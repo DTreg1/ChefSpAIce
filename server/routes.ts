@@ -367,6 +367,91 @@ Respond ONLY with a valid JSON object in this exact format:
     }
   });
 
+  // Nutrition Statistics
+  app.get("/api/nutrition/stats", async (_req, res) => {
+    try {
+      const foodItems = await storage.getFoodItems();
+      
+      let totalCalories = 0;
+      let totalProtein = 0;
+      let totalCarbs = 0;
+      let totalFat = 0;
+      let itemsWithNutrition = 0;
+      
+      const categoryBreakdown: Record<string, { calories: number; count: number }> = {};
+      
+      foodItems.forEach(item => {
+        if (item.nutrition) {
+          try {
+            const nutrition = JSON.parse(item.nutrition);
+            const qty = parseFloat(item.quantity) || 1;
+            const multiplier = qty / 100; // Nutrition is per 100g/ml
+            
+            totalCalories += nutrition.calories * multiplier;
+            totalProtein += nutrition.protein * multiplier;
+            totalCarbs += nutrition.carbs * multiplier;
+            totalFat += nutrition.fat * multiplier;
+            itemsWithNutrition++;
+            
+            // Track by storage location for breakdown
+            const locationId = item.storageLocationId;
+            if (!categoryBreakdown[locationId]) {
+              categoryBreakdown[locationId] = { calories: 0, count: 0 };
+            }
+            categoryBreakdown[locationId].calories += nutrition.calories * multiplier;
+            categoryBreakdown[locationId].count++;
+          } catch (e) {
+            // Skip items with invalid nutrition data
+          }
+        }
+      });
+      
+      res.json({
+        totalCalories: Math.round(totalCalories),
+        totalProtein: Math.round(totalProtein * 10) / 10,
+        totalCarbs: Math.round(totalCarbs * 10) / 10,
+        totalFat: Math.round(totalFat * 10) / 10,
+        itemsWithNutrition,
+        totalItems: foodItems.length,
+        categoryBreakdown,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch nutrition stats" });
+    }
+  });
+
+  app.get("/api/nutrition/items", async (_req, res) => {
+    try {
+      const foodItems = await storage.getFoodItems();
+      const locations = await storage.getStorageLocations();
+      
+      const itemsWithNutrition = foodItems
+        .filter(item => item.nutrition)
+        .map(item => {
+          const location = locations.find(loc => loc.id === item.storageLocationId);
+          let nutrition = null;
+          try {
+            nutrition = JSON.parse(item.nutrition!);
+          } catch (e) {
+            // Skip invalid nutrition
+          }
+          return {
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            locationName: location?.name || "Unknown",
+            nutrition,
+          };
+        })
+        .filter(item => item.nutrition !== null);
+      
+      res.json(itemsWithNutrition);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch nutrition items" });
+    }
+  });
+
   // Waste reduction suggestions
   app.get("/api/suggestions/waste-reduction", async (_req, res) => {
     try {

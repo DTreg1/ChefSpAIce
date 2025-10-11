@@ -53,6 +53,8 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
       toast({
         title: "Success",
         description: "Food item updated",
