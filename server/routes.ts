@@ -267,6 +267,149 @@ Respond ONLY with a valid JSON object in this exact format:
     }
   });
 
+  // Update recipe (favorite, rating)
+  app.patch("/api/recipes/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const recipe = await storage.updateRecipe(id, req.body);
+      res.json(recipe);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update recipe" });
+    }
+  });
+
+  // Expiration Notifications
+  app.get("/api/notifications/expiration", async (_req, res) => {
+    try {
+      const notifications = await storage.getExpirationNotifications();
+      
+      // Recalculate daysUntilExpiry dynamically and filter out expired/invalid items
+      const now = new Date();
+      const validNotifications = notifications
+        .map(notification => {
+          const expiry = new Date(notification.expirationDate);
+          const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return { ...notification, daysUntilExpiry: daysUntil };
+        })
+        .filter(notification => notification.daysUntilExpiry >= 0); // Remove expired items
+      
+      res.json(validNotifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.post("/api/notifications/expiration/check", async (_req, res) => {
+    try {
+      // Check for items expiring in the next 3 days
+      const expiringItems = await storage.getExpiringItems(3);
+      const now = new Date();
+      
+      // Get existing notifications
+      const existingNotifications = await storage.getExpirationNotifications();
+      
+      // Clean up notifications for items that no longer exist or are expired
+      const existingItemIds = new Set(expiringItems.map(item => item.id));
+      for (const notification of existingNotifications) {
+        const expiry = new Date(notification.expirationDate);
+        const isExpired = expiry.getTime() < now.getTime();
+        const itemNoLongerExists = !existingItemIds.has(notification.foodItemId);
+        
+        if (isExpired || itemNoLongerExists) {
+          await storage.dismissNotification(notification.id);
+        }
+      }
+      
+      // Create notifications for new expiring items
+      const existingNotificationItemIds = new Set(existingNotifications.map(n => n.foodItemId));
+      
+      for (const item of expiringItems) {
+        if (!existingNotificationItemIds.has(item.id) && item.expirationDate) {
+          const expiry = new Date(item.expirationDate);
+          const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysUntil >= 0) { // Only create if not already expired
+            await storage.createExpirationNotification({
+              foodItemId: item.id,
+              foodItemName: item.name,
+              expirationDate: item.expirationDate,
+              daysUntilExpiry: daysUntil,
+              dismissed: false,
+            });
+          }
+        }
+      }
+      
+      // Get updated notifications with dynamic day calculation
+      const notifications = await storage.getExpirationNotifications();
+      const validNotifications = notifications
+        .map(notification => {
+          const expiry = new Date(notification.expirationDate);
+          const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return { ...notification, daysUntilExpiry: daysUntil };
+        })
+        .filter(notification => notification.daysUntilExpiry >= 0);
+      
+      res.json({ notifications: validNotifications, count: validNotifications.length });
+    } catch (error) {
+      console.error("Notification check error:", error);
+      res.status(500).json({ error: "Failed to check for expiring items" });
+    }
+  });
+
+  app.post("/api/notifications/:id/dismiss", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.dismissNotification(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to dismiss notification" });
+    }
+  });
+
+  // Waste reduction suggestions
+  app.get("/api/suggestions/waste-reduction", async (_req, res) => {
+    try {
+      const expiringItems = await storage.getExpiringItems(5);
+      
+      if (expiringItems.length === 0) {
+        return res.json({ suggestions: [] });
+      }
+
+      const ingredientsList = expiringItems.map(item => 
+        `${item.name} (${item.quantity} ${item.unit || ''}, expires in ${
+          Math.ceil((new Date(item.expirationDate!).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        } days)`
+      ).join(', ');
+
+      const appliances = await storage.getAppliances();
+      const appliancesList = appliances.map(a => a.name).join(', ');
+
+      const prompt = `Generate waste reduction suggestions for these food items that are expiring soon: ${ingredientsList}.
+Available appliances: ${appliancesList}.
+
+Provide 2-3 practical suggestions to use these ingredients before they expire. Be concise and actionable.
+
+Respond ONLY with a valid JSON object:
+{
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"]
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 8192,
+      });
+
+      const data = JSON.parse(completion.choices[0].message.content || '{"suggestions":[]}');
+      res.json(data);
+    } catch (error) {
+      console.error("Waste reduction error:", error);
+      res.status(500).json({ error: "Failed to generate suggestions" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -82,6 +82,8 @@ export const recipes = pgTable("recipes", {
   usedIngredients: text("used_ingredients").array().notNull(),
   missingIngredients: text("missing_ingredients").array(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  isFavorite: boolean("is_favorite").notNull().default(false),
+  rating: integer("rating"),
 });
 
 export const insertRecipeSchema = createInsertSchema(recipes).omit({
@@ -91,6 +93,25 @@ export const insertRecipeSchema = createInsertSchema(recipes).omit({
 
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Recipe = typeof recipes.$inferSelect;
+
+// Expiration Notifications
+export const expirationNotifications = pgTable("expiration_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  foodItemId: varchar("food_item_id").notNull(),
+  foodItemName: text("food_item_name").notNull(),
+  expirationDate: text("expiration_date").notNull(),
+  daysUntilExpiry: integer("days_until_expiry").notNull(),
+  notifiedAt: timestamp("notified_at").notNull().defaultNow(),
+  dismissed: boolean("dismissed").notNull().default(false),
+});
+
+export const insertExpirationNotificationSchema = createInsertSchema(expirationNotifications).omit({
+  id: true,
+  notifiedAt: true,
+});
+
+export type InsertExpirationNotification = z.infer<typeof insertExpirationNotificationSchema>;
+export type ExpirationNotification = typeof expirationNotifications.$inferSelect;
 
 // USDA Food Search Response Type (not stored in DB)
 export type USDAFoodItem = {
