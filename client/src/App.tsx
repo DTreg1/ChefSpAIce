@@ -10,6 +10,7 @@ import Chat from "@/pages/chat";
 import Storage from "@/pages/storage";
 import Cookbook from "@/pages/cookbook";
 import Nutrition from "@/pages/nutrition";
+import MealPlanner from "@/pages/meal-planner";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/" component={Chat} />
       <Route path="/cookbook" component={Cookbook} />
       <Route path="/nutrition" component={Nutrition} />
+      <Route path="/meal-planner" component={MealPlanner} />
       <Route path="/storage/:location" component={Storage} />
       <Route component={NotFound} />
     </Switch>
