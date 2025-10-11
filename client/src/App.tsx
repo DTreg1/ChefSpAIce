@@ -8,12 +8,14 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Chat from "@/pages/chat";
 import Storage from "@/pages/storage";
+import Cookbook from "@/pages/cookbook";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Chat} />
+      <Route path="/cookbook" component={Cookbook} />
       <Route path="/storage/:location" component={Storage} />
       <Route component={NotFound} />
     </Switch>
