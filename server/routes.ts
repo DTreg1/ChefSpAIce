@@ -7,7 +7,8 @@ import {
   insertFoodItemSchema, 
   insertChatMessageSchema,
   insertRecipeSchema,
-  insertApplianceSchema 
+  insertApplianceSchema,
+  insertMealPlanSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -492,6 +493,54 @@ Respond ONLY with a valid JSON object:
     } catch (error) {
       console.error("Waste reduction error:", error);
       res.status(500).json({ error: "Failed to generate suggestions" });
+    }
+  });
+
+  // Meal Plans
+  app.get("/api/meal-plans", async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const plans = await storage.getMealPlans(
+        startDate as string | undefined,
+        endDate as string | undefined
+      );
+      res.json(plans);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch meal plans" });
+    }
+  });
+
+  app.post("/api/meal-plans", async (req, res) => {
+    try {
+      const validated = insertMealPlanSchema.parse(req.body);
+      const plan = await storage.createMealPlan(validated);
+      res.json(plan);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid meal plan data" });
+    }
+  });
+
+  app.put("/api/meal-plans/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validated = insertMealPlanSchema.partial().parse(req.body);
+      const plan = await storage.updateMealPlan(id, validated);
+      res.json(plan);
+    } catch (error) {
+      if (error instanceof Error && error.message === "Meal plan not found") {
+        return res.status(404).json({ error: "Meal plan not found" });
+      }
+      res.status(400).json({ error: "Failed to update meal plan" });
+    }
+  });
+
+  app.delete("/api/meal-plans/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteMealPlan(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete meal plan" });
     }
   });
 

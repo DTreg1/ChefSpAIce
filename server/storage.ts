@@ -11,12 +11,15 @@ import {
   type InsertRecipe,
   type ExpirationNotification,
   type InsertExpirationNotification,
+  type MealPlan,
+  type InsertMealPlan,
   storageLocations,
   appliances,
   foodItems,
   chatMessages,
   recipes,
-  expirationNotifications
+  expirationNotifications,
+  mealPlans
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, lte } from "drizzle-orm";
@@ -55,6 +58,13 @@ export interface IStorage {
   createExpirationNotification(notification: InsertExpirationNotification): Promise<ExpirationNotification>;
   dismissNotification(id: string): Promise<void>;
   getExpiringItems(daysThreshold: number): Promise<FoodItem[]>;
+
+  // Meal Plans
+  getMealPlans(startDate?: string, endDate?: string): Promise<MealPlan[]>;
+  getMealPlan(id: string): Promise<MealPlan | undefined>;
+  createMealPlan(plan: InsertMealPlan): Promise<MealPlan>;
+  updateMealPlan(id: string, updates: Partial<InsertMealPlan>): Promise<MealPlan>;
+  deleteMealPlan(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -276,6 +286,60 @@ export class DatabaseStorage implements IStorage {
     });
     
     return expiringItems;
+  }
+
+  // Meal Plans
+  async getMealPlans(startDate?: string, endDate?: string): Promise<MealPlan[]> {
+    await this.ensureDefaultData();
+    
+    const plans = await db.select().from(mealPlans);
+    
+    // Filter by date range if provided
+    if (startDate || endDate) {
+      return plans.filter(plan => {
+        if (startDate && endDate) {
+          return plan.date >= startDate && plan.date <= endDate;
+        } else if (startDate) {
+          return plan.date >= startDate;
+        } else if (endDate) {
+          return plan.date <= endDate;
+        }
+        return true;
+      });
+    }
+    
+    return plans;
+  }
+
+  async getMealPlan(id: string): Promise<MealPlan | undefined> {
+    await this.ensureDefaultData();
+    const [plan] = await db.select().from(mealPlans).where(eq(mealPlans.id, id));
+    return plan || undefined;
+  }
+
+  async createMealPlan(plan: InsertMealPlan): Promise<MealPlan> {
+    await this.ensureDefaultData();
+    const [newPlan] = await db.insert(mealPlans).values(plan).returning();
+    return newPlan;
+  }
+
+  async updateMealPlan(id: string, updates: Partial<InsertMealPlan>): Promise<MealPlan> {
+    await this.ensureDefaultData();
+    const [updated] = await db.update(mealPlans)
+      .set(updates)
+      .where(eq(mealPlans.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Meal plan not found");
+    }
+    
+    return updated;
+  }
+
+  async deleteMealPlan(id: string): Promise<void> {
+    await this.ensureDefaultData();
+    await db.delete(mealPlans).where(eq(mealPlans.id, id));
   }
 }
 
