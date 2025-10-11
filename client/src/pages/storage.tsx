@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FoodCard } from "@/components/food-card";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipe-generator";
+import { ExpirationAlert } from "@/components/expiration-alert";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import type { FoodItem, StorageLocation, Recipe } from "@shared/schema";
@@ -40,6 +41,10 @@ export default function Storage() {
     <>
       <div className="h-full overflow-y-auto">
         <div className="max-w-6xl mx-auto p-6">
+          <div className="mb-6">
+            <ExpirationAlert />
+          </div>
+
           <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground capitalize mb-2">

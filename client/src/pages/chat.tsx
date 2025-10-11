@@ -5,6 +5,7 @@ import { ChatInput } from "@/components/chat-input";
 import { EmptyState } from "@/components/empty-state";
 import { RecipeCard } from "@/components/recipe-card";
 import { RecipeGenerator } from "@/components/recipe-generator";
+import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
 import { useToast } from "@/hooks/use-toast";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
@@ -141,6 +142,10 @@ export default function Chat() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-6">
+          <div className="mb-6">
+            <ExpirationAlert />
+          </div>
+
           {messages.length === 0 && !isStreaming && !generatedRecipe ? (
             <EmptyState type="chat" />
           ) : (

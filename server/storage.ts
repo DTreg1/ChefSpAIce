@@ -9,14 +9,17 @@ import {
   type InsertChatMessage,
   type Recipe,
   type InsertRecipe,
+  type ExpirationNotification,
+  type InsertExpirationNotification,
   storageLocations,
   appliances,
   foodItems,
   chatMessages,
-  recipes
+  recipes,
+  expirationNotifications
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Storage Locations
@@ -43,7 +46,15 @@ export interface IStorage {
 
   // Recipes
   getRecipes(): Promise<Recipe[]>;
+  getRecipe(id: string): Promise<Recipe | undefined>;
   createRecipe(recipe: InsertRecipe): Promise<Recipe>;
+  updateRecipe(id: string, updates: Partial<Recipe>): Promise<Recipe>;
+
+  // Expiration Notifications
+  getExpirationNotifications(): Promise<ExpirationNotification[]>;
+  createExpirationNotification(notification: InsertExpirationNotification): Promise<ExpirationNotification>;
+  dismissNotification(id: string): Promise<void>;
+  getExpiringItems(daysThreshold: number): Promise<FoodItem[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -200,12 +211,71 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(recipes).orderBy(sql`${recipes.createdAt} DESC`);
   }
 
+  async getRecipe(id: string): Promise<Recipe | undefined> {
+    const [recipe] = await db.select().from(recipes).where(eq(recipes.id, id));
+    return recipe || undefined;
+  }
+
   async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
     const [newRecipe] = await db
       .insert(recipes)
       .values(recipe)
       .returning();
     return newRecipe;
+  }
+
+  async updateRecipe(id: string, updates: Partial<Recipe>): Promise<Recipe> {
+    const [updated] = await db
+      .update(recipes)
+      .set(updates)
+      .where(eq(recipes.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Recipe not found");
+    }
+    
+    return updated;
+  }
+
+  // Expiration Notifications
+  async getExpirationNotifications(): Promise<ExpirationNotification[]> {
+    return db.select()
+      .from(expirationNotifications)
+      .where(eq(expirationNotifications.dismissed, false))
+      .orderBy(expirationNotifications.daysUntilExpiry);
+  }
+
+  async createExpirationNotification(notification: InsertExpirationNotification): Promise<ExpirationNotification> {
+    const [newNotification] = await db
+      .insert(expirationNotifications)
+      .values(notification)
+      .returning();
+    return newNotification;
+  }
+
+  async dismissNotification(id: string): Promise<void> {
+    await db
+      .update(expirationNotifications)
+      .set({ dismissed: true })
+      .where(eq(expirationNotifications.id, id));
+  }
+
+  async getExpiringItems(daysThreshold: number): Promise<FoodItem[]> {
+    // Get items with expiration dates that are within the threshold
+    const items = await db.select().from(foodItems);
+    
+    const expiringItems = items.filter(item => {
+      if (!item.expirationDate) return false;
+      
+      const expiry = new Date(item.expirationDate);
+      const now = new Date();
+      const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      return daysUntil >= 0 && daysUntil <= daysThreshold;
+    });
+    
+    return expiringItems;
   }
 }
 
