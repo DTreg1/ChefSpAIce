@@ -1,0 +1,273 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { openai } from "./openai";
+import { searchUSDAFoods, getFoodByFdcId } from "./usda";
+import { 
+  insertFoodItemSchema, 
+  insertChatMessageSchema,
+  insertRecipeSchema,
+  insertApplianceSchema 
+} from "@shared/schema";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Storage Locations
+  app.get("/api/storage-locations", async (_req, res) => {
+    try {
+      const locations = await storage.getStorageLocations();
+      res.json(locations);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch storage locations" });
+    }
+  });
+
+  // Food Items
+  app.get("/api/food-items", async (req, res) => {
+    try {
+      const { storageLocationId } = req.query;
+      const items = await storage.getFoodItems(storageLocationId as string | undefined);
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch food items" });
+    }
+  });
+
+  app.post("/api/food-items", async (req, res) => {
+    try {
+      const validated = insertFoodItemSchema.parse(req.body);
+      const item = await storage.createFoodItem(validated);
+      res.json(item);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid food item data" });
+    }
+  });
+
+  app.put("/api/food-items/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const item = await storage.updateFoodItem(id, req.body);
+      res.json(item);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update food item" });
+    }
+  });
+
+  app.delete("/api/food-items/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteFoodItem(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete food item" });
+    }
+  });
+
+  // Appliances
+  app.get("/api/appliances", async (_req, res) => {
+    try {
+      const appliances = await storage.getAppliances();
+      res.json(appliances);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch appliances" });
+    }
+  });
+
+  app.post("/api/appliances", async (req, res) => {
+    try {
+      const validated = insertApplianceSchema.parse(req.body);
+      const appliance = await storage.createAppliance(validated);
+      res.json(appliance);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid appliance data" });
+    }
+  });
+
+  // USDA Food Search
+  app.get("/api/usda/search", async (req, res) => {
+    try {
+      const { query } = req.query;
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+      const results = await searchUSDAFoods(query);
+      res.json(results);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to search USDA database" });
+    }
+  });
+
+  app.get("/api/usda/food/:fdcId", async (req, res) => {
+    try {
+      const { fdcId } = req.params;
+      const food = await getFoodByFdcId(Number(fdcId));
+      if (!food) {
+        return res.status(404).json({ error: "Food not found" });
+      }
+      res.json(food);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch food details" });
+    }
+  });
+
+  // Chat Messages
+  app.get("/api/chat/messages", async (_req, res) => {
+    try {
+      const messages = await storage.getChatMessages();
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { message } = req.body;
+      
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Save user message
+      await storage.createChatMessage({
+        role: "user",
+        content: message,
+        metadata: null,
+      });
+
+      // Get current inventory and appliances for context
+      const foodItems = await storage.getFoodItems();
+      const appliances = await storage.getAppliances();
+      const storageLocations = await storage.getStorageLocations();
+
+      const inventoryContext = foodItems.map(item => {
+        const location = storageLocations.find(loc => loc.id === item.storageLocationId);
+        return `${item.name} (${item.quantity} ${item.unit || ''}) in ${location?.name || 'unknown'}`;
+      }).join(', ');
+
+      const appliancesContext = appliances.map(a => a.name).join(', ');
+
+      const systemPrompt = `You are an AI Chef assistant. You help users manage their food inventory and suggest recipes.
+
+Current inventory: ${inventoryContext || 'No items in inventory'}
+Available appliances: ${appliancesContext || 'No appliances registered'}
+
+Your tasks:
+1. Answer cooking and recipe questions
+2. Help users add, update, or remove food items from their inventory
+3. Suggest recipes based on available ingredients
+4. Provide cooking tips and guidance
+
+When the user asks to add items, respond with the details and suggest saving them to inventory.
+When asked for recipes, consider the available inventory and appliances.`;
+
+      // Stream response from OpenAI
+      const stream = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        stream: true,
+        max_completion_tokens: 8192,
+      });
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      let fullResponse = '';
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          fullResponse += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+
+      // Save AI response
+      await storage.createChatMessage({
+        role: "assistant",
+        content: fullResponse,
+        metadata: null,
+      });
+
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } catch (error) {
+      console.error("Chat error:", error);
+      res.status(500).json({ error: "Failed to process chat message" });
+    }
+  });
+
+  // Recipe Generation
+  app.post("/api/recipes/generate", async (req, res) => {
+    try {
+      const foodItems = await storage.getFoodItems();
+      const appliances = await storage.getAppliances();
+
+      if (foodItems.length === 0) {
+        return res.status(400).json({ error: "No ingredients in inventory" });
+      }
+
+      const ingredientsList = foodItems.map(item => 
+        `${item.name} (${item.quantity} ${item.unit || ''})`
+      ).join(', ');
+
+      const appliancesList = appliances.map(a => a.name).join(', ');
+
+      const prompt = `Generate a detailed recipe using these available ingredients: ${ingredientsList}.
+Available cooking appliances: ${appliancesList}.
+
+Respond ONLY with a valid JSON object in this exact format:
+{
+  "title": "Recipe name",
+  "prepTime": "X minutes",
+  "cookTime": "X minutes", 
+  "servings": number,
+  "ingredients": ["ingredient 1 with quantity", "ingredient 2 with quantity"],
+  "instructions": ["step 1", "step 2"],
+  "usedIngredients": ["ingredient from inventory"],
+  "missingIngredients": ["ingredient not in inventory"]
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 8192,
+      });
+
+      const recipeData = JSON.parse(completion.choices[0].message.content || "{}");
+      
+      const recipe = await storage.createRecipe({
+        title: recipeData.title,
+        prepTime: recipeData.prepTime,
+        cookTime: recipeData.cookTime,
+        servings: recipeData.servings,
+        ingredients: recipeData.ingredients,
+        instructions: recipeData.instructions,
+        usedIngredients: recipeData.usedIngredients,
+        missingIngredients: recipeData.missingIngredients || [],
+      });
+
+      res.json(recipe);
+    } catch (error) {
+      console.error("Recipe generation error:", error);
+      res.status(500).json({ error: "Failed to generate recipe" });
+    }
+  });
+
+  app.get("/api/recipes", async (_req, res) => {
+    try {
+      const recipes = await storage.getRecipes();
+      res.json(recipes);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch recipes" });
+    }
+  });
+
+  const httpServer = createServer(app);
+
+  return httpServer;
+}
