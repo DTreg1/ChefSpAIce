@@ -544,6 +544,95 @@ Respond ONLY with a valid JSON object:
     }
   });
 
+  // Shopping List Generator
+  app.get("/api/meal-plans/shopping-list", async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "startDate and endDate are required" });
+      }
+      
+      // Get meal plans for the date range
+      const mealPlans = await storage.getMealPlans(startDate as string, endDate as string);
+      
+      if (mealPlans.length === 0) {
+        return res.json({
+          items: [],
+          totalItems: 0,
+          plannedMeals: 0,
+          dateRange: { startDate, endDate },
+          message: "No meals planned for this period"
+        });
+      }
+      
+      // Get all unique recipe IDs
+      const recipeIds = Array.from(new Set(mealPlans.map(plan => plan.recipeId)));
+      
+      // Get all recipes
+      const recipes = await Promise.all(
+        recipeIds.map(id => storage.getRecipe(id))
+      );
+      
+      // Calculate ingredient requirements with quantities
+      const ingredientMap = new Map<string, { ingredient: string; count: number; recipes: string[] }>();
+      
+      mealPlans.forEach(plan => {
+        const recipe = recipes.find(r => r?.id === plan.recipeId);
+        if (!recipe) return;
+        
+        recipe.ingredients.forEach(ingredient => {
+          const key = ingredient.toLowerCase().trim();
+          const existing = ingredientMap.get(key);
+          
+          if (existing) {
+            existing.count += plan.servings;
+            if (!existing.recipes.includes(recipe.title)) {
+              existing.recipes.push(recipe.title);
+            }
+          } else {
+            ingredientMap.set(key, {
+              ingredient,
+              count: plan.servings,
+              recipes: [recipe.title]
+            });
+          }
+        });
+      });
+      
+      // Get current inventory
+      const inventory = await storage.getFoodItems();
+      const inventoryNames = new Set(
+        inventory.map(item => item.name.toLowerCase().trim())
+      );
+      
+      // Filter items not in inventory
+      const shoppingList = Array.from(ingredientMap.values())
+        .filter(item => {
+          // Check if any inventory item name contains the ingredient or vice versa
+          const ingredientLower = item.ingredient.toLowerCase();
+          return !Array.from(inventoryNames).some(invName => 
+            invName.includes(ingredientLower) || ingredientLower.includes(invName)
+          );
+        })
+        .map(item => ({
+          ingredient: item.ingredient,
+          neededFor: item.recipes.join(", "),
+          servings: item.count
+        }));
+      
+      res.json({
+        items: shoppingList,
+        totalItems: shoppingList.length,
+        plannedMeals: mealPlans.length,
+        dateRange: { startDate, endDate }
+      });
+    } catch (error) {
+      console.error("Shopping list error:", error);
+      res.status(500).json({ error: "Failed to generate shopping list" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
