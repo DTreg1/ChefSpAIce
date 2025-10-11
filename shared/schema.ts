@@ -144,3 +144,26 @@ export type USDASearchResponse = {
   currentPage: number;
   totalPages: number;
 };
+
+// Meal Plans
+export const mealPlans = pgTable("meal_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  recipeId: varchar("recipe_id").notNull(),
+  date: text("date").notNull(), // ISO date string (YYYY-MM-DD)
+  mealType: text("meal_type").notNull(), // breakfast, lunch, dinner, snack
+  servings: integer("servings").notNull().default(1),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+  servings: z.number().int().positive().default(1),
+});
+
+export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
+export type MealPlan = typeof mealPlans.$inferSelect;
