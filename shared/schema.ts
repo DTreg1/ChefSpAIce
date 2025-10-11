@@ -42,6 +42,7 @@ export const foodItems = pgTable("food_items", {
   storageLocationId: varchar("storage_location_id").notNull(),
   expirationDate: text("expiration_date"),
   imageUrl: text("image_url"),
+  nutrition: text("nutrition"),
   addedAt: timestamp("added_at").notNull().defaultNow(),
 });
 
@@ -113,6 +114,19 @@ export const insertExpirationNotificationSchema = createInsertSchema(expirationN
 export type InsertExpirationNotification = z.infer<typeof insertExpirationNotificationSchema>;
 export type ExpirationNotification = typeof expirationNotifications.$inferSelect;
 
+// Nutritional Information (embedded in food items)
+export type NutritionInfo = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+  servingSize?: string;
+  servingUnit?: string;
+};
+
 // USDA Food Search Response Type (not stored in DB)
 export type USDAFoodItem = {
   fdcId: number;
@@ -121,6 +135,7 @@ export type USDAFoodItem = {
   brandOwner?: string;
   ingredients?: string;
   foodCategory?: string;
+  nutrition?: NutritionInfo;
 };
 
 export type USDASearchResponse = {
