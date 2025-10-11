@@ -41,7 +41,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   });
 
   const { data: searchResults, refetch: searchUSDA } = useQuery<USDASearchResponse>({
-    queryKey: ["/api/usda/search", searchQuery],
+    queryKey: [`/api/usda/search?query=${encodeURIComponent(searchQuery)}`],
     enabled: false,
   });
 
@@ -52,6 +52,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
       toast({
         title: "Success",
         description: "Food item added to inventory",
@@ -110,6 +112,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       storageLocationId,
       expirationDate: expirationDate || null,
       imageUrl: null,
+      nutrition: selectedFood?.nutrition ? JSON.stringify(selectedFood.nutrition) : null,
     });
   };
 

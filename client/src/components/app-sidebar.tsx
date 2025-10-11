@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen } from "lucide-react";
+import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
@@ -96,7 +96,7 @@ export function AppSidebar() {
 
           <SidebarGroup className="mt-4">
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-              Recipes
+              Recipes & Nutrition
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -105,6 +105,14 @@ export function AppSidebar() {
                     <Link href="/cookbook" data-testid="link-cookbook">
                       <BookOpen className="w-4 h-4" />
                       <span className="flex-1">My Cookbook</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/nutrition"}>
+                    <Link href="/nutrition" data-testid="link-nutrition">
+                      <Apple className="w-4 h-4" />
+                      <span className="flex-1">Nutrition</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
