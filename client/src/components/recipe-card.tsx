@@ -1,9 +1,15 @@
+import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, ChefHat, CheckCircle2, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface RecipeCardProps {
+  id?: string;
   title: string;
   prepTime?: string;
   cookTime?: string;
@@ -12,9 +18,13 @@ interface RecipeCardProps {
   instructions: string[];
   usedIngredients: string[];
   missingIngredients?: string[];
+  isFavorite?: boolean;
+  rating?: number;
+  showControls?: boolean;
 }
 
 export function RecipeCard({
+  id,
   title,
   prepTime,
   cookTime,
@@ -23,7 +33,42 @@ export function RecipeCard({
   instructions,
   usedIngredients,
   missingIngredients = [],
+  isFavorite = false,
+  rating,
+  showControls = false,
 }: RecipeCardProps) {
+  const { toast } = useToast();
+  const [localRating, setLocalRating] = useState(rating || 0);
+  const [localFavorite, setLocalFavorite] = useState(isFavorite);
+
+  const updateMutation = useMutation({
+    mutationFn: async (updates: { isFavorite?: boolean; rating?: number }) => {
+      if (!id) throw new Error("Recipe ID required");
+      return await apiRequest("PATCH", `/api/recipes/${id}`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update recipe",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleFavorite = () => {
+    const newFavorite = !localFavorite;
+    setLocalFavorite(newFavorite);
+    updateMutation.mutate({ isFavorite: newFavorite });
+  };
+
+  const setRating = (newRating: number) => {
+    setLocalRating(newRating);
+    updateMutation.mutate({ rating: newRating });
+  };
+
   return (
     <Card className="border-2 border-primary/20 shadow-md" data-testid="card-recipe">
       <CardHeader className="pb-4">
@@ -36,6 +81,39 @@ export function RecipeCard({
             AI Generated
           </Badge>
         </div>
+
+        {showControls && id && (
+          <div className="flex items-center gap-4 mt-3 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleFavorite}
+              data-testid="button-toggle-favorite"
+              className={localFavorite ? "border-amber-500 text-amber-600" : ""}
+            >
+              <Star className={`w-4 h-4 ${localFavorite ? "fill-amber-500" : ""}`} />
+            </Button>
+            
+            <div className="flex gap-1" data-testid="rating-stars">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setRating(star)}
+                  className="transition-colors"
+                  data-testid={`button-star-${star}`}
+                >
+                  <Star
+                    className={`w-5 h-5 ${
+                      star <= localRating
+                        ? "fill-amber-500 text-amber-500"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-4 mt-3 flex-wrap">
           {prepTime && (
