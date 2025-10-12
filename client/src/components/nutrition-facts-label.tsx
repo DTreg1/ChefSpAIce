@@ -44,7 +44,7 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
         <div className="flex justify-between items-end">
           <span className="text-3xl font-black">Calories</span>
           <span className="text-4xl font-black" data-testid="calories-value">
-            {Math.round(nutrition.calories)}
+            {Math.round(nutrition.calories || 0)}
           </span>
         </div>
       </div>
