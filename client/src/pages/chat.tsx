@@ -17,6 +17,7 @@ export default function Chat() {
   const [streamingContent, setStreamingContent] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -37,6 +38,14 @@ export default function Chat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, streamingContent, generatedRecipe]);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const handleRecipeGenerated = (recipe: Recipe) => {
     setGeneratedRecipe(recipe);
@@ -65,11 +74,15 @@ export default function Chat() {
     setIsStreaming(true);
     setStreamingContent("");
 
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: content }),
+        signal: abortController.signal,
       });
 
       if (!response.ok) {
@@ -107,6 +120,7 @@ export default function Chat() {
               setMessages((prev) => [...prev, aiMessage]);
               setStreamingContent("");
               setIsStreaming(false);
+              abortControllerRef.current = null;
               return;
             }
 
@@ -122,7 +136,12 @@ export default function Chat() {
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Chat stream aborted');
+        abortControllerRef.current = null;
+        return;
+      }
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
@@ -130,6 +149,7 @@ export default function Chat() {
       });
       setIsStreaming(false);
       setStreamingContent("");
+      abortControllerRef.current = null;
     }
   };
 
