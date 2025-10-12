@@ -581,7 +581,7 @@ When asked for recipes, consider the available inventory and appliances.`;
 
         streamCompleted = true;
 
-        // Save AI response only if stream completed successfully
+        // Save AI response only if stream completed successfully and client is still connected
         if (fullResponse && !abortController.signal.aborted) {
           await storage.createChatMessage(userId, {
             role: "assistant",
@@ -590,10 +590,17 @@ When asked for recipes, consider the available inventory and appliances.`;
           });
         }
 
-        if (!abortController.signal.aborted) {
-          res.write('data: [DONE]\n\n');
+        // Only write and end response if client is still connected and response is writable
+        if (!abortController.signal.aborted && !res.writableEnded) {
+          try {
+            res.write('data: [DONE]\n\n');
+            res.end();
+          } catch (finalWriteError) {
+            console.error("Error in final write to stream:", finalWriteError);
+          }
+        } else if (!res.writableEnded) {
+          res.end();
         }
-        res.end();
       } catch (streamError: any) {
         console.error("Streaming error:", {
           message: streamError.message,
