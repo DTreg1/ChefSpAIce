@@ -43,6 +43,7 @@ export const userPreferences = pgTable("user_preferences", {
 
 export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -61,6 +62,7 @@ export const storageLocations = pgTable("storage_locations", {
 
 export const insertStorageLocationSchema = createInsertSchema(storageLocations).omit({
   id: true,
+  userId: true,
 });
 
 export type InsertStorageLocation = z.infer<typeof insertStorageLocationSchema>;
@@ -76,6 +78,7 @@ export const appliances = pgTable("appliances", {
 
 export const insertApplianceSchema = createInsertSchema(appliances).omit({
   id: true,
+  userId: true,
 });
 
 export type InsertAppliance = z.infer<typeof insertApplianceSchema>;
@@ -98,6 +101,7 @@ export const foodItems = pgTable("food_items", {
 
 export const insertFoodItemSchema = createInsertSchema(foodItems).omit({
   id: true,
+  userId: true,
   addedAt: true,
 });
 
@@ -116,6 +120,7 @@ export const chatMessages = pgTable("chat_messages", {
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   id: true,
+  userId: true,
   timestamp: true,
 });
 
@@ -141,6 +146,7 @@ export const recipes = pgTable("recipes", {
 
 export const insertRecipeSchema = createInsertSchema(recipes).omit({
   id: true,
+  userId: true,
   createdAt: true,
 });
 
@@ -161,6 +167,7 @@ export const expirationNotifications = pgTable("expiration_notifications", {
 
 export const insertExpirationNotificationSchema = createInsertSchema(expirationNotifications).omit({
   id: true,
+  userId: true,
   notifiedAt: true,
 });
 
@@ -214,6 +221,7 @@ export const mealPlans = pgTable("meal_plans", {
 
 export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
   id: true,
+  userId: true,
   createdAt: true,
 }).extend({
   mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
