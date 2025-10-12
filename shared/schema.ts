@@ -101,6 +101,7 @@ export const foodItems = pgTable("food_items", {
   expirationDate: text("expiration_date").notNull(),
   imageUrl: text("image_url"),
   nutrition: text("nutrition"),
+  usdaData: jsonb("usda_data"), // Complete USDA API response data
   addedAt: timestamp("added_at").notNull().defaultNow(),
 });
 
