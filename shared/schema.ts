@@ -135,6 +135,8 @@ export type USDAFoodItem = {
   brandOwner?: string;
   ingredients?: string;
   foodCategory?: string;
+  servingSize?: number;
+  servingSizeUnit?: string;
   nutrition?: NutritionInfo;
 };
 
