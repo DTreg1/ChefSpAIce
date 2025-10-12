@@ -57,13 +57,15 @@ Key architectural decisions include:
 
 ### Food Item Images (October 2025)
 - **Hybrid Image System**: Three-source approach for food item photos
-  - Open Food Facts API: Branded product images via barcode/text search
+  - Barcode Lookup API: Branded product images via barcode/text search
   - Replit Object Storage: User-uploaded photos with presigned URLs
   - Placeholder Icons: UtensilsCrossed icon fallback for items without images
-- **Open Food Facts Integration**: 
-  - API client at `server/openfoodfacts.ts` for branded product searches
-  - GET `/api/openfoodfacts/search?query={query}&pageSize={n}` endpoint
-  - Returns product name, image URL, and metadata
+- **Barcode Lookup Integration**: 
+  - API client at `server/barcodelookup.ts` for branded product searches
+  - GET `/api/barcodelookup/search?query={query}` - Search products by name/brand/category
+  - GET `/api/barcodelookup/product/:barcode` - Lookup product by barcode number
+  - Returns product name, brand, barcode, image URLs, description, and metadata
+  - Authentication via BARCODE_LOOKUP_API_KEY environment variable
 - **Object Storage Integration**:
   - POST `/api/objects/upload` generates presigned GCS upload URLs
   - PUT `/api/food-images` normalizes uploaded paths for database storage
