@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple, CalendarDays } from "lucide-react";
+import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
@@ -105,6 +105,14 @@ export function AppSidebar() {
                     <Link href="/meal-planner" data-testid="link-meal-planner">
                       <CalendarDays className="w-4 h-4" />
                       <span className="flex-1">Meal Planner</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/shopping-list"}>
+                    <Link href="/shopping-list" data-testid="link-shopping-list">
+                      <ShoppingCart className="w-4 h-4" />
+                      <span className="flex-1">Shopping List</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
