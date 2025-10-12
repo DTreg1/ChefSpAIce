@@ -793,11 +793,11 @@ Important:
       });
 
       res.json(recipe);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Recipe image processing error:", error);
       res.status(500).json({ 
         error: "Failed to extract recipe from image",
-        details: error.message 
+        details: error.message || "Unknown error occurred"
       });
     }
   });
