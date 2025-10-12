@@ -272,7 +272,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         <DialogHeader>
           <DialogTitle>Add Food Item</DialogTitle>
           <DialogDescription>
-            Search the USDA database or enter a custom item
+            We utilize the USDA database to provide accurate nutritional information.
           </DialogDescription>
         </DialogHeader>
 

@@ -6,7 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
 
 type ShoppingListItem = {
@@ -25,28 +29,35 @@ type ShoppingListResponse = {
 
 export default function ShoppingList() {
   // Default to current week
-  const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 0 }));
-  const [endDate, setEndDate] = useState<Date>(endOfWeek(new Date(), { weekStartsOn: 0 }));
+  const [startDate, setStartDate] = useState<Date>(
+    startOfWeek(new Date(), { weekStartsOn: 0 }),
+  );
+  const [endDate, setEndDate] = useState<Date>(
+    endOfWeek(new Date(), { weekStartsOn: 0 }),
+  );
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
 
   // Normalize dates to midnight and format
   const normalizedStartDate = useMemo(() => {
     const date = new Date(startDate);
     date.setHours(0, 0, 0, 0);
-    return date.toLocaleDateString('en-CA');
+    return date.toLocaleDateString("en-CA");
   }, [startDate]);
 
   const normalizedEndDate = useMemo(() => {
     const date = new Date(endDate);
     date.setHours(0, 0, 0, 0);
-    return date.toLocaleDateString('en-CA');
+    return date.toLocaleDateString("en-CA");
   }, [endDate]);
 
   const { data: shoppingList, isLoading } = useQuery<ShoppingListResponse>({
-    queryKey: ["/api/meal-plans/shopping-list", { startDate: normalizedStartDate, endDate: normalizedEndDate }],
+    queryKey: [
+      "/api/meal-plans/shopping-list",
+      { startDate: normalizedStartDate, endDate: normalizedEndDate },
+    ],
     queryFn: async () => {
       const response = await fetch(
-        `/api/meal-plans/shopping-list?startDate=${normalizedStartDate}&endDate=${normalizedEndDate}`
+        `/api/meal-plans/shopping-list?startDate=${normalizedStartDate}&endDate=${normalizedEndDate}`,
       );
       if (!response.ok) throw new Error("Failed to fetch shopping list");
       return response.json();
@@ -59,7 +70,7 @@ export default function ShoppingList() {
   }, [normalizedStartDate, normalizedEndDate]);
 
   const handleCheckItem = (ingredient: string) => {
-    setCheckedItems(prev => {
+    setCheckedItems((prev) => {
       const next = new Set(prev);
       if (next.has(ingredient)) {
         next.delete(ingredient);
@@ -83,8 +94,12 @@ export default function ShoppingList() {
     setEndDate(endOfWeek(nextWeek, { weekStartsOn: 0 }));
   };
 
-  const uncheckedCount = shoppingList?.items.filter(item => !checkedItems.has(item.ingredient)).length || 0;
-  const checkedCount = shoppingList?.items.filter(item => checkedItems.has(item.ingredient)).length || 0;
+  const uncheckedCount =
+    shoppingList?.items.filter((item) => !checkedItems.has(item.ingredient))
+      .length || 0;
+  const checkedCount =
+    shoppingList?.items.filter((item) => checkedItems.has(item.ingredient))
+      .length || 0;
 
   return (
     <div className="h-full overflow-y-auto">
@@ -96,9 +111,12 @@ export default function ShoppingList() {
                 <ShoppingCart className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Shopping List</h1>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Shopping List
+                </h1>
                 <p className="text-muted-foreground">
-                  {format(startDate, "MMM d")} - {format(endDate, "MMM d, yyyy")}
+                  {format(startDate, "MMM d")} -{" "}
+                  {format(endDate, "MMM d, yyyy")}
                 </p>
               </div>
             </div>
@@ -122,7 +140,11 @@ export default function ShoppingList() {
               </Button>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" data-testid="button-custom-range">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="button-custom-range"
+                  >
                     <CalendarIcon className="w-4 h-4 mr-2" />
                     Custom Range
                   </Button>
@@ -175,13 +197,19 @@ export default function ShoppingList() {
         ) : !shoppingList?.items || shoppingList.items.length === 0 ? (
           <Card>
             <CardContent className="py-12">
-              <div className="flex flex-col items-center justify-center" data-testid="empty-shopping-list">
+              <div
+                className="flex flex-col items-center justify-center"
+                data-testid="empty-shopping-list"
+              >
                 <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6">
                   <ShoppingCart className="w-12 h-12 text-muted-foreground" />
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">No items to buy</h3>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  No items to buy
+                </h3>
                 <p className="text-muted-foreground text-center max-w-sm">
-                  {shoppingList?.message || "Schedule some meals to generate a shopping list"}
+                  {shoppingList?.message ||
+                    "Schedule some meals to generate a shopping list"}
                 </p>
               </div>
             </CardContent>
@@ -217,7 +245,9 @@ export default function ShoppingList() {
                         htmlFor={`item-${idx}`}
                         className="flex-1 cursor-pointer"
                       >
-                        <div className={`font-medium ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                        <div
+                          className={`font-medium ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}
+                        >
                           {item.ingredient}
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">

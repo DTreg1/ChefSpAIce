@@ -256,7 +256,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 py-8">
+    <div className="min-h-screen bg-black/80 p-4 py-8">
       <div className="max-w-3xl mx-auto">
         <Card data-testid="card-onboarding">
           <CardHeader className="text-center">
