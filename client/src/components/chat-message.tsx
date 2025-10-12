@@ -1,5 +1,6 @@
 import { ChefHat, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import DOMPurify from "isomorphic-dompurify";
 
 interface ChatMessageProps {
   role: "user" | "assistant" | "system";
@@ -15,9 +16,10 @@ export function ChatMessage({ role, content, timestamp, children }: ChatMessageP
   if (isSystem) {
     return (
       <div className="flex justify-center my-6" data-testid="message-system">
-        <div className="border-2 border-border rounded-xl px-4 py-2 text-sm text-muted-foreground max-w-md text-center">
-          {content}
-        </div>
+        <div 
+          className="border-2 border-border rounded-xl px-4 py-2 text-sm text-muted-foreground max-w-md text-center"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
+        />
       </div>
     );
   }
@@ -53,7 +55,10 @@ export function ChatMessage({ role, content, timestamp, children }: ChatMessageP
           )}
           style={{ borderRadius: "var(--radius)" }}
         >
-          <p className="text-base leading-relaxed whitespace-pre-wrap">{content}</p>
+          <p 
+            className="text-base leading-relaxed whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
+          />
         </div>
 
         {children && (
