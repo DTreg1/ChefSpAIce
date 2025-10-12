@@ -237,3 +237,23 @@ export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
 export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
 export type MealPlan = typeof mealPlans.$inferSelect;
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+// API Usage Logs - Track Barcode Lookup API calls
+export const apiUsageLogs = pgTable("api_usage_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  apiName: text("api_name").notNull(), // e.g., "barcode_lookup"
+  endpoint: text("endpoint").notNull(), // e.g., "search" or "product"
+  queryParams: text("query_params"), // e.g., "query=Coca Cola"
+  statusCode: integer("status_code").notNull(), // HTTP status
+  success: boolean("success").notNull(), // true if data returned
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertApiUsageLog = z.infer<typeof insertApiUsageLogSchema>;
+export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;

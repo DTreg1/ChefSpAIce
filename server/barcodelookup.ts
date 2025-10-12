@@ -90,3 +90,33 @@ export function extractImageUrl(product: BarcodeLookupProduct): string | undefin
   }
   return undefined;
 }
+
+interface RateLimitResponse {
+  remaining_requests: number;
+  allowed_requests: number;
+  reset_time: string; // Unix timestamp or ISO date
+}
+
+export async function getBarcodeLookupRateLimits(): Promise<RateLimitResponse> {
+  const apiKey = process.env.BARCODE_LOOKUP_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('BARCODE_LOOKUP_API_KEY is not configured');
+  }
+
+  try {
+    const response = await axios.get(`${BARCODE_LOOKUP_API_BASE}/rate-limits`, {
+      params: {
+        key: apiKey,
+      },
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Barcode Lookup rate limits error:', error);
+    throw new Error('Failed to fetch rate limits');
+  }
+}

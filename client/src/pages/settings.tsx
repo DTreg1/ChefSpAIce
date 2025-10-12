@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed } from "lucide-react";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { User, UserPreferences } from "@shared/schema";
 
@@ -461,7 +461,144 @@ export default function Settings() {
             </Form>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              API Usage Monitoring
+            </CardTitle>
+            <CardDescription>
+              Track your Barcode Lookup API usage and quota
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ApiUsageSection />
+          </CardContent>
+        </Card>
       </div>
+    </div>
+  );
+}
+
+interface RateLimits {
+  remaining_requests: number;
+  allowed_requests: number;
+  reset_time: string;
+}
+
+interface UsageStats {
+  totalCalls: number;
+  successfulCalls: number;
+  failedCalls: number;
+}
+
+interface UsageLog {
+  id: string;
+  apiName: string;
+  endpoint: string;
+  queryParams: string;
+  statusCode: number;
+  success: boolean;
+  timestamp: string;
+}
+
+function ApiUsageSection() {
+  const { toast } = useToast();
+  
+  const { data: rateLimits, isLoading: limitsLoading } = useQuery<RateLimits>({
+    queryKey: ["/api/barcodelookup/rate-limits"],
+  });
+
+  const { data: stats, isLoading: statsLoading } = useQuery<UsageStats>({
+    queryKey: ["/api/barcodelookup/usage/stats"],
+  });
+
+  const { data: logs, isLoading: logsLoading } = useQuery<UsageLog[]>({
+    queryKey: ["/api/barcodelookup/usage/logs"],
+  });
+
+  if (limitsLoading || statsLoading) {
+    return <div className="text-sm text-muted-foreground">Loading usage data...</div>;
+  }
+
+  const usagePercentage = rateLimits 
+    ? ((rateLimits.allowed_requests - rateLimits.remaining_requests) / rateLimits.allowed_requests) * 100
+    : 0;
+
+  const isNearLimit = usagePercentage >= 80;
+
+  return (
+    <div className="space-y-4">
+      {isNearLimit && (
+        <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-destructive">API Quota Warning</p>
+            <p className="text-sm text-destructive/80">
+              You've used {usagePercentage.toFixed(0)}% of your monthly API quota. Consider upgrading your plan or reducing usage.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 border border-border rounded-lg">
+          <div className="text-sm text-muted-foreground">Remaining Requests</div>
+          <div className="text-2xl font-semibold mt-1">
+            {rateLimits?.remaining_requests || 0}
+          </div>
+        </div>
+        <div className="p-4 border border-border rounded-lg">
+          <div className="text-sm text-muted-foreground">Monthly Quota</div>
+          <div className="text-2xl font-semibold mt-1">
+            {rateLimits?.allowed_requests || 0}
+          </div>
+        </div>
+      </div>
+
+      {stats && (
+        <div className="p-4 border border-border rounded-lg space-y-2">
+          <div className="text-sm font-medium">Last 30 Days Statistics</div>
+          <div className="grid grid-cols-3 gap-4 mt-2">
+            <div>
+              <div className="text-xs text-muted-foreground">Total Calls</div>
+              <div className="text-lg font-semibold">{stats.totalCalls}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Successful</div>
+              <div className="text-lg font-semibold text-green-600 dark:text-green-400">{stats.successfulCalls}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Failed</div>
+              <div className="text-lg font-semibold text-destructive">{stats.failedCalls}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {logs && logs.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Recent API Calls</div>
+          <div className="border border-border rounded-lg divide-y divide-border max-h-64 overflow-y-auto">
+            {logs.slice(0, 10).map((log) => (
+              <div key={log.id} className="p-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={log.success ? "default" : "destructive"} className="text-xs">
+                      {log.endpoint}
+                    </Badge>
+                    <span className="text-muted-foreground text-xs">{log.queryParams}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(log.timestamp).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
