@@ -10,7 +10,8 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
   const servingUnit = nutrition.servingUnit || "g";
 
   const calculateDV = (value: number | undefined, dv: number): number => {
-    if (!value) return 0;
+    if (value === undefined || value === null || !Number.isFinite(value)) return 0;
+    if (!dv || !Number.isFinite(dv) || dv === 0) return 0;
     return Math.round((value / dv) * 100);
   };
 
