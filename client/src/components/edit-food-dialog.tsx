@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +96,9 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit {item.name}</DialogTitle>
+          <DialogDescription>
+            Update quantity, storage location, or expiration date
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
