@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,9 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle } from "lucide-react";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { User, UserPreferences } from "@shared/schema";
+import type { User, UserPreferences, StorageLocation } from "@shared/schema";
 
 const storageAreaOptions = [
   { name: "Fridge", icon: Refrigerator },
@@ -55,6 +55,10 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedStorageAreas, setSelectedStorageAreas] = useState<string[]>([]);
+  const [customStorageInput, setCustomStorageInput] = useState("");
+  const [isAddingStorage, setIsAddingStorage] = useState(false);
+  const isAddingStorageRef = useRef(false);
+  const pendingStorageNamesRef = useRef<Set<string>>(new Set());
   const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [foodToAvoid, setFoodToAvoid] = useState("");
@@ -62,6 +66,10 @@ export default function Settings() {
 
   const { data: preferences } = useQuery<UserPreferences>({
     queryKey: ["/api/user/preferences"],
+  });
+
+  const { data: storageLocations } = useQuery<StorageLocation[]>({
+    queryKey: ["/api/storage-locations"],
   });
 
   const form = useForm<z.infer<typeof preferenceSchema>>({
@@ -100,6 +108,20 @@ export default function Settings() {
       });
     }
   }, [preferences, form]);
+
+  // Sync selectedStorageAreas when storageLocations change to ensure newly added custom areas are selected
+  useEffect(() => {
+    if (storageLocations && selectedStorageAreas.length > 0) {
+      const availableNames = storageLocations.map(loc => loc.name);
+      const validSelected = selectedStorageAreas.filter(name => availableNames.includes(name));
+      
+      // Only update if there's a difference to avoid infinite loops
+      if (validSelected.length !== selectedStorageAreas.length) {
+        setSelectedStorageAreas(validSelected);
+        form.setValue("storageAreasEnabled", validSelected);
+      }
+    }
+  }, [storageLocations, selectedStorageAreas, form]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
@@ -169,6 +191,67 @@ export default function Settings() {
     form.setValue("foodsToAvoid", newList);
   };
 
+  const addCustomStorage = async () => {
+    if (!customStorageInput.trim() || !storageLocations || isAddingStorageRef.current) {
+      return;
+    }
+
+    const newStorageName = customStorageInput.trim();
+    const newStorageNameLower = newStorageName.toLowerCase();
+    
+    // Check against both existing storage locations AND pending additions
+    const storageNames = storageLocations.map(loc => loc.name.toLowerCase());
+    const pendingNames = Array.from(pendingStorageNamesRef.current).map(n => n.toLowerCase());
+    
+    if (storageNames.includes(newStorageNameLower) || pendingNames.includes(newStorageNameLower)) {
+      toast({
+        title: "Already Exists",
+        description: "This storage area already exists or is being added.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Set synchronous guards
+    isAddingStorageRef.current = true;
+    setIsAddingStorage(true);
+    pendingStorageNamesRef.current.add(newStorageName);
+    
+    try {
+      await apiRequest("POST", "/api/storage-locations", {
+        name: newStorageName,
+        icon: "package",
+      });
+      
+      // Await the refetch to ensure fresh data
+      await queryClient.refetchQueries({ queryKey: ["/api/storage-locations"] });
+      
+      // Use functional updates to avoid clobbering concurrent user edits
+      setSelectedStorageAreas(prev => [...prev, newStorageName]);
+      form.setValue("storageAreasEnabled", (form.getValues("storageAreasEnabled") || []).concat(newStorageName));
+      setCustomStorageInput("");
+      
+      toast({
+        title: "Success",
+        description: "Custom storage area added.",
+      });
+    } catch (error: any) {
+      const errorMsg = error?.message?.includes("already exists") || error?.status === 409
+        ? "This storage area already exists."
+        : "Failed to add custom storage area.";
+      
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    } finally {
+      isAddingStorageRef.current = false;
+      setIsAddingStorage(false);
+      pendingStorageNamesRef.current.delete(newStorageName);
+    }
+  };
+
   const onSubmit = (data: z.infer<typeof preferenceSchema>) => {
     saveMutation.mutate(data);
   };
@@ -228,7 +311,7 @@ export default function Settings() {
         <Card data-testid="card-preferences">
           <CardHeader>
             <CardTitle>Preferences</CardTitle>
-            <CardDescription>Customize your Kitchen Wizard experience</CardDescription>
+            <CardDescription>Customize your AI Chef experience</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -257,7 +340,50 @@ export default function Settings() {
                         </Badge>
                       );
                     })}
+                    {storageLocations?.filter(loc => 
+                      !storageAreaOptions.some(opt => opt.name === loc.name)
+                    ).map((customLoc) => (
+                      <Badge
+                        key={customLoc.id}
+                        variant={selectedStorageAreas.includes(customLoc.name) ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate active-elevate-2 gap-1.5"
+                        onClick={() => toggleStorageArea(customLoc.name)}
+                        data-testid={`badge-storage-${customLoc.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        <Package className="w-3.5 h-3.5" />
+                        {customLoc.name}
+                        {selectedStorageAreas.includes(customLoc.name) && (
+                          <X className="w-3 h-3 ml-0.5" />
+                        )}
+                      </Badge>
+                    ))}
                   </div>
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Input
+                      type="text"
+                      placeholder="Add custom storage area (e.g., Wine Cellar, Garage)"
+                      value={customStorageInput}
+                      onChange={(e) => setCustomStorageInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCustomStorage();
+                        }
+                      }}
+                      data-testid="input-custom-storage"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addCustomStorage}
+                      disabled={isAddingStorage}
+                      data-testid="button-add-custom-storage"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
                   {form.formState.errors.storageAreasEnabled && (
                     <p className="text-sm text-destructive">
                       {form.formState.errors.storageAreasEnabled.message}

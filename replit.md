@@ -33,7 +33,7 @@ Key architectural decisions include:
 
 ## Recent Updates (October 2025)
 
-### Bug Fixes (October 12, 2025)
+### Bug Fixes & Updates (October 12, 2025)
 - **Accessibility Fix**: Added screen-reader-only DialogDescription to CommandDialog component to resolve browser console accessibility warnings
 - **Memory Leak Fix**: Implemented AbortController cleanup in chat component to properly abort fetch requests on component unmount, preventing memory leaks and lingering network requests
 - **Chat History Persistence**: Fixed bug where chat messages weren't persisting when navigating away and back to chat page
@@ -41,6 +41,14 @@ Key architectural decisions include:
   - Messages now properly refetch from database when returning to chat
 - **Routing Fix**: Added missing `/chat` route to handle sidebar navigation (previously only `/` was mapped to chat component)
   - Both `/` and `/chat` now properly render the chat page
+- **Branding Updates**: Renamed application from "Kitchen Wizard" to "AI Chef" across all pages
+  - Landing page heading updated to "AI Chef"
+  - Onboarding welcome message updated to "Welcome to AI Chef!"
+  - Settings preferences card description updated to "Customize your AI Chef experience"
+- **Settings Page Enhancement**: Added custom storage areas functionality to match onboarding capabilities
+  - Users can now add custom storage locations (e.g., "Wine Cellar", "Garage Fridge") in Settings
+  - Custom storage areas display with Package icon to differentiate from default areas
+  - Fully integrated with existing storage locations system
 
 ### USDA FDC API Integration
 - **Real API Integration**: Replaced mock data with live USDA FoodData Central API
