@@ -10,13 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Upload, ImageOff } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -284,19 +278,26 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="storage">Storage Location *</Label>
-            <Select value={storageLocationId} onValueChange={setStorageLocationId}>
-              <SelectTrigger data-testid="select-storage-location">
-                <SelectValue placeholder="Select storage location" />
-              </SelectTrigger>
-              <SelectContent>
-                {storageLocations?.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label id="storage-location-label">Storage Location *</Label>
+            <ToggleGroup
+              type="single"
+              value={storageLocationId}
+              onValueChange={setStorageLocationId}
+              aria-labelledby="storage-location-label"
+              className="flex flex-wrap gap-2 justify-start"
+            >
+              {storageLocations?.map((location) => (
+                <ToggleGroupItem
+                  key={location.id}
+                  value={location.id}
+                  aria-label={`Select ${location.name}`}
+                  className="rounded-full"
+                  data-testid={`button-storage-${location.name.toLowerCase()}`}
+                >
+                  {location.name}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
 
           <div className="space-y-2">
