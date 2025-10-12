@@ -2,15 +2,23 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ChefHat, X } from "lucide-react";
+import { ChefHat, X, Refrigerator, Snowflake, Pizza, UtensilsCrossed } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const storageAreaOptions = [
+  { name: "Fridge", icon: Refrigerator },
+  { name: "Freezer", icon: Snowflake },
+  { name: "Pantry", icon: Pizza },
+  { name: "Counter", icon: UtensilsCrossed },
+];
 
 const dietaryOptions = [
   "Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free", 
@@ -22,22 +30,43 @@ const allergenOptions = [
   "Eggs", "Milk", "Soy", "Wheat", "Sesame"
 ];
 
+const cookingSkillOptions = [
+  { value: "beginner", label: "Beginner - I'm just starting out" },
+  { value: "intermediate", label: "Intermediate - I know my way around" },
+  { value: "advanced", label: "Advanced - I'm quite experienced" },
+];
+
 const preferenceSchema = z.object({
+  storageAreasEnabled: z.array(z.string()).min(1, "Please select at least one storage area"),
+  householdSize: z.number().int().min(1).max(20),
+  cookingSkillLevel: z.enum(["beginner", "intermediate", "advanced"]),
+  preferredUnits: z.enum(["metric", "imperial"]),
   dietaryRestrictions: z.array(z.string()).optional(),
   allergens: z.array(z.string()).optional(),
+  foodsToAvoid: z.array(z.string()).optional(),
   expirationAlertDays: z.number().int().min(1).max(14),
 });
 
 export default function Onboarding() {
   const { toast } = useToast();
+  const [selectedStorageAreas, setSelectedStorageAreas] = useState<string[]>([
+    "Fridge", "Freezer", "Pantry", "Counter"
+  ]);
   const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
+  const [foodToAvoid, setFoodToAvoid] = useState("");
+  const [foodsToAvoidList, setFoodsToAvoidList] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof preferenceSchema>>({
     resolver: zodResolver(preferenceSchema),
     defaultValues: {
+      storageAreasEnabled: ["Fridge", "Freezer", "Pantry", "Counter"],
+      householdSize: 2,
+      cookingSkillLevel: "beginner",
+      preferredUnits: "imperial",
       dietaryRestrictions: [] as string[],
       allergens: [] as string[],
+      foodsToAvoid: [] as string[],
       expirationAlertDays: 3,
     },
   });
@@ -59,7 +88,7 @@ export default function Onboarding() {
       queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
       window.location.href = "/";
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to save preferences. Please try again.",
@@ -67,6 +96,14 @@ export default function Onboarding() {
       });
     },
   });
+
+  const toggleStorageArea = (area: string) => {
+    const newSelected = selectedStorageAreas.includes(area)
+      ? selectedStorageAreas.filter(s => s !== area)
+      : [...selectedStorageAreas, area];
+    setSelectedStorageAreas(newSelected);
+    form.setValue("storageAreasEnabled", newSelected);
+  };
 
   const toggleDietary = (option: string) => {
     const newSelected = selectedDietary.includes(option)
@@ -84,13 +121,28 @@ export default function Onboarding() {
     form.setValue("allergens", newSelected);
   };
 
+  const addFoodToAvoid = () => {
+    if (foodToAvoid.trim() && !foodsToAvoidList.includes(foodToAvoid.trim())) {
+      const newList = [...foodsToAvoidList, foodToAvoid.trim()];
+      setFoodsToAvoidList(newList);
+      form.setValue("foodsToAvoid", newList);
+      setFoodToAvoid("");
+    }
+  };
+
+  const removeFoodToAvoid = (food: string) => {
+    const newList = foodsToAvoidList.filter(f => f !== food);
+    setFoodsToAvoidList(newList);
+    form.setValue("foodsToAvoid", newList);
+  };
+
   const onSubmit = (data: z.infer<typeof preferenceSchema>) => {
     saveMutation.mutate(data);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl" data-testid="card-onboarding">
+      <Card className="w-full max-w-3xl" data-testid="card-onboarding">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <ChefHat className="w-16 h-16 text-primary" />
@@ -103,6 +155,114 @@ export default function Onboarding() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <div className="space-y-4">
+                <FormLabel>Which storage areas do you have? (Pre-selected for you)</FormLabel>
+                <FormDescription>
+                  These are already selected. Deselect any you don't have.
+                </FormDescription>
+                <div className="flex flex-wrap gap-2">
+                  {storageAreaOptions.map((area) => {
+                    const Icon = area.icon;
+                    return (
+                      <Badge
+                        key={area.name}
+                        variant={selectedStorageAreas.includes(area.name) ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate active-elevate-2 gap-1.5"
+                        onClick={() => toggleStorageArea(area.name)}
+                        data-testid={`badge-storage-${area.name.toLowerCase()}`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        {area.name}
+                        {selectedStorageAreas.includes(area.name) && (
+                          <X className="w-3 h-3 ml-0.5" />
+                        )}
+                      </Badge>
+                    );
+                  })}
+                </div>
+                {form.formState.errors.storageAreasEnabled && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.storageAreasEnabled.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="householdSize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>How many people do you typically cook for?</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          data-testid="input-household-size"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        This helps us suggest appropriate serving sizes
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cookingSkillLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What's your cooking skill level?</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-cooking-skill">
+                            <SelectValue placeholder="Select your skill level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cookingSkillOptions.map((skill) => (
+                            <SelectItem key={skill.value} value={skill.value} data-testid={`option-skill-${skill.value}`}>
+                              {skill.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        We'll tailor recipe complexity to your level
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="preferredUnits"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred measurement units</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-units">
+                          <SelectValue placeholder="Select unit system" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="imperial" data-testid="option-units-imperial">Imperial (cups, oz, °F)</SelectItem>
+                        <SelectItem value="metric" data-testid="option-units-metric">Metric (ml, g, °C)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Your preferred units for recipes and measurements
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+
               <div className="space-y-4">
                 <FormLabel>Dietary Preferences (Optional)</FormLabel>
                 <div className="flex flex-wrap gap-2">
@@ -141,6 +301,52 @@ export default function Onboarding() {
                     </Badge>
                   ))}
                 </div>
+              </div>
+
+              <div className="space-y-4">
+                <FormLabel>Foods to Always Avoid (Optional)</FormLabel>
+                <FormDescription>
+                  Add any specific foods or ingredients you want to avoid in recipes
+                </FormDescription>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="e.g., cilantro, mushrooms"
+                    value={foodToAvoid}
+                    onChange={(e) => setFoodToAvoid(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addFoodToAvoid();
+                      }
+                    }}
+                    data-testid="input-food-to-avoid"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addFoodToAvoid}
+                    data-testid="button-add-food-to-avoid"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {foodsToAvoidList.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {foodsToAvoidList.map((food) => (
+                      <Badge
+                        key={food}
+                        variant="secondary"
+                        className="cursor-pointer hover-elevate active-elevate-2"
+                        onClick={() => removeFoodToAvoid(food)}
+                        data-testid={`badge-avoid-${food.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        {food}
+                        <X className="w-3 h-3 ml-1" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <FormField
