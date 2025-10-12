@@ -23,6 +23,8 @@ Key architectural decisions include:
     - **Recipe Management**: AI-generated recipes based on inventory, with saving, favoriting, and 5-star rating capabilities.
     - **Nutritional Dashboard**: Displays aggregated calorie and macronutrient breakdowns with visual charts, leveraging USDA data.
     - **Chat Interface**: Real-time streaming chat with the AI Chef assistant.
+    - **Meal Planning**: Weekly calendar view for scheduling recipes across breakfast, lunch, and dinner with servings customization.
+    - **Shopping List**: Auto-generated ingredient lists from planned meals with inventory comparison and purchase tracking.
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon-backed)
