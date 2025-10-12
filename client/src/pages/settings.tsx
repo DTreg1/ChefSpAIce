@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { User, UserPreferences, StorageLocation } from "@shared/schema";
 
@@ -149,6 +150,30 @@ export default function Settings() {
       toast({
         title: "Error",
         description: "Failed to save preferences. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/user/reset", null);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      toast({
+        title: "Account Reset",
+        description: "All your data has been cleared. Redirecting to onboarding...",
+      });
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1500);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to reset account. Please try again.",
         variant: "destructive",
       });
     },
@@ -602,6 +627,65 @@ export default function Settings() {
           </CardHeader>
           <CardContent>
             <ApiUsageSection />
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Danger Zone
+            </CardTitle>
+            <CardDescription>
+              Irreversible actions that will permanently delete your data
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+              <h4 className="font-medium mb-2">Reset Account Data</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                This will permanently delete all your data including food items, recipes, chat history, meal plans, and preferences. You'll be able to start fresh with the onboarding process.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    disabled={resetMutation.isPending}
+                    data-testid="button-reset-account"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {resetMutation.isPending ? "Resetting..." : "Reset Account"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>All your food inventory items</li>
+                        <li>All saved recipes</li>
+                        <li>All chat conversations</li>
+                        <li>All meal plans</li>
+                        <li>All custom storage locations</li>
+                        <li>All preferences and settings</li>
+                      </ul>
+                      <p className="mt-3 font-medium">You will be redirected to onboarding to set up your account again.</p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-cancel-reset">Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => resetMutation.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      data-testid="button-confirm-reset"
+                    >
+                      Yes, Reset My Account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </CardContent>
         </Card>
       </div>
