@@ -198,6 +198,7 @@ export type USDAFoodItem = {
   description: string;
   dataType: string;
   brandOwner?: string;
+  gtinUpc?: string;
   ingredients?: string;
   foodCategory?: string;
   servingSize?: number;
