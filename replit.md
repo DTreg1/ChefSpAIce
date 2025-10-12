@@ -49,6 +49,14 @@ Key architectural decisions include:
   - Users can now add custom storage locations (e.g., "Wine Cellar", "Garage Fridge") in Settings
   - Custom storage areas display with Package icon to differentiate from default areas
   - Fully integrated with existing storage locations system
+- **Reset Account Feature**: Added complete account reset functionality
+  - Backend: POST /api/user/reset endpoint deletes all user data (food items, recipes, chat messages, meal plans, notifications, appliances, storage locations, preferences)
+  - Deletion order respects foreign key constraints (cascading deletes)
+  - Resets userInitialized flag to allow default data re-seeding
+  - Frontend: "Danger Zone" section in Settings with confirmation dialog
+  - Dialog clearly lists all data that will be permanently deleted
+  - After successful reset, invalidates all cache and redirects to onboarding
+  - Users can start completely fresh with a clean slate
 
 ### USDA FDC API Integration
 - **Real API Integration**: Replaced mock data with live USDA FoodData Central API
