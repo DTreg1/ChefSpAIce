@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { RecipeCard } from "@/components/recipe-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChefHat, Star } from "lucide-react";
+import { Star, BookOpen } from "lucide-react";
 import { useState } from "react";
 import type { Recipe } from "@shared/schema";
 
@@ -35,7 +35,7 @@ export default function Cookbook() {
           <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <ChefHat className="w-6 h-6 text-primary" />
+                <BookOpen className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">My Cookbook</h1>
@@ -97,7 +97,7 @@ export default function Cookbook() {
             ) : (
               <div className="flex flex-col items-center justify-center p-8" data-testid="empty-cookbook">
                 <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                  <ChefHat className="w-12 h-12 text-primary" />
+                  <BookOpen className="w-12 h-12 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">No recipes yet</h3>
                 <p className="text-muted-foreground text-center max-w-sm">
