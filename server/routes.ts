@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { openai } from "./openai";
 import { searchUSDAFoods, getFoodByFdcId } from "./usda";
 import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
+import { getEnrichedOnboardingItem } from "./onboarding-usda";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ApiError } from "./apiError";
@@ -223,6 +224,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(error.statusCode).json({ error: error.message });
       }
       res.status(500).json({ error: "Failed to fetch food details" });
+    }
+  });
+
+  // Onboarding - Get enriched USDA data for common items (authenticated)
+  app.get("/api/onboarding/enriched-item/:itemName", isAuthenticated, async (req: any, res) => {
+    try {
+      const { itemName } = req.params;
+      const enrichedItem = await getEnrichedOnboardingItem(decodeURIComponent(itemName));
+      
+      if (!enrichedItem) {
+        return res.status(404).json({ error: "Item not found in onboarding list" });
+      }
+      
+      res.json(enrichedItem);
+    } catch (error: any) {
+      console.error("Error fetching enriched onboarding item:", error);
+      res.status(500).json({ error: "Failed to fetch enriched item data" });
     }
   });
 
