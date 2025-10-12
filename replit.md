@@ -54,3 +54,31 @@ Key architectural decisions include:
 - **Data Model**: Appliances table with name and type fields
 - **UI Components**: AppliantsPage with grid layout, dialogs for add/delete, empty states
 - **Navigation**: Integrated into sidebar under INVENTORY section
+
+### Food Item Images (October 2025)
+- **Hybrid Image System**: Three-source approach for food item photos
+  - Open Food Facts API: Branded product images via barcode/text search
+  - Replit Object Storage: User-uploaded photos with presigned URLs
+  - Placeholder Icons: UtensilsCrossed icon fallback for items without images
+- **Open Food Facts Integration**: 
+  - API client at `server/openfoodfacts.ts` for branded product searches
+  - GET `/api/openfoodfacts/search?query={query}&pageSize={n}` endpoint
+  - Returns product name, image URL, and metadata
+- **Object Storage Integration**:
+  - POST `/api/objects/upload` generates presigned GCS upload URLs
+  - PUT `/api/food-images` normalizes uploaded paths for database storage
+  - Environment variables: `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR`
+  - Uppy-based ObjectUploader component for file selection and progress
+- **Add Food Dialog Enhancement**:
+  - Three-tab interface for image source selection (None, Find Product, Upload Photo)
+  - Real-time image preview when branded search succeeds
+  - Toast notifications for all success/error states
+  - Image URLs stored in `imageUrl` field of food items
+- **FoodCard Display**:
+  - Displays actual images (external URLs or storage paths) when available
+  - Falls back to styled placeholder icon (UtensilsCrossed) when no image
+  - 64x64px rounded image thumbnails with proper object-fit
+- **Technical Implementation**:
+  - All API calls properly parse JSON responses (fixed Response object issues)
+  - Defensive error handling throughout image acquisition flow
+  - Cache invalidation on add/delete for consistent UI state
