@@ -30,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      res.status(500).json({ error: "Failed to fetch user" });
     }
   });
 
@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(preferences);
     } catch (error) {
       console.error("Error fetching preferences:", error);
-      res.status(500).json({ message: "Failed to fetch preferences" });
+      res.status(500).json({ error: "Failed to fetch preferences" });
     }
   });
 
@@ -54,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(preferences);
     } catch (error) {
       console.error("Error updating preferences:", error);
-      res.status(500).json({ message: "Failed to update preferences" });
+      res.status(500).json({ error: "Failed to update preferences" });
     }
   });
 
@@ -65,6 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const locations = await storage.getStorageLocations(userId);
       res.json(locations);
     } catch (error) {
+      console.error("Error fetching storage locations:", error);
       res.status(500).json({ error: "Failed to fetch storage locations" });
     }
   });
@@ -89,6 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const items = await storage.getFoodItems(userId, storageLocationId as string | undefined);
       res.json(items);
     } catch (error) {
+      console.error("Error fetching food items:", error);
       res.status(500).json({ error: "Failed to fetch food items" });
     }
   });
@@ -100,6 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const item = await storage.createFoodItem(userId, validated);
       res.json(item);
     } catch (error) {
+      console.error("Error creating food item:", error);
       res.status(400).json({ error: "Invalid food item data" });
     }
   });
@@ -118,6 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const item = await storage.updateFoodItem(userId, id, validated);
       res.json(item);
     } catch (error) {
+      console.error("Error updating food item:", error);
       res.status(400).json({ error: "Failed to update food item" });
     }
   });
@@ -129,6 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteFoodItem(userId, id);
       res.json({ success: true });
     } catch (error) {
+      console.error("Error deleting food item:", error);
       res.status(500).json({ error: "Failed to delete food item" });
     }
   });
@@ -140,6 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appliances = await storage.getAppliances(userId);
       res.json(appliances);
     } catch (error) {
+      console.error("Error fetching appliances:", error);
       res.status(500).json({ error: "Failed to fetch appliances" });
     }
   });
@@ -151,6 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appliance = await storage.createAppliance(userId, validated);
       res.json(appliance);
     } catch (error) {
+      console.error("Error creating appliance:", error);
       res.status(400).json({ error: "Invalid appliance data" });
     }
   });
@@ -162,6 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteAppliance(userId, id);
       res.json({ success: true });
     } catch (error) {
+      console.error("Error deleting appliance:", error);
       res.status(500).json({ error: "Failed to delete appliance" });
     }
   });
@@ -400,6 +408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const messages = await storage.getChatMessages(userId);
       res.json(messages);
     } catch (error) {
+      console.error("Error fetching chat messages:", error);
       res.status(500).json({ error: "Failed to fetch chat messages" });
     }
   });
@@ -654,6 +663,7 @@ Respond ONLY with a valid JSON object in this exact format:
       const recipes = await storage.getRecipes(userId);
       res.json(recipes);
     } catch (error) {
+      console.error("Error fetching recipes:", error);
       res.status(500).json({ error: "Failed to fetch recipes" });
     }
   });
@@ -665,6 +675,7 @@ Respond ONLY with a valid JSON object in this exact format:
       const recipe = await storage.updateRecipe(userId, id, req.body);
       res.json(recipe);
     } catch (error) {
+      console.error("Error updating recipe:", error);
       res.status(400).json({ error: "Failed to update recipe" });
     }
   });
@@ -686,6 +697,7 @@ Respond ONLY with a valid JSON object in this exact format:
       
       res.json(validNotifications);
     } catch (error) {
+      console.error("Error fetching expiration notifications:", error);
       res.status(500).json({ error: "Failed to fetch notifications" });
     }
   });
@@ -751,6 +763,7 @@ Respond ONLY with a valid JSON object in this exact format:
       await storage.dismissNotification(userId, id);
       res.json({ success: true });
     } catch (error) {
+      console.error("Error dismissing notification:", error);
       res.status(500).json({ error: "Failed to dismiss notification" });
     }
   });
@@ -804,6 +817,7 @@ Respond ONLY with a valid JSON object in this exact format:
         categoryBreakdown,
       });
     } catch (error) {
+      console.error("Error fetching nutrition stats:", error);
       res.status(500).json({ error: "Failed to fetch nutrition stats" });
     }
   });
@@ -837,6 +851,7 @@ Respond ONLY with a valid JSON object in this exact format:
       
       res.json(itemsWithNutrition);
     } catch (error) {
+      console.error("Error fetching nutrition items:", error);
       res.status(500).json({ error: "Failed to fetch nutrition items" });
     }
   });
@@ -897,6 +912,7 @@ Respond ONLY with a valid JSON object:
       );
       res.json(plans);
     } catch (error) {
+      console.error("Error fetching meal plans:", error);
       res.status(500).json({ error: "Failed to fetch meal plans" });
     }
   });
@@ -908,6 +924,7 @@ Respond ONLY with a valid JSON object:
       const plan = await storage.createMealPlan(userId, validated);
       res.json(plan);
     } catch (error) {
+      console.error("Error creating meal plan:", error);
       res.status(400).json({ error: "Invalid meal plan data" });
     }
   });
@@ -920,6 +937,7 @@ Respond ONLY with a valid JSON object:
       const plan = await storage.updateMealPlan(userId, id, validated);
       res.json(plan);
     } catch (error) {
+      console.error("Error updating meal plan:", error);
       res.status(400).json({ error: "Failed to update meal plan" });
     }
   });
@@ -931,6 +949,7 @@ Respond ONLY with a valid JSON object:
       await storage.deleteMealPlan(userId, id);
       res.json({ success: true });
     } catch (error) {
+      console.error("Error deleting meal plan:", error);
       res.status(500).json({ error: "Failed to delete meal plan" });
     }
   });
