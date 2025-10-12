@@ -167,3 +167,4 @@ export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
 
 export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
 export type MealPlan = typeof mealPlans.$inferSelect;
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
