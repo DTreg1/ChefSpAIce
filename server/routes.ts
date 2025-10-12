@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
 import { searchUSDAFoods, getFoodByFdcId } from "./usda";
-import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits } from "./barcodelookup";
+import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ApiError } from "./apiError";
@@ -238,6 +238,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
+      // Check rate limits before making API call
+      await checkRateLimitBeforeCall();
+
       apiCallMade = true;
       const results = await searchBarcodeLookup(query);
       
@@ -286,6 +289,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let success = true;
     
     try {
+      // Check rate limits before making API call
+      await checkRateLimitBeforeCall();
+      
       apiCallMade = true;
       const product = await getBarcodeLookupProduct(barcode);
       

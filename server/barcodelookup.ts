@@ -150,6 +150,46 @@ interface RateLimitResponse {
   reset_time: string; // Unix timestamp or ISO date
 }
 
+// Simple in-memory cache for rate limits
+let rateLimitCache: {
+  data: RateLimitResponse | null;
+  timestamp: number;
+} = {
+  data: null,
+  timestamp: 0
+};
+
+const RATE_LIMIT_CACHE_TTL = 60000; // 1 minute cache
+
+export async function checkRateLimitBeforeCall(): Promise<void> {
+  const now = Date.now();
+  
+  // If cache is stale or empty, fetch fresh rate limits
+  if (!rateLimitCache.data || (now - rateLimitCache.timestamp) > RATE_LIMIT_CACHE_TTL) {
+    try {
+      const limits = await getBarcodeLookupRateLimits();
+      rateLimitCache = {
+        data: limits,
+        timestamp: now
+      };
+    } catch (error) {
+      // If we can't fetch rate limits, allow the call to proceed
+      // (The actual API call will fail if there's a real auth issue)
+      console.warn('Could not fetch rate limits, proceeding with API call:', error);
+      return;
+    }
+  }
+  
+  // Check if we have remaining requests
+  if (rateLimitCache.data && rateLimitCache.data.remaining_requests <= 0) {
+    const resetTime = new Date(rateLimitCache.data.reset_time).toLocaleString();
+    throw new ApiError(
+      `BarcodeLookup API rate limit exceeded. ${rateLimitCache.data.remaining_requests} of ${rateLimitCache.data.allowed_requests} requests remaining. Resets at ${resetTime}`,
+      429
+    );
+  }
+}
+
 export async function getBarcodeLookupRateLimits(): Promise<RateLimitResponse> {
   const apiKey = process.env.BARCODE_LOOKUP_API_KEY;
   
