@@ -57,6 +57,7 @@ Key architectural decisions include:
   - Dialog clearly lists all data that will be permanently deleted
   - After successful reset, invalidates all cache and redirects to onboarding
   - Users can start completely fresh with a clean slate
+  - Fixed: Onboarding now displays full-screen (without sidebar) after reset by moving hasCompletedOnboarding check to AppContent component
 
 ### USDA FDC API Integration
 - **Real API Integration**: Replaced mock data with live USDA FoodData Central API
