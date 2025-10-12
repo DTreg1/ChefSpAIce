@@ -96,32 +96,39 @@ export class DatabaseStorage implements IStorage {
   private async ensureDefaultDataForUser(userId: string) {
     if (this.userInitialized.has(userId)) return;
     
-    // Check if user has storage locations
-    const existingLocations = await db.select().from(storageLocations).where(eq(storageLocations.userId, userId));
-    
-    if (existingLocations.length === 0) {
-      // Initialize default storage locations for this user
-      const defaultLocations = [
-        { userId, name: "Fridge", icon: "refrigerator", itemCount: 0 },
-        { userId, name: "Freezer", icon: "snowflake", itemCount: 0 },
-        { userId, name: "Pantry", icon: "pizza", itemCount: 0 },
-        { userId, name: "Counter", icon: "utensils-crossed", itemCount: 0 },
-      ];
-
-      await db.insert(storageLocations).values(defaultLocations);
-
-      // Initialize default appliances for this user
-      const defaultAppliances = [
-        { userId, name: "Oven", type: "cooking" },
-        { userId, name: "Stove", type: "cooking" },
-        { userId, name: "Microwave", type: "cooking" },
-        { userId, name: "Air Fryer", type: "cooking" },
-      ];
-
-      await db.insert(appliances).values(defaultAppliances);
-    }
-    
+    // Mark user as initialized immediately to prevent race conditions
     this.userInitialized.add(userId);
+    
+    try {
+      // Check if user has storage locations
+      const existingLocations = await db.select().from(storageLocations).where(eq(storageLocations.userId, userId));
+      
+      if (existingLocations.length === 0) {
+        // Initialize default storage locations for this user
+        const defaultLocations = [
+          { userId, name: "Fridge", icon: "refrigerator", itemCount: 0 },
+          { userId, name: "Freezer", icon: "snowflake", itemCount: 0 },
+          { userId, name: "Pantry", icon: "pizza", itemCount: 0 },
+          { userId, name: "Counter", icon: "utensils-crossed", itemCount: 0 },
+        ];
+
+        await db.insert(storageLocations).values(defaultLocations);
+
+        // Initialize default appliances for this user
+        const defaultAppliances = [
+          { userId, name: "Oven", type: "cooking" },
+          { userId, name: "Stove", type: "cooking" },
+          { userId, name: "Microwave", type: "cooking" },
+          { userId, name: "Air Fryer", type: "cooking" },
+        ];
+
+        await db.insert(appliances).values(defaultAppliances);
+      }
+    } catch (error) {
+      // Remove from initialized set on error so initialization can be retried
+      this.userInitialized.delete(userId);
+      throw error;
+    }
   }
 
   // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
