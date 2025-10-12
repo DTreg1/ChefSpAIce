@@ -28,17 +28,17 @@
 
 ### Font Families
 - **Primary**: Ubuntu, -apple-system, BlinkMacSystemFont, sans-serif
-- **Monospace**: Menlo, Monaco, 'Courier New', monospace (USDA FCD IDs, quantities)
-- **Serif**: Georgia, 'Times New Roman', serif (Recipe titles and headings)
+- **Serif**: Ubuntu, sans-serif (Recipe titles and headings)
+- **Monospace**: Ubuntu Mono, Monaco, 'Courier New', monospace (USDA FCD IDs, quantities)
 
 ### Type Scale
-- **Display**: 2.5rem/3rem, Georgia, weight 600 (Recipe headings in chat)
+- **Display**: 2.5rem/3rem, Ubuntu, weight 600 (Recipe headings in chat)
 - **H1**: 2rem/2.5rem, Ubuntu, weight 600 (Page titles)
 - **H2**: 1.5rem/2rem, Ubuntu, weight 600 (Section headers)
 - **H3**: 1.25rem/1.75rem, Ubuntu, weight 500 (Card titles)
 - **Body**: 1rem/1.5rem, Ubuntu, weight 400 (Chat messages)
 - **Small**: 0.875rem/1.25rem, Ubuntu, weight 400 (Metadata, timestamps)
-- **Caption**: 0.75rem/1rem, Ubuntu, weight 500 (Labels, FCD IDs)
+- **Caption**: 0.75rem/1rem, Ubuntu Mono, weight 500 (Labels, FCD IDs)
 
 ## Layout System
 
