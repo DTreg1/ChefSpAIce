@@ -107,7 +107,8 @@ export default function Settings() {
         expirationAlertDays: preferences.expirationAlertDays || 3,
       });
     }
-  }, [preferences, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preferences]);
 
   // Sync selectedStorageAreas when storageLocations change to ensure newly added custom areas are selected
   useEffect(() => {
@@ -121,7 +122,8 @@ export default function Settings() {
         form.setValue("storageAreasEnabled", validSelected);
       }
     }
-  }, [storageLocations, selectedStorageAreas, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageLocations, selectedStorageAreas]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
