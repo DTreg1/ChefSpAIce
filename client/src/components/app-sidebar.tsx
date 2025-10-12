@@ -152,6 +152,14 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/appliances"}>
+                    <Link href="/appliances" data-testid="link-appliances">
+                      <UtensilsCrossed className="w-4 h-4" />
+                      <span className="flex-1">My Appliances</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 {storageItems.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton asChild isActive={location === item.path}>

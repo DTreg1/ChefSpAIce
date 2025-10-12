@@ -83,6 +83,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/appliances/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAppliance(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete appliance" });
+    }
+  });
+
   // USDA Food Search
   app.get("/api/usda/search", async (req, res) => {
     try {

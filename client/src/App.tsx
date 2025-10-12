@@ -12,6 +12,7 @@ import Cookbook from "@/pages/cookbook";
 import Nutrition from "@/pages/nutrition";
 import MealPlanner from "@/pages/meal-planner";
 import ShoppingList from "@/pages/shopping-list";
+import Appliances from "@/pages/appliances";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/nutrition" component={Nutrition} />
       <Route path="/meal-planner" component={MealPlanner} />
       <Route path="/shopping-list" component={ShoppingList} />
+      <Route path="/appliances" component={Appliances} />
       <Route path="/storage/:location" component={Storage} />
       <Route component={NotFound} />
     </Switch>
