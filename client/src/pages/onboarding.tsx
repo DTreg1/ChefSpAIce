@@ -141,20 +141,21 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center p-4 overflow-y-auto">
-      <Card className="w-full max-w-3xl my-8" data-testid="card-onboarding">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <ChefHat className="w-16 h-16 text-primary" />
-          </div>
-          <CardTitle className="text-3xl">Welcome to Kitchen Wizard!</CardTitle>
-          <CardDescription className="text-base">
-            Let's personalize your experience. You can always change these later.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 py-8">
+      <div className="max-w-3xl mx-auto">
+        <Card data-testid="card-onboarding">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <ChefHat className="w-16 h-16 text-primary" />
+            </div>
+            <CardTitle className="text-3xl">Welcome to Kitchen Wizard!</CardTitle>
+            <CardDescription className="text-base">
+              Let's personalize your experience. You can always change these later.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
                 <FormLabel>Which storage areas do you have? (Pre-selected for you)</FormLabel>
                 <FormDescription>
@@ -384,6 +385,7 @@ export default function Onboarding() {
           </Form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
