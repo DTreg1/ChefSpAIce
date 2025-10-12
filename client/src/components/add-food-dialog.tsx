@@ -162,7 +162,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     }
   };
 
-  const handleSearchOpenFoodFacts = async () => {
+  const handleSearchBarcodeLookup = async () => {
     if (!searchQuery.trim()) {
       toast({
         title: "Search required",
@@ -173,7 +173,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     }
     
     try {
-      const response = await apiRequest("GET", `/api/openfoodfacts/search?query=${encodeURIComponent(searchQuery)}&pageSize=5`, null);
+      const response = await apiRequest("GET", `/api/barcodelookup/search?query=${encodeURIComponent(searchQuery)}`, null);
       const data = await response.json();
       if (data.products && data.products.length > 0 && data.products[0].imageUrl) {
         setImageUrl(data.products[0].imageUrl);
@@ -190,7 +190,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         });
       }
     } catch (error) {
-      console.error("Open Food Facts search error:", error);
+      console.error("Barcode Lookup search error:", error);
       toast({
         title: "Search failed",
         description: "Failed to search for product images. Please try again.",
@@ -395,11 +395,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
               <TabsContent value="branded" className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Search for branded product images from Open Food Facts database
+                  Search for branded product images from Barcode Lookup database
                 </p>
                 <Button
                   type="button"
-                  onClick={handleSearchOpenFoodFacts}
+                  onClick={handleSearchBarcodeLookup}
                   variant="outline"
                   className="w-full"
                   data-testid="button-search-product-image"
