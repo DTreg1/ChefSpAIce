@@ -48,7 +48,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/food-items/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const item = await storage.updateFoodItem(id, req.body);
+      // Validate that required fields are present for updates
+      const updateSchema = insertFoodItemSchema.partial().required({
+        quantity: true,
+        unit: true,
+        storageLocationId: true,
+        expirationDate: true,
+      });
+      const validated = updateSchema.parse(req.body);
+      const item = await storage.updateFoodItem(id, validated);
       res.json(item);
     } catch (error) {
       res.status(400).json({ error: "Failed to update food item" });

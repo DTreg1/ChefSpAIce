@@ -71,7 +71,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
   });
 
   const handleSubmit = () => {
-    if (!quantity || !storageLocationId) {
+    if (!quantity || !unit || !storageLocationId || !expirationDate) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -84,7 +84,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
       quantity,
       unit,
       storageLocationId,
-      expirationDate: expirationDate || null,
+      expirationDate,
     });
   };
 
@@ -110,7 +110,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-unit">Unit</Label>
+              <Label htmlFor="edit-unit">Unit *</Label>
               <Input
                 id="edit-unit"
                 value={unit}
@@ -137,7 +137,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-expiration">Expiration Date</Label>
+            <Label htmlFor="edit-expiration">Expiration Date *</Label>
             <Input
               id="edit-expiration"
               type="date"
