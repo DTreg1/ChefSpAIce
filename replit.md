@@ -29,4 +29,28 @@ Key architectural decisions include:
 ## External Dependencies
 - **Database**: PostgreSQL (Neon-backed)
 - **AI**: OpenAI GPT-5 (via Replit AI Integrations)
-- **Food Data**: USDA FoodData Central API (currently uses mock data for nutrition, requiring an API key for production)
+- **Food Data**: USDA FoodData Central API (fully integrated with real-time nutritional data)
+
+## Recent Updates (October 2025)
+
+### USDA FDC API Integration
+- **Real API Integration**: Replaced mock data with live USDA FoodData Central API
+- **Nutrition Extraction**: Implemented comprehensive nutrient mapping from FDC API responses
+  - Supports all food types: Branded, Foundation, SR Legacy, and Survey (FNDDS)
+  - Extracts: calories, protein, carbs, fat, fiber, sugar, sodium
+  - Nutrient number mapping: 208 (Energy), 203 (Protein), 205 (Carbs), 204 (Fat), 291 (Fiber), 269 (Sugar), 307 (Sodium)
+- **Enhanced Search**: Added pagination, filtering by data type, and configurable page sizes
+- **API Key Management**: Securely managed via USDA_FDC_API_KEY environment variable
+
+### FDA Nutrition Facts Label
+- **Visual Component**: Created FDA-compliant nutrition facts label (NutritionFactsLabel component)
+- **Daily Value Calculations**: Automatically calculates % DV based on 2000 calorie diet
+  - Total Fat: 78g DV, Sodium: 2300mg DV, Carbohydrates: 275g DV, Fiber: 28g DV, Protein: 50g DV
+- **Integration**: Nutrition label accessible via info button on food cards with nutrition data
+- **Dialog Display**: NutritionFactsDialog shows complete nutritional information per serving
+
+### Kitchen Appliances Registry
+- **Complete CRUD**: Add, view, and delete kitchen appliances
+- **Data Model**: Appliances table with name and type fields
+- **UI Components**: AppliantsPage with grid layout, dialogs for add/delete, empty states
+- **Navigation**: Integrated into sidebar under INVENTORY section
