@@ -96,13 +96,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // USDA Food Search
   app.get("/api/usda/search", async (req, res) => {
     try {
-      const { query } = req.query;
+      const { query, pageSize, pageNumber, dataType } = req.query;
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
       }
-      const results = await searchUSDAFoods(query);
+
+      const size = pageSize ? parseInt(pageSize as string) : 20;
+      const page = pageNumber ? parseInt(pageNumber as string) : 1;
+      const types = dataType ? (Array.isArray(dataType) ? dataType : [dataType]) as string[] : undefined;
+
+      const results = await searchUSDAFoods(query, size, page, types);
       res.json(results);
     } catch (error) {
+      console.error("USDA search error:", error);
       res.status(500).json({ error: "Failed to search USDA database" });
     }
   });

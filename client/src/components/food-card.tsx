@@ -3,9 +3,10 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, UtensilsCrossed } from "lucide-react";
+import { Edit, Trash2, UtensilsCrossed, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditFoodDialog } from "./edit-food-dialog";
+import { NutritionFactsDialog } from "./nutrition-facts-dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { FoodItem } from "@shared/schema";
@@ -17,6 +18,7 @@ interface FoodCardProps {
 
 export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [nutritionDialogOpen, setNutritionDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const getStorageBadgeColor = (location: string) => {
@@ -64,6 +66,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   });
 
   const expiryStatus = getExpiryStatus(item.expirationDate);
+  const hasNutrition = item.nutrition && item.nutrition !== "null";
 
   return (
     <>
@@ -121,6 +124,17 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
               )}
 
               <div className="flex items-center gap-1">
+                {hasNutrition && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={() => setNutritionDialogOpen(true)}
+                    data-testid={`button-nutrition-${item.id}`}
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </Button>
+                )}
                 <Button
                   size="icon"
                   variant="ghost"
@@ -151,6 +165,14 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
         onOpenChange={setEditDialogOpen}
         item={item}
       />
+      
+      {hasNutrition && (
+        <NutritionFactsDialog
+          open={nutritionDialogOpen}
+          onOpenChange={setNutritionDialogOpen}
+          item={item}
+        />
+      )}
     </>
   );
 }
