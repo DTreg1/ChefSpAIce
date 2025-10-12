@@ -18,7 +18,8 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
 
   const generateRecipeMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/recipes/generate", {});
+      const response = await apiRequest("POST", "/api/recipes/generate", {});
+      return await response.json();
     },
     onSuccess: (recipe: Recipe) => {
       toast({
