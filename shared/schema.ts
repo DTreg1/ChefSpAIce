@@ -31,7 +31,7 @@ export type User = typeof users.$inferSelect;
 // User Preferences
 export const userPreferences = pgTable("user_preferences", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
   dietaryRestrictions: text("dietary_restrictions").array(),
   allergens: text("allergens").array(),
   favoriteCategories: text("favorite_categories").array(),
