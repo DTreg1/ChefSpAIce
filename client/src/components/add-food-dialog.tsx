@@ -221,6 +221,15 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                     onClick={() => {
                       setSelectedFood(food);
                       setSearchQuery(food.description);
+                      // Auto-fill serving size if available
+                      if (food.servingSize && food.servingSizeUnit) {
+                        setQuantity(food.servingSize.toString());
+                        setUnit(food.servingSizeUnit);
+                      } else {
+                        // Default to 1 piece/item if no serving info
+                        setQuantity("1");
+                        setUnit("piece");
+                      }
                     }}
                     className={`w-full p-3 text-left hover-elevate border-b border-border last:border-0 ${
                       selectedFood?.fdcId === food.fdcId ? "bg-accent" : ""
@@ -228,8 +237,20 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                     data-testid={`button-select-food-${food.fdcId}`}
                   >
                     <div className="font-medium">{food.description}</div>
-                    <div className="text-xs text-muted-foreground font-mono">
-                      FDC ID: {food.fdcId}
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {food.brandOwner && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          {food.brandOwner}
+                        </span>
+                      )}
+                      {food.foodCategory && (
+                        <span className="text-xs bg-secondary/50 text-secondary-foreground px-2 py-0.5 rounded">
+                          {food.foodCategory}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {food.dataType} • ID: {food.fdcId}
+                      </span>
                     </div>
                   </button>
                 ))}
