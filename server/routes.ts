@@ -1,3 +1,4 @@
+// Referenced from blueprint:javascript_log_in_with_replit - Added authentication and user-scoped routes
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -5,50 +6,94 @@ import { openai } from "./openai";
 import { searchUSDAFoods, getFoodByFdcId } from "./usda";
 import { searchOpenFoodFacts, getOpenFoodFactsProduct, extractImageUrl } from "./openfoodfacts";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   insertFoodItemSchema, 
   insertChatMessageSchema,
   insertRecipeSchema,
   insertApplianceSchema,
-  insertMealPlanSchema
+  insertMealPlanSchema,
+  insertUserPreferencesSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Storage Locations
-  app.get("/api/storage-locations", async (_req, res) => {
+  // Auth middleware (from blueprint:javascript_log_in_with_replit)
+  await setupAuth(app);
+
+  // Auth routes (from blueprint:javascript_log_in_with_replit)
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const locations = await storage.getStorageLocations();
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // User Preferences
+  app.get('/api/user/preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const preferences = await storage.getUserPreferences(userId);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching preferences:", error);
+      res.status(500).json({ message: "Failed to fetch preferences" });
+    }
+  });
+
+  app.put('/api/user/preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validated = insertUserPreferencesSchema.parse({ ...req.body, userId });
+      const preferences = await storage.upsertUserPreferences(validated);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating preferences:", error);
+      res.status(500).json({ message: "Failed to update preferences" });
+    }
+  });
+
+  // Storage Locations (user-scoped)
+  app.get("/api/storage-locations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const locations = await storage.getStorageLocations(userId);
       res.json(locations);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch storage locations" });
     }
   });
 
-  // Food Items
-  app.get("/api/food-items", async (req, res) => {
+  // Food Items (user-scoped)
+  app.get("/api/food-items", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { storageLocationId } = req.query;
-      const items = await storage.getFoodItems(storageLocationId as string | undefined);
+      const items = await storage.getFoodItems(userId, storageLocationId as string | undefined);
       res.json(items);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch food items" });
     }
   });
 
-  app.post("/api/food-items", async (req, res) => {
+  app.post("/api/food-items", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validated = insertFoodItemSchema.parse(req.body);
-      const item = await storage.createFoodItem(validated);
+      const item = await storage.createFoodItem(userId, validated);
       res.json(item);
     } catch (error) {
       res.status(400).json({ error: "Invalid food item data" });
     }
   });
 
-  app.put("/api/food-items/:id", async (req, res) => {
+  app.put("/api/food-items/:id", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { id } = req.params;
-      // Validate that required fields are present for updates
       const updateSchema = insertFoodItemSchema.partial().required({
         quantity: true,
         unit: true,
@@ -56,54 +101,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expirationDate: true,
       });
       const validated = updateSchema.parse(req.body);
-      const item = await storage.updateFoodItem(id, validated);
+      const item = await storage.updateFoodItem(userId, id, validated);
       res.json(item);
     } catch (error) {
       res.status(400).json({ error: "Failed to update food item" });
     }
   });
 
-  app.delete("/api/food-items/:id", async (req, res) => {
+  app.delete("/api/food-items/:id", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { id } = req.params;
-      await storage.deleteFoodItem(id);
+      await storage.deleteFoodItem(userId, id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete food item" });
     }
   });
 
-  // Appliances
-  app.get("/api/appliances", async (_req, res) => {
+  // Appliances (user-scoped)
+  app.get("/api/appliances", isAuthenticated, async (req: any, res) => {
     try {
-      const appliances = await storage.getAppliances();
+      const userId = req.user.claims.sub;
+      const appliances = await storage.getAppliances(userId);
       res.json(appliances);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch appliances" });
     }
   });
 
-  app.post("/api/appliances", async (req, res) => {
+  app.post("/api/appliances", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validated = insertApplianceSchema.parse(req.body);
-      const appliance = await storage.createAppliance(validated);
+      const appliance = await storage.createAppliance(userId, validated);
       res.json(appliance);
     } catch (error) {
       res.status(400).json({ error: "Invalid appliance data" });
     }
   });
 
-  app.delete("/api/appliances/:id", async (req, res) => {
+  app.delete("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { id } = req.params;
-      await storage.deleteAppliance(id);
+      await storage.deleteAppliance(userId, id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete appliance" });
     }
   });
 
-  // USDA Food Search
+  // USDA Food Search (public)
   app.get("/api/usda/search", async (req, res) => {
     try {
       const { query, pageSize, pageNumber, dataType } = req.query;
@@ -136,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Open Food Facts - Product Images
+  // Open Food Facts - Product Images (public)
   app.get("/api/openfoodfacts/search", async (req, res) => {
     try {
       const { query, pageSize } = req.query;
@@ -147,7 +196,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const size = pageSize ? parseInt(pageSize as string) : 10;
       const results = await searchOpenFoodFacts(query, size);
       
-      // Map to simplified format with image URLs
       const products = results.products.map(product => ({
         code: product.code,
         name: product.product_name || 'Unknown Product',
@@ -199,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/objects/upload", async (_req, res) => {
+  app.post("/api/objects/upload", isAuthenticated, async (_req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -210,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/food-images", async (req, res) => {
+  app.put("/api/food-images", isAuthenticated, async (req, res) => {
     if (!req.body.imageURL) {
       return res.status(400).json({ error: "imageURL is required" });
     }
@@ -225,18 +273,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chat Messages
-  app.get("/api/chat/messages", async (_req, res) => {
+  // Chat Messages (user-scoped)
+  app.get("/api/chat/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const messages = await storage.getChatMessages();
+      const userId = req.user.claims.sub;
+      const messages = await storage.getChatMessages(userId);
       res.json(messages);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch chat messages" });
     }
   });
 
-  app.post("/api/chat", async (req, res) => {
+  app.post("/api/chat", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { message } = req.body;
       
       if (!message || typeof message !== "string") {
@@ -244,16 +294,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Save user message
-      await storage.createChatMessage({
+      await storage.createChatMessage(userId, {
         role: "user",
         content: message,
         metadata: null,
       });
 
       // Get current inventory and appliances for context
-      const foodItems = await storage.getFoodItems();
-      const appliances = await storage.getAppliances();
-      const storageLocations = await storage.getStorageLocations();
+      const foodItems = await storage.getFoodItems(userId);
+      const appliances = await storage.getAppliances(userId);
+      const storageLocations = await storage.getStorageLocations(userId);
 
       const inventoryContext = foodItems.map(item => {
         const location = storageLocations.find(loc => loc.id === item.storageLocationId);
@@ -278,7 +328,7 @@ When asked for recipes, consider the available inventory and appliances.`;
 
       // Stream response from OpenAI
       const stream = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-5",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: message }
@@ -303,7 +353,7 @@ When asked for recipes, consider the available inventory and appliances.`;
         }
 
         // Save AI response
-        await storage.createChatMessage({
+        await storage.createChatMessage(userId, {
           role: "assistant",
           content: fullResponse,
           metadata: null,
@@ -318,7 +368,6 @@ When asked for recipes, consider the available inventory and appliances.`;
       }
     } catch (error) {
       console.error("Chat error:", error);
-      // Only send JSON error if headers haven't been set yet
       if (!res.headersSent) {
         res.status(500).json({ error: "Failed to process chat message" });
       } else {
@@ -327,11 +376,12 @@ When asked for recipes, consider the available inventory and appliances.`;
     }
   });
 
-  // Recipe Generation
-  app.post("/api/recipes/generate", async (req, res) => {
+  // Recipe Generation (user-scoped)
+  app.post("/api/recipes/generate", isAuthenticated, async (req: any, res) => {
     try {
-      const foodItems = await storage.getFoodItems();
-      const appliances = await storage.getAppliances();
+      const userId = req.user.claims.sub;
+      const foodItems = await storage.getFoodItems(userId);
+      const appliances = await storage.getAppliances(userId);
 
       if (foodItems.length === 0) {
         return res.status(400).json({ error: "No ingredients in inventory" });
@@ -359,7 +409,7 @@ Respond ONLY with a valid JSON object in this exact format:
 }`;
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        model: "gpt-5",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         max_completion_tokens: 8192,
@@ -367,7 +417,7 @@ Respond ONLY with a valid JSON object in this exact format:
 
       const recipeData = JSON.parse(completion.choices[0].message.content || "{}");
       
-      const recipe = await storage.createRecipe({
+      const recipe = await storage.createRecipe(userId, {
         title: recipeData.title,
         prepTime: recipeData.prepTime,
         cookTime: recipeData.cookTime,
@@ -385,32 +435,33 @@ Respond ONLY with a valid JSON object in this exact format:
     }
   });
 
-  app.get("/api/recipes", async (_req, res) => {
+  app.get("/api/recipes", isAuthenticated, async (req: any, res) => {
     try {
-      const recipes = await storage.getRecipes();
+      const userId = req.user.claims.sub;
+      const recipes = await storage.getRecipes(userId);
       res.json(recipes);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch recipes" });
     }
   });
 
-  // Update recipe (favorite, rating)
-  app.patch("/api/recipes/:id", async (req, res) => {
+  app.patch("/api/recipes/:id", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { id } = req.params;
-      const recipe = await storage.updateRecipe(id, req.body);
+      const recipe = await storage.updateRecipe(userId, id, req.body);
       res.json(recipe);
     } catch (error) {
       res.status(400).json({ error: "Failed to update recipe" });
     }
   });
 
-  // Expiration Notifications
-  app.get("/api/notifications/expiration", async (_req, res) => {
+  // Expiration Notifications (user-scoped)
+  app.get("/api/notifications/expiration", isAuthenticated, async (req: any, res) => {
     try {
-      const notifications = await storage.getExpirationNotifications();
+      const userId = req.user.claims.sub;
+      const notifications = await storage.getExpirationNotifications(userId);
       
-      // Recalculate daysUntilExpiry dynamically and filter out expired/invalid items
       const now = new Date();
       const validNotifications = notifications
         .map(notification => {
@@ -418,7 +469,7 @@ Respond ONLY with a valid JSON object in this exact format:
           const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           return { ...notification, daysUntilExpiry: daysUntil };
         })
-        .filter(notification => notification.daysUntilExpiry >= 0); // Remove expired items
+        .filter(notification => notification.daysUntilExpiry >= 0);
       
       res.json(validNotifications);
     } catch (error) {
@@ -426,16 +477,14 @@ Respond ONLY with a valid JSON object in this exact format:
     }
   });
 
-  app.post("/api/notifications/expiration/check", async (_req, res) => {
+  app.post("/api/notifications/expiration/check", isAuthenticated, async (req: any, res) => {
     try {
-      // Check for items expiring in the next 3 days
-      const expiringItems = await storage.getExpiringItems(3);
+      const userId = req.user.claims.sub;
+      const expiringItems = await storage.getExpiringItems(userId, 3);
       const now = new Date();
       
-      // Get existing notifications
-      const existingNotifications = await storage.getExpirationNotifications();
+      const existingNotifications = await storage.getExpirationNotifications(userId);
       
-      // Clean up notifications for items that no longer exist or are expired
       const existingItemIds = new Set(expiringItems.map(item => item.id));
       for (const notification of existingNotifications) {
         const expiry = new Date(notification.expirationDate);
@@ -443,11 +492,10 @@ Respond ONLY with a valid JSON object in this exact format:
         const itemNoLongerExists = !existingItemIds.has(notification.foodItemId);
         
         if (isExpired || itemNoLongerExists) {
-          await storage.dismissNotification(notification.id);
+          await storage.dismissNotification(userId, notification.id);
         }
       }
       
-      // Create notifications for new expiring items
       const existingNotificationItemIds = new Set(existingNotifications.map(n => n.foodItemId));
       
       for (const item of expiringItems) {
@@ -455,8 +503,8 @@ Respond ONLY with a valid JSON object in this exact format:
           const expiry = new Date(item.expirationDate);
           const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           
-          if (daysUntil >= 0) { // Only create if not already expired
-            await storage.createExpirationNotification({
+          if (daysUntil >= 0) {
+            await storage.createExpirationNotification(userId, {
               foodItemId: item.id,
               foodItemName: item.name,
               expirationDate: item.expirationDate,
@@ -467,8 +515,7 @@ Respond ONLY with a valid JSON object in this exact format:
         }
       }
       
-      // Get updated notifications with dynamic day calculation
-      const notifications = await storage.getExpirationNotifications();
+      const notifications = await storage.getExpirationNotifications(userId);
       const validNotifications = notifications
         .map(notification => {
           const expiry = new Date(notification.expirationDate);
@@ -484,20 +531,22 @@ Respond ONLY with a valid JSON object in this exact format:
     }
   });
 
-  app.post("/api/notifications/:id/dismiss", async (req, res) => {
+  app.post("/api/notifications/:id/dismiss", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { id } = req.params;
-      await storage.dismissNotification(id);
+      await storage.dismissNotification(userId, id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to dismiss notification" });
     }
   });
 
-  // Nutrition Statistics
-  app.get("/api/nutrition/stats", async (_req, res) => {
+  // Nutrition Statistics (user-scoped)
+  app.get("/api/nutrition/stats", isAuthenticated, async (req: any, res) => {
     try {
-      const foodItems = await storage.getFoodItems();
+      const userId = req.user.claims.sub;
+      const foodItems = await storage.getFoodItems(userId);
       
       let totalCalories = 0;
       let totalProtein = 0;
@@ -512,7 +561,7 @@ Respond ONLY with a valid JSON object in this exact format:
           try {
             const nutrition = JSON.parse(item.nutrition);
             const qty = parseFloat(item.quantity) || 1;
-            const multiplier = qty / 100; // Nutrition is per 100g/ml
+            const multiplier = qty / 100;
             
             totalCalories += nutrition.calories * multiplier;
             totalProtein += nutrition.protein * multiplier;
@@ -520,7 +569,6 @@ Respond ONLY with a valid JSON object in this exact format:
             totalFat += nutrition.fat * multiplier;
             itemsWithNutrition++;
             
-            // Track by storage location for breakdown
             const locationId = item.storageLocationId;
             if (!categoryBreakdown[locationId]) {
               categoryBreakdown[locationId] = { calories: 0, count: 0 };
@@ -547,10 +595,11 @@ Respond ONLY with a valid JSON object in this exact format:
     }
   });
 
-  app.get("/api/nutrition/items", async (_req, res) => {
+  app.get("/api/nutrition/items", isAuthenticated, async (req: any, res) => {
     try {
-      const foodItems = await storage.getFoodItems();
-      const locations = await storage.getStorageLocations();
+      const userId = req.user.claims.sub;
+      const foodItems = await storage.getFoodItems(userId);
+      const locations = await storage.getStorageLocations(userId);
       
       const itemsWithNutrition = foodItems
         .filter(item => item.nutrition)
@@ -579,10 +628,11 @@ Respond ONLY with a valid JSON object in this exact format:
     }
   });
 
-  // Waste reduction suggestions
-  app.get("/api/suggestions/waste-reduction", async (_req, res) => {
+  // Waste reduction suggestions (user-scoped)
+  app.get("/api/suggestions/waste-reduction", isAuthenticated, async (req: any, res) => {
     try {
-      const expiringItems = await storage.getExpiringItems(5);
+      const userId = req.user.claims.sub;
+      const expiringItems = await storage.getExpiringItems(userId, 5);
       
       if (expiringItems.length === 0) {
         return res.json({ suggestions: [] });
@@ -594,7 +644,7 @@ Respond ONLY with a valid JSON object in this exact format:
         } days)`
       ).join(', ');
 
-      const appliances = await storage.getAppliances();
+      const appliances = await storage.getAppliances(userId);
       const appliancesList = appliances.map(a => a.name).join(', ');
 
       const prompt = `Generate waste reduction suggestions for these food items that are expiring soon: ${ingredientsList}.
@@ -622,11 +672,13 @@ Respond ONLY with a valid JSON object:
     }
   });
 
-  // Meal Plans
-  app.get("/api/meal-plans", async (req, res) => {
+  // Meal Plans (user-scoped)
+  app.get("/api/meal-plans", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { startDate, endDate } = req.query;
       const plans = await storage.getMealPlans(
+        userId,
         startDate as string | undefined,
         endDate as string | undefined
       );
@@ -636,123 +688,63 @@ Respond ONLY with a valid JSON object:
     }
   });
 
-  app.post("/api/meal-plans", async (req, res) => {
+  app.post("/api/meal-plans", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const validated = insertMealPlanSchema.parse(req.body);
-      const plan = await storage.createMealPlan(validated);
+      const plan = await storage.createMealPlan(userId, validated);
       res.json(plan);
     } catch (error) {
       res.status(400).json({ error: "Invalid meal plan data" });
     }
   });
 
-  app.put("/api/meal-plans/:id", async (req, res) => {
+  app.put("/api/meal-plans/:id", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       const validated = insertMealPlanSchema.partial().parse(req.body);
-      const plan = await storage.updateMealPlan(id, validated);
+      const plan = await storage.updateMealPlan(userId, id, validated);
       res.json(plan);
     } catch (error) {
-      if (error instanceof Error && error.message === "Meal plan not found") {
-        return res.status(404).json({ error: "Meal plan not found" });
-      }
       res.status(400).json({ error: "Failed to update meal plan" });
     }
   });
 
-  app.delete("/api/meal-plans/:id", async (req, res) => {
+  app.delete("/api/meal-plans/:id", isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.user.claims.sub;
       const { id } = req.params;
-      await storage.deleteMealPlan(id);
+      await storage.deleteMealPlan(userId, id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete meal plan" });
     }
   });
 
-  // Shopping List Generator
-  app.get("/api/meal-plans/shopping-list", async (req, res) => {
+  // Shopping list generation (user-scoped)
+  app.post("/api/shopping-list/generate", isAuthenticated, async (req: any, res) => {
     try {
-      const { startDate, endDate } = req.query;
-      
-      if (!startDate || !endDate) {
-        return res.status(400).json({ error: "startDate and endDate are required" });
+      const userId = req.user.claims.sub;
+      const { recipeIds } = req.body;
+
+      if (!recipeIds || !Array.isArray(recipeIds) || recipeIds.length === 0) {
+        return res.status(400).json({ error: "Recipe IDs are required" });
       }
-      
-      // Get meal plans for the date range
-      const mealPlans = await storage.getMealPlans(startDate as string, endDate as string);
-      
-      if (mealPlans.length === 0) {
-        return res.json({
-          items: [],
-          totalItems: 0,
-          plannedMeals: 0,
-          dateRange: { startDate, endDate },
-          message: "No meals planned for this period"
-        });
-      }
-      
-      // Get all unique recipe IDs
-      const recipeIds = Array.from(new Set(mealPlans.map(plan => plan.recipeId)));
-      
-      // Get all recipes
+
       const recipes = await Promise.all(
-        recipeIds.map(id => storage.getRecipe(id))
+        recipeIds.map((id: string) => storage.getRecipe(userId, id))
       );
-      
-      // Calculate ingredient requirements with quantities
-      const ingredientMap = new Map<string, { ingredient: string; count: number; recipes: string[] }>();
-      
-      mealPlans.forEach(plan => {
-        const recipe = recipes.find(r => r?.id === plan.recipeId);
-        if (!recipe) return;
-        
-        recipe.ingredients.forEach(ingredient => {
-          const key = ingredient.toLowerCase().trim();
-          const existing = ingredientMap.get(key);
-          
-          if (existing) {
-            existing.count += plan.servings;
-            if (!existing.recipes.includes(recipe.title)) {
-              existing.recipes.push(recipe.title);
-            }
-          } else {
-            ingredientMap.set(key, {
-              ingredient,
-              count: plan.servings,
-              recipes: [recipe.title]
-            });
-          }
-        });
-      });
-      
-      // Get current inventory
-      const inventory = await storage.getFoodItems();
-      const inventoryNames = new Set(
-        inventory.map(item => item.name.toLowerCase().trim())
-      );
-      
-      // Filter items not in inventory
-      const shoppingList = Array.from(ingredientMap.values())
-        .filter(item => {
-          // Check if any inventory item name contains the ingredient or vice versa
-          const ingredientLower = item.ingredient.toLowerCase();
-          return !Array.from(inventoryNames).some(invName => 
-            invName.includes(ingredientLower) || ingredientLower.includes(invName)
-          );
-        })
-        .map(item => ({
-          ingredient: item.ingredient,
-          neededFor: item.recipes.join(", "),
-          servings: item.count
-        }));
-      
-      res.json({
-        items: shoppingList,
-        totalItems: shoppingList.length,
-        plannedMeals: mealPlans.length,
-        dateRange: { startDate, endDate }
-      });
+
+      const validRecipes = recipes.filter(r => r !== undefined);
+      if (validRecipes.length === 0) {
+        return res.status(404).json({ error: "No valid recipes found" });
+      }
+
+      const allMissingIngredients = validRecipes.flatMap(r => r!.missingIngredients || []);
+      const uniqueIngredients = [...new Set(allMissingIngredients)];
+
+      res.json({ items: uniqueIngredients });
     } catch (error) {
       console.error("Shopping list error:", error);
       res.status(500).json({ error: "Failed to generate shopping list" });
@@ -760,6 +752,5 @@ Respond ONLY with a valid JSON object:
   });
 
   const httpServer = createServer(app);
-
   return httpServer;
 }
