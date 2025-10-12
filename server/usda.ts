@@ -136,6 +136,8 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
     brandOwner: food.brandOwner,
     ingredients: food.ingredients,
     foodCategory: food.foodCategory || food.brandedFoodCategory,
+    servingSize: food.servingSize,
+    servingSizeUnit: food.servingSizeUnit,
     nutrition: extractNutritionInfo(food),
   };
 }
