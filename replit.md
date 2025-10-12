@@ -110,6 +110,20 @@ Key architectural decisions include:
   - All API calls properly parse JSON responses (fixed Response object issues)
   - Defensive error handling throughout image acquisition flow
   - Cache invalidation on add/delete for consistent UI state
+- **UPC Barcode Integration** (October 12, 2025):
+  - USDA API now extracts gtinUpc (UPC/GTIN barcodes) from branded products
+  - Product image search automatically uses UPC barcode when available for accurate matching
+  - Green badge displays UPC in search results (e.g., "UPC: 072050301314")
+  - Direct barcode lookup via GET `/api/barcodelookup/product/{barcode}` instead of text search
+  - Falls back to simplified product name search when no UPC is available
+- **Rate Limit Management** (October 12, 2025):
+  - Rate limit enforcement middleware prevents API calls when monthly quota exceeded
+  - 1-minute caching of rate limit data to minimize API overhead
+  - BarcodeRateLimitInfo component displays remaining quota in Add Food dialog
+  - Shows "X of Y product image lookups remaining" with reset time
+  - Visual severity indicators: green (>20%), yellow (10-20%), red (<10%)
+  - API response transformation maps BarcodeLookup fields to internal types
+  - Automatic refresh every 60 seconds to keep quota display current
 
 ### Enhanced Add Food Experience (October 2025)
 - **Required Fields Update**: Unit and expiration date are now required (NOT NULL in database)
