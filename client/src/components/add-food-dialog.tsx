@@ -76,6 +76,42 @@ function getSuggestedShelfLife(category?: string, dataType?: string): number {
   return 14;
 }
 
+// Helper function to suggest storage location based on food category and description
+function getSuggestedStorageLocation(category?: string, description?: string, storageLocations?: StorageLocation[]): string | null {
+  if (!storageLocations || storageLocations.length === 0) return null;
+  
+  // Combine category and description for more accurate detection
+  const searchText = `${category || ''} ${description || ''}`.toLowerCase();
+  
+  // Frozen foods → Freezer (check both category and description)
+  if (searchText.includes('frozen')) {
+    return storageLocations.find(loc => loc.name.toLowerCase() === 'freezer')?.id || null;
+  }
+  
+  // Fresh items that need refrigeration → Fridge
+  if (searchText.includes('dairy') || searchText.includes('milk') || searchText.includes('cheese') || searchText.includes('yogurt') ||
+      searchText.includes('meat') || searchText.includes('poultry') || searchText.includes('beef') || searchText.includes('pork') || 
+      searchText.includes('chicken') || searchText.includes('fish') || searchText.includes('seafood') ||
+      searchText.includes('egg') || searchText.includes('fruit') || searchText.includes('vegetable') || searchText.includes('produce')) {
+    return storageLocations.find(loc => loc.name.toLowerCase() === 'fridge')?.id || null;
+  }
+  
+  // Shelf-stable items → Pantry
+  if (searchText.includes('canned') || searchText.includes('packaged') || searchText.includes('snack') || 
+      searchText.includes('cereal') || searchText.includes('grain') || searchText.includes('pasta') ||
+      searchText.includes('sauce') || searchText.includes('condiment') || searchText.includes('dressing')) {
+    return storageLocations.find(loc => loc.name.toLowerCase() === 'pantry')?.id || null;
+  }
+  
+  // Bread and bakery → Counter
+  if (searchText.includes('bread') || searchText.includes('bakery') || searchText.includes('baked')) {
+    return storageLocations.find(loc => loc.name.toLowerCase() === 'counter')?.id || null;
+  }
+  
+  // Default to Fridge for unknown categories (safer for food safety)
+  return storageLocations.find(loc => loc.name.toLowerCase() === 'fridge')?.id || null;
+}
+
 export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<any>(null);
@@ -281,6 +317,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                       const suggestedDate = new Date();
                       suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
                       setExpirationDate(suggestedDate.toISOString().split('T')[0]);
+                      // Auto-select storage location based on food category and description
+                      const suggestedLocationId = getSuggestedStorageLocation(food.foodCategory, food.description, storageLocations);
+                      if (suggestedLocationId) {
+                        setStorageLocationId(suggestedLocationId);
+                      }
                     }}
                     className={`w-full p-3 text-left hover-elevate border-b border-border last:border-0 ${
                       selectedFood?.fdcId === food.fdcId ? "bg-accent" : ""
