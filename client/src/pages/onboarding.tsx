@@ -141,8 +141,8 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl" data-testid="card-onboarding">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center p-4 overflow-y-auto">
+      <Card className="w-full max-w-3xl my-8" data-testid="card-onboarding">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <ChefHat className="w-16 h-16 text-primary" />
@@ -154,7 +154,7 @@ export default function Onboarding() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
                 <FormLabel>Which storage areas do you have? (Pre-selected for you)</FormLabel>
                 <FormDescription>
