@@ -88,6 +88,9 @@ export interface IStorage {
   logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>): Promise<ApiUsageLog>;
   getApiUsageLogs(userId: string, apiName?: string, limit?: number): Promise<ApiUsageLog[]>;
   getApiUsageStats(userId: string, apiName: string, days?: number): Promise<{ totalCalls: number; successfulCalls: number; failedCalls: number }>;
+  
+  // Account Management
+  resetUserData(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -640,6 +643,33 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error getting API usage stats for user ${userId}:`, error);
       throw new Error('Failed to retrieve API usage stats');
+    }
+  }
+
+  async resetUserData(userId: string): Promise<void> {
+    try {
+      // Delete all user data in order (respecting foreign key constraints)
+      await db.delete(mealPlans).where(eq(mealPlans.userId, userId));
+      await db.delete(expirationNotifications).where(eq(expirationNotifications.userId, userId));
+      await db.delete(foodItems).where(eq(foodItems.userId, userId));
+      await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
+      await db.delete(recipes).where(eq(recipes.userId, userId));
+      await db.delete(appliances).where(eq(appliances.userId, userId));
+      await db.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
+      
+      // Delete custom storage locations (keep default ones for re-initialization)
+      await db.delete(storageLocations).where(eq(storageLocations.userId, userId));
+      
+      // Reset user preferences to defaults
+      await db.delete(userPreferences).where(eq(userPreferences.userId, userId));
+      
+      // Clear the initialization flag so default data will be recreated
+      this.userInitialized.delete(userId);
+      
+      console.log(`Successfully reset all data for user ${userId}`);
+    } catch (error) {
+      console.error(`Error resetting user data for ${userId}:`, error);
+      throw new Error('Failed to reset user data');
     }
   }
 }

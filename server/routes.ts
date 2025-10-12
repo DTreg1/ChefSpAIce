@@ -58,6 +58,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/user/reset', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.resetUserData(userId);
+      res.json({ success: true, message: "Account data reset successfully" });
+    } catch (error) {
+      console.error("Error resetting user data:", error);
+      res.status(500).json({ error: "Failed to reset account data" });
+    }
+  });
+
   // Storage Locations (user-scoped)
   app.get("/api/storage-locations", isAuthenticated, async (req: any, res) => {
     try {
