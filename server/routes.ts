@@ -742,7 +742,7 @@ Respond ONLY with a valid JSON object:
       }
 
       const allMissingIngredients = validRecipes.flatMap(r => r!.missingIngredients || []);
-      const uniqueIngredients = [...new Set(allMissingIngredients)];
+      const uniqueIngredients = Array.from(new Set(allMissingIngredients));
 
       res.json({ items: uniqueIngredients });
     } catch (error) {
