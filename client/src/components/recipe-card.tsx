@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { MealPlanningDialog } from "@/components/meal-planning-dialog";
 
 interface RecipeCardProps {
   id?: string;
@@ -112,6 +113,12 @@ export function RecipeCard({
                 </button>
               ))}
             </div>
+
+            <MealPlanningDialog 
+              recipeId={id} 
+              recipeTitle={title}
+              defaultServings={servings}
+            />
           </div>
         )}
 
