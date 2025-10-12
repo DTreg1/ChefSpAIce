@@ -719,6 +719,89 @@ Respond ONLY with a valid JSON object in this exact format:
     }
   });
 
+  // Process recipe from image upload
+  app.post("/api/recipes/from-image", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { image } = req.body; // Base64 encoded image or image URL
+      
+      if (!image) {
+        return res.status(400).json({ error: "No image provided" });
+      }
+
+      // Create the prompt for recipe extraction
+      const extractionPrompt = `You are a recipe extraction expert. Analyze this image of a recipe and extract all the information.
+      
+Return ONLY a valid JSON object with the following structure:
+{
+  "title": "Recipe name",
+  "prepTime": "X minutes",
+  "cookTime": "X minutes",
+  "servings": number,
+  "ingredients": ["ingredient 1 with quantity", "ingredient 2 with quantity"],
+  "instructions": ["step 1", "step 2", "step 3"],
+  "usedIngredients": [],
+  "missingIngredients": []
+}
+
+Important:
+- Extract ALL ingredients with their exact quantities
+- Break down instructions into clear, numbered steps
+- If prep time or cook time is not visible, estimate based on recipe complexity
+- If servings is not specified, estimate based on ingredient quantities
+- Leave usedIngredients and missingIngredients as empty arrays
+- Ensure the JSON is properly formatted and parseable`;
+
+      // Prepare the message with image
+      const imageContent = image.startsWith('http') 
+        ? { type: "image_url" as const, image_url: { url: image } }
+        : { type: "image_url" as const, image_url: { url: `data:image/jpeg;base64,${image}` } };
+
+      // Call OpenAI with vision capabilities
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: extractionPrompt },
+              imageContent
+            ]
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 8192,
+      });
+
+      const extractedData = JSON.parse(completion.choices[0].message.content || "{}");
+      
+      // Validate the extracted data
+      if (!extractedData.title || !extractedData.ingredients || !extractedData.instructions) {
+        throw new Error("Could not extract complete recipe information from the image");
+      }
+
+      // Create the recipe in the database
+      const recipe = await storage.createRecipe(userId, {
+        title: extractedData.title,
+        prepTime: extractedData.prepTime || "Unknown",
+        cookTime: extractedData.cookTime || "Unknown",
+        servings: extractedData.servings || 4,
+        ingredients: extractedData.ingredients || [],
+        instructions: extractedData.instructions || [],
+        usedIngredients: extractedData.usedIngredients || [],
+        missingIngredients: extractedData.missingIngredients || [],
+      });
+
+      res.json(recipe);
+    } catch (error) {
+      console.error("Recipe image processing error:", error);
+      res.status(500).json({ 
+        error: "Failed to extract recipe from image",
+        details: error.message 
+      });
+    }
+  });
+
   // Expiration Notifications (user-scoped)
   app.get("/api/notifications/expiration", isAuthenticated, async (req: any, res) => {
     try {
