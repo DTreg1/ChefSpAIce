@@ -123,7 +123,8 @@ export default function Onboarding() {
       }
 
       // Step 3: Get all storage locations to map names to IDs
-      const locations = await apiRequest("GET", "/api/storage-locations", null) as unknown as any[];
+      const response = await apiRequest("GET", "/api/storage-locations", null);
+      const locations = await response.json() as any[];
       
       const locationMap = new Map(
         locations.map((loc: any) => [loc.name, loc.id])
@@ -142,7 +143,7 @@ export default function Onboarding() {
 
         await apiRequest("POST", "/api/food-items", {
           name: itemData.name,
-          quantity: parseFloat(itemData.quantity),
+          quantity: itemData.quantity,
           unit: itemData.unit,
           storageLocationId,
           expirationDate: expirationDate.toISOString(),
