@@ -90,7 +90,22 @@ export class ObjectStorageService {
       throw new ObjectNotFoundError();
     }
 
+    // Sanitize entityId to prevent directory traversal attacks
     const entityId = parts.slice(1).join("/");
+    
+    // Check for path traversal attempts
+    if (entityId.includes("..") || entityId.includes("//") || entityId.includes("\\")) {
+      console.error("Potential path traversal attempt detected:", objectPath);
+      throw new ObjectNotFoundError();
+    }
+    
+    // Additional validation: ensure entityId only contains alphanumeric, dash, underscore, and forward slash
+    const isValidPath = /^[a-zA-Z0-9\-_\/]+$/.test(entityId);
+    if (!isValidPath) {
+      console.error("Invalid characters in path:", objectPath);
+      throw new ObjectNotFoundError();
+    }
+    
     let entityDir = this.getPrivateObjectDir();
     if (!entityDir.endsWith("/")) {
       entityDir = `${entityDir}/`;
