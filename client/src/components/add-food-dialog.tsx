@@ -292,6 +292,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       expirationDate,
       imageUrl: imageUrl,
       nutrition: selectedFood?.nutrition ? JSON.stringify(selectedFood.nutrition) : null,
+      usdaData: selectedFood || null, // Save complete USDA response data
     });
   };
 
