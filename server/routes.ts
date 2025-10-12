@@ -7,6 +7,7 @@ import { searchUSDAFoods, getFoodByFdcId } from "./usda";
 import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits } from "./barcodelookup";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { ApiError } from "./apiError";
 import { 
   insertFoodItemSchema, 
   insertChatMessageSchema,
@@ -166,8 +167,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const results = await searchUSDAFoods(query, size, page, types);
       res.json(results);
-    } catch (error) {
+    } catch (error: any) {
       console.error("USDA search error:", error);
+      if (error instanceof ApiError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       res.status(500).json({ error: "Failed to search USDA database" });
     }
   });
@@ -180,7 +184,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Food not found" });
       }
       res.json(food);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("USDA food details error:", error);
+      if (error instanceof ApiError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       res.status(500).json({ error: "Failed to fetch food details" });
     }
   });
@@ -189,12 +197,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/barcodelookup/search", async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     const { query } = req.query;
+    let apiCallMade = false;
+    let statusCode = 200;
+    let success = true;
     
     try {
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
+      apiCallMade = true;
       const results = await searchBarcodeLookup(query);
       
       const products = results.products.map(product => ({
@@ -205,66 +217,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: product.description
       }));
 
-      // Log successful API usage (HTTP 200 = success, regardless of result count)
-      if (userId) {
-        await storage.logApiUsage(userId, {
-          apiName: 'barcode_lookup',
-          endpoint: 'search',
-          queryParams: `query=${query}`,
-          statusCode: 200,
-          success: true
-        });
-      }
-
       res.json({ products, count: products.length });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Barcode Lookup search error:", error);
-      
-      // Log failed API usage
-      if (userId) {
-        await storage.logApiUsage(userId, {
-          apiName: 'barcode_lookup',
-          endpoint: 'search',
-          queryParams: `query=${query}`,
-          statusCode: 500,
-          success: false
-        });
+      if (error instanceof ApiError) {
+        statusCode = error.statusCode;
+        success = false;
+        return res.status(error.statusCode).json({ error: error.message });
       }
-      
+      statusCode = 500;
+      success = false;
       res.status(500).json({ error: "Failed to search Barcode Lookup" });
+    } finally {
+      // Reliable logging: always executes regardless of success or failure
+      if (userId && apiCallMade) {
+        try {
+          await storage.logApiUsage(userId, {
+            apiName: 'barcode_lookup',
+            endpoint: 'search',
+            queryParams: `query=${query}`,
+            statusCode,
+            success
+          });
+        } catch (logError) {
+          console.error("Failed to log API usage:", logError);
+        }
+      }
     }
   });
 
   app.get("/api/barcodelookup/product/:barcode", async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     const { barcode } = req.params;
+    let apiCallMade = false;
+    let statusCode = 200;
+    let success = true;
     
     try {
+      apiCallMade = true;
       const product = await getBarcodeLookupProduct(barcode);
       
       if (!product) {
-        // Log failed API usage (404)
-        if (userId) {
-          await storage.logApiUsage(userId, {
-            apiName: 'barcode_lookup',
-            endpoint: 'product',
-            queryParams: `barcode=${barcode}`,
-            statusCode: 404,
-            success: false
-          });
-        }
+        statusCode = 404;
+        success = false;
         return res.status(404).json({ error: "Product not found" });
-      }
-
-      // Log successful API usage
-      if (userId) {
-        await storage.logApiUsage(userId, {
-          apiName: 'barcode_lookup',
-          endpoint: 'product',
-          queryParams: `barcode=${barcode}`,
-          statusCode: 200,
-          success: true
-        });
       }
 
       res.json({
@@ -274,18 +270,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageUrl: extractImageUrl(product),
         description: product.description
       });
-    } catch (error) {
-      // Log failed API usage (500)
-      if (userId) {
-        await storage.logApiUsage(userId, {
-          apiName: 'barcode_lookup',
-          endpoint: 'product',
-          queryParams: `barcode=${barcode}`,
-          statusCode: 500,
-          success: false
-        });
+    } catch (error: any) {
+      console.error("Barcode Lookup product error:", error);
+      if (error instanceof ApiError) {
+        statusCode = error.statusCode;
+        success = false;
+        return res.status(error.statusCode).json({ error: error.message });
       }
+      statusCode = 500;
+      success = false;
       res.status(500).json({ error: "Failed to fetch product details" });
+    } finally {
+      // Reliable logging: always executes regardless of success or failure
+      if (userId && apiCallMade) {
+        try {
+          await storage.logApiUsage(userId, {
+            apiName: 'barcode_lookup',
+            endpoint: 'product',
+            queryParams: `barcode=${barcode}`,
+            statusCode,
+            success
+          });
+        } catch (logError) {
+          console.error("Failed to log API usage:", logError);
+        }
+      }
     }
   });
 
@@ -293,8 +302,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limits = await getBarcodeLookupRateLimits();
       res.json(limits);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Barcode Lookup rate limits error:", error);
+      if (error instanceof ApiError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       res.status(500).json({ error: "Failed to fetch rate limits" });
     }
   });
@@ -380,6 +392,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/chat", isAuthenticated, async (req: any, res) => {
+    const abortController = new AbortController();
+    
+    req.on('close', () => {
+      abortController.abort();
+    });
+
     try {
       const userId = req.user.claims.sub;
       const { message } = req.body;
@@ -400,16 +418,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appliances = await storage.getAppliances(userId);
       const storageLocations = await storage.getStorageLocations(userId);
 
-      const inventoryContext = foodItems.map(item => {
+      // Optimize inventory context for large inventories
+      // Prioritize: 1) expiring items, 2) recently added items
+      const now = new Date();
+      const prioritizedItems = foodItems
+        .map(item => {
+          const daysToExpiry = item.expirationDate 
+            ? Math.ceil((new Date(item.expirationDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            : Infinity;
+          return { ...item, daysToExpiry };
+        })
+        .sort((a, b) => {
+          // Sort by expiring soon first, then by most recently created
+          if (a.daysToExpiry !== b.daysToExpiry) {
+            return a.daysToExpiry - b.daysToExpiry;
+          }
+          return 0;
+        })
+        .slice(0, 100); // Limit to top 100 items to prevent excessive context size
+
+      const inventoryContext = prioritizedItems.map(item => {
         const location = storageLocations.find(loc => loc.id === item.storageLocationId);
-        return `${item.name} (${item.quantity} ${item.unit || ''}) in ${location?.name || 'unknown'}`;
+        const expiryNote = item.expirationDate && item.daysToExpiry < 7 
+          ? ` (expires in ${item.daysToExpiry} days)` 
+          : '';
+        return `${item.name} (${item.quantity} ${item.unit || ''}) in ${location?.name || 'unknown'}${expiryNote}`;
       }).join(', ');
+
+      const totalItemCount = foodItems.length;
+      const contextNote = totalItemCount > 100 
+        ? ` [Showing ${prioritizedItems.length} of ${totalItemCount} items - prioritizing expiring and recent items]` 
+        : '';
 
       const appliancesContext = appliances.map(a => a.name).join(', ');
 
       const systemPrompt = `You are an AI Chef assistant. You help users manage their food inventory and suggest recipes.
 
-Current inventory: ${inventoryContext || 'No items in inventory'}
+Current inventory: ${inventoryContext || 'No items in inventory'}${contextNote}
 Available appliances: ${appliancesContext || 'No appliances registered'}
 
 Your tasks:
@@ -422,49 +467,109 @@ When the user asks to add items, respond with the details and suggest saving the
 When asked for recipes, consider the available inventory and appliances.`;
 
       // Stream response from OpenAI
-      const stream = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message }
-        ],
-        stream: true,
-        max_completion_tokens: 8192,
-      });
+      let stream;
+      try {
+        stream = await openai.chat.completions.create({
+          model: "gpt-5",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: message }
+          ],
+          stream: true,
+          max_completion_tokens: 8192,
+        });
+      } catch (openaiError: any) {
+        console.error("OpenAI API error:", {
+          message: openaiError.message,
+          status: openaiError.status,
+          code: openaiError.code,
+          type: openaiError.type,
+          requestId: openaiError.headers?.['x-request-id'],
+        });
+        
+        const errorMessage = openaiError.status === 429 
+          ? "Rate limit exceeded. Please try again in a moment."
+          : openaiError.status === 401 || openaiError.status === 403
+          ? "Authentication failed with OpenAI API."
+          : openaiError.message || "Failed to connect to AI service.";
+        
+        return res.status(openaiError.status || 500).json({ 
+          error: errorMessage,
+          details: openaiError.code,
+        });
+      }
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
       let fullResponse = '';
+      let streamCompleted = false;
 
       try {
         for await (const chunk of stream) {
+          if (abortController.signal.aborted) {
+            console.log("Stream aborted by client disconnect");
+            break;
+          }
+          
           const content = chunk.choices[0]?.delta?.content || '';
           if (content) {
             fullResponse += content;
-            res.write(`data: ${JSON.stringify({ content })}\n\n`);
+            try {
+              res.write(`data: ${JSON.stringify({ content })}\n\n`);
+            } catch (writeError) {
+              console.error("Error writing to stream:", writeError);
+              break;
+            }
           }
         }
 
-        // Save AI response
-        await storage.createChatMessage(userId, {
-          role: "assistant",
-          content: fullResponse,
-          metadata: null,
-        });
+        streamCompleted = true;
 
-        res.write('data: [DONE]\n\n');
+        // Save AI response only if stream completed successfully
+        if (fullResponse && !abortController.signal.aborted) {
+          await storage.createChatMessage(userId, {
+            role: "assistant",
+            content: fullResponse,
+            metadata: null,
+          });
+        }
+
+        if (!abortController.signal.aborted) {
+          res.write('data: [DONE]\n\n');
+        }
         res.end();
-      } catch (streamError) {
-        console.error("Streaming error:", streamError);
-        res.write(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`);
-        res.end();
+      } catch (streamError: any) {
+        console.error("Streaming error:", {
+          message: streamError.message,
+          code: streamError.code,
+          aborted: abortController.signal.aborted,
+        });
+        
+        if (!res.writableEnded) {
+          const errorData = {
+            error: abortController.signal.aborted 
+              ? "Stream cancelled" 
+              : "Stream interrupted unexpectedly. Please try again.",
+            type: streamError.code || 'stream_error',
+          };
+          res.write(`data: ${JSON.stringify(errorData)}\n\n`);
+          res.end();
+        }
       }
-    } catch (error) {
-      console.error("Chat error:", error);
+    } catch (error: any) {
+      console.error("Chat error:", {
+        message: error.message,
+        stack: error.stack,
+        userId: req.user?.claims?.sub,
+      });
+      
       if (!res.headersSent) {
-        res.status(500).json({ error: "Failed to process chat message" });
+        res.status(500).json({ 
+          error: "Failed to process chat message",
+          details: error.message,
+        });
       } else {
         res.end();
       }

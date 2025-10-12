@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ApiError } from './apiError';
 
 const BARCODE_LOOKUP_API_BASE = 'https://api.barcodelookup.com/v3';
 
@@ -49,9 +50,33 @@ export async function searchBarcodeLookup(query: string): Promise<BarcodeLookupS
     });
 
     return response.data;
-  } catch (error) {
-    console.error('Barcode Lookup search error:', error);
-    throw new Error('Failed to search Barcode Lookup');
+  } catch (error: any) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    
+    console.error('Barcode Lookup search error:', {
+      message: error.message,
+      status,
+      statusText,
+      code: error.code,
+      query
+    });
+    
+    if (status === 401 || status === 403) {
+      throw new ApiError('Barcode Lookup API authentication failed. Please check your API key.', 401);
+    } else if (status === 429) {
+      throw new ApiError('Barcode Lookup API rate limit exceeded. Please try again later.', 429);
+    } else if (status === 400) {
+      throw new ApiError('Invalid search query for Barcode Lookup API.', 400);
+    } else if (status >= 500) {
+      throw new ApiError('Barcode Lookup API service is temporarily unavailable.', 503);
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      throw new ApiError('Barcode Lookup API request timed out.', 504);
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      throw new ApiError('Cannot connect to Barcode Lookup API.', 503);
+    }
+    
+    throw new ApiError('Failed to search Barcode Lookup', 500);
   }
 }
 
@@ -77,9 +102,37 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
       return response.data.products[0];
     }
     return null;
-  } catch (error) {
-    console.error('Barcode Lookup product lookup error:', error);
-    return null;
+  } catch (error: any) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    
+    console.error('Barcode Lookup product lookup error:', {
+      message: error.message,
+      status,
+      statusText,
+      code: error.code,
+      barcode
+    });
+    
+    // Return null only for 404 (not found), throw ApiError for other failures
+    if (status === 404) {
+      return null;
+    }
+    
+    // Throw structured errors for non-404 failures so routes can return detailed messages
+    if (status === 401 || status === 403) {
+      throw new ApiError('Barcode Lookup API authentication failed. Please check your API key.', 401);
+    } else if (status === 429) {
+      throw new ApiError('Barcode Lookup API rate limit exceeded. Please try again later.', 429);
+    } else if (status >= 500) {
+      throw new ApiError('Barcode Lookup API service is temporarily unavailable.', 503);
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      throw new ApiError('Barcode Lookup API request timed out.', 504);
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      throw new ApiError('Cannot connect to Barcode Lookup API.', 503);
+    }
+    
+    throw new ApiError('Failed to fetch barcode product', 500);
   }
 }
 
@@ -115,8 +168,23 @@ export async function getBarcodeLookupRateLimits(): Promise<RateLimitResponse> {
     });
 
     return response.data;
-  } catch (error) {
-    console.error('Barcode Lookup rate limits error:', error);
-    throw new Error('Failed to fetch rate limits');
+  } catch (error: any) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    
+    console.error('Barcode Lookup rate limits error:', {
+      message: error.message,
+      status,
+      statusText,
+      code: error.code
+    });
+    
+    if (status === 401 || status === 403) {
+      throw new ApiError('Barcode Lookup API authentication failed. Please check your API key.', 401);
+    } else if (status >= 500) {
+      throw new ApiError('Barcode Lookup API service is temporarily unavailable.', 503);
+    }
+    
+    throw new ApiError('Failed to fetch rate limits', 500);
   }
 }

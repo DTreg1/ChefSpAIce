@@ -1,4 +1,5 @@
 import type { USDAFoodItem, USDASearchResponse, NutritionInfo } from "@shared/schema";
+import { ApiError } from "./apiError";
 
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
 const API_KEY = process.env.USDA_FDC_API_KEY;
@@ -169,7 +170,25 @@ export async function searchUSDAFoods(
     );
 
     if (!response.ok) {
-      throw new Error(`USDA API error: ${response.status} ${response.statusText}`);
+      console.error("USDA API error:", {
+        status: response.status,
+        statusText: response.statusText,
+        query,
+        pageSize,
+        pageNumber
+      });
+      
+      if (response.status === 401 || response.status === 403) {
+        throw new ApiError("USDA API authentication failed. Please check your API key.", 401);
+      } else if (response.status === 400) {
+        throw new ApiError("Invalid request to USDA API. Please check search parameters.", 400);
+      } else if (response.status === 429) {
+        throw new ApiError("USDA API rate limit exceeded. Please try again later.", 429);
+      } else if (response.status >= 500) {
+        throw new ApiError("USDA API service is temporarily unavailable.", 503);
+      }
+      
+      throw new ApiError(`USDA API error: ${response.status} ${response.statusText}`, response.status);
     }
 
     const data: FDCSearchResult = await response.json();
@@ -180,9 +199,12 @@ export async function searchUSDAFoods(
       currentPage: data.currentPage,
       totalPages: data.totalPages,
     };
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
     console.error("USDA API error:", error);
-    throw new Error("Failed to search USDA database");
+    throw new ApiError("Failed to search USDA database", 500);
   }
 }
 
@@ -200,12 +222,30 @@ export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null
       if (response.status === 404) {
         return null;
       }
-      throw new Error(`USDA API error: ${response.status} ${response.statusText}`);
+      
+      console.error("USDA API error:", {
+        status: response.status,
+        statusText: response.statusText,
+        fdcId
+      });
+      
+      if (response.status === 401 || response.status === 403) {
+        throw new ApiError("USDA API authentication failed. Please check your API key.", 401);
+      } else if (response.status === 429) {
+        throw new ApiError("USDA API rate limit exceeded. Please try again later.", 429);
+      } else if (response.status >= 500) {
+        throw new ApiError("USDA API service is temporarily unavailable.", 503);
+      }
+      
+      throw new ApiError(`USDA API error: ${response.status} ${response.statusText}`, response.status);
     }
 
     const food: FDCFood = await response.json();
     return mapFDCFoodToUSDAItem(food);
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
     console.error("USDA API error:", error);
     return null;
   }

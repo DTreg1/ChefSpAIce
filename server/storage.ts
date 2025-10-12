@@ -170,25 +170,25 @@ export class DatabaseStorage implements IStorage {
   async getStorageLocations(userId: string): Promise<StorageLocation[]> {
     await this.ensureDefaultDataForUser(userId);
     
-    // Get item counts dynamically
-    const locations = await db.select().from(storageLocations).where(eq(storageLocations.userId, userId));
-    
-    const locationsWithCounts = await Promise.all(
-      locations.map(async (location) => {
-        const [result] = await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(foodItems)
-          .where(and(
-            eq(foodItems.storageLocationId, location.id),
-            eq(foodItems.userId, userId)
-          ));
-        
-        return {
-          ...location,
-          itemCount: result?.count || 0
-        };
+    // Optimized query: get locations with counts in a single query using LEFT JOIN and GROUP BY
+    const locationsWithCounts = await db
+      .select({
+        id: storageLocations.id,
+        userId: storageLocations.userId,
+        name: storageLocations.name,
+        icon: storageLocations.icon,
+        itemCount: sql<number>`COALESCE(COUNT(${foodItems.id})::int, 0)`.as('itemCount'),
       })
-    );
+      .from(storageLocations)
+      .leftJoin(
+        foodItems,
+        and(
+          eq(foodItems.storageLocationId, storageLocations.id),
+          eq(foodItems.userId, userId)
+        )
+      )
+      .where(eq(storageLocations.userId, userId))
+      .groupBy(storageLocations.id, storageLocations.userId, storageLocations.name, storageLocations.icon);
     
     return locationsWithCounts;
   }
@@ -355,18 +355,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]> {
-    // Get items with expiration dates that are within the threshold
-    const items = await db.select().from(foodItems).where(eq(foodItems.userId, userId));
+    // Optimized: use SQL to filter items expiring within threshold instead of fetching all items
+    const now = new Date();
+    const maxExpiryDate = new Date(now.getTime() + daysThreshold * 24 * 60 * 60 * 1000);
     
-    const expiringItems = items.filter(item => {
-      if (!item.expirationDate) return false;
-      
-      const expiry = new Date(item.expirationDate);
-      const now = new Date();
-      const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      
-      return daysUntil >= 0 && daysUntil <= daysThreshold;
-    });
+    const expiringItems = await db
+      .select()
+      .from(foodItems)
+      .where(
+        and(
+          eq(foodItems.userId, userId),
+          sql`${foodItems.expirationDate} IS NOT NULL`,
+          sql`${foodItems.expirationDate} >= ${now.toISOString()}`,
+          sql`${foodItems.expirationDate} <= ${maxExpiryDate.toISOString()}`
+        )
+      );
     
     return expiringItems;
   }
