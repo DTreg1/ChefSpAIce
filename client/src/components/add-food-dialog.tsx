@@ -163,7 +163,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       return;
     }
 
-    if (!quantity || !storageLocationId) {
+    if (!quantity || !unit || !storageLocationId || !expirationDate) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -174,11 +174,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
     addItemMutation.mutate({
       name: selectedFood?.description || searchQuery,
-      fcdId: selectedFood?.fdcId?.toString(),
+      fcdId: selectedFood?.fdcId?.toString() || "N/A",
       quantity,
       unit,
       storageLocationId,
-      expirationDate: expirationDate || null,
+      expirationDate,
       imageUrl: imageUrl,
       nutrition: selectedFood?.nutrition ? JSON.stringify(selectedFood.nutrition) : null,
     });
@@ -251,7 +251,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unit">Unit</Label>
+              <Label htmlFor="unit">Unit *</Label>
               <Input
                 id="unit"
                 placeholder="e.g., lbs, kg, cups"
@@ -279,7 +279,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="expiration">Expiration Date</Label>
+            <Label htmlFor="expiration">Expiration Date *</Label>
             <Input
               id="expiration"
               type="date"
