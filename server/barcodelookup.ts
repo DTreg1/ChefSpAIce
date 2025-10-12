@@ -207,7 +207,18 @@ export async function getBarcodeLookupRateLimits(): Promise<RateLimitResponse> {
       }
     });
 
-    return response.data;
+    // Map the API response to our expected format
+    const apiData = response.data;
+    
+    // Calculate reset time (end of current month)
+    const now = new Date();
+    const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    
+    return {
+      remaining_requests: apiData.remaining_calls_per_month || 0,
+      allowed_requests: apiData.allowed_calls_per_month || 0,
+      reset_time: resetDate.toISOString()
+    };
   } catch (error: any) {
     const status = error.response?.status;
     const statusText = error.response?.statusText;
