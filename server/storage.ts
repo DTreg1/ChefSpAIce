@@ -38,7 +38,7 @@ export interface IStorage {
   
   // User Preferences
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
-  upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
+  upsertUserPreferences(preferences: InsertUserPreferences & { userId: string }): Promise<UserPreferences>;
   
   // Storage Locations (user-scoped)
   getStorageLocations(userId: string): Promise<StorageLocation[]>;
@@ -143,7 +143,7 @@ export class DatabaseStorage implements IStorage {
     return preferences;
   }
 
-  async upsertUserPreferences(preferencesData: InsertUserPreferences): Promise<UserPreferences> {
+  async upsertUserPreferences(preferencesData: InsertUserPreferences & { userId: string }): Promise<UserPreferences> {
     const [preferences] = await db
       .insert(userPreferences)
       .values(preferencesData)
