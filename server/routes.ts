@@ -47,8 +47,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/user/preferences', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const validated = insertUserPreferencesSchema.parse({ ...req.body, userId });
-      const preferences = await storage.upsertUserPreferences(validated);
+      const validated = insertUserPreferencesSchema.parse(req.body);
+      const preferences = await storage.upsertUserPreferences({ ...validated, userId });
       res.json(preferences);
     } catch (error) {
       console.error("Error updating preferences:", error);
