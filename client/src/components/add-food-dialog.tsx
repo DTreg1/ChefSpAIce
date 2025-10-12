@@ -17,10 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Upload, ImageOff } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ObjectUploader } from "./ObjectUploader";
 import type { StorageLocation, USDASearchResponse, InsertFoodItem } from "@shared/schema";
+import type { UploadResult } from "@uppy/core";
 
 interface AddFoodDialogProps {
   open: boolean;
@@ -34,6 +37,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [unit, setUnit] = useState("");
   const [storageLocationId, setStorageLocationId] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageSource, setImageSource] = useState<"branded" | "upload" | "none">("none");
   const { toast } = useToast();
 
   const { data: storageLocations } = useQuery<StorageLocation[]>({
@@ -47,7 +52,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
   const addItemMutation = useMutation({
     mutationFn: async (data: InsertFoodItem) => {
-      return await apiRequest("POST", "/api/food-items", data);
+      const response = await apiRequest("POST", "/api/food-items", data);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
@@ -82,7 +88,69 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     setUnit("");
     setStorageLocationId("");
     setExpirationDate("");
+    setImageUrl(null);
+    setImageSource("none");
     onOpenChange(false);
+  };
+
+  const handleGetUploadURL = async () => {
+    const response = await apiRequest("POST", "/api/objects/upload", {});
+    const data = await response.json();
+    return {
+      method: "PUT" as const,
+      url: data.uploadURL,
+    };
+  };
+
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadedUrl = result.successful[0].uploadURL;
+      const response = await apiRequest("PUT", "/api/food-images", { imageURL: uploadedUrl });
+      const data = await response.json();
+      setImageUrl(data.objectPath);
+      setImageSource("upload");
+      toast({
+        title: "Image uploaded",
+        description: "Photo uploaded successfully",
+      });
+    }
+  };
+
+  const handleSearchOpenFoodFacts = async () => {
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Search required",
+        description: "Please enter a food item name to search",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const response = await apiRequest("GET", `/api/openfoodfacts/search?query=${encodeURIComponent(searchQuery)}&pageSize=5`, null);
+      const data = await response.json();
+      if (data.products && data.products.length > 0 && data.products[0].imageUrl) {
+        setImageUrl(data.products[0].imageUrl);
+        setImageSource("branded");
+        toast({
+          title: "Product image found",
+          description: `Found image for ${data.products[0].name}`,
+        });
+      } else {
+        toast({
+          title: "No image found",
+          description: "No product images found for this search",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Open Food Facts search error:", error);
+      toast({
+        title: "Search failed",
+        description: "Failed to search for product images. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmit = () => {
@@ -111,7 +179,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       unit,
       storageLocationId,
       expirationDate: expirationDate || null,
-      imageUrl: null,
+      imageUrl: imageUrl,
       nutrition: selectedFood?.nutrition ? JSON.stringify(selectedFood.nutrition) : null,
     });
   };
@@ -219,6 +287,72 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
               onChange={(e) => setExpirationDate(e.target.value)}
               data-testid="input-expiration"
             />
+          </div>
+
+          <div className="space-y-3">
+            <Label>Food Image (Optional)</Label>
+            <Tabs value={imageSource} onValueChange={(value) => setImageSource(value as any)} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="none" data-testid="tab-no-image">
+                  <ImageOff className="w-4 h-4 mr-2" />
+                  No Image
+                </TabsTrigger>
+                <TabsTrigger value="branded" data-testid="tab-search-image">
+                  <Search className="w-4 h-4 mr-2" />
+                  Find Product
+                </TabsTrigger>
+                <TabsTrigger value="upload" data-testid="tab-upload-image">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Photo
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="none" className="text-sm text-muted-foreground">
+                No image will be added to this item
+              </TabsContent>
+
+              <TabsContent value="branded" className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Search for branded product images from Open Food Facts database
+                </p>
+                <Button
+                  type="button"
+                  onClick={handleSearchOpenFoodFacts}
+                  variant="outline"
+                  className="w-full"
+                  data-testid="button-search-product-image"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Search for Product Image
+                </Button>
+                {imageUrl && imageSource === "branded" && (
+                  <div className="mt-2 p-2 border border-border rounded-lg">
+                    <img src={imageUrl} alt="Product" className="w-full h-32 object-contain" />
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="upload" className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Take or upload a photo of your food item
+                </p>
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={10485760}
+                  onGetUploadParameters={handleGetUploadURL}
+                  onComplete={handleUploadComplete}
+                  buttonClassName="w-full"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Photo
+                </ObjectUploader>
+                {imageUrl && imageSource === "upload" && (
+                  <div className="mt-2 p-2 border border-border rounded-lg">
+                    <img src={imageUrl} alt="Uploaded" className="w-full h-32 object-contain" />
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 

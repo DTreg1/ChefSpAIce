@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
 import { searchUSDAFoods, getFoodByFdcId } from "./usda";
+import { searchOpenFoodFacts, getOpenFoodFactsProduct, extractImageUrl } from "./openfoodfacts";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { 
   insertFoodItemSchema, 
   insertChatMessageSchema,
@@ -123,6 +125,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(food);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch food details" });
+    }
+  });
+
+  // Open Food Facts - Product Images
+  app.get("/api/openfoodfacts/search", async (req, res) => {
+    try {
+      const { query, pageSize } = req.query;
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      const size = pageSize ? parseInt(pageSize as string) : 10;
+      const results = await searchOpenFoodFacts(query, size);
+      
+      // Map to simplified format with image URLs
+      const products = results.products.map(product => ({
+        code: product.code,
+        name: product.product_name || 'Unknown Product',
+        brand: product.brands || '',
+        imageUrl: extractImageUrl(product),
+        nutriscoreGrade: product.nutriscore_grade
+      }));
+
+      res.json({ products, count: results.count });
+    } catch (error) {
+      console.error("Open Food Facts search error:", error);
+      res.status(500).json({ error: "Failed to search Open Food Facts" });
+    }
+  });
+
+  app.get("/api/openfoodfacts/product/:barcode", async (req, res) => {
+    try {
+      const { barcode } = req.params;
+      const product = await getOpenFoodFactsProduct(barcode);
+      
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      res.json({
+        code: product.code,
+        name: product.product_name || 'Unknown Product',
+        brand: product.brands || '',
+        imageUrl: extractImageUrl(product),
+        nutriscoreGrade: product.nutriscore_grade
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch product details" });
+    }
+  });
+
+  // Object Storage - Image Uploads (referenced from blueprint:javascript_object_storage)
+  app.get("/objects/:objectPath(*)", async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  app.post("/api/objects/upload", async (_req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  app.put("/api/food-images", async (req, res) => {
+    if (!req.body.imageURL) {
+      return res.status(400).json({ error: "imageURL is required" });
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = objectStorageService.normalizeObjectEntityPath(req.body.imageURL);
+      res.status(200).json({ objectPath });
+    } catch (error) {
+      console.error("Error setting food image:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
