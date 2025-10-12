@@ -35,12 +35,12 @@ export type Appliance = typeof appliances.$inferSelect;
 // Food Items
 export const foodItems = pgTable("food_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  fcdId: text("fcd_id"),
+  fcdId: text("fcd_id").notNull(),
   name: text("name").notNull(),
   quantity: text("quantity").notNull(),
-  unit: text("unit"),
+  unit: text("unit").notNull(),
   storageLocationId: varchar("storage_location_id").notNull(),
-  expirationDate: text("expiration_date"),
+  expirationDate: text("expiration_date").notNull(),
   imageUrl: text("image_url"),
   nutrition: text("nutrition"),
   addedAt: timestamp("added_at").notNull().defaultNow(),
