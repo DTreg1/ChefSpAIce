@@ -133,344 +133,514 @@ export class DatabaseStorage implements IStorage {
 
   // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error(`Error getting user ${id}:`, error);
+      throw new Error('Failed to retrieve user');
+    }
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+    try {
+      const [user] = await db
+        .insert(users)
+        .values(userData)
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            ...userData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return user;
+    } catch (error) {
+      console.error('Error upserting user:', error);
+      throw new Error('Failed to save user');
+    }
   }
 
   // User Preferences
   async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
-    const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
-    return preferences;
+    try {
+      const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+      return preferences;
+    } catch (error) {
+      console.error(`Error getting user preferences for ${userId}:`, error);
+      throw new Error('Failed to retrieve user preferences');
+    }
   }
 
   async upsertUserPreferences(preferencesData: InsertUserPreferences & { userId: string }): Promise<UserPreferences> {
-    const [preferences] = await db
-      .insert(userPreferences)
-      .values(preferencesData)
-      .onConflictDoUpdate({
-        target: userPreferences.userId,
-        set: {
-          ...preferencesData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return preferences;
+    try {
+      const [preferences] = await db
+        .insert(userPreferences)
+        .values(preferencesData)
+        .onConflictDoUpdate({
+          target: userPreferences.userId,
+          set: {
+            ...preferencesData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return preferences;
+    } catch (error) {
+      console.error('Error upserting user preferences:', error);
+      throw new Error('Failed to save user preferences');
+    }
   }
 
   // Storage Locations
   async getStorageLocations(userId: string): Promise<StorageLocation[]> {
-    await this.ensureDefaultDataForUser(userId);
-    
-    // Optimized query: get locations with counts in a single query using LEFT JOIN and GROUP BY
-    const locationsWithCounts = await db
-      .select({
-        id: storageLocations.id,
-        userId: storageLocations.userId,
-        name: storageLocations.name,
-        icon: storageLocations.icon,
-        itemCount: sql<number>`COALESCE(COUNT(${foodItems.id})::int, 0)`.as('itemCount'),
-      })
-      .from(storageLocations)
-      .leftJoin(
-        foodItems,
-        and(
-          eq(foodItems.storageLocationId, storageLocations.id),
-          eq(foodItems.userId, userId)
+    try {
+      await this.ensureDefaultDataForUser(userId);
+      
+      // Optimized query: get locations with counts in a single query using LEFT JOIN and GROUP BY
+      const locationsWithCounts = await db
+        .select({
+          id: storageLocations.id,
+          userId: storageLocations.userId,
+          name: storageLocations.name,
+          icon: storageLocations.icon,
+          itemCount: sql<number>`COALESCE(COUNT(${foodItems.id})::int, 0)`.as('itemCount'),
+        })
+        .from(storageLocations)
+        .leftJoin(
+          foodItems,
+          and(
+            eq(foodItems.storageLocationId, storageLocations.id),
+            eq(foodItems.userId, userId)
+          )
         )
-      )
-      .where(eq(storageLocations.userId, userId))
-      .groupBy(storageLocations.id, storageLocations.userId, storageLocations.name, storageLocations.icon);
-    
-    return locationsWithCounts;
+        .where(eq(storageLocations.userId, userId))
+        .groupBy(storageLocations.id, storageLocations.userId, storageLocations.name, storageLocations.icon);
+      
+      return locationsWithCounts;
+    } catch (error) {
+      console.error(`Error getting storage locations for user ${userId}:`, error);
+      throw new Error('Failed to retrieve storage locations');
+    }
   }
 
   async getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined> {
-    await this.ensureDefaultDataForUser(userId);
-    const [location] = await db.select().from(storageLocations).where(
-      and(eq(storageLocations.id, id), eq(storageLocations.userId, userId))
-    );
-    return location || undefined;
+    try {
+      await this.ensureDefaultDataForUser(userId);
+      const [location] = await db.select().from(storageLocations).where(
+        and(eq(storageLocations.id, id), eq(storageLocations.userId, userId))
+      );
+      return location || undefined;
+    } catch (error) {
+      console.error(`Error getting storage location ${id}:`, error);
+      throw new Error('Failed to retrieve storage location');
+    }
   }
 
   async createStorageLocation(userId: string, location: Omit<InsertStorageLocation, 'userId'>): Promise<StorageLocation> {
-    const [newLocation] = await db
-      .insert(storageLocations)
-      .values({ ...location, userId })
-      .returning();
-    return newLocation;
+    try {
+      const [newLocation] = await db
+        .insert(storageLocations)
+        .values({ ...location, userId })
+        .returning();
+      return newLocation;
+    } catch (error) {
+      console.error('Error creating storage location:', error);
+      throw new Error('Failed to create storage location');
+    }
   }
 
   async updateStorageLocationCount(userId: string, id: string, count: number): Promise<void> {
-    await db
-      .update(storageLocations)
-      .set({ itemCount: count })
-      .where(and(eq(storageLocations.id, id), eq(storageLocations.userId, userId)));
+    try {
+      await db
+        .update(storageLocations)
+        .set({ itemCount: count })
+        .where(and(eq(storageLocations.id, id), eq(storageLocations.userId, userId)));
+    } catch (error) {
+      console.error(`Error updating storage location count for ${id}:`, error);
+      throw new Error('Failed to update storage location count');
+    }
   }
 
   // Appliances
   async getAppliances(userId: string): Promise<Appliance[]> {
-    await this.ensureDefaultDataForUser(userId);
-    return db.select().from(appliances).where(eq(appliances.userId, userId));
+    try {
+      await this.ensureDefaultDataForUser(userId);
+      return db.select().from(appliances).where(eq(appliances.userId, userId));
+    } catch (error) {
+      console.error(`Error getting appliances for user ${userId}:`, error);
+      throw new Error('Failed to retrieve appliances');
+    }
   }
 
   async createAppliance(userId: string, appliance: Omit<InsertAppliance, 'userId'>): Promise<Appliance> {
-    const [newAppliance] = await db
-      .insert(appliances)
-      .values({ ...appliance, userId })
-      .returning();
-    return newAppliance;
+    try {
+      const [newAppliance] = await db
+        .insert(appliances)
+        .values({ ...appliance, userId })
+        .returning();
+      return newAppliance;
+    } catch (error) {
+      console.error('Error creating appliance:', error);
+      throw new Error('Failed to create appliance');
+    }
   }
 
   async deleteAppliance(userId: string, id: string): Promise<void> {
-    await db.delete(appliances).where(and(eq(appliances.id, id), eq(appliances.userId, userId)));
+    try {
+      await db.delete(appliances).where(and(eq(appliances.id, id), eq(appliances.userId, userId)));
+    } catch (error) {
+      console.error(`Error deleting appliance ${id}:`, error);
+      throw new Error('Failed to delete appliance');
+    }
   }
 
   // Food Items
   async getFoodItems(userId: string, storageLocationId?: string): Promise<FoodItem[]> {
-    if (storageLocationId) {
-      return db.select().from(foodItems).where(
-        and(eq(foodItems.storageLocationId, storageLocationId), eq(foodItems.userId, userId))
-      );
+    try {
+      if (storageLocationId) {
+        return db.select().from(foodItems).where(
+          and(eq(foodItems.storageLocationId, storageLocationId), eq(foodItems.userId, userId))
+        );
+      }
+      return db.select().from(foodItems).where(eq(foodItems.userId, userId));
+    } catch (error) {
+      console.error(`Error getting food items for user ${userId}:`, error);
+      throw new Error('Failed to retrieve food items');
     }
-    return db.select().from(foodItems).where(eq(foodItems.userId, userId));
   }
 
   async getFoodItem(userId: string, id: string): Promise<FoodItem | undefined> {
-    const [item] = await db.select().from(foodItems).where(
-      and(eq(foodItems.id, id), eq(foodItems.userId, userId))
-    );
-    return item || undefined;
+    try {
+      const [item] = await db.select().from(foodItems).where(
+        and(eq(foodItems.id, id), eq(foodItems.userId, userId))
+      );
+      return item || undefined;
+    } catch (error) {
+      console.error(`Error getting food item ${id}:`, error);
+      throw new Error('Failed to retrieve food item');
+    }
   }
 
   async createFoodItem(userId: string, item: Omit<InsertFoodItem, 'userId'>): Promise<FoodItem> {
-    const [newItem] = await db
-      .insert(foodItems)
-      .values({ ...item, userId })
-      .returning();
-    return newItem;
+    try {
+      const [newItem] = await db
+        .insert(foodItems)
+        .values({ ...item, userId })
+        .returning();
+      return newItem;
+    } catch (error) {
+      console.error('Error creating food item:', error);
+      throw new Error('Failed to create food item');
+    }
   }
 
   async updateFoodItem(userId: string, id: string, item: Partial<Omit<InsertFoodItem, 'userId'>>): Promise<FoodItem> {
-    const [updated] = await db
-      .update(foodItems)
-      .set(item)
-      .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)))
-      .returning();
-    
-    if (!updated) {
-      throw new Error("Food item not found");
+    try {
+      const [updated] = await db
+        .update(foodItems)
+        .set(item)
+        .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)))
+        .returning();
+      
+      if (!updated) {
+        throw new Error("Food item not found");
+      }
+      
+      return updated;
+    } catch (error) {
+      console.error(`Error updating food item ${id}:`, error);
+      throw new Error('Failed to update food item');
     }
-    
-    return updated;
   }
 
   async deleteFoodItem(userId: string, id: string): Promise<void> {
-    await db.delete(foodItems).where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)));
+    try {
+      await db.delete(foodItems).where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)));
+    } catch (error) {
+      console.error(`Error deleting food item ${id}:`, error);
+      throw new Error('Failed to delete food item');
+    }
   }
 
   // Chat Messages
   async getChatMessages(userId: string): Promise<ChatMessage[]> {
-    return db.select().from(chatMessages)
-      .where(eq(chatMessages.userId, userId))
-      .orderBy(chatMessages.timestamp);
+    try {
+      return db.select().from(chatMessages)
+        .where(eq(chatMessages.userId, userId))
+        .orderBy(chatMessages.timestamp);
+    } catch (error) {
+      console.error(`Error getting chat messages for user ${userId}:`, error);
+      throw new Error('Failed to retrieve chat messages');
+    }
   }
 
   async createChatMessage(userId: string, message: Omit<InsertChatMessage, 'userId'>): Promise<ChatMessage> {
-    const [newMessage] = await db
-      .insert(chatMessages)
-      .values({ ...message, userId })
-      .returning();
-    return newMessage;
+    try {
+      const [newMessage] = await db
+        .insert(chatMessages)
+        .values({ ...message, userId })
+        .returning();
+      return newMessage;
+    } catch (error) {
+      console.error('Error creating chat message:', error);
+      throw new Error('Failed to create chat message');
+    }
   }
 
   // Recipes
   async getRecipes(userId: string): Promise<Recipe[]> {
-    return db.select().from(recipes)
-      .where(eq(recipes.userId, userId))
-      .orderBy(sql`${recipes.createdAt} DESC`);
+    try {
+      return db.select().from(recipes)
+        .where(eq(recipes.userId, userId))
+        .orderBy(sql`${recipes.createdAt} DESC`);
+    } catch (error) {
+      console.error(`Error getting recipes for user ${userId}:`, error);
+      throw new Error('Failed to retrieve recipes');
+    }
   }
 
   async getRecipe(userId: string, id: string): Promise<Recipe | undefined> {
-    const [recipe] = await db.select().from(recipes).where(
-      and(eq(recipes.id, id), eq(recipes.userId, userId))
-    );
-    return recipe || undefined;
+    try {
+      const [recipe] = await db.select().from(recipes).where(
+        and(eq(recipes.id, id), eq(recipes.userId, userId))
+      );
+      return recipe || undefined;
+    } catch (error) {
+      console.error(`Error getting recipe ${id}:`, error);
+      throw new Error('Failed to retrieve recipe');
+    }
   }
 
   async createRecipe(userId: string, recipe: Omit<InsertRecipe, 'userId'>): Promise<Recipe> {
-    const [newRecipe] = await db
-      .insert(recipes)
-      .values({ ...recipe, userId })
-      .returning();
-    return newRecipe;
+    try {
+      const [newRecipe] = await db
+        .insert(recipes)
+        .values({ ...recipe, userId })
+        .returning();
+      return newRecipe;
+    } catch (error) {
+      console.error('Error creating recipe:', error);
+      throw new Error('Failed to create recipe');
+    }
   }
 
   async updateRecipe(userId: string, id: string, updates: Partial<Recipe>): Promise<Recipe> {
-    const [updated] = await db
-      .update(recipes)
-      .set(updates)
-      .where(and(eq(recipes.id, id), eq(recipes.userId, userId)))
-      .returning();
-    
-    if (!updated) {
-      throw new Error("Recipe not found");
+    try {
+      const [updated] = await db
+        .update(recipes)
+        .set(updates)
+        .where(and(eq(recipes.id, id), eq(recipes.userId, userId)))
+        .returning();
+      
+      if (!updated) {
+        throw new Error("Recipe not found");
+      }
+      
+      return updated;
+    } catch (error) {
+      console.error(`Error updating recipe ${id}:`, error);
+      throw new Error('Failed to update recipe');
     }
-    
-    return updated;
   }
 
   // Expiration Notifications
   async getExpirationNotifications(userId: string): Promise<ExpirationNotification[]> {
-    return db.select()
-      .from(expirationNotifications)
-      .where(and(
-        eq(expirationNotifications.userId, userId),
-        eq(expirationNotifications.dismissed, false)
-      ))
-      .orderBy(expirationNotifications.daysUntilExpiry);
+    try {
+      return db.select()
+        .from(expirationNotifications)
+        .where(and(
+          eq(expirationNotifications.userId, userId),
+          eq(expirationNotifications.dismissed, false)
+        ))
+        .orderBy(expirationNotifications.daysUntilExpiry);
+    } catch (error) {
+      console.error(`Error getting expiration notifications for user ${userId}:`, error);
+      throw new Error('Failed to retrieve expiration notifications');
+    }
   }
 
   async createExpirationNotification(userId: string, notification: Omit<InsertExpirationNotification, 'userId'>): Promise<ExpirationNotification> {
-    const [newNotification] = await db
-      .insert(expirationNotifications)
-      .values({ ...notification, userId })
-      .returning();
-    return newNotification;
+    try {
+      const [newNotification] = await db
+        .insert(expirationNotifications)
+        .values({ ...notification, userId })
+        .returning();
+      return newNotification;
+    } catch (error) {
+      console.error('Error creating expiration notification:', error);
+      throw new Error('Failed to create expiration notification');
+    }
   }
 
   async dismissNotification(userId: string, id: string): Promise<void> {
-    await db
-      .update(expirationNotifications)
-      .set({ dismissed: true })
-      .where(and(eq(expirationNotifications.id, id), eq(expirationNotifications.userId, userId)));
+    try {
+      await db
+        .update(expirationNotifications)
+        .set({ dismissed: true })
+        .where(and(eq(expirationNotifications.id, id), eq(expirationNotifications.userId, userId)));
+    } catch (error) {
+      console.error(`Error dismissing notification ${id}:`, error);
+      throw new Error('Failed to dismiss notification');
+    }
   }
 
   async getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]> {
-    // Optimized: use SQL to filter items expiring within threshold instead of fetching all items
-    const now = new Date();
-    const maxExpiryDate = new Date(now.getTime() + daysThreshold * 24 * 60 * 60 * 1000);
-    
-    const expiringItems = await db
-      .select()
-      .from(foodItems)
-      .where(
-        and(
-          eq(foodItems.userId, userId),
-          sql`${foodItems.expirationDate} IS NOT NULL`,
-          sql`${foodItems.expirationDate} >= ${now.toISOString()}`,
-          sql`${foodItems.expirationDate} <= ${maxExpiryDate.toISOString()}`
-        )
-      );
-    
-    return expiringItems;
+    try {
+      // Optimized: use SQL to filter items expiring within threshold instead of fetching all items
+      const now = new Date();
+      const maxExpiryDate = new Date(now.getTime() + daysThreshold * 24 * 60 * 60 * 1000);
+      
+      const expiringItems = await db
+        .select()
+        .from(foodItems)
+        .where(
+          and(
+            eq(foodItems.userId, userId),
+            sql`${foodItems.expirationDate} IS NOT NULL`,
+            sql`${foodItems.expirationDate} >= ${now.toISOString()}`,
+            sql`${foodItems.expirationDate} <= ${maxExpiryDate.toISOString()}`
+          )
+        );
+      
+      return expiringItems;
+    } catch (error) {
+      console.error(`Error getting expiring items for user ${userId}:`, error);
+      throw new Error('Failed to retrieve expiring items');
+    }
   }
 
   // Meal Plans
   async getMealPlans(userId: string, startDate?: string, endDate?: string): Promise<MealPlan[]> {
-    await this.ensureDefaultDataForUser(userId);
-    
-    const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId));
-    
-    // Filter by date range if provided
-    if (startDate || endDate) {
-      return plans.filter(plan => {
-        if (startDate && endDate) {
-          return plan.date >= startDate && plan.date <= endDate;
-        } else if (startDate) {
-          return plan.date >= startDate;
-        } else if (endDate) {
-          return plan.date <= endDate;
-        }
-        return true;
-      });
+    try {
+      await this.ensureDefaultDataForUser(userId);
+      
+      const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId));
+      
+      // Filter by date range if provided
+      if (startDate || endDate) {
+        return plans.filter(plan => {
+          if (startDate && endDate) {
+            return plan.date >= startDate && plan.date <= endDate;
+          } else if (startDate) {
+            return plan.date >= startDate;
+          } else if (endDate) {
+            return plan.date <= endDate;
+          }
+          return true;
+        });
+      }
+      
+      return plans;
+    } catch (error) {
+      console.error(`Error getting meal plans for user ${userId}:`, error);
+      throw new Error('Failed to retrieve meal plans');
     }
-    
-    return plans;
   }
 
   async getMealPlan(userId: string, id: string): Promise<MealPlan | undefined> {
-    await this.ensureDefaultDataForUser(userId);
-    const [plan] = await db.select().from(mealPlans).where(
-      and(eq(mealPlans.id, id), eq(mealPlans.userId, userId))
-    );
-    return plan || undefined;
+    try {
+      await this.ensureDefaultDataForUser(userId);
+      const [plan] = await db.select().from(mealPlans).where(
+        and(eq(mealPlans.id, id), eq(mealPlans.userId, userId))
+      );
+      return plan || undefined;
+    } catch (error) {
+      console.error(`Error getting meal plan ${id}:`, error);
+      throw new Error('Failed to retrieve meal plan');
+    }
   }
 
   async createMealPlan(userId: string, plan: Omit<InsertMealPlan, 'userId'>): Promise<MealPlan> {
-    await this.ensureDefaultDataForUser(userId);
-    const [newPlan] = await db.insert(mealPlans).values({ ...plan, userId }).returning();
-    return newPlan;
+    try {
+      await this.ensureDefaultDataForUser(userId);
+      const [newPlan] = await db.insert(mealPlans).values({ ...plan, userId }).returning();
+      return newPlan;
+    } catch (error) {
+      console.error('Error creating meal plan:', error);
+      throw new Error('Failed to create meal plan');
+    }
   }
 
   async updateMealPlan(userId: string, id: string, updates: Partial<Omit<InsertMealPlan, 'userId'>>): Promise<MealPlan> {
-    await this.ensureDefaultDataForUser(userId);
-    const [updated] = await db.update(mealPlans)
-      .set(updates)
-      .where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)))
-      .returning();
-    
-    if (!updated) {
-      throw new Error("Meal plan not found");
+    try {
+      await this.ensureDefaultDataForUser(userId);
+      const [updated] = await db.update(mealPlans)
+        .set(updates)
+        .where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)))
+        .returning();
+      
+      if (!updated) {
+        throw new Error("Meal plan not found");
+      }
+      
+      return updated;
+    } catch (error) {
+      console.error(`Error updating meal plan ${id}:`, error);
+      throw new Error('Failed to update meal plan');
     }
-    
-    return updated;
   }
 
   async deleteMealPlan(userId: string, id: string): Promise<void> {
-    await this.ensureDefaultDataForUser(userId);
-    await db.delete(mealPlans).where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)));
+    try {
+      await this.ensureDefaultDataForUser(userId);
+      await db.delete(mealPlans).where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)));
+    } catch (error) {
+      console.error(`Error deleting meal plan ${id}:`, error);
+      throw new Error('Failed to delete meal plan');
+    }
   }
 
   async logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>): Promise<ApiUsageLog> {
-    const [newLog] = await db.insert(apiUsageLogs).values({ ...log, userId }).returning();
-    return newLog;
+    try {
+      const [newLog] = await db.insert(apiUsageLogs).values({ ...log, userId }).returning();
+      return newLog;
+    } catch (error) {
+      console.error('Error logging API usage:', error);
+      throw new Error('Failed to log API usage');
+    }
   }
 
   async getApiUsageLogs(userId: string, apiName?: string, limit: number = 100): Promise<ApiUsageLog[]> {
-    const conditions = apiName 
-      ? and(eq(apiUsageLogs.userId, userId), eq(apiUsageLogs.apiName, apiName))
-      : eq(apiUsageLogs.userId, userId);
-    
-    const logs = await db.select().from(apiUsageLogs)
-      .where(conditions)
-      .orderBy(sql`${apiUsageLogs.timestamp} DESC`)
-      .limit(limit);
-    return logs;
+    try {
+      const conditions = apiName 
+        ? and(eq(apiUsageLogs.userId, userId), eq(apiUsageLogs.apiName, apiName))
+        : eq(apiUsageLogs.userId, userId);
+      
+      const logs = await db.select().from(apiUsageLogs)
+        .where(conditions)
+        .orderBy(sql`${apiUsageLogs.timestamp} DESC`)
+        .limit(limit);
+      return logs;
+    } catch (error) {
+      console.error(`Error getting API usage logs for user ${userId}:`, error);
+      throw new Error('Failed to retrieve API usage logs');
+    }
   }
 
   async getApiUsageStats(userId: string, apiName: string, days: number = 30): Promise<{ totalCalls: number; successfulCalls: number; failedCalls: number }> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    
-    const logs = await db.select().from(apiUsageLogs).where(
-      and(
-        eq(apiUsageLogs.userId, userId),
-        eq(apiUsageLogs.apiName, apiName),
-        sql`${apiUsageLogs.timestamp} >= ${cutoffDate.toISOString()}`
-      )
-    );
-    
-    const totalCalls = logs.length;
-    const successfulCalls = logs.filter(log => log.success).length;
-    const failedCalls = totalCalls - successfulCalls;
-    
-    return { totalCalls, successfulCalls, failedCalls };
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      const logs = await db.select().from(apiUsageLogs).where(
+        and(
+          eq(apiUsageLogs.userId, userId),
+          eq(apiUsageLogs.apiName, apiName),
+          sql`${apiUsageLogs.timestamp} >= ${cutoffDate.toISOString()}`
+        )
+      );
+      
+      const totalCalls = logs.length;
+      const successfulCalls = logs.filter(log => log.success).length;
+      const failedCalls = totalCalls - successfulCalls;
+      
+      return { totalCalls, successfulCalls, failedCalls };
+    } catch (error) {
+      console.error(`Error getting API usage stats for user ${userId}:`, error);
+      throw new Error('Failed to retrieve API usage stats');
+    }
   }
 }
 
