@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { NutritionFactsLabel } from "./nutrition-facts-label";
 import type { FoodItem, NutritionInfo } from "@shared/schema";
@@ -33,6 +34,9 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Nutrition Facts</DialogTitle>
+          <DialogDescription>
+            Nutritional information for {item.name}
+          </DialogDescription>
         </DialogHeader>
         <div className="flex justify-center py-4">
           <NutritionFactsLabel nutrition={nutrition} foodName={item.name} />

@@ -285,26 +285,37 @@ When asked for recipes, consider the available inventory and appliances.`;
 
       let fullResponse = '';
 
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        if (content) {
-          fullResponse += content;
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      try {
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          if (content) {
+            fullResponse += content;
+            res.write(`data: ${JSON.stringify({ content })}\n\n`);
+          }
         }
+
+        // Save AI response
+        await storage.createChatMessage({
+          role: "assistant",
+          content: fullResponse,
+          metadata: null,
+        });
+
+        res.write('data: [DONE]\n\n');
+        res.end();
+      } catch (streamError) {
+        console.error("Streaming error:", streamError);
+        res.write(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`);
+        res.end();
       }
-
-      // Save AI response
-      await storage.createChatMessage({
-        role: "assistant",
-        content: fullResponse,
-        metadata: null,
-      });
-
-      res.write('data: [DONE]\n\n');
-      res.end();
     } catch (error) {
       console.error("Chat error:", error);
-      res.status(500).json({ error: "Failed to process chat message" });
+      // Only send JSON error if headers haven't been set yet
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to process chat message" });
+      } else {
+        res.end();
+      }
     }
   });
 
