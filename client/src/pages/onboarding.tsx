@@ -3,17 +3,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ChefHat, X, Refrigerator, Snowflake, Pizza, UtensilsCrossed } from "lucide-react";
+import { ChefHat, X, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Plus, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const storageAreaOptions = [
+const defaultStorageAreaOptions = [
   { name: "Fridge", icon: Refrigerator },
   { name: "Freezer", icon: Snowflake },
   { name: "Pantry", icon: Pizza },
@@ -36,6 +36,38 @@ const cookingSkillOptions = [
   { value: "advanced", label: "Advanced - I'm quite experienced" },
 ];
 
+const commonFoodItems = [
+  { name: "Salt", storage: "Pantry", quantity: "1", unit: "container", expiration: 730 },
+  { name: "Black Pepper", storage: "Pantry", quantity: "1", unit: "container", expiration: 730 },
+  { name: "Olive Oil", storage: "Pantry", quantity: "1", unit: "bottle", expiration: 365 },
+  { name: "All-Purpose Flour", storage: "Pantry", quantity: "5", unit: "lbs", expiration: 180 },
+  { name: "Sugar", storage: "Pantry", quantity: "5", unit: "lbs", expiration: 730 },
+  { name: "Rice", storage: "Pantry", quantity: "2", unit: "lbs", expiration: 365 },
+  { name: "Pasta", storage: "Pantry", quantity: "1", unit: "lb", expiration: 365 },
+  { name: "Canned Tomatoes", storage: "Pantry", quantity: "2", unit: "cans", expiration: 365 },
+  { name: "Onions", storage: "Pantry", quantity: "3", unit: "whole", expiration: 30 },
+  { name: "Garlic", storage: "Pantry", quantity: "1", unit: "bulb", expiration: 30 },
+  { name: "Chicken Broth", storage: "Pantry", quantity: "2", unit: "cans", expiration: 365 },
+  { name: "Soy Sauce", storage: "Pantry", quantity: "1", unit: "bottle", expiration: 730 },
+  { name: "Milk", storage: "Fridge", quantity: "1", unit: "gallon", expiration: 7 },
+  { name: "Eggs", storage: "Fridge", quantity: "12", unit: "count", expiration: 21 },
+  { name: "Butter", storage: "Fridge", quantity: "1", unit: "lb", expiration: 60 },
+  { name: "Cheddar Cheese", storage: "Fridge", quantity: "8", unit: "oz", expiration: 30 },
+  { name: "Carrots", storage: "Fridge", quantity: "1", unit: "lb", expiration: 21 },
+  { name: "Bell Peppers", storage: "Fridge", quantity: "2", unit: "whole", expiration: 7 },
+  { name: "Lettuce", storage: "Fridge", quantity: "1", unit: "head", expiration: 7 },
+  { name: "Yogurt", storage: "Fridge", quantity: "4", unit: "cups", expiration: 14 },
+  { name: "Mayonnaise", storage: "Fridge", quantity: "1", unit: "jar", expiration: 90 },
+  { name: "Mustard", storage: "Fridge", quantity: "1", unit: "jar", expiration: 180 },
+  { name: "Ketchup", storage: "Fridge", quantity: "1", unit: "bottle", expiration: 180 },
+  { name: "Frozen Peas", storage: "Freezer", quantity: "1", unit: "bag", expiration: 365 },
+  { name: "Frozen Corn", storage: "Freezer", quantity: "1", unit: "bag", expiration: 365 },
+  { name: "Chicken Breast", storage: "Freezer", quantity: "2", unit: "lbs", expiration: 180 },
+  { name: "Ground Beef", storage: "Freezer", quantity: "1", unit: "lb", expiration: 120 },
+  { name: "Frozen Pizza", storage: "Freezer", quantity: "1", unit: "whole", expiration: 180 },
+  { name: "Ice Cream", storage: "Freezer", quantity: "1", unit: "pint", expiration: 90 },
+];
+
 const preferenceSchema = z.object({
   storageAreasEnabled: z.array(z.string()).min(1, "Please select at least one storage area"),
   householdSize: z.number().int().min(1).max(20),
@@ -52,6 +84,9 @@ export default function Onboarding() {
   const [selectedStorageAreas, setSelectedStorageAreas] = useState<string[]>([
     "Fridge", "Freezer", "Pantry", "Counter"
   ]);
+  const [customStorageAreas, setCustomStorageAreas] = useState<string[]>([]);
+  const [customStorageInput, setCustomStorageInput] = useState("");
+  const [selectedCommonItems, setSelectedCommonItems] = useState<string[]>([]);
   const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [foodToAvoid, setFoodToAvoid] = useState("");
@@ -73,25 +108,59 @@ export default function Onboarding() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
-      const response = await fetch("/api/user/preferences", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          hasCompletedOnboarding: true,
-        }),
+      // Step 1: Save user preferences
+      const preferences = await apiRequest("PUT", "/api/user/preferences", {
+        ...data,
+        hasCompletedOnboarding: true,
       });
-      if (!response.ok) throw new Error("Failed to save preferences");
-      return response.json();
+
+      // Step 2: Create custom storage locations
+      for (const customArea of customStorageAreas) {
+        await apiRequest("POST", "/api/storage-locations", {
+          name: customArea,
+          icon: "package",
+        });
+      }
+
+      // Step 3: Get all storage locations to map names to IDs
+      const locations = await apiRequest("GET", "/api/storage-locations", null) as unknown as any[];
+      
+      const locationMap = new Map(
+        locations.map((loc: any) => [loc.name, loc.id])
+      );
+
+      // Step 4: Create selected common food items
+      for (const itemName of selectedCommonItems) {
+        const itemData = commonFoodItems.find(item => item.name === itemName);
+        if (!itemData) continue;
+
+        const storageLocationId = locationMap.get(itemData.storage);
+        if (!storageLocationId) continue;
+
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + itemData.expiration);
+
+        await apiRequest("POST", "/api/food-items", {
+          name: itemData.name,
+          quantity: parseFloat(itemData.quantity),
+          unit: itemData.unit,
+          storageLocationId,
+          expirationDate: expirationDate.toISOString(),
+        });
+      }
+
+      return preferences;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       window.location.href = "/";
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to save preferences. Please try again.",
+        description: error.message || "Failed to save preferences. Please try again.",
         variant: "destructive",
       });
     },
@@ -103,6 +172,32 @@ export default function Onboarding() {
       : [...selectedStorageAreas, area];
     setSelectedStorageAreas(newSelected);
     form.setValue("storageAreasEnabled", newSelected);
+  };
+
+  const addCustomStorageArea = () => {
+    const trimmed = customStorageInput.trim();
+    if (trimmed && !customStorageAreas.includes(trimmed) && !selectedStorageAreas.includes(trimmed)) {
+      const newCustomAreas = [...customStorageAreas, trimmed];
+      setCustomStorageAreas(newCustomAreas);
+      const newSelected = [...selectedStorageAreas, trimmed];
+      setSelectedStorageAreas(newSelected);
+      form.setValue("storageAreasEnabled", newSelected);
+      setCustomStorageInput("");
+    }
+  };
+
+  const removeCustomStorageArea = (area: string) => {
+    setCustomStorageAreas(customStorageAreas.filter(a => a !== area));
+    const newSelected = selectedStorageAreas.filter(s => s !== area);
+    setSelectedStorageAreas(newSelected);
+    form.setValue("storageAreasEnabled", newSelected);
+  };
+
+  const toggleCommonItem = (itemName: string) => {
+    const newSelected = selectedCommonItems.includes(itemName)
+      ? selectedCommonItems.filter(i => i !== itemName)
+      : [...selectedCommonItems, itemName];
+    setSelectedCommonItems(newSelected);
   };
 
   const toggleDietary = (option: string) => {
@@ -159,10 +254,10 @@ export default function Onboarding() {
               <div className="space-y-4">
                 <FormLabel>Which storage areas do you have? (Pre-selected for you)</FormLabel>
                 <FormDescription>
-                  These are already selected. Deselect any you don't have.
+                  These are already selected. Deselect any you don't have, or add your own custom storage areas.
                 </FormDescription>
                 <div className="flex flex-wrap gap-2">
-                  {storageAreaOptions.map((area) => {
+                  {defaultStorageAreaOptions.map((area) => {
                     const Icon = area.icon;
                     return (
                       <Badge
@@ -180,12 +275,123 @@ export default function Onboarding() {
                       </Badge>
                     );
                   })}
+                  {customStorageAreas.map((area) => (
+                    <Badge
+                      key={area}
+                      variant="default"
+                      className="cursor-pointer hover-elevate active-elevate-2 gap-1.5"
+                      onClick={() => removeCustomStorageArea(area)}
+                      data-testid={`badge-custom-storage-${area.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      <Package className="w-3.5 h-3.5" />
+                      {area}
+                      <X className="w-3 h-3 ml-0.5" />
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Add custom storage (e.g., Wine Cellar, Garage Fridge)"
+                    value={customStorageInput}
+                    onChange={(e) => setCustomStorageInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomStorageArea();
+                      }
+                    }}
+                    data-testid="input-custom-storage"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addCustomStorageArea}
+                    data-testid="button-add-custom-storage"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
                 </div>
                 {form.formState.errors.storageAreasEnabled && (
                   <p className="text-sm text-destructive">
                     {form.formState.errors.storageAreasEnabled.message}
                   </p>
                 )}
+              </div>
+
+              <div className="space-y-4">
+                <FormLabel>Quick-Add Common Items (Optional)</FormLabel>
+                <FormDescription>
+                  Select items you already have to save time setting up your inventory. You can add more items later.
+                </FormDescription>
+                
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Pantry Staples</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {commonFoodItems.filter(item => item.storage === "Pantry").map((item) => (
+                        <Badge
+                          key={item.name}
+                          variant={selectedCommonItems.includes(item.name) ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => toggleCommonItem(item.name)}
+                          data-testid={`badge-common-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        >
+                          {item.name}
+                          {selectedCommonItems.includes(item.name) && (
+                            <X className="w-3 h-3 ml-1" />
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Refrigerator Items</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {commonFoodItems.filter(item => item.storage === "Fridge").map((item) => (
+                        <Badge
+                          key={item.name}
+                          variant={selectedCommonItems.includes(item.name) ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => toggleCommonItem(item.name)}
+                          data-testid={`badge-common-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        >
+                          {item.name}
+                          {selectedCommonItems.includes(item.name) && (
+                            <X className="w-3 h-3 ml-1" />
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Freezer Items</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {commonFoodItems.filter(item => item.storage === "Freezer").map((item) => (
+                        <Badge
+                          key={item.name}
+                          variant={selectedCommonItems.includes(item.name) ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => toggleCommonItem(item.name)}
+                          data-testid={`badge-common-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        >
+                          {item.name}
+                          {selectedCommonItems.includes(item.name) && (
+                            <X className="w-3 h-3 ml-1" />
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {selectedCommonItems.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {selectedCommonItems.length} item{selectedCommonItems.length !== 1 ? 's' : ''} selected
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -14,7 +14,8 @@ import {
   insertRecipeSchema,
   insertApplianceSchema,
   insertMealPlanSchema,
-  insertUserPreferencesSchema
+  insertUserPreferencesSchema,
+  insertStorageLocationSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -65,6 +66,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(locations);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch storage locations" });
+    }
+  });
+
+  app.post("/api/storage-locations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validated = insertStorageLocationSchema.parse(req.body);
+      const location = await storage.createStorageLocation(userId, validated);
+      res.json(location);
+    } catch (error) {
+      console.error("Error creating storage location:", error);
+      res.status(400).json({ error: "Invalid storage location data" });
     }
   });
 
