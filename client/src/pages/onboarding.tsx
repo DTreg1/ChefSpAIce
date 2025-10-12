@@ -167,6 +167,25 @@ export default function Onboarding() {
     },
   });
 
+  const skipMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PUT", "/api/user/preferences", {
+        hasCompletedOnboarding: true,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
+      window.location.href = "/";
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to skip onboarding. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const toggleStorageArea = (area: string) => {
     const newSelected = selectedStorageAreas.includes(area)
       ? selectedStorageAreas.filter(s => s !== area)
