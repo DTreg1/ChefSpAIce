@@ -174,7 +174,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
     addItemMutation.mutate({
       name: selectedFood?.description || searchQuery,
-      fcdId: selectedFood?.fdcId?.toString() || "N/A",
+      fcdId: selectedFood?.fdcId?.toString() || null,
       quantity,
       unit,
       storageLocationId,
