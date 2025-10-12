@@ -130,24 +130,51 @@ export default function Onboarding() {
         locations.map((loc: any) => [loc.name, loc.id])
       );
 
-      // Step 4: Create selected common food items
+      // Step 4: Create selected common food items with enriched USDA data
       for (const itemName of selectedCommonItems) {
-        const itemData = commonFoodItems.find(item => item.name === itemName);
-        if (!itemData) continue;
+        try {
+          // Fetch enriched USDA data for this item
+          const enrichedResponse = await apiRequest("GET", `/api/onboarding/enriched-item/${encodeURIComponent(itemName)}`, null);
+          const enrichedData = await enrichedResponse.json();
+          
+          const storageLocationId = locationMap.get(enrichedData.storage);
+          if (!storageLocationId) continue;
 
-        const storageLocationId = locationMap.get(itemData.storage);
-        if (!storageLocationId) continue;
+          const expirationDate = new Date();
+          expirationDate.setDate(expirationDate.getDate() + enrichedData.expirationDays);
 
-        const expirationDate = new Date();
-        expirationDate.setDate(expirationDate.getDate() + itemData.expiration);
+          // Create the food item with full USDA data
+          await apiRequest("POST", "/api/food-items", {
+            name: enrichedData.name,
+            quantity: enrichedData.quantity,
+            unit: enrichedData.unit,
+            storageLocationId,
+            expirationDate: expirationDate.toISOString(),
+            fcdId: enrichedData.fcdId,
+            nutrition: enrichedData.nutrition,
+            usdaData: enrichedData.usdaData,
+          });
+        } catch (error) {
+          // If enrichment fails, fall back to basic data
+          console.warn(`Failed to get enriched data for ${itemName}, using basic data:`, error);
+          
+          const itemData = commonFoodItems.find(item => item.name === itemName);
+          if (!itemData) continue;
 
-        await apiRequest("POST", "/api/food-items", {
-          name: itemData.name,
-          quantity: itemData.quantity,
-          unit: itemData.unit,
-          storageLocationId,
-          expirationDate: expirationDate.toISOString(),
-        });
+          const storageLocationId = locationMap.get(itemData.storage);
+          if (!storageLocationId) continue;
+
+          const expirationDate = new Date();
+          expirationDate.setDate(expirationDate.getDate() + itemData.expiration);
+
+          await apiRequest("POST", "/api/food-items", {
+            name: itemData.name,
+            quantity: itemData.quantity,
+            unit: itemData.unit,
+            storageLocationId,
+            expirationDate: expirationDate.toISOString(),
+          });
+        }
       }
 
       return preferences;
