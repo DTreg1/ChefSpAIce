@@ -16,6 +16,7 @@ import { Search, Upload, ImageOff } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ObjectUploader } from "./ObjectUploader";
+import { BarcodeRateLimitInfo } from "./barcode-rate-limit-info";
 import type { StorageLocation, USDASearchResponse, InsertFoodItem } from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 
@@ -115,6 +116,7 @@ function getSuggestedStorageLocation(category?: string, description?: string, st
 export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<any>(null);
+  const [selectedUpc, setSelectedUpc] = useState<string | null>(null);
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [storageLocationId, setStorageLocationId] = useState("");
@@ -166,6 +168,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const handleClose = () => {
     setSearchQuery("");
     setSelectedFood(null);
+    setSelectedUpc(null);
     setQuantity("");
     setUnit("");
     setStorageLocationId("");
@@ -199,19 +202,45 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   };
 
   const handleSearchBarcodeLookup = async () => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery.trim() && !selectedUpc) {
       toast({
         title: "Search required",
-        description: "Please enter a food item name to search",
+        description: "Please select a food item first",
         variant: "destructive",
       });
       return;
     }
     
     try {
-      const response = await apiRequest("GET", `/api/barcodelookup/search?query=${encodeURIComponent(searchQuery)}`, null);
+      let response;
+      let searchMethod = "";
+      
+      // If we have a UPC barcode, use it for direct lookup
+      if (selectedUpc) {
+        searchMethod = `UPC ${selectedUpc}`;
+        response = await apiRequest("GET", `/api/barcodelookup/product/${encodeURIComponent(selectedUpc)}`, null);
+      } else {
+        // Otherwise fall back to text search with simplified query
+        const simplifiedQuery = selectedFood?.brandOwner 
+          ? `${selectedFood.brandOwner} ${searchQuery.split(',')[0].trim()}`.trim()
+          : searchQuery.split(',')[0].trim();
+        searchMethod = `search "${simplifiedQuery}"`;
+        response = await apiRequest("GET", `/api/barcodelookup/search?query=${encodeURIComponent(simplifiedQuery)}`, null);
+      }
+      
       const data = await response.json();
-      if (data.products && data.products.length > 0 && data.products[0].imageUrl) {
+      
+      // Handle direct product lookup response
+      if (data.imageUrl) {
+        setImageUrl(data.imageUrl);
+        setImageSource("branded");
+        toast({
+          title: "Product image found",
+          description: `Found image using ${searchMethod}`,
+        });
+      } 
+      // Handle search results response
+      else if (data.products && data.products.length > 0 && data.products[0].imageUrl) {
         setImageUrl(data.products[0].imageUrl);
         setImageSource("branded");
         toast({
@@ -221,7 +250,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       } else {
         toast({
           title: "No image found",
-          description: "No product images found for this search",
+          description: "No product images found. Try uploading your own photo.",
           variant: "destructive",
         });
       }
@@ -302,6 +331,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                     key={food.fdcId}
                     onClick={() => {
                       setSelectedFood(food);
+                      setSelectedUpc(food.gtinUpc || null);
                       setSearchQuery(food.description);
                       // Auto-fill serving size if available
                       if (food.servingSize && food.servingSizeUnit) {
@@ -333,6 +363,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                       {food.brandOwner && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
                           {food.brandOwner}
+                        </span>
+                      )}
+                      {food.gtinUpc && (
+                        <span className="text-xs bg-green-500/10 text-green-600 dark:text-green-400 px-2 py-0.5 rounded font-mono">
+                          UPC: {food.gtinUpc}
                         </span>
                       )}
                       {food.foodCategory && (
@@ -434,9 +469,12 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                 No image will be added to this item
               </TabsContent>
 
-              <TabsContent value="branded" className="space-y-2">
+              <TabsContent value="branded" className="space-y-3">
+                <BarcodeRateLimitInfo />
                 <p className="text-sm text-muted-foreground">
-                  Search for branded product images from Barcode Lookup database
+                  {selectedUpc 
+                    ? `Will search using UPC barcode: ${selectedUpc}` 
+                    : "Search for branded product images from Barcode Lookup database"}
                 </p>
                 <Button
                   type="button"
@@ -446,7 +484,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                   data-testid="button-search-product-image"
                 >
                   <Search className="w-4 h-4 mr-2" />
-                  Search for Product Image
+                  {selectedUpc ? "Find Product by UPC" : "Search for Product Image"}
                 </Button>
                 {imageUrl && imageSource === "branded" && (
                   <div className="mt-2 p-2 border border-border rounded-lg">
