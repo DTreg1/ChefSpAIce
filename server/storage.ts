@@ -1,4 +1,9 @@
+// Referenced from blueprint:javascript_log_in_with_replit - Added user operations and user-scoped data
 import { 
+  type User,
+  type UpsertUser,
+  type UserPreferences,
+  type InsertUserPreferences,
   type StorageLocation, 
   type InsertStorageLocation,
   type Appliance,
@@ -13,6 +18,8 @@ import {
   type InsertExpirationNotification,
   type MealPlan,
   type InsertMealPlan,
+  users,
+  userPreferences,
   storageLocations,
   appliances,
   foodItems,
@@ -22,98 +29,151 @@ import {
   mealPlans
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and, lte } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 
 export interface IStorage {
-  // Storage Locations
-  getStorageLocations(): Promise<StorageLocation[]>;
-  getStorageLocation(id: string): Promise<StorageLocation | undefined>;
-  createStorageLocation(location: InsertStorageLocation): Promise<StorageLocation>;
-  updateStorageLocationCount(id: string, count: number): Promise<void>;
+  // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  
+  // User Preferences
+  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
+  upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
+  
+  // Storage Locations (user-scoped)
+  getStorageLocations(userId: string): Promise<StorageLocation[]>;
+  getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined>;
+  createStorageLocation(userId: string, location: Omit<InsertStorageLocation, 'userId'>): Promise<StorageLocation>;
+  updateStorageLocationCount(userId: string, id: string, count: number): Promise<void>;
 
-  // Appliances
-  getAppliances(): Promise<Appliance[]>;
-  createAppliance(appliance: InsertAppliance): Promise<Appliance>;
-  deleteAppliance(id: string): Promise<void>;
+  // Appliances (user-scoped)
+  getAppliances(userId: string): Promise<Appliance[]>;
+  createAppliance(userId: string, appliance: Omit<InsertAppliance, 'userId'>): Promise<Appliance>;
+  deleteAppliance(userId: string, id: string): Promise<void>;
 
-  // Food Items
-  getFoodItems(storageLocationId?: string): Promise<FoodItem[]>;
-  getFoodItem(id: string): Promise<FoodItem | undefined>;
-  createFoodItem(item: InsertFoodItem): Promise<FoodItem>;
-  updateFoodItem(id: string, item: Partial<InsertFoodItem>): Promise<FoodItem>;
-  deleteFoodItem(id: string): Promise<void>;
+  // Food Items (user-scoped)
+  getFoodItems(userId: string, storageLocationId?: string): Promise<FoodItem[]>;
+  getFoodItem(userId: string, id: string): Promise<FoodItem | undefined>;
+  createFoodItem(userId: string, item: Omit<InsertFoodItem, 'userId'>): Promise<FoodItem>;
+  updateFoodItem(userId: string, id: string, item: Partial<Omit<InsertFoodItem, 'userId'>>): Promise<FoodItem>;
+  deleteFoodItem(userId: string, id: string): Promise<void>;
 
-  // Chat Messages
-  getChatMessages(): Promise<ChatMessage[]>;
-  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  // Chat Messages (user-scoped)
+  getChatMessages(userId: string): Promise<ChatMessage[]>;
+  createChatMessage(userId: string, message: Omit<InsertChatMessage, 'userId'>): Promise<ChatMessage>;
 
-  // Recipes
-  getRecipes(): Promise<Recipe[]>;
-  getRecipe(id: string): Promise<Recipe | undefined>;
-  createRecipe(recipe: InsertRecipe): Promise<Recipe>;
-  updateRecipe(id: string, updates: Partial<Recipe>): Promise<Recipe>;
+  // Recipes (user-scoped)
+  getRecipes(userId: string): Promise<Recipe[]>;
+  getRecipe(userId: string, id: string): Promise<Recipe | undefined>;
+  createRecipe(userId: string, recipe: Omit<InsertRecipe, 'userId'>): Promise<Recipe>;
+  updateRecipe(userId: string, id: string, updates: Partial<Recipe>): Promise<Recipe>;
 
-  // Expiration Notifications
-  getExpirationNotifications(): Promise<ExpirationNotification[]>;
-  createExpirationNotification(notification: InsertExpirationNotification): Promise<ExpirationNotification>;
-  dismissNotification(id: string): Promise<void>;
-  getExpiringItems(daysThreshold: number): Promise<FoodItem[]>;
+  // Expiration Notifications (user-scoped)
+  getExpirationNotifications(userId: string): Promise<ExpirationNotification[]>;
+  createExpirationNotification(userId: string, notification: Omit<InsertExpirationNotification, 'userId'>): Promise<ExpirationNotification>;
+  dismissNotification(userId: string, id: string): Promise<void>;
+  getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]>;
 
-  // Meal Plans
-  getMealPlans(startDate?: string, endDate?: string): Promise<MealPlan[]>;
-  getMealPlan(id: string): Promise<MealPlan | undefined>;
-  createMealPlan(plan: InsertMealPlan): Promise<MealPlan>;
-  updateMealPlan(id: string, updates: Partial<InsertMealPlan>): Promise<MealPlan>;
-  deleteMealPlan(id: string): Promise<void>;
+  // Meal Plans (user-scoped)
+  getMealPlans(userId: string, startDate?: string, endDate?: string): Promise<MealPlan[]>;
+  getMealPlan(userId: string, id: string): Promise<MealPlan | undefined>;
+  createMealPlan(userId: string, plan: Omit<InsertMealPlan, 'userId'>): Promise<MealPlan>;
+  updateMealPlan(userId: string, id: string, updates: Partial<Omit<InsertMealPlan, 'userId'>>): Promise<MealPlan>;
+  deleteMealPlan(userId: string, id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
-  private initialized = false;
+  private userInitialized = new Set<string>();
 
-  private async ensureDefaultData() {
-    if (this.initialized) return;
+  private async ensureDefaultDataForUser(userId: string) {
+    if (this.userInitialized.has(userId)) return;
     
-    // Check if storage locations exist
-    const existingLocations = await db.select().from(storageLocations);
+    // Check if user has storage locations
+    const existingLocations = await db.select().from(storageLocations).where(eq(storageLocations.userId, userId));
     
     if (existingLocations.length === 0) {
-      // Initialize default storage locations
+      // Initialize default storage locations for this user
       const defaultLocations = [
-        { name: "Fridge", icon: "refrigerator", itemCount: 0 },
-        { name: "Freezer", icon: "snowflake", itemCount: 0 },
-        { name: "Pantry", icon: "pizza", itemCount: 0 },
-        { name: "Counter", icon: "utensils-crossed", itemCount: 0 },
+        { userId, name: "Fridge", icon: "refrigerator", itemCount: 0 },
+        { userId, name: "Freezer", icon: "snowflake", itemCount: 0 },
+        { userId, name: "Pantry", icon: "pizza", itemCount: 0 },
+        { userId, name: "Counter", icon: "utensils-crossed", itemCount: 0 },
       ];
 
       await db.insert(storageLocations).values(defaultLocations);
 
-      // Initialize default appliances
+      // Initialize default appliances for this user
       const defaultAppliances = [
-        { name: "Oven", type: "cooking" },
-        { name: "Stove", type: "cooking" },
-        { name: "Microwave", type: "cooking" },
-        { name: "Air Fryer", type: "cooking" },
+        { userId, name: "Oven", type: "cooking" },
+        { userId, name: "Stove", type: "cooking" },
+        { userId, name: "Microwave", type: "cooking" },
+        { userId, name: "Air Fryer", type: "cooking" },
       ];
 
       await db.insert(appliances).values(defaultAppliances);
     }
     
-    this.initialized = true;
+    this.userInitialized.add(userId);
+  }
+
+  // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // User Preferences
+  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+    const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+    return preferences;
+  }
+
+  async upsertUserPreferences(preferencesData: InsertUserPreferences): Promise<UserPreferences> {
+    const [preferences] = await db
+      .insert(userPreferences)
+      .values(preferencesData)
+      .onConflictDoUpdate({
+        target: userPreferences.userId,
+        set: {
+          ...preferencesData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return preferences;
   }
 
   // Storage Locations
-  async getStorageLocations(): Promise<StorageLocation[]> {
-    await this.ensureDefaultData();
+  async getStorageLocations(userId: string): Promise<StorageLocation[]> {
+    await this.ensureDefaultDataForUser(userId);
     
     // Get item counts dynamically
-    const locations = await db.select().from(storageLocations);
+    const locations = await db.select().from(storageLocations).where(eq(storageLocations.userId, userId));
     
     const locationsWithCounts = await Promise.all(
       locations.map(async (location) => {
         const [result] = await db
           .select({ count: sql<number>`count(*)::int` })
           .from(foodItems)
-          .where(eq(foodItems.storageLocationId, location.id));
+          .where(and(
+            eq(foodItems.storageLocationId, location.id),
+            eq(foodItems.userId, userId)
+          ));
         
         return {
           ...location,
@@ -125,71 +185,77 @@ export class DatabaseStorage implements IStorage {
     return locationsWithCounts;
   }
 
-  async getStorageLocation(id: string): Promise<StorageLocation | undefined> {
-    await this.ensureDefaultData();
-    const [location] = await db.select().from(storageLocations).where(eq(storageLocations.id, id));
+  async getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined> {
+    await this.ensureDefaultDataForUser(userId);
+    const [location] = await db.select().from(storageLocations).where(
+      and(eq(storageLocations.id, id), eq(storageLocations.userId, userId))
+    );
     return location || undefined;
   }
 
-  async createStorageLocation(location: InsertStorageLocation): Promise<StorageLocation> {
+  async createStorageLocation(userId: string, location: Omit<InsertStorageLocation, 'userId'>): Promise<StorageLocation> {
     const [newLocation] = await db
       .insert(storageLocations)
-      .values(location)
+      .values({ ...location, userId })
       .returning();
     return newLocation;
   }
 
-  async updateStorageLocationCount(id: string, count: number): Promise<void> {
+  async updateStorageLocationCount(userId: string, id: string, count: number): Promise<void> {
     await db
       .update(storageLocations)
       .set({ itemCount: count })
-      .where(eq(storageLocations.id, id));
+      .where(and(eq(storageLocations.id, id), eq(storageLocations.userId, userId)));
   }
 
   // Appliances
-  async getAppliances(): Promise<Appliance[]> {
-    await this.ensureDefaultData();
-    return db.select().from(appliances);
+  async getAppliances(userId: string): Promise<Appliance[]> {
+    await this.ensureDefaultDataForUser(userId);
+    return db.select().from(appliances).where(eq(appliances.userId, userId));
   }
 
-  async createAppliance(appliance: InsertAppliance): Promise<Appliance> {
+  async createAppliance(userId: string, appliance: Omit<InsertAppliance, 'userId'>): Promise<Appliance> {
     const [newAppliance] = await db
       .insert(appliances)
-      .values(appliance)
+      .values({ ...appliance, userId })
       .returning();
     return newAppliance;
   }
 
-  async deleteAppliance(id: string): Promise<void> {
-    await db.delete(appliances).where(eq(appliances.id, id));
+  async deleteAppliance(userId: string, id: string): Promise<void> {
+    await db.delete(appliances).where(and(eq(appliances.id, id), eq(appliances.userId, userId)));
   }
 
   // Food Items
-  async getFoodItems(storageLocationId?: string): Promise<FoodItem[]> {
+  async getFoodItems(userId: string, storageLocationId?: string): Promise<FoodItem[]> {
     if (storageLocationId) {
-      return db.select().from(foodItems).where(eq(foodItems.storageLocationId, storageLocationId));
+      return db.select().from(foodItems).where(
+        and(eq(foodItems.storageLocationId, storageLocationId), eq(foodItems.userId, userId))
+      );
     }
-    return db.select().from(foodItems);
+    return db.select().from(foodItems).where(eq(foodItems.userId, userId));
   }
 
-  async getFoodItem(id: string): Promise<FoodItem | undefined> {
-    const [item] = await db.select().from(foodItems).where(eq(foodItems.id, id));
+  async getFoodItem(userId: string, id: string): Promise<FoodItem | undefined> {
+    const [item] = await db.select().from(foodItems).where(
+      and(eq(foodItems.id, id), eq(foodItems.userId, userId))
+    );
     return item || undefined;
   }
 
-  async createFoodItem(item: InsertFoodItem): Promise<FoodItem> {
+  async createFoodItem(userId: string, item: Omit<InsertFoodItem, 'userId'>): Promise<FoodItem> {
     const [newItem] = await db
       .insert(foodItems)
-      .values(item)
+      .values({ ...item, userId })
       .returning();
     return newItem;
   }
 
-  async updateFoodItem(id: string, item: Partial<InsertFoodItem>): Promise<FoodItem> {
+  async updateFoodItem(userId: string, id: string, item: Partial<Omit<InsertFoodItem, 'userId'>>): Promise<FoodItem> {
     const [updated] = await db
       .update(foodItems)
       .set(item)
-      .where(eq(foodItems.id, id))
+      .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)))
       .returning();
     
     if (!updated) {
@@ -199,46 +265,52 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async deleteFoodItem(id: string): Promise<void> {
-    await db.delete(foodItems).where(eq(foodItems.id, id));
+  async deleteFoodItem(userId: string, id: string): Promise<void> {
+    await db.delete(foodItems).where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)));
   }
 
   // Chat Messages
-  async getChatMessages(): Promise<ChatMessage[]> {
-    return db.select().from(chatMessages).orderBy(chatMessages.timestamp);
+  async getChatMessages(userId: string): Promise<ChatMessage[]> {
+    return db.select().from(chatMessages)
+      .where(eq(chatMessages.userId, userId))
+      .orderBy(chatMessages.timestamp);
   }
 
-  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+  async createChatMessage(userId: string, message: Omit<InsertChatMessage, 'userId'>): Promise<ChatMessage> {
     const [newMessage] = await db
       .insert(chatMessages)
-      .values(message)
+      .values({ ...message, userId })
       .returning();
     return newMessage;
   }
 
   // Recipes
-  async getRecipes(): Promise<Recipe[]> {
-    return db.select().from(recipes).orderBy(sql`${recipes.createdAt} DESC`);
+  async getRecipes(userId: string): Promise<Recipe[]> {
+    return db.select().from(recipes)
+      .where(eq(recipes.userId, userId))
+      .orderBy(sql`${recipes.createdAt} DESC`);
   }
 
-  async getRecipe(id: string): Promise<Recipe | undefined> {
-    const [recipe] = await db.select().from(recipes).where(eq(recipes.id, id));
+  async getRecipe(userId: string, id: string): Promise<Recipe | undefined> {
+    const [recipe] = await db.select().from(recipes).where(
+      and(eq(recipes.id, id), eq(recipes.userId, userId))
+    );
     return recipe || undefined;
   }
 
-  async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
+  async createRecipe(userId: string, recipe: Omit<InsertRecipe, 'userId'>): Promise<Recipe> {
     const [newRecipe] = await db
       .insert(recipes)
-      .values(recipe)
+      .values({ ...recipe, userId })
       .returning();
     return newRecipe;
   }
 
-  async updateRecipe(id: string, updates: Partial<Recipe>): Promise<Recipe> {
+  async updateRecipe(userId: string, id: string, updates: Partial<Recipe>): Promise<Recipe> {
     const [updated] = await db
       .update(recipes)
       .set(updates)
-      .where(eq(recipes.id, id))
+      .where(and(eq(recipes.id, id), eq(recipes.userId, userId)))
       .returning();
     
     if (!updated) {
@@ -249,31 +321,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Expiration Notifications
-  async getExpirationNotifications(): Promise<ExpirationNotification[]> {
+  async getExpirationNotifications(userId: string): Promise<ExpirationNotification[]> {
     return db.select()
       .from(expirationNotifications)
-      .where(eq(expirationNotifications.dismissed, false))
+      .where(and(
+        eq(expirationNotifications.userId, userId),
+        eq(expirationNotifications.dismissed, false)
+      ))
       .orderBy(expirationNotifications.daysUntilExpiry);
   }
 
-  async createExpirationNotification(notification: InsertExpirationNotification): Promise<ExpirationNotification> {
+  async createExpirationNotification(userId: string, notification: Omit<InsertExpirationNotification, 'userId'>): Promise<ExpirationNotification> {
     const [newNotification] = await db
       .insert(expirationNotifications)
-      .values(notification)
+      .values({ ...notification, userId })
       .returning();
     return newNotification;
   }
 
-  async dismissNotification(id: string): Promise<void> {
+  async dismissNotification(userId: string, id: string): Promise<void> {
     await db
       .update(expirationNotifications)
       .set({ dismissed: true })
-      .where(eq(expirationNotifications.id, id));
+      .where(and(eq(expirationNotifications.id, id), eq(expirationNotifications.userId, userId)));
   }
 
-  async getExpiringItems(daysThreshold: number): Promise<FoodItem[]> {
+  async getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]> {
     // Get items with expiration dates that are within the threshold
-    const items = await db.select().from(foodItems);
+    const items = await db.select().from(foodItems).where(eq(foodItems.userId, userId));
     
     const expiringItems = items.filter(item => {
       if (!item.expirationDate) return false;
@@ -289,10 +364,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Meal Plans
-  async getMealPlans(startDate?: string, endDate?: string): Promise<MealPlan[]> {
-    await this.ensureDefaultData();
+  async getMealPlans(userId: string, startDate?: string, endDate?: string): Promise<MealPlan[]> {
+    await this.ensureDefaultDataForUser(userId);
     
-    const plans = await db.select().from(mealPlans);
+    const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId));
     
     // Filter by date range if provided
     if (startDate || endDate) {
@@ -311,23 +386,25 @@ export class DatabaseStorage implements IStorage {
     return plans;
   }
 
-  async getMealPlan(id: string): Promise<MealPlan | undefined> {
-    await this.ensureDefaultData();
-    const [plan] = await db.select().from(mealPlans).where(eq(mealPlans.id, id));
+  async getMealPlan(userId: string, id: string): Promise<MealPlan | undefined> {
+    await this.ensureDefaultDataForUser(userId);
+    const [plan] = await db.select().from(mealPlans).where(
+      and(eq(mealPlans.id, id), eq(mealPlans.userId, userId))
+    );
     return plan || undefined;
   }
 
-  async createMealPlan(plan: InsertMealPlan): Promise<MealPlan> {
-    await this.ensureDefaultData();
-    const [newPlan] = await db.insert(mealPlans).values(plan).returning();
+  async createMealPlan(userId: string, plan: Omit<InsertMealPlan, 'userId'>): Promise<MealPlan> {
+    await this.ensureDefaultDataForUser(userId);
+    const [newPlan] = await db.insert(mealPlans).values({ ...plan, userId }).returning();
     return newPlan;
   }
 
-  async updateMealPlan(id: string, updates: Partial<InsertMealPlan>): Promise<MealPlan> {
-    await this.ensureDefaultData();
+  async updateMealPlan(userId: string, id: string, updates: Partial<Omit<InsertMealPlan, 'userId'>>): Promise<MealPlan> {
+    await this.ensureDefaultDataForUser(userId);
     const [updated] = await db.update(mealPlans)
       .set(updates)
-      .where(eq(mealPlans.id, id))
+      .where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)))
       .returning();
     
     if (!updated) {
@@ -337,9 +414,9 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async deleteMealPlan(id: string): Promise<void> {
-    await this.ensureDefaultData();
-    await db.delete(mealPlans).where(eq(mealPlans.id, id));
+  async deleteMealPlan(userId: string, id: string): Promise<void> {
+    await this.ensureDefaultDataForUser(userId);
+    await db.delete(mealPlans).where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)));
   }
 }
 
