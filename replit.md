@@ -112,3 +112,31 @@ Key architectural decisions include:
   - Canned/Packaged goods: 180 days (6 months)
   - Condiments/Sauces: 60 days (2 months)
   - Helper text reminds users to verify with package label
+
+### Enhanced Onboarding (October 2025)
+- **Storage Areas Pre-Selection**: Four default storage areas (Fridge, Freezer, Pantry, Counter) are pre-selected
+  - Users can deselect any areas they don't have
+  - At least one storage area must remain selected
+  - Icons displayed for each storage type for visual clarity
+- **Household Size**: Asks "How many people do you typically cook for?"
+  - Numeric input with default value of 2
+  - Helps tailor recipe serving sizes and suggestions
+- **Cooking Skills Assessment**: Users select their skill level
+  - Options: Beginner, Intermediate, Advanced
+  - AI tailors recipe complexity based on skill level
+  - Default is set to "Beginner"
+- **Unit Preferences**: Users choose measurement system
+  - Options: Imperial (cups, oz, °F) or Metric (ml, g, °C)
+  - Default is Imperial
+  - Affects all recipe measurements and nutritional displays
+- **Foods to Always Avoid**: Custom food avoidance list
+  - Add specific foods or ingredients to avoid in recipes
+  - Separate from allergens - for taste preferences or dietary choices
+  - Examples: cilantro, mushrooms, anchovies
+  - Displayed as removable badges
+- **Database Schema**: New fields in user_preferences table
+  - storage_areas_enabled: ARRAY of text
+  - household_size: integer (default 2)
+  - cooking_skill_level: text (default 'beginner')
+  - preferred_units: text (default 'imperial')
+  - foods_to_avoid: ARRAY of text
