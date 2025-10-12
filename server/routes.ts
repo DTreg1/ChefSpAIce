@@ -8,6 +8,7 @@ import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarco
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ApiError } from "./apiError";
+import { z } from "zod";
 import { 
   insertFoodItemSchema, 
   insertChatMessageSchema,
@@ -430,6 +431,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Define schema for chat message validation
+  const chatMessageRequestSchema = z.object({
+    message: z.string()
+      .min(1, "Message cannot be empty")
+      .max(10000, "Message is too long (max 10,000 characters)")
+      .trim()
+  });
+
   app.post("/api/chat", isAuthenticated, async (req: any, res) => {
     const abortController = new AbortController();
     
@@ -439,11 +448,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const userId = req.user.claims.sub;
-      const { message } = req.body;
       
-      if (!message || typeof message !== "string") {
-        return res.status(400).json({ error: "Message is required" });
+      // Validate request body using Zod
+      const validation = chatMessageRequestSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: "Invalid message format",
+          details: validation.error.issues 
+        });
       }
+      
+      const { message } = validation.data;
 
       // Save user message
       await storage.createChatMessage(userId, {
