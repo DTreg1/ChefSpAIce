@@ -21,15 +21,6 @@ import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
-  const { data: preferences, isLoading: prefLoading } = useQuery<{ hasCompletedOnboarding?: boolean }>({
-    queryKey: ["/api/user/preferences"],
-  });
-
-  // Show onboarding if user hasn't completed it
-  if (!prefLoading && (!preferences || !preferences.hasCompletedOnboarding)) {
-    return <Onboarding />;
-  }
-
   return (
     <Switch>
       <Route path="/" component={Chat} />
@@ -64,6 +55,10 @@ function Router() {
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { data: preferences, isLoading: prefLoading } = useQuery<{ hasCompletedOnboarding?: boolean }>({
+    queryKey: ["/api/user/preferences"],
+    enabled: isAuthenticated && !isLoading,
+  });
 
   const style = {
     "--sidebar-width": "20rem",
@@ -73,6 +68,11 @@ function AppContent() {
   // Show landing page layout for non-authenticated users
   if (isLoading || !isAuthenticated) {
     return <Router />;
+  }
+
+  // Show onboarding outside the main layout to allow scrolling
+  if (!prefLoading && (!preferences || !preferences.hasCompletedOnboarding)) {
+    return <Onboarding />;
   }
 
   // Show app layout with sidebar for authenticated users
