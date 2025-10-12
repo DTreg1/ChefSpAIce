@@ -18,6 +18,8 @@ import {
   type InsertExpirationNotification,
   type MealPlan,
   type InsertMealPlan,
+  type ApiUsageLog,
+  type InsertApiUsageLog,
   users,
   userPreferences,
   storageLocations,
@@ -26,7 +28,8 @@ import {
   chatMessages,
   recipes,
   expirationNotifications,
-  mealPlans
+  mealPlans,
+  apiUsageLogs
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -80,6 +83,11 @@ export interface IStorage {
   createMealPlan(userId: string, plan: Omit<InsertMealPlan, 'userId'>): Promise<MealPlan>;
   updateMealPlan(userId: string, id: string, updates: Partial<Omit<InsertMealPlan, 'userId'>>): Promise<MealPlan>;
   deleteMealPlan(userId: string, id: string): Promise<void>;
+
+  // API Usage Logs (user-scoped)
+  logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>): Promise<ApiUsageLog>;
+  getApiUsageLogs(userId: string, apiName?: string, limit?: number): Promise<ApiUsageLog[]>;
+  getApiUsageStats(userId: string, apiName: string, days?: number): Promise<{ totalCalls: number; successfulCalls: number; failedCalls: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -417,6 +425,42 @@ export class DatabaseStorage implements IStorage {
   async deleteMealPlan(userId: string, id: string): Promise<void> {
     await this.ensureDefaultDataForUser(userId);
     await db.delete(mealPlans).where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)));
+  }
+
+  async logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>): Promise<ApiUsageLog> {
+    const [newLog] = await db.insert(apiUsageLogs).values({ ...log, userId }).returning();
+    return newLog;
+  }
+
+  async getApiUsageLogs(userId: string, apiName?: string, limit: number = 100): Promise<ApiUsageLog[]> {
+    const conditions = apiName 
+      ? and(eq(apiUsageLogs.userId, userId), eq(apiUsageLogs.apiName, apiName))
+      : eq(apiUsageLogs.userId, userId);
+    
+    const logs = await db.select().from(apiUsageLogs)
+      .where(conditions)
+      .orderBy(sql`${apiUsageLogs.timestamp} DESC`)
+      .limit(limit);
+    return logs;
+  }
+
+  async getApiUsageStats(userId: string, apiName: string, days: number = 30): Promise<{ totalCalls: number; successfulCalls: number; failedCalls: number }> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    const logs = await db.select().from(apiUsageLogs).where(
+      and(
+        eq(apiUsageLogs.userId, userId),
+        eq(apiUsageLogs.apiName, apiName),
+        sql`${apiUsageLogs.timestamp} >= ${cutoffDate.toISOString()}`
+      )
+    );
+    
+    const totalCalls = logs.length;
+    const successfulCalls = logs.filter(log => log.success).length;
+    const failedCalls = totalCalls - successfulCalls;
+    
+    return { totalCalls, successfulCalls, failedCalls };
   }
 }
 

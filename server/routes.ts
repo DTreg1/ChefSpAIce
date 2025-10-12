@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
 import { searchUSDAFoods, getFoodByFdcId } from "./usda";
-import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl } from "./barcodelookup";
+import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits } from "./barcodelookup";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
@@ -186,9 +186,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Barcode Lookup - Product Images (public)
-  app.get("/api/barcodelookup/search", async (req, res) => {
+  app.get("/api/barcodelookup/search", async (req: any, res) => {
+    const userId = req.user?.claims?.sub;
+    const { query } = req.query;
+    
     try {
-      const { query } = req.query;
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
       }
@@ -203,20 +205,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: product.description
       }));
 
+      // Log successful API usage (HTTP 200 = success, regardless of result count)
+      if (userId) {
+        await storage.logApiUsage(userId, {
+          apiName: 'barcode_lookup',
+          endpoint: 'search',
+          queryParams: `query=${query}`,
+          statusCode: 200,
+          success: true
+        });
+      }
+
       res.json({ products, count: products.length });
     } catch (error) {
       console.error("Barcode Lookup search error:", error);
+      
+      // Log failed API usage
+      if (userId) {
+        await storage.logApiUsage(userId, {
+          apiName: 'barcode_lookup',
+          endpoint: 'search',
+          queryParams: `query=${query}`,
+          statusCode: 500,
+          success: false
+        });
+      }
+      
       res.status(500).json({ error: "Failed to search Barcode Lookup" });
     }
   });
 
-  app.get("/api/barcodelookup/product/:barcode", async (req, res) => {
+  app.get("/api/barcodelookup/product/:barcode", async (req: any, res) => {
+    const userId = req.user?.claims?.sub;
+    const { barcode } = req.params;
+    
     try {
-      const { barcode } = req.params;
       const product = await getBarcodeLookupProduct(barcode);
       
       if (!product) {
+        // Log failed API usage (404)
+        if (userId) {
+          await storage.logApiUsage(userId, {
+            apiName: 'barcode_lookup',
+            endpoint: 'product',
+            queryParams: `barcode=${barcode}`,
+            statusCode: 404,
+            success: false
+          });
+        }
         return res.status(404).json({ error: "Product not found" });
+      }
+
+      // Log successful API usage
+      if (userId) {
+        await storage.logApiUsage(userId, {
+          apiName: 'barcode_lookup',
+          endpoint: 'product',
+          queryParams: `barcode=${barcode}`,
+          statusCode: 200,
+          success: true
+        });
       }
 
       res.json({
@@ -227,7 +275,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: product.description
       });
     } catch (error) {
+      // Log failed API usage (500)
+      if (userId) {
+        await storage.logApiUsage(userId, {
+          apiName: 'barcode_lookup',
+          endpoint: 'product',
+          queryParams: `barcode=${barcode}`,
+          statusCode: 500,
+          success: false
+        });
+      }
       res.status(500).json({ error: "Failed to fetch product details" });
+    }
+  });
+
+  app.get("/api/barcodelookup/rate-limits", isAuthenticated, async (req, res) => {
+    try {
+      const limits = await getBarcodeLookupRateLimits();
+      res.json(limits);
+    } catch (error) {
+      console.error("Barcode Lookup rate limits error:", error);
+      res.status(500).json({ error: "Failed to fetch rate limits" });
+    }
+  });
+
+  app.get("/api/barcodelookup/usage/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { days } = req.query;
+      const daysParam = days ? parseInt(days as string) : 30;
+      
+      const stats = await storage.getApiUsageStats(userId, 'barcode_lookup', daysParam);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching API usage stats:", error);
+      res.status(500).json({ error: "Failed to fetch usage stats" });
+    }
+  });
+
+  app.get("/api/barcodelookup/usage/logs", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { limit } = req.query;
+      const limitParam = limit ? parseInt(limit as string) : 50;
+      
+      const logs = await storage.getApiUsageLogs(userId, 'barcode_lookup', limitParam);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching API usage logs:", error);
+      res.status(500).json({ error: "Failed to fetch usage logs" });
     }
   });
 
