@@ -33,6 +33,7 @@ function AuthenticatedRouter() {
   return (
     <Switch>
       <Route path="/" component={Chat} />
+      <Route path="/chat" component={Chat} />
       <Route path="/cookbook" component={Cookbook} />
       <Route path="/nutrition" component={Nutrition} />
       <Route path="/meal-planner" component={MealPlanner} />

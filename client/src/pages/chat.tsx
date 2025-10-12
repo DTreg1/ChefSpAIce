@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
 import { EmptyState } from "@/components/empty-state";
@@ -121,6 +122,9 @@ export default function Chat() {
               setStreamingContent("");
               setIsStreaming(false);
               abortControllerRef.current = null;
+              
+              // Invalidate chat messages query to refetch with saved messages
+              await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
               return;
             }
 
