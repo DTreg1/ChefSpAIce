@@ -82,3 +82,33 @@ Key architectural decisions include:
   - All API calls properly parse JSON responses (fixed Response object issues)
   - Defensive error handling throughout image acquisition flow
   - Cache invalidation on add/delete for consistent UI state
+
+### Enhanced Add Food Experience (October 2025)
+- **Required Fields Update**: Unit and expiration date are now required (NOT NULL in database)
+  - FcdId remains nullable (only set for USDA foods, null for custom items)
+  - Frontend validation enforces all required fields before submission
+  - Backend validation on both create and update endpoints
+- **Improved USDA Search Results**:
+  - Displays brand owner in highlighted badge for branded products
+  - Shows food category to help distinguish similar items
+  - Includes data type (Branded, Foundation, SR Legacy) and FDC ID
+  - Makes it easy to differentiate between multiple "Apple" entries
+- **Smart Auto-Fill**: When selecting a USDA food item:
+  - Quantity auto-fills with serving size from USDA data
+  - Unit auto-fills with serving size unit (e.g., "g", "ml", "oz")
+  - Defaults to "1 piece" when serving size data unavailable
+- **Storage Location Pills**: Replaced dropdown with accessible pill buttons
+  - All storage options visible immediately (no clicks needed)
+  - Uses ToggleGroup component with proper ARIA attributes
+  - Selected pill has solid background, unselected have outline
+  - Fully accessible with aria-labelledby and role attributes
+- **Intelligent Expiration Suggestions**: Auto-suggests expiration dates based on food category
+  - Fruits/Vegetables: 7 days
+  - Dairy products: 10 days
+  - Meat/Poultry/Seafood: 3 days
+  - Bread/Bakery: 5 days
+  - Eggs: 21 days
+  - Frozen foods: 90 days (3 months)
+  - Canned/Packaged goods: 180 days (6 months)
+  - Condiments/Sauces: 60 days (2 months)
+  - Helper text reminds users to verify with package label
