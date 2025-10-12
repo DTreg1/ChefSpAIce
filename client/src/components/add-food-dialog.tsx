@@ -24,6 +24,58 @@ interface AddFoodDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Helper function to suggest shelf life based on food category
+function getSuggestedShelfLife(category?: string, dataType?: string): number {
+  if (!category) return 7; // Default 7 days for unknown items
+  
+  const cat = category.toLowerCase();
+  
+  // Fresh produce
+  if (cat.includes('fruit') || cat.includes('vegetable') || cat.includes('produce')) {
+    return 7;
+  }
+  
+  // Dairy products
+  if (cat.includes('dairy') || cat.includes('milk') || cat.includes('cheese') || cat.includes('yogurt')) {
+    return 10;
+  }
+  
+  // Meat and poultry
+  if (cat.includes('meat') || cat.includes('poultry') || cat.includes('beef') || 
+      cat.includes('pork') || cat.includes('chicken') || cat.includes('fish') || cat.includes('seafood')) {
+    return 3;
+  }
+  
+  // Bread and bakery
+  if (cat.includes('bread') || cat.includes('bakery') || cat.includes('baked')) {
+    return 5;
+  }
+  
+  // Eggs
+  if (cat.includes('egg')) {
+    return 21;
+  }
+  
+  // Frozen foods
+  if (cat.includes('frozen')) {
+    return 90; // 3 months
+  }
+  
+  // Canned/packaged goods
+  if (cat.includes('canned') || cat.includes('packaged') || cat.includes('snack') || 
+      cat.includes('cereal') || cat.includes('grain') || cat.includes('pasta')) {
+    return 180; // 6 months
+  }
+  
+  // Condiments and sauces
+  if (cat.includes('sauce') || cat.includes('condiment') || cat.includes('dressing')) {
+    return 60; // 2 months
+  }
+  
+  // Default for unknown categories
+  return 14;
+}
+
 export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<any>(null);
@@ -224,6 +276,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                         setQuantity("1");
                         setUnit("piece");
                       }
+                      // Auto-suggest expiration date based on food category
+                      const suggestedDays = getSuggestedShelfLife(food.foodCategory, food.dataType);
+                      const suggestedDate = new Date();
+                      suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
+                      setExpirationDate(suggestedDate.toISOString().split('T')[0]);
                     }}
                     className={`w-full p-3 text-left hover-elevate border-b border-border last:border-0 ${
                       selectedFood?.fdcId === food.fdcId ? "bg-accent" : ""
@@ -309,6 +366,9 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
               onChange={(e) => setExpirationDate(e.target.value)}
               data-testid="input-expiration"
             />
+            <p className="text-xs text-muted-foreground">
+              Auto-suggested based on food type. Always verify with the package label.
+            </p>
           </div>
 
           <div className="space-y-3">
