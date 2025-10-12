@@ -19,8 +19,9 @@ interface FDCNutrient {
 }
 
 interface FDCFoodNutrient {
-  number?: string;
-  name?: string;
+  nutrientNumber?: string;
+  nutrientName?: string;
+  value?: number;
   amount?: number;
   unitName?: string;
   nutrient?: {
@@ -84,18 +85,20 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
     };
   }
 
-  // Fall back to foodNutrients (Foundation/SR Legacy/Survey Foods)
+  // Fall back to foodNutrients (Foundation/SR Legacy/Survey Foods and Branded Foods)
   if (food.foodNutrients && food.foodNutrients.length > 0) {
     const nutrients = food.foodNutrients;
     
     const getNutrientValue = (nutrientNumbers: string[]): number | undefined => {
       for (const num of nutrientNumbers) {
         const nutrient = nutrients.find(n => {
-          const number = n.number || n.nutrient?.number;
+          const number = n.nutrientNumber || n.nutrient?.number;
           return number === num;
         });
-        if (nutrient?.amount !== undefined) {
-          return nutrient.amount;
+        // Support both 'value' (search results) and 'amount' (detail fetches)
+        const quantity = nutrient?.value ?? nutrient?.amount;
+        if (quantity !== undefined) {
+          return quantity;
         }
       }
       return undefined;
