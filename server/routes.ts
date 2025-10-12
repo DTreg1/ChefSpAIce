@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
 import { searchUSDAFoods, getFoodByFdcId } from "./usda";
-import { searchOpenFoodFacts, getOpenFoodFactsProduct, extractImageUrl } from "./openfoodfacts";
+import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl } from "./barcodelookup";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
@@ -185,47 +185,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Open Food Facts - Product Images (public)
-  app.get("/api/openfoodfacts/search", async (req, res) => {
+  // Barcode Lookup - Product Images (public)
+  app.get("/api/barcodelookup/search", async (req, res) => {
     try {
-      const { query, pageSize } = req.query;
+      const { query } = req.query;
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
-      const size = pageSize ? parseInt(pageSize as string) : 10;
-      const results = await searchOpenFoodFacts(query, size);
+      const results = await searchBarcodeLookup(query);
       
       const products = results.products.map(product => ({
-        code: product.code,
-        name: product.product_name || 'Unknown Product',
-        brand: product.brands || '',
+        code: product.barcode_number || '',
+        name: product.title || 'Unknown Product',
+        brand: product.brand || '',
         imageUrl: extractImageUrl(product),
-        nutriscoreGrade: product.nutriscore_grade
+        description: product.description
       }));
 
-      res.json({ products, count: results.count });
+      res.json({ products, count: products.length });
     } catch (error) {
-      console.error("Open Food Facts search error:", error);
-      res.status(500).json({ error: "Failed to search Open Food Facts" });
+      console.error("Barcode Lookup search error:", error);
+      res.status(500).json({ error: "Failed to search Barcode Lookup" });
     }
   });
 
-  app.get("/api/openfoodfacts/product/:barcode", async (req, res) => {
+  app.get("/api/barcodelookup/product/:barcode", async (req, res) => {
     try {
       const { barcode } = req.params;
-      const product = await getOpenFoodFactsProduct(barcode);
+      const product = await getBarcodeLookupProduct(barcode);
       
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }
 
       res.json({
-        code: product.code,
-        name: product.product_name || 'Unknown Product',
-        brand: product.brands || '',
+        code: product.barcode_number || '',
+        name: product.title || 'Unknown Product',
+        brand: product.brand || '',
         imageUrl: extractImageUrl(product),
-        nutriscoreGrade: product.nutriscore_grade
+        description: product.description
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch product details" });
