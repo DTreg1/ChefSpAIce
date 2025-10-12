@@ -52,6 +52,7 @@ interface FDCFood {
   description: string;
   dataType: string;
   brandOwner?: string;
+  gtinUpc?: string;
   ingredients?: string;
   foodCategory?: string;
   brandedFoodCategory?: string;
@@ -135,6 +136,7 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
     description: food.description,
     dataType: food.dataType,
     brandOwner: food.brandOwner,
+    gtinUpc: food.gtinUpc,
     ingredients: food.ingredients,
     foodCategory: food.foodCategory || food.brandedFoodCategory,
     servingSize: food.servingSize,
