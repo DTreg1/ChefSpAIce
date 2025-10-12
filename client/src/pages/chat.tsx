@@ -8,6 +8,7 @@ import { RecipeGenerator } from "@/components/recipe-generator";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
 
 export default function Chat() {
@@ -17,6 +18,7 @@ export default function Chat() {
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: chatHistory } = useQuery<ChatMessageType[]>({
     queryKey: ["/api/chat/messages"],
@@ -40,6 +42,7 @@ export default function Chat() {
     setGeneratedRecipe(recipe);
     const recipeMessage: ChatMessageType = {
       id: Date.now().toString(),
+      userId: user?.id || "",
       role: "assistant",
       content: `I've created a recipe for you: ${recipe.title}`,
       timestamp: new Date(),
@@ -51,6 +54,7 @@ export default function Chat() {
   const handleSendMessage = async (content: string) => {
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
+      userId: user?.id || "",
       role: "user",
       content,
       timestamp: new Date(),
@@ -94,6 +98,7 @@ export default function Chat() {
             if (data === "[DONE]") {
               const aiMessage: ChatMessageType = {
                 id: (Date.now() + 1).toString(),
+                userId: user?.id || "",
                 role: "assistant",
                 content: accumulated,
                 timestamp: new Date(),
