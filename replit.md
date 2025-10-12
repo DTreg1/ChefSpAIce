@@ -33,6 +33,15 @@ Key architectural decisions include:
 
 ## Recent Updates (October 2025)
 
+### Bug Fixes (October 12, 2025)
+- **Accessibility Fix**: Added screen-reader-only DialogDescription to CommandDialog component to resolve browser console accessibility warnings
+- **Memory Leak Fix**: Implemented AbortController cleanup in chat component to properly abort fetch requests on component unmount, preventing memory leaks and lingering network requests
+- **Chat History Persistence**: Fixed bug where chat messages weren't persisting when navigating away and back to chat page
+  - Added query cache invalidation after assistant message completion
+  - Messages now properly refetch from database when returning to chat
+- **Routing Fix**: Added missing `/chat` route to handle sidebar navigation (previously only `/` was mapped to chat component)
+  - Both `/` and `/chat` now properly render the chat page
+
 ### USDA FDC API Integration
 - **Real API Integration**: Replaced mock data with live USDA FoodData Central API
 - **Nutrition Extraction**: Implemented comprehensive nutrient mapping from FDC API responses
