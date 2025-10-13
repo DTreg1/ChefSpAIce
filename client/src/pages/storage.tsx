@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { EmptyState } from "@/components/empty-state";
@@ -7,6 +7,7 @@ import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipe-generator";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import type { FoodItem, StorageLocation, Recipe } from "@shared/schema";
 
@@ -14,15 +15,37 @@ export default function Storage() {
   const [, params] = useRoute("/storage/:location");
   const [, setLocation] = useLocation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const { toast } = useToast();
   const location = params?.location || "all";
 
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
+  const { data: storageLocations, error: locationsError } = useQuery<StorageLocation[]>({
     queryKey: ["/api/storage-locations"],
   });
 
-  const { data: allItems } = useQuery<FoodItem[]>({
+  const { data: allItems, error: itemsError } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],
   });
+
+  // Display error notifications
+  useEffect(() => {
+    if (locationsError) {
+      toast({
+        title: "Error loading storage locations",
+        description: "Failed to load your storage locations. Please try refreshing the page.",
+        variant: "destructive",
+      });
+    }
+  }, [locationsError, toast]);
+
+  useEffect(() => {
+    if (itemsError) {
+      toast({
+        title: "Error loading items",
+        description: "Failed to load your inventory items. Please try refreshing the page.",
+        variant: "destructive",
+      });
+    }
+  }, [itemsError, toast]);
 
   const currentLocation = storageLocations?.find(
     (loc) => loc.name.toLowerCase() === location.toLowerCase()
