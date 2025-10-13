@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Search,
@@ -606,6 +607,9 @@ export default function FdcSearch() {
             <DialogTitle>
               {foodDetails?.description || "Loading..."}
             </DialogTitle>
+            <DialogDescription>
+              Detailed nutritional information from USDA FoodData Central
+            </DialogDescription>
           </DialogHeader>
 
           {isLoadingDetails && (
