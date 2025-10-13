@@ -206,10 +206,10 @@ export default function FdcSearch() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="w-6 h-6" />
-            USDA Food Data Central Search
+            USDA Food Data Central
           </CardTitle>
           <CardDescription>
-            Search the USDA FDC database for nutritional information with advanced filters
+            Search the database for nutritional information with advanced filters
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
