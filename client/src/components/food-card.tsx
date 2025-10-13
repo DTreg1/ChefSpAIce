@@ -73,7 +73,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   return (
     <>
       <Card 
-        className="liquid-glass hover:scale-[1.005] transition-all-smooth" 
+        className="glass-morph hover-elevate active-elevate-2 card-hover border border-card-border/50 shadow-glass hover:shadow-glass-hover transition-morph" 
         data-testid={`card-food-${item.id}`}
       >
         <CardContent className="p-4">

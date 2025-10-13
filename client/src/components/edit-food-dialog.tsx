@@ -93,7 +93,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="liquid-glass-modal">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit {item.name}</DialogTitle>
           <DialogDescription>
