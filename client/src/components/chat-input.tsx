@@ -26,7 +26,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
   };
 
   return (
-    <div className="border-t border-border bg-background p-4">
+    <div className="liquid-glass-subtle border-t border-border p-4">
       <div className="max-w-4xl mx-auto flex gap-2">
         <Button
           size="icon"
