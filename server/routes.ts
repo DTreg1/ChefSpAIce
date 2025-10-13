@@ -190,30 +190,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FDC Food Search with Cache (public)
   app.get("/api/fdc/search", async (req, res) => {
     try {
-      const { query, pageSize, pageNumber, dataType } = req.query;
+      const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
       const size = pageSize ? parseInt(pageSize as string) : 25;
       const page = pageNumber ? parseInt(pageNumber as string) : 1;
-      const type = dataType as string | undefined;
+      
+      // Parse dataType - can be comma-separated string or array
+      let dataTypes: string[] = [];
+      if (dataType) {
+        if (Array.isArray(dataType)) {
+          dataTypes = dataType as string[];
+        } else if (typeof dataType === 'string') {
+          dataTypes = dataType.split(',').map(t => t.trim()).filter(Boolean);
+        }
+      }
+      
+      const sort = sortBy as string | undefined;
+      const order = sortOrder as string | undefined;
+      const brand = brandOwner as string | undefined;
 
-      // Check cache first
-      const cachedResults = await storage.getCachedSearchResults(query, type, page);
-      if (cachedResults) {
-        console.log(`FDC search cache hit for query: ${query}`);
-        return res.json({
-          foods: cachedResults.results,
-          totalHits: cachedResults.totalHits,
-          currentPage: page,
-          totalPages: Math.ceil((cachedResults.totalHits || 0) / size),
-          fromCache: true
-        });
+      // Only cache the simplest searches (query + page) to avoid stale results with filters
+      // Advanced filters (dataType, sort, brand) bypass cache completely
+      const hasAnyFilters = sort || brand || dataTypes.length > 0 || size !== 25;
+      
+      if (!hasAnyFilters) {
+        const cachedResults = await storage.getCachedSearchResults(query, undefined, page);
+        if (cachedResults && 
+            cachedResults.results &&
+            cachedResults.pageSize === 25) {
+          console.log(`FDC search cache hit for query: ${query}`);
+          return res.json({
+            foods: cachedResults.results,
+            totalHits: cachedResults.totalHits,
+            currentPage: page,
+            totalPages: Math.ceil((cachedResults.totalHits || 0) / size),
+            fromCache: true
+          });
+        }
       }
 
       // If not in cache, call FDC API
-      console.log(`FDC search cache miss for query: ${query}, calling API`);
+      console.log(`FDC search calling API for query: ${query}`);
       
       // Build API URL
       const apiKey = process.env.FDC_API_KEY;
@@ -227,8 +247,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       searchUrl.searchParams.append('pageSize', size.toString());
       searchUrl.searchParams.append('pageNumber', page.toString());
       
-      if (type) {
-        searchUrl.searchParams.append('dataType', type);
+      // Add each dataType as a separate parameter for FDC API array handling
+      if (dataTypes.length > 0) {
+        dataTypes.forEach(type => {
+          searchUrl.searchParams.append('dataType', type);
+        });
+      }
+      
+      if (sort) {
+        searchUrl.searchParams.append('sortBy', sort);
+      }
+      
+      if (order) {
+        searchUrl.searchParams.append('sortOrder', order);
+      }
+      
+      if (brand) {
+        searchUrl.searchParams.append('brandOwner', brand);
       }
 
       const response = await fetch(searchUrl);
@@ -238,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = await response.json();
       
-      // Cache the search results
+      // Cache the search results (only for simple searches)
       const resultsToCache = data.foods?.map((food: any) => ({
         fdcId: food.fdcId.toString(),
         description: food.description || food.lowercaseDescription,
@@ -248,14 +283,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         score: food.score
       })) || [];
 
-      await storage.cacheSearchResults({
-        query,
-        dataType: type || null,
-        pageNumber: page,
-        pageSize: size,
-        totalHits: data.totalHits || 0,
-        results: resultsToCache
-      });
+      // Only cache simple searches without any filters
+      if (!hasAnyFilters) {
+        await storage.cacheSearchResults({
+          query,
+          dataType: null,
+          pageNumber: page,
+          pageSize: 25,
+          totalHits: data.totalHits || 0,
+          results: resultsToCache
+        });
+      }
 
       // Cache individual food items for faster detail lookups
       for (const food of (data.foods || [])) {

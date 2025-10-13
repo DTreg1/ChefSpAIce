@@ -1,14 +1,30 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Info, Package, Apple, Wheat, Utensils, ChevronRight, Database } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { 
+  Search, 
+  Package, 
+  Apple, 
+  Wheat, 
+  Utensils, 
+  ChevronRight, 
+  Database, 
+  ChevronDown,
+  ChevronLeft,
+  ChevronUp,
+  X,
+  Filter,
+  SlidersHorizontal
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FoodNutrient {
@@ -50,20 +66,55 @@ interface FoodDetails {
   fromCache?: boolean;
 }
 
+const DATA_TYPES = [
+  { value: "Branded", label: "Branded Foods" },
+  { value: "Foundation", label: "Foundation Foods" },
+  { value: "SR Legacy", label: "SR Legacy" },
+  { value: "Survey (FNDDS)", label: "Survey (FNDDS)" }
+];
+
+const SORT_OPTIONS = [
+  { value: "lowercaseDescription.keyword", label: "Description" },
+  { value: "dataType.keyword", label: "Data Type" },
+  { value: "fdcId", label: "FDC ID" },
+  { value: "publishedDate", label: "Published Date" }
+];
+
+const PAGE_SIZES = [25, 50, 100, 200];
+
 export default function FdcSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentQuery, setCurrentQuery] = useState("");
+  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
+  const [brandOwner, setBrandOwner] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedFood, setSelectedFood] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const { toast } = useToast();
 
-  // Search query
+  const buildQueryParams = () => {
+    const params = new URLSearchParams();
+    if (currentQuery) params.append("query", currentQuery);
+    if (selectedDataTypes.length > 0) {
+      params.append("dataType", selectedDataTypes.join(","));
+    }
+    if (brandOwner.trim()) params.append("brandOwner", brandOwner.trim());
+    if (sortBy) params.append("sortBy", sortBy);
+    if (sortOrder) params.append("sortOrder", sortOrder);
+    params.append("pageSize", pageSize.toString());
+    params.append("pageNumber", currentPage.toString());
+    return params.toString();
+  };
+
   const { data: searchResults, isLoading: isSearching } = useQuery<SearchResponse>({
-    queryKey: ["/api/fdc/search", currentQuery],
+    queryKey: ["/api/fdc/search", buildQueryParams()],
     enabled: !!currentQuery,
   });
 
-  // Food details query
   const { data: foodDetails, isLoading: isLoadingDetails } = useQuery<FoodDetails>({
     queryKey: ["/api/fdc/food", selectedFood],
     enabled: !!selectedFood && detailsOpen,
@@ -73,6 +124,7 @@ export default function FdcSearch() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setCurrentQuery(searchQuery.trim());
+      setCurrentPage(1);
     }
   };
 
@@ -80,6 +132,26 @@ export default function FdcSearch() {
     setSelectedFood(fdcId);
     setDetailsOpen(true);
   };
+
+  const handleDataTypeToggle = (dataType: string) => {
+    setSelectedDataTypes(prev =>
+      prev.includes(dataType)
+        ? prev.filter(t => t !== dataType)
+        : [...prev, dataType]
+    );
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedDataTypes([]);
+    setBrandOwner("");
+    setSortBy("");
+    setSortOrder("asc");
+    setPageSize(25);
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = selectedDataTypes.length > 0 || brandOwner.trim() !== "" || sortBy !== "";
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType?.toLowerCase()) {
@@ -124,7 +196,7 @@ export default function FdcSearch() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl bg-muted">
+    <div className="container mx-auto p-6 max-w-6xl">
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -132,10 +204,10 @@ export default function FdcSearch() {
             USDA Food Data Central Search
           </CardTitle>
           <CardDescription>
-            Search the USDA FDC database for nutritional information. Data is cached locally to minimize API calls.
+            Search the USDA FDC database for nutritional information with advanced filters
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <form onSubmit={handleSearch} className="flex gap-2">
             <Input
               type="text"
@@ -150,6 +222,169 @@ export default function FdcSearch() {
               Search
             </Button>
           </form>
+
+          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <div className="flex items-center justify-between">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" data-testid="button-toggle-filters" className="gap-2">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  Advanced Filters
+                  {filtersOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              {hasActiveFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleClearFilters}
+                  data-testid="button-clear-filters"
+                  className="gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+
+            <CollapsibleContent className="space-y-4 pt-4">
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">Data Types</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {DATA_TYPES.map((type) => (
+                    <div key={type.value} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`type-${type.value}`}
+                        checked={selectedDataTypes.includes(type.value)}
+                        onCheckedChange={() => handleDataTypeToggle(type.value)}
+                        data-testid={`checkbox-type-${type.value.toLowerCase().replace(/\s+/g, '-')}`}
+                      />
+                      <Label htmlFor={`type-${type.value}`} className="cursor-pointer text-sm">
+                        {type.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="brand-owner" className="text-sm font-semibold mb-2 block">
+                  Brand Owner
+                </Label>
+                <Input
+                  id="brand-owner"
+                  type="text"
+                  placeholder="e.g., 'General Mills', 'Kraft'"
+                  value={brandOwner}
+                  onChange={(e) => {
+                    setBrandOwner(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  data-testid="input-brand-owner"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="sort-by" className="text-sm font-semibold mb-2 block">
+                    Sort By
+                  </Label>
+                  <Select value={sortBy} onValueChange={(value) => {
+                    setSortBy(value);
+                    setCurrentPage(1);
+                  }}>
+                    <SelectTrigger id="sort-by" data-testid="select-sort-by">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {SORT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="sort-order" className="text-sm font-semibold mb-2 block">
+                    Sort Order
+                  </Label>
+                  <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => {
+                    setSortOrder(value);
+                    setCurrentPage(1);
+                  }}>
+                    <SelectTrigger id="sort-order" data-testid="select-sort-order" disabled={!sortBy}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Ascending</SelectItem>
+                      <SelectItem value="desc">Descending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="page-size" className="text-sm font-semibold mb-2 block">
+                    Results Per Page
+                  </Label>
+                  <Select value={pageSize.toString()} onValueChange={(value) => {
+                    setPageSize(parseInt(value));
+                    setCurrentPage(1);
+                  }}>
+                    <SelectTrigger id="page-size" data-testid="select-page-size">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZES.map((size) => (
+                        <SelectItem key={size} value={size.toString()}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {hasActiveFilters && (
+            <div className="flex flex-wrap gap-2" data-testid="active-filters">
+              {selectedDataTypes.map((type) => (
+                <Badge key={type} variant="secondary" className="gap-1">
+                  {type}
+                  <X 
+                    className="w-3 h-3 cursor-pointer hover-elevate" 
+                    onClick={() => handleDataTypeToggle(type)}
+                  />
+                </Badge>
+              ))}
+              {brandOwner.trim() && (
+                <Badge variant="secondary" className="gap-1">
+                  Brand: {brandOwner}
+                  <X 
+                    className="w-3 h-3 cursor-pointer hover-elevate" 
+                    onClick={() => {
+                      setBrandOwner("");
+                      setCurrentPage(1);
+                    }}
+                  />
+                </Badge>
+              )}
+              {sortBy && (
+                <Badge variant="secondary" className="gap-1">
+                  Sort: {SORT_OPTIONS.find(o => o.value === sortBy)?.label} ({sortOrder})
+                  <X 
+                    className="w-3 h-3 cursor-pointer hover-elevate" 
+                    onClick={() => {
+                      setSortBy("");
+                      setCurrentPage(1);
+                    }}
+                  />
+                </Badge>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -168,7 +403,7 @@ export default function FdcSearch() {
 
       {searchResults && !isSearching && (
         <>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" data-testid="badge-results-count">
                 {searchResults.totalHits} results
@@ -180,8 +415,30 @@ export default function FdcSearch() {
                 </Badge>
               )}
             </div>
-            <div className="text-sm text-muted-foreground">
-              Page {searchResults.currentPage} of {searchResults.totalPages}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Page {searchResults.currentPage} of {searchResults.totalPages}
+              </span>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  data-testid="button-prev-page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage(p => Math.min(searchResults.totalPages, p + 1))}
+                  disabled={currentPage === searchResults.totalPages}
+                  data-testid="button-next-page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
