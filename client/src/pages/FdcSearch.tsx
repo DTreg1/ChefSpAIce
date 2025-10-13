@@ -124,7 +124,7 @@ export default function FdcSearch() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto p-6 max-w-6xl bg-muted">
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

@@ -32,13 +32,13 @@
 
   --sidebar-border: 205.0000 25.0000% 90.5882%;
 
-  --sidebar-primary: 84.71 88% 53%;
+  --sidebar-primary: 84.71 50% 40%;
 
   --sidebar-primary-foreground: 0 0% 100%;
 
   --sidebar-accent: 84.71 51% 92%;
 
-  --sidebar-accent-foreground: 84.71 88% 53%;
+  --sidebar-accent-foreground: 84.71 50% 40%;
 
   --sidebar-ring: 84.71 89% 53%;
 
@@ -129,7 +129,7 @@
 
   --sidebar-border: 205.7143 15.7895% 26.0784%;
 
-  --sidebar-primary: 84.71 89% 53%;
+  --sidebar-primary: 84.71 60% 60%;
 
   --sidebar-primary-foreground: 0 0% 100%;
 

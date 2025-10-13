@@ -30,7 +30,7 @@ export default function Cookbook() {
   const favoriteCount = recipes?.filter(r => r.isFavorite).length || 0;
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto bg-muted">
       <div className="max-w-6xl mx-auto p-6">
         <div className="mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
