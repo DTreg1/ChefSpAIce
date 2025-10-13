@@ -874,14 +874,26 @@ Respond ONLY with a valid JSON object in this exact format:
   "missingIngredients": ["ingredient not in inventory"]
 }`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 8192,
-      });
+      let completion;
+      try {
+        completion = await openai.chat.completions.create({
+          model: "gpt-5",
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          max_completion_tokens: 8192,
+        });
+      } catch (openAIError: any) {
+        console.error("OpenAI API error:", openAIError);
+        if (openAIError.status === 429) {
+          return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
+        }
+        if (openAIError.status === 401 || openAIError.status === 403) {
+          return res.status(503).json({ error: "AI service configuration error. Please contact support." });
+        }
+        return res.status(500).json({ error: "AI service temporarily unavailable" });
+      }
 
-      const recipeData = JSON.parse(completion.choices[0].message.content || "{}");
+      const recipeData = JSON.parse(completion.choices[0]?.message?.content || "{}");
       
       const recipe = await storage.createRecipe(userId, {
         title: recipeData.title,
@@ -963,22 +975,34 @@ Important:
         : { type: "image_url" as const, image_url: { url: `data:image/jpeg;base64,${image}` } };
 
       // Call OpenAI with vision capabilities
-      const completion = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: extractionPrompt },
-              imageContent
-            ]
-          }
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 8192,
-      });
+      let completion;
+      try {
+        completion = await openai.chat.completions.create({
+          model: "gpt-5",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: extractionPrompt },
+                imageContent
+              ]
+            }
+          ],
+          response_format: { type: "json_object" },
+          max_completion_tokens: 8192,
+        });
+      } catch (openAIError: any) {
+        console.error("OpenAI Vision API error:", openAIError);
+        if (openAIError.status === 429) {
+          return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
+        }
+        if (openAIError.status === 401 || openAIError.status === 403) {
+          return res.status(503).json({ error: "AI service configuration error. Please contact support." });
+        }
+        return res.status(500).json({ error: "Failed to process image with AI service" });
+      }
 
-      const extractedData = JSON.parse(completion.choices[0].message.content || "{}");
+      const extractedData = JSON.parse(completion.choices[0]?.message?.content || "{}");
       
       // Validate the extracted data
       if (!extractedData.title || !extractedData.ingredients || !extractedData.instructions) {
