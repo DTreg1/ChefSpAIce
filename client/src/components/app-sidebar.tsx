@@ -65,7 +65,7 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar className="glass-strong">
+      <Sidebar className="bg-sidebar/90 backdrop-blur-sm">
         <SidebarHeader className="p-6 border-b border-sidebar-border/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center transition-spring">
