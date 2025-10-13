@@ -173,6 +173,7 @@ export default function Onboarding() {
               fcdId: enrichedData.fcdId,
               nutrition: enrichedData.nutrition,
               usdaData: enrichedData.usdaData,
+              foodCategory: enrichedData.usdaData?.foodCategory || null,
             });
             console.log(`Created enriched food item: ${enrichedData.name}`);
           } catch (error) {

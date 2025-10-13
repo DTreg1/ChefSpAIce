@@ -293,6 +293,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       imageUrl: imageUrl,
       nutrition: selectedFood?.nutrition ? JSON.stringify(selectedFood.nutrition) : null,
       usdaData: selectedFood || null, // Save complete USDA response data
+      foodCategory: selectedFood?.foodCategory || null, // Save food category for filtering
     });
   };
 
