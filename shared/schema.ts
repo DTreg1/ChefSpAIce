@@ -102,6 +102,7 @@ export const foodItems = pgTable("food_items", {
   imageUrl: text("image_url"),
   nutrition: text("nutrition"),
   usdaData: jsonb("usda_data"), // Complete USDA API response data
+  foodCategory: text("food_category"), // USDA food category (e.g., "Vegetables and Vegetable Products")
   addedAt: timestamp("added_at").notNull().defaultNow(),
 });
 
