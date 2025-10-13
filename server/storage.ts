@@ -180,6 +180,7 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     try {
+      // Try to insert with conflict resolution on ID
       const [user] = await db
         .insert(users)
         .values(userData)
@@ -192,7 +193,27 @@ export class DatabaseStorage implements IStorage {
         })
         .returning();
       return user;
-    } catch (error) {
+    } catch (error: any) {
+      // If we get a duplicate email error, update the existing user with that email
+      if (error?.message?.includes('duplicate key') && error?.message?.includes('email')) {
+        try {
+          const [existingUser] = await db
+            .update(users)
+            .set({
+              ...userData,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.email, userData.email!))
+            .returning();
+          
+          if (existingUser) {
+            return existingUser;
+          }
+        } catch (updateError) {
+          console.error('Error updating user by email:', updateError);
+        }
+      }
+      
       console.error('Error upserting user:', error);
       throw new Error('Failed to save user');
     }

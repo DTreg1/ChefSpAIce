@@ -16,16 +16,12 @@ import {
   Utensils, 
   ChevronRight, 
   Database,
-  ChevronDown,
   ChevronLeft,
-  ChevronUp,
-  X,
-  SlidersHorizontal
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface FoodNutrient {
   nutrientId: number;
@@ -86,7 +82,6 @@ export default function FdcSearch() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFood, setSelectedFood] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const { toast } = useToast();
   
   const buildQueryParams = () => {
@@ -234,16 +229,9 @@ export default function FdcSearch() {
             </Button>
           </form>
 
-          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <div className="flex items-center justify-between">
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" data-testid="button-toggle-filters" className="gap-2">
-                  <SlidersHorizontal className="w-4 h-4" />
-                  Advanced Filters
-                  {filtersOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </Button>
-              </CollapsibleTrigger>
-              {hasActiveFilters && (
+          <div className="space-y-4">
+            {hasActiveFilters && (
+              <div className="flex items-center justify-end">
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -254,10 +242,8 @@ export default function FdcSearch() {
                   <X className="w-4 h-4" />
                   Clear Filters
                 </Button>
-              )}
-            </div>
-
-            <CollapsibleContent className="space-y-4 pt-4">
+              </div>
+            )}
               <div>
                 <Label htmlFor="brand-owner" className="text-sm font-semibold mb-2 block">
                   Brand Owners
@@ -360,8 +346,7 @@ export default function FdcSearch() {
                   </Select>
                 </div>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+          </div>
 
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2" data-testid="active-filters">
