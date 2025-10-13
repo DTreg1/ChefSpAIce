@@ -151,6 +151,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/food-categories", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const categories = await storage.getFoodCategories(userId);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching food categories:", error);
+      res.status(500).json({ error: "Failed to fetch food categories" });
+    }
+  });
+
   // Appliances (user-scoped)
   app.get("/api/appliances", isAuthenticated, async (req: any, res) => {
     try {

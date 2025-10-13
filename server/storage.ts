@@ -66,6 +66,7 @@ export interface IStorage {
   createFoodItem(userId: string, item: Omit<InsertFoodItem, 'userId'>): Promise<FoodItem>;
   updateFoodItem(userId: string, id: string, item: Partial<Omit<InsertFoodItem, 'userId'>>): Promise<FoodItem>;
   deleteFoodItem(userId: string, id: string): Promise<void>;
+  getFoodCategories(userId: string): Promise<string[]>;
 
   // Chat Messages (user-scoped)
   getChatMessages(userId: string): Promise<ChatMessage[]>;
@@ -396,6 +397,24 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error deleting food item ${id}:`, error);
       throw new Error('Failed to delete food item');
+    }
+  }
+
+  async getFoodCategories(userId: string): Promise<string[]> {
+    try {
+      const results = await db
+        .selectDistinct({ foodCategory: foodItems.foodCategory })
+        .from(foodItems)
+        .where(and(
+          eq(foodItems.userId, userId),
+          sql`${foodItems.foodCategory} IS NOT NULL`
+        ))
+        .orderBy(foodItems.foodCategory);
+      
+      return results.map(r => r.foodCategory).filter((cat): cat is string => cat !== null);
+    } catch (error) {
+      console.error(`Error getting food categories for user ${userId}:`, error);
+      throw new Error('Failed to retrieve food categories');
     }
   }
 
