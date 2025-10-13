@@ -86,6 +86,8 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
       unit,
       storageLocationId,
       expirationDate,
+      // Include nutrition to ensure weightInGrams is recalculated when quantity changes
+      nutrition: item?.nutrition || null,
     });
   };
 
