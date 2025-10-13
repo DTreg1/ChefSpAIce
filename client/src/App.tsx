@@ -127,7 +127,7 @@ function AppContent() {
               <div className="flex items-center gap-2">
                 <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph" />
                 <Button 
-                  variant="ghost" 
+                  variant="default" 
                   size="sm"
                   onClick={() => {
                     const event = new KeyboardEvent('keydown', {
@@ -141,7 +141,7 @@ function AppContent() {
                   data-testid="button-quick-actions"
                   className="text-xs transition-all-smooth"
                 >
-                  Quick Actions <kbd className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold text-muted-foreground bg-muted/50 rounded">⌘K</kbd>
+                  Quick Actions
                 </Button>
               </div>
               <ThemeToggle />

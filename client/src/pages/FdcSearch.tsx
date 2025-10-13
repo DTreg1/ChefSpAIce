@@ -1,27 +1,44 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Search,
-  Package, 
-  Apple, 
-  Wheat, 
-  Utensils, 
-  ChevronRight, 
+  Package,
+  Apple,
+  Wheat,
+  Utensils,
+  ChevronRight,
   Database,
   ChevronLeft,
-  X
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FoodNutrient {
   nutrientId: number;
@@ -68,7 +85,7 @@ const SORT_OPTIONS = [
   { value: "lowercaseDescription.keyword", label: "Description" },
   { value: "dataType.keyword", label: "Data Type" },
   { value: "fdcId", label: "FDC ID" },
-  { value: "publishedDate", label: "Published Date" }
+  { value: "publishedDate", label: "Published Date" },
 ];
 
 const PAGE_SIZES = [25, 50, 100, 200];
@@ -86,7 +103,7 @@ export default function FdcSearch() {
   const [selectedFood, setSelectedFood] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const { toast } = useToast();
-  
+
   const buildQueryParams = () => {
     const params = new URLSearchParams();
     // Include UPC in search query if provided
@@ -94,7 +111,7 @@ export default function FdcSearch() {
     if (searchTerms) params.append("query", searchTerms);
     // Append each brand owner separately to handle brands with commas
     if (brandOwners.length > 0) {
-      brandOwners.forEach(brand => {
+      brandOwners.forEach((brand) => {
         params.append("brandOwner", brand);
       });
     }
@@ -108,16 +125,18 @@ export default function FdcSearch() {
   };
 
   // Search query
-  const { data: searchResults, isLoading: isSearching} = useQuery<SearchResponse>({
-    queryKey: [`/api/fdc/search?${buildQueryParams()}`],
-    enabled: !!currentQuery || !!upcCode,
-  });
+  const { data: searchResults, isLoading: isSearching } =
+    useQuery<SearchResponse>({
+      queryKey: [`/api/fdc/search?${buildQueryParams()}`],
+      enabled: !!currentQuery || !!upcCode,
+    });
 
   // Food details query
-  const { data: foodDetails, isLoading: isLoadingDetails } = useQuery<FoodDetails>({
-    queryKey: ["/api/fdc/food", selectedFood],
-    enabled: !!selectedFood && detailsOpen,
-  });
+  const { data: foodDetails, isLoading: isLoadingDetails } =
+    useQuery<FoodDetails>({
+      queryKey: ["/api/fdc/food", selectedFood],
+      enabled: !!selectedFood && detailsOpen,
+    });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,14 +154,14 @@ export default function FdcSearch() {
   const handleAddBrand = () => {
     const trimmedBrand = brandInput.trim();
     if (trimmedBrand && !brandOwners.includes(trimmedBrand)) {
-      setBrandOwners(prev => [...prev, trimmedBrand]);
+      setBrandOwners((prev) => [...prev, trimmedBrand]);
       setBrandInput("");
       setCurrentPage(1);
     }
   };
 
   const handleRemoveBrand = (brandToRemove: string) => {
-    setBrandOwners(prev => prev.filter(b => b !== brandToRemove));
+    setBrandOwners((prev) => prev.filter((b) => b !== brandToRemove));
     setCurrentPage(1);
   };
 
@@ -163,7 +182,8 @@ export default function FdcSearch() {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = brandOwners.length > 0 || sortBy !== "" || upcCode !== "";
+  const hasActiveFilters =
+    brandOwners.length > 0 || sortBy !== "" || upcCode !== "";
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType?.toLowerCase()) {
@@ -201,9 +221,12 @@ export default function FdcSearch() {
     { number: "307", name: "Sodium" },
   ];
 
-  const getNutrientValue = (nutrients: FoodNutrient[] | undefined, nutrientNumber: string) => {
+  const getNutrientValue = (
+    nutrients: FoodNutrient[] | undefined,
+    nutrientNumber: string,
+  ) => {
     if (!nutrients) return null;
-    const nutrient = nutrients.find(n => n.nutrientNumber === nutrientNumber);
+    const nutrient = nutrients.find((n) => n.nutrientNumber === nutrientNumber);
     return nutrient ? `${nutrient.value} ${nutrient.unitName}` : "N/A";
   };
 
@@ -216,10 +239,17 @@ export default function FdcSearch() {
             USDA Food Data Central
           </CardTitle>
           <CardDescription>
-            Search the comprehensive database for nutritional information on any food
+            Search the comprehensive database for nutritional information on any
+            food
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Label
+            htmlFor="brand-owner"
+            className="text-sm font-semibold mb-2 block"
+          >
+            Search
+          </Label>
           <form onSubmit={handleSearch} className="flex gap-2">
             <Input
               type="text"
@@ -229,7 +259,11 @@ export default function FdcSearch() {
               className="flex-1"
               data-testid="input-search"
             />
-            <Button type="submit" disabled={isSearching} data-testid="button-search">
+            <Button
+              type="submit"
+              disabled={isSearching}
+              data-testid="button-search"
+            >
               <Search className="w-4 h-4 mr-2" />
               Search
             </Button>
@@ -238,9 +272,9 @@ export default function FdcSearch() {
           <div className="space-y-4">
             {hasActiveFilters && (
               <div className="flex items-center justify-end">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleClearFilters}
                   data-testid="button-clear-filters"
                   className="gap-1"
@@ -250,125 +284,156 @@ export default function FdcSearch() {
                 </Button>
               </div>
             )}
-              <div>
-                <Label htmlFor="brand-owner" className="text-sm font-semibold mb-2 block">
-                  Brand Owners
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="brand-owner"
-                    type="text"
-                    placeholder="e.g., 'General Mills', 'Kraft'"
-                    value={brandInput}
-                    onChange={(e) => setBrandInput(e.target.value)}
-                    onKeyDown={handleBrandInputKeyDown}
-                    data-testid="input-brand-owner"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleAddBrand}
-                    disabled={!brandInput.trim()}
-                    data-testid="button-add-brand"
-                  >
-                    Add
-                  </Button>
-                </div>
-                {brandOwners.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2" data-testid="brand-pills">
-                    {brandOwners.map((brand) => (
-                      <Badge key={brand} variant="secondary" className="gap-1">
-                        {brand}
-                        <X 
-                          className="w-3 h-3 cursor-pointer hover-elevate" 
-                          onClick={() => handleRemoveBrand(brand)}
-                          data-testid={`button-remove-brand-${brand.toLowerCase().replace(/\s+/g, '-')}`}
-                        />
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="upc-code" className="text-sm font-semibold mb-2 block">
-                  UPC/GTIN Code
-                </Label>
+            <div>
+              <Label
+                htmlFor="brand-owner"
+                className="text-sm font-semibold mb-2 block"
+              >
+                Brand Owners
+              </Label>
+              <div className="flex gap-2">
                 <Input
-                  id="upc-code"
+                  id="brand-owner"
                   type="text"
-                  placeholder="e.g., '077034085228'"
-                  value={upcCode}
-                  onChange={(e) => {
-                    setUpcCode(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  data-testid="input-upc"
+                  placeholder="e.g., 'General Mills', 'Kraft'"
+                  value={brandInput}
+                  onChange={(e) => setBrandInput(e.target.value)}
+                  onKeyDown={handleBrandInputKeyDown}
+                  data-testid="input-brand-owner"
                 />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleAddBrand}
+                  disabled={!brandInput.trim()}
+                  data-testid="button-add-brand"
+                >
+                  Add
+                </Button>
               </div>
+              {brandOwners.length > 0 && (
+                <div
+                  className="flex flex-wrap gap-2 mt-2"
+                  data-testid="brand-pills"
+                >
+                  {brandOwners.map((brand) => (
+                    <Badge key={brand} variant="secondary" className="gap-1">
+                      {brand}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover-elevate"
+                        onClick={() => handleRemoveBrand(brand)}
+                        data-testid={`button-remove-brand-${brand.toLowerCase().replace(/\s+/g, "-")}`}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="sort-by" className="text-sm font-semibold mb-2 block">
-                    Sort By
-                  </Label>
-                  <Select value={sortBy || "none"} onValueChange={(value) => {
+            <div>
+              <Label
+                htmlFor="upc-code"
+                className="text-sm font-semibold mb-2 block"
+              >
+                UPC/GTIN Code
+              </Label>
+              <Input
+                id="upc-code"
+                type="text"
+                placeholder="e.g., '077034085228'"
+                value={upcCode}
+                onChange={(e) => {
+                  setUpcCode(e.target.value);
+                  setCurrentPage(1);
+                }}
+                data-testid="input-upc"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label
+                  htmlFor="sort-by"
+                  className="text-sm font-semibold mb-2 block"
+                >
+                  Sort By
+                </Label>
+                <Select
+                  value={sortBy || "none"}
+                  onValueChange={(value) => {
                     setSortBy(value === "none" ? "" : value);
                     setCurrentPage(1);
-                  }}>
-                    <SelectTrigger id="sort-by" data-testid="select-sort-by">
-                      <SelectValue placeholder="None" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {SORT_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  }}
+                >
+                  <SelectTrigger id="sort-by" data-testid="select-sort-by">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {SORT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <Label htmlFor="sort-order" className="text-sm font-semibold mb-2 block">
-                    Sort Order
-                  </Label>
-                  <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => {
+              <div>
+                <Label
+                  htmlFor="sort-order"
+                  className="text-sm font-semibold mb-2 block"
+                >
+                  Sort Order
+                </Label>
+                <Select
+                  value={sortOrder}
+                  onValueChange={(value: "asc" | "desc") => {
                     setSortOrder(value);
                     setCurrentPage(1);
-                  }}>
-                    <SelectTrigger id="sort-order" data-testid="select-sort-order" disabled={!sortBy}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="asc">Ascending</SelectItem>
-                      <SelectItem value="desc">Descending</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  }}
+                >
+                  <SelectTrigger
+                    id="sort-order"
+                    data-testid="select-sort-order"
+                    disabled={!sortBy}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="asc">Ascending</SelectItem>
+                    <SelectItem value="desc">Descending</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <Label htmlFor="page-size" className="text-sm font-semibold mb-2 block">
-                    Results Per Page
-                  </Label>
-                  <Select value={pageSize.toString()} onValueChange={(value) => {
+              <div>
+                <Label
+                  htmlFor="page-size"
+                  className="text-sm font-semibold mb-2 block"
+                >
+                  Results Per Page
+                </Label>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
                     setPageSize(parseInt(value));
                     setCurrentPage(1);
-                  }}>
-                    <SelectTrigger id="page-size" data-testid="select-page-size">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAGE_SIZES.map((size) => (
-                        <SelectItem key={size} value={size.toString()}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  }}
+                >
+                  <SelectTrigger id="page-size" data-testid="select-page-size">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZES.map((size) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
           </div>
 
           {hasActiveFilters && (
@@ -376,17 +441,21 @@ export default function FdcSearch() {
               {brandOwners.map((brand) => (
                 <Badge key={brand} variant="secondary" className="gap-1">
                   Brand: {brand}
-                  <X 
-                    className="w-3 h-3 cursor-pointer hover-elevate" 
+                  <X
+                    className="w-3 h-3 cursor-pointer hover-elevate"
                     onClick={() => handleRemoveBrand(brand)}
                   />
                 </Badge>
               ))}
               {upcCode && (
-                <Badge variant="secondary" className="gap-1" data-testid="badge-upc-filter">
+                <Badge
+                  variant="secondary"
+                  className="gap-1"
+                  data-testid="badge-upc-filter"
+                >
                   UPC: {upcCode}
-                  <X 
-                    className="w-3 h-3 cursor-pointer hover-elevate" 
+                  <X
+                    className="w-3 h-3 cursor-pointer hover-elevate"
                     onClick={() => {
                       setUpcCode("");
                       setCurrentPage(1);
@@ -397,9 +466,10 @@ export default function FdcSearch() {
               )}
               {sortBy && (
                 <Badge variant="secondary" className="gap-1">
-                  Sort: {SORT_OPTIONS.find(o => o.value === sortBy)?.label} ({sortOrder})
-                  <X 
-                    className="w-3 h-3 cursor-pointer hover-elevate" 
+                  Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label} (
+                  {sortOrder})
+                  <X
+                    className="w-3 h-3 cursor-pointer hover-elevate"
                     onClick={() => {
                       setSortBy("");
                       setCurrentPage(1);
@@ -433,7 +503,11 @@ export default function FdcSearch() {
                 {searchResults.totalHits} results
               </Badge>
               {searchResults.fromCache && (
-                <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20" data-testid="badge-cached">
+                <Badge
+                  variant="outline"
+                  className="bg-green-50 dark:bg-green-900/20"
+                  data-testid="badge-cached"
+                >
                   <Database className="w-3 h-3 mr-1" />
                   Cached
                 </Badge>
@@ -447,7 +521,7 @@ export default function FdcSearch() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   data-testid="button-prev-page"
                 >
@@ -456,7 +530,11 @@ export default function FdcSearch() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setCurrentPage(p => Math.min(searchResults.totalPages, p + 1))}
+                  onClick={() =>
+                    setCurrentPage((p) =>
+                      Math.min(searchResults.totalPages, p + 1),
+                    )
+                  }
                   disabled={currentPage === searchResults.totalPages}
                   data-testid="button-next-page"
                 >
@@ -468,8 +546,8 @@ export default function FdcSearch() {
 
           <div className="space-y-3">
             {searchResults.foods.map((food) => (
-              <Card 
-                key={food.fdcId} 
+              <Card
+                key={food.fdcId}
                 className="hover-elevate cursor-pointer"
                 onClick={() => handleViewDetails(food.fdcId)}
                 data-testid={`card-food-${food.fdcId}`}
@@ -477,21 +555,34 @@ export default function FdcSearch() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-1" data-testid={`text-food-name-${food.fdcId}`}>
+                      <h3
+                        className="font-semibold text-lg mb-1"
+                        data-testid={`text-food-name-${food.fdcId}`}
+                      >
                         {food.description}
                       </h3>
                       {food.brandOwner && (
-                        <p className="text-sm text-muted-foreground mb-2" data-testid={`text-brand-${food.fdcId}`}>
-                          {food.brandOwner} {food.brandName && `- ${food.brandName}`}
+                        <p
+                          className="text-sm text-muted-foreground mb-2"
+                          data-testid={`text-brand-${food.fdcId}`}
+                        >
+                          {food.brandOwner}{" "}
+                          {food.brandName && `- ${food.brandName}`}
                         </p>
                       )}
                       {food.gtinUpc && (
-                        <p className="text-sm text-muted-foreground mb-2" data-testid={`text-upc-${food.fdcId}`}>
+                        <p
+                          className="text-sm text-muted-foreground mb-2"
+                          data-testid={`text-upc-${food.fdcId}`}
+                        >
                           UPC: {food.gtinUpc}
                         </p>
                       )}
                       <div className="flex items-center gap-2">
-                        <Badge className={getDataTypeColor(food.dataType)} data-testid={`badge-type-${food.fdcId}`}>
+                        <Badge
+                          className={getDataTypeColor(food.dataType)}
+                          data-testid={`badge-type-${food.fdcId}`}
+                        >
                           {getDataTypeIcon(food.dataType)}
                           <span className="ml-1">{food.dataType}</span>
                         </Badge>
@@ -516,7 +607,7 @@ export default function FdcSearch() {
               {foodDetails?.description || "Loading..."}
             </DialogTitle>
           </DialogHeader>
-          
+
           {isLoadingDetails && (
             <div className="space-y-4">
               <Skeleton className="h-20 w-full" />
@@ -532,7 +623,10 @@ export default function FdcSearch() {
                   <span className="ml-1">{foodDetails.dataType}</span>
                 </Badge>
                 {foodDetails.fromCache && (
-                  <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20">
+                  <Badge
+                    variant="outline"
+                    className="bg-green-50 dark:bg-green-900/20"
+                  >
                     <Database className="w-3 h-3 mr-1" />
                     Cached
                   </Badge>
@@ -543,7 +637,8 @@ export default function FdcSearch() {
                 <div>
                   <h4 className="font-semibold text-sm mb-1">Brand</h4>
                   <p className="text-sm">
-                    {foodDetails.brandOwner} {foodDetails.brandName && `- ${foodDetails.brandName}`}
+                    {foodDetails.brandOwner}{" "}
+                    {foodDetails.brandName && `- ${foodDetails.brandName}`}
                   </p>
                 </div>
               )}
@@ -560,7 +655,9 @@ export default function FdcSearch() {
               {foodDetails.ingredients && (
                 <div>
                   <h4 className="font-semibold text-sm mb-1">Ingredients</h4>
-                  <p className="text-sm text-muted-foreground">{foodDetails.ingredients}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {foodDetails.ingredients}
+                  </p>
                 </div>
               )}
 
@@ -576,10 +673,16 @@ export default function FdcSearch() {
               <div>
                 <h4 className="font-semibold text-sm mb-2">Nutrition Facts</h4>
                 <div className="border rounded-lg p-3 space-y-2">
-                  {importantNutrients.map(nutrient => {
-                    const value = getNutrientValue(foodDetails.nutrients, nutrient.number);
+                  {importantNutrients.map((nutrient) => {
+                    const value = getNutrientValue(
+                      foodDetails.nutrients,
+                      nutrient.number,
+                    );
                     return value ? (
-                      <div key={nutrient.number} className="flex justify-between text-sm">
+                      <div
+                        key={nutrient.number}
+                        className="flex justify-between text-sm"
+                      >
                         <span>{nutrient.name}</span>
                         <span className="font-medium">{value}</span>
                       </div>
