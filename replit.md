@@ -31,6 +31,7 @@ Key architectural decisions include:
     - **Enhanced Onboarding**: Guides users through initial setup, including storage areas, household size, cooking skill, unit preferences, and foods to avoid, using USDA-enriched data.
     - **Food Category Filtering**: Allows filtering inventory by USDA food categories and viewing items organized by groups.
     - **Barcode Integration**: Utilizes UPC/GTIN barcodes for product image search and leverages USDA data for enriched item details.
+    - **USDA Food Search**: Comprehensive search interface with always-visible filters (Brand Owners, Sort By, Sort Order, Results Per Page) for easy access to nutritional data.
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon-backed)
