@@ -22,14 +22,16 @@ import {
   MessageSquare,
   Apple,
   UtensilsCrossed,
+  ScanLine,
 } from "lucide-react";
 
 interface CommandPaletteProps {
   onAddFood?: () => void;
   onGenerateRecipe?: () => void;
+  onScanBarcode?: () => void;
 }
 
-export function CommandPalette({ onAddFood, onGenerateRecipe }: CommandPaletteProps) {
+export function CommandPalette({ onAddFood, onGenerateRecipe, onScanBarcode }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const [, setLocation] = useLocation();
 
@@ -65,6 +67,10 @@ export function CommandPalette({ onAddFood, onGenerateRecipe }: CommandPalettePr
           <CommandItem onSelect={() => runAction(() => onAddFood?.())}>
             <Plus className="mr-2 h-4 w-4" />
             <span>Add Food Item</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runAction(() => onScanBarcode?.())}>
+            <ScanLine className="mr-2 h-4 w-4" />
+            <span>Scan Barcode</span>
           </CommandItem>
           <CommandItem onSelect={() => runAction(() => onGenerateRecipe?.())}>
             <ChefHat className="mr-2 h-4 w-4" />
