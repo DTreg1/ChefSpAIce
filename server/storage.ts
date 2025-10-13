@@ -675,7 +675,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [cachedFood] = await db
         .insert(fdcCache)
-        .values(food)
+        .values([food])
         .onConflictDoUpdate({
           target: fdcCache.fdcId,
           set: {
@@ -741,10 +741,10 @@ export class DatabaseStorage implements IStorage {
     try {
       const [cachedSearch] = await db
         .insert(fdcSearchCache)
-        .values({
+        .values([{
           ...search,
           query: search.query.toLowerCase(),
-        })
+        }])
         .returning();
       return cachedSearch;
     } catch (error) {

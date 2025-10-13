@@ -187,7 +187,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // USDA Food Search (public)
+  // FDC Food Search with Cache (public)
+  app.get("/api/fdc/search", async (req, res) => {
+    try {
+      const { query, pageSize, pageNumber, dataType } = req.query;
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      const size = pageSize ? parseInt(pageSize as string) : 25;
+      const page = pageNumber ? parseInt(pageNumber as string) : 1;
+      const type = dataType as string | undefined;
+
+      // Check cache first
+      const cachedResults = await storage.getCachedSearchResults(query, type, page);
+      if (cachedResults) {
+        console.log(`FDC search cache hit for query: ${query}`);
+        return res.json({
+          foods: cachedResults.results,
+          totalHits: cachedResults.totalHits,
+          currentPage: page,
+          totalPages: Math.ceil((cachedResults.totalHits || 0) / size),
+          fromCache: true
+        });
+      }
+
+      // If not in cache, call FDC API
+      console.log(`FDC search cache miss for query: ${query}, calling API`);
+      
+      // Build API URL
+      const apiKey = process.env.FDC_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "FDC API key not configured" });
+      }
+
+      const searchUrl = new URL('https://api.nal.usda.gov/fdc/v1/foods/search');
+      searchUrl.searchParams.append('api_key', apiKey);
+      searchUrl.searchParams.append('query', query);
+      searchUrl.searchParams.append('pageSize', size.toString());
+      searchUrl.searchParams.append('pageNumber', page.toString());
+      
+      if (type) {
+        searchUrl.searchParams.append('dataType', type);
+      }
+
+      const response = await fetch(searchUrl);
+      if (!response.ok) {
+        throw new Error(`FDC API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Cache the search results
+      const resultsToCache = data.foods?.map((food: any) => ({
+        fdcId: food.fdcId.toString(),
+        description: food.description || food.lowercaseDescription,
+        dataType: food.dataType,
+        brandOwner: food.brandOwner,
+        brandName: food.brandName,
+        score: food.score
+      })) || [];
+
+      await storage.cacheSearchResults({
+        query,
+        dataType: type || null,
+        pageNumber: page,
+        pageSize: size,
+        totalHits: data.totalHits || 0,
+        results: resultsToCache
+      });
+
+      // Cache individual food items for faster detail lookups
+      for (const food of (data.foods || [])) {
+        const nutrients = food.foodNutrients?.map((n: any) => ({
+          nutrientId: n.nutrientId,
+          nutrientName: n.nutrientName,
+          nutrientNumber: n.nutrientNumber,
+          unitName: n.unitName,
+          value: n.value
+        })) || [];
+
+        await storage.cacheFood({
+          fdcId: food.fdcId.toString(),
+          description: food.description || food.lowercaseDescription,
+          dataType: food.dataType,
+          brandOwner: food.brandOwner,
+          brandName: food.brandName,
+          ingredients: food.ingredients,
+          servingSize: food.servingSize,
+          servingSizeUnit: food.servingSizeUnit,
+          nutrients,
+          fullData: food
+        });
+      }
+
+      res.json({
+        foods: resultsToCache,
+        totalHits: data.totalHits || 0,
+        currentPage: page,
+        totalPages: Math.ceil((data.totalHits || 0) / size),
+        fromCache: false
+      });
+    } catch (error: any) {
+      console.error("FDC search error:", error);
+      res.status(500).json({ error: "Failed to search FDC database" });
+    }
+  });
+
+  // FDC Food Details with Cache (public)
+  app.get("/api/fdc/food/:fdcId", async (req, res) => {
+    try {
+      const { fdcId } = req.params;
+      
+      // Check cache first
+      const cachedFood = await storage.getCachedFood(fdcId);
+      if (cachedFood) {
+        console.log(`FDC food cache hit for fdcId: ${fdcId}`);
+        await storage.updateFoodLastAccessed(fdcId);
+        return res.json({
+          ...cachedFood.fullData,
+          fromCache: true
+        });
+      }
+
+      // If not in cache, call FDC API
+      console.log(`FDC food cache miss for fdcId: ${fdcId}, calling API`);
+      
+      const apiKey = process.env.FDC_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "FDC API key not configured" });
+      }
+
+      const foodUrl = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${apiKey}`;
+      const response = await fetch(foodUrl);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return res.status(404).json({ error: "Food not found" });
+        }
+        throw new Error(`FDC API error: ${response.statusText}`);
+      }
+
+      const food = await response.json();
+      
+      // Cache the food item
+      const nutrients = food.foodNutrients?.map((n: any) => ({
+        nutrientId: n.nutrient?.id || n.nutrientId,
+        nutrientName: n.nutrient?.name || n.nutrientName,
+        nutrientNumber: n.nutrient?.number || n.nutrientNumber,
+        unitName: n.nutrient?.unitName || n.unitName,
+        value: n.amount || n.value || 0
+      })) || [];
+
+      await storage.cacheFood({
+        fdcId: fdcId,
+        description: food.description || food.lowercaseDescription,
+        dataType: food.dataType,
+        brandOwner: food.brandOwner,
+        brandName: food.brandName,
+        ingredients: food.ingredients,
+        servingSize: food.servingSize,
+        servingSizeUnit: food.servingSizeUnit,
+        nutrients,
+        fullData: food
+      });
+
+      res.json({
+        ...food,
+        fromCache: false
+      });
+    } catch (error: any) {
+      console.error("FDC food details error:", error);
+      res.status(500).json({ error: "Failed to fetch food details" });
+    }
+  });
+
+  // Clear old cache entries (admin endpoint - could be scheduled)
+  app.post("/api/fdc/cache/clear", async (req, res) => {
+    try {
+      const { daysOld = 30 } = req.body;
+      await storage.clearOldCache(daysOld);
+      res.json({ success: true, message: `Cleared cache entries older than ${daysOld} days` });
+    } catch (error) {
+      console.error("Error clearing cache:", error);
+      res.status(500).json({ error: "Failed to clear cache" });
+    }
+  });
+
+  // USDA Food Search (public) - Keep existing endpoints for compatibility
   app.get("/api/usda/search", async (req, res) => {
     try {
       const { query, pageSize, pageNumber, dataType } = req.query;
