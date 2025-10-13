@@ -37,6 +37,7 @@ interface FoodItem {
   dataType: string;
   brandOwner?: string;
   brandName?: string;
+  gtinUpc?: string;
   score?: number;
 }
 
@@ -54,6 +55,7 @@ interface FoodDetails {
   dataType: string;
   brandOwner?: string;
   brandName?: string;
+  gtinUpc?: string;
   ingredients?: string;
   servingSize?: number;
   servingSizeUnit?: string;
@@ -76,6 +78,7 @@ export default function FdcSearch() {
   const [currentQuery, setCurrentQuery] = useState("");
   const [brandOwners, setBrandOwners] = useState<string[]>([]);
   const [brandInput, setBrandInput] = useState("");
+  const [upcCode, setUpcCode] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [pageSize, setPageSize] = useState(25);
@@ -86,7 +89,9 @@ export default function FdcSearch() {
   
   const buildQueryParams = () => {
     const params = new URLSearchParams();
-    if (currentQuery) params.append("query", currentQuery);
+    // Include UPC in search query if provided
+    const searchTerms = [currentQuery, upcCode].filter(Boolean).join(" ");
+    if (searchTerms) params.append("query", searchTerms);
     // Append each brand owner separately to handle brands with commas
     if (brandOwners.length > 0) {
       brandOwners.forEach(brand => {
@@ -105,7 +110,7 @@ export default function FdcSearch() {
   // Search query
   const { data: searchResults, isLoading: isSearching} = useQuery<SearchResponse>({
     queryKey: [`/api/fdc/search?${buildQueryParams()}`],
-    enabled: !!currentQuery,
+    enabled: !!currentQuery || !!upcCode,
   });
 
   // Food details query
@@ -151,13 +156,14 @@ export default function FdcSearch() {
   const handleClearFilters = () => {
     setBrandOwners([]);
     setBrandInput("");
+    setUpcCode("");
     setSortBy("");
     setSortOrder("asc");
     setPageSize(25);
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = brandOwners.length > 0 || sortBy !== "";
+  const hasActiveFilters = brandOwners.length > 0 || sortBy !== "" || upcCode !== "";
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType?.toLowerCase()) {
@@ -284,6 +290,23 @@ export default function FdcSearch() {
                 )}
               </div>
 
+              <div>
+                <Label htmlFor="upc-code" className="text-sm font-semibold mb-2 block">
+                  UPC/GTIN Code
+                </Label>
+                <Input
+                  id="upc-code"
+                  type="text"
+                  placeholder="e.g., '077034085228'"
+                  value={upcCode}
+                  onChange={(e) => {
+                    setUpcCode(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  data-testid="input-upc"
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="sort-by" className="text-sm font-semibold mb-2 block">
@@ -359,6 +382,19 @@ export default function FdcSearch() {
                   />
                 </Badge>
               ))}
+              {upcCode && (
+                <Badge variant="secondary" className="gap-1" data-testid="badge-upc-filter">
+                  UPC: {upcCode}
+                  <X 
+                    className="w-3 h-3 cursor-pointer hover-elevate" 
+                    onClick={() => {
+                      setUpcCode("");
+                      setCurrentPage(1);
+                    }}
+                    data-testid="button-remove-upc"
+                  />
+                </Badge>
+              )}
               {sortBy && (
                 <Badge variant="secondary" className="gap-1">
                   Sort: {SORT_OPTIONS.find(o => o.value === sortBy)?.label} ({sortOrder})
@@ -449,6 +485,11 @@ export default function FdcSearch() {
                           {food.brandOwner} {food.brandName && `- ${food.brandName}`}
                         </p>
                       )}
+                      {food.gtinUpc && (
+                        <p className="text-sm text-muted-foreground mb-2" data-testid={`text-upc-${food.fdcId}`}>
+                          UPC: {food.gtinUpc}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2">
                         <Badge className={getDataTypeColor(food.dataType)} data-testid={`badge-type-${food.fdcId}`}>
                           {getDataTypeIcon(food.dataType)}
@@ -503,6 +544,15 @@ export default function FdcSearch() {
                   <h4 className="font-semibold text-sm mb-1">Brand</h4>
                   <p className="text-sm">
                     {foodDetails.brandOwner} {foodDetails.brandName && `- ${foodDetails.brandName}`}
+                  </p>
+                </div>
+              )}
+
+              {foodDetails.gtinUpc && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">UPC/GTIN</h4>
+                  <p className="text-sm" data-testid="text-upc-details">
+                    {foodDetails.gtinUpc}
                   </p>
                 </div>
               )}
