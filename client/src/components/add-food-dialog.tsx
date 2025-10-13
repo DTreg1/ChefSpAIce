@@ -519,10 +519,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={handleClose} data-testid="button-cancel">
+          <Button variant="outline" className="touch-target" onClick={handleClose} data-testid="button-cancel">
             Cancel
           </Button>
           <Button
+            className="touch-target"
             onClick={handleSubmit}
             disabled={addItemMutation.isPending}
             data-testid="button-submit-food"

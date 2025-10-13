@@ -71,7 +71,7 @@ export function RecipeCard({
   };
 
   return (
-    <Card className="border-2 border-primary/20 shadow-md" data-testid="card-recipe">
+    <Card className="hover-elevate active-elevate-2 card-hover border-2 border-primary/20 shadow-md hover:shadow-lg transition-all-smooth" data-testid="card-recipe">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-2xl font-serif font-semibold text-foreground" data-testid="text-recipe-title">

@@ -79,15 +79,15 @@
   --font-sans: 'Ubuntu', sans-serif;
   --font-serif: 'Ubuntu', sans-serif;
   --font-mono: 'Ubuntu Mono', monospace;
-  --radius: 1.3rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 2px 4px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 4px 6px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
+  --radius: 0.9rem;
+  --shadow-2xs: 0 1px 2px 0 hsla(var(--primary), 0.05);
+  --shadow-xs: 0 1px 3px 0 hsla(var(--primary), 0.08), 0 1px 2px 0 hsla(var(--primary), 0.06);
+  --shadow-sm: 0 2px 4px -1px hsla(var(--primary), 0.06), 0 2px 4px -1px hsla(var(--primary), 0.06);
+  --shadow: 0 4px 6px -1px hsla(var(--primary), 0.08), 0 2px 4px -1px hsla(var(--primary), 0.04);
+  --shadow-md: 0 10px 15px -3px hsla(var(--primary), 0.1), 0 4px 6px -2px hsla(var(--primary), 0.05);
+  --shadow-lg: 0 20px 25px -5px hsla(var(--primary), 0.12), 0 10px 10px -5px hsla(var(--primary), 0.06);
+  --shadow-xl: 0 25px 50px -12px hsla(var(--primary), 0.15);
+  --shadow-2xl: 0 35px 60px -15px hsla(var(--primary), 0.18);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -173,14 +173,14 @@
   --chart-4: 147.1429 78.5047% 41.9608%;
   --chart-5: 341.4894 75.2000% 50.9804%;
 
-  --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 2px 4px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 4px 6px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
+  --shadow-2xs: 0 1px 2px 0 hsla(var(--primary), 0.08);
+  --shadow-xs: 0 1px 3px 0 hsla(var(--primary), 0.12), 0 1px 2px 0 hsla(var(--primary), 0.08);
+  --shadow-sm: 0 2px 4px -1px hsla(var(--primary), 0.1), 0 2px 4px -1px hsla(var(--primary), 0.08);
+  --shadow: 0 4px 6px -1px hsla(var(--primary), 0.12), 0 2px 4px -1px hsla(var(--primary), 0.08);
+  --shadow-md: 0 10px 15px -3px hsla(var(--primary), 0.15), 0 4px 6px -2px hsla(var(--primary), 0.1);
+  --shadow-lg: 0 20px 25px -5px hsla(var(--primary), 0.18), 0 10px 10px -5px hsla(var(--primary), 0.12);
+  --shadow-xl: 0 25px 50px -12px hsla(var(--primary), 0.22);
+  --shadow-2xl: 0 35px 60px -15px hsla(var(--primary), 0.26);
 
   /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -190,7 +190,7 @@
   --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-  --radius: 1.3rem;
+  --radius: 0.9rem;
   --spacing: 0.25rem;
   --font-sans: 'Ubuntu', sans-serif;
   --font-serif: 'Ubuntu', sans-serif;
@@ -240,6 +240,86 @@
     content: attr(data-placeholder);
     color: hsl(var(--muted-foreground));
     pointer-events: none;
+  }
+
+  /* Smooth transitions for all interactive elements */
+  .transition-all-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Card hover animation */
+  .card-hover {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Subtle scale animation for buttons */
+  .scale-touch {
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .scale-touch:active {
+    transform: scale(0.97);
+  }
+
+  /* Pulse animation for notifications */
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Fade in animation */
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Mobile touch optimizations */
+  @media (max-width: 768px) {
+    /* Increase touch targets for mobile */
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Better mobile spacing */
+    .mobile-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    
+    /* Disable hover effects on touch devices */
+    @media (hover: none) and (pointer: coarse) {
+      .card-hover:hover {
+        transform: none;
+      }
+      .hover-elevate:hover::after {
+        background-color: transparent;
+      }
+    }
+    
+    /* Smooth scrolling for mobile */
+    .mobile-scroll {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Swipeable cards animation */
+  .swipe-hint {
+    animation: swipe-hint 2s ease-in-out infinite;
+  }
+  
+  @keyframes swipe-hint {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-8px); }
   }
 
   /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
