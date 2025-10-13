@@ -8,14 +8,16 @@ import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipe-generator";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import type { FoodItem, StorageLocation, Recipe } from "@shared/schema";
 
 export default function Storage() {
   const [, params] = useRoute("/storage/:location");
   const [, setLocation] = useLocation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { toast } = useToast();
   const location = params?.location || "all";
 
@@ -25,6 +27,10 @@ export default function Storage() {
 
   const { data: allItems, error: itemsError, isLoading: itemsLoading } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],
+  });
+
+  const { data: categories } = useQuery<string[]>({
+    queryKey: ["/api/food-categories"],
   });
 
   // Display error notifications
@@ -52,9 +58,14 @@ export default function Storage() {
     (loc) => loc.name.toLowerCase() === location.toLowerCase()
   );
 
-  const items = location === "all" 
+  let items = location === "all" 
     ? allItems 
     : allItems?.filter((item) => item.storageLocationId === currentLocation?.id);
+  
+  // Apply category filter if selected
+  if (selectedCategory && items) {
+    items = items.filter((item) => item.foodCategory === selectedCategory);
+  }
 
   const handleRecipeGenerated = (recipe: Recipe) => {
     // Navigate to chat to see the recipe
@@ -68,6 +79,28 @@ export default function Storage() {
           <div className="mb-6">
             <ExpirationAlert />
           </div>
+
+          {categories && categories.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold mb-2 text-muted-foreground">Filter by Category</h3>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <Badge
+                    key={category}
+                    variant={selectedCategory === category ? "default" : "outline"}
+                    className="cursor-pointer hover-elevate active-elevate-2"
+                    onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                    data-testid={`badge-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {category}
+                    {selectedCategory === category && (
+                      <X className="w-3 h-3 ml-1" />
+                    )}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
