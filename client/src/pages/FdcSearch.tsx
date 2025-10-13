@@ -87,7 +87,8 @@ export default function FdcSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentQuery, setCurrentQuery] = useState("");
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
-  const [brandOwner, setBrandOwner] = useState("");
+  const [brandOwners, setBrandOwners] = useState<string[]>([]);
+  const [brandInput, setBrandInput] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [pageSize, setPageSize] = useState(25);
@@ -103,7 +104,12 @@ export default function FdcSearch() {
     if (selectedDataTypes.length > 0) {
       params.append("dataType", selectedDataTypes.join(","));
     }
-    if (brandOwner.trim()) params.append("brandOwner", brandOwner.trim());
+    // Append each brand owner separately to handle brands with commas
+    if (brandOwners.length > 0) {
+      brandOwners.forEach(brand => {
+        params.append("brandOwner", brand);
+      });
+    }
     if (sortBy) {
       params.append("sortBy", sortBy);
       params.append("sortOrder", sortOrder);
@@ -147,16 +153,38 @@ export default function FdcSearch() {
     setCurrentPage(1);
   };
 
+  const handleAddBrand = () => {
+    const trimmedBrand = brandInput.trim();
+    if (trimmedBrand && !brandOwners.includes(trimmedBrand)) {
+      setBrandOwners(prev => [...prev, trimmedBrand]);
+      setBrandInput("");
+      setCurrentPage(1);
+    }
+  };
+
+  const handleRemoveBrand = (brandToRemove: string) => {
+    setBrandOwners(prev => prev.filter(b => b !== brandToRemove));
+    setCurrentPage(1);
+  };
+
+  const handleBrandInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddBrand();
+    }
+  };
+
   const handleClearFilters = () => {
     setSelectedDataTypes([]);
-    setBrandOwner("");
+    setBrandOwners([]);
+    setBrandInput("");
     setSortBy("");
     setSortOrder("asc");
     setPageSize(25);
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = selectedDataTypes.length > 0 || brandOwner.trim() !== "" || sortBy !== "";
+  const hasActiveFilters = selectedDataTypes.length > 0 || brandOwners.length > 0 || sortBy !== "";
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType?.toLowerCase()) {
@@ -273,19 +301,42 @@ export default function FdcSearch() {
 
               <div>
                 <Label htmlFor="brand-owner" className="text-sm font-semibold mb-2 block">
-                  Brand Owner
+                  Brand Owners
                 </Label>
-                <Input
-                  id="brand-owner"
-                  type="text"
-                  placeholder="e.g., 'General Mills', 'Kraft'"
-                  value={brandOwner}
-                  onChange={(e) => {
-                    setBrandOwner(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  data-testid="input-brand-owner"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="brand-owner"
+                    type="text"
+                    placeholder="e.g., 'General Mills', 'Kraft'"
+                    value={brandInput}
+                    onChange={(e) => setBrandInput(e.target.value)}
+                    onKeyDown={handleBrandInputKeyDown}
+                    data-testid="input-brand-owner"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleAddBrand}
+                    disabled={!brandInput.trim()}
+                    data-testid="button-add-brand"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {brandOwners.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2" data-testid="brand-pills">
+                    {brandOwners.map((brand) => (
+                      <Badge key={brand} variant="secondary" className="gap-1">
+                        {brand}
+                        <X 
+                          className="w-3 h-3 cursor-pointer hover-elevate" 
+                          onClick={() => handleRemoveBrand(brand)}
+                          data-testid={`button-remove-brand-${brand.toLowerCase().replace(/\s+/g, '-')}`}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -364,18 +415,15 @@ export default function FdcSearch() {
                   />
                 </Badge>
               ))}
-              {brandOwner.trim() && (
-                <Badge variant="secondary" className="gap-1">
-                  Brand: {brandOwner}
+              {brandOwners.map((brand) => (
+                <Badge key={brand} variant="secondary" className="gap-1">
+                  Brand: {brand}
                   <X 
                     className="w-3 h-3 cursor-pointer hover-elevate" 
-                    onClick={() => {
-                      setBrandOwner("");
-                      setCurrentPage(1);
-                    }}
+                    onClick={() => handleRemoveBrand(brand)}
                   />
                 </Badge>
-              )}
+              ))}
               {sortBy && (
                 <Badge variant="secondary" className="gap-1">
                   Sort: {SORT_OPTIONS.find(o => o.value === sortBy)?.label} ({sortOrder})
