@@ -114,7 +114,7 @@ function AppContent() {
       />
       <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <SidebarProvider style={style}>
-        <div className="flex h-screen w-full">
+        <div className="flex h-screen w-full bg-gradient-to-br from-lime-50/50 via-background to-green-50/30">
           <AppSidebar />
           <div className="flex flex-col flex-1">
             <header className={cn(
