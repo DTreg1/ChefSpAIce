@@ -259,3 +259,76 @@ export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs).omit({
 
 export type InsertApiUsageLog = z.infer<typeof insertApiUsageLogSchema>;
 export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
+
+// FDC API Cache - Store complete food data from USDA FDC API
+export const fdcCache = pgTable("fdc_cache", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fdcId: text("fdc_id").notNull().unique(),
+  description: text("description").notNull(),
+  dataType: text("data_type"),
+  brandOwner: text("brand_owner"),
+  brandName: text("brand_name"),
+  ingredients: text("ingredients"),
+  servingSize: integer("serving_size"),
+  servingSizeUnit: text("serving_size_unit"),
+  
+  // Store complete nutrient data as JSONB
+  nutrients: jsonb("nutrients").$type<Array<{
+    nutrientId: number;
+    nutrientName: string;
+    nutrientNumber: string;
+    unitName: string;
+    value: number;
+  }>>(),
+  
+  // Store the complete API response for any additional data
+  fullData: jsonb("full_data"),
+  
+  // Cache management
+  cachedAt: timestamp("cached_at").notNull().defaultNow(),
+  lastAccessed: timestamp("last_accessed").notNull().defaultNow(),
+}, (table) => [
+  index("fdc_cache_fdc_id_idx").on(table.fdcId),
+  index("fdc_cache_description_idx").on(table.description),
+]);
+
+export const insertFdcCacheSchema = createInsertSchema(fdcCache).omit({
+  id: true,
+  cachedAt: true,
+  lastAccessed: true,
+});
+
+export type InsertFdcCache = z.infer<typeof insertFdcCacheSchema>;
+export type FdcCache = typeof fdcCache.$inferSelect;
+
+// FDC Search Cache - Cache search results to avoid repeated API calls
+export const fdcSearchCache = pgTable("fdc_search_cache", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  query: text("query").notNull(),
+  dataType: text("data_type"),
+  pageNumber: integer("page_number").notNull().default(1),
+  pageSize: integer("page_size").notNull().default(50),
+  
+  // Store search results
+  totalHits: integer("total_hits"),
+  results: jsonb("results").$type<Array<{
+    fdcId: string;
+    description: string;
+    dataType: string;
+    brandOwner?: string;
+    brandName?: string;
+    score?: number;
+  }>>(),
+  
+  cachedAt: timestamp("cached_at").notNull().defaultNow(),
+}, (table) => [
+  index("fdc_search_cache_query_idx").on(table.query, table.dataType, table.pageNumber),
+]);
+
+export const insertFdcSearchCacheSchema = createInsertSchema(fdcSearchCache).omit({
+  id: true,
+  cachedAt: true,
+});
+
+export type InsertFdcSearchCache = z.infer<typeof insertFdcSearchCacheSchema>;
+export type FdcSearchCache = typeof fdcSearchCache.$inferSelect;
