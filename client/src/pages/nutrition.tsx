@@ -19,6 +19,7 @@ type NutritionItem = {
   name: string;
   quantity: string;
   unit: string | null;
+  weightInGrams: number;
   locationName: string;
   nutrition: NutritionInfo;
 };
@@ -185,10 +186,11 @@ export default function Nutrition() {
                 ) : (
                   <div className="space-y-3">
                     {items.map((item) => {
-                      const qty = parseFloat(item.quantity) || 1;
-                      const protein = item.nutrition.protein * qty / 100;
-                      const carbs = item.nutrition.carbs * qty / 100;
-                      const fat = item.nutrition.fat * qty / 100;
+                      const servingSize = parseFloat(item.nutrition.servingSize || "100") || 100;
+                      const multiplier = item.weightInGrams / servingSize;
+                      const protein = item.nutrition.protein * multiplier;
+                      const carbs = item.nutrition.carbs * multiplier;
+                      const fat = item.nutrition.fat * multiplier;
                       const itemTotalMacros = protein + carbs + fat;
                       
                       return (
@@ -206,7 +208,7 @@ export default function Nutrition() {
                             </div>
                             <Badge variant="secondary">
                               <Flame className="w-3 h-3 mr-1" />
-                              {Math.round(item.nutrition.calories * qty / 100)} kcal
+                              {Math.round(item.nutrition.calories * multiplier)} kcal
                             </Badge>
                           </div>
                           
