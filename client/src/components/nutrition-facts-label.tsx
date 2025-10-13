@@ -6,6 +6,10 @@ interface NutritionFactsLabelProps {
 }
 
 export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabelProps) {
+  if (!nutrition) {
+    return null;
+  }
+  
   const servingSize = nutrition.servingSize || "100";
   const servingUnit = nutrition.servingUnit || "g";
 
