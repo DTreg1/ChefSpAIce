@@ -402,16 +402,15 @@ export class DatabaseStorage implements IStorage {
 
   async getFoodCategories(userId: string): Promise<string[]> {
     try {
-      const results = await db
-        .selectDistinct({ foodCategory: foodItems.foodCategory })
-        .from(foodItems)
-        .where(and(
-          eq(foodItems.userId, userId),
-          sql`${foodItems.foodCategory} IS NOT NULL`
-        ))
-        .orderBy(foodItems.foodCategory);
+      const results = await db.execute<{ food_category: string }>(
+        sql`SELECT DISTINCT food_category 
+            FROM food_items 
+            WHERE user_id = ${userId} 
+              AND food_category IS NOT NULL 
+            ORDER BY food_category`
+      );
       
-      return results.map(r => r.foodCategory).filter((cat): cat is string => cat !== null);
+      return results.rows.map(r => r.food_category);
     } catch (error) {
       console.error(`Error getting food categories for user ${userId}:`, error);
       throw new Error('Failed to retrieve food categories');
