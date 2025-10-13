@@ -155,6 +155,23 @@ Key architectural decisions include:
   - Condiments/Sauces: 60 days (2 months)
   - Helper text reminds users to verify with package label
 
+### USDA-Enriched Onboarding (October 13, 2025)
+- **Real USDA Data Integration**: Onboarding items now use actual USDA FoodData Central data instead of hardcoded values
+- **30 Item Mapping**: Created comprehensive mapping file with FDC IDs for all 30 common onboarding items
+  - Pantry items: Flour, Sugar, Salt, Rice, Pasta, Olive Oil, etc.
+  - Fridge items: Milk (FDC 1097512), Eggs, Butter, Cheese, Yogurt, etc.
+  - Fresh items: Chicken Breast, Ground Beef, Salmon, Lettuce, Tomatoes, etc.
+- **Enrichment Endpoint**: Added `/api/onboarding/enriched-item/:name` (public, no auth required)
+  - Fetches full USDA data including nutrition, ingredients, brand info
+  - Returns enriched item data with complete nutritional profile
+- **Robust Fallback Logic**: If USDA enrichment fails, items are still created with basic data
+  - Ensures selected items are always added during onboarding
+  - Each item creation wrapped in independent error handling
+  - Console logging tracks which path (enriched vs basic) was used
+- **Complete Data Storage**: Food items store both extracted nutrition fields and full USDA response
+  - `nutrition` field: Extracted values for quick access  
+  - `usdaData` JSONB field: Complete API response for future use
+
 ### Enhanced Onboarding (October 2025)
 - **Storage Areas Pre-Selection**: Four default storage areas (Fridge, Freezer, Pantry, Counter) are pre-selected
   - Users can deselect any areas they don't have
