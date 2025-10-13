@@ -40,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 interface FoodNutrient {
   nutrientId: number;
@@ -338,17 +339,26 @@ export default function FdcSearch() {
               >
                 UPC/GTIN Code
               </Label>
-              <Input
-                id="upc-code"
-                type="text"
-                placeholder="e.g., '077034085228'"
-                value={upcCode}
-                onChange={(e) => {
-                  setUpcCode(e.target.value);
-                  setCurrentPage(1);
-                }}
-                data-testid="input-upc"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="upc-code"
+                  type="text"
+                  placeholder="e.g., '077034085228'"
+                  value={upcCode}
+                  onChange={(e) => {
+                    setUpcCode(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  data-testid="input-upc"
+                  className="flex-1"
+                />
+                <BarcodeScanner
+                  onScanSuccess={(barcode) => {
+                    setUpcCode(barcode);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
