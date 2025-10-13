@@ -63,7 +63,9 @@ export const storageLocations = pgTable("storage_locations", {
   name: text("name").notNull(),
   icon: text("icon").notNull(),
   itemCount: integer("item_count").notNull().default(0),
-});
+}, (table) => [
+  index("storage_locations_user_id_idx").on(table.userId),
+]);
 
 export const insertStorageLocationSchema = createInsertSchema(storageLocations).omit({
   id: true,
@@ -79,7 +81,9 @@ export const appliances = pgTable("appliances", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   type: text("type").notNull(),
-});
+}, (table) => [
+  index("appliances_user_id_idx").on(table.userId),
+]);
 
 export const insertApplianceSchema = createInsertSchema(appliances).omit({
   id: true,
@@ -105,7 +109,11 @@ export const foodItems = pgTable("food_items", {
   usdaData: jsonb("usda_data"), // Complete USDA API response data
   foodCategory: text("food_category"), // USDA food category (e.g., "Vegetables and Vegetable Products")
   addedAt: timestamp("added_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("food_items_user_id_idx").on(table.userId),
+  index("food_items_storage_location_id_idx").on(table.storageLocationId),
+  index("food_items_expiration_date_idx").on(table.expirationDate),
+]);
 
 export const insertFoodItemSchema = createInsertSchema(foodItems).omit({
   id: true,
@@ -124,7 +132,10 @@ export const chatMessages = pgTable("chat_messages", {
   content: text("content").notNull(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
   metadata: text("metadata"),
-});
+}, (table) => [
+  index("chat_messages_user_id_idx").on(table.userId),
+  index("chat_messages_timestamp_idx").on(table.timestamp),
+]);
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   id: true,
@@ -150,7 +161,10 @@ export const recipes = pgTable("recipes", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   isFavorite: boolean("is_favorite").notNull().default(false),
   rating: integer("rating"),
-});
+}, (table) => [
+  index("recipes_user_id_idx").on(table.userId),
+  index("recipes_created_at_idx").on(table.createdAt),
+]);
 
 export const insertRecipeSchema = createInsertSchema(recipes).omit({
   id: true,
@@ -171,7 +185,10 @@ export const expirationNotifications = pgTable("expiration_notifications", {
   daysUntilExpiry: integer("days_until_expiry").notNull(),
   notifiedAt: timestamp("notified_at").notNull().defaultNow(),
   dismissed: boolean("dismissed").notNull().default(false),
-});
+}, (table) => [
+  index("expiration_notifications_user_id_idx").on(table.userId),
+  index("expiration_notifications_dismissed_idx").on(table.dismissed),
+]);
 
 export const insertExpirationNotificationSchema = createInsertSchema(expirationNotifications).omit({
   id: true,
@@ -226,7 +243,10 @@ export const mealPlans = pgTable("meal_plans", {
   servings: integer("servings").notNull().default(1),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  index("meal_plans_user_id_idx").on(table.userId),
+  index("meal_plans_date_idx").on(table.date),
+]);
 
 export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
   id: true,
@@ -252,7 +272,10 @@ export const apiUsageLogs = pgTable("api_usage_logs", {
   statusCode: integer("status_code").notNull(), // HTTP status
   success: boolean("success").notNull(), // true if data returned
   timestamp: timestamp("timestamp").notNull().defaultNow(),
-});
+}, (table) => [
+  index("api_usage_logs_user_id_idx").on(table.userId),
+  index("api_usage_logs_timestamp_idx").on(table.timestamp),
+]);
 
 export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs).omit({
   id: true,

@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { EmptyState } from "@/components/empty-state";
 import { FoodCard } from "@/components/food-card";
 import { FoodCardSkeletonGrid } from "@/components/food-card-skeleton";
@@ -13,6 +14,98 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, X } from "lucide-react";
 import type { FoodItem, StorageLocation, Recipe } from "@shared/schema";
 
+// Virtual scrolling component for large food grids
+interface VirtualizedFoodGridProps {
+  items: FoodItem[];
+  storageLocations: StorageLocation[];
+  scrollContainerRef: React.RefObject<HTMLDivElement>;
+}
+
+function VirtualizedFoodGrid({ items, storageLocations, scrollContainerRef }: VirtualizedFoodGridProps) {
+  // Calculate grid columns based on screen size (responsive)
+  const getColumns = () => {
+    if (typeof window === 'undefined') return 3;
+    const width = window.innerWidth;
+    if (width < 768) return 1; // mobile
+    if (width < 1024) return 2; // tablet
+    return 3; // desktop
+  };
+
+  const [columns, setColumns] = useState(getColumns());
+
+  // Update columns on resize
+  useEffect(() => {
+    const handleResize = () => setColumns(getColumns());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Group items into rows for virtual scrolling
+  const rows = useMemo(() => {
+    const rowArray: FoodItem[][] = [];
+    for (let i = 0; i < items.length; i += columns) {
+      rowArray.push(items.slice(i, i + columns));
+    }
+    return rowArray;
+  }, [items, columns]);
+
+  // Initialize virtualizer for rows
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 280, // Estimated height of each card row
+    overscan: 2, // Render 2 rows outside of view
+  });
+
+  return (
+    <div
+      ref={scrollContainerRef}
+      className="h-[600px] overflow-auto"
+      style={{ contain: 'strict' }}
+    >
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const row = rows[virtualRow.index];
+          return (
+            <div
+              key={virtualRow.key}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: `${virtualRow.size}px`,
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {row.map((item) => {
+                  const itemLocation = storageLocations.find(
+                    (loc) => loc.id === item.storageLocationId
+                  );
+                  return (
+                    <FoodCard
+                      key={item.id}
+                      item={item}
+                      storageLocationName={itemLocation?.name || "Unknown"}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Storage() {
   const [, params] = useRoute("/storage/:location");
   const [, setLocation] = useLocation();
@@ -20,6 +113,7 @@ export default function Storage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { toast } = useToast();
   const location = params?.location || "all";
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: storageLocations, error: locationsError, isLoading: locationsLoading } = useQuery<StorageLocation[]>({
     queryKey: ["/api/storage-locations"],
@@ -129,7 +223,15 @@ export default function Storage() {
             <FoodCardSkeletonGrid count={6} />
           ) : !items || items.length === 0 ? (
             <EmptyState type="inventory" onAction={() => setAddDialogOpen(true)} />
+          ) : items.length > 50 ? (
+            // Use virtual scrolling for large lists (>50 items)
+            <VirtualizedFoodGrid 
+              items={items} 
+              storageLocations={storageLocations || []}
+              scrollContainerRef={scrollContainerRef}
+            />
           ) : (
+            // Regular rendering for smaller lists
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {items.map((item) => {
                 const itemLocation = storageLocations?.find(

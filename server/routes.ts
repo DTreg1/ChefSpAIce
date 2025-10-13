@@ -9,6 +9,7 @@ import { getEnrichedOnboardingItem } from "./onboarding-usda";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ApiError } from "./apiError";
+import { batchedApiLogger } from "./batchedApiLogger";
 import { z } from "zod";
 import { 
   insertFoodItemSchema, 
@@ -268,20 +269,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Advanced filters (dataType, sort, brand) bypass cache completely
       const hasAnyFilters = sort || brandOwners.length > 0 || dataTypes.length > 0 || size !== 25;
       
-      if (!hasAnyFilters) {
-        const cachedResults = await storage.getCachedSearchResults(query, undefined, page);
-        if (cachedResults && 
-            cachedResults.results &&
-            cachedResults.pageSize === 25) {
-          console.log(`FDC search cache hit for query: ${query}`);
-          return res.json({
+      // Use shorter TTL for complex searches, longer TTL for simple searches
+      const cachedResults = await storage.getCachedSearchResults(query, undefined, page, hasAnyFilters);
+      if (cachedResults && 
+          cachedResults.results &&
+          cachedResults.pageSize === size) {
+        console.log(`FDC search cache hit for query: ${query} (complex: ${hasAnyFilters})`);
+        return res.json({
             foods: cachedResults.results,
             totalHits: cachedResults.totalHits,
             currentPage: page,
             totalPages: Math.ceil((cachedResults.totalHits || 0) / size),
             fromCache: true
           });
-        }
       }
 
       // If not in cache, call FDC API
@@ -338,17 +338,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         score: food.score
       })) || [];
 
-      // Only cache simple searches without any filters
-      if (!hasAnyFilters) {
-        await storage.cacheSearchResults({
-          query,
-          dataType: null,
-          pageNumber: page,
-          pageSize: 25,
-          totalHits: data.totalHits || 0,
-          results: resultsToCache
-        });
-      }
+      // Cache all searches, but complex searches will have shorter TTL (2 hours vs 24 hours)
+      // This is handled by the getCachedSearchResults method which checks isComplexSearch
+      await storage.cacheSearchResults({
+        query,
+        dataType: null,
+        pageNumber: page,
+        pageSize: size,
+        totalHits: data.totalHits || 0,
+        results: resultsToCache
+      });
 
       // Cache individual food items for faster detail lookups
       for (const food of (data.foods || [])) {
@@ -563,10 +562,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       success = false;
       res.status(500).json({ error: "Failed to search Barcode Lookup" });
     } finally {
-      // Reliable logging: always executes regardless of success or failure
+      // Use batched logging for better performance
       if (userId && apiCallMade) {
         try {
-          await storage.logApiUsage(userId, {
+          await batchedApiLogger.logApiUsage(userId, {
             apiName: 'barcode_lookup',
             endpoint: 'search',
             queryParams: `query=${query}`,
@@ -618,10 +617,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       success = false;
       res.status(500).json({ error: "Failed to fetch product details" });
     } finally {
-      // Reliable logging: always executes regardless of success or failure
+      // Use batched logging for better performance
       if (userId && apiCallMade) {
         try {
-          await storage.logApiUsage(userId, {
+          await batchedApiLogger.logApiUsage(userId, {
             apiName: 'barcode_lookup',
             endpoint: 'product',
             queryParams: `barcode=${barcode}`,
@@ -717,12 +716,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chat Messages (user-scoped)
+  // Chat Messages (user-scoped) - Now with pagination support
   app.get("/api/chat/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const messages = await storage.getChatMessages(userId);
-      res.json(messages);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100); // Max 100 per page
+      
+      // If pagination params are provided, use paginated method
+      if (req.query.page || req.query.limit) {
+        const result = await storage.getChatMessagesPaginated(userId, page, limit);
+        res.json(result);
+      } else {
+        // Fallback to non-paginated for backward compatibility
+        const messages = await storage.getChatMessages(userId);
+        res.json(messages);
+      }
     } catch (error) {
       console.error("Error fetching chat messages:", error);
       res.status(500).json({ error: "Failed to fetch chat messages" });
@@ -1009,8 +1018,18 @@ Respond ONLY with a valid JSON object in this exact format:
   app.get("/api/recipes", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const recipes = await storage.getRecipes(userId);
-      res.json(recipes);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
+      
+      // If pagination params are provided, use paginated method
+      if (req.query.page || req.query.limit) {
+        const result = await storage.getRecipesPaginated(userId, page, limit);
+        res.json(result);
+      } else {
+        // Fallback to non-paginated for backward compatibility
+        const recipes = await storage.getRecipes(userId);
+        res.json(recipes);
+      }
     } catch (error) {
       console.error("Error fetching recipes:", error);
       res.status(500).json({ error: "Failed to fetch recipes" });
