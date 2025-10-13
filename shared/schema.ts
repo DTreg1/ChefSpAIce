@@ -97,6 +97,7 @@ export const foodItems = pgTable("food_items", {
   name: text("name").notNull(),
   quantity: text("quantity").notNull(),
   unit: text("unit").notNull(),
+  weightInGrams: real("weight_in_grams"), // Actual weight for nutrition calculations (quantity × serving size)
   storageLocationId: varchar("storage_location_id").notNull(),
   expirationDate: text("expiration_date").notNull(),
   imageUrl: text("image_url"),
