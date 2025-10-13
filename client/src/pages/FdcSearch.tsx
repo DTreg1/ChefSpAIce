@@ -23,7 +23,6 @@ import {
   SlidersHorizontal
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -67,13 +66,6 @@ interface FoodDetails {
   fromCache?: boolean;
 }
 
-const DATA_TYPES = [
-  { value: "Branded", label: "Branded Foods" },
-  { value: "Foundation", label: "Foundation Foods" },
-  { value: "SR Legacy", label: "SR Legacy" },
-  { value: "Survey (FNDDS)", label: "Survey (FNDDS)" }
-];
-
 const SORT_OPTIONS = [
   { value: "lowercaseDescription.keyword", label: "Description" },
   { value: "dataType.keyword", label: "Data Type" },
@@ -86,7 +78,6 @@ const PAGE_SIZES = [25, 50, 100, 200];
 export default function FdcSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentQuery, setCurrentQuery] = useState("");
-  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
   const [brandOwners, setBrandOwners] = useState<string[]>([]);
   const [brandInput, setBrandInput] = useState("");
   const [sortBy, setSortBy] = useState("");
@@ -101,9 +92,6 @@ export default function FdcSearch() {
   const buildQueryParams = () => {
     const params = new URLSearchParams();
     if (currentQuery) params.append("query", currentQuery);
-    if (selectedDataTypes.length > 0) {
-      params.append("dataType", selectedDataTypes.join(","));
-    }
     // Append each brand owner separately to handle brands with commas
     if (brandOwners.length > 0) {
       brandOwners.forEach(brand => {
@@ -144,15 +132,6 @@ export default function FdcSearch() {
     setDetailsOpen(true);
   };
 
-  const handleDataTypeToggle = (dataType: string) => {
-    setSelectedDataTypes(prev =>
-      prev.includes(dataType)
-        ? prev.filter(t => t !== dataType)
-        : [...prev, dataType]
-    );
-    setCurrentPage(1);
-  };
-
   const handleAddBrand = () => {
     const trimmedBrand = brandInput.trim();
     if (trimmedBrand && !brandOwners.includes(trimmedBrand)) {
@@ -175,7 +154,6 @@ export default function FdcSearch() {
   };
 
   const handleClearFilters = () => {
-    setSelectedDataTypes([]);
     setBrandOwners([]);
     setBrandInput("");
     setSortBy("");
@@ -184,7 +162,7 @@ export default function FdcSearch() {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = selectedDataTypes.length > 0 || brandOwners.length > 0 || sortBy !== "";
+  const hasActiveFilters = brandOwners.length > 0 || sortBy !== "";
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType?.toLowerCase()) {
@@ -237,7 +215,7 @@ export default function FdcSearch() {
             USDA Food Data Central
           </CardTitle>
           <CardDescription>
-            Search the database for nutritional information with advanced filters
+            Search the comprehensive database for nutritional information on any food
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -280,25 +258,6 @@ export default function FdcSearch() {
             </div>
 
             <CollapsibleContent className="space-y-4 pt-4">
-              <div>
-                <Label className="text-sm font-semibold mb-2 block">Data Types</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {DATA_TYPES.map((type) => (
-                    <div key={type.value} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`type-${type.value}`}
-                        checked={selectedDataTypes.includes(type.value)}
-                        onCheckedChange={() => handleDataTypeToggle(type.value)}
-                        data-testid={`checkbox-type-${type.value.toLowerCase().replace(/\s+/g, '-')}`}
-                      />
-                      <Label htmlFor={`type-${type.value}`} className="cursor-pointer text-sm">
-                        {type.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               <div>
                 <Label htmlFor="brand-owner" className="text-sm font-semibold mb-2 block">
                   Brand Owners
@@ -406,15 +365,6 @@ export default function FdcSearch() {
 
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2" data-testid="active-filters">
-              {selectedDataTypes.map((type) => (
-                <Badge key={type} variant="secondary" className="gap-1">
-                  {type}
-                  <X 
-                    className="w-3 h-3 cursor-pointer hover-elevate" 
-                    onClick={() => handleDataTypeToggle(type)}
-                  />
-                </Badge>
-              ))}
               {brandOwners.map((brand) => (
                 <Badge key={brand} variant="secondary" className="gap-1">
                   Brand: {brand}
