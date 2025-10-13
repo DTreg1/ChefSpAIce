@@ -790,7 +790,7 @@ When asked for recipes, consider the available inventory and appliances.`;
       let stream;
       try {
         stream = await openai.chat.completions.create({
-          model: "gpt-5",
+          model: "gpt-3.5-turbo",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: message }
@@ -938,10 +938,10 @@ Respond ONLY with a valid JSON object in this exact format:
       let completion;
       try {
         completion = await openai.chat.completions.create({
-          model: "gpt-5",
+          model: "gpt-3.5-turbo",
           messages: [{ role: "user", content: prompt }],
           response_format: { type: "json_object" },
-          max_completion_tokens: 8192,
+          max_completion_tokens: 1500,
         });
       } catch (openAIError: any) {
         console.error("OpenAI API error:", openAIError);
@@ -1039,7 +1039,7 @@ Important:
       let completion;
       try {
         completion = await openai.chat.completions.create({
-          model: "gpt-5",
+          model: "gpt-3.5-turbo",
           messages: [
             {
               role: "user",
@@ -1298,7 +1298,7 @@ Respond ONLY with a valid JSON object:
 }`;
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         max_completion_tokens: 8192,
