@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings } from "lucide-react";
+import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, Database } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
@@ -139,6 +139,14 @@ export function AppSidebar() {
                     <Link href="/nutrition" data-testid="link-nutrition">
                       <Apple className="w-4 h-4" />
                       <span className="flex-1">Nutrition</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/fdc-search"}>
+                    <Link href="/fdc-search" data-testid="link-fdc-search">
+                      <Database className="w-4 h-4" />
+                      <span className="flex-1">FDC Search</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

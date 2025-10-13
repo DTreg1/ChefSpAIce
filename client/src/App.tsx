@@ -18,6 +18,7 @@ import MealPlanner from "@/pages/meal-planner";
 import ShoppingList from "@/pages/shopping-list";
 import Appliances from "@/pages/appliances";
 import Settings from "@/pages/settings";
+import FdcSearch from "@/pages/FdcSearch";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
@@ -31,6 +32,7 @@ function AuthenticatedRouter() {
       <Route path="/shopping-list" component={ShoppingList} />
       <Route path="/appliances" component={Appliances} />
       <Route path="/storage/:location" component={Storage} />
+      <Route path="/fdc-search" component={FdcSearch} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
