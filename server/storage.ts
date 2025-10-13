@@ -682,7 +682,13 @@ export class DatabaseStorage implements IStorage {
         ingredients: food.ingredients,
         servingSize: food.servingSize,
         servingSizeUnit: food.servingSizeUnit,
-        nutrients: food.nutrients,
+        nutrients: food.nutrients as Array<{
+          nutrientId: number;
+          nutrientName: string;
+          nutrientNumber: string;
+          unitName: string;
+          value: number;
+        }> | null | undefined,
         fullData: food.fullData
       };
       
@@ -758,7 +764,14 @@ export class DatabaseStorage implements IStorage {
         pageNumber: search.pageNumber,
         pageSize: search.pageSize,
         totalHits: search.totalHits,
-        results: search.results
+        results: search.results as Array<{
+          fdcId: string;
+          description: string;
+          dataType: string;
+          brandOwner?: string;
+          brandName?: string;
+          score?: number;
+        }> | null | undefined
       };
       
       const [cachedSearch] = await db
