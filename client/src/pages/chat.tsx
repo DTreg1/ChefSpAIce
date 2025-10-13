@@ -158,7 +158,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gradient-to-b from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
       <div className="border-b border-border p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div>
