@@ -1,15 +1,18 @@
 import { ChefHat, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DOMPurify from "isomorphic-dompurify";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface ChatMessageProps {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp?: string;
   children?: React.ReactNode;
+  userProfileImageUrl?: string;
+  userInitials?: string;
 }
 
-export function ChatMessage({ role, content, timestamp, children }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp, children, userProfileImageUrl, userInitials }: ChatMessageProps) {
   const isUser = role === "user";
   const isSystem = role === "system";
 
@@ -32,18 +35,18 @@ export function ChatMessage({ role, content, timestamp, children }: ChatMessageP
       )}
       data-testid={`message-${role}`}
     >
-      <div
-        className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-spring",
-          isUser ? "bg-primary" : "bg-accent"
-        )}
-      >
-        {isUser ? (
-          <User className="w-4 h-4 text-primary-foreground" />
-        ) : (
+      {isUser ? (
+        <Avatar className="w-8 h-8 flex-shrink-0 transition-spring">
+          <AvatarImage src={userProfileImageUrl || undefined} />
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+            {userInitials || <User className="w-4 h-4" />}
+          </AvatarFallback>
+        </Avatar>
+      ) : (
+        <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center flex-shrink-0 transition-spring">
           <ChefHat className="w-4 h-4 text-accent-foreground" />
-        )}
-      </div>
+        </div>
+      )}
 
       <div className={cn("flex flex-col gap-2", isUser ? "items-end" : "items-start", "max-w-2xl")}>
         <div
