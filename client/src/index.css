@@ -2,132 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIQUID GLASS DESIGN SYSTEM */
-/* Inspired by Apple's Liquid Glass material with enhanced glass effects, fluid transitions, and organic shapes */
-
 /* LIGHT MODE */
 :root {
-  /* Glass Effect Variables */
-  --glass-blur: 20px;
-  --glass-blur-strong: 30px;
-  --glass-saturation: 1.2;
-  --glass-opacity: 0.92;
-  --glass-opacity-light: 0.85;
-  --glass-opacity-strong: 0.95;
-  
-  /* Backdrop Effects */
-  --backdrop-blur: blur(16px);
-  --backdrop-blur-strong: blur(24px);
-  --backdrop-saturate: saturate(180%);
-  
-  /* Enhanced Elevation System */
-  --elevate-glass-1: rgba(255, 255, 255, 0.25);
-  --elevate-glass-2: rgba(255, 255, 255, 0.35);
-  --elevate-shadow: rgba(0, 0, 0, 0.04);
-  
-  /* Original elevation for backwards compatibility */
-  --elevate-1: rgba(0, 0, 0, 0.03);
-  --elevate-2: rgba(0, 0, 0, 0.08);
-  
-  /* Button and Badge Outlines */
-  --button-outline: rgba(0, 0, 0, 0.08);
-  --badge-outline: rgba(0, 0, 0, 0.04);
-  --glass-border: rgba(255, 255, 255, 0.18);
-  
-  /* Border intensity for computed borders */
-  --opaque-button-border-intensity: -8;
-  
-  /* Enhanced Spacing System (more generous for breathing room) */
-  --spacing-xs: 0.375rem;  /* 6px */
-  --spacing-sm: 0.5rem;    /* 8px */
-  --spacing: 0.75rem;      /* 12px (increased from 4px) */
-  --spacing-md: 1rem;      /* 16px */
-  --spacing-lg: 1.5rem;    /* 24px */
-  --spacing-xl: 2rem;      /* 32px */
-  
-  /* Enhanced Border Radius (rounder, more organic) */
-  --radius-sm: 0.5rem;     /* 8px */
-  --radius: 1.125rem;      /* 18px (increased from 14.4px) */
-  --radius-md: 1.5rem;     /* 24px */
-  --radius-lg: 2rem;       /* 32px */
-  --radius-full: 9999px;   /* Full round */
-  
-  /* Transition Timing (fluid morphing) */
-  --transition-fast: 150ms;
-  --transition-base: 250ms;
-  --transition-slow: 350ms;
-  --transition-slower: 500ms;
-  --transition-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-morph: cubic-bezier(0.65, 0, 0.35, 1);
-  
-  /* Color System with transparency support */
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+
+  /* Automatic computation of border around primary / danger buttons */
+  --opaque-button-border-intensity: -8; /* In terms of percentages */
+
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
+
   --background: 0 0% 100%;
-  --background-glass: 0 0% 100%;
+
   --foreground: 210 25% 7.8431%;
-  
+
   --border: 201.4286 30.4348% 90.9804%;
-  
-  /* Card with glass effect support */
+
   --card: 180 6.6667% 97.0588%;
-  --card-glass: 0 0% 98%;
+
   --card-foreground: 210 25% 7.8431%;
+
   --card-border: 200 10% 94%;
-  
-  /* Sidebar with glass effect */
+
   --sidebar: 180 6.6667% 97.0588%;
-  --sidebar-glass: 0 0% 96%;
+
   --sidebar-foreground: 210 25% 7.8431%;
-  --sidebar-border: 205 25% 90.5882%;
+
+  --sidebar-border: 205.0000 25.0000% 90.5882%;
+
   --sidebar-primary: 203.8863 88.2845% 53.1373%;
+
   --sidebar-primary-foreground: 0 0% 100%;
+
   --sidebar-accent: 211.5789 51.3514% 92.7451%;
+
   --sidebar-accent-foreground: 203.8863 88.2845% 53.1373%;
+
   --sidebar-ring: 202.8169 89.1213% 53.1373%;
-  
-  /* Popover with glass effect */
+
   --popover: 0 0% 100%;
-  --popover-glass: 0 0% 99%;
+
   --popover-foreground: 210 25% 7.8431%;
+
   --popover-border: 200 15% 92%;
-  
-  /* Primary colors (kitchen/food theme - warm green) */
-  --primary: 84.71 50% 40%;
+
+  --primary: 84.71deg 50% 40%;
+
   --primary-foreground: 0 0% 100%;
-  
-  /* Secondary colors */
+
   --secondary: 210 25% 7.8431%;
+
   --secondary-foreground: 0 0% 100%;
-  
-  /* Muted colors */
+
   --muted: 240 1.9608% 90%;
+
   --muted-foreground: 210 25% 7.8431%;
-  
-  /* Accent colors */
+
   --accent: 211.5789 51.3514% 92.7451%;
-  --accent-foreground: 84.71 50% 40%;
-  
-  /* Destructive colors */
+
+  --accent-foreground: 84.71deg 50% 40%;
+
   --destructive: 356.3033 90.5579% 54.3137%;
+
   --destructive-foreground: 0 0% 100%;
-  
-  --input: 200 23.0769% 97.451%;
-  --ring: 84.71 50% 40%;
-  
-  /* Chart colors */
-  --chart-1: 213.52 65.61% 56.67%;
-  --chart-2: 291.82 43.56% 39.61%;
-  --chart-3: 42.029 92.8251% 56.2745%;
+
+  --input: 200 23.0769% 97.4510%;
+  --ring: 84.71deg 50% 40%;
+  --chart-1: 213.52deg 65.61% 56.67%;
+  --chart-2: 291.82deg 43.56% 39.61%;
+  --chart-3: 42.0290 92.8251% 56.2745%;
   --chart-4: 147.1429 78.5047% 41.9608%;
-  --chart-5: 341.4894 75.2% 50.9804%;
-  
-  /* Typography */
+  --chart-5: 341.4894 75.2000% 50.9804%;
+
   --font-sans: 'Ubuntu', sans-serif;
   --font-serif: 'Ubuntu', sans-serif;
   --font-mono: 'Ubuntu Mono', monospace;
-  --tracking-normal: 0em;
-  
-  /* Enhanced Shadow System with glass effect */
+  --radius: 0.9rem;
   --shadow-2xs: 0 1px 2px 0 hsla(var(--primary), 0.05);
   --shadow-xs: 0 1px 3px 0 hsla(var(--primary), 0.08), 0 1px 2px 0 hsla(var(--primary), 0.06);
   --shadow-sm: 0 2px 4px -1px hsla(var(--primary), 0.06), 0 2px 4px -1px hsla(var(--primary), 0.06);
@@ -136,10 +88,10 @@
   --shadow-lg: 0 20px 25px -5px hsla(var(--primary), 0.12), 0 10px 10px -5px hsla(var(--primary), 0.06);
   --shadow-xl: 0 25px 50px -12px hsla(var(--primary), 0.15);
   --shadow-2xl: 0 35px 60px -15px hsla(var(--primary), 0.18);
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --shadow-glass-lg: 0 16px 48px 0 rgba(31, 38, 135, 0.12);
-  
-  /* Automatically computed borders */
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -149,98 +101,78 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
-/* DARK MODE */
 .dark {
-  /* Glass Effect Variables */
-  --glass-blur: 24px;
-  --glass-blur-strong: 36px;
-  --glass-saturation: 1.1;
-  --glass-opacity: 0.88;
-  --glass-opacity-light: 0.75;
-  --glass-opacity-strong: 0.92;
-  
-  /* Backdrop Effects */
-  --backdrop-blur: blur(20px);
-  --backdrop-blur-strong: blur(30px);
-  --backdrop-saturate: saturate(150%);
-  
-  /* Enhanced Elevation System */
-  --elevate-glass-1: rgba(255, 255, 255, 0.08);
-  --elevate-glass-2: rgba(255, 255, 255, 0.12);
-  --elevate-shadow: rgba(0, 0, 0, 0.2);
-  
-  /* Original elevation for backwards compatibility */
-  --elevate-1: rgba(255, 255, 255, 0.04);
-  --elevate-2: rgba(255, 255, 255, 0.09);
-  
-  /* Button and Badge Outlines */
-  --button-outline: rgba(255, 255, 255, 0.1);
-  --badge-outline: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  
-  --opaque-button-border-intensity: 9;
-  
-  /* Color System */
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+
+  --opaque-button-border-intensity: 9;  /* In terms of percentages */
+
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+
   --background: 0 0% 0%;
-  --background-glass: 0 0% 5%;
+
   --foreground: 200 6.6667% 91.1765%;
-  
-  --border: 210 5.2632% 14.902%;
-  
+
+  --border: 210 5.2632% 14.9020%;
+
   --card: 228 9.8039% 10%;
-  --card-glass: 228 9% 8%;
-  --card-foreground: 0 0% 85.098%;
+
+  --card-foreground: 0 0% 85.0980%;
+
   --card-border: 228 9% 12%;
-  
+
   --sidebar: 228 9.8039% 10%;
-  --sidebar-glass: 228 9% 7%;
-  --sidebar-foreground: 0 0% 85.098%;
+
+  --sidebar-foreground: 0 0% 85.0980%;
+
   --sidebar-border: 205.7143 15.7895% 26.0784%;
+
   --sidebar-primary: 202.8169 89.1213% 53.1373%;
+
   --sidebar-primary-foreground: 0 0% 100%;
+
   --sidebar-accent: 205.7143 70% 7.8431%;
-  --sidebar-accent-foreground: 203.7736 87.6033% 52.549%;
+
+  --sidebar-accent-foreground: 203.7736 87.6033% 52.5490%;
+
   --sidebar-ring: 202.8169 89.1213% 53.1373%;
-  
+
   --popover: 0 0% 0%;
-  --popover-glass: 0 0% 3%;
+
   --popover-foreground: 200 6.6667% 91.1765%;
+
   --popover-border: 210 8% 8%;
-  
-  --primary: 203.7736 87.6033% 52.549%;
+
+  --primary: 203.7736 87.6033% 52.5490%;
+
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 195 15.3846% 94.902%;
+
+  --secondary: 195.0000 15.3846% 94.9020%;
+
   --secondary-foreground: 210 25% 7.8431%;
-  
+
   --muted: 0 0% 9.4118%;
+
   --muted-foreground: 210 3.3898% 46.2745%;
-  
+
   --accent: 205.7143 70% 7.8431%;
-  --accent-foreground: 203.7736 87.6033% 52.549%;
-  
+
+  --accent-foreground: 203.7736 87.6033% 52.5490%;
+
   --destructive: 356.3033 90.5579% 54.3137%;
+
   --destructive-foreground: 0 0% 100%;
-  
+
   --input: 207.6923 27.6596% 18.4314%;
   --ring: 202.8169 89.1213% 53.1373%;
-  
   --chart-1: 203.8863 88.2845% 53.1373%;
   --chart-2: 159.7826 100% 36.0784%;
-  --chart-3: 42.029 92.8251% 56.2745%;
+  --chart-3: 42.0290 92.8251% 56.2745%;
   --chart-4: 147.1429 78.5047% 41.9608%;
-  --chart-5: 341.4894 75.2% 50.9804%;
-  
-  /* Glass Effect Variables */
-  --glass-opacity: 0.85;
-  --glass-opacity-light: 0.75;
-  --glass-blur: 12px;
-  --backdrop-blur: blur(12px);
-  --backdrop-blur-strong: blur(24px);
-  --backdrop-saturate: saturate(180%);
-  --shadow-glass-hover: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
-  
-  /* Shadow System */
+  --chart-5: 341.4894 75.2000% 50.9804%;
+
   --shadow-2xs: 0 1px 2px 0 hsla(var(--primary), 0.08);
   --shadow-xs: 0 1px 3px 0 hsla(var(--primary), 0.12), 0 1px 2px 0 hsla(var(--primary), 0.08);
   --shadow-sm: 0 2px 4px -1px hsla(var(--primary), 0.1), 0 2px 4px -1px hsla(var(--primary), 0.08);
@@ -249,10 +181,8 @@
   --shadow-lg: 0 20px 25px -5px hsla(var(--primary), 0.18), 0 10px 10px -5px hsla(var(--primary), 0.12);
   --shadow-xl: 0 25px 50px -12px hsla(var(--primary), 0.22);
   --shadow-2xl: 0 35px 60px -15px hsla(var(--primary), 0.26);
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --shadow-glass-lg: 0 16px 48px 0 rgba(0, 0, 0, 0.42);
-  
-  /* Automatically computed borders */
+
+  /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -260,30 +190,12 @@
   --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
-  
-  /* Keep other variables consistent */
-  --radius-sm: 0.5rem;
-  --radius: 1.125rem;
-  --radius-md: 1.5rem;
-  --radius-lg: 2rem;
-  --radius-full: 9999px;
-  --spacing-xs: 0.375rem;
-  --spacing-sm: 0.5rem;
-  --spacing: 0.75rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
+  --radius: 0.9rem;
+  --spacing: 0.25rem;
   --font-sans: 'Ubuntu', sans-serif;
   --font-serif: 'Ubuntu', sans-serif;
   --font-mono: 'Ubuntu Mono', monospace;
   --tracking-normal: 0em;
-  --transition-fast: 150ms;
-  --transition-base: 250ms;
-  --transition-slow: 350ms;
-  --transition-slower: 500ms;
-  --transition-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-morph: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @layer base {
@@ -297,11 +209,28 @@
 }
 
 /**
- * LIQUID GLASS UTILITY CLASSES
- * Glassmorphism effects inspired by Apple's Liquid Glass design
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ *
+ * <element className="hover-elevate" />
+ * <element className="active-elevate-2" />
+ *
+ * // Using the tailwind utility when a data attribute is "on"
+ * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
+ * // Or manually controlling the toggle state
+ * <element className="toggle-elevate toggle-elevated" />
+ *
+ * Elevation systems have to handle many states.
+ * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
+ * - toggled or not
+ * - focused or not (this is not handled with these utilities)
+ *
+ * Even without handling focused or not, this is six possible combinations that
+ * need to be distinguished from eachother visually.
  */
 @layer utilities {
-  /* Hide ugly search cancel button in Chrome */
+
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
   }
@@ -313,296 +242,77 @@
     pointer-events: none;
   }
 
-  /* GLASS MORPHISM EFFECTS */
-  
-  /* Base glass effect for cards and containers */
-  .glass {
-    background: rgba(255, 255, 255, var(--glass-opacity-light));
-    backdrop-filter: var(--backdrop-blur) var(--backdrop-saturate);
-    -webkit-backdrop-filter: var(--backdrop-blur) var(--backdrop-saturate);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-glass);
-    transition: all var(--transition-base) var(--transition-smooth);
-  }
-  
-  .dark .glass {
-    background: rgba(10, 10, 10, var(--glass-opacity-light));
-    border-color: rgba(255, 255, 255, 0.08);
-  }
-  
-  /* Strong glass effect for navigation and sidebars */
-  .glass-strong {
-    background: rgba(255, 255, 255, var(--glass-opacity));
-    backdrop-filter: var(--backdrop-blur-strong) var(--backdrop-saturate);
-    -webkit-backdrop-filter: var(--backdrop-blur-strong) var(--backdrop-saturate);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: var(--shadow-glass-lg);
-    transition: all var(--transition-base) var(--transition-smooth);
-  }
-  
-  .dark .glass-strong {
-    background: rgba(10, 10, 10, var(--glass-opacity));
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
-  /* Subtle glass for overlays */
-  .glass-subtle {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all var(--transition-base) var(--transition-smooth);
-  }
-  
-  .dark .glass-subtle {
-    background: rgba(10, 10, 10, 0.6);
-    border-color: rgba(255, 255, 255, 0.05);
-  }
-  
-  /* Interactive glass morphing on hover */
-  .glass-morph {
-    transition: all var(--transition-slow) var(--transition-morph);
-    will-change: transform, backdrop-filter;
-  }
-  
-  .glass-morph:hover {
-    backdrop-filter: blur(calc(var(--glass-blur) * 1.2)) var(--backdrop-saturate);
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 1.2)) var(--backdrop-saturate);
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: var(--shadow-glass-lg);
-  }
-  
-  .glass-morph:active {
-    transform: translateY(0) scale(0.99);
-    backdrop-filter: blur(calc(var(--glass-blur) * 0.9)) var(--backdrop-saturate);
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.9)) var(--backdrop-saturate);
-  }
-  
-  /* FLUID ANIMATIONS */
-  
   /* Smooth transitions for all interactive elements */
   .transition-all-smooth {
-    transition: all var(--transition-base) var(--transition-smooth);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
-  /* Morph transition for shape changes */
-  .transition-morph {
-    transition: all var(--transition-slow) var(--transition-morph);
-  }
-  
-  /* Spring animation for playful interactions */
-  .transition-spring {
-    transition: all var(--transition-base) var(--transition-spring);
-  }
-  
-  /* Card hover with glass effect */
+
+  /* Card hover animation */
   .card-hover {
-    transition: transform var(--transition-base) var(--transition-smooth), 
-                box-shadow var(--transition-base) var(--transition-smooth),
-                backdrop-filter var(--transition-base) var(--transition-smooth);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
   .card-hover:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: var(--shadow-glass-lg);
+    transform: translateY(-2px);
   }
-  
+
   /* Subtle scale animation for buttons */
   .scale-touch {
-    transition: transform var(--transition-fast) var(--transition-smooth);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
   .scale-touch:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
-  
-  /* Focus glass effect for inputs */
-  .focus-glass {
-    @apply focus-visible:outline-none;
-    transition: all var(--transition-base) var(--transition-smooth);
+
+  /* Pulse animation for notifications */
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
   }
-  
-  .focus-glass:focus {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-color: hsl(var(--ring));
-    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.2), var(--shadow-glass);
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-  
-  .dark .focus-glass:focus {
-    background: rgba(10, 10, 10, 0.95);
-    border-color: hsl(var(--ring));
+
+  /* Fade in animation */
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
-  
-  /* Navbar scroll adaptation */
-  .navbar-scroll {
-    transition: all var(--transition-base) var(--transition-smooth);
+  .animate-fade-in {
+    animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
-  .navbar-scroll.scrolled {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.92);
-  }
-  
-  .dark .navbar-scroll.scrolled {
-    background: rgba(10, 10, 10, 0.92);
-  }
-  
-  /* Liquid animation for dynamic elements */
-  @keyframes liquid {
-    0%, 100% { 
-      border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-      transform: rotate(0deg);
-    }
-    50% { 
-      border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
-      transform: rotate(180deg);
-    }
-  }
-  
-  .animate-liquid {
-    animation: liquid 8s ease-in-out infinite;
-  }
-  
-  /* Pulse with glass glow */
-  @keyframes pulse-glass {
-    0%, 100% { 
-      box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 135, 171, 102), 0.4);
-    }
-    50% { 
-      box-shadow: 0 0 0 10px rgba(var(--primary-rgb, 135, 171, 102), 0);
-    }
-  }
-  
-  .animate-pulse-glass {
-    animation: pulse-glass 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  
-  /* Fade in with blur */
-  @keyframes fade-in-blur {
-    from { 
-      opacity: 0; 
-      filter: blur(10px);
-      transform: translateY(10px);
-    }
-    to { 
-      opacity: 1; 
-      filter: blur(0);
-      transform: translateY(0);
-    }
-  }
-  
-  .animate-fade-in-blur {
-    animation: fade-in-blur var(--transition-slow) var(--transition-smooth);
-  }
-  
-  /* Shimmer effect for loading states */
-  @keyframes shimmer {
-    0% {
-      background-position: -1000px 0;
-    }
-    100% {
-      background-position: 1000px 0;
-    }
-  }
-  
-  .shimmer {
-    animation: shimmer 2s infinite;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    background-size: 1000px 100%;
-  }
-  
-  /* SCROLL-ADAPTIVE EFFECTS */
-  
-  /* Elements that respond to scroll */
-  .scroll-fade {
-    transition: opacity var(--transition-base) var(--transition-smooth);
-  }
-  
-  .scroll-fade.scrolled {
-    opacity: 0.8;
-  }
-  
-  /* Navbar that adapts on scroll */
-  .navbar-scroll {
-    transition: all var(--transition-base) var(--transition-smooth);
-  }
-  
-  .navbar-scroll.scrolled {
-    backdrop-filter: var(--backdrop-blur-strong) var(--backdrop-saturate);
-    -webkit-backdrop-filter: var(--backdrop-blur-strong) var(--backdrop-saturate);
-    background: rgba(255, 255, 255, var(--glass-opacity-strong));
-    box-shadow: var(--shadow-glass);
-  }
-  
-  .dark .navbar-scroll.scrolled {
-    background: rgba(10, 10, 10, var(--glass-opacity-strong));
-  }
-  
-  /* FOCUS STATES WITH GLASS EFFECT */
-  
-  /* Enhanced focus ring */
-  .focus-glass:focus {
-    outline: none;
-    box-shadow: 
-      0 0 0 2px rgba(var(--ring-rgb, 135, 171, 102), 0.2),
-      0 0 20px 0 rgba(var(--ring-rgb, 135, 171, 102), 0.1),
-      var(--shadow-glass);
-  }
-  
-  .focus-glass:focus-visible {
-    outline: none;
-    box-shadow: 
-      0 0 0 2px rgba(var(--ring-rgb, 135, 171, 102), 0.3),
-      0 0 30px 0 rgba(var(--ring-rgb, 135, 171, 102), 0.15),
-      var(--shadow-glass-lg);
-  }
-  
-  /* MOBILE OPTIMIZATIONS */
+
+  /* Mobile touch optimizations */
   @media (max-width: 768px) {
-    /* Increase touch targets */
+    /* Increase touch targets for mobile */
     .touch-target {
-      min-height: 48px;
-      min-width: 48px;
+      min-height: 44px;
+      min-width: 44px;
     }
     
     /* Better mobile spacing */
     .mobile-padding {
-      padding-left: var(--spacing-md);
-      padding-right: var(--spacing-md);
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
     
-    /* Disable complex effects on low-power devices */
+    /* Disable hover effects on touch devices */
     @media (hover: none) and (pointer: coarse) {
-      .glass-morph:hover {
+      .card-hover:hover {
         transform: none;
       }
-      .card-hover:hover {
-        transform: translateY(-2px);
+      .hover-elevate:hover::after {
+        background-color: transparent;
       }
     }
     
-    /* Smooth scrolling */
+    /* Smooth scrolling for mobile */
     .mobile-scroll {
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
     }
-    
-    /* Reduce glass blur on mobile for performance */
-    .glass {
-      backdrop-filter: blur(12px) var(--backdrop-saturate);
-      -webkit-backdrop-filter: blur(12px) var(--backdrop-saturate);
-    }
   }
-  
-  /* SWIPE INTERACTIONS */
+
+  /* Swipeable cards animation */
   .swipe-hint {
     animation: swipe-hint 2s ease-in-out infinite;
   }
@@ -611,33 +321,43 @@
     0%, 100% { transform: translateX(0); }
     50% { transform: translateX(-8px); }
   }
-  
-  /* ELEVATION SYSTEM (preserved from original) */
-  
+
+  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
+   * buttons/badges can remove the automatic brightness adjustment on interactions
+   * and program their own. */
   .no-default-hover-elevate {}
+
   .no-default-active-elevate {}
-  
-  /* Toggle elevation system */
+
+
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
   .toggle-elevate::before,
   .toggle-elevate-2::before {
     content: "";
     pointer-events: none;
     position: absolute;
     inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
     border-radius: inherit;
     z-index: -1;
-    transition: background-color var(--transition-base) var(--transition-smooth);
+    /* sits behind content but above backdrop */
   }
-  
+
   .toggle-elevate.toggle-elevated::before {
     background-color: var(--elevate-2);
   }
-  
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
   .border.toggle-elevate::before {
     inset: -1px;
   }
-  
-  /* Hover and active elevation */
+
+  /* Does not work on elements with overflow:hidden! */
   .hover-elevate:not(.no-default-hover-elevate),
   .active-elevate:not(.no-default-active-elevate),
   .hover-elevate-2:not(.no-default-hover-elevate),
@@ -645,7 +365,7 @@
     position: relative;
     z-index: 0;
   }
-  
+
   .hover-elevate:not(.no-default-hover-elevate)::after,
   .active-elevate:not(.no-default-active-elevate)::after,
   .hover-elevate-2:not(.no-default-hover-elevate)::after,
@@ -654,74 +374,28 @@
     pointer-events: none;
     position: absolute;
     inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
     border-radius: inherit;
     z-index: 999;
-    transition: background-color var(--transition-fast) var(--transition-smooth);
+    /* sits in front of content */
   }
-  
+
   .hover-elevate:hover:not(.no-default-hover-elevate)::after,
   .active-elevate:active:not(.no-default-active-elevate)::after {
     background-color: var(--elevate-1);
   }
-  
+
   .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
   .active-elevate-2:active:not(.no-default-active-elevate)::after {
     background-color: var(--elevate-2);
   }
-  
+
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
   .border.active-elevate:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
-  .border.active-elevate-2:not(.no-active-interaction-elevate)::after {
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
-  }
-  
-  /* LIQUID GLASS SPECIAL EFFECTS */
-  
-  /* Floating elements with glass */
-  .float-glass {
-    animation: float 6s ease-in-out infinite;
-    box-shadow: var(--shadow-glass-lg);
-  }
-  
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
-  }
-  
-  /* Gradient glass overlay */
-  .gradient-glass {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.05)
-    );
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .dark .gradient-glass {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.05),
-      rgba(255, 255, 255, 0.02)
-    );
-    border-color: rgba(255, 255, 255, 0.05);
-  }
-  
-  /* Noise texture for glass depth */
-  .glass-noise::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
-    pointer-events: none;
-    opacity: 0.03;
-    mix-blend-mode: overlay;
   }
 }
