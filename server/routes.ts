@@ -219,13 +219,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Parse brandOwner - Express automatically handles multiple params as array
+      let brandOwners: string[] = [];
+      if (brandOwner) {
+        if (Array.isArray(brandOwner)) {
+          brandOwners = brandOwner as string[];
+        } else if (typeof brandOwner === 'string') {
+          brandOwners = [brandOwner];
+        }
+      }
+      
       const sort = sortBy as string | undefined;
       const order = sortOrder as string | undefined;
-      const brand = brandOwner as string | undefined;
 
       // Only cache the simplest searches (query + page) to avoid stale results with filters
       // Advanced filters (dataType, sort, brand) bypass cache completely
-      const hasAnyFilters = sort || brand || dataTypes.length > 0 || size !== 25;
+      const hasAnyFilters = sort || brandOwners.length > 0 || dataTypes.length > 0 || size !== 25;
       
       if (!hasAnyFilters) {
         const cachedResults = await storage.getCachedSearchResults(query, undefined, page);
@@ -273,8 +282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         searchUrl.searchParams.append('sortOrder', order);
       }
       
-      if (brand) {
-        searchUrl.searchParams.append('brandOwner', brand);
+      // Add each brandOwner as a separate parameter for FDC API array handling
+      if (brandOwners.length > 0) {
+        brandOwners.forEach(brand => {
+          searchUrl.searchParams.append('brandOwner', brand);
+        });
       }
 
       const response = await fetch(searchUrl);
