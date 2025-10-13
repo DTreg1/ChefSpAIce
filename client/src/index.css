@@ -398,4 +398,104 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* Liquid Glass Effect Utilities */
+  .liquid-glass {
+    @apply transition-all duration-300 cursor-pointer;
+    background: rgba(255, 255, 255, 0.01);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px hsla(var(--primary), 0.12);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .liquid-glass:hover {
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 48px hsla(var(--primary), 0.18);
+  }
+
+  .liquid-glass:active {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px hsla(var(--primary), 0.15);
+  }
+  
+  /* Subtle variant for backgrounds and input areas */
+  .liquid-glass-subtle {
+    @apply transition-all duration-300;
+    background: rgba(255, 255, 255, 0.005);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 16px hsla(var(--primary), 0.08);
+  }
+  
+  .liquid-glass-subtle:hover {
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: 0 6px 24px hsla(var(--primary), 0.12);
+  }
+
+  /* Strong variant for modal overlays */
+  .liquid-glass-strong {
+    @apply transition-all duration-300;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 16px 64px hsla(var(--primary), 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+  }
+
+  /* Dark mode adjustments */
+  .dark .liquid-glass {
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px hsla(var(--primary), 0.2);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  }
+  
+  .dark .liquid-glass:hover {
+    background: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 12px 48px hsla(var(--primary), 0.25);
+  }
+
+  .dark .liquid-glass:active {
+    box-shadow: 0 6px 24px hsla(var(--primary), 0.22);
+  }
+  
+  .dark .liquid-glass-subtle {
+    background: rgba(0, 0, 0, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px hsla(var(--primary), 0.12);
+  }
+  
+  .dark .liquid-glass-subtle:hover {
+    background: rgba(0, 0, 0, 0.03);
+    box-shadow: 0 6px 24px hsla(var(--primary), 0.15);
+  }
+
+  .dark .liquid-glass-strong {
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 16px 64px hsla(var(--primary), 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+  }
+
+  /* Glass effect specifically for food/recipe cards */
+  .liquid-glass-card {
+    @apply liquid-glass rounded-xl p-4;
+  }
+
+  /* Glass effect for chat messages */
+  .liquid-glass-message {
+    @apply liquid-glass-subtle rounded-2xl;
+  }
+
+  /* Glass effect for modals */
+  .liquid-glass-modal {
+    @apply liquid-glass-strong rounded-2xl;
+  }
 }
