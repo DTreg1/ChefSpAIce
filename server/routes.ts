@@ -305,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`FDC food cache hit for fdcId: ${fdcId}`);
         await storage.updateFoodLastAccessed(fdcId);
         return res.json({
-          ...cachedFood.fullData,
+          ...(cachedFood.fullData || {}),
           fromCache: true
         });
       }
