@@ -79,7 +79,7 @@ export function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent className="p-4">
-          <SidebarGroup>
+          <SidebarGroup className="liquid-glass-subtle rounded-xl p-3">
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -94,7 +94,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup className="mt-4">
+          <SidebarGroup className="liquid-glass-subtle rounded-xl p-3 mt-4">
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               Planning
             </SidebarGroupLabel>
@@ -120,7 +120,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup className="mt-4">
+          <SidebarGroup className="liquid-glass-subtle rounded-xl p-3 mt-4">
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               Recipes & Nutrition
             </SidebarGroupLabel>
@@ -154,7 +154,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup className="mt-4">
+          <SidebarGroup className="liquid-glass-subtle rounded-xl p-3 mt-4">
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               Inventory
             </SidebarGroupLabel>
@@ -189,7 +189,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup className="mt-4">
+          <SidebarGroup className="liquid-glass-subtle rounded-xl p-3 mt-4">
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               Account
             </SidebarGroupLabel>
