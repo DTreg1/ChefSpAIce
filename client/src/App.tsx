@@ -144,7 +144,6 @@ function AppContent() {
                   Quick Actions
                 </Button>
               </div>
-              <ThemeToggle />
             </header>
             <main ref={mainRef} className="flex-1 overflow-auto">
               <Router />
