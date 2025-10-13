@@ -1,7 +1,8 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added authentication routing
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
+import { cn } from "@/lib/utils";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -63,11 +64,28 @@ function Router() {
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [addFoodOpen, setAddFoodOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
   
   const { data: preferences, isLoading: prefLoading } = useQuery<{ hasCompletedOnboarding?: boolean }>({
     queryKey: ["/api/user/preferences"],
     enabled: isAuthenticated,
   });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (mainRef.current) {
+        const isScrolled = mainRef.current.scrollTop > 10;
+        setScrolled(isScrolled);
+      }
+    };
+
+    const mainElement = mainRef.current;
+    if (mainElement) {
+      mainElement.addEventListener('scroll', handleScroll);
+      return () => mainElement.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
 
   const style = {
     "--sidebar-width": "20rem",
@@ -99,16 +117,19 @@ function AppContent() {
         <div className="flex h-screen w-full">
           <AppSidebar />
           <div className="flex flex-col flex-1">
-            <header className="flex items-center justify-between p-4 border-b border-border">
+            <header className={cn(
+              "flex items-center justify-between p-4 border-b transition-all-smooth sticky top-0 z-20",
+              scrolled ? "glass-strong navbar-scroll scrolled shadow-glass" : "glass-subtle border-border/50"
+            )}>
               <div className="flex items-center gap-2">
-                <SidebarTrigger data-testid="button-sidebar-toggle" />
-                <span className="text-xs text-muted-foreground hidden md:block">
-                  Press <kbd className="px-1.5 py-0.5 text-xs font-semibold text-muted-foreground bg-muted rounded">⌘K</kbd> for quick actions
+                <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph" />
+                <span className="text-xs text-muted-foreground hidden md:block transition-all-smooth">
+                  Press <kbd className="px-1.5 py-0.5 text-xs font-semibold text-muted-foreground bg-muted/50 rounded transition-all-smooth">⌘K</kbd> for quick actions
                 </span>
               </div>
               <ThemeToggle />
             </header>
-            <main className="flex-1 overflow-hidden">
+            <main ref={mainRef} className="flex-1 overflow-auto">
               <Router />
             </main>
           </div>

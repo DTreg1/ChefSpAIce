@@ -104,7 +104,7 @@ export function MealPlanningDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="liquid-glass-modal sm:max-w-md" data-testid="dialog-meal-planning">
+      <DialogContent className="sm:max-w-md" data-testid="dialog-meal-planning">
         <DialogHeader>
           <DialogTitle>Schedule Meal</DialogTitle>
           <DialogDescription>

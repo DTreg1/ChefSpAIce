@@ -17,7 +17,7 @@ export function ChatMessage({ role, content, timestamp, children }: ChatMessageP
     return (
       <div className="flex justify-center my-6" data-testid="message-system">
         <div 
-          className="border-2 border-border rounded-xl px-4 py-2 text-sm text-muted-foreground max-w-md text-center"
+          className="glass-subtle border-2 border-border/50 rounded-xl px-4 py-2 text-sm text-muted-foreground max-w-md text-center shadow-glass transition-morph"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
         />
       </div>
@@ -34,7 +34,7 @@ export function ChatMessage({ role, content, timestamp, children }: ChatMessageP
     >
       <div
         className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-spring",
           isUser ? "bg-primary" : "bg-accent"
         )}
       >
@@ -48,10 +48,10 @@ export function ChatMessage({ role, content, timestamp, children }: ChatMessageP
       <div className={cn("flex flex-col gap-2", isUser ? "items-end" : "items-start", "max-w-2xl")}>
         <div
           className={cn(
-            "rounded-2xl px-4 py-3",
+            "rounded-2xl px-4 py-3 glass-subtle shadow-glass transition-morph",
             isUser
-              ? "bg-primary text-primary-foreground"
-              : "liquid-glass-subtle text-foreground"
+              ? "bg-primary/90 text-primary-foreground backdrop-blur-sm"
+              : "bg-accent/90 text-foreground backdrop-blur-sm"
           )}
           style={{ borderRadius: "var(--radius)" }}
         >
