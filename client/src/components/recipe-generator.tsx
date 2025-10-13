@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ChefHat } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Recipe, FoodItem } from "@shared/schema";
 
@@ -21,12 +21,14 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
       const response = await apiRequest("POST", "/api/recipes/generate", {});
       return await response.json();
     },
-    onSuccess: (recipe: Recipe) => {
+    onSuccess: async (recipe: Recipe) => {
       toast({
         title: "Recipe Generated!",
         description: `Check out: ${recipe.title}`,
       });
       onRecipeGenerated?.(recipe);
+      // Invalidate recipes query to refresh the cookbook
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
     },
     onError: (error: any) => {
       toast({
