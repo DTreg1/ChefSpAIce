@@ -1227,11 +1227,12 @@ Important:
       const categoryBreakdown: Record<string, { calories: number; count: number }> = {};
       
       foodItems.forEach(item => {
-        if (item.nutrition) {
+        if (item.nutrition && item.weightInGrams) {
           try {
             const nutrition = JSON.parse(item.nutrition);
-            const qty = parseFloat(item.quantity) || 1;
-            const multiplier = qty / 100;
+            const servingSize = parseFloat(nutrition.servingSize) || 100;
+            // Multiplier is weightInGrams / servingSize
+            const multiplier = item.weightInGrams / servingSize;
             
             totalCalories += nutrition.calories * multiplier;
             totalProtein += nutrition.protein * multiplier;
@@ -1273,7 +1274,7 @@ Important:
       const locations = await storage.getStorageLocations(userId);
       
       const itemsWithNutrition = foodItems
-        .filter(item => item.nutrition)
+        .filter(item => item.nutrition && item.weightInGrams)
         .map(item => {
           const location = locations.find(loc => loc.id === item.storageLocationId);
           let nutrition = null;
@@ -1287,6 +1288,7 @@ Important:
             name: item.name,
             quantity: item.quantity,
             unit: item.unit,
+            weightInGrams: item.weightInGrams,
             locationName: location?.name || "Unknown",
             nutrition,
           };
