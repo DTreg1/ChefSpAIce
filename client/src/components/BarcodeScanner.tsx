@@ -49,6 +49,10 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
       setIsScanning(true);
     } catch (err: any) {
       console.error("Scanner start error:", err);
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
       toast({
         title: "Camera error",
         description:
