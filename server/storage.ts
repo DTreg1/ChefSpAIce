@@ -20,6 +20,10 @@ import {
   type InsertMealPlan,
   type ApiUsageLog,
   type InsertApiUsageLog,
+  type FdcCache,
+  type InsertFdcCache,
+  type FdcSearchCache,
+  type InsertFdcSearchCache,
   users,
   userPreferences,
   storageLocations,
@@ -29,7 +33,9 @@ import {
   recipes,
   expirationNotifications,
   mealPlans,
-  apiUsageLogs
+  apiUsageLogs,
+  fdcCache,
+  fdcSearchCache
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -88,6 +94,14 @@ export interface IStorage {
   logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>): Promise<ApiUsageLog>;
   getApiUsageLogs(userId: string, apiName?: string, limit?: number): Promise<ApiUsageLog[]>;
   getApiUsageStats(userId: string, apiName: string, days?: number): Promise<{ totalCalls: number; successfulCalls: number; failedCalls: number }>;
+  
+  // FDC Cache Methods
+  getCachedFood(fdcId: string): Promise<FdcCache | undefined>;
+  cacheFood(food: InsertFdcCache): Promise<FdcCache>;
+  updateFoodLastAccessed(fdcId: string): Promise<void>;
+  getCachedSearchResults(query: string, dataType?: string, pageNumber?: number): Promise<FdcSearchCache | undefined>;
+  cacheSearchResults(search: InsertFdcSearchCache): Promise<FdcSearchCache>;
+  clearOldCache(daysOld: number): Promise<void>;
   
   // Account Management
   resetUserData(userId: string): Promise<void>;
@@ -643,6 +657,119 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error getting API usage stats for user ${userId}:`, error);
       throw new Error('Failed to retrieve API usage stats');
+    }
+  }
+
+  // FDC Cache Methods
+  async getCachedFood(fdcId: string): Promise<FdcCache | undefined> {
+    try {
+      const [cached] = await db.select().from(fdcCache).where(eq(fdcCache.fdcId, fdcId));
+      return cached;
+    } catch (error) {
+      console.error(`Error getting cached food ${fdcId}:`, error);
+      throw new Error('Failed to retrieve cached food');
+    }
+  }
+
+  async cacheFood(food: InsertFdcCache): Promise<FdcCache> {
+    try {
+      const [cachedFood] = await db
+        .insert(fdcCache)
+        .values(food)
+        .onConflictDoUpdate({
+          target: fdcCache.fdcId,
+          set: {
+            ...food,
+            lastAccessed: new Date(),
+          },
+        })
+        .returning();
+      return cachedFood;
+    } catch (error) {
+      console.error('Error caching food:', error);
+      throw new Error('Failed to cache food');
+    }
+  }
+
+  async updateFoodLastAccessed(fdcId: string): Promise<void> {
+    try {
+      await db
+        .update(fdcCache)
+        .set({ lastAccessed: new Date() })
+        .where(eq(fdcCache.fdcId, fdcId));
+    } catch (error) {
+      console.error(`Error updating last accessed for ${fdcId}:`, error);
+      // Don't throw - this is not critical
+    }
+  }
+
+  async getCachedSearchResults(query: string, dataType?: string, pageNumber: number = 1): Promise<FdcSearchCache | undefined> {
+    try {
+      const conditions = [
+        eq(fdcSearchCache.query, query.toLowerCase()),
+        eq(fdcSearchCache.pageNumber, pageNumber)
+      ];
+      
+      if (dataType) {
+        conditions.push(eq(fdcSearchCache.dataType, dataType));
+      }
+      
+      const [cached] = await db
+        .select()
+        .from(fdcSearchCache)
+        .where(and(...conditions))
+        .orderBy(sql`${fdcSearchCache.cachedAt} DESC`)
+        .limit(1);
+      
+      // Check if cache is less than 24 hours old
+      if (cached) {
+        const cacheAge = Date.now() - new Date(cached.cachedAt).getTime();
+        const oneDayInMs = 24 * 60 * 60 * 1000;
+        if (cacheAge < oneDayInMs) {
+          return cached;
+        }
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error('Error getting cached search results:', error);
+      return undefined;
+    }
+  }
+
+  async cacheSearchResults(search: InsertFdcSearchCache): Promise<FdcSearchCache> {
+    try {
+      const [cachedSearch] = await db
+        .insert(fdcSearchCache)
+        .values({
+          ...search,
+          query: search.query.toLowerCase(),
+        })
+        .returning();
+      return cachedSearch;
+    } catch (error) {
+      console.error('Error caching search results:', error);
+      throw new Error('Failed to cache search results');
+    }
+  }
+
+  async clearOldCache(daysOld: number = 30): Promise<void> {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+      
+      // Clear old search cache
+      await db
+        .delete(fdcSearchCache)
+        .where(sql`${fdcSearchCache.cachedAt} < ${cutoffDate.toISOString()}`);
+      
+      // Clear old food cache that hasn't been accessed recently
+      await db
+        .delete(fdcCache)
+        .where(sql`${fdcCache.lastAccessed} < ${cutoffDate.toISOString()}`);
+    } catch (error) {
+      console.error('Error clearing old cache:', error);
+      // Don't throw - cache cleanup is not critical
     }
   }
 
