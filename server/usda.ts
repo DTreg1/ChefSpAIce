@@ -54,7 +54,7 @@ interface FDCFood {
   brandOwner?: string;
   gtinUpc?: string;
   ingredients?: string;
-  foodCategory?: string;
+  foodCategory?: string | { id: number; code: string; description: string };
   brandedFoodCategory?: string;
   servingSize?: number;
   servingSizeUnit?: string;
@@ -131,6 +131,16 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
 }
 
 function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
+  // Extract foodCategory - handle both string and object formats
+  let foodCategory: string | undefined;
+  if (typeof food.foodCategory === 'object' && food.foodCategory !== null) {
+    foodCategory = food.foodCategory.description;
+  } else if (typeof food.foodCategory === 'string') {
+    foodCategory = food.foodCategory;
+  } else {
+    foodCategory = food.brandedFoodCategory;
+  }
+
   return {
     fdcId: food.fdcId,
     description: food.description,
@@ -138,7 +148,7 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
     brandOwner: food.brandOwner,
     gtinUpc: food.gtinUpc,
     ingredients: food.ingredients,
-    foodCategory: food.foodCategory || food.brandedFoodCategory,
+    foodCategory: foodCategory,
     servingSize: food.servingSize,
     servingSizeUnit: food.servingSizeUnit,
     nutrition: extractNutritionInfo(food),
