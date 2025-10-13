@@ -673,13 +673,26 @@ export class DatabaseStorage implements IStorage {
 
   async cacheFood(food: InsertFdcCache): Promise<FdcCache> {
     try {
+      const foodToInsert = {
+        fdcId: food.fdcId,
+        description: food.description,
+        dataType: food.dataType,
+        brandOwner: food.brandOwner,
+        brandName: food.brandName,
+        ingredients: food.ingredients,
+        servingSize: food.servingSize,
+        servingSizeUnit: food.servingSizeUnit,
+        nutrients: food.nutrients,
+        fullData: food.fullData
+      };
+      
       const [cachedFood] = await db
         .insert(fdcCache)
-        .values([food])
+        .values(foodToInsert)
         .onConflictDoUpdate({
           target: fdcCache.fdcId,
           set: {
-            ...food,
+            ...foodToInsert,
             lastAccessed: new Date(),
           },
         })
@@ -739,12 +752,18 @@ export class DatabaseStorage implements IStorage {
 
   async cacheSearchResults(search: InsertFdcSearchCache): Promise<FdcSearchCache> {
     try {
+      const searchToInsert = {
+        query: search.query.toLowerCase(),
+        dataType: search.dataType,
+        pageNumber: search.pageNumber,
+        pageSize: search.pageSize,
+        totalHits: search.totalHits,
+        results: search.results
+      };
+      
       const [cachedSearch] = await db
         .insert(fdcSearchCache)
-        .values([{
-          ...search,
-          query: search.query.toLowerCase(),
-        }])
+        .values(searchToInsert)
         .returning();
       return cachedSearch;
     } catch (error) {
