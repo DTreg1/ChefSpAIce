@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -269,7 +269,7 @@ export const fdcCache = pgTable("fdc_cache", {
   brandOwner: text("brand_owner"),
   brandName: text("brand_name"),
   ingredients: text("ingredients"),
-  servingSize: integer("serving_size"),
+  servingSize: real("serving_size"),
   servingSizeUnit: text("serving_size_unit"),
   
   // Store complete nutrient data as JSONB

@@ -1,31 +1,32 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
-  Search, 
+  Search,
   Package, 
   Apple, 
   Wheat, 
   Utensils, 
   ChevronRight, 
-  Database, 
+  Database,
   ChevronDown,
   ChevronLeft,
   ChevronUp,
   X,
-  Filter,
   SlidersHorizontal
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface FoodNutrient {
   nutrientId: number;
@@ -95,7 +96,7 @@ export default function FdcSearch() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { toast } = useToast();
-
+  
   const buildQueryParams = () => {
     const params = new URLSearchParams();
     if (currentQuery) params.append("query", currentQuery);
@@ -103,18 +104,22 @@ export default function FdcSearch() {
       params.append("dataType", selectedDataTypes.join(","));
     }
     if (brandOwner.trim()) params.append("brandOwner", brandOwner.trim());
-    if (sortBy) params.append("sortBy", sortBy);
-    if (sortOrder) params.append("sortOrder", sortOrder);
+    if (sortBy) {
+      params.append("sortBy", sortBy);
+      params.append("sortOrder", sortOrder);
+    }
     params.append("pageSize", pageSize.toString());
     params.append("pageNumber", currentPage.toString());
     return params.toString();
   };
 
-  const { data: searchResults, isLoading: isSearching } = useQuery<SearchResponse>({
-    queryKey: ["/api/fdc/search", buildQueryParams()],
+  // Search query
+  const { data: searchResults, isLoading: isSearching} = useQuery<SearchResponse>({
+    queryKey: [`/api/fdc/search?${buildQueryParams()}`],
     enabled: !!currentQuery,
   });
 
+  // Food details query
   const { data: foodDetails, isLoading: isLoadingDetails } = useQuery<FoodDetails>({
     queryKey: ["/api/fdc/food", selectedFood],
     enabled: !!selectedFood && detailsOpen,
@@ -288,8 +293,8 @@ export default function FdcSearch() {
                   <Label htmlFor="sort-by" className="text-sm font-semibold mb-2 block">
                     Sort By
                   </Label>
-                  <Select value={sortBy} onValueChange={(value) => {
-                    setSortBy(value);
+                  <Select value={sortBy || "none"} onValueChange={(value) => {
+                    setSortBy(value === "none" ? "" : value);
                     setCurrentPage(1);
                   }}>
                     <SelectTrigger id="sort-by" data-testid="select-sort-by">
