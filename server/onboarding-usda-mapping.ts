@@ -121,7 +121,7 @@ export const onboardingUsdaMapping: Record<string, {
   },
   // Refrigerator Items
   "Milk": {
-    fcdId: "746776", // Milk, whole, 3.25% fat
+    fcdId: "1097512", // Milk, whole
     displayName: "Milk",
     quantity: "1",
     unit: "gallon",
@@ -139,7 +139,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Large eggs"
   },
   "Butter": {
-    fcdId: "173410", // Butter, salted
+    fcdId: "173430", // Butter, salted
     displayName: "Butter",
     quantity: "1",
     unit: "lb",
