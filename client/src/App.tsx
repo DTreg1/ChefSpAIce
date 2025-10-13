@@ -114,6 +114,10 @@ function AppContent() {
           // Navigate to storage page for recipe generation
           window.location.href = '/storage/all';
         }}
+        onScanBarcode={() => {
+          // Navigate to FDC search page with barcode scanner
+          window.location.href = '/fdc-search';
+        }}
       />
       <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <SidebarProvider style={style}>

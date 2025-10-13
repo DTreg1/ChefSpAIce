@@ -24,13 +24,14 @@ Key architectural decisions include:
 - **Feature Specifications**:
     - **Food Inventory**: CRUD operations for tracking items across storage locations (Fridge, Pantry, Freezer, Counter) with expiration dates, visual indicators, and images. Includes kitchen appliances registry and custom storage areas.
     - **Recipe Management**: AI-generated recipes, saving, favoriting, and rating.
-    - **Nutritional Dashboard**: Aggregated calorie and macronutrient breakdowns using USDA data, including FDA-compliant nutrition labels.
+    - **Nutritional Dashboard**: Aggregated calorie and macronutrient breakdowns using USDA data with dual-unit system (quantity × serving size = weightInGrams) for accurate calculations. Displays single horizontal stacked bar for overall macros and mini stacked bars per food item.
     - **Chat Interface**: Real-time streaming chat with AI Chef.
     - **Meal Planning**: Weekly calendar for scheduling recipes with serving customization.
     - **Shopping List**: Auto-generated from planned meals, comparing with inventory.
+    - **Quick Actions**: Command palette (Cmd/Ctrl+K) with quick access to Add Food Item, Scan Barcode, and Generate Recipe.
     - **Enhanced Onboarding**: Guides users through initial setup, including storage areas, household size, cooking skill, unit preferences, and foods to avoid, using USDA-enriched data.
     - **Food Category Filtering**: Allows filtering inventory by USDA food categories and viewing items organized by groups.
-    - **Barcode Integration**: Utilizes UPC/GTIN barcodes for product image search and leverages USDA data for enriched item details.
+    - **Barcode Integration**: Utilizes UPC/GTIN barcodes for product image search and leverages USDA data for enriched item details. Accessible via Quick Actions or FDC Search page.
     - **USDA Food Search**: Comprehensive search interface with always-visible filters (Brand Owners, UPC/GTIN Code, Sort By, Sort Order, Results Per Page) for easy access to nutritional data. Supports searching by UPC/GTIN barcodes to find specific branded products.
 
 ## External Dependencies
