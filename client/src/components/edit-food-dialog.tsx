@@ -93,7 +93,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-muted">
         <DialogHeader>
           <DialogTitle>Edit {item.name}</DialogTitle>
           <DialogDescription>

@@ -57,7 +57,7 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
+      <DialogContent className="max-w-2xl max-h-[90vh] bg-muted">
         <DialogHeader>
           <DialogTitle>Nutrition Facts</DialogTitle>
           <DialogDescription>
