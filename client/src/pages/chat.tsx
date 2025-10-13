@@ -158,8 +158,8 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
-      <div className="border-b border-border p-4">
+    <div className="flex flex-col h-full">
+      <div className="border-b border-border p-4 bg-gradient-to-r from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Chat with AI Chef</h2>
@@ -169,7 +169,7 @@ export default function Chat() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-gradient-to-br from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
         <div className="max-w-4xl mx-auto p-6">
           <div className="mb-6">
             <ExpirationAlert />
