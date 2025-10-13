@@ -62,6 +62,7 @@ export interface IStorage {
 
   // Food Items (user-scoped)
   getFoodItems(userId: string, storageLocationId?: string): Promise<FoodItem[]>;
+  getFoodItemsPaginated(userId: string, page?: number, limit?: number, storageLocationId?: string, sortBy?: 'name' | 'expirationDate' | 'addedAt'): Promise<{ items: FoodItem[], total: number, page: number, totalPages: number }>;
   getFoodItem(userId: string, id: string): Promise<FoodItem | undefined>;
   createFoodItem(userId: string, item: Omit<InsertFoodItem, 'userId'>): Promise<FoodItem>;
   updateFoodItem(userId: string, id: string, item: Partial<Omit<InsertFoodItem, 'userId'>>): Promise<FoodItem>;
@@ -70,10 +71,12 @@ export interface IStorage {
 
   // Chat Messages (user-scoped)
   getChatMessages(userId: string): Promise<ChatMessage[]>;
+  getChatMessagesPaginated(userId: string, page?: number, limit?: number): Promise<{ messages: ChatMessage[], total: number, page: number, totalPages: number }>;
   createChatMessage(userId: string, message: Omit<InsertChatMessage, 'userId'>): Promise<ChatMessage>;
 
   // Recipes (user-scoped)
   getRecipes(userId: string): Promise<Recipe[]>;
+  getRecipesPaginated(userId: string, page?: number, limit?: number): Promise<{ recipes: Recipe[], total: number, page: number, totalPages: number }>;
   getRecipe(userId: string, id: string): Promise<Recipe | undefined>;
   createRecipe(userId: string, recipe: Omit<InsertRecipe, 'userId'>): Promise<Recipe>;
   updateRecipe(userId: string, id: string, updates: Partial<Recipe>): Promise<Recipe>;
@@ -368,6 +371,55 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getFoodItemsPaginated(
+    userId: string, 
+    page: number = 1, 
+    limit: number = 30, 
+    storageLocationId?: string,
+    sortBy: 'name' | 'expirationDate' | 'addedAt' = 'expirationDate'
+  ): Promise<{ items: FoodItem[], total: number, page: number, totalPages: number }> {
+    try {
+      const offset = (page - 1) * limit;
+      
+      // Build where clause
+      const whereConditions = [eq(foodItems.userId, userId)];
+      if (storageLocationId && storageLocationId !== "all") {
+        whereConditions.push(eq(foodItems.storageLocationId, storageLocationId));
+      }
+      
+      // Get total count
+      const [countResult] = await db.select({ count: sql<number>`count(*)` })
+        .from(foodItems)
+        .where(and(...whereConditions));
+      
+      const total = Number(countResult?.count || 0);
+      
+      // Determine sort order
+      const orderClause = sortBy === 'name' 
+        ? foodItems.name
+        : sortBy === 'addedAt'
+        ? sql`${foodItems.addedAt} DESC`
+        : foodItems.expirationDate;
+      
+      // Get paginated items
+      const items = await db.select().from(foodItems)
+        .where(and(...whereConditions))
+        .orderBy(orderClause)
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        items,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      console.error(`Error getting paginated food items for user ${userId}:`, error);
+      throw new Error('Failed to retrieve food items');
+    }
+  }
+
   async getFoodItem(userId: string, id: string): Promise<FoodItem | undefined> {
     try {
       const [item] = await db.select().from(foodItems).where(
@@ -450,6 +502,36 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getChatMessagesPaginated(userId: string, page: number = 1, limit: number = 50): Promise<{ messages: ChatMessage[], total: number, page: number, totalPages: number }> {
+    try {
+      const offset = (page - 1) * limit;
+      
+      // Get total count
+      const [countResult] = await db.select({ count: sql<number>`count(*)` })
+        .from(chatMessages)
+        .where(eq(chatMessages.userId, userId));
+      
+      const total = Number(countResult?.count || 0);
+      
+      // Get paginated messages
+      const messages = await db.select().from(chatMessages)
+        .where(eq(chatMessages.userId, userId))
+        .orderBy(sql`${chatMessages.timestamp} DESC`)
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        messages,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      console.error(`Error getting paginated chat messages for user ${userId}:`, error);
+      throw new Error('Failed to retrieve chat messages');
+    }
+  }
+
   async createChatMessage(userId: string, message: Omit<InsertChatMessage, 'userId'>): Promise<ChatMessage> {
     try {
       const [newMessage] = await db
@@ -471,6 +553,36 @@ export class DatabaseStorage implements IStorage {
         .orderBy(sql`${recipes.createdAt} DESC`);
     } catch (error) {
       console.error(`Error getting recipes for user ${userId}:`, error);
+      throw new Error('Failed to retrieve recipes');
+    }
+  }
+
+  async getRecipesPaginated(userId: string, page: number = 1, limit: number = 20): Promise<{ recipes: Recipe[], total: number, page: number, totalPages: number }> {
+    try {
+      const offset = (page - 1) * limit;
+      
+      // Get total count
+      const [countResult] = await db.select({ count: sql<number>`count(*)` })
+        .from(recipes)
+        .where(eq(recipes.userId, userId));
+      
+      const total = Number(countResult?.count || 0);
+      
+      // Get paginated recipes
+      const paginatedRecipes = await db.select().from(recipes)
+        .where(eq(recipes.userId, userId))
+        .orderBy(sql`${recipes.createdAt} DESC`)
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        recipes: paginatedRecipes,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      console.error(`Error getting paginated recipes for user ${userId}:`, error);
       throw new Error('Failed to retrieve recipes');
     }
   }
@@ -779,7 +891,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCachedSearchResults(query: string, dataType?: string, pageNumber: number = 1): Promise<FdcSearchCache | undefined> {
+  async getCachedSearchResults(query: string, dataType?: string, pageNumber: number = 1, isComplexSearch: boolean = false): Promise<FdcSearchCache | undefined> {
     try {
       const conditions = [
         eq(fdcSearchCache.query, query.toLowerCase()),
@@ -797,11 +909,14 @@ export class DatabaseStorage implements IStorage {
         .orderBy(sql`${fdcSearchCache.cachedAt} DESC`)
         .limit(1);
       
-      // Check if cache is less than 24 hours old
+      // Use shorter TTL for complex searches (2 hours), longer for simple searches (24 hours)
       if (cached) {
         const cacheAge = Date.now() - new Date(cached.cachedAt).getTime();
-        const oneDayInMs = 24 * 60 * 60 * 1000;
-        if (cacheAge < oneDayInMs) {
+        const ttlMs = isComplexSearch 
+          ? 2 * 60 * 60 * 1000  // 2 hours for complex searches with filters
+          : 24 * 60 * 60 * 1000; // 24 hours for simple searches
+        
+        if (cacheAge < ttlMs) {
           return cached;
         }
       }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Upload, ImageOff } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
 import { ObjectUploader } from "./ObjectUploader";
 import { BarcodeRateLimitInfo } from "./barcode-rate-limit-info";
@@ -115,6 +116,7 @@ function getSuggestedStorageLocation(category?: string, description?: string, st
 
 export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedFood, setSelectedFood] = useState<any>(null);
   const [selectedUpc, setSelectedUpc] = useState<string | null>(null);
   const [quantity, setQuantity] = useState("");
@@ -123,16 +125,40 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [expirationDate, setExpirationDate] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageSource, setImageSource] = useState<"branded" | "upload" | "none">("none");
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
   const { data: storageLocations } = useQuery<StorageLocation[]>({
     queryKey: ["/api/storage-locations"],
   });
 
-  const { data: searchResults, refetch: searchUSDA } = useQuery<USDASearchResponse>({
-    queryKey: [`/api/usda/search?query=${encodeURIComponent(searchQuery)}`],
-    enabled: false,
+  // Use debounced query for automatic search
+  const { data: searchResults, isFetching: searchLoading } = useQuery<USDASearchResponse>({
+    queryKey: [`/api/usda/search?query=${encodeURIComponent(debouncedSearchQuery)}`],
+    enabled: debouncedSearchQuery.length > 0,
   });
+
+  // Debounced search callback - triggers after 300ms of no typing
+  const debouncedSearch = useDebouncedCallback(
+    (value: string) => {
+      setDebouncedSearchQuery(value);
+      setIsSearching(false);
+    },
+    300,
+    []
+  );
+
+  // Handle input changes with debouncing
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) {
+      setIsSearching(true);
+      debouncedSearch(value.trim());
+    } else {
+      setIsSearching(false);
+      setDebouncedSearchQuery("");
+    }
+  };
 
   const addItemMutation = useMutation({
     mutationFn: async (data: InsertFoodItem) => {
@@ -159,14 +185,9 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     },
   });
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      searchUSDA();
-    }
-  };
-
   const handleClose = () => {
     setSearchQuery("");
+    setDebouncedSearchQuery("");
     setSelectedFood(null);
     setSelectedUpc(null);
     setQuantity("");
@@ -175,6 +196,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     setExpirationDate("");
     setImageUrl(null);
     setImageSource("none");
+    setIsSearching(false);
     onOpenChange(false);
   };
 
@@ -310,17 +332,18 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <Label>Search USDA Database</Label>
-            <div className="flex gap-2">
+            <div className="space-y-2">
               <Input
-                placeholder="Search for food items..."
+                placeholder="Search for food items... (searches automatically as you type)"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
                 data-testid="input-usda-search"
               />
-              <Button onClick={handleSearch} data-testid="button-usda-search">
-                <Search className="w-4 h-4" />
-              </Button>
+              {(isSearching || searchLoading) && (
+                <div className="text-sm text-muted-foreground">
+                  Searching USDA database...
+                </div>
+              )}
             </div>
           </div>
 

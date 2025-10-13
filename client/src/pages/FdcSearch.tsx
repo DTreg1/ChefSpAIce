@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { useDebouncedCallback } from "@/lib/debounce";
 import {
   Card,
   CardContent,
@@ -104,7 +105,31 @@ export default function FdcSearch() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFood, setSelectedFood] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
+
+  // Debounced search callback - triggers after 400ms of no typing
+  const debouncedSearch = useDebouncedCallback(
+    (value: string) => {
+      setCurrentQuery(value);
+      setCurrentPage(1);
+      setIsTyping(false);
+    },
+    400,
+    []
+  );
+
+  // Handle input changes with debouncing
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) {
+      setIsTyping(true);
+      debouncedSearch(value.trim());
+    } else {
+      setIsTyping(false);
+      setCurrentQuery("");
+    }
+  };
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
@@ -252,13 +277,14 @@ export default function FdcSearch() {
           >
             Search
           </Label>
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Search for foods (e.g., 'apple', 'chicken breast', 'coca cola')"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
+          <form onSubmit={handleSearch} className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Search for foods (searches automatically as you type)"
+                value={searchQuery}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
+                className="flex-1"
               data-testid="input-search"
             />
             <Button
@@ -269,6 +295,12 @@ export default function FdcSearch() {
               <Search className="w-4 h-4 mr-2" />
               Search
             </Button>
+            </div>
+            {(isTyping || isSearching) && (
+              <div className="text-sm text-muted-foreground">
+                Searching FDA database...
+              </div>
+            )}
           </form>
 
           <div className="space-y-4">
