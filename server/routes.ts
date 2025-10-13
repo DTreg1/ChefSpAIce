@@ -112,7 +112,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const validated = insertFoodItemSchema.parse(req.body);
-      const item = await storage.createFoodItem(userId, validated);
+      
+      // Calculate weightInGrams from quantity and USDA serving size
+      let weightInGrams: number | null = null;
+      if (validated.nutrition) {
+        try {
+          const nutritionData = JSON.parse(validated.nutrition);
+          const quantity = parseFloat(validated.quantity) || 1;
+          const servingSize = parseFloat(nutritionData.servingSize) || 100;
+          weightInGrams = quantity * servingSize;
+        } catch (e) {
+          console.error("Error calculating weight:", e);
+        }
+      }
+      
+      const item = await storage.createFoodItem(userId, {
+        ...validated,
+        weightInGrams,
+      });
       res.json(item);
     } catch (error) {
       console.error("Error creating food item:", error);
@@ -131,7 +148,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expirationDate: true,
       });
       const validated = updateSchema.parse(req.body);
-      const item = await storage.updateFoodItem(userId, id, validated);
+      
+      // Recalculate weightInGrams if quantity or nutrition changes
+      let weightInGrams: number | null | undefined = undefined;
+      if (validated.quantity && validated.nutrition) {
+        try {
+          const nutritionData = JSON.parse(validated.nutrition);
+          const quantity = parseFloat(validated.quantity) || 1;
+          const servingSize = parseFloat(nutritionData.servingSize) || 100;
+          weightInGrams = quantity * servingSize;
+        } catch (e) {
+          console.error("Error calculating weight:", e);
+        }
+      }
+      
+      const updateData = weightInGrams !== undefined ? { ...validated, weightInGrams } : validated;
+      const item = await storage.updateFoodItem(userId, id, updateData);
       res.json(item);
     } catch (error) {
       console.error("Error updating food item:", error);
