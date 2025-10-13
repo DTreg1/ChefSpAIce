@@ -4,7 +4,7 @@ import { ChefHat, Refrigerator, Calendar, ShoppingCart, Sparkles } from "lucide-
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-lime-50/50 via-background to-green-50/30">
+    <div className="min-h-screen bg-gradient-to-br from-lime-50/50 via-background to-green-50/30 dark:from-lime-950/20 dark:via-background dark:to-green-950/20">
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center text-center space-y-8">
           <div className="flex items-center gap-3">
