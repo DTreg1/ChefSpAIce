@@ -65,10 +65,10 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar>
-        <SidebarHeader className="p-6 border-b border-sidebar-border">
+      <Sidebar className="glass-strong">
+        <SidebarHeader className="p-6 border-b border-sidebar-border/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center transition-spring">
               <ChefHat className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
@@ -209,7 +209,7 @@ export function AppSidebar() {
 
           <div className="mt-6">
             <Button 
-              className="w-full" 
+              className="w-full transition-morph glass-morph" 
               size="default"
               onClick={() => setAddDialogOpen(true)}
               data-testid="button-add-item"
