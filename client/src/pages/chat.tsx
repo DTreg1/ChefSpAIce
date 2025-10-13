@@ -8,6 +8,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { RecipeGenerator } from "@/components/recipe-generator";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
+import { ChefHat } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
@@ -212,9 +213,9 @@ export default function Chat() {
               )}
 
               {isStreaming && !streamingContent && (
-                <div className="flex gap-3 mb-4">
+                <div className="flex gap-3 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
-                    <LoadingDots />
+                    <ChefHat className="w-4 h-4 text-accent-foreground" />
                   </div>
                   <div className="bg-accent rounded-2xl px-4 py-3 text-accent-foreground">
                     <LoadingDots />
