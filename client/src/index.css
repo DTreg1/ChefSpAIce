@@ -2,156 +2,200 @@
 @tailwind components;
 @tailwind utilities;
 
+/* LIGHT MODE */
 :root {
-  /* Color Variables */
-  --background: hsl(60, 15%, 96%);
-  --foreground: hsl(30, 25%, 20%);
-  --muted: hsl(85, 20%, 90%);
-  --muted-foreground: hsl(75, 15%, 50%);
-  --popover: hsl(60, 15%, 96%);
-  --popover-foreground: hsl(30, 25%, 20%);
-  --card: hsl(85, 18%, 93%);
-  --card-foreground: hsl(30, 25%, 20%);
-  --border: hsl(85, 25%, 82%);
-  --input: hsl(85, 25%, 82%);
-  --primary: hsl(85, 50%, 40%);
-  --primary-foreground: hsl(60, 15%, 96%);
-  --secondary: hsl(35, 45%, 45%);
-  --secondary-foreground: hsl(60, 15%, 96%);
-  --accent: hsl(95, 40%, 65%);
-  --accent-foreground: hsl(30, 25%, 20%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 100%);
-  --ring: hsl(30, 25%, 20%);
-  --chat-bubble: hsl(95, 30%, 88%);
-  --radius: 0.5rem;
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
 
-  /* Enhanced Visual Hierarchy Colors */
-  --heading-primary: hsl(30, 30%, 15%);
-  --heading-secondary: hsl(30, 25%, 25%);
-  --text-emphasis: hsl(30, 25%, 20%);
-  --text-subtle: hsl(75, 15%, 45%);
-  --text-muted: hsl(75, 12%, 60%);
+  /* Automatic computation of border around primary / danger buttons */
+  --opaque-button-border-intensity: -8; /* In terms of percentages */
 
-  /* Enhanced Typography Scale - Fluid Responsive */
-  --text-xs: clamp(0.688rem, 0.65rem + 0.15vw, 0.75rem);          /* 11px - 12px */
-  --text-sm: clamp(0.813rem, 0.77rem + 0.22vw, 0.938rem);         /* 13px - 15px */
-  --text-base: clamp(1rem, 0.94rem + 0.33vw, 1.125rem);           /* 16px - 18px */
-  --text-lg: clamp(1.063rem, 0.99rem + 0.36vw, 1.25rem);          /* 17px - 20px */
-  --text-xl: clamp(1.188rem, 1.1rem + 0.44vw, 1.438rem);          /* 19px - 23px */
-  --text-2xl: clamp(1.375rem, 1.24rem + 0.68vw, 1.75rem);         /* 22px - 28px */
-  --text-3xl: clamp(1.688rem, 1.46rem + 1.14vw, 2.25rem);         /* 27px - 36px */
-  --text-4xl: clamp(2rem, 1.68rem + 1.61vw, 2.813rem);            /* 32px - 45px */
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
 
-  /* Enhanced Spacing Scale - Fluid Responsive */
-  --space-xs: clamp(0.25rem, 0.23rem + 0.1vw, 0.313rem);          /* 4px - 5px */
-  --space-sm: clamp(0.5rem, 0.46rem + 0.19vw, 0.625rem);          /* 8px - 10px */
-  --space-md: clamp(0.75rem, 0.69rem + 0.29vw, 0.938rem);         /* 12px - 15px */
-  --space-lg: clamp(1rem, 0.92rem + 0.39vw, 1.25rem);             /* 16px - 20px */
-  --space-xl: clamp(1.5rem, 1.34rem + 0.78vw, 1.938rem);          /* 24px - 31px */
-  --space-2xl: clamp(2rem, 1.68rem + 1.61vw, 2.813rem);           /* 32px - 45px */
-  --space-3xl: clamp(3rem, 2.51rem + 2.42vw, 4.25rem);            /* 48px - 68px */
+  --background: 0 0% 100%;
 
-  /* Visual Hierarchy Weights */
-  --font-light: 300;
-  --font-normal: 400;
-  --font-medium: 500;
-  --font-semibold: 600;
-  --font-bold: 700;
+  --foreground: 210 25% 7.8431%;
 
-  /* Animation Variables */
-  --animation-duration-fast: 0.2s;
-  --animation-duration-normal: 0.3s;
-  --animation-duration-slow: 0.5s;
-  --animation-duration-very-slow: 1s;
-  --animation-easing-default: ease-out;
-  --animation-easing-spring: cubic-bezier(0.4, 0, 0.2, 1);
-  --animation-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --border: 201.4286 30.4348% 90.9804%;
 
-  /* Accessibility Variables */
-  --focus-ring-color: hsl(85, 50%, 40%);
-  --focus-ring-offset: 2px;
-  --focus-ring-width: 2px;
-  --high-contrast-border: hsl(0, 0%, 0%);
-  --high-contrast-bg: hsl(0, 0%, 100%);
-  --high-contrast-text: hsl(0, 0%, 0%);
-}
+  --card: 180 6.6667% 97.0588%;
 
-.appliance-card {
-  @apply bg-card border rounded-lg overflow-hidden transition-all duration-200;
-}
+  --card-foreground: 210 25% 7.8431%;
 
-.appliance-card:hover {
-  @apply shadow-xl;
-}
+  --card-border: 200 10% 94%;
 
-.appliance-image-container {
-  @apply bg-white dark:bg-gray-900 rounded-lg overflow-hidden;
-  min-height: 128px;
-}
+  --sidebar: 180 6.6667% 97.0588%;
 
-@media (min-width: 640px) {
-  .appliance-image-container {
-    min-height: 160px;
-  }
-}
+  --sidebar-foreground: 210 25% 7.8431%;
 
-@media (min-width: 1024px) {
-  .appliance-image-container {
-    min-height: 192px;
-  }
-}
+  --sidebar-border: 205.0000 25.0000% 90.5882%;
 
-.appliance-image {
-  @apply w-full h-full object-contain;
-  padding: 0.5rem;
-}
+  --sidebar-primary: 84.71 50% 40%;
 
-.thumbnail-dots {
-  @apply flex justify-center gap-1.5 pb-2;
-}
+  --sidebar-primary-foreground: 0 0% 100%;
 
-.thumbnail-dot {
-  @apply w-2 h-2 rounded-full transition-all duration-200;
-}
+  --sidebar-accent: 84.71 51% 92%;
 
-.thumbnail-dot.active {
-  @apply bg-primary;
-}
+  --sidebar-accent-foreground: 84.71 50% 40%;
 
-.thumbnail-dot.inactive {
-  @apply bg-muted-foreground opacity-30 hover:opacity-50;
+  --sidebar-ring: 84.71 89% 53%;
+
+  --popover: 0 0% 100%;
+
+  --popover-foreground: 210 25% 7.8431%;
+
+  --popover-border: 200 15% 92%;
+
+  --primary: 84.71deg 50% 40%;
+
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 210 25% 7.8431%;
+
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 240 1.9608% 90%;
+
+  --muted-foreground: 210 25% 7.8431%;
+
+  --accent: 84.71 51% 92%;
+
+  --accent-foreground: 84.71deg 50% 40%;
+
+  --destructive: 356.3033 90.5579% 54.3137%;
+
+  --destructive-foreground: 0 0% 100%;
+
+  --input: 200 23.0769% 97.4510%;
+  --ring: 84.71deg 50% 40%;
+  --chart-1: 84.71 65% 56%;
+  --chart-2: 291.82deg 43.56% 39.61%;
+  --chart-3: 42.0290 92.8251% 56.2745%;
+  --chart-4: 147.1429 78.5047% 41.9608%;
+  --chart-5: 341.4894 75.2000% 50.9804%;
+
+  --font-sans: 'Ubuntu', sans-serif;
+  --font-serif: 'Ubuntu', sans-serif;
+  --font-mono: 'Ubuntu Mono', monospace;
+  --radius: 0.9rem;
+  --shadow-2xs: 0 1px 2px 0 hsla(var(--primary), 0.05);
+  --shadow-xs: 0 1px 3px 0 hsla(var(--primary), 0.08), 0 1px 2px 0 hsla(var(--primary), 0.06);
+  --shadow-sm: 0 2px 4px -1px hsla(var(--primary), 0.06), 0 2px 4px -1px hsla(var(--primary), 0.06);
+  --shadow: 0 4px 6px -1px hsla(var(--primary), 0.08), 0 2px 4px -1px hsla(var(--primary), 0.04);
+  --shadow-md: 0 10px 15px -3px hsla(var(--primary), 0.1), 0 4px 6px -2px hsla(var(--primary), 0.05);
+  --shadow-lg: 0 20px 25px -5px hsla(var(--primary), 0.12), 0 10px 10px -5px hsla(var(--primary), 0.06);
+  --shadow-xl: 0 25px 50px -12px hsla(var(--primary), 0.15);
+  --shadow-2xl: 0 35px 60px -15px hsla(var(--primary), 0.18);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
 .dark {
-  --background: hsl(30, 15%, 8%);
-  --foreground: hsl(85, 12%, 88%);
-  --muted: hsl(35, 25%, 15%);
-  --muted-foreground: hsl(75, 10%, 60%);
-  --popover: hsl(30, 15%, 8%);
-  --popover-foreground: hsl(85, 12%, 88%);
-  --card: hsl(35, 20%, 12%);
-  --card-foreground: hsl(85, 12%, 88%);
-  --border: hsl(75, 20%, 18%);
-  --input: hsl(75, 20%, 18%);
-  --primary: hsl(85, 45%, 50%);
-  --primary-foreground: hsl(30, 15%, 8%);
-  --secondary: hsl(35, 50%, 55%);
-  --secondary-foreground: hsl(30, 15%, 8%);
-  --accent: hsl(95, 35%, 70%);
-  --accent-foreground: hsl(30, 15%, 8%);
-  --destructive: hsl(0, 70%, 45%);
-  --destructive-foreground: hsl(85, 12%, 88%);
-  --ring: hsl(85, 15%, 70%);
-  --chat-bubble: hsl(75, 20%, 15%);
-  --radius: 0.5rem;
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
 
-  /* Enhanced Visual Hierarchy Colors - Dark Mode */
-  --heading-primary: hsl(85, 15%, 92%);
-  --heading-secondary: hsl(85, 12%, 85%);
-  --text-emphasis: hsl(85, 12%, 88%);
-  --text-subtle: hsl(75, 10%, 65%);
-  --text-muted: hsl(75, 8%, 50%);
+  --opaque-button-border-intensity: 9;  /* In terms of percentages */
+
+  /* Backgrounds applied on top of other backgrounds when hovered/active */
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+
+  --background: 0 0% 0%;
+
+  --foreground: 200 6.6667% 91.1765%;
+
+  --border: 210 5.2632% 14.9020%;
+
+  --card: 228 9.8039% 10%;
+
+  --card-foreground: 0 0% 85.0980%;
+
+  --card-border: 228 9% 12%;
+
+  --sidebar: 228 9.8039% 10%;
+
+  --sidebar-foreground: 0 0% 85.0980%;
+
+  --sidebar-border: 205.7143 15.7895% 26.0784%;
+
+  --sidebar-primary: 84.71 60% 60%;
+
+  --sidebar-primary-foreground: 0 0% 100%;
+
+  --sidebar-accent: 84.71 70% 7.8431%;
+
+  --sidebar-accent-foreground: 84.71 87% 52%;
+
+  --sidebar-ring: 84.71 89% 53%;
+
+  --popover: 0 0% 0%;
+
+  --popover-foreground: 200 6.6667% 91.1765%;
+
+  --popover-border: 210 8% 8%;
+
+  --primary: 84.71 60% 60%;
+
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 195.0000 15.3846% 94.9020%;
+
+  --secondary-foreground: 210 25% 7.8431%;
+
+  --muted: 0 0% 9.4118%;
+
+  --muted-foreground: 210 3.3898% 46.2745%;
+
+  --accent: 84.71 70% 7.8431%;
+
+  --accent-foreground: 84.71 87% 52%;
+
+  --destructive: 356.3033 90.5579% 54.3137%;
+
+  --destructive-foreground: 0 0% 100%;
+
+  --input: 207.6923 27.6596% 18.4314%;
+  --ring: 84.71 89% 53%;
+  --chart-1: 84.71 88% 53%;
+  --chart-2: 159.7826 100% 36.0784%;
+  --chart-3: 42.0290 92.8251% 56.2745%;
+  --chart-4: 147.1429 78.5047% 41.9608%;
+  --chart-5: 341.4894 75.2000% 50.9804%;
+
+  --shadow-2xs: 0 1px 2px 0 hsla(var(--primary), 0.08);
+  --shadow-xs: 0 1px 3px 0 hsla(var(--primary), 0.12), 0 1px 2px 0 hsla(var(--primary), 0.08);
+  --shadow-sm: 0 2px 4px -1px hsla(var(--primary), 0.1), 0 2px 4px -1px hsla(var(--primary), 0.08);
+  --shadow: 0 4px 6px -1px hsla(var(--primary), 0.12), 0 2px 4px -1px hsla(var(--primary), 0.08);
+  --shadow-md: 0 10px 15px -3px hsla(var(--primary), 0.15), 0 4px 6px -2px hsla(var(--primary), 0.1);
+  --shadow-lg: 0 20px 25px -5px hsla(var(--primary), 0.18), 0 10px 10px -5px hsla(var(--primary), 0.12);
+  --shadow-xl: 0 25px 50px -12px hsla(var(--primary), 0.22);
+  --shadow-2xl: 0 35px 60px -15px hsla(var(--primary), 0.26);
+
+  /* Automatically computed borders - intensity can be controlled by the user by the --opaque-button-border-intensity setting */
+  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --radius: 0.9rem;
+  --spacing: 0.25rem;
+  --font-sans: 'Ubuntu', sans-serif;
+  --font-serif: 'Ubuntu', sans-serif;
+  --font-mono: 'Ubuntu Mono', monospace;
+  --tracking-normal: 0em;
 }
 
 @layer base {
@@ -159,1014 +203,221 @@
     @apply border-border;
   }
 
-  /* Enhanced Typography Hierarchy Classes */
-  .heading-1 {
-    font-size: var(--text-4xl);
-    font-weight: var(--font-bold);
-    color: var(--heading-primary);
-    line-height: 1.2;
-    letter-spacing: -0.025em;
-  }
-
-  .heading-2 {
-    font-size: var(--text-3xl);
-    font-weight: var(--font-semibold);
-    color: var(--heading-primary);
-    line-height: 1.3;
-    letter-spacing: -0.02em;
-  }
-
-  .heading-3 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    color: var(--heading-secondary);
-    line-height: 1.4;
-    letter-spacing: -0.015em;
-  }
-
-  .heading-4 {
-    font-size: var(--text-xl);
-    font-weight: var(--font-medium);
-    color: var(--heading-secondary);
-    line-height: 1.4;
-  }
-
-  .text-emphasis {
-    font-weight: var(--font-medium);
-    color: var(--text-emphasis);
-  }
-
-  .text-subtle {
-    color: var(--text-subtle);
-    font-size: var(--text-sm);
-  }
-
-  .text-muted-enhanced {
-    color: var(--text-muted);
-    font-size: var(--text-xs);
-  }
-
-  /* Enhanced Spacing Utilities */
-  .space-hierarchy-xs { gap: var(--space-xs); }
-  .space-hierarchy-sm { gap: var(--space-sm); }
-  .space-hierarchy-md { gap: var(--space-md); }
-  .space-hierarchy-lg { gap: var(--space-lg); }
-  .space-hierarchy-xl { gap: var(--space-xl); }
-  .space-hierarchy-2xl { gap: var(--space-2xl); }
-  .space-hierarchy-3xl { gap: var(--space-3xl); }
-
-  /* Visual Importance Classes */
-  .visual-priority-high {
-    font-weight: var(--font-semibold);
-    color: var(--heading-primary);
-    font-size: var(--text-lg);
-  }
-
-  .visual-priority-medium {
-    font-weight: var(--font-medium);
-    color: var(--text-emphasis);
-  }
-
-  .visual-priority-low {
-    color: var(--text-subtle);
-    font-size: var(--text-sm);
-  }
-
-  /* Primary HTML/Body styles - consolidated and optimized */
-  html {
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-    background-color: var(--background) !important;
-    overscroll-behavior: none;
-    overflow-x: hidden;
-    font-size: var(--text-base);
-  }
-
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-    position: relative;
-    background-color: var(--background) !important;
-    overflow-x: hidden;
+  }
+  .liquid-glass {
+    width: 280px;
+    height: 160px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.01);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 12px 48px rgba(31, 38, 135, 0.154);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent 50%);
+    transition: all 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+    cursor: pointer;
   }
 
-  #root {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+  .liquid-glass:hover {
 
-  /* Apply fluid typography to semantic HTML elements */
-  h1 {
-    font-size: var(--text-4xl);
-    font-weight: var(--font-bold);
-    color: var(--heading-primary);
-    line-height: 1.2;
-    letter-spacing: -0.025em;
-  }
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateY(-4px);
+    filter: none;
 
-  h2 {
-    font-size: var(--text-3xl);
-    font-weight: var(--font-semibold);
-    color: var(--heading-primary);
-    line-height: 1.3;
-    letter-spacing: -0.02em;
-  }
-
-  h3 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    color: var(--heading-secondary);
-    line-height: 1.4;
-    letter-spacing: -0.015em;
-  }
-
-  h4 {
-    font-size: var(--text-xl);
-    font-weight: var(--font-medium);
-    color: var(--heading-secondary);
-    line-height: 1.4;
-  }
-
-  h5 {
-    font-size: var(--text-lg);
-    font-weight: var(--font-medium);
-    color: var(--heading-secondary);
-    line-height: 1.5;
-  }
-
-  h6 {
-    font-size: var(--text-base);
-    font-weight: var(--font-medium);
-    color: var(--heading-secondary);
-    line-height: 1.5;
-  }
-
-  /* Ensure form controls use fluid base size (prevents iOS input zoom) */
-  input:not([type="checkbox"]):not([type="radio"]),
-  select,
-  textarea,
-  button {
-    font-size: var(--text-base);
-  }
-
-  /* Paragraphs and base text use fluid sizing */
-  p {
-    font-size: var(--text-base);
-    line-height: 1.6;
   }
 }
 
-/* Mobile-specific override: Force ≥16px on inputs/buttons to prevent iOS zoom */
-/* Higher specificity to override Tailwind utilities like text-sm */
-@media (max-width: 768px) {
-  html body input:not([type="checkbox"]):not([type="radio"]),
-  html body select,
-  html body textarea {
-    font-size: 16px !important;
-    min-height: 22px;
+/**
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ *
+ * <element className="hover-elevate" />
+ * <element className="active-elevate-2" />
+ *
+ * // Using the tailwind utility when a data attribute is "on"
+ * <element className="toggle-elevate data-[state=on]:toggle-elevated" />
+ * // Or manually controlling the toggle state
+ * <element className="toggle-elevate toggle-elevated" />
+ *
+ * Elevation systems have to handle many states.
+ * - not-hovered, vs. hovered vs. active  (three mutually exclusive states)
+ * - toggled or not
+ * - focused or not (this is not handled with these utilities)
+ *
+ * Even without handling focused or not, this is six possible combinations that
+ * need to be distinguished from eachother visually.
+ */
+@layer utilities {
+
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
   }
 
-  /* Apply min-height to regular buttons, but exclude Switch and TabsList components */
-  html body button:not([role="switch"]):not([role="tab"]) {
-    font-size: 16px !important;
-    min-height: 22px;
-  }
-}
-
-/* Custom scrollbar styles */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground));
-}
-
-/* ============================
-   Theme Revision System
-   ============================ */
-
-/* Rev 0 (default/classic) - No special styles, uses original button styles */
-/* Rev 1 (modern glass) - Applies liquid glass effect to all buttons and cards */
-
-/* Apply liquid glass to all buttons when theme-rev-1 is active */
-.theme-rev-1 button,
-.theme-rev-1 .inline-flex[class*="btn"],
-.theme-rev-1 .inline-flex[class*="rounded-md"] {
-  position: relative;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 
-    0 8px 32px 0 rgba(31, 38, 135, 0.37),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-}
-
-/* Enhanced text contrast for liquid glass buttons */
-.theme-rev-1 button:not([class*="ghost"]):not([class*="link"]),
-.theme-rev-1 .inline-flex[class*="btn"]:not([class*="ghost"]):not([class*="link"]),
-.theme-rev-1 .inline-flex[class*="rounded-md"]:not([class*="ghost"]):not([class*="link"]) {
-  color: white !important;
-}
-
-/* Dark mode adjustments for liquid glass buttons */
-.dark.theme-rev-1 button,
-.dark.theme-rev-1 .inline-flex[class*="btn"],
-.dark.theme-rev-1 .inline-flex[class*="rounded-md"] {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-/* Hover effects for liquid glass buttons */
-.theme-rev-1 button:hover:not(:disabled),
-.theme-rev-1 .inline-flex[class*="btn"]:hover:not(:disabled),
-.theme-rev-1 .inline-flex[class*="rounded-md"]:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  transform: translateY(-1px);
-  box-shadow: 
-    0 12px 40px 0 rgba(31, 38, 135, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.15);
-}
-
-/* Disabled state for liquid glass buttons */
-.theme-rev-1 button:disabled,
-.theme-rev-1 .inline-flex[class*="btn"]:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Apply liquid glass to cards when theme-rev-1 is active */
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] {
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 
-    0 8px 32px 0 rgba(31, 38, 135, 0.37),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-/* Dark mode card adjustments */
-.dark.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
-/* Ensure text remains readable in liquid glass cards */
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] h1,
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] h2,
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] h3,
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] h4,
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] p,
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] span:not([class*="muted"]) {
-  color: white !important;
-}
-
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] [class*="muted"],
-.theme-rev-1 [class*="rounded-lg"][class*="border"][class*="bg-card"] [class*="description"] {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Special handling for destructive buttons */
-.theme-rev-1 button[class*="destructive"],
-.theme-rev-1 .inline-flex[class*="destructive"] {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%) !important;
-  border: 1px solid rgba(239, 68, 68, 0.3) !important;
-  color: #fca5a5 !important;
-}
-
-.theme-rev-1 button[class*="destructive"]:hover:not(:disabled),
-.theme-rev-1 .inline-flex[class*="destructive"]:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.15) 100%) !important;
-  border: 1px solid rgba(239, 68, 68, 0.4) !important;
-}
-
-/* ============================
-   Background Patterns Section
-   ============================ */
-
-/* Line pattern background for liquid glass showcase */
-.line-pattern-bg {
-  background-image: 
-    linear-gradient(90deg, rgba(255,255,255,0.3) 2px, transparent 2px),
-    linear-gradient(rgba(255,255,255,0.3) 2px, transparent 2px);
-  background-size: 40px 40px;
-}
-
-.diagonal-lines-bg {
-  background-image: 
-    repeating-linear-gradient(
-      45deg,
-      rgba(255,255,255,0.2) 0px,
-      rgba(255,255,255,0.2) 2px,
-      transparent 2px,
-      transparent 25px
-    );
-}
-
-.dot-pattern-bg {
-  background-image: 
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.4) 1px, transparent 1px);
-  background-size: 25px 25px;
-}
-
-/* ============================
-   Animation Keyframes Section
-   ============================ */
-
-/* Fade In Animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Typing Indicator Animation */
-@keyframes typing {
-  0%, 60%, 100% {
-    transform: initial;
-  }
-  30% {
-    transform: translateY(-10px);
-  }
-}
-
-/* Progress Slide Animation */
-@keyframes progress-slide {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(300%);
-  }
-}
-
-/* Steam Animations */
-@keyframes steam-fade {
-  0% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.8;
-  }
-  100% {
-    opacity: 0.4;
-  }
-}
-
-@keyframes steam-curl {
-  0% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-5px) rotate(5deg);
-  }
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-}
-
-@keyframes bubble-rise {
-  0% {
-    transform: translateY(0);
-  }
-  70% {
-    transform: translateY(-20px);
-  }
-  100% {
-    transform: translateY(0);
-  }
-}
-
-/* Liquid Shine Animation */
-@keyframes liquidShine {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(90deg);
-  }
-  100% {
-    transform: translateX(100%) translateY(100%) rotate(90deg);
-  }
-}
-
-/* Settings Flash Animation */
-@keyframes settings-flash-animation {
-  0% { background-color: transparent; }
-  50% { background-color: rgba(var(--primary), 0.1); }
-  100% { background-color: transparent; }
-}
-
-/* Mobile Slide Up Animation */
-@keyframes slide-up {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-/* Cook Pot Specific Animations */
-@keyframes bubble {
-  0% { opacity: 0; transform: translateY(0) scale(0.8); }
-  50% { opacity: 1; transform: translateY(-10px) scale(1); }
-  100% { opacity: 0; transform: translateY(-20px) scale(0.8); }
-}
-
-@keyframes steam {
-  0% { opacity: 0; transform: translateY(0) scale(0.8); }
-  40% { opacity: 0.8; transform: translateY(-5px) scale(1); }
-  100% { opacity: 0; transform: translateY(-10px) scale(0.8); }
-}
-
-@keyframes lid-bounce {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-  100% { transform: translateY(0); }
-}
-
-/* Swipe Hint Animations */
-@keyframes swipe-hint-left {
-  0%, 100% { 
-    transform: translateX(0);
-    opacity: 0.6;
-  }
-  50% { 
-    transform: translateX(-8px);
-    opacity: 1;
-  }
-}
-
-@keyframes swipe-hint-right {
-  0%, 100% { 
-    transform: translateX(0);
-    opacity: 0.6;
-  }
-  50% { 
-    transform: translateX(8px);
-    opacity: 1;
-  }
-}
-
-/* Pull to Refresh Bounce Animation */
-@keyframes pull-bounce {
-  0%, 100% { 
-    transform: translateY(0) scale(1);
-  }
-  50% { 
-    transform: translateY(-4px) scale(1.1);
-  }
-}
-
-/* ============================
-   Animation Classes
-   ============================ */
-
-.animate-fade-in {
-  animation: fadeIn var(--animation-duration-normal) var(--animation-easing-default);
-}
-
-/* Chat message animations */
-.chat-message {
-  animation: fadeIn var(--animation-duration-normal) var(--animation-easing-default);
-  will-change: opacity, transform;
-}
-
-/* Typing dots */
-.typing-dot {
-  animation: typing 1.4s infinite;
-  will-change: transform;
-}
-
-.typing-dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-/* ============================
-   Apple Liquid Glass System (from WWDC 2025)
-   ============================ 
-   Recreating Apple's iOS 26 "Liquid Glass" design language with pure CSS.
-   Based on the exact specifications from the blog post about Apple's new design.
-   Features backdrop blur, transparency, and subtle shadows for depth.
-*/
-
-/* Liquid glass CSS variables matching Apple's specs */
-:root {
-  --liquid-blur: 2px;  /* Apple uses subtle 2px blur */
-  --liquid-saturate: 180%;
-  --liquid-bg-opacity: 0.15;
-  --liquid-border-opacity: 0.8;  /* Much more visible border per Apple */
-  --liquid-shadow-color: rgba(31, 38, 135, 0.2);
-  --liquid-inset-light: rgba(255, 255, 255, 0.3);  /* Stronger inset per Apple */
-}
-
-/* Mobile devices now use the same blur effects as desktop */
-/* Blur effects re-enabled for all screen sizes */
-
-/* Respect user's motion preferences - disable expensive effects */
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --liquid-blur: 0px;
-    --liquid-saturate: 100%;
-    --liquid-shadow-color: rgba(31, 38, 135, 0.05);
-    --liquid-inset-light: rgba(255, 255, 255, 0.05);
-  }
-}
-
-/* Base liquid glass container - Apple's exact specification */
-.liquid-glass-container {
-  position: relative;
-  background: linear-gradient(to bottom, hsl(85 50% 40%) 0%, transparent 100%);
-  backdrop-filter: blur(var(--liquid-blur, 2px)) saturate(var(--liquid-saturate, 180%));
-  -webkit-backdrop-filter: blur(var(--liquid-blur, 2px)) saturate(var(--liquid-saturate, 180%));
-  border: 1px solid rgba(255, 255, 255, var(--liquid-border-opacity, 0.8));
-  box-shadow: 
-    0 8px 32px var(--liquid-shadow-color, rgba(31, 38, 135, 0.2)),
-    inset 0 4px 20px var(--liquid-inset-light, rgba(255, 255, 255, 0.3));
-  will-change: transform, box-shadow;
-  contain: layout style;
-
-}
-
-/* Feature detection - only apply backdrop-filter if supported */
-@supports (backdrop-filter: blur(1px)) {
-  .liquid-glass-container {
-    backdrop-filter: blur(var(--liquid-blur, 2px)) saturate(var(--liquid-saturate, 180%));
-    -webkit-backdrop-filter: blur(var(--liquid-blur, 2px)) saturate(var(--liquid-saturate, 180%));
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
   }
 
-  /* Blur effects now enabled on all screen sizes */
-}
-
-/* Further optimizations for devices that prefer reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .liquid-glass-container {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: hsla(85, 50%, 40%, 0.6);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    will-change: auto;
-    contain: layout;
-  }
-}
-
-/* Glass reflection layer - Apple's liquid shine effect */
-.liquid-glass-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: inherit;
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(1px);
-  box-shadow: 
-    inset -10px -8px 0px -11px rgba(255, 255, 255, 1),  /* Bottom-right crescent */
-    inset 0px -9px 0px -8px rgba(255, 255, 255, 1),     /* Bottom edge */
-    inset 10px 8px 0px -11px rgba(255, 255, 255, 1),    /* Top-left crescent */
-    inset 0px 9px 0px -8px rgba(255, 255, 255, 1);      /* Top edge */
-  opacity: 0.6;
-  z-index: 1;  /* On top to show corner shine */
-  filter: blur(1px) drop-shadow(10px 4px 6px black) brightness(115%);  /* Apple's exact filter */
-  pointer-events: none;
-}
-
-
-/* Completely disable reflection layer for reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .liquid-glass-container::after {
-    display: none;
-  }
-}
-
-/* Ensure content is above glass layers */
-.liquid-glass-container > * {
-  position: relative;
-  z-index: 2;
-}
-
-.typing-dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-.animate-steam-fade {
-  animation: steam-fade 2s ease-in-out infinite;
-}
-
-.animate-steam-1 {
-  animation: steam-curl 3s ease-in-out infinite;
-}
-
-.animate-steam-2 {
-  animation: steam-curl 2.7s ease-in-out infinite;
-}
-
-.animate-steam-3 {
-  animation: steam-curl 3.3s ease-in-out infinite; 
-}
-
-.animate-bubble-1 {
-  animation: bubble-rise 1.8s ease-in-out infinite;
-}
-
-.animate-bubble-2 {
-  animation: bubble-rise 2s ease-in-out infinite;
-}
-
-.animate-bubble-3 {
-  animation: bubble-rise 1.5s ease-in-out infinite;
-}
-
-@layer base {
-  /* Base transition definitions for consistent animations throughout the app */
-  :root {
-    /* Global transition settings */
-    --transition-duration: 0.3s;
-    --transition-timing: ease-out;
-
-    /* Element-specific transition settings */
-    --nav-transition-duration: 0.2s;
-    --theme-transition-duration: 0.5s;
-    --modal-transition-duration: 0.25s;
-
-    /* App layout variables */
-    --mobile-nav-height: clamp(5rem, 12vh, 6.5rem); /* 80px-104px, matches button height + padding */
-    --mobile-header-height: 3.5rem; /* 56px, equivalent to h-14 */
-    --desktop-header-height: 4rem; /* 64px for desktop header with padding */
-
-    /* Semantic state color variables */
-    --success: 142.1 70.6% 45.3%;
-    --success-foreground: 144.9 80.4% 10%;
-    --success-muted: 138 76.5% 97.3%;
-    --success-border: 141.7 69.2% 58%;
-
-    --warning: 38 92.7% 50.2%;
-    --warning-foreground: 39 100% 18%;
-    --warning-muted: 48 96.5% 97.3%;
-    --warning-border: 38 92.7% 60.2%;
-
-    --info: 217.2 91.2% 59.8%;
-    --info-foreground: 224.3 100% 19%;
-    --info-muted: 214.3 100% 96.9%;
-    --info-border: 217.2 91.2% 69.8%;
+  /* Smooth transitions for all interactive elements */
+  .transition-all-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .dark {
-    /* Adjust semantic colors for dark mode */
-    --success: 142.1 70.6% 45.3%;
-    --success-foreground: 138 62.5% 96.9%;
-    --success-muted: 144.3 60.7% 15%;
-    --success-border: 143.1 64.1% 24.2%;
-
-    --warning: 38 92.7% 50.2%;
-    --warning-foreground: 48 96.5% 97.3%;
-    --warning-muted: 40 63.6% 14.9%;
-    --warning-border: 36 100% 25.5%;
-
-    --info: 217.2 91.2% 59.8%;
-    --info-foreground: 213 100% 96.9%;
-    --info-muted: 215 28% 17%;
-    --info-border: 217.2 32.6% 26.5%;
+  /* Card hover animation */
+  .card-hover {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
   }
 
-  /* Apply transition to theme-related elements */
-  body, 
-  .bg-background, 
-  .bg-card, 
-  .bg-primary,
-  .border-border, 
-  .text-primary,
-  .text-foreground,
-  [class*="bg-"], 
-  [class*="text-"] {
-    transition: background-color var(--theme-transition-duration) ease, 
-                color var(--theme-transition-duration) ease,
-                border-color var(--theme-transition-duration) ease;
+  /* Subtle scale animation for buttons */
+  .scale-touch {
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .scale-touch:active {
+    transform: scale(0.97);
   }
 
-  /* Apply transition to all interactive elements */
-  a, button, input, select, textarea,
-  .interactive, .card, .dialog, .dropdown, .tooltip {
-    transition: background-color var(--transition-duration) var(--transition-timing),
-                color var(--transition-duration) var(--transition-timing),
-                border-color var(--transition-duration) var(--transition-timing),
-                transform var(--transition-duration) var(--transition-timing),
-                box-shadow var(--transition-duration) var(--transition-timing),
-                opacity var(--transition-duration) var(--transition-timing);
+  /* Pulse animation for notifications */
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
-  /* Disable transitions for users who prefer reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    *, ::before, ::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
+  /* Fade in animation */
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Mobile touch optimizations */
+  @media (max-width: 768px) {
+    /* Increase touch targets for mobile */
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Better mobile spacing */
+    .mobile-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    
+    /* Disable hover effects on touch devices */
+    @media (hover: none) and (pointer: coarse) {
+      .card-hover:hover {
+        transform: none;
+      }
+      .hover-elevate:hover::after {
+        background-color: transparent;
+      }
+    }
+    
+    /* Smooth scrolling for mobile */
+    .mobile-scroll {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
   }
 
-  /* Class to manually disable transitions */
-  .disable-transitions * {
-    transition: none !important;
-    animation: none !important;
+  /* Swipeable cards animation */
+  .swipe-hint {
+    animation: swipe-hint 2s ease-in-out infinite;
+  }
+  
+  @keyframes swipe-hint {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-8px); }
   }
 
-  /* Visual feedback for settings changes - uses keyframe from animation section */
-  .settings-flash {
-    animation: settings-flash-animation var(--animation-duration-normal) var(--animation-easing-default);
-  }
+  /* .no-default-hover-elevate/no-default-active-elevate is an escape hatch so consumers of
+   * buttons/badges can remove the automatic brightness adjustment on interactions
+   * and program their own. */
+  .no-default-hover-elevate {}
 
-  /* Prevent body scroll when mobile layout is active */
-  body.mobile-layout-active {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-  }
-}
-
-@layer components {
-  /* Cook Pot Loader Animations */
-  .cook-pot-loader {
-    padding: 0.4em;  /* Add padding to prevent steam from being cut off */
-    max-width: 100%;
-    position: relative;
-  }
-
-  .cook-pot-loader .bubble {
-    opacity: 0;
-    transform-origin: center;
-  }
-
-  .cook-pot-loader .bubble-1 {
-    animation: bubble 2s ease-in-out infinite;
-  }
-
-  .cook-pot-loader .bubble-2 {
-    animation: bubble 2s ease-in-out 0.5s infinite;
-  }
-
-  .cook-pot-loader .bubble-3 {
-    animation: bubble 2s ease-in-out 1s infinite;
-  }
-
-  .cook-pot-loader .steam {
-    opacity: 0;
-    transform-origin: bottom;
-  }
-
-  .cook-pot-loader .steam-1 {
-    animation: steam 3s ease-in-out infinite;
-  }
-
-  .cook-pot-loader .steam-2 {
-    animation: steam 3s ease-in-out 1.5s infinite;
-  }
-
-  .cook-pot-loader .pot-lid-top {
-    animation: lid-bounce 1.5s ease-in-out infinite;
-  }
-
-  /* Keyframes defined in Animation Keyframes Section above */
-
-  .category-pill {
-    @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-
-  /* Improved category styling with softer colors */
-  .category-dairy {
-    @apply bg-slate-50 text-slate-700 border border-slate-200 shadow-sm;
-  }
-
-  .category-produce {
-    @apply bg-green-50 text-green-700 border border-green-200 shadow-sm;
-  }
-
-  .category-meat {
-    @apply bg-red-50 text-red-700 border border-red-200 shadow-sm;
-  }
-
-  .category-pantry {
-    @apply bg-amber-50 text-amber-700 border border-amber-200 shadow-sm;
-  }
-
-  .category-frozen {
-    @apply bg-cyan-50 text-cyan-700 border border-cyan-200 shadow-sm;
-  }
-
-  .category-beverages {
-    @apply bg-purple-50 text-purple-700 border border-purple-200 shadow-sm;
-  }
+  .no-default-active-elevate {}
 
 
-  /* Pull-to-refresh indicator */
-  .pull-indicator {
-    @apply w-full flex justify-center items-center py-4 text-primary;
-  }
-
-  /* App install prompt banner */
-  .app-install-banner {
-    @apply fixed bottom-16 left-4 right-4 bg-primary text-white p-4 rounded-lg shadow-lg z-50 flex justify-between items-center;
-  }
-
-  /* Bottom navigation safety utility - prevents content overlap with fixed bottom navbar */
-  .with-bottom-nav-safety {
-    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem);
-  }
-
-
-  /* Capacitor-specific styles */
-  .native-app {
-    /* Remove browser-specific UI when running as a native app */
-    @apply touch-manipulation select-none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-
-    /* Remove safe area padding that causes issues in Replit webview */
-  }
-
-  /* Camera capture button styling */
-  .camera-button {
-    @apply fixed left-1/2 transform -translate-x-1/2 h-16 w-16 rounded-full bg-primary text-white flex items-center justify-center shadow-lg z-[999];
-    bottom: calc(var(--mobile-nav-height) + 1rem);
-  }
-
-  /* Native toast styling override */
-  .capacitor-toast {
-    @apply font-sans bg-background text-foreground rounded-lg px-4 py-2 shadow-lg;
-  }
-
-  /* Mobile chat widget styling */
-  .mobile-chat-widget .chat-container {
-    @apply border-t border-gray-200 shadow-lg bg-white;
-    height: calc(80vh);
-    animation: slide-up 0.3s ease-out;
-  }
-
-  @keyframes slide-up {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: translateY(0);
-    }
-  }
-
-  /* ===== ACCESSIBILITY UTILITIES ===== */
-
-  /* Screen Reader Only - Hide visually but keep for screen readers */
-  .sr-only {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-  }
-
-  /* Show on focus for skip links */
-  .sr-only:focus,
-  .sr-only:active {
-    position: static !important;
-    width: auto !important;
-    height: auto !important;
-    padding: inherit !important;
-    margin: inherit !important;
-    overflow: visible !important;
-    clip: auto !important;
-    white-space: normal !important;
-  }
-
-  /* Focus visible utilities */
-  .focus-visible-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
-  }
-
-  .focus-visible-ring:focus-visible {
-    --tw-ring-color: var(--focus-ring-color);
-    --tw-ring-offset-color: var(--background);
-  }
-
-  .focus-visible-inset {
-    @apply focus-visible:outline-none;
-    box-shadow: inset 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
-  }
-
-  /* High contrast mode support */
-  @media (prefers-contrast: high) {
-    .high-contrast-border {
-      border: 2px solid var(--high-contrast-border) !important;
-    }
-
-    .high-contrast-text {
-      color: var(--high-contrast-text) !important;
-    }
-
-    .high-contrast-bg {
-      background-color: var(--high-contrast-bg) !important;
-    }
-  }
-
-  /* Reduced motion support */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
-
-  /* Enhanced focus indicators */
-  .focus-enhanced {
-    @apply transition-all duration-200;
-  }
-
-  .focus-enhanced:focus {
-    @apply outline-none ring-2 ring-offset-2;
-    ring-color: var(--focus-ring-color);
-    transform: scale(1.02);
-  }
-
-  /* Keyboard navigation helpers */
-  .keyboard-nav-active [data-keyboard-nav="true"] {
-    @apply outline-none ring-2 ring-offset-1;
-    ring-color: var(--focus-ring-color);
-  }
-
-  /* ARIA live regions */
-  .aria-live-polite {
+  /**
+   * Toggleable backgrounds go behind the content. Hoverable/active goes on top.
+   * This way they can stack/compound. Both will overlap the parent's borders!
+   * So borders will be automatically adjusted both on toggle, and hover/active,
+   * and they will be compounded.
+   */
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
     position: absolute;
-    left: -10000px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: -1;
+    /* sits behind content but above backdrop */
   }
 
-  /* Skip link styling */
-  .skip-link {
-    @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50;
-    @apply bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium;
-    @apply ring-2 ring-offset-2 ring-primary-foreground/20;
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
   }
 
-  /* Interactive element accessibility */
-  .interactive-element {
-    @apply cursor-pointer select-none;
-    -webkit-tap-highlight-color: transparent;
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.toggle-elevate::before {
+    inset: -1px;
   }
 
-  .interactive-element:focus-visible {
-    @apply outline-none ring-2 ring-offset-2;
-    ring-color: var(--focus-ring-color);
+  /* Does not work on elements with overflow:hidden! */
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
   }
 
-  .interactive-element:active {
-    transform: scale(0.98);
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    /*border-radius: inherit;   match rounded corners */
+    border-radius: inherit;
+    z-index: 999;
+    /* sits in front of content */
   }
 
-  /* Touch target sizing (minimum 44px) */
-  .touch-target {
-    min-height: 44px;
-    min-width: 44px;
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
   }
 
-  /* Color contrast helpers */
-  .text-contrast-aa {
-    /* Ensures AA compliance (4.5:1 ratio) */
-    color: var(--foreground);
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
   }
 
-  .text-contrast-aaa {
-    /* Ensures AAA compliance (7:1 ratio) */
-    color: var(--heading-primary);
-    font-weight: var(--font-medium);
+  /* If there's a 1px border, adjust the inset so that it covers that parent's border */
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
   }
 }
