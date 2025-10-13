@@ -227,8 +227,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Onboarding - Get enriched USDA data for common items (authenticated)
-  app.get("/api/onboarding/enriched-item/:itemName", isAuthenticated, async (req: any, res) => {
+  // Onboarding - Get enriched USDA data for common items (public - used during onboarding)
+  app.get("/api/onboarding/enriched-item/:itemName", async (req: any, res) => {
     try {
       const { itemName } = req.params;
       const enrichedItem = await getEnrichedOnboardingItem(decodeURIComponent(itemName));
