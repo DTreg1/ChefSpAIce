@@ -132,28 +132,40 @@ export default function Nutrition() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {macroData.map((macro) => {
-                    const percentage = totalMacros > 0 ? (macro.value / totalMacros) * 100 : 0;
-                    return (
-                      <div key={macro.name} data-testid={`macro-bar-${macro.name.toLowerCase()}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${macro.color}`} />
-                            <span className="text-sm font-medium">{macro.name}</span>
-                          </div>
+                  <div className="flex items-center w-full h-8 rounded-lg overflow-hidden" data-testid="macro-stacked-bar">
+                    {macroData.map((macro, index) => {
+                      const percentage = totalMacros > 0 ? (macro.value / totalMacros) * 100 : 0;
+                      return percentage > 0 ? (
+                        <div
+                          key={macro.name}
+                          className={`h-full ${macro.color} flex items-center justify-center transition-all`}
+                          style={{ width: `${percentage}%` }}
+                          data-testid={`macro-segment-${macro.name.toLowerCase()}`}
+                        >
+                          {percentage > 10 && (
+                            <span className="text-xs font-medium text-white px-1">
+                              {Math.round(percentage)}%
+                            </span>
+                          )}
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-4 pt-2">
+                    {macroData.map((macro) => {
+                      const percentage = totalMacros > 0 ? (macro.value / totalMacros) * 100 : 0;
+                      return (
+                        <div key={macro.name} className="flex items-center gap-2" data-testid={`macro-legend-${macro.name.toLowerCase()}`}>
+                          <div className={`w-3 h-3 rounded-full ${macro.color}`} />
+                          <span className="text-sm font-medium">{macro.name}</span>
                           <span className="text-sm text-muted-foreground">
                             {macro.value}g ({Math.round(percentage)}%)
                           </span>
                         </div>
-                        <div className="w-full bg-muted rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${macro.color}`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
