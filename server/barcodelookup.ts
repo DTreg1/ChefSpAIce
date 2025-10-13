@@ -205,14 +205,26 @@ export async function getBarcodeLookupRateLimits(): Promise<RateLimitResponse> {
     // Map the API response to our expected format
     const apiData = response.data;
     
-    // Calculate reset time (end of current month)
-    const now = new Date();
-    const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    // Use the reset time from API if available, otherwise calculate end of month
+    let resetTime: string;
+    if (apiData.reset_time) {
+      // Handle both ISO string and numeric timestamp formats
+      if (typeof apiData.reset_time === 'number') {
+        resetTime = new Date(apiData.reset_time * 1000).toISOString();
+      } else {
+        resetTime = apiData.reset_time;
+      }
+    } else {
+      // Fallback: Calculate reset time (beginning of next month)
+      const now = new Date();
+      const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      resetTime = resetDate.toISOString();
+    }
     
     return {
       remaining_requests: apiData.remaining_calls_per_month || 0,
       allowed_requests: apiData.allowed_calls_per_month || 0,
-      reset_time: resetDate.toISOString()
+      reset_time: resetTime
     };
   } catch (error: any) {
     const status = error.response?.status;

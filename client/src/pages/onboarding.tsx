@@ -108,6 +108,9 @@ export default function Onboarding() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
+      const failedItems: string[] = [];
+      let successCount = 0;
+
       // Step 1: Save user preferences
       const preferences = await apiRequest("PUT", "/api/user/preferences", {
         ...data,
@@ -156,6 +159,7 @@ export default function Onboarding() {
           const storageLocationId = locationMap.get(enrichedData.storage);
           if (!storageLocationId) {
             console.error(`No storage location found for ${enrichedData.storage}`);
+            failedItems.push(itemName);
             continue;
           }
 
@@ -176,20 +180,24 @@ export default function Onboarding() {
               foodCategory: enrichedData.usdaData?.foodCategory || null,
             });
             console.log(`Created enriched food item: ${enrichedData.name}`);
+            successCount++;
           } catch (error) {
             console.error(`Failed to create enriched food item ${enrichedData.name}:`, error);
+            failedItems.push(itemName);
           }
         } else {
           // Fall back to basic data
           const itemData = commonFoodItems.find(item => item.name === itemName);
           if (!itemData) {
             console.error(`No basic data found for ${itemName}`);
+            failedItems.push(itemName);
             continue;
           }
 
           const storageLocationId = locationMap.get(itemData.storage);
           if (!storageLocationId) {
             console.error(`No storage location found for ${itemData.storage}`);
+            failedItems.push(itemName);
             continue;
           }
 
@@ -205,18 +213,35 @@ export default function Onboarding() {
               expirationDate: expirationDate.toISOString(),
             });
             console.log(`Created basic food item: ${itemData.name}`);
+            successCount++;
           } catch (error) {
             console.error(`Failed to create basic food item ${itemData.name}:`, error);
+            failedItems.push(itemName);
           }
         }
       }
 
-      return preferences;
+      return { successCount, failedItems };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      
+      // Show feedback about food item creation
+      if (data.failedItems.length > 0) {
+        toast({
+          title: "Setup Complete with Warnings",
+          description: `${data.successCount} items added successfully. ${data.failedItems.length} items failed: ${data.failedItems.join(", ")}. You can add them manually later.`,
+          variant: "default",
+        });
+      } else if (data.successCount > 0) {
+        toast({
+          title: "Setup Complete!",
+          description: `Successfully added ${data.successCount} items to your kitchen.`,
+        });
+      }
+      
       window.location.href = "/";
     },
     onError: (error: any) => {
