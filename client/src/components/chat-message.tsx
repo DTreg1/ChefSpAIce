@@ -51,7 +51,7 @@ export function ChatMessage({ role, content, timestamp, children }: ChatMessageP
             "rounded-2xl px-4 py-3",
             isUser
               ? "bg-primary text-primary-foreground"
-              : "liquid-glass-message bg-accent/50 text-foreground"
+              : "liquid-glass-subtle text-foreground"
           )}
           style={{ borderRadius: "var(--radius)" }}
         >
