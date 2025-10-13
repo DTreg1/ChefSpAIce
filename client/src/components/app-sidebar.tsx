@@ -146,7 +146,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={location === "/fdc-search"}>
                     <Link href="/fdc-search" data-testid="link-fdc-search">
                       <Database className="w-4 h-4" />
-                      <span className="flex-1">FDC Search</span>
+                      <span className="flex-1">Food Search</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
