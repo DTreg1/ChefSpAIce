@@ -302,37 +302,110 @@ export default function Settings() {
       <div className="container max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8" data-testid="text-settings-title">Settings</h1>
 
-        <Card className="mb-6" data-testid="card-profile">
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Your account information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16">
-                <AvatarImage src={(user as User)?.profileImageUrl || undefined} />
-                <AvatarFallback>{getUserInitials()}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium" data-testid="text-profile-name">
-                  {(user as User)?.firstName && (user as User)?.lastName 
-                    ? `${(user as User).firstName} ${(user as User).lastName}`
-                    : (user as User)?.email || "User"}
-                </p>
-                <p className="text-sm text-muted-foreground" data-testid="text-profile-email">
-                  {(user as User)?.email}
-                </p>
+        <Card className="mb-6 overflow-hidden" data-testid="card-profile">
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b border-border">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CreditCard className="w-4 h-4" />
+              <span className="font-medium">Member Profile</span>
+            </div>
+          </div>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-shrink-0">
+                <Avatar className="w-32 h-32 border-4 border-border rounded-md">
+                  <AvatarImage src={(user as User)?.profileImageUrl || undefined} />
+                  <AvatarFallback className="text-3xl rounded-md">{getUserInitials()}</AvatarFallback>
+                </Avatar>
+              </div>
+              
+              <div className="flex-1 space-y-4">
+                <div>
+                  <h2 className="text-2xl font-bold mb-1" data-testid="text-profile-name">
+                    {(user as User)?.firstName && (user as User)?.lastName 
+                      ? `${(user as User).firstName} ${(user as User).lastName}`
+                      : (user as User)?.email || "User"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground" data-testid="text-profile-email">
+                    {(user as User)?.email}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-start gap-2">
+                    <CreditCard className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground">Member ID</div>
+                      <div className="font-mono text-xs" data-testid="text-member-id">
+                        {(user as User)?.id?.slice(0, 8).toUpperCase() || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground">Member Since</div>
+                      <div className="font-medium" data-testid="text-member-since">
+                        {(user as User)?.createdAt 
+                          ? new Date((user as User).createdAt!).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              year: 'numeric' 
+                            })
+                          : "N/A"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <Users className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground">Household Size</div>
+                      <div className="font-medium" data-testid="text-household-size">
+                        {preferences?.householdSize || 2} {(preferences?.householdSize || 2) === 1 ? 'person' : 'people'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <ChefHat className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground">Cooking Level</div>
+                      <div className="font-medium capitalize" data-testid="text-cooking-level">
+                        {preferences?.cookingSkillLevel || "Beginner"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Appearance</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-sm text-muted-foreground">
+                      Toggle between light and dark theme
+                    </div>
+                    <ThemeToggle />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = "/api/logout"}
+                    data-testid="button-logout"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Log Out
+                  </Button>
+                </div>
               </div>
             </div>
-            <Separator />
-            <Button
-              variant="outline"
-              onClick={() => window.location.href = "/api/logout"}
-              data-testid="button-logout"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Log Out
-            </Button>
           </CardContent>
         </Card>
 
