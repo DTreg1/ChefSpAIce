@@ -1,4 +1,5 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added authentication routing
+import { useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -7,6 +8,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CommandPalette } from "@/components/command-palette";
+import { AddFoodDialog } from "@/components/add-food-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "@/pages/landing";
@@ -59,6 +62,8 @@ function Router() {
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [addFoodOpen, setAddFoodOpen] = useState(false);
+  
   const { data: preferences, isLoading: prefLoading } = useQuery<{ hasCompletedOnboarding?: boolean }>({
     queryKey: ["/api/user/preferences"],
     enabled: isAuthenticated,
@@ -81,20 +86,35 @@ function AppContent() {
 
   // Show app layout with sidebar for authenticated users who completed onboarding
   return (
-    <SidebarProvider style={style}>
-      <div className="flex h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between p-4 border-b border-border">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
-          </header>
-          <main className="flex-1 overflow-hidden">
-            <Router />
-          </main>
+    <>
+      <CommandPalette 
+        onAddFood={() => setAddFoodOpen(true)}
+        onGenerateRecipe={() => {
+          // Navigate to storage page for recipe generation
+          window.location.href = '/storage/all';
+        }}
+      />
+      <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
+      <SidebarProvider style={style}>
+        <div className="flex h-screen w-full">
+          <AppSidebar />
+          <div className="flex flex-col flex-1">
+            <header className="flex items-center justify-between p-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger data-testid="button-sidebar-toggle" />
+                <span className="text-xs text-muted-foreground hidden md:block">
+                  Press <kbd className="px-1.5 py-0.5 text-xs font-semibold text-muted-foreground bg-muted rounded">⌘K</kbd> for quick actions
+                </span>
+              </div>
+              <ThemeToggle />
+            </header>
+            <main className="flex-1 overflow-hidden">
+              <Router />
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </>
   );
 }
 

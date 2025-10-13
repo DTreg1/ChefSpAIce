@@ -3,6 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { EmptyState } from "@/components/empty-state";
 import { FoodCard } from "@/components/food-card";
+import { FoodCardSkeletonGrid } from "@/components/food-card-skeleton";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipe-generator";
 import { ExpirationAlert } from "@/components/expiration-alert";
@@ -18,11 +19,11 @@ export default function Storage() {
   const { toast } = useToast();
   const location = params?.location || "all";
 
-  const { data: storageLocations, error: locationsError } = useQuery<StorageLocation[]>({
+  const { data: storageLocations, error: locationsError, isLoading: locationsLoading } = useQuery<StorageLocation[]>({
     queryKey: ["/api/storage-locations"],
   });
 
-  const { data: allItems, error: itemsError } = useQuery<FoodItem[]>({
+  const { data: allItems, error: itemsError, isLoading: itemsLoading } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],
   });
 
@@ -62,32 +63,39 @@ export default function Storage() {
 
   return (
     <>
-      <div className="h-full overflow-y-auto">
-        <div className="max-w-6xl mx-auto p-6">
+      <div className="h-full overflow-y-auto mobile-scroll">
+        <div className="max-w-6xl mx-auto p-4 md:p-6">
           <div className="mb-6">
             <ExpirationAlert />
           </div>
 
-          <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground capitalize mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground capitalize mb-2">
                 {location === "all" ? "All Items" : location}
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm md:text-base text-muted-foreground">
                 {items?.length || 0} item{items?.length !== 1 ? "s" : ""} in this location
               </p>
             </div>
             <div className="flex gap-2">
               <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
-              <Button onClick={() => setAddDialogOpen(true)} data-testid="button-add-item-page">
+              <Button 
+                onClick={() => setAddDialogOpen(true)} 
+                className="touch-target"
+                data-testid="button-add-item-page"
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Item
+                <span className="hidden sm:inline">Add Item</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </div>
           </div>
 
-          {!items || items.length === 0 ? (
-            <EmptyState type="inventory" />
+          {itemsLoading || locationsLoading ? (
+            <FoodCardSkeletonGrid count={6} />
+          ) : !items || items.length === 0 ? (
+            <EmptyState type="inventory" onAction={() => setAddDialogOpen(true)} />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {items.map((item) => {
