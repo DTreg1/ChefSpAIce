@@ -231,6 +231,15 @@
   --chart-4: 147.1429 78.5047% 41.9608%;
   --chart-5: 341.4894 75.2% 50.9804%;
   
+  /* Glass Effect Variables */
+  --glass-opacity: 0.85;
+  --glass-opacity-light: 0.75;
+  --glass-blur: 12px;
+  --backdrop-blur: blur(12px);
+  --backdrop-blur-strong: blur(24px);
+  --backdrop-saturate: saturate(180%);
+  --shadow-glass-hover: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
+  
   /* Shadow System */
   --shadow-2xs: 0 1px 2px 0 hsla(var(--primary), 0.08);
   --shadow-xs: 0 1px 3px 0 hsla(var(--primary), 0.12), 0 1px 2px 0 hsla(var(--primary), 0.08);
@@ -405,6 +414,40 @@
   
   .scale-touch:active {
     transform: scale(0.96);
+  }
+  
+  /* Focus glass effect for inputs */
+  .focus-glass {
+    @apply focus-visible:outline-none;
+    transition: all var(--transition-base) var(--transition-smooth);
+  }
+  
+  .focus-glass:focus {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.2), var(--shadow-glass);
+  }
+  
+  .dark .focus-glass:focus {
+    background: rgba(10, 10, 10, 0.95);
+    border-color: hsl(var(--ring));
+  }
+  
+  /* Navbar scroll adaptation */
+  .navbar-scroll {
+    transition: all var(--transition-base) var(--transition-smooth);
+  }
+  
+  .navbar-scroll.scrolled {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.92);
+  }
+  
+  .dark .navbar-scroll.scrolled {
+    background: rgba(10, 10, 10, 0.92);
   }
   
   /* Liquid animation for dynamic elements */
