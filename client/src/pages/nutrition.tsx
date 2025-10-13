@@ -184,35 +184,83 @@ export default function Nutrition() {
                   <p className="text-muted-foreground text-center py-4">No items with nutrition data</p>
                 ) : (
                   <div className="space-y-3">
-                    {items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-3 border border-border rounded-lg hover-elevate"
-                        data-testid={`nutrition-item-${item.id}`}
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {item.quantity} {item.unit || ""} • {item.locationName}
+                    {items.map((item) => {
+                      const qty = parseFloat(item.quantity) || 1;
+                      const protein = item.nutrition.protein * qty / 100;
+                      const carbs = item.nutrition.carbs * qty / 100;
+                      const fat = item.nutrition.fat * qty / 100;
+                      const itemTotalMacros = protein + carbs + fat;
+                      
+                      return (
+                        <div
+                          key={item.id}
+                          className="p-3 border border-border rounded-lg hover-elevate"
+                          data-testid={`nutrition-item-${item.id}`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {item.quantity} {item.unit || ""} • {item.locationName}
+                              </div>
+                            </div>
+                            <Badge variant="secondary">
+                              <Flame className="w-3 h-3 mr-1" />
+                              {Math.round(item.nutrition.calories * qty / 100)} kcal
+                            </Badge>
                           </div>
+                          
+                          {itemTotalMacros > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center w-full h-6 rounded overflow-hidden" data-testid={`item-macro-bar-${item.id}`}>
+                                {protein > 0 && (
+                                  <div
+                                    className="h-full bg-red-500 flex items-center justify-center"
+                                    style={{ width: `${(protein / itemTotalMacros) * 100}%` }}
+                                  >
+                                    {(protein / itemTotalMacros) * 100 > 15 && (
+                                      <span className="text-xs font-medium text-white px-1">
+                                        P: {Math.round(protein * 10) / 10}g
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {carbs > 0 && (
+                                  <div
+                                    className="h-full bg-yellow-500 flex items-center justify-center"
+                                    style={{ width: `${(carbs / itemTotalMacros) * 100}%` }}
+                                  >
+                                    {(carbs / itemTotalMacros) * 100 > 15 && (
+                                      <span className="text-xs font-medium text-white px-1">
+                                        C: {Math.round(carbs * 10) / 10}g
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {fat > 0 && (
+                                  <div
+                                    className="h-full bg-blue-500 flex items-center justify-center"
+                                    style={{ width: `${(fat / itemTotalMacros) * 100}%` }}
+                                  >
+                                    {(fat / itemTotalMacros) * 100 > 15 && (
+                                      <span className="text-xs font-medium text-white px-1">
+                                        F: {Math.round(fat * 10) / 10}g
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="flex gap-3 text-xs text-muted-foreground">
+                                <span>P: {Math.round(protein * 10) / 10}g</span>
+                                <span>C: {Math.round(carbs * 10) / 10}g</span>
+                                <span>F: {Math.round(fat * 10) / 10}g</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex gap-2 flex-wrap justify-end">
-                          <Badge variant="secondary">
-                            <Flame className="w-3 h-3 mr-1" />
-                            {Math.round(item.nutrition.calories * (parseFloat(item.quantity) || 1) / 100)} kcal
-                          </Badge>
-                          <Badge className="bg-red-500 text-white border-red-500 hover:bg-red-600">
-                            P: {Math.round(item.nutrition.protein * (parseFloat(item.quantity) || 1) / 100 * 10) / 10}g
-                          </Badge>
-                          <Badge className="bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600">
-                            C: {Math.round(item.nutrition.carbs * (parseFloat(item.quantity) || 1) / 100 * 10) / 10}g
-                          </Badge>
-                          <Badge className="bg-blue-500 text-white border-blue-500 hover:bg-blue-600">
-                            F: {Math.round(item.nutrition.fat * (parseFloat(item.quantity) || 1) / 100 * 10) / 10}g
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
