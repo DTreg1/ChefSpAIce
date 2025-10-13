@@ -201,13 +201,13 @@ export default function Nutrition() {
                             <Flame className="w-3 h-3 mr-1" />
                             {Math.round(item.nutrition.calories * (parseFloat(item.quantity) || 1) / 100)} kcal
                           </Badge>
-                          <Badge variant="outline">
+                          <Badge className="bg-red-500 text-white border-red-500 hover:bg-red-600">
                             P: {Math.round(item.nutrition.protein * (parseFloat(item.quantity) || 1) / 100 * 10) / 10}g
                           </Badge>
-                          <Badge variant="outline">
+                          <Badge className="bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600">
                             C: {Math.round(item.nutrition.carbs * (parseFloat(item.quantity) || 1) / 100 * 10) / 10}g
                           </Badge>
-                          <Badge variant="outline">
+                          <Badge className="bg-blue-500 text-white border-blue-500 hover:bg-blue-600">
                             F: {Math.round(item.nutrition.fat * (parseFloat(item.quantity) || 1) / 100 * 10) / 10}g
                           </Badge>
                         </div>
