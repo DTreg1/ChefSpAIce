@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/command-palette";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { useAuth } from "@/hooks/useAuth";
@@ -125,9 +126,23 @@ function AppContent() {
             )}>
               <div className="flex items-center gap-2">
                 <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph" />
-                <span className="text-xs text-muted-foreground hidden md:block transition-all-smooth">
-                  Press <kbd className="px-1.5 py-0.5 text-xs font-semibold text-muted-foreground bg-muted/50 rounded transition-all-smooth">⌘K</kbd> for quick actions
-                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    const event = new KeyboardEvent('keydown', {
+                      key: 'k',
+                      metaKey: true,
+                      ctrlKey: true,
+                      bubbles: true
+                    });
+                    document.dispatchEvent(event);
+                  }}
+                  data-testid="button-quick-actions"
+                  className="text-xs transition-all-smooth"
+                >
+                  Quick Actions <kbd className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold text-muted-foreground bg-muted/50 rounded">⌘K</kbd>
+                </Button>
               </div>
               <ThemeToggle />
             </header>
