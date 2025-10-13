@@ -23,6 +23,13 @@ export default function Chat() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const getUserInitials = () => {
+    if (!user) return "";
+    const firstName = user.firstName || "";
+    const lastName = user.lastName || "";
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
   const { data: chatHistory } = useQuery<ChatMessageType[]>({
     queryKey: ["/api/chat/messages"],
   });
@@ -185,6 +192,8 @@ export default function Chat() {
                   key={message.id}
                   role={message.role as "user" | "assistant" | "system"}
                   content={message.content}
+                  userProfileImageUrl={user?.profileImageUrl || undefined}
+                  userInitials={getUserInitials()}
                   timestamp={new Date(message.timestamp).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -209,6 +218,8 @@ export default function Chat() {
                 <ChatMessage
                   role="assistant"
                   content={streamingContent}
+                  userProfileImageUrl={user?.profileImageUrl || undefined}
+                  userInitials={getUserInitials()}
                 />
               )}
 
