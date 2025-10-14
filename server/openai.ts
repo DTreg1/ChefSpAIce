@@ -7,14 +7,25 @@ import OpenAI from "openai";
 const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
 const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
 
-if (!baseURL || !apiKey) {
-  console.warn('[OpenAI] Missing AI Integrations configuration. AI features may not work properly.');
-  console.warn('[OpenAI] Ensure AI_INTEGRATIONS_OPENAI_BASE_URL and AI_INTEGRATIONS_OPENAI_API_KEY are set.');
-}
+let openai: OpenAI;
 
-const openai = new OpenAI({
-  baseURL: baseURL || 'https://api.openai.com/v1',  // Provide fallback URL
-  apiKey: apiKey || 'missing-api-key',  // Provide placeholder to prevent immediate crash
-});
+if (!baseURL || !apiKey) {
+  console.error('[OpenAI] Missing AI Integrations configuration.');
+  console.error('[OpenAI] Ensure AI_INTEGRATIONS_OPENAI_BASE_URL and AI_INTEGRATIONS_OPENAI_API_KEY are set.');
+  
+  // Create a stub that will throw meaningful errors when AI features are actually used
+  openai = new Proxy({} as OpenAI, {
+    get: (target, prop) => {
+      return () => {
+        throw new Error('OpenAI is not configured. Please set AI_INTEGRATIONS_OPENAI_BASE_URL and AI_INTEGRATIONS_OPENAI_API_KEY environment variables.');
+      };
+    }
+  });
+} else {
+  openai = new OpenAI({
+    baseURL: baseURL,
+    apiKey: apiKey,
+  });
+}
 
 export { openai };
