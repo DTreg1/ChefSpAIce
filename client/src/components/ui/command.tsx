@@ -24,7 +24,7 @@ Command.displayName = CommandPrimitive.displayName
 const CommandDialog = ({ children, ...props }: DialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
+      <DialogContent className="bg-muted overflow-hidden p-0 shadow-lg">
         <DialogDescription className="sr-only">
           Command menu for searching and navigation
         </DialogDescription>

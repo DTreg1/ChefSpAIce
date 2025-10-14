@@ -109,7 +109,7 @@ export function RecipeUpload() {
           Upload Recipe
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl bg-muted">
         <DialogHeader>
           <DialogTitle>Upload Recipe from Image</DialogTitle>
           <DialogDescription>

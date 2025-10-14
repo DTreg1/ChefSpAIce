@@ -644,7 +644,7 @@ export default function FdcSearch() {
       )}
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-muted">
           <DialogHeader>
             <DialogTitle>
               {foodDetails?.description || "Loading..."}
