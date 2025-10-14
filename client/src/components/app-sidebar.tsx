@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, Database, LayoutGrid } from "lucide-react";
+import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, Database, LayoutGrid, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
@@ -10,12 +10,17 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { AddFoodDialog } from "./add-food-dialog";
+import { cn } from "@/lib/utils";
 import type { StorageLocation, FoodItem } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
@@ -28,6 +33,7 @@ const iconMap: Record<string, any> = {
 export function AppSidebar() {
   const [location] = useLocation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(true);
 
   const { data: storageLocations } = useQuery<StorageLocation[]>({
     queryKey: ["/api/storage-locations"],
@@ -45,23 +51,6 @@ export function AppSidebar() {
     icon: MessageSquare,
     path: "/",
   };
-
-  const storageItems = [
-    { 
-      id: "all", 
-      name: "All Items", 
-      icon: Home, 
-      count: totalItems, 
-      path: "/storage/all" 
-    },
-    ...(storageLocations?.map((loc) => ({
-      id: loc.id,
-      name: loc.name,
-      icon: iconMap[loc.icon] || UtensilsCrossed,
-      count: loc.itemCount,
-      path: `/storage/${loc.name.toLowerCase()}`,
-    })) || []),
-  ];
 
   return (
     <>
@@ -176,23 +165,56 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {storageItems.map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton asChild isActive={location === item.path}>
-                      <Link href={item.path} data-testid={`link-storage-${item.id}`}>
-                        <item.icon className="w-4 h-4" />
-                        <span className="flex-1">{item.name}</span>
+                <Collapsible open={inventoryOpen} onOpenChange={setInventoryOpen}>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton data-testid="button-toggle-storage">
+                        <ChevronRight className={cn("w-4 h-4 transition-transform", inventoryOpen && "rotate-90")} />
+                        <span className="flex-1">All Items</span>
                         <Badge 
                           variant="secondary" 
                           className="ml-auto text-xs rounded-full h-5 px-2"
-                          data-testid={`badge-count-${item.id}`}
+                          data-testid="badge-count-all"
                         >
-                          {item.count}
+                          {totalItems}
                         </Badge>
-                      </Link>
-                    </SidebarMenuButton>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={location === "/storage/all"}>
+                            <Link href="/storage/all" data-testid="link-storage-all">
+                              <Home className="w-4 h-4" />
+                              <span className="flex-1">View All</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        {storageLocations?.map((loc) => {
+                          const IconComponent = iconMap[loc.icon] || UtensilsCrossed;
+                          const locCount = foodItems?.filter(item => item.storageLocationId === loc.id).length || 0;
+                          return (
+                            <SidebarMenuSubItem key={loc.id}>
+                              <SidebarMenuSubButton asChild isActive={location === `/storage/${loc.name.toLowerCase()}`}>
+                                <Link href={`/storage/${loc.name.toLowerCase()}`} data-testid={`link-storage-${loc.id}`}>
+                                  <IconComponent className="w-4 h-4" />
+                                  <span className="flex-1">{loc.name}</span>
+                                  <Badge 
+                                    variant="secondary" 
+                                    className="ml-auto text-xs rounded-full h-5 px-2"
+                                    data-testid={`badge-count-${loc.id}`}
+                                  >
+                                    {locCount}
+                                  </Badge>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
                   </SidebarMenuItem>
-                ))}
+                </Collapsible>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
