@@ -35,7 +35,7 @@ const iconMap: Record<string, any> = {
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const [inventoryOpen, setInventoryOpen] = useState(true);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
   const [foodGroupsOpen, setFoodGroupsOpen] = useState(false);
 
   const { data: storageLocations } = useQuery<StorageLocation[]>({
