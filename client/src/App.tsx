@@ -121,7 +121,6 @@ function AppContent() {
       <RecipeCustomizationDialog 
         open={recipeDialogOpen} 
         onOpenChange={setRecipeDialogOpen}
-        showTrigger={false}
       />
       <SidebarProvider style={style}>
         <div className="flex h-screen w-full">
