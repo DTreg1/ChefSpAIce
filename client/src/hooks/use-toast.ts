@@ -89,17 +89,7 @@ export const reducer = (state: State, action: Action): State => {
 
     case "DISMISS_TOAST": {
       const { toastId } = action
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId)
-      } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
-        })
-      }
-
+      
       return {
         ...state,
         toasts: state.toasts.map((t) =>
@@ -132,6 +122,20 @@ let memoryState: State = { toasts: [] }
 
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
+  
+  // Handle side effects after state update
+  if (action.type === "DISMISS_TOAST") {
+    const { toastId } = action
+    if (toastId) {
+      addToRemoveQueue(toastId)
+    } else {
+      // Dismiss all toasts
+      memoryState.toasts.forEach((toast) => {
+        addToRemoveQueue(toast.id)
+      })
+    }
+  }
+  
   listeners.forEach((listener) => {
     listener(memoryState)
   })
