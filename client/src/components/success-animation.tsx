@@ -24,11 +24,11 @@ export function SuccessAnimation({
       const animationEnd = Date.now() + duration;
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-      function randomInRange(min: number, max: number) {
+      const randomInRange = (min: number, max: number) => {
         return Math.random() * (max - min) + min;
-      }
+      };
 
-      const interval: NodeJS.Timer = setInterval(function () {
+      const interval = setInterval(function () {
         const timeLeft = animationEnd - Date.now();
 
         if (timeLeft <= 0) {
