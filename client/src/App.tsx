@@ -31,6 +31,9 @@ import FoodGroups from "@/pages/food-groups";
 import FeedbackAnalytics from "@/pages/feedback-analytics";
 import Donate from "@/pages/donate";
 import DonateSuccess from "@/pages/donate-success";
+import About from "@/pages/about";
+import Privacy from "@/pages/privacy";
+import Terms from "@/pages/terms";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
@@ -50,6 +53,9 @@ function AuthenticatedRouter() {
       <Route path="/donate" component={Donate} />
       <Route path="/donate/success" component={DonateSuccess} />
       <Route path="/settings" component={Settings} />
+      <Route path="/about" component={About} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );
