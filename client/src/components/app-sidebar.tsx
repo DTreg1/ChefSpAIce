@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { 
-  Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, 
+  Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, 
   MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, 
   Database, LayoutGrid, ChevronRight
 } from "lucide-react";
@@ -20,10 +20,8 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { AddFoodDialog } from "./add-food-dialog";
 import { cn } from "@/lib/utils";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import type { StorageLocation, FoodItem } from "@shared/schema";
@@ -37,7 +35,6 @@ const iconMap: Record<string, any> = {
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(true);
   const [foodGroupsOpen, setFoodGroupsOpen] = useState(false);
 
@@ -297,22 +294,8 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-
-          <div className="mt-6">
-            <Button 
-              className="w-full transition-morph glass-morph" 
-              size="default"
-              onClick={() => setAddDialogOpen(true)}
-              data-testid="button-add-item"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Food Item
-            </Button>
-          </div>
         </SidebarContent>
       </Sidebar>
-
-      <AddFoodDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </>
   );
 }
