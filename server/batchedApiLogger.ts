@@ -13,6 +13,7 @@ class BatchedApiLogger {
   private flushTimer: NodeJS.Timeout | null = null;
   private isFlushInProgress = false; // Prevent concurrent flushes
   private failureRetryCount = new Map<string, number>(); // Track retry counts
+  private queuedLogKeys = new Set<string>(); // Track which logs are already in queue
 
   constructor() {
     // Setup periodic flush
@@ -26,8 +27,17 @@ class BatchedApiLogger {
   }
 
   async logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>) {
-    // Add to queue
+    // Create deterministic key to prevent duplicates
+    const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
+    
+    // Skip if already queued
+    if (this.queuedLogKeys.has(logKey)) {
+      return;
+    }
+    
+    // Add to queue and track it
     this.queue.push({ userId, log });
+    this.queuedLogKeys.add(logKey);
 
     // Check if we should flush immediately
     if (this.queue.length >= this.batchSize) {
@@ -56,8 +66,8 @@ class BatchedApiLogger {
           } catch (error) {
             console.error('Failed to write API log:', error);
             
-            // Create a unique key for this log using available fields
-            const logKey = `${userId}-${log.apiName}-${log.endpoint}-${Date.now()}`;
+            // Create a deterministic key for this log (no timestamp for proper retry tracking)
+            const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
             const retryCount = (this.failureRetryCount.get(logKey) || 0) + 1;
             
             // Only retry up to 3 times
@@ -84,13 +94,13 @@ class BatchedApiLogger {
       const newLogsAddedDuringFlush = this.queue.slice(logsToWrite.length);
       this.queue = [...failedLogs, ...newLogsAddedDuringFlush];
 
-      // Clean up retry counts for successful logs
+      // Clean up tracking for successful logs
       successfulLogs.forEach(({ userId, log }) => {
-        // Remove all retry counts that match this log's pattern
-        const pattern = `${userId}-${log.apiName}-${log.endpoint}`;
-        Array.from(this.failureRetryCount.keys())
-          .filter(key => key.startsWith(pattern))
-          .forEach(key => this.failureRetryCount.delete(key));
+        const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
+        // Remove from queued keys set
+        this.queuedLogKeys.delete(logKey);
+        // Remove from retry count map
+        this.failureRetryCount.delete(logKey);
       });
     } finally {
       this.isFlushInProgress = false;
