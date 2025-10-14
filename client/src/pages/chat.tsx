@@ -5,7 +5,6 @@ import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
 import { EmptyState } from "@/components/empty-state";
 import { RecipeCard } from "@/components/recipe-card";
-import { RecipeGenerator } from "@/components/recipe-generator";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
@@ -175,7 +174,6 @@ export default function Chat() {
             <p className="text-sm text-muted-foreground">Get recipe suggestions and manage your inventory</p>
           </div>
           <div className="flex gap-2">
-            <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
             <RecipeCustomizationDialog onRecipeGenerated={handleRecipeGenerated} />
           </div>
         </div>
