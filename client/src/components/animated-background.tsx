@@ -31,10 +31,10 @@ export function AnimatedBackground({
 
   useEffect(() => {
     const colors = [
-      "hsla(142, 70%, 45%, 0.3)",
-      "hsla(22, 92%, 56%, 0.3)",
-      "hsla(291, 70%, 50%, 0.3)",
-      "hsla(42, 93%, 56%, 0.3)",
+      "hsla(82, 39%, 30%, 0.3)",
+      "hsla(60, 10%, 40%, 0.3)",
+      "hsla(102, 20%, 35%, 0.3)",
+      "hsla(92, 25%, 35%, 0.3)",
     ];
 
     const newParticles: Particle[] = Array.from({ length: particleCount }, (_, i) => ({
@@ -53,9 +53,9 @@ export function AnimatedBackground({
 
   const gradientClasses = {
     primary: "gradient-animate",
-    secondary: "bg-gradient-to-br from-orange-400/10 via-amber-500/10 to-yellow-400/10",
+    secondary: "bg-gradient-to-br from-yellow-700/10 via-lime-600/10 to-amber-700/10",
     vibrant: "gradient-animate",
-    soft: "bg-gradient-to-br from-emerald-400/5 via-orange-400/5 to-purple-500/5",
+    soft: "bg-gradient-to-br from-olive-400/5 via-lime-500/5 to-green-600/5",
   };
 
   return (
