@@ -27,8 +27,7 @@ export function QuickActionsBar({
               variant="ghost"
               onClick={onAddFood}
               data-testid="button-quick-add-food"
-              className="transition-all-smooth lg:px-3"
-              size="icon"
+              className="transition-all-smooth h-9 w-9 p-0 lg:w-auto lg:px-3"
             >
               <Plus className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Add Food</span>
@@ -45,8 +44,7 @@ export function QuickActionsBar({
               variant="ghost"
               onClick={onScanBarcode}
               data-testid="button-quick-scan-barcode"
-              className="transition-all-smooth lg:px-3"
-              size="icon"
+              className="transition-all-smooth h-9 w-9 p-0 lg:w-auto lg:px-3"
             >
               <ScanLine className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Scan Barcode</span>
@@ -63,8 +61,7 @@ export function QuickActionsBar({
               variant="ghost"
               onClick={onGenerateRecipe}
               data-testid="button-quick-generate-recipe"
-              className="transition-all-smooth lg:px-3"
-              size="icon"
+              className="transition-all-smooth h-9 w-9 p-0 lg:w-auto lg:px-3"
             >
               <ChefHat className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Generate Recipe</span>
