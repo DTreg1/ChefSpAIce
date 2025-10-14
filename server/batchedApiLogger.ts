@@ -11,6 +11,8 @@ class BatchedApiLogger {
   private batchSize = 10; // Write after 10 logs
   private flushInterval = 5000; // Or after 5 seconds
   private flushTimer: NodeJS.Timeout | null = null;
+  private isFlushInProgress = false; // Prevent concurrent flushes
+  private failureRetryCount = new Map<string, number>(); // Track retry counts
 
   constructor() {
     // Setup periodic flush
@@ -34,22 +36,65 @@ class BatchedApiLogger {
   }
 
   async flush() {
-    if (this.queue.length === 0) return;
+    if (this.queue.length === 0 || this.isFlushInProgress) return;
 
-    // Take current queue and reset
-    const logsToWrite = [...this.queue];
-    this.queue = [];
+    // Prevent concurrent flushes
+    this.isFlushInProgress = true;
 
-    // Write all logs in parallel
-    const writePromises = logsToWrite.map(({ userId, log }) =>
-      storage.logApiUsage(userId, log).catch(error => {
-        console.error('Failed to write API log:', error);
-        // On failure, re-queue the log for retry
-        this.queue.push({ userId, log });
-      })
-    );
+    try {
+      // Take current queue but don't reset it yet
+      const logsToWrite = [...this.queue];
+      const failedLogs: QueuedLog[] = [];
 
-    await Promise.allSettled(writePromises);
+      // Write all logs in parallel and track results
+      const results = await Promise.allSettled(
+        logsToWrite.map(async (queuedLog) => {
+          const { userId, log } = queuedLog;
+          try {
+            await storage.logApiUsage(userId, log);
+            return { success: true, queuedLog };
+          } catch (error) {
+            console.error('Failed to write API log:', error);
+            
+            // Create a unique key for this log using available fields
+            const logKey = `${userId}-${log.apiName}-${log.endpoint}-${Date.now()}`;
+            const retryCount = (this.failureRetryCount.get(logKey) || 0) + 1;
+            
+            // Only retry up to 3 times
+            if (retryCount < 3) {
+              this.failureRetryCount.set(logKey, retryCount);
+              failedLogs.push(queuedLog);
+            } else {
+              console.error(`Dropping API log after 3 failed attempts: ${logKey}`);
+              this.failureRetryCount.delete(logKey);
+            }
+            
+            return { success: false, queuedLog };
+          }
+        })
+      );
+
+      // Clear successfully written logs from the queue
+      const successfulLogs = results
+        .filter((r): r is PromiseFulfilledResult<{ success: boolean; queuedLog: QueuedLog }> => 
+          r.status === 'fulfilled' && r.value.success)
+        .map(r => r.value.queuedLog);
+
+      // Update queue to only contain failed logs and any new logs added during flush
+      const newLogsAddedDuringFlush = this.queue.slice(logsToWrite.length);
+      this.queue = [...failedLogs, ...newLogsAddedDuringFlush];
+
+      // Clean up retry counts for successful logs
+      successfulLogs.forEach(({ userId, log }) => {
+        // Remove all retry counts that match this log's pattern
+        const pattern = `${userId}-${log.apiName}-${log.endpoint}`;
+        Array.from(this.failureRetryCount.keys())
+          .filter(key => key.startsWith(pattern))
+          .forEach(key => this.failureRetryCount.delete(key));
+      });
+    } finally {
+      this.isFlushInProgress = false;
+    }
   }
 
   // Graceful shutdown
