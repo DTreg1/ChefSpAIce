@@ -193,7 +193,7 @@ export default function FdcSearch() {
   const { data: searchResults, isLoading: isSearching } =
     useQuery<SearchResponse>({
       queryKey: [`/api/fdc/search?${buildQueryParams()}`],
-      enabled: !!currentQuery || !!upcCode,
+      enabled: !!currentQuery || !!upcCode || brandOwners.length > 0,
     });
 
   // Food details query
