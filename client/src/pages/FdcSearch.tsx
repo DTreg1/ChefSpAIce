@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import {
   Card,
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Search,
@@ -31,6 +32,9 @@ import {
   Database,
   ChevronLeft,
   X,
+  Plus,
+  Calendar,
+  MapPin,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
@@ -42,6 +46,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import type { StorageLocation } from "@shared/schema";
+import { format, addDays } from "date-fns";
+import { SuccessAnimation } from "@/components/success-animation";
 
 interface FoodNutrient {
   nutrientId: number;
@@ -93,6 +100,29 @@ const SORT_OPTIONS = [
 
 const PAGE_SIZES = [25, 50, 100, 200];
 
+// Helper function to get suggested expiration date based on food category
+function getSuggestedExpirationDays(dataType?: string, description?: string): number {
+  const desc = description?.toLowerCase() || '';
+  
+  // Frozen foods
+  if (desc.includes('frozen')) return 90;
+  
+  // Fresh produce
+  if (desc.includes('fresh') || desc.includes('produce')) return 7;
+  
+  // Dairy
+  if (desc.includes('milk') || desc.includes('yogurt') || desc.includes('cheese')) return 14;
+  
+  // Meat
+  if (desc.includes('meat') || desc.includes('chicken') || desc.includes('beef') || desc.includes('pork')) return 3;
+  
+  // Canned/packaged
+  if (desc.includes('canned') || desc.includes('packaged')) return 365;
+  
+  // Default
+  return 21;
+}
+
 export default function FdcSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentQuery, setCurrentQuery] = useState("");
@@ -107,6 +137,14 @@ export default function FdcSearch() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
+  
+  // Add to inventory state
+  const [addToInventoryFood, setAddToInventoryFood] = useState<FoodItem | null>(null);
+  const [selectedStorageLocation, setSelectedStorageLocation] = useState<string>("");
+  const [expirationDate, setExpirationDate] = useState<string>("");
+  const [quantity, setQuantity] = useState("1");
+  const [unit, setUnit] = useState("item");
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Debounced search callback - triggers after 400ms of no typing
   const debouncedSearch = useDebouncedCallback(
@@ -164,6 +202,40 @@ export default function FdcSearch() {
       queryKey: ["/api/fdc/food", selectedFood],
       enabled: !!selectedFood && detailsOpen,
     });
+  
+  // Storage locations query
+  const { data: storageLocations } = useQuery<StorageLocation[]>({
+    queryKey: ["/api/storage-locations"],
+  });
+  
+  // Add to inventory mutation
+  const addToInventoryMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest('POST', '/api/food-items', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+      toast({
+        title: "Item added!",
+        description: `${addToInventoryFood?.description} has been added to your inventory.`,
+        className: "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800",
+      });
+      setAddToInventoryFood(null);
+      setSelectedStorageLocation("");
+      setExpirationDate("");
+      setQuantity("1");
+      setUnit("item");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to add item",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +248,59 @@ export default function FdcSearch() {
   const handleViewDetails = (fdcId: string) => {
     setSelectedFood(fdcId);
     setDetailsOpen(true);
+  };
+  
+  const handleAddToInventory = (food: FoodItem) => {
+    const suggestedExpDays = getSuggestedExpirationDays(food.dataType, food.description);
+    const defaultExpDate = format(addDays(new Date(), suggestedExpDays), 'yyyy-MM-dd');
+    
+    setAddToInventoryFood(food);
+    setExpirationDate(defaultExpDate);
+    
+    // Set default storage location
+    if (storageLocations && storageLocations.length > 0) {
+      const fridgeLocation = storageLocations.find(loc => loc.name.toLowerCase() === 'fridge');
+      setSelectedStorageLocation(fridgeLocation?.id || storageLocations[0].id);
+    }
+  };
+  
+  const handleConfirmAddToInventory = async () => {
+    if (!addToInventoryFood || !selectedStorageLocation || !expirationDate) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Get full food details if available
+    const foodDetailsToSave = await queryClient.fetchQuery<FoodDetails>({
+      queryKey: ["/api/fdc/food", addToInventoryFood.fdcId],
+      staleTime: 5 * 60 * 1000, // Use cached data if available within 5 minutes
+    }).catch(() => null);
+    
+    const itemData = {
+      fdcId: addToInventoryFood.fdcId,
+      name: addToInventoryFood.description,
+      quantity,
+      unit,
+      storageLocationId: selectedStorageLocation,
+      expirationDate,
+      usdaData: foodDetailsToSave || undefined,
+      foodCategory: foodDetailsToSave?.dataType || addToInventoryFood.dataType,
+      nutrition: foodDetailsToSave?.nutrients ? JSON.stringify({
+        calories: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "208")?.value || 0,
+        protein: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "203")?.value || 0,
+        carbs: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "205")?.value || 0,
+        fat: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "204")?.value || 0,
+        fiber: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "291")?.value || 0,
+        sugar: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "269")?.value || 0,
+        sodium: foodDetailsToSave.nutrients.find((n: FoodNutrient) => n.nutrientNumber === "307")?.value || 0,
+      }) : undefined,
+    };
+    
+    addToInventoryMutation.mutate(itemData);
   };
 
   const handleAddBrand = () => {
@@ -591,13 +716,15 @@ export default function FdcSearch() {
             {searchResults.foods.map((food) => (
               <Card
                 key={food.fdcId}
-                className="hover-elevate cursor-pointer"
-                onClick={() => handleViewDetails(food.fdcId)}
+                className="hover-elevate"
                 data-testid={`card-food-${food.fdcId}`}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => handleViewDetails(food.fdcId)}
+                    >
                       <h3
                         className="font-semibold text-lg mb-1"
                         data-testid={`text-food-name-${food.fdcId}`}
@@ -634,7 +761,29 @@ export default function FdcSearch() {
                         </span>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToInventory(food);
+                        }}
+                        data-testid={`button-add-inventory-${food.fdcId}`}
+                        className="flex items-center gap-1"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleViewDetails(food.fdcId)}
+                        data-testid={`button-view-details-${food.fdcId}`}
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -744,6 +893,117 @@ export default function FdcSearch() {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Add to Inventory Dialog */}
+      <Dialog open={!!addToInventoryFood} onOpenChange={(open) => !open && setAddToInventoryFood(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add to Inventory</DialogTitle>
+            <DialogDescription>
+              Add "{addToInventoryFood?.description}" to your inventory
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Storage Location */}
+            <div className="space-y-2">
+              <Label htmlFor="storage-location" className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Storage Location
+              </Label>
+              <Select
+                value={selectedStorageLocation}
+                onValueChange={setSelectedStorageLocation}
+              >
+                <SelectTrigger id="storage-location" data-testid="select-storage-location">
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {storageLocations?.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Quantity and Unit */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Quantity</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  data-testid="input-quantity"
+                  min="1"
+                  step="0.1"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="unit">Unit</Label>
+                <Select value={unit} onValueChange={setUnit}>
+                  <SelectTrigger id="unit" data-testid="select-unit">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="item">Item</SelectItem>
+                    <SelectItem value="lb">lb</SelectItem>
+                    <SelectItem value="oz">oz</SelectItem>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="g">g</SelectItem>
+                    <SelectItem value="cup">cup</SelectItem>
+                    <SelectItem value="tbsp">tbsp</SelectItem>
+                    <SelectItem value="tsp">tsp</SelectItem>
+                    <SelectItem value="liter">liter</SelectItem>
+                    <SelectItem value="ml">ml</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* Expiration Date */}
+            <div className="space-y-2">
+              <Label htmlFor="expiration" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Expiration Date
+              </Label>
+              <Input
+                id="expiration"
+                type="date"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+                data-testid="input-expiration"
+              />
+              <p className="text-xs text-muted-foreground">
+                Suggested based on {addToInventoryFood?.dataType || 'food type'}
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAddToInventoryFood(null)}
+              data-testid="button-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmAddToInventory}
+              disabled={!selectedStorageLocation || !expirationDate || addToInventoryMutation.isPending}
+              data-testid="button-confirm-add"
+            >
+              {addToInventoryMutation.isPending ? "Adding..." : "Add to Inventory"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Success Animation Overlay */}
+      {showSuccess && <SuccessAnimation />}
     </div>
   );
 }
