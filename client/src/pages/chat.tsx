@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
 import { EmptyState } from "@/components/empty-state";
@@ -8,7 +8,8 @@ import { RecipeCard } from "@/components/recipe-card";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
-import { ChefHat } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChefHat, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
@@ -34,6 +35,28 @@ export default function Chat() {
     queryKey: ["/api/chat/messages"],
   });
 
+  const clearChatMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("/api/chat/messages", "DELETE");
+    },
+    onSuccess: () => {
+      setMessages([]);
+      setGeneratedRecipe(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      toast({
+        title: "Chat cleared",
+        description: "Your chat history has been cleared successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to clear chat history. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (chatHistory) {
       setMessages(chatHistory);
@@ -56,17 +79,38 @@ export default function Chat() {
     };
   }, []);
 
-  const handleRecipeGenerated = (recipe: Recipe) => {
+  const handleRecipeGenerated = async (recipe: Recipe) => {
     setGeneratedRecipe(recipe);
-    const recipeMessage: ChatMessageType = {
-      id: Date.now().toString(),
-      userId: user?.id || "",
-      role: "assistant",
-      content: `I've created a recipe for you: ${recipe.title}`,
-      timestamp: new Date(),
-      metadata: JSON.stringify({ recipeId: recipe.id }),
-    };
-    setMessages((prev) => [...prev, recipeMessage]);
+    
+    // Save the recipe notification message to the database
+    try {
+      const response = await fetch("/api/chat/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "assistant",
+          content: `I've created a recipe for you: ${recipe.title}`,
+          metadata: JSON.stringify({ recipeId: recipe.id }),
+        }),
+      });
+      
+      if (response.ok) {
+        // Refresh chat messages to get the saved message with proper ID
+        await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      }
+    } catch (error) {
+      console.error("Failed to save recipe message:", error);
+      // Still show the message locally even if save fails
+      const recipeMessage: ChatMessageType = {
+        id: Date.now().toString(),
+        userId: user?.id || "",
+        role: "assistant",
+        content: `I've created a recipe for you: ${recipe.title}`,
+        timestamp: new Date(),
+        metadata: JSON.stringify({ recipeId: recipe.id }),
+      };
+      setMessages((prev) => [...prev, recipeMessage]);
+    }
   };
 
   const handleSendMessage = async (content: string) => {
@@ -168,12 +212,24 @@ export default function Chat() {
   return (
     <div className="flex flex-col h-full">
       <div className="border-b border-border p-4 bg-gradient-to-r from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Chat with AI Chef</h2>
             <p className="text-sm text-muted-foreground">Get recipe suggestions and manage your inventory</p>
           </div>
           <div className="flex gap-2">
+            {messages.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => clearChatMutation.mutate()}
+                disabled={clearChatMutation.isPending || isStreaming}
+                data-testid="button-clear-chat"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Start New Chat
+              </Button>
+            )}
             <RecipeCustomizationDialog onRecipeGenerated={handleRecipeGenerated} />
           </div>
         </div>
