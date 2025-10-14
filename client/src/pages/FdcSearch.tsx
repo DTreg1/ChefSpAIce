@@ -138,7 +138,18 @@ export default function FdcSearch() {
   const [selectedFood, setSelectedFood] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const { toast } = useToast();
+  
+  // Check URL params on mount to see if we should open barcode scanner
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('scanBarcode') === 'true') {
+      setShowBarcodeScanner(true);
+      // Clean up URL
+      window.history.replaceState({}, '', '/fdc-search');
+    }
+  }, []);
   
   // Add to inventory state
   const [addToInventoryFood, setAddToInventoryFood] = useState<FoodItem | null>(null);
@@ -925,6 +936,30 @@ export default function FdcSearch() {
       
       {/* Success Animation Overlay */}
       {showSuccess && <SuccessAnimation />}
+      
+      {/* Barcode Scanner Dialog */}
+      <Dialog open={showBarcodeScanner} onOpenChange={setShowBarcodeScanner}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Scan Barcode</DialogTitle>
+            <DialogDescription>
+              Position the barcode in the camera view to scan
+            </DialogDescription>
+          </DialogHeader>
+          <BarcodeScanner
+            onScanSuccess={(barcode) => {
+              setSearchQuery(barcode);
+              setCurrentQuery(barcode);
+              setCurrentPage(1);
+              setShowBarcodeScanner(false);
+              toast({
+                title: "Barcode scanned",
+                description: `Searching for UPC: ${barcode}`,
+              });
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

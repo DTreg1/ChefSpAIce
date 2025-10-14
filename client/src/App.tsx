@@ -129,7 +129,7 @@ function AppContent() {
         onGenerateRecipe={() => setRecipeDialogOpen(true)}
         onScanBarcode={() => {
           // Navigate to FDC search page with barcode scanner
-          window.location.href = '/fdc-search';
+          window.location.href = '/fdc-search?scanBarcode=true';
         }}
       />
       <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
@@ -153,7 +153,7 @@ function AppContent() {
                   onGenerateRecipe={() => setRecipeDialogOpen(true)}
                   onScanBarcode={() => {
                     // Navigate to FDC search page with barcode scanner
-                    window.location.href = '/fdc-search';
+                    window.location.href = '/fdc-search?scanBarcode=true';
                   }}
                 />
               </div>
