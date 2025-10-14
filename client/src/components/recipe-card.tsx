@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { MealPlanningDialog } from "@/components/meal-planning-dialog";
 import { ServingAdjuster } from "@/components/serving-adjuster";
+import { StarRating } from "@/components/star-rating";
 
 interface IngredientMatch {
   ingredientName: string;
@@ -197,24 +198,16 @@ export function RecipeCard({
               <Star className={`w-4 h-4 ${localFavorite ? "fill-amber-500" : ""}`} />
             </Button>
             
-            <div className="flex gap-1" data-testid="rating-stars">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => setRating(star)}
-                  className="transition-colors"
-                  data-testid={`button-star-${star}`}
-                >
-                  <Star
-                    className={`w-5 h-5 ${
-                      star <= localRating
-                        ? "fill-amber-500 text-amber-500"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
+            <StarRating
+              contextId={id}
+              contextType="recipe"
+              initialRating={localRating}
+              showTextFeedback={true}
+              onRatingSubmit={(newRating, comment) => {
+                setLocalRating(newRating);
+                updateMutation.mutate({ rating: newRating });
+              }}
+            />
 
             <MealPlanningDialog 
               recipeId={id} 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, 
   MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, 
-  Database, LayoutGrid, ChevronRight
+  Database, LayoutGrid, ChevronRight, BarChart3
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -283,6 +283,14 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/feedback-analytics"}>
+                    <Link href="/feedback-analytics" data-testid="link-feedback-analytics">
+                      <BarChart3 className="w-4 h-4" />
+                      <span className="flex-1">Feedback Analytics</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/settings"}>
                     <Link href="/settings" data-testid="link-settings">

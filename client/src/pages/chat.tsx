@@ -8,6 +8,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
+import { FeedbackButtons } from "@/components/feedback-buttons";
 import { Button } from "@/components/ui/button";
 import { ChefHat, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -257,20 +258,29 @@ export default function Chat() {
                     minute: "2-digit",
                   })}
                 >
-                  {message.metadata && message.metadata.includes("recipeId") && generatedRecipe && (
-                    <RecipeCard
-                      id={generatedRecipe.id}
-                      title={generatedRecipe.title}
-                      prepTime={generatedRecipe.prepTime || undefined}
-                      cookTime={generatedRecipe.cookTime || undefined}
-                      servings={generatedRecipe.servings || undefined}
-                      ingredients={generatedRecipe.ingredients}
-                      instructions={generatedRecipe.instructions}
-                      usedIngredients={generatedRecipe.usedIngredients}
-                      missingIngredients={generatedRecipe.missingIngredients || []}
-                      showControls={true}
-                    />
-                  )}
+                  <>
+                    {message.metadata && message.metadata.includes("recipeId") && generatedRecipe && (
+                      <RecipeCard
+                        id={generatedRecipe.id}
+                        title={generatedRecipe.title}
+                        prepTime={generatedRecipe.prepTime || undefined}
+                        cookTime={generatedRecipe.cookTime || undefined}
+                        servings={generatedRecipe.servings || undefined}
+                        ingredients={generatedRecipe.ingredients}
+                        instructions={generatedRecipe.instructions}
+                        usedIngredients={generatedRecipe.usedIngredients}
+                        missingIngredients={generatedRecipe.missingIngredients || []}
+                        showControls={true}
+                      />
+                    )}
+                    {message.role === "assistant" && (
+                      <FeedbackButtons
+                        contextId={message.id}
+                        contextType="chat_message"
+                        className="mt-2"
+                      />
+                    )}
+                  </>
                 </ChatMessage>
               ))}
 

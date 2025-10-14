@@ -26,6 +26,11 @@ import {
   type InsertFdcSearchCache,
   type ShoppingListItem,
   type InsertShoppingListItem,
+  type Feedback,
+  type InsertFeedback,
+  type FeedbackResponse,
+  type InsertFeedbackResponse,
+  type FeedbackAnalytics,
   users,
   userPreferences,
   storageLocations,
@@ -38,7 +43,9 @@ import {
   apiUsageLogs,
   fdcCache,
   fdcSearchCache,
-  shoppingListItems
+  shoppingListItems,
+  feedback,
+  feedbackResponses
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -121,6 +128,17 @@ export interface IStorage {
   
   // Account Management
   resetUserData(userId: string): Promise<void>;
+
+  // Feedback System
+  createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'>): Promise<Feedback>;
+  getFeedback(userId: string, id: string): Promise<Feedback | undefined>;
+  getUserFeedback(userId: string, limit?: number): Promise<Feedback[]>;
+  getAllFeedback(limit?: number, offset?: number, status?: string): Promise<{ items: Feedback[], total: number }>;
+  updateFeedbackStatus(id: string, status: string, resolvedAt?: Date): Promise<Feedback>;
+  addFeedbackResponse(feedbackId: string, response: Omit<InsertFeedbackResponse, 'feedbackId'>): Promise<FeedbackResponse>;
+  getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]>;
+  getFeedbackAnalytics(userId?: string, days?: number): Promise<FeedbackAnalytics>;
+  getFeedbackByContext(contextId: string, contextType: string): Promise<Feedback[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1174,6 +1192,7 @@ export class DatabaseStorage implements IStorage {
         await tx.delete(recipes).where(eq(recipes.userId, userId));
         await tx.delete(appliances).where(eq(appliances.userId, userId));
         await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
+        await tx.delete(feedback).where(eq(feedback.userId, userId));
         
         // Delete custom storage locations (keep default ones for re-initialization)
         await tx.delete(storageLocations).where(eq(storageLocations.userId, userId));
@@ -1190,6 +1209,248 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error resetting user data for ${userId}:`, error);
       throw new Error('Failed to reset user data - transaction rolled back');
+    }
+  }
+
+  // Feedback System Implementation
+  async createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'>): Promise<Feedback> {
+    try {
+      const [newFeedback] = await db
+        .insert(feedback)
+        .values({ ...feedbackData, userId })
+        .returning();
+      return newFeedback;
+    } catch (error) {
+      console.error('Error creating feedback:', error);
+      throw new Error('Failed to create feedback');
+    }
+  }
+
+  async getFeedback(userId: string, id: string): Promise<Feedback | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(feedback)
+        .where(and(eq(feedback.id, id), eq(feedback.userId, userId)));
+      return result;
+    } catch (error) {
+      console.error('Error getting feedback:', error);
+      throw new Error('Failed to get feedback');
+    }
+  }
+
+  async getUserFeedback(userId: string, limit: number = 50): Promise<Feedback[]> {
+    try {
+      const results = await db
+        .select()
+        .from(feedback)
+        .where(eq(feedback.userId, userId))
+        .orderBy(sql`${feedback.createdAt} DESC`)
+        .limit(limit);
+      return results;
+    } catch (error) {
+      console.error('Error getting user feedback:', error);
+      throw new Error('Failed to get user feedback');
+    }
+  }
+
+  async getAllFeedback(limit: number = 50, offset: number = 0, status?: string): Promise<{ items: Feedback[], total: number }> {
+    try {
+      const whereCondition = status ? eq(feedback.status, status) : undefined;
+      
+      const countQuery = db
+        .select({ count: sql<number>`count(*)` })
+        .from(feedback);
+      
+      const dataQuery = db
+        .select()
+        .from(feedback);
+      
+      const [{ count }] = whereCondition 
+        ? await countQuery.where(whereCondition)
+        : await countQuery;
+      
+      const items = whereCondition
+        ? await dataQuery.where(whereCondition).orderBy(sql`${feedback.createdAt} DESC`).limit(limit).offset(offset)
+        : await dataQuery.orderBy(sql`${feedback.createdAt} DESC`).limit(limit).offset(offset);
+      
+      return { items, total: count };
+    } catch (error) {
+      console.error('Error getting all feedback:', error);
+      throw new Error('Failed to get all feedback');
+    }
+  }
+
+  async updateFeedbackStatus(id: string, status: string, resolvedAt?: Date): Promise<Feedback> {
+    try {
+      const updateData: any = { status };
+      if (resolvedAt) {
+        updateData.resolvedAt = resolvedAt;
+      }
+      
+      const [updated] = await db
+        .update(feedback)
+        .set(updateData)
+        .where(eq(feedback.id, id))
+        .returning();
+      
+      if (!updated) {
+        throw new Error('Feedback not found');
+      }
+      
+      return updated;
+    } catch (error) {
+      console.error('Error updating feedback status:', error);
+      throw new Error('Failed to update feedback status');
+    }
+  }
+
+  async addFeedbackResponse(feedbackId: string, response: Omit<InsertFeedbackResponse, 'feedbackId'>): Promise<FeedbackResponse> {
+    try {
+      const [newResponse] = await db
+        .insert(feedbackResponses)
+        .values({ ...response, feedbackId })
+        .returning();
+      return newResponse;
+    } catch (error) {
+      console.error('Error adding feedback response:', error);
+      throw new Error('Failed to add feedback response');
+    }
+  }
+
+  async getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]> {
+    try {
+      const responses = await db
+        .select()
+        .from(feedbackResponses)
+        .where(eq(feedbackResponses.feedbackId, feedbackId))
+        .orderBy(sql`${feedbackResponses.createdAt} ASC`);
+      return responses;
+    } catch (error) {
+      console.error('Error getting feedback responses:', error);
+      throw new Error('Failed to get feedback responses');
+    }
+  }
+
+  async getFeedbackAnalytics(userId?: string, days: number = 30): Promise<FeedbackAnalytics> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      const allFeedback = userId
+        ? await db
+            .select()
+            .from(feedback)
+            .where(and(
+              eq(feedback.userId, userId),
+              sql`${feedback.createdAt} >= ${startDate}`
+            ))
+        : await db
+            .select()
+            .from(feedback)
+            .where(sql`${feedback.createdAt} >= ${startDate}`);
+      
+      // Calculate analytics
+      const totalFeedback = allFeedback.length;
+      const ratings = allFeedback.filter(f => f.rating !== null).map(f => f.rating!);
+      const averageRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
+      
+      const sentimentDistribution = {
+        positive: allFeedback.filter(f => f.sentiment === 'positive').length,
+        negative: allFeedback.filter(f => f.sentiment === 'negative').length,
+        neutral: allFeedback.filter(f => f.sentiment === 'neutral').length,
+      };
+      
+      const typeDistribution: Record<string, number> = {};
+      const priorityDistribution: Record<string, number> = {};
+      
+      allFeedback.forEach(f => {
+        typeDistribution[f.type] = (typeDistribution[f.type] || 0) + 1;
+        if (f.priority) {
+          priorityDistribution[f.priority] = (priorityDistribution[f.priority] || 0) + 1;
+        }
+      });
+      
+      // Calculate daily trends
+      const dailyTrends = new Map<string, { count: number; sentiments: number[] }>();
+      allFeedback.forEach(f => {
+        const date = new Date(f.createdAt).toISOString().split('T')[0];
+        if (!dailyTrends.has(date)) {
+          dailyTrends.set(date, { count: 0, sentiments: [] });
+        }
+        const dayData = dailyTrends.get(date)!;
+        dayData.count++;
+        if (f.sentiment) {
+          dayData.sentiments.push(f.sentiment === 'positive' ? 1 : f.sentiment === 'negative' ? -1 : 0);
+        }
+      });
+      
+      const recentTrends = Array.from(dailyTrends.entries())
+        .map(([date, data]) => ({
+          date,
+          count: data.count,
+          averageSentiment: data.sentiments.length > 0 
+            ? data.sentiments.reduce((a, b) => a + b, 0) / data.sentiments.length 
+            : 0
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      
+      // Calculate top issues
+      const categoryMap = new Map<string, { count: number; priority: string }>();
+      allFeedback.forEach(f => {
+        if (f.category && f.priority) {
+          const key = f.category;
+          if (!categoryMap.has(key)) {
+            categoryMap.set(key, { count: 0, priority: f.priority });
+          }
+          const cat = categoryMap.get(key)!;
+          cat.count++;
+          // Update to highest priority
+          const priorities = ['low', 'medium', 'high', 'critical'];
+          if (priorities.indexOf(f.priority) > priorities.indexOf(cat.priority)) {
+            cat.priority = f.priority;
+          }
+        }
+      });
+      
+      const topIssues = Array.from(categoryMap.entries())
+        .map(([category, data]) => ({
+          category,
+          count: data.count,
+          priority: data.priority
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+      
+      return {
+        totalFeedback,
+        averageRating,
+        sentimentDistribution,
+        typeDistribution,
+        priorityDistribution,
+        recentTrends,
+        topIssues
+      };
+    } catch (error) {
+      console.error('Error getting feedback analytics:', error);
+      throw new Error('Failed to get feedback analytics');
+    }
+  }
+
+  async getFeedbackByContext(contextId: string, contextType: string): Promise<Feedback[]> {
+    try {
+      const results = await db
+        .select()
+        .from(feedback)
+        .where(and(
+          eq(feedback.contextId, contextId),
+          eq(feedback.contextType, contextType)
+        ))
+        .orderBy(sql`${feedback.createdAt} DESC`);
+      return results;
+    } catch (error) {
+      console.error('Error getting feedback by context:', error);
+      throw new Error('Failed to get feedback by context');
     }
   }
 }
