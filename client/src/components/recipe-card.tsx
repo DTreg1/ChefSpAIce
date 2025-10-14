@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart } from "lucide-react";
+import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart, RefreshCw } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +60,8 @@ export function RecipeCard({
   const [localFavorite, setLocalFavorite] = useState(isFavorite);
   const [adjustedIngredients, setAdjustedIngredients] = useState(ingredients);
   const [currentServings, setCurrentServings] = useState(servings || 4);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [localIngredientMatches, setLocalIngredientMatches] = useState(ingredientMatches);
 
   const updateMutation = useMutation({
     mutationFn: async (updates: { isFavorite?: boolean; rating?: number }) => {
@@ -88,6 +90,38 @@ export function RecipeCard({
   const setRating = (newRating: number) => {
     setLocalRating(newRating);
     updateMutation.mutate({ rating: newRating });
+  };
+
+  const refreshAvailability = async () => {
+    if (!id) return;
+    
+    setIsRefreshing(true);
+    try {
+      // Invalidate and refetch recipes with inventory matching
+      await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      const updatedRecipes = await queryClient.fetchQuery({
+        queryKey: ["/api/recipes?includeMatching=true"],
+        staleTime: 0,
+      });
+      
+      // Find this recipe and update its ingredient matches
+      const thisRecipe = (updatedRecipes as any[])?.find((r: any) => r.id === id);
+      if (thisRecipe?.ingredientMatches) {
+        setLocalIngredientMatches(thisRecipe.ingredientMatches);
+        toast({
+          title: "Availability Updated",
+          description: "Ingredient availability has been refreshed",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh availability",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleServingsChange = (newServings: number, adjustedIngs: string[]) => {
@@ -144,6 +178,18 @@ export function RecipeCard({
               recipeTitle={title}
               defaultServings={servings}
             />
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshAvailability}
+              disabled={isRefreshing}
+              data-testid="button-refresh-availability"
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Checking..." : "Check Availability"}
+            </Button>
           </div>
         )}
 
@@ -166,16 +212,20 @@ export function RecipeCard({
               <span>{servings} servings</span>
             </div>
           )}
-          {ingredientMatches && (
-            <Badge 
-              variant={missingIngredients.length === 0 ? "default" : "destructive"}
-              className="gap-1"
-              data-testid="badge-missing-ingredients"
-            >
-              <ShoppingCart className="w-3 h-3" />
-              {missingIngredients.length === 0 ? "All ingredients available" : `${missingIngredients.length} missing`}
-            </Badge>
-          )}
+          {(localIngredientMatches || ingredientMatches) && (() => {
+            const currentMatches = localIngredientMatches || ingredientMatches;
+            const missingCount = currentMatches ? currentMatches.filter(m => !m.hasEnough).length : missingIngredients.length;
+            return (
+              <Badge 
+                variant={missingCount === 0 ? "default" : "destructive"}
+                className="gap-1"
+                data-testid="badge-missing-ingredients"
+              >
+                <ShoppingCart className="w-3 h-3" />
+                {missingCount === 0 ? "All ingredients available" : `${missingCount} missing`}
+              </Badge>
+            );
+          })()}
         </div>
       </CardHeader>
 
@@ -195,8 +245,9 @@ export function RecipeCard({
           <ul className="space-y-2">
             {adjustedIngredients.map((ingredient, idx) => {
               // Use enhanced matching data if available
-              if (ingredientMatches && ingredientMatches[idx]) {
-                const match = ingredientMatches[idx];
+              const currentMatches = localIngredientMatches || ingredientMatches;
+              if (currentMatches && currentMatches[idx]) {
+                const match = currentMatches[idx];
                 const getStatusIcon = () => {
                   if (match.hasEnough) {
                     return <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />;
