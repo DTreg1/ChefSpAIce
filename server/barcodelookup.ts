@@ -76,7 +76,9 @@ export async function searchBarcodeLookup(query: string): Promise<BarcodeLookupS
       throw new ApiError('Cannot connect to Barcode Lookup API.', 503);
     }
     
-    throw new ApiError('Failed to search Barcode Lookup', 500);
+    // Log the full error for debugging unexpected cases
+    console.error('Unexpected error in barcode search:', error);
+    throw new ApiError(`Failed to search Barcode Lookup: ${error.message || 'Unknown error'}`, 500);
   }
 }
 
@@ -132,7 +134,9 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
       throw new ApiError('Cannot connect to Barcode Lookup API.', 503);
     }
     
-    throw new ApiError('Failed to fetch barcode product', 500);
+    // Log the full error for debugging unexpected cases
+    console.error('Unexpected error in barcode lookup:', error);
+    throw new ApiError(`Failed to fetch barcode product: ${error.message || 'Unknown error'}`, 500);
   }
 }
 
