@@ -18,9 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChefHat, Clock, Users, Sparkles, GraduationCap, Utensils } from "lucide-react";
+import { ChefHat, Clock, Users, Sparkles, GraduationCap, Utensils, ShoppingBasket } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 import type { Recipe } from "@shared/schema";
 
 interface RecipePreferences {
@@ -29,6 +30,7 @@ interface RecipePreferences {
   difficulty: "beginner" | "intermediate" | "advanced" | "expert";
   mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
   creativity: number; // 1-10 scale
+  onlyUseOnHand: boolean; // New field
 }
 
 interface RecipeCustomizationDialogProps {
@@ -45,6 +47,7 @@ export function RecipeCustomizationDialog({ onRecipeGenerated }: RecipeCustomiza
     difficulty: "intermediate",
     mealType: "dinner",
     creativity: 5,
+    onlyUseOnHand: true, // Default to using only ingredients on hand
   });
 
   const generateRecipeMutation = useMutation({
@@ -218,6 +221,29 @@ export function RecipeCustomizationDialog({ onRecipeGenerated }: RecipeCustomiza
                 <SelectItem value="dessert">Dessert</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Only Use Ingredients On Hand Toggle */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="only-on-hand" className="flex items-center gap-2">
+                <ShoppingBasket className="w-4 h-4" />
+                Only use ingredients on hand
+              </Label>
+              <Switch
+                id="only-on-hand"
+                checked={preferences.onlyUseOnHand}
+                onCheckedChange={(checked) => 
+                  setPreferences({ ...preferences, onlyUseOnHand: checked })
+                }
+                data-testid="switch-only-on-hand"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {preferences.onlyUseOnHand 
+                ? "Recipe will only use ingredients from your inventory"
+                : "Recipe may include ingredients you need to buy"}
+            </p>
           </div>
 
           {/* Creativity Scale */}

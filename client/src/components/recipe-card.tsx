@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart, RefreshCw } from "lucide-react";
+import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart, RefreshCw, Plus, ShoppingBasket } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +62,7 @@ export function RecipeCard({
   const [currentServings, setCurrentServings] = useState(servings || 4);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [localIngredientMatches, setLocalIngredientMatches] = useState(ingredientMatches);
+  const [isAddingToShoppingList, setIsAddingToShoppingList] = useState(false);
 
   const updateMutation = useMutation({
     mutationFn: async (updates: { isFavorite?: boolean; rating?: number }) => {
@@ -127,6 +128,48 @@ export function RecipeCard({
   const handleServingsChange = (newServings: number, adjustedIngs: string[]) => {
     setCurrentServings(newServings);
     setAdjustedIngredients(adjustedIngs);
+  };
+
+  const addMissingToShoppingList = async () => {
+    if (!id) return;
+    
+    // Get the missing ingredients
+    const missingItems = localIngredientMatches 
+      ? localIngredientMatches.filter(m => !m.hasEnough).map(m => m.ingredientName)
+      : missingIngredients;
+
+    if (missingItems.length === 0) {
+      toast({
+        title: "No missing ingredients",
+        description: "All ingredients are available in your inventory",
+      });
+      return;
+    }
+
+    setIsAddingToShoppingList(true);
+    try {
+      const response = await apiRequest("POST", "/api/shopping-list/add-missing", {
+        recipeId: id,
+        ingredients: missingItems,
+      });
+      
+      const items = await response.json();
+      
+      toast({
+        title: "Added to shopping list",
+        description: `Added ${items.length} item${items.length === 1 ? '' : 's'} to your shopping list`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/shopping-list/items"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add items to shopping list",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingToShoppingList(false);
+    }
   };
 
   return (
@@ -216,14 +259,29 @@ export function RecipeCard({
             const currentMatches = localIngredientMatches || ingredientMatches;
             const missingCount = currentMatches ? currentMatches.filter(m => !m.hasEnough).length : missingIngredients.length;
             return (
-              <Badge 
-                variant={missingCount === 0 ? "default" : "destructive"}
-                className="gap-1"
-                data-testid="badge-missing-ingredients"
-              >
-                <ShoppingCart className="w-3 h-3" />
-                {missingCount === 0 ? "All ingredients available" : `${missingCount} missing`}
-              </Badge>
+              <>
+                <Badge 
+                  variant={missingCount === 0 ? "default" : "destructive"}
+                  className="gap-1"
+                  data-testid="badge-missing-ingredients"
+                >
+                  <ShoppingCart className="w-3 h-3" />
+                  {missingCount === 0 ? "All ingredients available" : `${missingCount} missing`}
+                </Badge>
+                {missingCount > 0 && showControls && id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={addMissingToShoppingList}
+                    disabled={isAddingToShoppingList}
+                    data-testid="button-add-to-shopping-list"
+                    className="gap-2"
+                  >
+                    <ShoppingBasket className="w-4 h-4" />
+                    {isAddingToShoppingList ? "Adding..." : "Add to List"}
+                  </Button>
+                )}
+              </>
             );
           })()}
         </div>

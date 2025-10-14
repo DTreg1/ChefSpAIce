@@ -24,6 +24,8 @@ import {
   type InsertFdcCache,
   type FdcSearchCache,
   type InsertFdcSearchCache,
+  type ShoppingListItem,
+  type InsertShoppingListItem,
   users,
   userPreferences,
   storageLocations,
@@ -35,7 +37,8 @@ import {
   mealPlans,
   apiUsageLogs,
   fdcCache,
-  fdcSearchCache
+  fdcSearchCache,
+  shoppingListItems
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -107,6 +110,14 @@ export interface IStorage {
   getCachedSearchResults(query: string, dataType?: string, pageNumber?: number): Promise<FdcSearchCache | undefined>;
   cacheSearchResults(search: InsertFdcSearchCache): Promise<FdcSearchCache>;
   clearOldCache(daysOld: number): Promise<void>;
+  
+  // Shopping List Items (user-scoped)
+  getShoppingListItems(userId: string): Promise<ShoppingListItem[]>;
+  createShoppingListItem(userId: string, item: Omit<InsertShoppingListItem, 'userId'>): Promise<ShoppingListItem>;
+  updateShoppingListItem(userId: string, id: string, updates: Partial<Omit<InsertShoppingListItem, 'userId'>>): Promise<ShoppingListItem>;
+  deleteShoppingListItem(userId: string, id: string): Promise<void>;
+  clearCheckedShoppingListItems(userId: string): Promise<void>;
+  addMissingIngredientsToShoppingList(userId: string, recipeId: string, ingredients: string[]): Promise<ShoppingListItem[]>;
   
   // Account Management
   resetUserData(userId: string): Promise<void>;
@@ -1031,9 +1042,99 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Shopping List Methods
+  async getShoppingListItems(userId: string): Promise<ShoppingListItem[]> {
+    await this.ensureDefaultDataForUser(userId);
+    const items = await db
+      .select()
+      .from(shoppingListItems)
+      .where(eq(shoppingListItems.userId, userId))
+      .orderBy(shoppingListItems.createdAt);
+    return items;
+  }
+
+  async createShoppingListItem(userId: string, item: Omit<InsertShoppingListItem, 'userId'>): Promise<ShoppingListItem> {
+    await this.ensureDefaultDataForUser(userId);
+    const [newItem] = await db
+      .insert(shoppingListItems)
+      .values({ ...item, userId })
+      .returning();
+    return newItem;
+  }
+
+  async updateShoppingListItem(userId: string, id: string, updates: Partial<Omit<InsertShoppingListItem, 'userId'>>): Promise<ShoppingListItem> {
+    const [updated] = await db
+      .update(shoppingListItems)
+      .set(updates)
+      .where(and(
+        eq(shoppingListItems.id, id),
+        eq(shoppingListItems.userId, userId)
+      ))
+      .returning();
+    
+    if (!updated) {
+      throw new Error('Shopping list item not found');
+    }
+    return updated;
+  }
+
+  async deleteShoppingListItem(userId: string, id: string): Promise<void> {
+    await db
+      .delete(shoppingListItems)
+      .where(and(
+        eq(shoppingListItems.id, id),
+        eq(shoppingListItems.userId, userId)
+      ));
+  }
+
+  async clearCheckedShoppingListItems(userId: string): Promise<void> {
+    await db
+      .delete(shoppingListItems)
+      .where(and(
+        eq(shoppingListItems.userId, userId),
+        eq(shoppingListItems.isChecked, true)
+      ));
+  }
+
+  async addMissingIngredientsToShoppingList(userId: string, recipeId: string, ingredients: string[]): Promise<ShoppingListItem[]> {
+    await this.ensureDefaultDataForUser(userId);
+    
+    // Parse each ingredient to extract quantity and unit if possible
+    const items = ingredients.map(ingredient => {
+      // Simple parsing - could be enhanced
+      const match = ingredient.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?\s+(.+)$/);
+      if (match) {
+        return {
+          ingredient: match[3],
+          quantity: match[1],
+          unit: match[2] || '',
+          recipeId,
+          isChecked: false,
+          userId
+        };
+      }
+      return {
+        ingredient,
+        quantity: null,
+        unit: null,
+        recipeId,
+        isChecked: false,
+        userId
+      };
+    });
+
+    const newItems = await db
+      .insert(shoppingListItems)
+      .values(items)
+      .returning();
+    
+    return newItems;
+  }
+
   async resetUserData(userId: string): Promise<void> {
     try {
       // Delete all user data in order (respecting foreign key constraints)
+      await db.delete(shoppingListItems).where(eq(shoppingListItems.userId, userId));
       await db.delete(mealPlans).where(eq(mealPlans.userId, userId));
       await db.delete(expirationNotifications).where(eq(expirationNotifications.userId, userId));
       await db.delete(foodItems).where(eq(foodItems.userId, userId));
