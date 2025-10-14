@@ -62,7 +62,6 @@ export const storageLocations = pgTable("storage_locations", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   icon: text("icon").notNull(),
-  itemCount: integer("item_count").notNull().default(0),
 }, (table) => [
   index("storage_locations_user_id_idx").on(table.userId),
 ]);
