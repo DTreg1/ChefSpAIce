@@ -11,6 +11,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { AddFoodDialog } from "@/components/add-food-dialog";
+import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "@/pages/landing";
@@ -66,6 +67,7 @@ function Router() {
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [addFoodOpen, setAddFoodOpen] = useState(false);
+  const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   
@@ -109,16 +111,18 @@ function AppContent() {
     <>
       <CommandPalette 
         onAddFood={() => setAddFoodOpen(true)}
-        onGenerateRecipe={() => {
-          // Navigate to storage page for recipe generation
-          window.location.href = '/storage/all';
-        }}
+        onGenerateRecipe={() => setRecipeDialogOpen(true)}
         onScanBarcode={() => {
           // Navigate to FDC search page with barcode scanner
           window.location.href = '/fdc-search';
         }}
       />
       <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
+      <RecipeCustomizationDialog 
+        open={recipeDialogOpen} 
+        onOpenChange={setRecipeDialogOpen}
+        showTrigger={false}
+      />
       <SidebarProvider style={style}>
         <div className="flex h-screen w-full">
           <AppSidebar />
@@ -130,10 +134,7 @@ function AppContent() {
               <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph" />
               <QuickActionsBar 
                 onAddFood={() => setAddFoodOpen(true)}
-                onGenerateRecipe={() => {
-                  // Navigate to storage page for recipe generation
-                  window.location.href = '/storage/all';
-                }}
+                onGenerateRecipe={() => setRecipeDialogOpen(true)}
                 onScanBarcode={() => {
                   // Navigate to FDC search page with barcode scanner
                   window.location.href = '/fdc-search';
