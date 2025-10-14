@@ -35,10 +35,21 @@ interface RecipePreferences {
 
 interface RecipeCustomizationDialogProps {
   onRecipeGenerated?: (recipe: Recipe) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 }
 
-export function RecipeCustomizationDialog({ onRecipeGenerated }: RecipeCustomizationDialogProps) {
-  const [open, setOpen] = useState(false);
+export function RecipeCustomizationDialog({ 
+  onRecipeGenerated, 
+  open: externalOpen, 
+  onOpenChange: externalOnOpenChange,
+  showTrigger = true 
+}: RecipeCustomizationDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const { toast } = useToast();
   
   const [preferences, setPreferences] = useState<RecipePreferences>({
@@ -110,12 +121,14 @@ export function RecipeCustomizationDialog({ onRecipeGenerated }: RecipeCustomiza
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="default" data-testid="button-custom-recipe">
-          <Sparkles className="w-4 h-4 mr-2" />
-          Generate Recipe
-        </Button>
-      </DialogTrigger>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="default" data-testid="button-custom-recipe">
+            <Sparkles className="w-4 h-4 mr-2" />
+            Generate Recipe
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md" data-testid="dialog-recipe-customization">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
