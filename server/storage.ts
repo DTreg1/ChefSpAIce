@@ -287,40 +287,44 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     try {
-      // Try to insert with conflict resolution on ID
+      // First check if a user with this email already exists
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, userData.email!));
+
+      if (existingUser) {
+        // Update the existing user (keep the same ID to avoid foreign key issues)
+        const [updatedUser] = await db
+          .update(users)
+          .set({
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            profileImage: userData.profileImage,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, existingUser.id))
+          .returning();
+        return updatedUser;
+      }
+
+      // No existing user, insert new one
       const [user] = await db
         .insert(users)
         .values(userData)
         .onConflictDoUpdate({
           target: users.id,
           set: {
-            ...userData,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            email: userData.email,
+            profileImage: userData.profileImage,
             updatedAt: new Date(),
           },
         })
         .returning();
       return user;
     } catch (error: any) {
-      // If we get a duplicate email error, update the existing user with that email
-      if (error?.message?.includes('duplicate key') && error?.message?.includes('email')) {
-        try {
-          const [existingUser] = await db
-            .update(users)
-            .set({
-              ...userData,
-              updatedAt: new Date(),
-            })
-            .where(eq(users.email, userData.email!))
-            .returning();
-          
-          if (existingUser) {
-            return existingUser;
-          }
-        } catch (updateError) {
-          console.error('Error updating user by email:', updateError);
-        }
-      }
-      
       console.error('Error upserting user:', error);
       throw new Error('Failed to save user');
     }

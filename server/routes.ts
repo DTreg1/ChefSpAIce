@@ -2278,6 +2278,22 @@ Respond ONLY with a valid JSON object:
     }
   });
 
+  // Community Feedback Routes - must come before /api/feedback/:id to avoid route collision
+  app.get("/api/feedback/community", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const type = req.query.type as string | undefined;
+      const sortBy = (req.query.sortBy as 'upvotes' | 'recent') || 'recent';
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      const feedback = await storage.getCommunityFeedbackForUser(userId, type, sortBy, limit);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching community feedback:", error);
+      res.status(500).json({ error: "Failed to fetch community feedback" });
+    }
+  });
+
   app.get("/api/feedback/:id", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -2395,22 +2411,7 @@ Respond ONLY with a valid JSON object:
     }
   });
 
-  // Community Feedback Routes
-  app.get("/api/feedback/community", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const type = req.query.type as string | undefined;
-      const sortBy = (req.query.sortBy as 'upvotes' | 'recent') || 'recent';
-      const limit = parseInt(req.query.limit as string) || 50;
-      
-      const feedback = await storage.getCommunityFeedbackForUser(userId, type, sortBy, limit);
-      res.json(feedback);
-    } catch (error) {
-      console.error("Error fetching community feedback:", error);
-      res.status(500).json({ error: "Failed to fetch community feedback" });
-    }
-  });
-
+  // Upvote routes
   app.post("/api/feedback/:id/upvote", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
