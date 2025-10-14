@@ -21,8 +21,87 @@ import {
   insertMealPlanSchema,
   insertUserPreferencesSchema,
   insertStorageLocationSchema,
-  insertFeedbackSchema
+  insertFeedbackSchema,
+  type BarcodeProduct
 } from "@shared/schema";
+
+// Helper functions for appliance barcode processing
+function extractApplianceCapabilities(product: any): string[] {
+  const capabilities: string[] = [];
+  const text = `${product.title || ''} ${product.description || ''}`.toLowerCase();
+  
+  const capabilityKeywords = {
+    grill: ['grill', 'grilling'],
+    bake: ['bake', 'baking', 'oven'],
+    air_fry: ['air fry', 'air fryer', 'air crisp', 'air-fry'],
+    dehydrate: ['dehydrate', 'dehydrator'],
+    broil: ['broil', 'broiling'],
+    toast: ['toast', 'toaster'],
+    roast: ['roast', 'roasting'],
+    steam: ['steam', 'steamer'],
+    pressure_cook: ['pressure cook', 'pressure cooker', 'instant pot'],
+    slow_cook: ['slow cook', 'slow cooker', 'crock pot'],
+    blend: ['blend', 'blender', 'mix'],
+    food_process: ['food process', 'processor', 'chop', 'dice'],
+    warm: ['warm', 'warmer', 'keep warm'],
+    reheat: ['reheat', 'microwave'],
+    sauté: ['sauté', 'saute', 'pan fry']
+  };
+  
+  for (const [capability, keywords] of Object.entries(capabilityKeywords)) {
+    if (keywords.some(keyword => text.includes(keyword))) {
+      capabilities.push(capability);
+    }
+  }
+  
+  return capabilities;
+}
+
+function extractApplianceCapacity(product: any): { capacity?: string; servingSize?: string } {
+  const text = `${product.title || ''} ${product.description || ''}`;
+  
+  // Look for capacity patterns (e.g., "4-qt", "6 quart", "5L")
+  const capacityMatch = text.match(/(\d+(?:\.\d+)?)\s*[-\s]?(qt|quart|l|liter|litre|gal|gallon|oz|cup)/i);
+  
+  // Look for serving patterns (e.g., "serves 4", "4 servings", "up to 6 people")
+  const servingMatch = text.match(/(?:serves?|serving[s]?|up to)\s+(\d+)\s*(?:people|person|servings?)?/i);
+  
+  return {
+    capacity: capacityMatch ? capacityMatch[0] : undefined,
+    servingSize: servingMatch ? `up to ${servingMatch[1]} servings` : undefined
+  };
+}
+
+function determineApplianceType(barcodeProduct: BarcodeProduct): string {
+  const title = (barcodeProduct.title || '').toLowerCase();
+  const category = (barcodeProduct.category || '').toLowerCase();
+  const description = (barcodeProduct.description || '').toLowerCase();
+  const combined = `${title} ${category} ${description}`;
+  
+  // Check for specific appliance types
+  if (combined.includes('bake') || combined.includes('oven')) return 'baking';
+  if (combined.includes('grill') || combined.includes('bbq')) return 'cooking';
+  if (combined.includes('fryer') || combined.includes('fry')) return 'cooking';
+  if (combined.includes('pressure') || combined.includes('instant pot')) return 'cooking';
+  if (combined.includes('slow cook') || combined.includes('crock')) return 'cooking';
+  if (combined.includes('microwave')) return 'cooking';
+  if (combined.includes('blender') || combined.includes('mixer') || combined.includes('processor')) return 'prep';
+  if (combined.includes('whisk') || combined.includes('masher') || combined.includes('slicer')) return 'prep';
+  if (combined.includes('pan') || combined.includes('pot') || combined.includes('skillet')) return 'bakeware';
+  if (combined.includes('sheet') || combined.includes('tin') || combined.includes('mold')) return 'bakeware';
+  
+  // Default based on capabilities if available
+  if (barcodeProduct.capabilities?.length) {
+    if (barcodeProduct.capabilities.some(c => ['grill', 'bake', 'air_fry', 'broil'].includes(c))) {
+      return 'cooking';
+    }
+    if (barcodeProduct.capabilities.some(c => ['blend', 'food_process', 'chop'].includes(c))) {
+      return 'prep';
+    }
+  }
+  
+  return 'cooking'; // default
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware (from blueprint:javascript_log_in_with_replit)
@@ -368,6 +447,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const appliance = await storage.getAppliance(userId, id);
+      if (!appliance) {
+        return res.status(404).json({ error: "Appliance not found" });
+      }
+      res.json(appliance);
+    } catch (error) {
+      console.error("Error fetching appliance:", error);
+      res.status(500).json({ error: "Failed to fetch appliance" });
+    }
+  });
+
+  app.put("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const validated = insertApplianceSchema.partial().parse(req.body);
+      const appliance = await storage.updateAppliance(userId, id, validated);
+      res.json(appliance);
+    } catch (error) {
+      console.error("Error updating appliance:", error);
+      res.status(400).json({ error: "Invalid appliance data" });
+    }
+  });
+
   app.delete("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -377,6 +484,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting appliance:", error);
       res.status(500).json({ error: "Failed to delete appliance" });
+    }
+  });
+
+  // Appliance Categories
+  app.get("/api/appliance-categories", async (req, res) => {
+    try {
+      const categories = await storage.getApplianceCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching appliance categories:", error);
+      res.status(500).json({ error: "Failed to fetch appliance categories" });
+    }
+  });
+
+  app.post("/api/appliance-categories", isAuthenticated, async (req: any, res) => {
+    try {
+      const category = await storage.createApplianceCategory(req.body);
+      res.json(category);
+    } catch (error) {
+      console.error("Error creating appliance category:", error);
+      res.status(400).json({ error: "Invalid category data" });
+    }
+  });
+
+  // Get appliances by category
+  app.get("/api/appliances/category/:categoryId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { categoryId } = req.params;
+      const appliances = await storage.getAppliancesByCategory(userId, categoryId);
+      res.json(appliances);
+    } catch (error) {
+      console.error("Error fetching appliances by category:", error);
+      res.status(500).json({ error: "Failed to fetch appliances" });
+    }
+  });
+
+  // Get appliances by capability
+  app.get("/api/appliances/capability/:capability", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { capability } = req.params;
+      const appliances = await storage.getAppliancesByCapability(userId, capability);
+      res.json(appliances);
+    } catch (error) {
+      console.error("Error fetching appliances by capability:", error);
+      res.status(500).json({ error: "Failed to fetch appliances" });
+    }
+  });
+
+  // Create appliance from barcode
+  app.post("/api/appliances/from-barcode", isAuthenticated, async (req: any, res) => {
+    const userId = req.user.claims.sub;
+    const { barcode, nickname, notes } = req.body;
+    
+    try {
+      if (!barcode) {
+        return res.status(400).json({ error: "Barcode is required" });
+      }
+
+      // Check if barcode product exists in our database
+      let barcodeProduct = await storage.getBarcodeProduct(barcode);
+      
+      // If not in database, fetch from API
+      if (!barcodeProduct) {
+        // Check rate limits before making API call
+        await checkRateLimitBeforeCall();
+        
+        const apiProduct = await getBarcodeLookupProduct(barcode);
+        
+        if (!apiProduct) {
+          return res.status(404).json({ error: "Product not found for this barcode" });
+        }
+
+        // Extract capabilities from description
+        const capabilities = extractApplianceCapabilities(apiProduct);
+        const { capacity, servingSize } = extractApplianceCapacity(apiProduct);
+        
+        // Save to barcode products table
+        barcodeProduct = await storage.createBarcodeProduct({
+          barcodeNumber: apiProduct.barcode_number || barcode,
+          title: apiProduct.title || 'Unknown Product',
+          brand: apiProduct.brand,
+          manufacturer: apiProduct.manufacturer,
+          model: apiProduct.model,
+          description: apiProduct.description,
+          category: apiProduct.category,
+          images: apiProduct.images,
+          capabilities,
+          capacity,
+          servingSize,
+          rawData: apiProduct
+        });
+      }
+
+      // Create appliance for user
+      const appliance = await storage.createAppliance(userId, {
+        name: barcodeProduct.title,
+        type: determineApplianceType(barcodeProduct),
+        barcodeProductId: barcodeProduct.id,
+        nickname: nickname || barcodeProduct.title,
+        notes,
+        imageUrl: barcodeProduct.images?.[0],
+        customCapabilities: barcodeProduct.capabilities,
+        customCapacity: barcodeProduct.capacity,
+        customServingSize: barcodeProduct.servingSize
+      });
+
+      res.json(appliance);
+    } catch (error: any) {
+      console.error("Error creating appliance from barcode:", error);
+      if (error instanceof ApiError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to create appliance from barcode" });
     }
   });
 
