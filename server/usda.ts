@@ -70,7 +70,7 @@ interface FDCSearchResult {
   foods: FDCFood[];
 }
 
-function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: string): boolean {
+export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: string): boolean {
   // Check if all major macronutrients are zero (suspicious)
   const allMacrosZero = nutrition.calories === 0 && 
                         nutrition.protein === 0 && 

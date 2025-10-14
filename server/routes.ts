@@ -3,7 +3,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
-import { searchUSDAFoods, getFoodByFdcId } from "./usda";
+import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "./usda";
 import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
 import { getEnrichedOnboardingItem } from "./onboarding-usda";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -115,11 +115,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const validated = insertFoodItemSchema.parse(req.body);
       
+      let nutrition = validated.nutrition;
+      let usdaData = validated.usdaData;
+      
+      // Always validate nutrition if provided
+      let needsFreshNutrition = !nutrition;
+      
+      if (nutrition) {
+        try {
+          const parsedNutrition = JSON.parse(nutrition);
+          if (!isNutritionDataValid(parsedNutrition, validated.name)) {
+            console.log(`Invalid nutrition detected for "${validated.name}"`);
+            // If we have an FDC ID, try to fetch fresh data
+            if (validated.fcdId) {
+              console.log(`Will fetch fresh data from USDA`);
+              needsFreshNutrition = true;
+            } else {
+              // No FDC ID, can't fetch fresh data - reject invalid nutrition
+              console.log(`No FDC ID available, clearing invalid nutrition`);
+              nutrition = null;
+              usdaData = null;
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing/validating nutrition:", e);
+          // If we have an FDC ID, try to fetch fresh data
+          if (validated.fcdId) {
+            needsFreshNutrition = true;
+          } else {
+            // No FDC ID, clear malformed nutrition
+            nutrition = null;
+            usdaData = null;
+          }
+        }
+      }
+      
+      // If we have an FDC ID and need fresh nutrition, fetch full details
+      if (validated.fcdId && needsFreshNutrition) {
+        console.log(`Fetching full USDA details for FDC ID ${validated.fcdId} during item creation`);
+        const foodDetails = await getFoodByFdcId(parseInt(validated.fcdId));
+        if (foodDetails && foodDetails.nutrition) {
+          console.log(`Found valid nutrition data for FDC ID ${validated.fcdId}`);
+          nutrition = JSON.stringify(foodDetails.nutrition);
+          usdaData = JSON.stringify(foodDetails);
+        } else {
+          // If we couldn't get valid nutrition, clear any invalid nutrition
+          console.log(`Could not fetch valid nutrition for FDC ID ${validated.fcdId}, storing without nutrition`);
+          nutrition = null;
+          usdaData = null;
+        }
+      }
+      
       // Calculate weightInGrams from quantity and USDA serving size
       let weightInGrams: number | null = null;
-      if (validated.nutrition) {
+      if (nutrition) {
         try {
-          const nutritionData = JSON.parse(validated.nutrition);
+          const nutritionData = JSON.parse(nutrition);
           const quantity = parseFloat(validated.quantity) || 1;
           const servingSize = parseFloat(nutritionData.servingSize) || 100;
           weightInGrams = quantity * servingSize;
@@ -130,6 +181,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const item = await storage.createFoodItem(userId, {
         ...validated,
+        nutrition,
+        usdaData,
         weightInGrams,
       });
       res.json(item);
