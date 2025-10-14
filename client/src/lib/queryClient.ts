@@ -29,7 +29,10 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Ensure all queryKey elements are converted to strings before joining
+    // Ensure queryKey is an array and all elements are converted to strings before joining
+    if (!Array.isArray(queryKey) || queryKey.length === 0) {
+      throw new Error("Invalid queryKey: must be a non-empty array");
+    }
     const url = queryKey.map(key => String(key)).join("/");
     const res = await fetch(url, {
       credentials: "include",
