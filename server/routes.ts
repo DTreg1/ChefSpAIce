@@ -3,7 +3,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
-import { searchUSDAFoods, getFoodByFdcId } from "./usda";
+import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "./usda";
 import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
 import { getEnrichedOnboardingItem } from "./onboarding-usda";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -115,11 +115,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const validated = insertFoodItemSchema.parse(req.body);
       
+      let nutrition = validated.nutrition;
+      let usdaData = validated.usdaData;
+      
+      // Always validate nutrition if provided
+      let needsFreshNutrition = !nutrition;
+      
+      if (nutrition) {
+        try {
+          const parsedNutrition = JSON.parse(nutrition);
+          if (!isNutritionDataValid(parsedNutrition, validated.name)) {
+            console.log(`Invalid nutrition detected for "${validated.name}"`);
+            // If we have an FDC ID, try to fetch fresh data
+            if (validated.fcdId) {
+              console.log(`Will fetch fresh data from USDA`);
+              needsFreshNutrition = true;
+            } else {
+              // No FDC ID, can't fetch fresh data - reject invalid nutrition
+              console.log(`No FDC ID available, clearing invalid nutrition`);
+              nutrition = null;
+              usdaData = null;
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing/validating nutrition:", e);
+          // If we have an FDC ID, try to fetch fresh data
+          if (validated.fcdId) {
+            needsFreshNutrition = true;
+          } else {
+            // No FDC ID, clear malformed nutrition
+            nutrition = null;
+            usdaData = null;
+          }
+        }
+      }
+      
+      // If we have an FDC ID and need fresh nutrition, fetch full details
+      if (validated.fcdId && needsFreshNutrition) {
+        console.log(`Fetching full USDA details for FDC ID ${validated.fcdId} during item creation`);
+        const foodDetails = await getFoodByFdcId(parseInt(validated.fcdId));
+        if (foodDetails && foodDetails.nutrition) {
+          console.log(`Found valid nutrition data for FDC ID ${validated.fcdId}`);
+          nutrition = JSON.stringify(foodDetails.nutrition);
+          usdaData = JSON.stringify(foodDetails);
+        } else {
+          // If we couldn't get valid nutrition, clear any invalid nutrition
+          console.log(`Could not fetch valid nutrition for FDC ID ${validated.fcdId}, storing without nutrition`);
+          nutrition = null;
+          usdaData = null;
+        }
+      }
+      
       // Calculate weightInGrams from quantity and USDA serving size
       let weightInGrams: number | null = null;
-      if (validated.nutrition) {
+      if (nutrition) {
         try {
-          const nutritionData = JSON.parse(validated.nutrition);
+          const nutritionData = JSON.parse(nutrition);
           const quantity = parseFloat(validated.quantity) || 1;
           const servingSize = parseFloat(nutritionData.servingSize) || 100;
           weightInGrams = quantity * servingSize;
@@ -130,6 +181,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const item = await storage.createFoodItem(userId, {
         ...validated,
+        nutrition,
+        usdaData,
         weightInGrams,
       });
       res.json(item);
@@ -182,6 +235,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting food item:", error);
       res.status(500).json({ error: "Failed to delete food item" });
+    }
+  });
+
+  app.post("/api/food-items/:id/refresh-nutrition", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      // Get the current food item
+      const items = await storage.getFoodItems(userId);
+      const item = items.find(i => i.id === id);
+      
+      if (!item) {
+        return res.status(404).json({ error: "Food item not found" });
+      }
+
+      let usdaData = null;
+      let nutrition = null;
+
+      // Try to fetch fresh USDA data
+      if (item.fcdId) {
+        // If we have an FDC ID, try to fetch by ID first
+        console.log(`Refreshing nutrition for "${item.name}" using FDC ID: ${item.fcdId}`);
+        usdaData = await getFoodByFdcId(parseInt(item.fcdId));
+        
+        if (usdaData && usdaData.nutrition) {
+          nutrition = JSON.stringify(usdaData.nutrition);
+        }
+      }
+      
+      // If no FDC ID or fetch failed, try searching by name
+      if (!nutrition) {
+        console.log(`Searching USDA for "${item.name}" to refresh nutrition data`);
+        const searchResults = await searchUSDAFoods(item.name);
+        
+        if (searchResults.foods && searchResults.foods.length > 0) {
+          // Try multiple search results until we find one with valid nutrition
+          for (const searchResult of searchResults.foods) {
+            try {
+              console.log(`Trying FDC ID: ${searchResult.fdcId} for "${item.name}"`);
+              
+              // Fetch full details for this search result
+              const foodDetails = await getFoodByFdcId(searchResult.fdcId);
+              
+              if (foodDetails && foodDetails.nutrition) {
+                console.log(`Found valid nutrition data using FDC ID: ${searchResult.fdcId} for "${item.name}"`);
+                usdaData = foodDetails;
+                nutrition = JSON.stringify(foodDetails.nutrition);
+                
+                // Update FDC ID if we found a better match
+                if (foodDetails.fdcId) {
+                  await storage.updateFoodItem(userId, id, {
+                    fcdId: foodDetails.fdcId.toString(),
+                  });
+                }
+                break; // Found valid nutrition, stop searching
+              } else {
+                console.log(`Skipping FDC ID: ${searchResult.fdcId} - nutrition data invalid or missing`);
+              }
+            } catch (err) {
+              console.error(`Error fetching details for FDC ID ${searchResult.fdcId}:`, err);
+              // Continue to next result
+            }
+          }
+        }
+      }
+
+      if (nutrition) {
+        // Recalculate weight based on new nutrition data
+        let weightInGrams: number | null = null;
+        try {
+          const nutritionData = JSON.parse(nutrition);
+          const quantity = parseFloat(item.quantity) || 1;
+          const servingSize = parseFloat(nutritionData.servingSize) || 100;
+          weightInGrams = quantity * servingSize;
+        } catch (e) {
+          console.error("Error calculating weight:", e);
+        }
+
+        // Update the item with new nutrition data
+        const updatedItem = await storage.updateFoodItem(userId, id, {
+          nutrition,
+          weightInGrams: weightInGrams || undefined,
+          usdaData: usdaData ? JSON.stringify(usdaData) : undefined,
+        });
+        
+        res.json({ success: true, item: updatedItem });
+      } else {
+        res.status(404).json({ error: "No nutrition data found for this item" });
+      }
+    } catch (error) {
+      console.error("Error refreshing nutrition data:", error);
+      res.status(500).json({ error: "Failed to refresh nutrition data" });
     }
   });
 
@@ -1618,6 +1764,33 @@ Important:
     } catch (error) {
       console.error("Error fetching nutrition items:", error);
       res.status(500).json({ error: "Failed to fetch nutrition items" });
+    }
+  });
+
+  app.get("/api/nutrition/items/missing", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const foodItems = await storage.getFoodItems(userId);
+      const locations = await storage.getStorageLocations(userId);
+      
+      const itemsWithoutNutrition = foodItems
+        .filter(item => !item.nutrition || !item.weightInGrams)
+        .map(item => {
+          const location = locations.find(loc => loc.id === item.storageLocationId);
+          return {
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            unit: item.unit,
+            fcdId: item.fcdId,
+            locationName: location?.name || "Unknown",
+          };
+        });
+      
+      res.json(itemsWithoutNutrition);
+    } catch (error) {
+      console.error("Error fetching items missing nutrition:", error);
+      res.status(500).json({ error: "Failed to fetch items missing nutrition" });
     }
   });
 
