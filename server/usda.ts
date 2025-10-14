@@ -70,11 +70,45 @@ interface FDCSearchResult {
   foods: FDCFood[];
 }
 
+export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: string): boolean {
+  // Check if all major macronutrients are zero (suspicious)
+  const allMacrosZero = nutrition.calories === 0 && 
+                        nutrition.protein === 0 && 
+                        nutrition.carbs === 0 && 
+                        nutrition.fat === 0;
+  
+  if (allMacrosZero) {
+    console.warn(`Suspicious nutrition data for "${foodDescription}": all macronutrients are zero`);
+    return false;
+  }
+
+  // Check for specific food types that should have certain nutrients
+  const descLower = foodDescription.toLowerCase();
+  
+  // Oils and fats should have significant fat content
+  if ((descLower.includes('oil') || descLower.includes('butter') || descLower.includes('lard')) && 
+      nutrition.fat === 0) {
+    console.warn(`Invalid nutrition data for "${foodDescription}": oil/fat product with zero fat`);
+    return false;
+  }
+
+  // Protein-rich foods should have protein
+  if ((descLower.includes('meat') || descLower.includes('chicken') || 
+       descLower.includes('beef') || descLower.includes('pork') || 
+       descLower.includes('fish') || descLower.includes('egg')) && 
+      nutrition.protein === 0 && nutrition.calories > 0) {
+    console.warn(`Invalid nutrition data for "${foodDescription}": protein food with zero protein`);
+    return false;
+  }
+
+  return true;
+}
+
 function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
   // First try labelNutrients (Branded Foods)
   if (food.labelNutrients) {
     const label = food.labelNutrients;
-    return {
+    const nutrition: NutritionInfo = {
       calories: label.calories?.value || 0,
       protein: label.protein?.value || 0,
       carbs: label.carbohydrates?.value || 0,
@@ -85,6 +119,13 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
       servingSize: food.servingSize?.toString() || "100",
       servingUnit: food.servingSizeUnit || "g",
     };
+
+    // Validate the nutrition data
+    if (!isNutritionDataValid(nutrition, food.description)) {
+      return undefined;
+    }
+
+    return nutrition;
   }
 
   // Fall back to foodNutrients (Foundation/SR Legacy/Survey Foods and Branded Foods)
@@ -114,7 +155,7 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
     const sugar = getNutrientValue(["269"]);
     const sodium = getNutrientValue(["307"]);
 
-    return {
+    const nutrition: NutritionInfo = {
       calories,
       protein,
       carbs,
@@ -125,6 +166,13 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
       servingSize: "100",
       servingUnit: "g",
     };
+
+    // Validate the nutrition data
+    if (!isNutritionDataValid(nutrition, food.description)) {
+      return undefined;
+    }
+
+    return nutrition;
   }
 
   return undefined;
