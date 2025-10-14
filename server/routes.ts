@@ -2226,38 +2226,31 @@ Respond ONLY with a valid JSON object:
       const userId = req.user.claims.sub;
       const validated = insertFeedbackSchema.parse(req.body);
       
-      // Auto-categorize feedback using OpenAI if content is provided
       let enrichedFeedback = { ...validated };
+      
       if (validated.content && validated.content.length > 10) {
         try {
-          const categoryPrompt = `Analyze this feedback and provide:
-1. Category (one of: ui, functionality, content, performance)
-2. Priority (one of: low, medium, high, critical)
-3. 2-3 relevant tags
-
-Feedback: "${validated.content}"
-Type: ${validated.type}
-
-Respond in JSON format: { "category": "...", "priority": "...", "tags": [...] }`;
-
-          const completion = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [{ role: "system", content: "You are a feedback analysis assistant." }, { role: "user", content: categoryPrompt }],
-            response_format: { type: "json_object" },
-            temperature: 0.3,
-            max_tokens: 200
-          });
-
-          const analysis = JSON.parse(completion.choices[0].message.content || "{}");
+          const existingFeedback = await storage.getUserFeedback(userId, 20);
+          const { moderateFeedback } = await import('./feedbackModerator');
+          
+          const moderation = await moderateFeedback(
+            validated.content,
+            validated.type,
+            existingFeedback
+          );
+          
           enrichedFeedback = {
             ...enrichedFeedback,
-            category: analysis.category || enrichedFeedback.category,
-            priority: analysis.priority || enrichedFeedback.priority || 'medium',
-            tags: analysis.tags || enrichedFeedback.tags
+            isFlagged: moderation.isFlagged,
+            flagReason: moderation.flagReason,
+            category: moderation.category || enrichedFeedback.category,
+            priority: moderation.priority || enrichedFeedback.priority || 'medium',
+            sentiment: moderation.sentiment || enrichedFeedback.sentiment,
+            tags: moderation.tags || enrichedFeedback.tags,
+            similarTo: moderation.similarTo,
           };
         } catch (aiError) {
-          console.error("Failed to auto-categorize feedback:", aiError);
-          // Continue without AI categorization
+          console.error("Failed to moderate feedback:", aiError);
         }
       }
       
@@ -2328,14 +2321,14 @@ Respond in JSON format: { "category": "...", "priority": "...", "tags": [...] }`
   app.patch("/api/feedback/:id/status", isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { status } = req.body;
+      const { status, estimatedTurnaround } = req.body;
       
-      if (!status || !['new', 'reviewed', 'in_progress', 'resolved'].includes(status)) {
+      if (!status || !['open', 'in_progress', 'completed', 'wont_fix'].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
       }
       
-      const resolvedAt = status === 'resolved' ? new Date() : undefined;
-      const updated = await storage.updateFeedbackStatus(id, status, resolvedAt);
+      const resolvedAt = status === 'completed' ? new Date() : undefined;
+      const updated = await storage.updateFeedbackStatus(id, status, estimatedTurnaround, resolvedAt);
       res.json(updated);
     } catch (error) {
       console.error("Error updating feedback status:", error);
@@ -2399,6 +2392,52 @@ Respond in JSON format: { "category": "...", "priority": "...", "tags": [...] }`
     } catch (error) {
       console.error("Error fetching global feedback analytics:", error);
       res.status(500).json({ error: "Failed to fetch global feedback analytics" });
+    }
+  });
+
+  // Community Feedback Routes
+  app.get("/api/feedback/community", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const type = req.query.type as string | undefined;
+      const sortBy = (req.query.sortBy as 'upvotes' | 'recent') || 'recent';
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      const feedback = await storage.getCommunityFeedbackForUser(userId, type, sortBy, limit);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching community feedback:", error);
+      res.status(500).json({ error: "Failed to fetch community feedback" });
+    }
+  });
+
+  app.post("/api/feedback/:id/upvote", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      await storage.upvoteFeedback(userId, id);
+      const upvoteCount = await storage.getFeedbackUpvoteCount(id);
+      
+      res.json({ success: true, upvoteCount });
+    } catch (error) {
+      console.error("Error upvoting feedback:", error);
+      res.status(500).json({ error: "Failed to upvote feedback" });
+    }
+  });
+
+  app.delete("/api/feedback/:id/upvote", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      await storage.removeUpvote(userId, id);
+      const upvoteCount = await storage.getFeedbackUpvoteCount(id);
+      
+      res.json({ success: true, upvoteCount });
+    } catch (error) {
+      console.error("Error removing upvote:", error);
+      res.status(500).json({ error: "Failed to remove upvote" });
     }
   });
 
