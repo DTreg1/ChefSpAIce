@@ -12,12 +12,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Upload, ImageOff } from "lucide-react";
+import { Search, Upload, ImageOff, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
 import { ObjectUploader } from "./ObjectUploader";
 import { BarcodeRateLimitInfo } from "./barcode-rate-limit-info";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import type { StorageLocation, USDASearchResponse, InsertFoodItem } from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 
@@ -126,15 +139,68 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageSource, setImageSource] = useState<"branded" | "upload" | "none">("none");
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Advanced search parameters
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string>("relevance");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [brandOwner, setBrandOwner] = useState("");
+  const [debouncedBrandOwner, setDebouncedBrandOwner] = useState("");
+  
   const { toast } = useToast();
 
   const { data: storageLocations } = useQuery<StorageLocation[]>({
     queryKey: ["/api/storage-locations"],
   });
 
+  // Debounced brand owner search
+  const debouncedBrandSearch = useDebouncedCallback(
+    (value: string) => {
+      setDebouncedBrandOwner(value);
+    },
+    300,
+    []
+  );
+  
+  // Build query string with all parameters
+  const buildQueryString = () => {
+    const params = new URLSearchParams();
+    params.append('query', debouncedSearchQuery);
+    
+    if (selectedDataTypes.length > 0) {
+      params.append('dataType', selectedDataTypes.join(','));
+    }
+    
+    // Don't send sortBy if it's "relevance" (default)
+    if (sortBy && sortBy !== "relevance") {
+      params.append('sortBy', sortBy);
+    }
+    
+    if (sortOrder) {
+      params.append('sortOrder', sortOrder);
+    }
+    
+    if (pageSize !== 20) {
+      params.append('pageSize', pageSize.toString());
+    }
+    
+    if (currentPage !== 1) {
+      params.append('pageNumber', currentPage.toString());
+    }
+    
+    if (debouncedBrandOwner) {
+      params.append('brandOwner', debouncedBrandOwner);
+    }
+    
+    return params.toString();
+  };
+  
   // Use debounced query for automatic search
-  const { data: searchResults, isFetching: searchLoading } = useQuery<USDASearchResponse>({
-    queryKey: [`/api/usda/search?query=${encodeURIComponent(debouncedSearchQuery)}`],
+  const { data: searchResults, isFetching: searchLoading, refetch: refetchSearch } = useQuery<USDASearchResponse>({
+    queryKey: [`/api/usda/search?${buildQueryString()}`],
     enabled: debouncedSearchQuery.length > 0,
   });
 
@@ -151,6 +217,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   // Handle input changes with debouncing
   const handleSearchInputChange = (value: string) => {
     setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page when search changes
     if (value.trim()) {
       setIsSearching(true);
       debouncedSearch(value.trim());
@@ -158,6 +225,13 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       setIsSearching(false);
       setDebouncedSearchQuery("");
     }
+  };
+  
+  // Handle brand owner change with debouncing
+  const handleBrandOwnerChange = (value: string) => {
+    setBrandOwner(value);
+    setCurrentPage(1); // Reset to first page when brand filter changes
+    debouncedBrandSearch(value.trim());
   };
 
   const addItemMutation = useMutation({
@@ -197,6 +271,15 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     setImageUrl(null);
     setImageSource("none");
     setIsSearching(false);
+    // Reset advanced search parameters
+    setShowAdvancedSearch(false);
+    setSelectedDataTypes([]);
+    setSortBy("relevance");
+    setSortOrder("asc");
+    setPageSize(20);
+    setCurrentPage(1);
+    setBrandOwner("");
+    setDebouncedBrandOwner("");
     onOpenChange(false);
   };
 
@@ -339,6 +422,126 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                 onChange={(e) => handleSearchInputChange(e.target.value)}
                 data-testid="input-usda-search"
               />
+              
+              {/* Advanced Search Options */}
+              <Collapsible open={showAdvancedSearch} onOpenChange={setShowAdvancedSearch}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-between">
+                    <span className="flex items-center gap-2">
+                      <Filter className="w-4 h-4" />
+                      Advanced Search Options
+                    </span>
+                    {showAdvancedSearch ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 pt-4 px-1">
+                  {/* Data Type Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Data Types</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {['Branded', 'Foundation', 'Survey (FNDDS)', 'SR Legacy'].map((type) => (
+                        <Badge
+                          key={type}
+                          variant={selectedDataTypes.includes(type) ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate"
+                          onClick={() => {
+                            setSelectedDataTypes(prev => 
+                              prev.includes(type)
+                                ? prev.filter(t => t !== type)
+                                : [...prev, type]
+                            );
+                            setCurrentPage(1);
+                          }}
+                        >
+                          {type}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Brand Owner Filter */}
+                  <div className="space-y-2">
+                    <Label htmlFor="brand-owner" className="text-sm">Brand Owner</Label>
+                    <Input
+                      id="brand-owner"
+                      placeholder="Filter by brand (e.g., Nestle, Kellogg's)"
+                      value={brandOwner}
+                      onChange={(e) => handleBrandOwnerChange(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Sort By */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Sort By</Label>
+                      <Select value={sortBy || "relevance"} onValueChange={(value) => { setSortBy(value === "relevance" ? "" : value); setCurrentPage(1); }}>
+                        <SelectTrigger className="text-sm">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="relevance">Relevance</SelectItem>
+                          <SelectItem value="lowercaseDescription.keyword">Description</SelectItem>
+                          <SelectItem value="dataType.keyword">Data Type</SelectItem>
+                          <SelectItem value="fdcId">FDC ID</SelectItem>
+                          <SelectItem value="publishedDate">Published Date</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Sort Order */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Order</Label>
+                      <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => { setSortOrder(value); setCurrentPage(1); }}>
+                        <SelectTrigger className="text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="asc">Ascending</SelectItem>
+                          <SelectItem value="desc">Descending</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  {/* Results per page */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Results per page</Label>
+                    <Select value={pageSize.toString()} onValueChange={(value) => { setPageSize(Number(value)); setCurrentPage(1); }}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Clear Filters Button */}
+                  {(selectedDataTypes.length > 0 || brandOwner || (sortBy && sortBy !== "relevance")) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedDataTypes([]);
+                        setSortBy("relevance");
+                        setSortOrder("asc");
+                        setBrandOwner("");
+                        setDebouncedBrandOwner("");
+                        setPageSize(20);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full"
+                    >
+                      Clear All Filters
+                    </Button>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+              
               {(isSearching || searchLoading) && (
                 <div className="text-sm text-muted-foreground">
                   Searching USDA database...
@@ -349,7 +552,12 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
           {searchResults && searchResults.foods.length > 0 && (
             <div className="space-y-2">
-              <Label>Search Results</Label>
+              <div className="flex items-center justify-between">
+                <Label>Search Results</Label>
+                <span className="text-sm text-muted-foreground">
+                  {searchResults.totalHits} total results
+                </span>
+              </div>
               <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
                 {searchResults.foods.map((food) => (
                   <button
@@ -407,6 +615,31 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                   </button>
                 ))}
               </div>
+              
+              {/* Pagination Controls */}
+              {searchResults.totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {searchResults.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(searchResults.totalPages, prev + 1))}
+                    disabled={currentPage === searchResults.totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
