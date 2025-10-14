@@ -18,23 +18,50 @@ export default function FeedbackBoard() {
   const [bugSortBy, setBugSortBy] = useState<'upvotes' | 'recent'>('upvotes');
   const [generalSortBy, setGeneralSortBy] = useState<'upvotes' | 'recent'>('recent');
 
-  const { data: personalFeedback, isLoading: personalLoading } = useQuery<Feedback[]>({
+  const { data: personalFeedback = [], isLoading: personalLoading } = useQuery<Feedback[]>({
     queryKey: ['/api/feedback', personalSortBy],
   });
 
-  const { data: featureRequests, isLoading: featuresLoading } = useQuery<FeedbackWithUpvote[]>({
+  const { data: featureRequests = [], isLoading: featuresLoading } = useQuery<FeedbackWithUpvote[]>({
     queryKey: ['/api/feedback/community', 'feature', featureSortBy],
-    queryFn: () => fetch(`/api/feedback/community?type=feature&sortBy=${featureSortBy}`).then(r => r.json()),
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/feedback/community?type=feature&sortBy=${featureSortBy}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    },
   });
 
-  const { data: bugReports, isLoading: bugsLoading } = useQuery<FeedbackWithUpvote[]>({
+  const { data: bugReports = [], isLoading: bugsLoading } = useQuery<FeedbackWithUpvote[]>({
     queryKey: ['/api/feedback/community', 'bug', bugSortBy],
-    queryFn: () => fetch(`/api/feedback/community?type=bug&sortBy=${bugSortBy}`).then(r => r.json()),
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/feedback/community?type=bug&sortBy=${bugSortBy}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    },
   });
 
-  const { data: generalFeedback, isLoading: generalLoading } = useQuery<FeedbackWithUpvote[]>({
+  const { data: generalFeedback = [], isLoading: generalLoading } = useQuery<FeedbackWithUpvote[]>({
     queryKey: ['/api/feedback/community', 'general', generalSortBy],
-    queryFn: () => fetch(`/api/feedback/community?type=general&sortBy=${generalSortBy}`).then(r => r.json()),
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/feedback/community?type=general&sortBy=${generalSortBy}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    },
   });
 
   const upvoteMutation = useMutation({
