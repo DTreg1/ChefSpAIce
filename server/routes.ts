@@ -267,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Only cache the simplest searches (query + page) to avoid stale results with filters
       // Advanced filters (dataType, sort, brand) bypass cache completely
-      const hasAnyFilters = sort || brandOwners.length > 0 || dataTypes.length > 0 || size !== 25;
+      const hasAnyFilters = !!(sort || brandOwners.length > 0 || dataTypes.length > 0 || size !== 25);
       
       // Use shorter TTL for complex searches, longer TTL for simple searches
       const cachedResults = await storage.getCachedSearchResults(query, undefined, page, hasAnyFilters);
@@ -466,19 +466,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // USDA Food Search (public) - Keep existing endpoints for compatibility
+  // USDA Food Search (public) - Enhanced with all FDC search parameters
   app.get("/api/usda/search", async (req, res) => {
     try {
-      const { query, pageSize, pageNumber, dataType } = req.query;
+      const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
       if (!query || typeof query !== "string") {
         return res.status(400).json({ error: "Query parameter is required" });
       }
 
       const size = pageSize ? parseInt(pageSize as string) : 20;
       const page = pageNumber ? parseInt(pageNumber as string) : 1;
-      const types = dataType ? (Array.isArray(dataType) ? dataType : [dataType]) as string[] : undefined;
+      
+      // Parse dataType - can be comma-separated string or array
+      let dataTypes: string[] = [];
+      if (dataType) {
+        if (Array.isArray(dataType)) {
+          dataTypes = dataType as string[];
+        } else if (typeof dataType === 'string') {
+          dataTypes = dataType.split(',').map(t => t.trim()).filter(Boolean);
+        }
+      }
+      
+      // Parse brandOwner - can be comma-separated string or array
+      let brandOwners: string[] = [];
+      if (brandOwner) {
+        if (Array.isArray(brandOwner)) {
+          brandOwners = brandOwner as string[];
+        } else if (typeof brandOwner === 'string') {
+          brandOwners = brandOwner.split(',').map(b => b.trim()).filter(Boolean);
+        }
+      }
 
-      const results = await searchUSDAFoods(query, size, page, types);
+      const results = await searchUSDAFoods({
+        query,
+        pageSize: size,
+        pageNumber: page,
+        dataType: dataTypes.length > 0 ? dataTypes : undefined,
+        sortBy: sortBy as any,
+        sortOrder: sortOrder as any,
+        brandOwner: brandOwners.length > 0 ? brandOwners : undefined
+      });
       res.json(results);
     } catch (error: any) {
       console.error("USDA search error:", error);

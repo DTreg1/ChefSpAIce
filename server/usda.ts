@@ -155,31 +155,67 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
   };
 }
 
+export interface USDASearchOptions {
+  query: string;
+  pageSize?: number;
+  pageNumber?: number;
+  dataType?: string[];
+  sortBy?: 'dataType.keyword' | 'lowercaseDescription.keyword' | 'fdcId' | 'publishedDate';
+  sortOrder?: 'asc' | 'desc';
+  brandOwner?: string[];
+}
+
 export async function searchUSDAFoods(
-  query: string, 
-  pageSize: number = 20,
-  pageNumber: number = 1,
-  dataType?: string[]
+  options: USDASearchOptions | string
 ): Promise<USDASearchResponse> {
   if (!API_KEY) {
     throw new Error("USDA_FDC_API_KEY is not configured");
   }
 
-  try {
-    const params = new URLSearchParams({
-      api_key: API_KEY,
-      query: query,
-      pageSize: pageSize.toString(),
-      pageNumber: pageNumber.toString(),
-    });
+  // Handle backward compatibility - if just a string is passed, treat it as query
+  let searchOptions: USDASearchOptions;
+  if (typeof options === 'string') {
+    searchOptions = { query: options, pageSize: 20, pageNumber: 1 };
+  } else {
+    searchOptions = {
+      pageSize: 20,
+      pageNumber: 1,
+      ...options
+    };
+  }
 
+  const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = searchOptions;
+
+  try {
+    const url = new URL(`${USDA_API_BASE}/foods/search`);
+    url.searchParams.append('api_key', API_KEY);
+    url.searchParams.append('query', query);
+    url.searchParams.append('pageSize', (pageSize || 20).toString());
+    url.searchParams.append('pageNumber', (pageNumber || 1).toString());
+
+    // Add each dataType as a separate parameter for FDC API array handling
     if (dataType && dataType.length > 0) {
-      params.append("dataType", dataType.join(","));
+      dataType.forEach(type => {
+        url.searchParams.append('dataType', type);
+      });
     }
 
-    const response = await fetch(
-      `${USDA_API_BASE}/foods/search?${params.toString()}`
-    );
+    if (sortBy) {
+      url.searchParams.append('sortBy', sortBy);
+    }
+
+    if (sortOrder) {
+      url.searchParams.append('sortOrder', sortOrder);
+    }
+
+    // Add each brandOwner as a separate parameter for FDC API array handling
+    if (brandOwner && brandOwner.length > 0) {
+      brandOwner.forEach(brand => {
+        url.searchParams.append('brandOwner', brand);
+      });
+    }
+
+    const response = await fetch(url);
 
     if (!response.ok) {
       console.error("USDA API error:", {
