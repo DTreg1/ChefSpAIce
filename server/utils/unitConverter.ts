@@ -337,6 +337,34 @@ export function matchIngredientWithInventory(
     };
   }
 
+  // Special handling for 'piece' units
+  // If the recipe also specifies 'piece' or a countable unit, compare quantities
+  // Otherwise, we can't determine sufficiency
+  if (matchingItem.unit.toLowerCase() === 'piece') {
+    const isPieceOrCountable = parsed.unit.toLowerCase() === 'piece' || 
+                               parsed.unit === '' || 
+                               ['egg', 'eggs', 'clove', 'cloves'].includes(parsed.unit.toLowerCase());
+    
+    if (isPieceOrCountable) {
+      const hasEnough = inventoryQuantity >= parsed.quantity;
+      const percentageAvailable = Math.min(100, (inventoryQuantity / parsed.quantity) * 100);
+      
+      return {
+        ingredientName: parsed.name,
+        neededQuantity: parsed.quantity,
+        neededUnit: parsed.unit || 'piece',
+        availableQuantity: inventoryQuantity,
+        availableUnit: matchingItem.unit,
+        hasEnough,
+        percentageAvailable,
+        shortage: hasEnough ? undefined : {
+          quantity: parsed.quantity - inventoryQuantity,
+          unit: parsed.unit || 'piece',
+        },
+      };
+    }
+  }
+
   // Can't compare different unit types
   return {
     ingredientName: parsed.name,

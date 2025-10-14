@@ -22,14 +22,28 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
       return await response.json();
     },
     onSuccess: async (recipe: Recipe) => {
+      // First invalidate to get fresh inventory data
+      await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
+      
+      // Fetch the recipe with fresh inventory matching
+      const recipesWithMatching = await queryClient.fetchQuery({
+        queryKey: ["/api/recipes?includeMatching=true"],
+        staleTime: 0,
+      });
+      
+      // Find the newly generated recipe with updated matching
+      const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
+      
       toast({
         title: "Recipe Generated!",
-        description: `Check out: ${recipe.title}`,
+        description: `${recipe.title} - Availability validated`,
       });
-      onRecipeGenerated?.(recipe);
-      // Invalidate recipes query to refresh the cookbook
+      
+      onRecipeGenerated?.(updatedRecipe || recipe);
+      
+      // Final invalidation to update UI
       await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
     },
     onError: (error: any) => {
       toast({
