@@ -335,7 +335,7 @@ export default function FdcSearch() {
   };
 
   const hasActiveFilters =
-    sortBy !== "" || upcCode !== "";
+    brandOwners.length > 0 || sortBy !== "" || upcCode !== "";
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType?.toLowerCase()) {
@@ -592,6 +592,15 @@ export default function FdcSearch() {
             {hasActiveFilters && (
               <div className="flex items-center justify-between gap-4 mt-4">
                 <div className="flex flex-wrap gap-2" data-testid="active-filters">
+                  {brandOwners.map((brand) => (
+                    <Badge key={brand} variant="secondary" className="gap-1">
+                      Brand: {brand}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover-elevate"
+                        onClick={() => handleRemoveBrand(brand)}
+                      />
+                    </Badge>
+                  ))}
                   {upcCode && (
                     <Badge
                       variant="secondary"
