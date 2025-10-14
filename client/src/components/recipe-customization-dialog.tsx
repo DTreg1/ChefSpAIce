@@ -37,14 +37,12 @@ interface RecipeCustomizationDialogProps {
   onRecipeGenerated?: (recipe: Recipe) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  showTrigger?: boolean;
 }
 
 export function RecipeCustomizationDialog({ 
   onRecipeGenerated, 
   open: externalOpen, 
-  onOpenChange: externalOnOpenChange,
-  showTrigger = true 
+  onOpenChange: externalOnOpenChange
 }: RecipeCustomizationDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   
@@ -121,14 +119,6 @@ export function RecipeCustomizationDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {showTrigger && (
-        <DialogTrigger asChild>
-          <Button variant="default" data-testid="button-custom-recipe">
-            <Sparkles className="w-4 h-4 mr-2" />
-            Generate Recipe
-          </Button>
-        </DialogTrigger>
-      )}
       <DialogContent className="sm:max-w-md" data-testid="dialog-recipe-customization">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
