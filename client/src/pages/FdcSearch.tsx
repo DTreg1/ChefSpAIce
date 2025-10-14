@@ -131,7 +131,7 @@ export default function FdcSearch() {
   const [currentQuery, setCurrentQuery] = useState("");
   const [brandOwners, setBrandOwners] = useState<string[]>([]);
   const [brandInput, setBrandInput] = useState("");
-  const [sortBy, setSortBy] = useState("");
+  const [sortBy, setSortBy] = useState("fdcId");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
