@@ -1163,29 +1163,33 @@ export class DatabaseStorage implements IStorage {
 
   async resetUserData(userId: string): Promise<void> {
     try {
-      // Delete all user data in order (respecting foreign key constraints)
-      await db.delete(shoppingListItems).where(eq(shoppingListItems.userId, userId));
-      await db.delete(mealPlans).where(eq(mealPlans.userId, userId));
-      await db.delete(expirationNotifications).where(eq(expirationNotifications.userId, userId));
-      await db.delete(foodItems).where(eq(foodItems.userId, userId));
-      await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
-      await db.delete(recipes).where(eq(recipes.userId, userId));
-      await db.delete(appliances).where(eq(appliances.userId, userId));
-      await db.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
-      
-      // Delete custom storage locations (keep default ones for re-initialization)
-      await db.delete(storageLocations).where(eq(storageLocations.userId, userId));
-      
-      // Reset user preferences to defaults
-      await db.delete(userPreferences).where(eq(userPreferences.userId, userId));
+      // Use a transaction to ensure all deletions complete or all rollback
+      await db.transaction(async (tx) => {
+        // Delete all user data in order (respecting foreign key constraints)
+        await tx.delete(shoppingListItems).where(eq(shoppingListItems.userId, userId));
+        await tx.delete(mealPlans).where(eq(mealPlans.userId, userId));
+        await tx.delete(expirationNotifications).where(eq(expirationNotifications.userId, userId));
+        await tx.delete(foodItems).where(eq(foodItems.userId, userId));
+        await tx.delete(chatMessages).where(eq(chatMessages.userId, userId));
+        await tx.delete(recipes).where(eq(recipes.userId, userId));
+        await tx.delete(appliances).where(eq(appliances.userId, userId));
+        await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
+        
+        // Delete custom storage locations (keep default ones for re-initialization)
+        await tx.delete(storageLocations).where(eq(storageLocations.userId, userId));
+        
+        // Reset user preferences to defaults
+        await tx.delete(userPreferences).where(eq(userPreferences.userId, userId));
+      });
       
       // Clear the initialization flag so default data will be recreated
+      // This is done outside the transaction since it's an in-memory operation
       this.userInitialized.delete(userId);
       
       console.log(`Successfully reset all data for user ${userId}`);
     } catch (error) {
       console.error(`Error resetting user data for ${userId}:`, error);
-      throw new Error('Failed to reset user data');
+      throw new Error('Failed to reset user data - transaction rolled back');
     }
   }
 }
