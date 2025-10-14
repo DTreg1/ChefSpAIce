@@ -3,6 +3,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
+import Stripe from "stripe";
 import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "./usda";
 import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
 import { getEnrichedOnboardingItem } from "./onboarding-usda";
@@ -2176,6 +2177,160 @@ Respond in JSON format: { "category": "...", "priority": "...", "tags": [...] }`
     } catch (error) {
       console.error("Error fetching global feedback analytics:", error);
       res.status(500).json({ error: "Failed to fetch global feedback analytics" });
+    }
+  });
+
+  // Donation routes (from blueprint:javascript_stripe)
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: "2024-10-28.acacia" as any,
+  });
+
+  // Create payment intent for donation
+  app.post("/api/donations/create-payment-intent", async (req: any, res) => {
+    try {
+      const { amount, donorEmail, donorName, message, anonymous } = req.body;
+      
+      // Validate amount
+      if (!amount || amount < 100) { // Minimum $1.00
+        return res.status(400).json({ error: "Minimum donation amount is $1.00" });
+      }
+      
+      // Create Stripe payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount), // Amount is already in cents
+        currency: "usd",
+        metadata: {
+          donorEmail: donorEmail || '',
+          donorName: donorName || 'Anonymous',
+          message: message || '',
+          anonymous: String(anonymous || false)
+        }
+      });
+      
+      // Create donation record in database
+      const userId = req.user?.claims?.sub || null; // Allow anonymous donations
+      const donation = await storage.createDonation({
+        userId,
+        stripePaymentIntentId: paymentIntent.id,
+        amount: Math.round(amount),
+        currency: 'usd',
+        status: 'pending',
+        donorEmail,
+        donorName,
+        message,
+        anonymous: anonymous || false
+      });
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        donationId: donation.id 
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ 
+        error: "Failed to create payment intent",
+        message: error.message 
+      });
+    }
+  });
+
+  // Webhook to handle Stripe payment events
+  app.post("/api/donations/webhook", async (req: any, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    let event;
+    
+    try {
+      if (webhookSecret) {
+        // Verify webhook signature if secret is configured
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          sig,
+          webhookSecret
+        );
+      } else {
+        // For testing without webhook secret
+        event = req.body;
+      }
+    } catch (err: any) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    
+    // Handle the event
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        await storage.updateDonation(paymentIntent.id, {
+          status: 'succeeded'
+        });
+        break;
+        
+      case 'payment_intent.payment_failed':
+        const failedPaymentIntent = event.data.object;
+        await storage.updateDonation(failedPaymentIntent.id, {
+          status: 'failed'
+        });
+        break;
+        
+      case 'payment_intent.canceled':
+        const canceledPaymentIntent = event.data.object;
+        await storage.updateDonation(canceledPaymentIntent.id, {
+          status: 'canceled'
+        });
+        break;
+        
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+    
+    res.json({ received: true });
+  });
+
+  // Get donation statistics
+  app.get("/api/donations/stats", async (req: any, res) => {
+    try {
+      const stats = await storage.getTotalDonations();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching donation stats:", error);
+      res.status(500).json({ error: "Failed to fetch donation statistics" });
+    }
+  });
+
+  // Get recent donations (public, anonymous info only)
+  app.get("/api/donations/recent", async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const { donations } = await storage.getDonations(limit, 0);
+      
+      // Filter out personal information for public display
+      const publicDonations = donations.map(d => ({
+        id: d.id,
+        amount: d.amount,
+        currency: d.currency,
+        donorName: d.anonymous ? 'Anonymous' : (d.donorName || 'Anonymous'),
+        message: d.anonymous ? null : d.message,
+        createdAt: d.createdAt
+      }));
+      
+      res.json(publicDonations);
+    } catch (error) {
+      console.error("Error fetching recent donations:", error);
+      res.status(500).json({ error: "Failed to fetch recent donations" });
+    }
+  });
+
+  // Get user's own donations (authenticated)
+  app.get("/api/donations/my-donations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const donations = await storage.getUserDonations(userId);
+      res.json(donations);
+    } catch (error) {
+      console.error("Error fetching user donations:", error);
+      res.status(500).json({ error: "Failed to fetch your donations" });
     }
   });
 

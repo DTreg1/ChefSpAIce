@@ -462,3 +462,37 @@ export type FeedbackAnalytics = {
     priority: string;
   }[];
 };
+
+// Donations - Track Stripe donations (from blueprint:javascript_stripe)
+export const donations = pgTable("donations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }), // Optional - allow anonymous donations
+  stripePaymentIntentId: text("stripe_payment_intent_id").notNull().unique(),
+  amount: integer("amount").notNull(), // Amount in cents
+  currency: text("currency").notNull().default('usd'),
+  status: text("status").notNull(), // 'pending', 'succeeded', 'failed', 'canceled'
+  donorEmail: text("donor_email"),
+  donorName: text("donor_name"),
+  message: text("message"), // Optional message from donor
+  anonymous: boolean("anonymous").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("donations_user_id_idx").on(table.userId),
+  index("donations_created_at_idx").on(table.createdAt),
+  index("donations_status_idx").on(table.status),
+]);
+
+export const insertDonationSchema = createInsertSchema(donations).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+}).extend({
+  amount: z.number().int().positive(),
+  status: z.enum(['pending', 'succeeded', 'failed', 'canceled']).default('pending'),
+  currency: z.string().default('usd'),
+  anonymous: z.boolean().default(false),
+});
+
+export type InsertDonation = z.infer<typeof insertDonationSchema>;
+export type Donation = typeof donations.$inferSelect;
