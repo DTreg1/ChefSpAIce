@@ -991,9 +991,59 @@ When asked for recipes, consider the available inventory and appliances.`;
         creativity = 5
       } = req.body;
 
-      const ingredientsList = foodItems.map(item => 
-        `${item.name} (${item.quantity} ${item.unit || ''})`
-      ).join(', ');
+      // Sort items by expiration date to prioritize expiring items
+      const now = new Date();
+      const sortedItems = foodItems.sort((a, b) => {
+        // Items without expiration dates go to the end
+        if (!a.expirationDate && !b.expirationDate) return 0;
+        if (!a.expirationDate) return 1;
+        if (!b.expirationDate) return -1;
+        
+        // Sort by expiration date (earliest first)
+        return new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime();
+      });
+
+      // Categorize ingredients by urgency
+      const expiringIngredients: any[] = [];
+      const freshIngredients: any[] = [];
+      const stableIngredients: any[] = [];
+
+      sortedItems.forEach(item => {
+        const daysUntilExpiration = item.expirationDate 
+          ? Math.floor((new Date(item.expirationDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+
+        const ingredientInfo = {
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit || '',
+          expiresIn: daysUntilExpiration
+        };
+
+        if (daysUntilExpiration !== null && daysUntilExpiration <= 3) {
+          expiringIngredients.push(ingredientInfo);
+        } else if (daysUntilExpiration !== null && daysUntilExpiration <= 7) {
+          freshIngredients.push(ingredientInfo);
+        } else {
+          stableIngredients.push(ingredientInfo);
+        }
+      });
+
+      // Create detailed ingredient lists for the prompt
+      const formatIngredientList = (items: any[]) => items.map(item => {
+        const expiryNote = item.expiresIn !== null 
+          ? item.expiresIn <= 0 
+            ? " [EXPIRES TODAY]" 
+            : item.expiresIn === 1 
+              ? " [EXPIRES TOMORROW]"
+              : ` [expires in ${item.expiresIn} days]`
+          : "";
+        return `${item.name} (${item.quantity} ${item.unit})${expiryNote}`;
+      }).join(', ');
+
+      const urgentIngredientsList = formatIngredientList(expiringIngredients);
+      const freshIngredientsList = formatIngredientList(freshIngredients);
+      const stableIngredientsList = formatIngredientList(stableIngredients);
 
       const appliancesList = appliances.map(a => a.name).join(', ');
 
@@ -1009,8 +1059,20 @@ When asked for recipes, consider the available inventory and appliances.`;
         creativity <= 7 ? "balanced mix of familiar with some creative elements" :
         "experimental and innovative with unique flavor combinations";
 
-      const prompt = `Generate a detailed recipe using these available ingredients: ${ingredientsList}.
-Available cooking appliances: ${appliancesList}.
+      const prompt = `You are an intelligent kitchen assistant that creates recipes based on available ingredients, prioritizing items that are expiring soon to minimize food waste.
+
+AVAILABLE INGREDIENTS:
+${expiringIngredients.length > 0 ? `
+⚠️ URGENT - USE FIRST (expiring within 3 days):
+${urgentIngredientsList}` : ''}
+${freshIngredients.length > 0 ? `
+Fresh ingredients (expiring within 7 days):
+${freshIngredientsList}` : ''}
+${stableIngredients.length > 0 ? `
+Stable ingredients:
+${stableIngredientsList}` : ''}
+
+Available cooking appliances: ${appliancesList}
 
 Recipe Requirements:
 - Meal Type: ${mealType}
@@ -1019,11 +1081,13 @@ Recipe Requirements:
 - Difficulty Level: ${difficulty}
 - Style: ${creativityGuidance}
 
-Important:
-- Adjust quantities to match the requested number of servings (${servings})
-- Ensure total preparation and cooking time fits within ${timeMap[timeConstraint as keyof typeof timeMap]}
-- Keep instructions appropriate for ${difficulty} level cooks
-- Be ${creativityGuidance} in your recipe creation
+CRITICAL INSTRUCTIONS:
+1. PRIORITIZE using ingredients marked as "URGENT" or expiring soon
+2. Try to use AS MANY expiring ingredients as possible while still creating a delicious meal
+3. You don't need to use ALL ingredients, but focus on those expiring first
+4. Only suggest ingredients you weren't given if they are basic pantry staples (salt, pepper, oil, etc.)
+5. Adjust quantities to match the requested number of servings (${servings})
+6. Ensure total time fits within ${timeMap[timeConstraint as keyof typeof timeMap]}
 
 Respond ONLY with a valid JSON object in this exact format:
 {
