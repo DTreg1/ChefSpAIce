@@ -1170,6 +1170,103 @@ Important:
     }
   });
 
+  // Analyze food item from image (for leftovers)
+  app.post("/api/food/analyze-image", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { image } = req.body; // Base64 encoded image or image URL
+      
+      if (!image) {
+        return res.status(400).json({ error: "No image provided" });
+      }
+
+      // Create the prompt for food analysis
+      const analysisPrompt = `You are a food analysis expert. Analyze this image of a leftover meal or food item and extract nutritional information.
+      
+Return ONLY a valid JSON object with the following structure:
+{
+  "name": "Name of the dish or food item",
+  "quantity": "Estimated portion size (e.g., '1 cup', '200g', '1 serving', '1 plate')",
+  "unit": "The unit from quantity (e.g., 'cup', 'g', 'serving', 'plate')",
+  "category": "Category (produce, dairy, meat, grains, leftovers, prepared_meal, etc.)",
+  "ingredients": [
+    {
+      "name": "Ingredient name",
+      "quantity": "Estimated amount",
+      "unit": "Unit (g, oz, cup, tbsp, etc.)"
+    }
+  ],
+  "calories": number (estimated total calories),
+  "protein": number (estimated grams of protein),
+  "carbs": number (estimated grams of carbohydrates),
+  "fat": number (estimated grams of fat),
+  "confidence": number (0-100, how confident you are in the analysis)
+}
+
+Important:
+- Identify the main dish/food item and give it a descriptive name
+- Estimate realistic portion sizes based on visual cues (plates, utensils, containers)
+- Break down visible ingredients with approximate quantities
+- Provide nutritional estimates based on typical recipes and portion sizes
+- Use confidence score to indicate certainty (100 = very clear image and common dish, 50 = unclear or unusual)
+- For complex dishes, list main visible ingredients
+- Consider cooking methods (fried, grilled, steamed) when estimating nutrition
+- If it's clearly a leftover meal, categorize as "leftovers" or "prepared_meal"`;
+
+      // Prepare the message with image
+      const imageContent = image.startsWith('http') 
+        ? { type: "image_url" as const, image_url: { url: image } }
+        : { type: "image_url" as const, image_url: { url: `data:image/jpeg;base64,${image}` } };
+
+      // Call OpenAI with vision capabilities
+      let completion;
+      try {
+        completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: analysisPrompt },
+                imageContent
+              ]
+            }
+          ],
+          response_format: { type: "json_object" },
+          max_completion_tokens: 8192,
+        });
+      } catch (openAIError: any) {
+        console.error("OpenAI Vision API error:", openAIError);
+        if (openAIError.status === 429) {
+          return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
+        }
+        if (openAIError.status === 401 || openAIError.status === 403) {
+          return res.status(503).json({ error: "AI service configuration error. Please contact support." });
+        }
+        return res.status(500).json({ error: "Failed to process image with AI service" });
+      }
+
+      const analysisData = JSON.parse(completion.choices[0]?.message?.content || "{}");
+      
+      // Validate the analyzed data
+      if (!analysisData.name || analysisData.confidence === undefined) {
+        throw new Error("Could not analyze food item from the image");
+      }
+
+      // Return the analysis (don't save to database yet, let frontend handle that)
+      res.json({
+        success: true,
+        analysis: analysisData
+      });
+    } catch (error: any) {
+      console.error("Food image analysis error:", error);
+      res.status(500).json({ 
+        error: "Failed to analyze food from image",
+        details: error.message || "Unknown error occurred"
+      });
+    }
+  });
+
   // Expiration Notifications (user-scoped)
   app.get("/api/notifications/expiration", isAuthenticated, async (req: any, res) => {
     try {

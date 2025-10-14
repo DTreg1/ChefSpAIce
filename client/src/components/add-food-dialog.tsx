@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Upload, ImageOff, ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { Search, Upload, ImageOff, ChevronDown, ChevronUp, Filter, Loader2, ScanEye } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { StorageLocation, USDASearchResponse, InsertFoodItem } from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 
@@ -150,6 +151,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [brandOwner, setBrandOwner] = useState("");
   const [debouncedBrandOwner, setDebouncedBrandOwner] = useState("");
   
+  // Image analysis state
+  const [imageAnalysis, setImageAnalysis] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisApplied, setAnalysisApplied] = useState(false);
+  
   const { toast } = useToast();
 
   const { data: storageLocations } = useQuery<StorageLocation[]>({
@@ -259,6 +265,66 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     },
   });
 
+  // Mutation for analyzing food image
+  const analyzeImageMutation = useMutation({
+    mutationFn: async (imageBase64: string) => {
+      const response = await apiRequest("POST", "/api/food/analyze-image", {
+        image: imageBase64
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && data.analysis) {
+        const analysis = data.analysis;
+        setImageAnalysis(analysis);
+        
+        // Auto-populate form fields with analysis results
+        setSearchQuery(analysis.name || "");
+        setQuantity(analysis.quantity?.replace(/[^0-9.]/g, '') || "1");
+        setUnit(analysis.unit || "serving");
+        
+        // Suggest storage location based on category
+        if (storageLocations && analysis.category) {
+          const suggestedLocation = getSuggestedStorageLocation(analysis.category, analysis.name, storageLocations);
+          if (suggestedLocation) {
+            setStorageLocationId(suggestedLocation);
+          }
+        }
+        
+        // Suggest expiration date based on category or use default
+        if (!expirationDate && analysis.category) {
+          const shelfLife = getSuggestedShelfLife(analysis.category);
+          const futureDate = new Date();
+          futureDate.setDate(futureDate.getDate() + shelfLife);
+          setExpirationDate(futureDate.toISOString().split('T')[0]);
+        }
+        
+        setAnalysisApplied(true);
+        
+        toast({
+          title: "Image Analyzed",
+          description: `Detected: ${analysis.name} (${analysis.confidence}% confidence)`,
+        });
+      } else {
+        toast({
+          title: "Analysis Failed",
+          description: "Could not analyze the image. Please enter details manually.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis Error",
+        description: error.message || "Failed to analyze the image",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setIsAnalyzing(false);
+    },
+  });
+
   const handleClose = () => {
     setSearchQuery("");
     setDebouncedSearchQuery("");
@@ -280,6 +346,10 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     setCurrentPage(1);
     setBrandOwner("");
     setDebouncedBrandOwner("");
+    // Reset image analysis state
+    setImageAnalysis(null);
+    setIsAnalyzing(false);
+    setAnalysisApplied(false);
     onOpenChange(false);
   };
 
@@ -299,11 +369,30 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       const data = await response.json();
       setImageUrl(data.objectPath);
       setImageSource("upload");
+      // Reset analysis when new image is uploaded
+      setImageAnalysis(null);
+      setAnalysisApplied(false);
       toast({
         title: "Image uploaded",
-        description: "Photo uploaded successfully",
+        description: "Photo uploaded successfully. You can now analyze it to detect ingredients.",
       });
     }
+  };
+
+  const handleAnalyzeImage = async () => {
+    if (!imageUrl) {
+      toast({
+        title: "No image",
+        description: "Please upload an image first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    
+    // Convert URL to base64 if needed, or send URL directly
+    analyzeImageMutation.mutate(imageUrl);
   };
 
   const handleSearchBarcodeLookup = async () => {
@@ -776,7 +865,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
               <TabsContent value="upload" className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Take or upload a photo of your food item
+                  Take or upload a photo of your leftover meal to automatically detect ingredients
                 </p>
                 <ObjectUploader
                   maxNumberOfFiles={1}
@@ -789,8 +878,78 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                   Upload Photo
                 </ObjectUploader>
                 {imageUrl && imageSource === "upload" && (
-                  <div className="mt-2 p-2 border border-border rounded-lg">
-                    <img src={imageUrl} alt="Uploaded" className="w-full h-32 object-contain" />
+                  <div className="space-y-3">
+                    <div className="mt-2 p-2 border border-border rounded-lg">
+                      <img src={imageUrl} alt="Uploaded" className="w-full h-32 object-contain" />
+                    </div>
+                    
+                    {!analysisApplied && (
+                      <Button
+                        type="button"
+                        onClick={handleAnalyzeImage}
+                        disabled={isAnalyzing}
+                        variant="outline"
+                        className="w-full"
+                        data-testid="button-analyze-image"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Analyzing Image...
+                          </>
+                        ) : (
+                          <>
+                            <ScanEye className="w-4 h-4 mr-2" />
+                            Analyze for Ingredients
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    
+                    {imageAnalysis && (
+                      <Alert className="bg-muted/50">
+                        <ScanEye className="h-4 w-4" />
+                        <AlertDescription>
+                          <div className="space-y-2">
+                            <div className="font-medium">
+                              Detected: {imageAnalysis.name} 
+                              {imageAnalysis.confidence && (
+                                <span className="text-muted-foreground ml-2">
+                                  ({imageAnalysis.confidence}% confidence)
+                                </span>
+                              )}
+                            </div>
+                            
+                            {imageAnalysis.ingredients && imageAnalysis.ingredients.length > 0 && (
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium">Visible ingredients:</p>
+                                <ul className="text-xs text-muted-foreground list-disc list-inside">
+                                  {imageAnalysis.ingredients.map((ing: any, idx: number) => (
+                                    <li key={idx}>{ing.name} - {ing.quantity} {ing.unit}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            
+                            {imageAnalysis.calories !== undefined && (
+                              <div className="text-xs space-y-1">
+                                <p className="font-medium">Estimated nutrition:</p>
+                                <div className="grid grid-cols-2 gap-x-4 text-muted-foreground">
+                                  <span>Calories: {imageAnalysis.calories}</span>
+                                  <span>Protein: {imageAnalysis.protein}g</span>
+                                  <span>Carbs: {imageAnalysis.carbs}g</span>
+                                  <span>Fat: {imageAnalysis.fat}g</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <p className="text-xs text-muted-foreground italic">
+                              Form fields have been pre-filled. Please review and adjust as needed.
+                            </p>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                 )}
               </TabsContent>
