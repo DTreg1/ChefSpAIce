@@ -379,3 +379,86 @@ export const insertShoppingListItemSchema = createInsertSchema(shoppingListItems
 
 export type InsertShoppingListItem = z.infer<typeof insertShoppingListItemSchema>;
 export type ShoppingListItem = typeof shoppingListItems.$inferSelect;
+
+// Feedback System
+export const feedback = pgTable("feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // 'chat_response', 'recipe', 'food_item', 'bug', 'feature', 'general'
+  sentiment: text("sentiment"), // 'positive', 'negative', 'neutral'
+  rating: integer("rating"), // 1-5 stars for recipes, null for others
+  content: text("content"), // User's text feedback
+  metadata: jsonb("metadata"), // Additional context data
+  contextId: varchar("context_id"), // ID of related entity (recipe_id, chat_message_id, food_item_id)
+  contextType: text("context_type"), // Type of related entity
+  category: text("category"), // Auto-categorized: 'ui', 'functionality', 'content', 'performance'
+  priority: text("priority"), // 'low', 'medium', 'high', 'critical'
+  status: text("status").notNull().default('new'), // 'new', 'reviewed', 'in_progress', 'resolved'
+  tags: text("tags").array(), // AI-generated tags
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+}, (table) => [
+  index("feedback_user_id_idx").on(table.userId),
+  index("feedback_type_idx").on(table.type),
+  index("feedback_created_at_idx").on(table.createdAt),
+  index("feedback_status_idx").on(table.status),
+  index("feedback_context_idx").on(table.contextId, table.contextType),
+]);
+
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+  id: true,
+  createdAt: true,
+  resolvedAt: true,
+}).extend({
+  type: z.enum(['chat_response', 'recipe', 'food_item', 'bug', 'feature', 'general']),
+  sentiment: z.enum(['positive', 'negative', 'neutral']).optional(),
+  rating: z.number().int().min(1).max(5).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  status: z.enum(['new', 'reviewed', 'in_progress', 'resolved']).optional(),
+});
+
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type Feedback = typeof feedback.$inferSelect;
+
+// Feedback Responses from admin/team
+export const feedbackResponses = pgTable("feedback_responses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  feedbackId: varchar("feedback_id").notNull().references(() => feedback.id, { onDelete: "cascade" }),
+  responderId: varchar("responder_id"), // Admin/team member ID
+  response: text("response").notNull(),
+  action: text("action"), // What action was taken
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("feedback_responses_feedback_id_idx").on(table.feedbackId),
+]);
+
+export const insertFeedbackResponseSchema = createInsertSchema(feedbackResponses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertFeedbackResponse = z.infer<typeof insertFeedbackResponseSchema>;
+export type FeedbackResponse = typeof feedbackResponses.$inferSelect;
+
+// Feedback Analytics Aggregations (for dashboard)
+export type FeedbackAnalytics = {
+  totalFeedback: number;
+  averageRating: number | null;
+  sentimentDistribution: {
+    positive: number;
+    negative: number;
+    neutral: number;
+  };
+  typeDistribution: Record<string, number>;
+  priorityDistribution: Record<string, number>;
+  recentTrends: {
+    date: string;
+    count: number;
+    averageSentiment: number;
+  }[];
+  topIssues: {
+    category: string;
+    count: number;
+    priority: string;
+  }[];
+};

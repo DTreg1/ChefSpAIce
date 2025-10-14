@@ -12,6 +12,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
+import { FeedbackWidget } from "@/components/feedback-widget";
 import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "@/pages/landing";
@@ -26,6 +27,7 @@ import Appliances from "@/pages/appliances";
 import Settings from "@/pages/settings";
 import FdcSearch from "@/pages/FdcSearch";
 import FoodGroups from "@/pages/food-groups";
+import FeedbackAnalytics from "@/pages/feedback-analytics";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
@@ -41,6 +43,7 @@ function AuthenticatedRouter() {
       <Route path="/storage/:location" component={Storage} />
       <Route path="/food-groups" component={FoodGroups} />
       <Route path="/fdc-search" component={FdcSearch} />
+      <Route path="/feedback-analytics" component={FeedbackAnalytics} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
@@ -122,6 +125,7 @@ function AppContent() {
         open={recipeDialogOpen} 
         onOpenChange={setRecipeDialogOpen}
       />
+      <FeedbackWidget />
       <SidebarProvider style={style}>
         <div className="flex h-screen w-full">
           <AppSidebar />

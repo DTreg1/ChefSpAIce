@@ -19,7 +19,8 @@ import {
   insertApplianceSchema,
   insertMealPlanSchema,
   insertUserPreferencesSchema,
-  insertStorageLocationSchema
+  insertStorageLocationSchema,
+  insertFeedbackSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1993,6 +1994,188 @@ Respond ONLY with a valid JSON object:
     } catch (error) {
       console.error("Error clearing checked items:", error);
       res.status(500).json({ error: "Failed to clear checked items" });
+    }
+  });
+
+  // Feedback System Routes
+  app.post("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validated = insertFeedbackSchema.parse(req.body);
+      
+      // Auto-categorize feedback using OpenAI if content is provided
+      let enrichedFeedback = { ...validated };
+      if (validated.content && validated.content.length > 10) {
+        try {
+          const categoryPrompt = `Analyze this feedback and provide:
+1. Category (one of: ui, functionality, content, performance)
+2. Priority (one of: low, medium, high, critical)
+3. 2-3 relevant tags
+
+Feedback: "${validated.content}"
+Type: ${validated.type}
+
+Respond in JSON format: { "category": "...", "priority": "...", "tags": [...] }`;
+
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4-turbo-preview",
+            messages: [{ role: "system", content: "You are a feedback analysis assistant." }, { role: "user", content: categoryPrompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.3,
+            max_tokens: 200
+          });
+
+          const analysis = JSON.parse(completion.choices[0].message.content || "{}");
+          enrichedFeedback = {
+            ...enrichedFeedback,
+            category: analysis.category || enrichedFeedback.category,
+            priority: analysis.priority || enrichedFeedback.priority || 'medium',
+            tags: analysis.tags || enrichedFeedback.tags
+          };
+        } catch (aiError) {
+          console.error("Failed to auto-categorize feedback:", aiError);
+          // Continue without AI categorization
+        }
+      }
+      
+      const feedback = await storage.createFeedback(userId, enrichedFeedback);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error creating feedback:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid feedback data", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to create feedback" });
+      }
+    }
+  });
+
+  app.get("/api/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const feedback = await storage.getUserFeedback(userId, limit);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+      res.status(500).json({ error: "Failed to fetch feedback" });
+    }
+  });
+
+  app.get("/api/feedback/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const feedback = await storage.getFeedback(userId, id);
+      
+      if (!feedback) {
+        return res.status(404).json({ error: "Feedback not found" });
+      }
+      
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+      res.status(500).json({ error: "Failed to fetch feedback" });
+    }
+  });
+
+  app.get("/api/feedback/context/:contextType/:contextId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { contextType, contextId } = req.params;
+      const feedback = await storage.getFeedbackByContext(contextId, contextType);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching feedback by context:", error);
+      res.status(500).json({ error: "Failed to fetch feedback by context" });
+    }
+  });
+
+  app.get("/api/feedback/analytics/summary", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const days = parseInt(req.query.days as string) || 30;
+      const analytics = await storage.getFeedbackAnalytics(userId, days);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching feedback analytics:", error);
+      res.status(500).json({ error: "Failed to fetch feedback analytics" });
+    }
+  });
+
+  app.patch("/api/feedback/:id/status", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!status || !['new', 'reviewed', 'in_progress', 'resolved'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      
+      const resolvedAt = status === 'resolved' ? new Date() : undefined;
+      const updated = await storage.updateFeedbackStatus(id, status, resolvedAt);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating feedback status:", error);
+      res.status(500).json({ error: "Failed to update feedback status" });
+    }
+  });
+
+  app.post("/api/feedback/:id/responses", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { response, action } = req.body;
+      
+      if (!response) {
+        return res.status(400).json({ error: "Response is required" });
+      }
+      
+      const feedbackResponse = await storage.addFeedbackResponse(id, {
+        response,
+        action,
+        responderId: req.user.claims.sub
+      });
+      
+      res.json(feedbackResponse);
+    } catch (error) {
+      console.error("Error adding feedback response:", error);
+      res.status(500).json({ error: "Failed to add feedback response" });
+    }
+  });
+
+  app.get("/api/feedback/:id/responses", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const responses = await storage.getFeedbackResponses(id);
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching feedback responses:", error);
+      res.status(500).json({ error: "Failed to fetch feedback responses" });
+    }
+  });
+
+  // Admin feedback endpoints (for viewing all feedback)
+  app.get("/api/admin/feedback", isAuthenticated, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      const status = req.query.status as string;
+      
+      const result = await storage.getAllFeedback(limit, offset, status);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching all feedback:", error);
+      res.status(500).json({ error: "Failed to fetch all feedback" });
+    }
+  });
+
+  app.get("/api/admin/feedback/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const analytics = await storage.getFeedbackAnalytics(undefined, days);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching global feedback analytics:", error);
+      res.status(500).json({ error: "Failed to fetch global feedback analytics" });
     }
   });
 
