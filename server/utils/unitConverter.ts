@@ -121,8 +121,10 @@ export function parseIngredient(ingredientStr: string): {
   unit: string;
   name: string;
 } {
+  // First, normalize commas in the ingredient name (e.g., "olive oil, extra virgin" -> "olive oil extra virgin")
+  let cleanStr = ingredientStr.replace(/,\s*/g, ' ');
   // Remove parenthetical notes
-  const cleanStr = ingredientStr.replace(/\([^)]*\)/g, '').trim();
+  cleanStr = cleanStr.replace(/\([^)]*\)/g, '').trim();
   
   // Match patterns like "2 cups flour" or "1/2 cup sugar" or "3.5 oz cheese"
   const patterns = [
@@ -181,6 +183,7 @@ export function parseIngredient(ingredientStr: string): {
 export function ingredientNamesMatch(name1: string, name2: string): boolean {
   const normalize = (str: string) => 
     str.toLowerCase()
+      .replace(/,\s*/g, ' ') // Remove commas
       .replace(/[^a-z0-9]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -198,21 +201,36 @@ export function ingredientNamesMatch(name1: string, name2: string): boolean {
   const singular1 = n1.replace(/s$/, '');
   const singular2 = n2.replace(/s$/, '');
   if (singular1 === singular2) return true;
+  
+  // Check if the core ingredient name matches (e.g., "olive oil" in "olive oil extra virgin")
+  const words1 = n1.split(' ');
+  const words2 = n2.split(' ');
+  
+  // Check if the first two words match (common for oil, flour, etc.)
+  if (words1.length >= 2 && words2.length >= 2) {
+    const core1 = words1.slice(0, 2).join(' ');
+    const core2 = words2.slice(0, 2).join(' ');
+    if (core1 === core2) return true;
+  }
 
   // Handle common variations
   const variations: { [key: string]: string[] } = {
-    'flour': ['all purpose flour', 'plain flour', 'white flour'],
+    'flour': ['all purpose flour', 'plain flour', 'white flour', 'all purpose flour for pasta'],
     'sugar': ['white sugar', 'granulated sugar'],
     'brown sugar': ['light brown sugar', 'dark brown sugar'],
-    'butter': ['unsalted butter', 'salted butter'],
-    'oil': ['vegetable oil', 'cooking oil', 'canola oil'],
-    'milk': ['whole milk', '2% milk', 'skim milk'],
-    'egg': ['eggs', 'large egg', 'medium egg'],
+    'butter': ['unsalted butter', 'salted butter', 'butter salted'],
+    'oil': ['vegetable oil', 'cooking oil', 'canola oil', 'olive oil', 'extra virgin olive oil', 'olive oil extra virgin'],
+    'milk': ['whole milk', '2% milk', 'skim milk', '2 milk', 'full fat milk'],
+    'egg': ['eggs', 'large egg', 'medium egg', 'large eggs'],
     'chicken': ['chicken breast', 'chicken thigh', 'chicken pieces'],
-    'beef': ['ground beef', 'beef mince', 'minced beef'],
+    'beef': ['ground beef', 'beef mince', 'minced beef', 'beef hot dog', 'beef hot dogs'],
     'tomato': ['tomatoes', 'fresh tomato', 'ripe tomato'],
     'onion': ['yellow onion', 'white onion', 'brown onion'],
     'garlic': ['garlic clove', 'fresh garlic'],
+    'cheese': ['parmesan', 'parmesan cheese', 'grated parmesan', 'grated parmesan cheese', 'parmesan cheese kraft', 'kraft parmesan'],
+    'pepper': ['black pepper', 'white pepper', 'ground pepper'],
+    'pear': ['pears', 'bartlett pear', 'bartlett pears', 'ripe pear', 'ripe pears'],
+    'hot dog': ['hot dogs', 'beef hot dog', 'beef hot dogs', 'hot dog beef'],
   };
 
   // Check if both names belong to the same variation group
