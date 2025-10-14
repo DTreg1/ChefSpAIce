@@ -35,6 +35,9 @@ import {
   Plus,
   Calendar,
   MapPin,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
@@ -98,7 +101,7 @@ const SORT_OPTIONS = [
   { value: "publishedDate", label: "Published Date" },
 ];
 
-const PAGE_SIZES = [25, 50, 100, 200];
+const PAGE_SIZES = [3, 5, 10];
 
 // Helper function to get suggested expiration date based on food category
 function getSuggestedExpirationDays(dataType?: string, description?: string): number {
@@ -128,10 +131,9 @@ export default function FdcSearch() {
   const [currentQuery, setCurrentQuery] = useState("");
   const [brandOwners, setBrandOwners] = useState<string[]>([]);
   const [brandInput, setBrandInput] = useState("");
-  const [upcCode, setUpcCode] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFood, setSelectedFood] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -171,9 +173,7 @@ export default function FdcSearch() {
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
-    // Include UPC in search query if provided
-    const searchTerms = [currentQuery, upcCode].filter(Boolean).join(" ");
-    if (searchTerms) params.append("query", searchTerms);
+    if (currentQuery) params.append("query", currentQuery);
     // Append each brand owner separately to handle brands with commas
     if (brandOwners.length > 0) {
       brandOwners.forEach((brand) => {
@@ -193,7 +193,7 @@ export default function FdcSearch() {
   const { data: searchResults, isLoading: isSearching } =
     useQuery<SearchResponse>({
       queryKey: [`/api/fdc/search?${buildQueryParams()}`],
-      enabled: !!currentQuery || !!upcCode || brandOwners.length > 0,
+      enabled: !!currentQuery || brandOwners.length > 0,
     });
 
   // Food details query
@@ -327,15 +327,14 @@ export default function FdcSearch() {
   const handleClearFilters = () => {
     setBrandOwners([]);
     setBrandInput("");
-    setUpcCode("");
     setSortBy("");
     setSortOrder("asc");
-    setPageSize(25);
+    setPageSize(5);
     setCurrentPage(1);
   };
 
   const hasActiveFilters =
-    brandOwners.length > 0 || sortBy !== "" || upcCode !== "";
+    brandOwners.length > 0 || sortBy !== "";
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType?.toLowerCase()) {
@@ -475,118 +474,59 @@ export default function FdcSearch() {
               )}
             </div>
 
-            <div>
-              <Label
-                htmlFor="upc-code"
-                className="text-sm font-semibold mb-2 block"
+            <div className="flex items-center gap-2">
+              <Select
+                value={sortBy || "none"}
+                onValueChange={(value) => {
+                  setSortBy(value === "none" ? "" : value);
+                  setCurrentPage(1);
+                }}
               >
-                UPC/GTIN Code
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="upc-code"
-                  type="text"
-                  placeholder="e.g., '077034085228'"
-                  value={upcCode}
-                  onChange={(e) => {
-                    setUpcCode(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  data-testid="input-upc"
-                  className="flex-1"
-                />
-                <BarcodeScanner
-                  onScanSuccess={(barcode) => {
-                    setUpcCode(barcode);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-            </div>
+                <SelectTrigger className="w-[140px]" id="sort-by" data-testid="select-sort-by">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {SORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label
-                  htmlFor="sort-by"
-                  className="text-sm font-semibold mb-2 block"
-                >
-                  Sort By
-                </Label>
-                <Select
-                  value={sortBy || "none"}
-                  onValueChange={(value) => {
-                    setSortBy(value === "none" ? "" : value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <SelectTrigger id="sort-by" data-testid="select-sort-by">
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {SORT_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                  setCurrentPage(1);
+                }}
+                disabled={!sortBy}
+                data-testid="button-toggle-sort-order"
+                className="shrink-0"
+              >
+                {sortOrder === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+              </Button>
 
-              <div>
-                <Label
-                  htmlFor="sort-order"
-                  className="text-sm font-semibold mb-2 block"
-                >
-                  Sort Order
-                </Label>
-                <Select
-                  value={sortOrder}
-                  onValueChange={(value: "asc" | "desc") => {
-                    setSortOrder(value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <SelectTrigger
-                    id="sort-order"
-                    data-testid="select-sort-order"
-                    disabled={!sortBy}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="asc">Ascending</SelectItem>
-                    <SelectItem value="desc">Descending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="page-size"
-                  className="text-sm font-semibold mb-2 block"
-                >
-                  Results Per Page
-                </Label>
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={(value) => {
-                    setPageSize(parseInt(value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  <SelectTrigger id="page-size" data-testid="select-page-size">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAGE_SIZES.map((size) => (
-                      <SelectItem key={size} value={size.toString()}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(value) => {
+                  setPageSize(parseInt(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[100px]" id="page-size" data-testid="select-page-size">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZES.map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size} results
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {hasActiveFilters && (
@@ -601,23 +541,6 @@ export default function FdcSearch() {
                       />
                     </Badge>
                   ))}
-                  {upcCode && (
-                    <Badge
-                      variant="secondary"
-                      className="gap-1"
-                      data-testid="badge-upc-filter"
-                    >
-                      UPC: {upcCode}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover-elevate"
-                        onClick={() => {
-                          setUpcCode("");
-                          setCurrentPage(1);
-                        }}
-                        data-testid="button-remove-upc"
-                      />
-                    </Badge>
-                  )}
                   {sortBy && (
                     <Badge variant="secondary" className="gap-1">
                       Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label} (
