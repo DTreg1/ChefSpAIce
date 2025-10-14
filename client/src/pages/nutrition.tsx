@@ -186,11 +186,11 @@ export default function Nutrition() {
                 ) : (
                   <div className="space-y-3">
                     {items.map((item) => {
-                      const servingSize = parseFloat(item.nutrition.servingSize || "100") || 100;
+                      const servingSize = parseFloat(item.nutrition?.servingSize || "100") || 100;
                       const multiplier = item.weightInGrams / servingSize;
-                      const protein = item.nutrition.protein * multiplier;
-                      const carbs = item.nutrition.carbs * multiplier;
-                      const fat = item.nutrition.fat * multiplier;
+                      const protein = (item.nutrition?.protein || 0) * multiplier;
+                      const carbs = (item.nutrition?.carbs || 0) * multiplier;
+                      const fat = (item.nutrition?.fat || 0) * multiplier;
                       const itemTotalMacros = protein + carbs + fat;
                       
                       return (
@@ -208,7 +208,7 @@ export default function Nutrition() {
                             </div>
                             <Badge variant="secondary">
                               <Flame className="w-3 h-3 mr-1" />
-                              {Math.round(item.nutrition.calories * multiplier)} kcal
+                              {Math.round((item.nutrition?.calories || 0) * multiplier)} kcal
                             </Badge>
                           </div>
                           
