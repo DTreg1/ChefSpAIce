@@ -74,19 +74,129 @@ export const insertStorageLocationSchema = createInsertSchema(storageLocations).
 export type InsertStorageLocation = z.infer<typeof insertStorageLocationSchema>;
 export type StorageLocation = typeof storageLocations.$inferSelect;
 
-// Kitchen Appliances - now user-scoped
+// Appliance Categories - Define the types of appliances
+export const applianceCategories = pgTable("appliance_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(), // e.g., "Kitchen Tools", "Bakeware", "Countertop Appliances"
+  description: text("description"),
+  parentCategoryId: varchar("parent_category_id"), // For subcategories
+  icon: text("icon"), // Icon identifier for UI
+  sortOrder: integer("sort_order").notNull().default(0),
+}, (table) => [
+  index("appliance_categories_parent_idx").on(table.parentCategoryId),
+]);
+
+export const insertApplianceCategorySchema = createInsertSchema(applianceCategories).omit({
+  id: true,
+});
+
+export type InsertApplianceCategory = z.infer<typeof insertApplianceCategorySchema>;
+export type ApplianceCategory = typeof applianceCategories.$inferSelect;
+
+// Barcode Products - Store product data from barcode lookups
+export const barcodeProducts = pgTable("barcode_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  barcodeNumber: text("barcode_number").notNull().unique(),
+  barcodeFormats: text("barcode_formats"),
+  mpn: text("mpn"), // Manufacturer Part Number
+  model: text("model"),
+  asin: text("asin"), // Amazon Standard Identification Number
+  title: text("title").notNull(),
+  category: text("category"), // From barcode API
+  manufacturer: text("manufacturer"),
+  brand: text("brand"),
+  
+  // Physical attributes
+  color: text("color"),
+  material: text("material"),
+  size: text("size"),
+  weight: text("weight"),
+  dimensions: jsonb("dimensions").$type<{
+    length?: string;
+    width?: string;
+    height?: string;
+  }>(),
+  
+  // Product details
+  description: text("description"),
+  features: text("features").array(),
+  images: text("images").array(),
+  
+  // Capabilities for appliances (e.g., Ninja Foodi capabilities)
+  capabilities: text("capabilities").array(), // ["grill", "bake", "air_fry", "dehydrate", "broil"]
+  capacity: text("capacity"), // e.g., "4-qt", "6-qt"
+  servingSize: text("serving_size"), // e.g., "up to 4 servings"
+  
+  // Store information
+  stores: jsonb("stores").$type<Array<{
+    name: string;
+    country: string;
+    currency: string;
+    price: string;
+    salePrice?: string;
+    link?: string;
+    availability?: string;
+    lastUpdate: string;
+  }>>(),
+  
+  // Metadata
+  rawData: jsonb("raw_data"), // Complete API response
+  lastUpdate: timestamp("last_update").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("barcode_products_barcode_idx").on(table.barcodeNumber),
+  index("barcode_products_brand_idx").on(table.brand),
+  index("barcode_products_category_idx").on(table.category),
+]);
+
+export const insertBarcodeProductSchema = createInsertSchema(barcodeProducts).omit({
+  id: true,
+  createdAt: true,
+  lastUpdate: true,
+});
+
+export type InsertBarcodeProduct = z.infer<typeof insertBarcodeProductSchema>;
+export type BarcodeProduct = typeof barcodeProducts.$inferSelect;
+
+// Kitchen Appliances - Enhanced with barcode product reference
 export const appliances = pgTable("appliances", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  type: text("type").notNull(),
+  type: text("type").notNull(), // Legacy field kept for compatibility
+  
+  // New fields
+  categoryId: varchar("category_id").references(() => applianceCategories.id),
+  barcodeProductId: varchar("barcode_product_id").references(() => barcodeProducts.id),
+  
+  // Custom properties (can override barcode data)
+  customBrand: text("custom_brand"),
+  customModel: text("custom_model"),
+  customCapabilities: text("custom_capabilities").array(),
+  customCapacity: text("custom_capacity"),
+  customServingSize: text("custom_serving_size"),
+  
+  // User-specific data
+  nickname: text("nickname"), // User's custom name for the appliance
+  purchaseDate: text("purchase_date"),
+  warrantyEndDate: text("warranty_end_date"),
+  notes: text("notes"),
+  imageUrl: text("image_url"), // Can be from barcode or custom
+  isActive: boolean("is_active").notNull().default(true), // If appliance is currently in use
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   index("appliances_user_id_idx").on(table.userId),
+  index("appliances_category_id_idx").on(table.categoryId),
+  index("appliances_barcode_product_id_idx").on(table.barcodeProductId),
 ]);
 
 export const insertApplianceSchema = createInsertSchema(appliances).omit({
   id: true,
   userId: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export type InsertAppliance = z.infer<typeof insertApplianceSchema>;
