@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +12,18 @@ import type { FoodItem, StorageLocation } from "@shared/schema";
 
 export default function FoodGroups() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [location] = useLocation();
+  
+  // Parse category from URL query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectedCategory = urlParams.get('category');
+  
+  // Auto-expand selected category when navigating from sidebar
+  useEffect(() => {
+    if (selectedCategory) {
+      setExpandedCategories(new Set([selectedCategory]));
+    }
+  }, [selectedCategory]);
 
   const { data: foodItems, isLoading: itemsLoading } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],
@@ -32,6 +45,11 @@ export default function FoodGroups() {
 
   const categories = Object.keys(groupedItems).sort();
   const totalItems = foodItems?.length || 0;
+  
+  // Filter categories if one is selected from sidebar
+  const displayCategories = selectedCategory 
+    ? categories.filter(cat => cat === selectedCategory)
+    : categories;
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -50,10 +68,12 @@ export default function FoodGroups() {
       <div className="max-w-6xl mx-auto p-4 md:p-6">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Food Groups Dashboard
+            {selectedCategory ? `${selectedCategory} Items` : 'Food Groups Dashboard'}
           </h1>
           <p className="text-sm md:text-base text-muted-foreground">
-            Your inventory organized by USDA food categories • {totalItems} total items
+            {selectedCategory 
+              ? `Viewing items in ${selectedCategory} • ${groupedItems[selectedCategory]?.length || 0} items`
+              : `Your inventory organized by USDA food categories • ${totalItems} total items`}
           </p>
         </div>
 
@@ -68,7 +88,7 @@ export default function FoodGroups() {
               </Card>
             ))}
           </div>
-        ) : categories.length === 0 ? (
+        ) : displayCategories.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Package className="w-16 h-16 text-muted-foreground mb-4" />
@@ -82,7 +102,7 @@ export default function FoodGroups() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {categories.map((category) => {
+            {displayCategories.map((category) => {
               const items = groupedItems[category];
               const isExpanded = expandedCategories.has(category);
 

@@ -34,6 +34,7 @@ export function AppSidebar() {
   const [location] = useLocation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(true);
+  const [foodGroupsOpen, setFoodGroupsOpen] = useState(false);
 
   const { data: storageLocations } = useQuery<StorageLocation[]>({
     queryKey: ["/api/storage-locations"],
@@ -51,6 +52,18 @@ export function AppSidebar() {
     icon: MessageSquare,
     path: "/",
   };
+
+  // Group food items by category for the sidebar
+  const groupedItems = (foodItems || []).reduce((acc, item) => {
+    const category = item.foodCategory || "Uncategorized";
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, FoodItem[]>);
+
+  const foodCategories = Object.keys(groupedItems).sort();
 
   return (
     <>
@@ -157,14 +170,56 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === "/food-groups"}>
-                    <Link href="/food-groups" data-testid="link-food-groups">
-                      <LayoutGrid className="w-4 h-4" />
-                      <span className="flex-1">Food Groups</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <Collapsible open={foodGroupsOpen} onOpenChange={setFoodGroupsOpen}>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton data-testid="button-toggle-food-groups">
+                        <ChevronRight className={cn("w-4 h-4 transition-transform", foodGroupsOpen && "rotate-90")} />
+                        <span className="flex-1">Food Groups</span>
+                        <Badge 
+                          variant="secondary" 
+                          className="ml-auto text-xs rounded-full h-5 px-2"
+                          data-testid="badge-count-categories"
+                        >
+                          {foodCategories.length}
+                        </Badge>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild isActive={location === "/food-groups"}>
+                            <Link href="/food-groups" data-testid="link-food-groups-all">
+                              <LayoutGrid className="w-4 h-4" />
+                              <span className="flex-1">View All Categories</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        {foodCategories.map((category) => {
+                          const categoryItems = groupedItems[category];
+                          const categoryPath = `/food-groups?category=${encodeURIComponent(category)}`;
+                          return (
+                            <SidebarMenuSubItem key={category}>
+                              <SidebarMenuSubButton asChild isActive={location.includes(`category=${encodeURIComponent(category)}`)}>
+                                <Link href={categoryPath} data-testid={`link-category-${category.toLowerCase().replace(/\s+/g, '-')}`}>
+                                  <Apple className="w-4 h-4" />
+                                  <span className="flex-1">{category}</span>
+                                  <Badge 
+                                    variant="secondary" 
+                                    className="ml-auto text-xs rounded-full h-5 px-2"
+                                    data-testid={`badge-category-count-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                                  >
+                                    {categoryItems.length}
+                                  </Badge>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
                 <Collapsible open={inventoryOpen} onOpenChange={setInventoryOpen}>
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
