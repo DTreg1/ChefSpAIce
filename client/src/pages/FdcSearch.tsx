@@ -429,20 +429,6 @@ export default function FdcSearch() {
           </form>
 
           <div className="space-y-4">
-            {hasActiveFilters && (
-              <div className="flex items-center justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearFilters}
-                  data-testid="button-clear-filters"
-                  className="gap-1"
-                >
-                  <X className="w-4 h-4" />
-                  Clear Filters
-                </Button>
-              </div>
-            )}
             <div>
               <Label
                 htmlFor="brand-owner"
@@ -602,6 +588,21 @@ export default function FdcSearch() {
                 </Select>
               </div>
             </div>
+            
+            {hasActiveFilters && (
+              <div className="flex items-center justify-end mt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  data-testid="button-clear-filters"
+                  className="gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Clear Filters
+                </Button>
+              </div>
+            )}
           </div>
 
           {hasActiveFilters && (
