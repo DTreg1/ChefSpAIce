@@ -39,6 +39,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
+import { matchIngredientWithInventory, type IngredientMatch } from "./utils/unitConverter";
 
 export interface IStorage {
   // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
@@ -79,6 +80,7 @@ export interface IStorage {
   getRecipe(userId: string, id: string): Promise<Recipe | undefined>;
   createRecipe(userId: string, recipe: Omit<InsertRecipe, 'userId'>): Promise<Recipe>;
   updateRecipe(userId: string, id: string, updates: Partial<Recipe>): Promise<Recipe>;
+  getRecipesWithInventoryMatching(userId: string): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
 
   // Expiration Notifications (user-scoped)
   getExpirationNotifications(userId: string): Promise<ExpirationNotification[]>;
@@ -644,6 +646,42 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error updating recipe ${id}:`, error);
       throw new Error('Failed to update recipe');
+    }
+  }
+
+  async getRecipesWithInventoryMatching(userId: string): Promise<Array<Recipe & { ingredientMatches: IngredientMatch[] }>> {
+    try {
+      // Fetch all recipes for the user
+      const userRecipes = await this.getRecipes(userId);
+      
+      // Fetch current inventory
+      const inventory = await this.getFoodItems(userId);
+      
+      // Enrich each recipe with real-time inventory matching
+      return userRecipes.map(recipe => {
+        const ingredientMatches: IngredientMatch[] = recipe.ingredients.map(ingredient => {
+          return matchIngredientWithInventory(ingredient, inventory);
+        });
+
+        // Update the usedIngredients and missingIngredients based on current inventory
+        const usedIngredients = ingredientMatches
+          .filter(match => match.hasEnough)
+          .map(match => match.ingredientName);
+        
+        const missingIngredients = ingredientMatches
+          .filter(match => !match.hasEnough)
+          .map(match => match.ingredientName);
+
+        return {
+          ...recipe,
+          usedIngredients, // Update with current inventory state
+          missingIngredients, // Update with current inventory state
+          ingredientMatches, // Add detailed match information
+        };
+      });
+    } catch (error) {
+      console.error(`Error getting recipes with inventory matching for user ${userId}:`, error);
+      throw new Error('Failed to retrieve recipes with inventory matching');
     }
   }
 

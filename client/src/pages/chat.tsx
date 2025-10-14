@@ -6,6 +6,7 @@ import { ChatInput } from "@/components/chat-input";
 import { EmptyState } from "@/components/empty-state";
 import { RecipeCard } from "@/components/recipe-card";
 import { RecipeGenerator } from "@/components/recipe-generator";
+import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
 import { ChefHat } from "lucide-react";
@@ -173,7 +174,10 @@ export default function Chat() {
             <h2 className="text-lg font-semibold text-foreground">Chat with AI Chef</h2>
             <p className="text-sm text-muted-foreground">Get recipe suggestions and manage your inventory</p>
           </div>
-          <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
+          <div className="flex gap-2">
+            <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
+            <RecipeCustomizationDialog onRecipeGenerated={handleRecipeGenerated} />
+          </div>
         </div>
       </div>
 
