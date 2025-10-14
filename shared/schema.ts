@@ -356,3 +356,26 @@ export const insertFdcSearchCacheSchema = createInsertSchema(fdcSearchCache).omi
 
 export type InsertFdcSearchCache = z.infer<typeof insertFdcSearchCacheSchema>;
 export type FdcSearchCache = typeof fdcSearchCache.$inferSelect;
+
+// Shopping List Items - for individual items not tied to meal plans
+export const shoppingListItems = pgTable("shopping_list_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  ingredient: text("ingredient").notNull(),
+  quantity: text("quantity"),
+  unit: text("unit"),
+  recipeId: varchar("recipe_id"), // Optional reference to the recipe it came from
+  isChecked: boolean("is_checked").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("shopping_list_items_user_id_idx").on(table.userId),
+]);
+
+export const insertShoppingListItemSchema = createInsertSchema(shoppingListItems).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+});
+
+export type InsertShoppingListItem = z.infer<typeof insertShoppingListItemSchema>;
+export type ShoppingListItem = typeof shoppingListItems.$inferSelect;

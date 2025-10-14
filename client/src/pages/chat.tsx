@@ -205,6 +205,7 @@ export default function Chat() {
                 >
                   {message.metadata && message.metadata.includes("recipeId") && generatedRecipe && (
                     <RecipeCard
+                      id={generatedRecipe.id}
                       title={generatedRecipe.title}
                       prepTime={generatedRecipe.prepTime || undefined}
                       cookTime={generatedRecipe.cookTime || undefined}
@@ -213,6 +214,7 @@ export default function Chat() {
                       instructions={generatedRecipe.instructions}
                       usedIngredients={generatedRecipe.usedIngredients}
                       missingIngredients={generatedRecipe.missingIngredients || []}
+                      showControls={true}
                     />
                   )}
                 </ChatMessage>

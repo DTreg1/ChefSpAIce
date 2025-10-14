@@ -978,18 +978,20 @@ When asked for recipes, consider the available inventory and appliances.`;
       const foodItems = await storage.getFoodItems(userId);
       const appliances = await storage.getAppliances(userId);
 
-      if (foodItems.length === 0) {
-        return res.status(400).json({ error: "No ingredients in inventory" });
-      }
-
       // Extract customization preferences if provided
       const {
         timeConstraint = "moderate",
         servings = 4,
         difficulty = "intermediate",
         mealType = "dinner",
-        creativity = 5
+        creativity = 5,
+        onlyUseOnHand = true
       } = req.body;
+
+      // Only require inventory if onlyUseOnHand is true
+      if (onlyUseOnHand && foodItems.length === 0) {
+        return res.status(400).json({ error: "No ingredients in inventory. Turn off 'Only use ingredients on hand' to generate recipes without inventory." });
+      }
 
       // Sort items by expiration date to prioritize expiring items
       const now = new Date();
@@ -1059,7 +1061,14 @@ When asked for recipes, consider the available inventory and appliances.`;
         creativity <= 7 ? "balanced mix of familiar with some creative elements" :
         "experimental and innovative with unique flavor combinations";
 
-      const prompt = `You are an intelligent kitchen assistant that creates recipes based on available ingredients, prioritizing items that are expiring soon to minimize food waste.
+      const onlyUseOnHandInstructions = onlyUseOnHand
+        ? `4. ONLY use ingredients from the available list above. Do NOT suggest any ingredients that are not listed.
+5. If you need basic seasonings (salt, pepper, oil), you may include them ONLY if absolutely necessary.`
+        : `4. You MAY suggest additional ingredients that would enhance the recipe, even if they're not in the available list.
+5. Clearly distinguish between ingredients that are available vs. those that need to be purchased.`;
+
+      const prompt = foodItems.length > 0 
+        ? `You are an intelligent kitchen assistant that creates recipes based on available ingredients, prioritizing items that are expiring soon to minimize food waste.
 
 AVAILABLE INGREDIENTS:
 ${expiringIngredients.length > 0 ? `
@@ -1072,7 +1081,27 @@ ${stableIngredients.length > 0 ? `
 Stable ingredients:
 ${stableIngredientsList}` : ''}
 
-Available cooking appliances: ${appliancesList}
+Available cooking appliances: ${appliancesList}`
+        : `You are an intelligent kitchen assistant that creates recipes. The user has no ingredients in their inventory, so you'll need to suggest a complete recipe with all necessary ingredients.
+
+Available cooking appliances: ${appliancesList}`;
+
+      const recipeInstructions = foodItems.length > 0 
+        ? `CRITICAL INSTRUCTIONS:
+1. PRIORITIZE using ingredients marked as "URGENT" or expiring soon
+2. Try to use AS MANY expiring ingredients as possible while still creating a delicious meal
+3. You don't need to use ALL ingredients, but focus on those expiring first
+${onlyUseOnHandInstructions}
+6. Adjust quantities to match the requested number of servings (${servings})
+7. Ensure total time fits within ${timeMap[timeConstraint as keyof typeof timeMap]}`
+        : `INSTRUCTIONS:
+1. Create a complete recipe with all necessary ingredients
+2. All ingredients will be listed as "missing" since the user has no inventory
+${onlyUseOnHandInstructions}
+4. Adjust quantities to match the requested number of servings (${servings})
+5. Ensure total time fits within ${timeMap[timeConstraint as keyof typeof timeMap]}`;
+
+      const fullPrompt = `${prompt}
 
 Recipe Requirements:
 - Meal Type: ${mealType}
@@ -1080,14 +1109,9 @@ Recipe Requirements:
 - Time Constraint: ${timeMap[timeConstraint as keyof typeof timeMap]}
 - Difficulty Level: ${difficulty}
 - Style: ${creativityGuidance}
+- Ingredient Restriction: ${onlyUseOnHand ? 'ONLY use ingredients on hand' : 'Can suggest additional ingredients'}
 
-CRITICAL INSTRUCTIONS:
-1. PRIORITIZE using ingredients marked as "URGENT" or expiring soon
-2. Try to use AS MANY expiring ingredients as possible while still creating a delicious meal
-3. You don't need to use ALL ingredients, but focus on those expiring first
-4. Only suggest ingredients you weren't given if they are basic pantry staples (salt, pepper, oil, etc.)
-5. Adjust quantities to match the requested number of servings (${servings})
-6. Ensure total time fits within ${timeMap[timeConstraint as keyof typeof timeMap]}
+${recipeInstructions}
 
 Respond ONLY with a valid JSON object in this exact format:
 {
@@ -1105,7 +1129,7 @@ Respond ONLY with a valid JSON object in this exact format:
       try {
         completion = await openai.chat.completions.create({
           model: "gpt-4o-mini",
-          messages: [{ role: "user", content: prompt }],
+          messages: [{ role: "user", content: fullPrompt }],
           response_format: { type: "json_object" },
           max_completion_tokens: 1500,
         });
@@ -1672,6 +1696,81 @@ Respond ONLY with a valid JSON object:
     } catch (error) {
       console.error("Shopping list error:", error);
       res.status(500).json({ error: "Failed to generate shopping list" });
+    }
+  });
+
+  // Shopping List Item endpoints
+  app.get("/api/shopping-list/items", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const items = await storage.getShoppingListItems(userId);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching shopping list items:", error);
+      res.status(500).json({ error: "Failed to fetch shopping list items" });
+    }
+  });
+
+  app.post("/api/shopping-list/items", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const newItem = await storage.createShoppingListItem(userId, req.body);
+      res.json(newItem);
+    } catch (error) {
+      console.error("Error creating shopping list item:", error);
+      res.status(500).json({ error: "Failed to create shopping list item" });
+    }
+  });
+
+  app.post("/api/shopping-list/add-missing", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { recipeId, ingredients } = req.body;
+
+      if (!recipeId || !ingredients || !Array.isArray(ingredients)) {
+        return res.status(400).json({ error: "Recipe ID and ingredients array are required" });
+      }
+
+      const newItems = await storage.addMissingIngredientsToShoppingList(userId, recipeId, ingredients);
+      res.json(newItems);
+    } catch (error) {
+      console.error("Error adding missing ingredients:", error);
+      res.status(500).json({ error: "Failed to add missing ingredients to shopping list" });
+    }
+  });
+
+  app.patch("/api/shopping-list/items/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const updated = await storage.updateShoppingListItem(userId, id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating shopping list item:", error);
+      res.status(500).json({ error: "Failed to update shopping list item" });
+    }
+  });
+
+  app.delete("/api/shopping-list/items/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      await storage.deleteShoppingListItem(userId, id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting shopping list item:", error);
+      res.status(500).json({ error: "Failed to delete shopping list item" });
+    }
+  });
+
+  app.delete("/api/shopping-list/clear-checked", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.clearCheckedShoppingListItems(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error clearing checked items:", error);
+      res.status(500).json({ error: "Failed to clear checked items" });
     }
   });
 
