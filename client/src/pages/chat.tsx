@@ -37,7 +37,7 @@ export default function Chat() {
 
   const clearChatMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/chat/messages", "DELETE");
+      return apiRequest("DELETE", "/api/chat/messages");
     },
     onSuccess: () => {
       setMessages([]);
