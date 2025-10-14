@@ -113,7 +113,7 @@ export function RecipeCustomizationDialog({ onRecipeGenerated }: RecipeCustomiza
       <DialogTrigger asChild>
         <Button variant="default" data-testid="button-custom-recipe">
           <Sparkles className="w-4 h-4 mr-2" />
-          Custom Recipe
+          Generate Recipe
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md" data-testid="dialog-recipe-customization">
