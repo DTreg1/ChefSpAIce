@@ -1,11 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChefHat, Refrigerator, Calendar, ShoppingCart, Sparkles } from "lucide-react";
+import { AnimatedBackground } from "@/components/animated-background";
+import { PageTransition } from "@/components/page-transition";
+import { AnimatedCard } from "@/components/animated-card";
+import { MotionButton } from "@/components/motion-button";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-lime-950/50 via-background to-green-50/30 dark:from-lime-950/20 dark:via-background dark:to-green-950/20">
-      <div className="container mx-auto px-4 py-16">
+    <PageTransition className="min-h-screen relative">
+      <AnimatedBackground variant="both" gradientType="vibrant" particleCount={25} />
+      <div className="container mx-auto px-4 py-16 relative z-10">
         <div className="flex flex-col items-center text-center space-y-8">
           <div className="flex items-center gap-3">
             <ChefHat className="w-12 h-12 text-primary" />
@@ -16,17 +21,17 @@ export default function Landing() {
             Your AI-powered kitchen assistant. Manage your food inventory, discover recipes, and reduce waste—all in one place.
           </p>
 
-          <Button 
+          <MotionButton 
             size="lg" 
             className="mt-8"
             onClick={() => window.location.href = "/api/login"}
             data-testid="button-login"
           >
             Get Started
-          </Button>
+          </MotionButton>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16 w-full max-w-6xl">
-            <Card data-testid="card-feature-inventory">
+            <AnimatedCard data-testid="card-feature-inventory" className="glass-subtle backdrop-blur-md">
               <CardHeader>
                 <Refrigerator className="w-8 h-8 mb-2 text-primary" />
                 <CardTitle>Smart Inventory</CardTitle>
@@ -34,9 +39,9 @@ export default function Landing() {
                   Track what's in your fridge, freezer, and pantry with expiration reminders
                 </CardDescription>
               </CardHeader>
-            </Card>
+            </AnimatedCard>
 
-            <Card data-testid="card-feature-recipes">
+            <AnimatedCard data-testid="card-feature-recipes" className="glass-subtle backdrop-blur-md">
               <CardHeader>
                 <ChefHat className="w-8 h-8 mb-2 text-primary" />
                 <CardTitle>AI Recipes</CardTitle>
@@ -44,9 +49,9 @@ export default function Landing() {
                   Generate personalized recipes based on what you have in stock
                 </CardDescription>
               </CardHeader>
-            </Card>
+            </AnimatedCard>
 
-            <Card data-testid="card-feature-planner">
+            <AnimatedCard data-testid="card-feature-planner" className="glass-subtle backdrop-blur-md">
               <CardHeader>
                 <Calendar className="w-8 h-8 mb-2 text-primary" />
                 <CardTitle>Meal Planning</CardTitle>
@@ -54,9 +59,9 @@ export default function Landing() {
                   Plan your weekly meals and stay organized effortlessly
                 </CardDescription>
               </CardHeader>
-            </Card>
+            </AnimatedCard>
 
-            <Card data-testid="card-feature-shopping">
+            <AnimatedCard data-testid="card-feature-shopping" className="glass-subtle backdrop-blur-md">
               <CardHeader>
                 <ShoppingCart className="w-8 h-8 mb-2 text-primary" />
                 <CardTitle>Shopping Lists</CardTitle>
@@ -64,10 +69,10 @@ export default function Landing() {
                   Automatically generate shopping lists from your meal plans
                 </CardDescription>
               </CardHeader>
-            </Card>
+            </AnimatedCard>
           </div>
 
-          <Card className="mt-12 w-full max-w-3xl" data-testid="card-feature-ai">
+          <AnimatedCard className="mt-12 w-full max-w-3xl glass-vibrant backdrop-blur-lg" data-testid="card-feature-ai">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <Sparkles className="w-8 h-8 text-primary" />
@@ -79,9 +84,9 @@ export default function Landing() {
                 recipe suggestions, and personalized recommendations.
               </CardDescription>
             </CardHeader>
-          </Card>
+          </AnimatedCard>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }
