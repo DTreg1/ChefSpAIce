@@ -53,7 +53,6 @@ export interface IStorage {
   getStorageLocations(userId: string): Promise<StorageLocation[]>;
   getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined>;
   createStorageLocation(userId: string, location: Omit<InsertStorageLocation, 'userId'>): Promise<StorageLocation>;
-  updateStorageLocationCount(userId: string, id: string, count: number): Promise<void>;
 
   // Appliances (user-scoped)
   getAppliances(userId: string): Promise<Appliance[]>;
@@ -134,10 +133,10 @@ export class DatabaseStorage implements IStorage {
         if (existingLocations.length === 0) {
           // Initialize default storage locations for this user
           const defaultLocations = [
-            { userId, name: "Fridge", icon: "refrigerator", itemCount: 0 },
-            { userId, name: "Freezer", icon: "snowflake", itemCount: 0 },
-            { userId, name: "Pantry", icon: "pizza", itemCount: 0 },
-            { userId, name: "Counter", icon: "utensils-crossed", itemCount: 0 },
+            { userId, name: "Fridge", icon: "refrigerator" },
+            { userId, name: "Freezer", icon: "snowflake" },
+            { userId, name: "Pantry", icon: "pizza" },
+            { userId, name: "Counter", icon: "utensils-crossed" },
           ];
 
           await db.insert(storageLocations).values(defaultLocations);
@@ -311,17 +310,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateStorageLocationCount(userId: string, id: string, count: number): Promise<void> {
-    try {
-      await db
-        .update(storageLocations)
-        .set({ itemCount: count })
-        .where(and(eq(storageLocations.id, id), eq(storageLocations.userId, userId)));
-    } catch (error) {
-      console.error(`Error updating storage location count for ${id}:`, error);
-      throw new Error('Failed to update storage location count');
-    }
-  }
 
   // Appliances
   async getAppliances(userId: string): Promise<Appliance[]> {
