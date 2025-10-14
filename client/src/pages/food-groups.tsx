@@ -7,7 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { FoodCard } from "@/components/food-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronRight, Apple, Package } from "lucide-react";
+import { ChevronDown, ChevronRight, Package } from "lucide-react";
+import { getCategoryIcon } from "@/lib/categoryIcons";
 import type { FoodItem, StorageLocation } from "@shared/schema";
 
 export default function FoodGroups() {
@@ -105,6 +106,7 @@ export default function FoodGroups() {
             {displayCategories.map((category) => {
               const items = groupedItems[category];
               const isExpanded = expandedCategories.has(category);
+              const CategoryIcon = getCategoryIcon(category);
 
               return (
                 <Collapsible
@@ -122,7 +124,7 @@ export default function FoodGroups() {
                             ) : (
                               <ChevronRight className="w-5 h-5 text-muted-foreground" />
                             )}
-                            <Apple className="w-5 h-5 text-primary" />
+                            <CategoryIcon className="w-5 h-5 text-primary" />
                             <div>
                               <CardTitle className="text-lg">{category}</CardTitle>
                               <CardDescription className="mt-1">
