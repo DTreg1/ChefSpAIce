@@ -25,7 +25,7 @@ Key architectural decisions include:
     - **Food Inventory**: CRUD operations for tracking items across storage locations (Fridge, Pantry, Freezer, Counter) with expiration dates, visual indicators, and images. Includes kitchen appliances registry and custom storage areas.
     - **Recipe Management**: AI-generated recipes, saving, favoriting, and rating.
     - **Nutritional Dashboard**: Aggregated calorie and macronutrient breakdowns using USDA data with dual-unit system (quantity × serving size = weightInGrams) for accurate calculations. Displays single horizontal stacked bar for overall macros and mini stacked bars per food item.
-    - **Chat Interface**: Real-time streaming chat with AI Chef.
+    - **Chat Interface**: Real-time streaming chat with AI Chef. All messages persist to PostgreSQL database, including recipe notifications. Features "Start New Chat" button to manually clear conversation history. Automatic cleanup runs when users access chat (1-hour cooldown per user), deleting messages older than 24 hours to simulate the chef "sleeping" and cleaning up at night.
     - **Meal Planning**: Weekly calendar for scheduling recipes with serving customization.
     - **Shopping List**: Auto-generated from planned meals, comparing with inventory.
     - **Quick Actions**: Command palette (Cmd/Ctrl+K) with quick access to Add Food Item, Scan Barcode, and Generate Recipe.
