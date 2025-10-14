@@ -590,13 +590,54 @@ export default function FdcSearch() {
             </div>
             
             {hasActiveFilters && (
-              <div className="flex items-center justify-end mt-4">
+              <div className="flex items-center justify-between gap-4 mt-4">
+                <div className="flex flex-wrap gap-2" data-testid="active-filters">
+                  {brandOwners.map((brand) => (
+                    <Badge key={brand} variant="secondary" className="gap-1">
+                      Brand: {brand}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover-elevate"
+                        onClick={() => handleRemoveBrand(brand)}
+                      />
+                    </Badge>
+                  ))}
+                  {upcCode && (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1"
+                      data-testid="badge-upc-filter"
+                    >
+                      UPC: {upcCode}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover-elevate"
+                        onClick={() => {
+                          setUpcCode("");
+                          setCurrentPage(1);
+                        }}
+                        data-testid="button-remove-upc"
+                      />
+                    </Badge>
+                  )}
+                  {sortBy && (
+                    <Badge variant="secondary" className="gap-1">
+                      Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label} (
+                      {sortOrder})
+                      <X
+                        className="w-3 h-3 cursor-pointer hover-elevate"
+                        onClick={() => {
+                          setSortBy("");
+                          setCurrentPage(1);
+                        }}
+                      />
+                    </Badge>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleClearFilters}
                   data-testid="button-clear-filters"
-                  className="gap-1"
+                  className="gap-1 shrink-0"
                 >
                   <X className="w-4 h-4" />
                   Clear Filters
@@ -604,50 +645,6 @@ export default function FdcSearch() {
               </div>
             )}
           </div>
-
-          {hasActiveFilters && (
-            <div className="flex flex-wrap gap-2" data-testid="active-filters">
-              {brandOwners.map((brand) => (
-                <Badge key={brand} variant="secondary" className="gap-1">
-                  Brand: {brand}
-                  <X
-                    className="w-3 h-3 cursor-pointer hover-elevate"
-                    onClick={() => handleRemoveBrand(brand)}
-                  />
-                </Badge>
-              ))}
-              {upcCode && (
-                <Badge
-                  variant="secondary"
-                  className="gap-1"
-                  data-testid="badge-upc-filter"
-                >
-                  UPC: {upcCode}
-                  <X
-                    className="w-3 h-3 cursor-pointer hover-elevate"
-                    onClick={() => {
-                      setUpcCode("");
-                      setCurrentPage(1);
-                    }}
-                    data-testid="button-remove-upc"
-                  />
-                </Badge>
-              )}
-              {sortBy && (
-                <Badge variant="secondary" className="gap-1">
-                  Sort: {SORT_OPTIONS.find((o) => o.value === sortBy)?.label} (
-                  {sortOrder})
-                  <X
-                    className="w-3 h-3 cursor-pointer hover-elevate"
-                    onClick={() => {
-                      setSortBy("");
-                      setCurrentPage(1);
-                    }}
-                  />
-                </Badge>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
 
