@@ -33,6 +33,38 @@ const iconMap: Record<string, any> = {
   "utensils-crossed": UtensilsCrossed,
 };
 
+// Shorten long USDA category names for sidebar display
+function shortenCategoryName(category: string): string {
+  const mappings: Record<string, string> = {
+    "Cereal Grains and Pasta": "Grains & Pasta",
+    "Dairy and Egg Products": "Dairy & Eggs",
+    "Fats and Oils": "Fats & Oils",
+    "Fruits and Fruit Juices": "Fruits & Juices",
+    "Vegetables and Vegetable Products": "Vegetables",
+    "Sausages and Luncheon Meats": "Deli Meats",
+    "Spices and Herbs": "Spices & Herbs",
+    "Beef Products": "Beef",
+    "Pork Products": "Pork",
+    "Poultry Products": "Poultry",
+    "Finfish and Shellfish Products": "Seafood",
+    "Legumes and Legume Products": "Legumes",
+    "Nut and Seed Products": "Nuts & Seeds",
+    "Sweets": "Sweets",
+    "Baby Foods": "Baby Foods",
+    "Baked Products": "Baked Goods",
+    "Beverages": "Beverages",
+    "Breakfast Cereals": "Cereals",
+    "Fast Foods": "Fast Food",
+    "Meals, Entrees, and Side Dishes": "Meals & Sides",
+    "Snacks": "Snacks",
+    "Soups, Sauces, and Gravies": "Soups & Sauces",
+    "American Indian/Alaska Native Foods": "Native Foods",
+    "Restaurant Foods": "Restaurant",
+  };
+  
+  return mappings[category] || category;
+}
+
 export function AppSidebar() {
   const [location] = useLocation();
   const [inventoryOpen, setInventoryOpen] = useState(false);
@@ -201,12 +233,13 @@ export function AppSidebar() {
                           const categoryItems = groupedItems[category];
                           const categoryPath = `/food-groups?category=${encodeURIComponent(category)}`;
                           const CategoryIcon = getCategoryIcon(category);
+                          const displayName = shortenCategoryName(category);
                           return (
                             <SidebarMenuSubItem key={category}>
                               <SidebarMenuSubButton asChild isActive={location.includes(`category=${encodeURIComponent(category)}`)}>
                                 <Link href={categoryPath} data-testid={`link-category-${category.toLowerCase().replace(/\s+/g, '-')}`}>
                                   <CategoryIcon className="w-4 h-4" />
-                                  <span className="flex-1">{category}</span>
+                                  <span className="flex-1">{displayName}</span>
                                   <Badge 
                                     variant="secondary" 
                                     className="ml-auto text-xs rounded-full h-5 px-2"
