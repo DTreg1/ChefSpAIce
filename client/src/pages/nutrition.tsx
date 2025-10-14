@@ -1,7 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Apple, Flame, Beef, Wheat, Droplet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Apple, Flame, Beef, Wheat, Droplet, RefreshCw, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { NutritionInfo } from "@shared/schema";
 
 type NutritionStats = {
@@ -24,13 +28,51 @@ type NutritionItem = {
   nutrition: NutritionInfo;
 };
 
+type MissingNutritionItem = {
+  id: string;
+  name: string;
+  quantity: string;
+  unit: string | null;
+  fcdId?: string | null;
+  locationName: string;
+};
+
 export default function Nutrition() {
+  const { toast } = useToast();
+  
   const { data: stats, isLoading: statsLoading } = useQuery<NutritionStats>({
     queryKey: ["/api/nutrition/stats"],
   });
 
   const { data: items, isLoading: itemsLoading } = useQuery<NutritionItem[]>({
     queryKey: ["/api/nutrition/items"],
+  });
+
+  const { data: missingItems, isLoading: missingLoading } = useQuery<MissingNutritionItem[]>({
+    queryKey: ["/api/nutrition/items/missing"],
+  });
+
+  const refreshNutritionMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      return await apiRequest("POST", `/api/food-items/${itemId}/refresh-nutrition`, {});
+    },
+    onSuccess: (data, itemId) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items/missing"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      toast({
+        title: "Nutrition data refreshed",
+        description: "Successfully updated nutrition information",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to refresh nutrition",
+        description: error.message || "Could not fetch nutrition data for this item",
+        variant: "destructive",
+      });
+    },
   });
 
   const macroData = [
@@ -171,7 +213,7 @@ export default function Nutrition() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Items with Nutrition Data</CardTitle>
                 <p className="text-sm text-muted-foreground">
@@ -267,6 +309,60 @@ export default function Nutrition() {
                 )}
               </CardContent>
             </Card>
+
+            {missingItems && missingItems.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-orange-500" />
+                    Items Missing Nutrition Data
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {missingItems.length} item{missingItems.length !== 1 ? 's' : ''} need nutrition information
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {missingLoading ? (
+                    <p className="text-muted-foreground text-center py-4">Loading...</p>
+                  ) : (
+                    <>
+                      <Alert className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          Click "Refresh Nutrition" to automatically fetch nutritional data from the USDA database.
+                        </AlertDescription>
+                      </Alert>
+                      <div className="space-y-3">
+                        {missingItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-3 border border-border rounded-lg flex items-center justify-between"
+                            data-testid={`missing-nutrition-item-${item.id}`}
+                          >
+                            <div className="flex-1">
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {item.quantity} {item.unit || ""} • {item.locationName}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => refreshNutritionMutation.mutate(item.id)}
+                              disabled={refreshNutritionMutation.isPending}
+                              data-testid={`button-refresh-${item.id}`}
+                            >
+                              <RefreshCw className={`w-4 h-4 mr-2 ${refreshNutritionMutation.isPending ? 'animate-spin' : ''}`} />
+                              Refresh Nutrition
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </div>
