@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, 
   MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, 
-  Database, LayoutGrid, ChevronRight, BarChart3, Heart
+  Database, LayoutGrid, ChevronRight, BarChart3, Heart, Info, Shield, ScrollText
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -304,6 +304,40 @@ export function AppSidebar() {
                     <Link href="/settings" data-testid="link-settings">
                       <Settings className="w-4 h-4" />
                       <span className="flex-1">Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              Legal
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/about"}>
+                    <Link href="/about" data-testid="link-about">
+                      <Info className="w-4 h-4" />
+                      <span className="flex-1">About</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/privacy"}>
+                    <Link href="/privacy" data-testid="link-privacy">
+                      <Shield className="w-4 h-4" />
+                      <span className="flex-1">Privacy Policy</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/terms"}>
+                    <Link href="/terms" data-testid="link-terms">
+                      <ScrollText className="w-4 h-4" />
+                      <span className="flex-1">Terms of Service</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
