@@ -439,105 +439,107 @@ export default function FdcSearch() {
           </form>
 
           <div className="space-y-4">
-            <div>
-              <Label
-                htmlFor="brand-owner"
-                className="text-sm font-semibold mb-2 block"
-              >
-                Brand Owners
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="brand-owner"
-                  type="text"
-                  placeholder="e.g., 'General Mills', 'Kraft'"
-                  value={brandInput}
-                  onChange={(e) => setBrandInput(e.target.value)}
-                  onKeyDown={handleBrandInputKeyDown}
-                  data-testid="input-brand-owner"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleAddBrand}
-                  disabled={!brandInput.trim()}
-                  data-testid="button-add-brand"
+            <div className="flex items-start gap-4">
+              <div className="flex-1">
+                <Label
+                  htmlFor="brand-owner"
+                  className="text-sm font-semibold mb-2 block"
                 >
-                  Add
-                </Button>
-              </div>
-              {brandOwners.length > 0 && (
-                <div
-                  className="flex flex-wrap gap-2 mt-2"
-                  data-testid="brand-pills"
-                >
-                  {brandOwners.map((brand) => (
-                    <Badge key={brand} variant="secondary" className="gap-1">
-                      {brand}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover-elevate"
-                        onClick={() => handleRemoveBrand(brand)}
-                        data-testid={`button-remove-brand-${brand.toLowerCase().replace(/\s+/g, "-")}`}
-                      />
-                    </Badge>
-                  ))}
+                  Brand Owners
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="brand-owner"
+                    type="text"
+                    placeholder="e.g., 'General Mills', 'Kraft'"
+                    value={brandInput}
+                    onChange={(e) => setBrandInput(e.target.value)}
+                    onKeyDown={handleBrandInputKeyDown}
+                    data-testid="input-brand-owner"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleAddBrand}
+                    disabled={!brandInput.trim()}
+                    data-testid="button-add-brand"
+                  >
+                    Add
+                  </Button>
                 </div>
-              )}
-            </div>
+                {brandOwners.length > 0 && (
+                  <div
+                    className="flex flex-wrap gap-2 mt-2"
+                    data-testid="brand-pills"
+                  >
+                    {brandOwners.map((brand) => (
+                      <Badge key={brand} variant="secondary" className="gap-1">
+                        {brand}
+                        <X
+                          className="w-3 h-3 cursor-pointer hover-elevate"
+                          onClick={() => handleRemoveBrand(brand)}
+                          data-testid={`button-remove-brand-${brand.toLowerCase().replace(/\s+/g, "-")}`}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            <div className="flex items-center gap-2">
-              <Select
-                value={sortBy || "none"}
-                onValueChange={(value) => {
-                  setSortBy(value === "none" ? "" : value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[140px]" id="sort-by" data-testid="select-sort-by">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {SORT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2 pt-7">
+                <Select
+                  value={sortBy || "none"}
+                  onValueChange={(value) => {
+                    setSortBy(value === "none" ? "" : value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[140px]" id="sort-by" data-testid="select-sort-by">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {SORT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                  setCurrentPage(1);
-                }}
-                disabled={!sortBy}
-                data-testid="button-toggle-sort-order"
-                className="shrink-0"
-              >
-                {sortOrder === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                    setCurrentPage(1);
+                  }}
+                  disabled={!sortBy}
+                  data-testid="button-toggle-sort-order"
+                  className="shrink-0"
+                >
+                  {sortOrder === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                </Button>
 
-              <Select
-                value={pageSize.toString()}
-                onValueChange={(value) => {
-                  setPageSize(parseInt(value));
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[100px]" id="page-size" data-testid="select-page-size">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZES.map((size) => (
-                    <SelectItem key={size} value={size.toString()}>
-                      {size} results
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
+                    setPageSize(parseInt(value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[100px]" id="page-size" data-testid="select-page-size">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZES.map((size) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        {size} results
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             {hasActiveFilters && (
