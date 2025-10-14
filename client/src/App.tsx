@@ -13,6 +13,7 @@ import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
 import { FeedbackWidget } from "@/components/feedback-widget";
+import { AnimatedBackground } from "@/components/animated-background";
 import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "@/pages/landing";
@@ -116,6 +117,7 @@ function AppContent() {
   // Show app layout with sidebar for authenticated users who completed onboarding
   return (
     <>
+      <AnimatedBackground variant="both" gradientType="soft" particleCount={15} />
       <CommandPalette 
         onAddFood={() => setAddFoodOpen(true)}
         onGenerateRecipe={() => setRecipeDialogOpen(true)}
@@ -131,14 +133,14 @@ function AppContent() {
       />
       <FeedbackWidget />
       <SidebarProvider style={style}>
-        <div className="flex h-screen w-full">
+        <div className="flex h-screen w-full relative">
           <AppSidebar />
           <div className="flex flex-col flex-1">
             <header className={cn(
               "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-20",
-              scrolled ? "glass-strong navbar-scroll scrolled shadow-glass" : "glass-subtle border-border/50"
+              scrolled ? "glass-ultra navbar-scroll scrolled shadow-lg" : "glass-vibrant border-border/30"
             )}>
-              <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph" />
+              <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph hover:scale-105" />
               <div className="ml-auto">
                 <QuickActionsBar 
                   onAddFood={() => setAddFoodOpen(true)}
