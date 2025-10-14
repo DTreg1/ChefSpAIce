@@ -128,6 +128,9 @@ export async function setupAuth(app: Express) {
   });
 }
 
+// Map to track active token refreshes per user session
+const activeRefreshes = new Map<string, Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>>();
+
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
@@ -146,12 +149,34 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return;
   }
 
+  // Create a unique key for this user's refresh operation
+  const userId = user.claims?.sub || 'unknown';
+  const refreshKey = `${userId}-${refreshToken.substring(0, 10)}`;
+  
   try {
-    const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
+    // Check if a refresh is already in progress for this user
+    let tokenResponsePromise = activeRefreshes.get(refreshKey);
+    
+    if (!tokenResponsePromise) {
+      // No active refresh, start a new one
+      const config = await getOidcConfig();
+      tokenResponsePromise = client.refreshTokenGrant(config, refreshToken);
+      
+      // Store the promise so other concurrent requests can wait for it
+      activeRefreshes.set(refreshKey, tokenResponsePromise);
+      
+      // Clean up the promise after it completes (success or failure)
+      tokenResponsePromise.finally(() => {
+        activeRefreshes.delete(refreshKey);
+      });
+    }
+    
+    // Wait for the refresh to complete
+    const tokenResponse = await tokenResponsePromise;
     updateUserSession(user, tokenResponse);
     return next();
   } catch (error) {
+    console.error('Token refresh failed:', error);
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
