@@ -32,6 +32,8 @@ import {
   type InsertShoppingListItem,
   type Feedback,
   type InsertFeedback,
+  type FeedbackUpvote,
+  type InsertFeedbackUpvote,
   type FeedbackResponse,
   type InsertFeedbackResponse,
   type FeedbackAnalytics,
@@ -53,6 +55,7 @@ import {
   fdcSearchCache,
   shoppingListItems,
   feedback,
+  feedbackUpvotes,
   feedbackResponses,
   donations
 } from "@shared/schema";
@@ -160,11 +163,19 @@ export interface IStorage {
   getFeedback(userId: string, id: string): Promise<Feedback | undefined>;
   getUserFeedback(userId: string, limit?: number): Promise<Feedback[]>;
   getAllFeedback(limit?: number, offset?: number, status?: string): Promise<{ items: Feedback[], total: number }>;
-  updateFeedbackStatus(id: string, status: string, resolvedAt?: Date): Promise<Feedback>;
+  getCommunityFeedback(type?: string, sortBy?: 'upvotes' | 'recent', limit?: number): Promise<Array<Feedback & { userUpvoted: boolean }>>;
+  getCommunityFeedbackForUser(userId: string, type?: string, sortBy?: 'upvotes' | 'recent', limit?: number): Promise<Array<Feedback & { userUpvoted: boolean }>>;
+  updateFeedbackStatus(id: string, status: string, estimatedTurnaround?: string, resolvedAt?: Date): Promise<Feedback>;
   addFeedbackResponse(feedbackId: string, response: Omit<InsertFeedbackResponse, 'feedbackId'>): Promise<FeedbackResponse>;
   getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]>;
   getFeedbackAnalytics(userId?: string, days?: number): Promise<FeedbackAnalytics>;
   getFeedbackByContext(contextId: string, contextType: string): Promise<Feedback[]>;
+  
+  // Feedback Upvotes
+  upvoteFeedback(userId: string, feedbackId: string): Promise<void>;
+  removeUpvote(userId: string, feedbackId: string): Promise<void>;
+  hasUserUpvoted(userId: string, feedbackId: string): Promise<boolean>;
+  getFeedbackUpvoteCount(feedbackId: string): Promise<number>;
 
   // Donation System (from blueprint:javascript_stripe)
   createDonation(donation: Omit<InsertDonation, 'id' | 'createdAt' | 'completedAt'>): Promise<Donation>;
@@ -1481,9 +1492,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateFeedbackStatus(id: string, status: string, resolvedAt?: Date): Promise<Feedback> {
+  async updateFeedbackStatus(id: string, status: string, estimatedTurnaround?: string, resolvedAt?: Date): Promise<Feedback> {
     try {
       const updateData: any = { status };
+      if (estimatedTurnaround !== undefined) {
+        updateData.estimatedTurnaround = estimatedTurnaround;
+      }
       if (resolvedAt) {
         updateData.resolvedAt = resolvedAt;
       }
@@ -1651,6 +1665,134 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting feedback by context:', error);
       throw new Error('Failed to get feedback by context');
+    }
+  }
+
+  async getCommunityFeedback(type?: string, sortBy: 'upvotes' | 'recent' = 'recent', limit: number = 50): Promise<Array<Feedback & { userUpvoted: boolean }>> {
+    try {
+      const whereCondition = type ? eq(feedback.type, type) : undefined;
+      const orderByClause = sortBy === 'upvotes' 
+        ? sql`${feedback.upvoteCount} DESC, ${feedback.createdAt} DESC`
+        : sql`${feedback.createdAt} DESC`;
+
+      const results = whereCondition
+        ? await db.select().from(feedback).where(whereCondition).orderBy(orderByClause).limit(limit)
+        : await db.select().from(feedback).orderBy(orderByClause).limit(limit);
+
+      return results.map(item => ({ ...item, userUpvoted: false }));
+    } catch (error) {
+      console.error('Error getting community feedback:', error);
+      throw new Error('Failed to get community feedback');
+    }
+  }
+
+  async getCommunityFeedbackForUser(userId: string, type?: string, sortBy: 'upvotes' | 'recent' = 'recent', limit: number = 50): Promise<Array<Feedback & { userUpvoted: boolean }>> {
+    try {
+      const whereCondition = type ? eq(feedback.type, type) : undefined;
+      const orderByClause = sortBy === 'upvotes' 
+        ? sql`${feedback.upvoteCount} DESC, ${feedback.createdAt} DESC`
+        : sql`${feedback.createdAt} DESC`;
+
+      const results = whereCondition
+        ? await db.select().from(feedback).where(whereCondition).orderBy(orderByClause).limit(limit)
+        : await db.select().from(feedback).orderBy(orderByClause).limit(limit);
+
+      const feedbackIds = results.map(f => f.id);
+      const userUpvotes = feedbackIds.length > 0 
+        ? await db.select().from(feedbackUpvotes).where(
+            and(
+              eq(feedbackUpvotes.userId, userId),
+              sql`${feedbackUpvotes.feedbackId} IN ${feedbackIds}`
+            )
+          )
+        : [];
+
+      const upvotedIds = new Set(userUpvotes.map(u => u.feedbackId));
+
+      return results.map(item => ({
+        ...item,
+        userUpvoted: upvotedIds.has(item.id)
+      }));
+    } catch (error) {
+      console.error('Error getting community feedback for user:', error);
+      throw new Error('Failed to get community feedback');
+    }
+  }
+
+  async upvoteFeedback(userId: string, feedbackId: string): Promise<void> {
+    try {
+      const existing = await db
+        .select()
+        .from(feedbackUpvotes)
+        .where(and(
+          eq(feedbackUpvotes.userId, userId),
+          eq(feedbackUpvotes.feedbackId, feedbackId)
+        ));
+
+      if (existing.length > 0) {
+        return;
+      }
+
+      await db.insert(feedbackUpvotes).values({ userId, feedbackId });
+      
+      await db
+        .update(feedback)
+        .set({ upvoteCount: sql`${feedback.upvoteCount} + 1` })
+        .where(eq(feedback.id, feedbackId));
+    } catch (error) {
+      console.error('Error upvoting feedback:', error);
+      throw new Error('Failed to upvote feedback');
+    }
+  }
+
+  async removeUpvote(userId: string, feedbackId: string): Promise<void> {
+    try {
+      const deleted = await db
+        .delete(feedbackUpvotes)
+        .where(and(
+          eq(feedbackUpvotes.userId, userId),
+          eq(feedbackUpvotes.feedbackId, feedbackId)
+        ))
+        .returning();
+
+      if (deleted.length > 0) {
+        await db
+          .update(feedback)
+          .set({ upvoteCount: sql`GREATEST(${feedback.upvoteCount} - 1, 0)` })
+          .where(eq(feedback.id, feedbackId));
+      }
+    } catch (error) {
+      console.error('Error removing upvote:', error);
+      throw new Error('Failed to remove upvote');
+    }
+  }
+
+  async hasUserUpvoted(userId: string, feedbackId: string): Promise<boolean> {
+    try {
+      const [result] = await db
+        .select()
+        .from(feedbackUpvotes)
+        .where(and(
+          eq(feedbackUpvotes.userId, userId),
+          eq(feedbackUpvotes.feedbackId, feedbackId)
+        ));
+      return !!result;
+    } catch (error) {
+      console.error('Error checking upvote status:', error);
+      return false;
+    }
+  }
+
+  async getFeedbackUpvoteCount(feedbackId: string): Promise<number> {
+    try {
+      const [result] = await db
+        .select({ upvoteCount: feedback.upvoteCount })
+        .from(feedback)
+        .where(eq(feedback.id, feedbackId));
+      return result?.upvoteCount || 0;
+    } catch (error) {
+      console.error('Error getting upvote count:', error);
+      return 0;
     }
   }
 

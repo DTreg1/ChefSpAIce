@@ -29,6 +29,7 @@ import Settings from "@/pages/settings";
 import FdcSearch from "@/pages/FdcSearch";
 import FoodGroups from "@/pages/food-groups";
 import FeedbackAnalytics from "@/pages/feedback-analytics";
+import FeedbackBoard from "@/pages/feedback-board";
 import Donate from "@/pages/donate";
 import DonateSuccess from "@/pages/donate-success";
 import About from "@/pages/about";
@@ -50,6 +51,7 @@ function AuthenticatedRouter() {
       <Route path="/food-groups" component={FoodGroups} />
       <Route path="/fdc-search" component={FdcSearch} />
       <Route path="/feedback-analytics" component={FeedbackAnalytics} />
+      <Route path="/feedback-board" component={FeedbackBoard} />
       <Route path="/donate" component={Donate} />
       <Route path="/donate/success" component={DonateSuccess} />
       <Route path="/settings" component={Settings} />

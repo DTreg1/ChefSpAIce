@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, real } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, real, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -503,8 +503,13 @@ export const feedback = pgTable("feedback", {
   contextType: text("context_type"), // Type of related entity
   category: text("category"), // Auto-categorized: 'ui', 'functionality', 'content', 'performance'
   priority: text("priority"), // 'low', 'medium', 'high', 'critical'
-  status: text("status").notNull().default('new'), // 'new', 'reviewed', 'in_progress', 'resolved'
+  status: text("status").notNull().default('open'), // 'open', 'in_progress', 'completed', 'wont_fix'
+  estimatedTurnaround: text("estimated_turnaround"), // e.g., "1-2 weeks", "Next release", "Q2 2025"
   tags: text("tags").array(), // AI-generated tags
+  upvoteCount: integer("upvote_count").notNull().default(0), // Cached count for performance
+  isFlagged: boolean("is_flagged").notNull().default(false), // Flagged by AI moderator
+  flagReason: text("flag_reason"), // Why it was flagged
+  similarTo: varchar("similar_to"), // ID of similar/duplicate feedback
   createdAt: timestamp("created_at").notNull().defaultNow(),
   resolvedAt: timestamp("resolved_at"),
 }, (table) => [
@@ -513,22 +518,47 @@ export const feedback = pgTable("feedback", {
   index("feedback_created_at_idx").on(table.createdAt),
   index("feedback_status_idx").on(table.status),
   index("feedback_context_idx").on(table.contextId, table.contextType),
+  index("feedback_upvote_count_idx").on(table.upvoteCount),
 ]);
 
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   id: true,
   createdAt: true,
   resolvedAt: true,
+  upvoteCount: true,
+  isFlagged: true,
+  flagReason: true,
+  similarTo: true,
 }).extend({
   type: z.enum(['chat_response', 'recipe', 'food_item', 'bug', 'feature', 'general']),
   sentiment: z.enum(['positive', 'negative', 'neutral']).optional(),
   rating: z.number().int().min(1).max(5).optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-  status: z.enum(['new', 'reviewed', 'in_progress', 'resolved']).optional(),
+  status: z.enum(['open', 'in_progress', 'completed', 'wont_fix']).optional(),
 });
 
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof feedback.$inferSelect;
+
+// Feedback Upvotes - Track who upvoted what
+export const feedbackUpvotes = pgTable("feedback_upvotes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  feedbackId: varchar("feedback_id").notNull().references(() => feedback.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("feedback_upvotes_feedback_id_idx").on(table.feedbackId),
+  index("feedback_upvotes_user_id_idx").on(table.userId),
+  uniqueIndex("feedback_upvotes_unique_idx").on(table.feedbackId, table.userId),
+]);
+
+export const insertFeedbackUpvoteSchema = createInsertSchema(feedbackUpvotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertFeedbackUpvote = z.infer<typeof insertFeedbackUpvoteSchema>;
+export type FeedbackUpvote = typeof feedbackUpvotes.$inferSelect;
 
 // Feedback Responses from admin/team
 export const feedbackResponses = pgTable("feedback_responses", {
