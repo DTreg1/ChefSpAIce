@@ -7,6 +7,10 @@ import { Star, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { Recipe } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
+import { PageTransition } from "@/components/page-transition";
+import { StaggerContainer, StaggerItem } from "@/components/stagger-children";
+import { AnimatedCard } from "@/components/animated-card";
+import { CardSkeleton } from "@/components/skeleton-loader";
 
 export default function Cookbook() {
   const [filter, setFilter] = useState<"all" | "favorites">("all");
@@ -37,7 +41,7 @@ export default function Cookbook() {
   const favoriteCount = recipes?.filter(r => r.isFavorite).length || 0;
 
   return (
-    <div className="h-full overflow-y-auto bg-muted">
+    <PageTransition className="h-full overflow-y-auto bg-muted">
       <div className="max-w-6xl mx-auto p-6">
         <div className="mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
@@ -138,6 +142,6 @@ export default function Cookbook() {
           </div>
         )}
       </div>
-    </div>
+    </PageTransition>
   );
 }
