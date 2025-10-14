@@ -574,6 +574,36 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async clearChatMessages(userId: string): Promise<void> {
+    try {
+      await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
+    } catch (error) {
+      console.error(`Error clearing chat messages for user ${userId}:`, error);
+      throw new Error('Failed to clear chat messages');
+    }
+  }
+
+  async deleteOldChatMessages(userId: string, hoursOld: number = 24): Promise<number> {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
+      
+      const result = await db.delete(chatMessages)
+        .where(
+          and(
+            eq(chatMessages.userId, userId),
+            sql`${chatMessages.timestamp} < ${cutoffDate}`
+          )
+        )
+        .returning();
+      
+      return result.length;
+    } catch (error) {
+      console.error(`Error deleting old chat messages for user ${userId}:`, error);
+      throw new Error('Failed to delete old chat messages');
+    }
+  }
+
   // Recipes
   async getRecipes(userId: string): Promise<Recipe[]> {
     try {

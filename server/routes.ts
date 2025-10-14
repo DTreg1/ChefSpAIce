@@ -10,6 +10,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ApiError } from "./apiError";
 import { batchedApiLogger } from "./batchedApiLogger";
+import { cleanupOldMessagesForUser } from "./chatCleanup";
 import { z } from "zod";
 import { 
   insertFoodItemSchema, 
@@ -747,6 +748,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/chat/messages", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      
+      // Trigger automatic cleanup of old messages (runs in background)
+      cleanupOldMessagesForUser(userId).catch(err => 
+        console.error('Background cleanup error:', err)
+      );
+      
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 50, 100); // Max 100 per page
       
@@ -762,6 +769,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching chat messages:", error);
       res.status(500).json({ error: "Failed to fetch chat messages" });
+    }
+  });
+
+  // Create a single chat message
+  app.post("/api/chat/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageData = {
+        role: req.body.role,
+        content: req.body.content,
+        metadata: req.body.metadata || null
+      };
+      const message = await storage.createChatMessage(userId, messageData);
+      res.json(message);
+    } catch (error) {
+      console.error("Error creating chat message:", error);
+      res.status(400).json({ error: "Invalid chat message data" });
+    }
+  });
+
+  // Clear all chat messages for a user
+  app.delete("/api/chat/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.clearChatMessages(userId);
+      res.json({ success: true, message: "Chat history cleared" });
+    } catch (error) {
+      console.error("Error clearing chat messages:", error);
+      res.status(500).json({ error: "Failed to clear chat history" });
+    }
+  });
+
+  // Delete old chat messages (older than specified hours)
+  app.post("/api/chat/messages/cleanup", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { hoursOld = 24 } = req.body;
+      const deleted = await storage.deleteOldChatMessages(userId, hoursOld);
+      res.json({ success: true, deletedCount: deleted, message: `Deleted messages older than ${hoursOld} hours` });
+    } catch (error) {
+      console.error("Error cleaning up chat messages:", error);
+      res.status(500).json({ error: "Failed to cleanup chat messages" });
     }
   });
 
