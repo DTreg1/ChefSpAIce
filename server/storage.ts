@@ -31,6 +31,8 @@ import {
   type FeedbackResponse,
   type InsertFeedbackResponse,
   type FeedbackAnalytics,
+  type Donation,
+  type InsertDonation,
   users,
   userPreferences,
   storageLocations,
@@ -45,7 +47,8 @@ import {
   fdcSearchCache,
   shoppingListItems,
   feedback,
-  feedbackResponses
+  feedbackResponses,
+  donations
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -139,6 +142,15 @@ export interface IStorage {
   getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]>;
   getFeedbackAnalytics(userId?: string, days?: number): Promise<FeedbackAnalytics>;
   getFeedbackByContext(contextId: string, contextType: string): Promise<Feedback[]>;
+
+  // Donation System (from blueprint:javascript_stripe)
+  createDonation(donation: Omit<InsertDonation, 'id' | 'createdAt' | 'completedAt'>): Promise<Donation>;
+  updateDonation(stripePaymentIntentId: string, updates: Partial<Donation>): Promise<Donation>;
+  getDonation(id: string): Promise<Donation | undefined>;
+  getDonationByPaymentIntent(stripePaymentIntentId: string): Promise<Donation | undefined>;
+  getDonations(limit?: number, offset?: number): Promise<{ donations: Donation[], total: number }>;
+  getUserDonations(userId: string, limit?: number): Promise<Donation[]>;
+  getTotalDonations(): Promise<{ totalAmount: number, donationCount: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1451,6 +1463,123 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting feedback by context:', error);
       throw new Error('Failed to get feedback by context');
+    }
+  }
+
+  // Donation System Implementation (from blueprint:javascript_stripe)
+  async createDonation(donation: Omit<InsertDonation, 'id' | 'createdAt' | 'completedAt'>): Promise<Donation> {
+    try {
+      const [newDonation] = await db
+        .insert(donations)
+        .values(donation)
+        .returning();
+      return newDonation;
+    } catch (error) {
+      console.error('Error creating donation:', error);
+      throw new Error('Failed to create donation');
+    }
+  }
+
+  async updateDonation(stripePaymentIntentId: string, updates: Partial<Donation>): Promise<Donation> {
+    try {
+      const [updated] = await db
+        .update(donations)
+        .set({
+          ...updates,
+          completedAt: updates.status === 'succeeded' ? new Date() : undefined
+        })
+        .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
+        .returning();
+      
+      if (!updated) {
+        throw new Error('Donation not found');
+      }
+      return updated;
+    } catch (error) {
+      console.error('Error updating donation:', error);
+      throw new Error('Failed to update donation');
+    }
+  }
+
+  async getDonation(id: string): Promise<Donation | undefined> {
+    try {
+      const [donation] = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.id, id));
+      return donation;
+    } catch (error) {
+      console.error('Error getting donation:', error);
+      throw new Error('Failed to get donation');
+    }
+  }
+
+  async getDonationByPaymentIntent(stripePaymentIntentId: string): Promise<Donation | undefined> {
+    try {
+      const [donation] = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId));
+      return donation;
+    } catch (error) {
+      console.error('Error getting donation by payment intent:', error);
+      throw new Error('Failed to get donation');
+    }
+  }
+
+  async getDonations(limit: number = 50, offset: number = 0): Promise<{ donations: Donation[], total: number }> {
+    try {
+      const [donationResults, totalResult] = await Promise.all([
+        db
+          .select()
+          .from(donations)
+          .orderBy(sql`${donations.createdAt} DESC`)
+          .limit(limit)
+          .offset(offset),
+        db
+          .select({ count: sql<number>`COUNT(*)::int` })
+          .from(donations)
+      ]);
+
+      return {
+        donations: donationResults,
+        total: totalResult[0]?.count || 0
+      };
+    } catch (error) {
+      console.error('Error getting donations:', error);
+      throw new Error('Failed to get donations');
+    }
+  }
+
+  async getUserDonations(userId: string, limit: number = 10): Promise<Donation[]> {
+    try {
+      const results = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.userId, userId))
+        .orderBy(sql`${donations.createdAt} DESC`)
+        .limit(limit);
+      return results;
+    } catch (error) {
+      console.error('Error getting user donations:', error);
+      throw new Error('Failed to get user donations');
+    }
+  }
+
+  async getTotalDonations(): Promise<{ totalAmount: number, donationCount: number }> {
+    try {
+      const result = await db
+        .select({
+          totalAmount: sql<number>`COALESCE(SUM(amount), 0)::int`,
+          donationCount: sql<number>`COUNT(*)::int`
+        })
+        .from(donations)
+        .where(eq(donations.status, 'succeeded'));
+      
+      return result[0] || { totalAmount: 0, donationCount: 0 };
+    } catch (error) {
+      console.error('Error getting total donations:', error);
+      throw new Error('Failed to get total donations');
     }
   }
 }
