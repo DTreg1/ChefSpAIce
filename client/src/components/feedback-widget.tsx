@@ -15,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import type { InsertFeedback } from "@shared/schema";
 
 type FeedbackType = 'bug' | 'feature' | 'general';
@@ -26,6 +27,7 @@ export function FeedbackWidget() {
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [satisfaction, setSatisfaction] = useState<'positive' | 'negative' | 'neutral'>('neutral');
   const { toast } = useToast();
+  const [location] = useLocation();
 
   const submitFeedbackMutation = useMutation({
     mutationFn: async (data: Partial<InsertFeedback>) => {
@@ -79,12 +81,17 @@ export function FeedbackWidget() {
     });
   };
 
+  // Adjust positioning when on the chat page to avoid overlapping with chat input
+  // Both '/' and '/chat' routes render the Chat component
+  const isOnChatPage = location === '/' || location.startsWith('/chat');
+
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-50",
+          "fixed z-50",
+          isOnChatPage ? "bottom-48 right-6" : "bottom-6 right-6",
           "glass-subtle backdrop-blur-md",
           "rounded-full p-4",
           "shadow-glass hover:shadow-glass-hover",
@@ -102,7 +109,8 @@ export function FeedbackWidget() {
   return (
     <div
       className={cn(
-        "fixed bottom-6 right-6 z-50",
+        "fixed z-50",
+        isOnChatPage ? "bottom-48 right-6" : "bottom-6 right-6",
         "glass-subtle backdrop-blur-md",
         "rounded-2xl shadow-glass",
         "w-96 max-h-[600px]",
