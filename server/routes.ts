@@ -2334,6 +2334,11 @@ Respond in JSON format: { "category": "...", "priority": "...", "tags": [...] }`
     }
   });
 
+  // Handle 404s for API routes that weren't matched above
+  app.use("/api/*", (_req: any, res) => {
+    res.status(404).json({ message: "API endpoint not found" });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
