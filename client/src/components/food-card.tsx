@@ -134,7 +134,24 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                     <div 
                       className={cn("h-full rounded-full transition-all-smooth", expiryStatus.color)}
                       style={{
-                        width: `${Math.max(0, Math.min(100, ((new Date(item.expirationDate!).getTime() - new Date().getTime()) / (7 * 24 * 60 * 60 * 1000)) * 100))}%`
+                        width: (() => {
+                          const now = new Date().getTime();
+                          const expiry = new Date(item.expirationDate!).getTime();
+                          const daysUntil = (expiry - now) / (24 * 60 * 60 * 1000);
+                          
+                          // For expired items, show 10% width as a minimum visual indicator
+                          if (daysUntil < 0) return '10%';
+                          
+                          // For items expiring within 3 days, scale from 10% to 30%
+                          if (daysUntil <= 3) return `${10 + (daysUntil / 3) * 20}%`;
+                          
+                          // For items expiring within 7 days, scale from 30% to 60%
+                          if (daysUntil <= 7) return `${30 + ((daysUntil - 3) / 4) * 30}%`;
+                          
+                          // For items with more than 7 days, scale from 60% to 100%
+                          // Max out at 30 days for full bar
+                          return `${Math.min(100, 60 + ((daysUntil - 7) / 23) * 40)}%`;
+                        })()
                       }}
                     />
                   </div>
