@@ -370,25 +370,44 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   };
 
   const handleSubmit = () => {
+    console.log("handleSubmit called with:", {
+      selectedFood,
+      searchQuery,
+      quantity,
+      unit,
+      storageLocationId,
+      expirationDate
+    });
+
+    // Validate that we have either a selected food or a search query
     if (!selectedFood && !searchQuery.trim()) {
       toast({
         title: "Error",
-        description: "Please select a food item",
+        description: "Please select a food item or enter a name",
         variant: "destructive",
       });
       return;
     }
 
-    if (!quantity || !unit || !storageLocationId || !expirationDate) {
+    // Check all required fields individually for better error reporting
+    const missingFields = [];
+    if (!quantity) missingFields.push("quantity");
+    if (!unit) missingFields.push("unit");
+    if (!storageLocationId) missingFields.push("storage location");
+    if (!expirationDate) missingFields.push("expiration date");
+
+    if (missingFields.length > 0) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: `Please fill in: ${missingFields.join(", ")}`,
         variant: "destructive",
       });
+      console.error("Missing fields:", missingFields);
       return;
     }
 
-    addItemMutation.mutate({
+    // Log the mutation data for debugging
+    const mutationData = {
       name: selectedFood?.description || searchQuery,
       fcdId: selectedFood?.fdcId?.toString() || null,
       quantity,
@@ -397,9 +416,13 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       expirationDate,
       imageUrl: imageUrl,
       nutrition: selectedFood?.nutrition ? JSON.stringify(selectedFood.nutrition) : null,
-      usdaData: selectedFood || null, // Save complete USDA response data
-      foodCategory: selectedFood?.foodCategory || null, // Save food category for filtering
-    });
+      usdaData: selectedFood || null,
+      foodCategory: selectedFood?.foodCategory || null,
+    };
+    
+    console.log("Submitting mutation with data:", mutationData);
+    
+    addItemMutation.mutate(mutationData);
   };
 
   return (
