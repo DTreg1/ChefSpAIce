@@ -119,7 +119,7 @@ export function RecipeCustomizationDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md bg-muted" data-testid="dialog-recipe-customization">
+      <DialogContent className="sm:max-w-md" data-testid="dialog-recipe-customization">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ChefHat className="w-5 h-5 text-primary" />
