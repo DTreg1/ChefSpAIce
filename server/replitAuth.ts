@@ -129,7 +129,19 @@ export async function setupAuth(app: Express) {
 }
 
 // Map to track active token refreshes per user session
-const activeRefreshes = new Map<string, Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>>();
+const activeRefreshes = new Map<string, { promise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>, timestamp: number }>();
+
+// Clean up stale refresh promises (older than 30 seconds)
+const cleanupStaleRefreshes = () => {
+  const now = Date.now();
+  const staleTimeout = 30000; // 30 seconds
+  
+  Array.from(activeRefreshes.entries()).forEach(([key, value]) => {
+    if (now - value.timestamp > staleTimeout) {
+      activeRefreshes.delete(key);
+    }
+  });
+};
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
@@ -153,22 +165,40 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const userId = user.claims?.sub || 'unknown';
   const refreshKey = `${userId}-${refreshToken.substring(0, 10)}`;
   
+  // Clean up stale refreshes periodically
+  cleanupStaleRefreshes();
+  
   try {
     // Check if a refresh is already in progress for this user
-    let tokenResponsePromise = activeRefreshes.get(refreshKey);
+    const existingRefresh = activeRefreshes.get(refreshKey);
+    let tokenResponsePromise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>;
     
-    if (!tokenResponsePromise) {
+    if (!existingRefresh) {
       // No active refresh, start a new one
       const config = await getOidcConfig();
       tokenResponsePromise = client.refreshTokenGrant(config, refreshToken);
       
-      // Store the promise so other concurrent requests can wait for it
-      activeRefreshes.set(refreshKey, tokenResponsePromise);
-      
-      // Clean up the promise after it completes (success or failure)
-      tokenResponsePromise.finally(() => {
-        activeRefreshes.delete(refreshKey);
+      // Store the promise with timestamp so concurrent requests can wait for it
+      activeRefreshes.set(refreshKey, { 
+        promise: tokenResponsePromise, 
+        timestamp: Date.now() 
       });
+      
+      // Clean up the promise after success, but keep failed ones briefly to prevent retry storms
+      tokenResponsePromise
+        .then(() => {
+          // On success, remove immediately
+          activeRefreshes.delete(refreshKey);
+        })
+        .catch((error) => {
+          // On failure, keep for 5 seconds to prevent immediate retries
+          setTimeout(() => {
+            activeRefreshes.delete(refreshKey);
+          }, 5000);
+        });
+    } else {
+      // Use the existing refresh promise
+      tokenResponsePromise = existingRefresh.promise;
     }
     
     // Wait for the refresh to complete
