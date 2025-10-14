@@ -982,21 +982,55 @@ When asked for recipes, consider the available inventory and appliances.`;
         return res.status(400).json({ error: "No ingredients in inventory" });
       }
 
+      // Extract customization preferences if provided
+      const {
+        timeConstraint = "moderate",
+        servings = 4,
+        difficulty = "intermediate",
+        mealType = "dinner",
+        creativity = 5
+      } = req.body;
+
       const ingredientsList = foodItems.map(item => 
         `${item.name} (${item.quantity} ${item.unit || ''})`
       ).join(', ');
 
       const appliancesList = appliances.map(a => a.name).join(', ');
 
+      // Map time constraint to actual time ranges
+      const timeMap = {
+        "quick": "under 30 minutes total",
+        "moderate": "30-60 minutes total",
+        "elaborate": "over 60 minutes total"
+      };
+
+      // Map creativity to style guidance
+      const creativityGuidance = creativity <= 3 ? "traditional and familiar" :
+        creativity <= 7 ? "balanced mix of familiar with some creative elements" :
+        "experimental and innovative with unique flavor combinations";
+
       const prompt = `Generate a detailed recipe using these available ingredients: ${ingredientsList}.
 Available cooking appliances: ${appliancesList}.
+
+Recipe Requirements:
+- Meal Type: ${mealType}
+- Servings: ${servings} servings
+- Time Constraint: ${timeMap[timeConstraint as keyof typeof timeMap]}
+- Difficulty Level: ${difficulty}
+- Style: ${creativityGuidance}
+
+Important:
+- Adjust quantities to match the requested number of servings (${servings})
+- Ensure total preparation and cooking time fits within ${timeMap[timeConstraint as keyof typeof timeMap]}
+- Keep instructions appropriate for ${difficulty} level cooks
+- Be ${creativityGuidance} in your recipe creation
 
 Respond ONLY with a valid JSON object in this exact format:
 {
   "title": "Recipe name",
   "prepTime": "X minutes",
   "cookTime": "X minutes", 
-  "servings": number,
+  "servings": ${servings},
   "ingredients": ["ingredient 1 with quantity", "ingredient 2 with quantity"],
   "instructions": ["step 1", "step 2"],
   "usedIngredients": ["ingredient from inventory"],
@@ -1047,9 +1081,14 @@ Respond ONLY with a valid JSON object in this exact format:
       const userId = req.user.claims.sub;
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
+      const includeMatching = req.query.includeMatching === 'true';
       
-      // If pagination params are provided, use paginated method
-      if (req.query.page || req.query.limit) {
+      // If requesting inventory matching, use enriched method
+      if (includeMatching) {
+        const recipesWithMatching = await storage.getRecipesWithInventoryMatching(userId);
+        res.json(recipesWithMatching);
+      } else if (req.query.page || req.query.limit) {
+        // If pagination params are provided, use paginated method
         const result = await storage.getRecipesPaginated(userId, page, limit);
         res.json(result);
       } else {

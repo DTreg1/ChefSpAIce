@@ -11,7 +11,7 @@ export default function Cookbook() {
   const [filter, setFilter] = useState<"all" | "favorites">("all");
   
   const { data: recipes, isLoading } = useQuery<Recipe[]>({
-    queryKey: ["/api/recipes"],
+    queryKey: ["/api/recipes?includeMatching=true"],
   });
 
   const filteredRecipes = recipes?.filter(recipe => {
@@ -110,7 +110,7 @@ export default function Cookbook() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredRecipes.map((recipe) => (
+            {filteredRecipes.map((recipe: any) => (
               <RecipeCard
                 key={recipe.id}
                 id={recipe.id}
@@ -122,6 +122,7 @@ export default function Cookbook() {
                 instructions={recipe.instructions}
                 usedIngredients={recipe.usedIngredients}
                 missingIngredients={recipe.missingIngredients || []}
+                ingredientMatches={recipe.ingredientMatches}
                 isFavorite={recipe.isFavorite}
                 rating={recipe.rating || undefined}
                 showControls={true}

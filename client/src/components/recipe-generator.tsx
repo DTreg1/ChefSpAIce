@@ -29,6 +29,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
       onRecipeGenerated?.(recipe);
       // Invalidate recipes query to refresh the cookbook
       await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
     },
     onError: (error: any) => {
       toast({

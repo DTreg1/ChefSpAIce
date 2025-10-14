@@ -2,12 +2,27 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star } from "lucide-react";
+import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { MealPlanningDialog } from "@/components/meal-planning-dialog";
+import { ServingAdjuster } from "@/components/serving-adjuster";
+
+interface IngredientMatch {
+  ingredientName: string;
+  neededQuantity: number;
+  neededUnit: string;
+  availableQuantity: number;
+  availableUnit: string;
+  hasEnough: boolean;
+  percentageAvailable: number;
+  shortage?: {
+    quantity: number;
+    unit: string;
+  };
+}
 
 interface RecipeCardProps {
   id?: string;
@@ -19,6 +34,7 @@ interface RecipeCardProps {
   instructions: string[];
   usedIngredients: string[];
   missingIngredients?: string[];
+  ingredientMatches?: IngredientMatch[];
   isFavorite?: boolean;
   rating?: number;
   showControls?: boolean;
@@ -34,6 +50,7 @@ export function RecipeCard({
   instructions,
   usedIngredients,
   missingIngredients = [],
+  ingredientMatches,
   isFavorite = false,
   rating,
   showControls = false,
@@ -41,6 +58,8 @@ export function RecipeCard({
   const { toast } = useToast();
   const [localRating, setLocalRating] = useState(rating || 0);
   const [localFavorite, setLocalFavorite] = useState(isFavorite);
+  const [adjustedIngredients, setAdjustedIngredients] = useState(ingredients);
+  const [currentServings, setCurrentServings] = useState(servings || 4);
 
   const updateMutation = useMutation({
     mutationFn: async (updates: { isFavorite?: boolean; rating?: number }) => {
@@ -49,6 +68,7 @@ export function RecipeCard({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
     },
     onError: () => {
       toast({
@@ -68,6 +88,11 @@ export function RecipeCard({
   const setRating = (newRating: number) => {
     setLocalRating(newRating);
     updateMutation.mutate({ rating: newRating });
+  };
+
+  const handleServingsChange = (newServings: number, adjustedIngs: string[]) => {
+    setCurrentServings(newServings);
+    setAdjustedIngredients(adjustedIngs);
   };
 
   return (
@@ -141,14 +166,96 @@ export function RecipeCard({
               <span>{servings} servings</span>
             </div>
           )}
+          {ingredientMatches && (
+            <Badge 
+              variant={missingIngredients.length === 0 ? "default" : "destructive"}
+              className="gap-1"
+              data-testid="badge-missing-ingredients"
+            >
+              <ShoppingCart className="w-3 h-3" />
+              {missingIngredients.length === 0 ? "All ingredients available" : `${missingIngredients.length} missing`}
+            </Badge>
+          )}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {servings && (
+          <ServingAdjuster
+            originalServings={servings}
+            ingredients={ingredients}
+            onServingsChange={handleServingsChange}
+          />
+        )}
+
+        <Separator />
+
         <div>
           <h3 className="font-semibold text-base mb-3 text-foreground">Ingredients</h3>
           <ul className="space-y-2">
-            {ingredients.map((ingredient, idx) => {
+            {adjustedIngredients.map((ingredient, idx) => {
+              // Use enhanced matching data if available
+              if (ingredientMatches && ingredientMatches[idx]) {
+                const match = ingredientMatches[idx];
+                const getStatusIcon = () => {
+                  if (match.hasEnough) {
+                    return <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />;
+                  } else if (match.percentageAvailable > 50) {
+                    return <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />;
+                  } else if (match.percentageAvailable > 0) {
+                    return <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />;
+                  } else {
+                    return <XCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />;
+                  }
+                };
+
+                const getQuantityText = () => {
+                  if (match.hasEnough) {
+                    return null;
+                  }
+                  if (match.shortage) {
+                    return (
+                      <span className="text-xs text-red-600 ml-2">
+                        (need {match.shortage.quantity.toFixed(1)} {match.shortage.unit})
+                      </span>
+                    );
+                  }
+                  if (match.percentageAvailable === -1) {
+                    return (
+                      <span className="text-xs text-orange-600 ml-2">
+                        (have {match.availableQuantity} {match.availableUnit})
+                      </span>
+                    );
+                  }
+                  return null;
+                };
+
+                return (
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2 text-base"
+                    data-testid={`text-ingredient-${idx}`}
+                  >
+                    {getStatusIcon()}
+                    <div className="flex-1">
+                      <span className={!match.hasEnough ? "text-muted-foreground" : ""}>
+                        {ingredient}
+                      </span>
+                      {getQuantityText()}
+                      {match.percentageAvailable > 0 && match.percentageAvailable < 100 && match.percentageAvailable !== -1 && (
+                        <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                          <div 
+                            className="bg-amber-600 h-1.5 rounded-full transition-all"
+                            style={{ width: `${match.percentageAvailable}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                );
+              }
+              
+              // Fall back to original logic if no matches data
               const isAvailable = usedIngredients.some(used => 
                 ingredient.toLowerCase().includes(used.toLowerCase())
               );
