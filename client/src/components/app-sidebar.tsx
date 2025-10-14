@@ -70,13 +70,13 @@ export function AppSidebar() {
   return (
     <>
       <Sidebar>
-        <SidebarHeader className="p-6 border-b border-sidebar-border/50">
+        <SidebarHeader className="p-6 border-b border-sidebar-border/50 glass-vibrant">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center transition-spring">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center transition-morph hover:scale-110 shadow-lg glow-primary">
               <ChefHat className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-sidebar-foreground font-sans">AI Chef</h1>
+              <h1 className="text-xl font-semibold text-gradient-primary font-sans">AI Chef</h1>
               <p className="text-xs text-muted-foreground">Your Kitchen Assistant</p>
             </div>
           </div>
@@ -87,9 +87,9 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === chatItem.path}>
+                  <SidebarMenuButton asChild isActive={location === chatItem.path} className="transition-morph hover:pl-1">
                     <Link href={chatItem.path} data-testid="link-chat">
-                      <chatItem.icon className="w-4 h-4" />
+                      <chatItem.icon className="w-4 h-4 transition-morph" />
                       <span className="flex-1">{chatItem.name}</span>
                     </Link>
                   </SidebarMenuButton>
