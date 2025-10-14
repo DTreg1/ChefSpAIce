@@ -113,60 +113,88 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   private userInitialized = new Set<string>();
   private initializationPromises = new Map<string, Promise<void>>();
+  private initializationLock = new Map<string, boolean>(); // Mutex for atomic operations
 
   private async ensureDefaultDataForUser(userId: string) {
+    // Fast path: already initialized
     if (this.userInitialized.has(userId)) return;
     
-    // Check if initialization is already in progress for this user
-    const existingPromise = this.initializationPromises.get(userId);
+    // Atomic check-and-set operation
+    let shouldInitialize = false;
+    let existingPromise: Promise<void> | undefined;
+    
+    // Synchronously check and claim initialization if needed
+    if (this.initializationLock.get(userId)) {
+      // Another initialization is in progress, wait for it
+      existingPromise = this.initializationPromises.get(userId);
+    } else {
+      // Check if we need to initialize
+      existingPromise = this.initializationPromises.get(userId);
+      if (!existingPromise && !this.userInitialized.has(userId)) {
+        // Claim the lock atomically
+        this.initializationLock.set(userId, true);
+        shouldInitialize = true;
+      }
+    }
+    
+    // Wait for existing initialization if present
     if (existingPromise) {
       await existingPromise;
       return;
     }
     
-    // Create a new initialization promise for this user
-    const initPromise = (async () => {
-      try {
-        // Check if user has storage locations
-        const existingLocations = await db.select().from(storageLocations).where(eq(storageLocations.userId, userId));
-        
-        if (existingLocations.length === 0) {
-          // Initialize default storage locations for this user
-          const defaultLocations = [
-            { userId, name: "Fridge", icon: "refrigerator" },
-            { userId, name: "Freezer", icon: "snowflake" },
-            { userId, name: "Pantry", icon: "pizza" },
-            { userId, name: "Counter", icon: "utensils-crossed" },
-          ];
+    // Perform initialization if we claimed the lock
+    if (shouldInitialize) {
+      const initPromise = (async () => {
+        try {
+          // Double-check in case of extreme race conditions
+          if (this.userInitialized.has(userId)) {
+            return;
+          }
+          
+          // Check if user has storage locations
+          const existingLocations = await db.select().from(storageLocations).where(eq(storageLocations.userId, userId));
+          
+          if (existingLocations.length === 0) {
+            // Initialize default storage locations for this user
+            const defaultLocations = [
+              { userId, name: "Fridge", icon: "refrigerator" },
+              { userId, name: "Freezer", icon: "snowflake" },
+              { userId, name: "Pantry", icon: "pizza" },
+              { userId, name: "Counter", icon: "utensils-crossed" },
+            ];
 
-          await db.insert(storageLocations).values(defaultLocations);
+            await db.insert(storageLocations).values(defaultLocations);
 
-          // Initialize default appliances for this user
-          const defaultAppliances = [
-            { userId, name: "Oven", type: "cooking" },
-            { userId, name: "Stove", type: "cooking" },
-            { userId, name: "Microwave", type: "cooking" },
-            { userId, name: "Air Fryer", type: "cooking" },
-          ];
+            // Initialize default appliances for this user
+            const defaultAppliances = [
+              { userId, name: "Oven", type: "cooking" },
+              { userId, name: "Stove", type: "cooking" },
+              { userId, name: "Microwave", type: "cooking" },
+              { userId, name: "Air Fryer", type: "cooking" },
+            ];
 
-          await db.insert(appliances).values(defaultAppliances);
+            await db.insert(appliances).values(defaultAppliances);
+          }
+          
+          // Mark as initialized only on success
+          this.userInitialized.add(userId);
+        } catch (error) {
+          console.error(`Failed to initialize default data for user ${userId}:`, error);
+          // Re-throw to inform callers of failure
+          throw error;
+        } finally {
+          // Clean up the promise and lock
+          this.initializationPromises.delete(userId);
+          this.initializationLock.delete(userId);
         }
-        
-        // Mark as initialized only on success
-        this.userInitialized.add(userId);
-      } catch (error) {
-        console.error(`Failed to initialize default data for user ${userId}:`, error);
-        throw error;
-      } finally {
-        // Clean up the promise from the map
-        this.initializationPromises.delete(userId);
-      }
-    })();
-    
-    // Store the promise so concurrent calls can await it
-    this.initializationPromises.set(userId, initPromise);
-    
-    await initPromise;
+      })();
+      
+      // Store the promise before starting async work
+      this.initializationPromises.set(userId, initPromise);
+      
+      await initPromise;
+    }
   }
 
   // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
