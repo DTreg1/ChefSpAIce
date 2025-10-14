@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, Database, LayoutGrid, ChevronRight } from "lucide-react";
+import { 
+  Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, 
+  MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, 
+  Database, LayoutGrid, ChevronRight
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
@@ -21,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { AddFoodDialog } from "./add-food-dialog";
 import { cn } from "@/lib/utils";
+import { getCategoryIcon } from "@/lib/categoryIcons";
 import type { StorageLocation, FoodItem } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
@@ -198,11 +203,12 @@ export function AppSidebar() {
                         {foodCategories.map((category) => {
                           const categoryItems = groupedItems[category];
                           const categoryPath = `/food-groups?category=${encodeURIComponent(category)}`;
+                          const CategoryIcon = getCategoryIcon(category);
                           return (
                             <SidebarMenuSubItem key={category}>
                               <SidebarMenuSubButton asChild isActive={location.includes(`category=${encodeURIComponent(category)}`)}>
                                 <Link href={categoryPath} data-testid={`link-category-${category.toLowerCase().replace(/\s+/g, '-')}`}>
-                                  <Apple className="w-4 h-4" />
+                                  <CategoryIcon className="w-4 h-4" />
                                   <span className="flex-1">{category}</span>
                                   <Badge 
                                     variant="secondary" 
