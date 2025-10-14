@@ -8,9 +8,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/command-palette";
+import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -128,27 +127,18 @@ function AppContent() {
               "flex items-center justify-between p-4 border-b transition-all-smooth sticky top-0 z-20",
               scrolled ? "glass-strong navbar-scroll scrolled shadow-glass" : "glass-subtle border-border/50"
             )}>
-              <div className="flex items-center gap-2">
-                <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph" />
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={() => {
-                    const event = new KeyboardEvent('keydown', {
-                      key: 'k',
-                      metaKey: true,
-                      ctrlKey: true,
-                      bubbles: true
-                    });
-                    document.dispatchEvent(event);
-                  }}
-                  data-testid="button-quick-actions"
-                  className="text-xs transition-all-smooth"
-                >
-                  Quick Actions
-                </Button>
-              </div>
-              <ThemeToggle />
+              <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph" />
+              <QuickActionsBar 
+                onAddFood={() => setAddFoodOpen(true)}
+                onGenerateRecipe={() => {
+                  // Navigate to storage page for recipe generation
+                  window.location.href = '/storage/all';
+                }}
+                onScanBarcode={() => {
+                  // Navigate to FDC search page with barcode scanner
+                  window.location.href = '/fdc-search';
+                }}
+              />
             </header>
             <main ref={mainRef} className="flex-1 overflow-auto">
               <Router />
