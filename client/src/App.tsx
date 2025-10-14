@@ -128,18 +128,20 @@ function AppContent() {
           <AppSidebar />
           <div className="flex flex-col flex-1">
             <header className={cn(
-              "flex items-center justify-between p-4 border-b transition-all-smooth sticky top-0 z-20",
+              "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-20",
               scrolled ? "glass-strong navbar-scroll scrolled shadow-glass" : "glass-subtle border-border/50"
             )}>
               <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph" />
-              <QuickActionsBar 
-                onAddFood={() => setAddFoodOpen(true)}
-                onGenerateRecipe={() => setRecipeDialogOpen(true)}
-                onScanBarcode={() => {
-                  // Navigate to FDC search page with barcode scanner
-                  window.location.href = '/fdc-search';
-                }}
-              />
+              <div className="ml-auto">
+                <QuickActionsBar 
+                  onAddFood={() => setAddFoodOpen(true)}
+                  onGenerateRecipe={() => setRecipeDialogOpen(true)}
+                  onScanBarcode={() => {
+                    // Navigate to FDC search page with barcode scanner
+                    window.location.href = '/fdc-search';
+                  }}
+                />
+              </div>
             </header>
             <main ref={mainRef} className="flex-1 overflow-auto">
               <Router />
