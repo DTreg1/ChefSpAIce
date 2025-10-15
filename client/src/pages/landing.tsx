@@ -28,7 +28,9 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16 w-full max-w-6xl">
             <Card data-testid="card-feature-inventory">
               <CardHeader>
-                <Refrigerator className="w-8 h-8 mb-2 text-primary" />
+                <div className="flex justify-center mb-4">
+                  <Refrigerator className="w-8 h-8 text-primary" />
+                </div>
                 <CardTitle>Smart Inventory</CardTitle>
                 <CardDescription>
                   Track what's in your fridge, freezer, and pantry with expiration reminders
@@ -38,7 +40,9 @@ export default function Landing() {
 
             <Card data-testid="card-feature-recipes">
               <CardHeader>
-                <ChefHat className="w-8 h-8 mb-2 text-primary" />
+                <div className="flex justify-center mb-4">
+                  <ChefHat className="w-8 h-8 text-primary" />
+                </div>
                 <CardTitle>AI Recipes</CardTitle>
                 <CardDescription>
                   Generate personalized recipes based on what you have in stock
@@ -48,7 +52,9 @@ export default function Landing() {
 
             <Card data-testid="card-feature-planner">
               <CardHeader>
-                <Calendar className="w-8 h-8 mb-2 text-primary" />
+                <div className="flex justify-center mb-4">
+                  <Calendar className="w-8 h-8 text-primary" />
+                </div>
                 <CardTitle>Meal Planning</CardTitle>
                 <CardDescription>
                   Plan your weekly meals and stay organized effortlessly
@@ -58,7 +64,9 @@ export default function Landing() {
 
             <Card data-testid="card-feature-shopping">
               <CardHeader>
-                <ShoppingCart className="w-8 h-8 mb-2 text-primary" />
+                <div className="flex justify-center mb-4">
+                  <ShoppingCart className="w-8 h-8 text-primary" />
+                </div>
                 <CardTitle>Shopping Lists</CardTitle>
                 <CardDescription>
                   Automatically generate shopping lists from your meal plans
