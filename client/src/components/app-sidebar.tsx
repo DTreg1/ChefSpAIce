@@ -317,10 +317,10 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === "/feedback-analytics"}>
-                    <Link href="/feedback-analytics" data-testid="link-feedback-analytics">
+                  <SidebarMenuButton asChild isActive={location === "/feedback"}>
+                    <Link href="/feedback" data-testid="link-feedback">
                       <BarChart3 className="w-4 h-4" />
-                      <span className="flex-1">Feedback Analytics</span>
+                      <span className="flex-1">Feedback</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
