@@ -3,10 +3,10 @@
 ## Asset Inventory Overview
 
 ### 1. Logo Suite (4 Variations)
-- **chefspice-icon.svg** - Primary icon with olive green background circle
-- **chefspice-icon-white.svg** - White version for dark backgrounds
-- **chefspice-logo-horizontal.svg** - Full logo with text for headers
-- **chefspice-logo-stacked.svg** - Vertical layout for square spaces
+- **chefspaice-icon.svg** - Primary icon with olive green background circle
+- **chefspaice-icon-white.svg** - White version for dark backgrounds
+- **chefspaice-logo-horizontal.svg** - Full logo with text for headers
+- **chefspaice-logo-stacked.svg** - Vertical layout for square spaces
 
 ### 2. Social Media Graphics
 - **instagram-post.svg** (1080x1080) - Square post template with feature icons
