@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { CacheStorage } from "@/lib/cacheStorage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -398,7 +399,10 @@ export default function Settings() {
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = "/api/logout"}
+                    onClick={() => {
+                      CacheStorage.clear();
+                      window.location.href = "/api/logout";
+                    }}
                     data-testid="button-logout"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
