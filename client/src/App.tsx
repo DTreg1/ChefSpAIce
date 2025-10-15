@@ -14,6 +14,7 @@ import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { AnimatedBackground } from "@/components/animated-background";
+import { OfflineIndicator } from "@/components/offline-indicator";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -194,6 +195,7 @@ export default function App() {
         <TooltipProvider>
           <AppContent />
           <Toaster />
+          <OfflineIndicator />
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

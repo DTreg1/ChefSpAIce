@@ -1,0 +1,32 @@
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.chefspaice.app',
+  appName: 'ChefSpAIce',
+  webDir: 'dist/public',
+  server: {
+    androidScheme: 'https',
+    iosScheme: 'https',
+    hostname: 'app.chefspaice.com'
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: '#6e9933',
+      showSpinner: false,
+      androidSpinnerStyle: 'small',
+      iosSpinnerStyle: 'small',
+      splashFullScreen: true,
+      splashImmersive: true
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert']
+    }
+  },
+  ios: {
+    contentInset: 'automatic',
+    scheme: 'ChefSpAIce'
+  }
+};
+
+export default config;

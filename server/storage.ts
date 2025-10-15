@@ -39,8 +39,11 @@ import {
   type FeedbackAnalytics,
   type Donation,
   type InsertDonation,
+  type PushToken,
+  type InsertPushToken,
   users,
   userPreferences,
+  pushTokens,
   storageLocations,
   appliances,
   applianceCategories,
@@ -71,6 +74,11 @@ export interface IStorage {
   // User Preferences
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
   upsertUserPreferences(preferences: InsertUserPreferences & { userId: string }): Promise<UserPreferences>;
+  
+  // Push Tokens (user-scoped)
+  getPushTokens(userId: string): Promise<PushToken[]>;
+  upsertPushToken(userId: string, token: Omit<InsertPushToken, 'userId'>): Promise<PushToken>;
+  deletePushToken(userId: string, token: string): Promise<void>;
   
   // Storage Locations (user-scoped)
   getStorageLocations(userId: string): Promise<StorageLocation[]>;
@@ -358,6 +366,45 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error upserting user preferences:', error);
       throw new Error('Failed to save user preferences');
+    }
+  }
+
+  async getPushTokens(userId: string): Promise<PushToken[]> {
+    try {
+      return await db.select().from(pushTokens).where(eq(pushTokens.userId, userId));
+    } catch (error) {
+      console.error('Error getting push tokens:', error);
+      throw new Error('Failed to get push tokens');
+    }
+  }
+
+  async upsertPushToken(userId: string, tokenData: Omit<InsertPushToken, 'userId'>): Promise<PushToken> {
+    try {
+      const [token] = await db
+        .insert(pushTokens)
+        .values({ ...tokenData, userId })
+        .onConflictDoUpdate({
+          target: pushTokens.token,
+          set: {
+            platform: tokenData.platform,
+            deviceInfo: tokenData.deviceInfo,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return token;
+    } catch (error) {
+      console.error('Error upserting push token:', error);
+      throw new Error('Failed to save push token');
+    }
+  }
+
+  async deletePushToken(userId: string, token: string): Promise<void> {
+    try {
+      await db.delete(pushTokens).where(and(eq(pushTokens.userId, userId), eq(pushTokens.token, token)));
+    } catch (error) {
+      console.error('Error deleting push token:', error);
+      throw new Error('Failed to delete push token');
     }
   }
 
