@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1584" height="396" viewBox="0 0 1584 396" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- LinkedIn Banner Template -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#2c3e50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#34495e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6b8e23;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8bc34a;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dx="0" dy="0" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.8"/>
+      </feComponentTransfer>
+      <feFlood flood-color="#6b8e23" flood-opacity="0.3"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1584" height="396" fill="url(#bgGradient)"/>
+  
+  <!-- Grid Pattern -->
+  <defs>
+    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="40" height="40" fill="none" stroke="white" stroke-width="0.5" opacity="0.1"/>
+    </pattern>
+  </defs>
+  <rect width="1584" height="396" fill="url(#grid)"/>
+  
+  <!-- Left Section - Logo and Brand -->
+  <g transform="translate(150, 198)">
+    <!-- Glowing Logo Circle -->
+    <circle cx="0" cy="0" r="70" fill="url(#accentGradient)" filter="url(#glow)"/>
+    
+    <!-- Chef Hat Icon -->
+    <g transform="scale(1.1)">
+      <ellipse cx="0" cy="-18" rx="35" ry="30" fill="white"/>
+      <path d="M -32 -18 Q -35 -28, -28 -32 Q -20 -36, -10 -33 Q 0 -36, 10 -33 Q 20 -36, 28 -32 Q 35 -28, 32 -18" 
+            fill="white"/>
+      <rect x="-35" y="7" width="70" height="18" rx="2" fill="white"/>
+      <!-- AI Sparkle -->
+      <g transform="translate(25, -25)">
+        <path d="M 0 -5 L 1.2 -1.2 L 5 0 L 1.2 1.2 L 0 5 L -1.2 1.2 L -5 0 L -1.2 -1.2 Z" 
+              fill="#ffd700"/>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Center Content -->
+  <g transform="translate(792, 150)">
+    <!-- Title -->
+    <text x="0" y="0" font-family="Ubuntu, sans-serif" font-size="64" font-weight="700" fill="white" text-anchor="middle">
+      ChefSp<tspan fill="#8bc34a">AI</tspan>ce
+    </text>
+    
+    <!-- Tagline -->
+    <text x="0" y="50" font-family="Ubuntu, sans-serif" font-size="24" font-weight="300" fill="#ecf0f1" text-anchor="middle">
+      Revolutionizing Kitchen Management with AI
+    </text>
+    
+    <!-- Value Props -->
+    <g transform="translate(0, 100)">
+      <!-- Item 1 -->
+      <g transform="translate(-250, 0)">
+        <rect x="-5" y="-5" width="10" height="10" rx="5" fill="#8bc34a"/>
+        <text x="20" y="4" font-family="Ubuntu, sans-serif" font-size="16" fill="white">
+          70% Less Food Waste
+        </text>
+      </g>
+      
+      <!-- Item 2 -->
+      <g transform="translate(0, 0)">
+        <rect x="-5" y="-5" width="10" height="10" rx="5" fill="#8bc34a"/>
+        <text x="20" y="4" font-family="Ubuntu, sans-serif" font-size="16" fill="white">
+          $100+ Monthly Savings
+        </text>
+      </g>
+      
+      <!-- Item 3 -->
+      <g transform="translate(250, 0)">
+        <rect x="-5" y="-5" width="10" height="10" rx="5" fill="#8bc34a"/>
+        <text x="20" y="4" font-family="Ubuntu, sans-serif" font-size="16" fill="white">
+          5+ Hours Saved Weekly
+        </text>
+      </g>
+    </g>
+  </g>
+  
+  <!-- Right Section - CTA -->
+  <g transform="translate(1400, 198)">
+    <rect x="-80" y="-25" width="160" height="50" rx="25" fill="white" opacity="0.95"/>
+    <text x="0" y="6" font-family="Ubuntu, sans-serif" font-size="18" font-weight="600" fill="#2c3e50" text-anchor="middle">
+      Learn More
+    </text>
+  </g>
+  
+  <!-- Bottom Text -->
+  <text x="792" y="360" font-family="Ubuntu, sans-serif" font-size="14" fill="#95a5a6" text-anchor="middle">
+    Powered by GPT-5 | USDA Nutrition Database | Enterprise Ready
+  </text>
+</svg>
