@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Heart, Home, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import confetti from 'canvas-confetti';
 
 export default function DonateSuccessPage() {
@@ -23,6 +24,26 @@ export default function DonateSuccessPage() {
       setLocation('/donate');
       return;
     }
+
+    // Confirm donation status with backend
+    const confirmDonation = async () => {
+      if (paymentIntent) {
+        try {
+          const response = await apiRequest("POST", "/api/donations/confirm", {
+            paymentIntentId: paymentIntent
+          });
+          const data = await response.json();
+          
+          if (data.status !== 'succeeded') {
+            console.warn('Payment not yet confirmed:', data.status);
+          }
+        } catch (error) {
+          console.error('Error confirming donation:', error);
+        }
+      }
+    };
+
+    confirmDonation();
 
     // Trigger confetti animation
     const duration = 3 * 1000;
