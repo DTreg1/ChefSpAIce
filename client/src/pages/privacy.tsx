@@ -98,7 +98,7 @@ export default function Privacy() {
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           Your privacy is important to us. This policy explains how we collect, use, and protect your information
-          when you use AI Chef.
+          when you use ChefSpAIce.
         </AlertDescription>
       </Alert>
 
@@ -108,12 +108,12 @@ export default function Privacy() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            AI Chef is committed to protecting your privacy and ensuring the security of your personal information.
+            ChefSpAIce is committed to protecting your privacy and ensuring the security of your personal information.
             We believe in transparency about our data practices and giving you control over your information.
           </p>
           <p className="text-muted-foreground leading-relaxed">
             This Privacy Policy describes how we collect, use, share, and protect information when you use our 
-            application. By using AI Chef, you agree to the collection and use of information in accordance with 
+            application. By using ChefSpAIce, you agree to the collection and use of information in accordance with 
             this policy.
           </p>
         </CardContent>
@@ -188,7 +188,7 @@ export default function Privacy() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            AI Chef is not intended for use by children under 13 years of age. We do not knowingly collect 
+            ChefSpAIce is not intended for use by children under 13 years of age. We do not knowingly collect 
             personal information from children under 13. If you believe we have collected information from 
             a child under 13, please contact us immediately.
           </p>
@@ -238,7 +238,7 @@ export default function Privacy() {
       </AnimatedCard>
 
       <div className="text-center text-sm text-muted-foreground pb-8">
-        <p>© 2025 AI Chef. All rights reserved.</p>
+        <p>© 2025 ChefSpAIce. All rights reserved.</p>
       </div>
     </PageTransition>
   );

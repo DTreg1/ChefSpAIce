@@ -349,7 +349,7 @@ export default function Onboarding() {
             <div className="flex justify-center mb-4">
               <ChefHat className="w-16 h-16 text-primary" />
             </div>
-            <CardTitle className="text-3xl">Welcome to AI Chef!</CardTitle>
+            <CardTitle className="text-3xl">Welcome to ChefSpAIce!</CardTitle>
             <CardDescription className="text-base">
               Let's personalize your experience. You can always change these later.
             </CardDescription>

@@ -1,4 +1,4 @@
-# AI Chef Helper - Comprehensive Design Guidelines
+# ChefSpAIce Helper - Comprehensive Design Guidelines
 
 ## Design Approach
 **Utility-Focused Chat Application** - Following ChatGPT's conversational patterns combined with food management capabilities from Yuka and MyFitnessPal. The design prioritizes clarity, readability, and efficient information access while maintaining a warm, approachable aesthetic suitable for a kitchen companion.

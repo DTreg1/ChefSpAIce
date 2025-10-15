@@ -412,7 +412,7 @@ export default function Settings() {
         <Card data-testid="card-preferences">
           <CardHeader>
             <CardTitle>Preferences</CardTitle>
-            <CardDescription>Customize your AI Chef experience</CardDescription>
+            <CardDescription>Customize your ChefSpAIce experience</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>

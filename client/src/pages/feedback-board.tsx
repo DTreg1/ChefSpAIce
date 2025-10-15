@@ -203,7 +203,7 @@ export default function FeedbackBoard() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold" data-testid="text-page-title">Community Feedback Board</h1>
-        <p className="text-muted-foreground">Share your feedback and help shape the future of AI Chef</p>
+        <p className="text-muted-foreground">Share your feedback and help shape the future of ChefSpAIce</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

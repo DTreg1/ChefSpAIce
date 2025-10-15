@@ -13,7 +13,7 @@ export function EmptyState({ type, onAction }: EmptyStateProps) {
         <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6 animate-pulse-subtle">
           <ChefHat className="w-12 h-12 text-primary" />
         </div>
-        <h2 className="text-2xl font-semibold text-foreground mb-3">Welcome to AI Chef!</h2>
+        <h2 className="text-2xl font-semibold text-foreground mb-3">Welcome to ChefSpAIce!</h2>
         <p className="text-muted-foreground text-center max-w-md mb-6">
           Your personal kitchen assistant is here to help you manage your food inventory and discover amazing recipes.
         </p>
@@ -40,7 +40,7 @@ export function EmptyState({ type, onAction }: EmptyStateProps) {
       </div>
       <h3 className="text-xl font-semibold text-foreground mb-2">No items yet</h3>
       <p className="text-muted-foreground text-center max-w-sm mb-6">
-        Start by adding food items to your inventory or ask your AI Chef to help you.
+        Start by adding food items to your inventory or ask your ChefSpAIce to help you.
       </p>
       {onAction && (
         <Button onClick={onAction} className="scale-touch" data-testid="button-add-first-item">

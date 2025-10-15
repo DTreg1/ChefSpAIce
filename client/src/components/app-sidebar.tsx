@@ -90,7 +90,7 @@ export function AppSidebar() {
 
   const chatItem = {
     id: "chat",
-    name: "AI Chef Chat",
+    name: "ChefSpAIce Chat",
     icon: MessageSquare,
     path: "/",
   };
@@ -116,7 +116,7 @@ export function AppSidebar() {
               <ChefHat className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gradient-primary font-sans">AI Chef</h1>
+              <h1 className="text-xl font-semibold text-gradient-primary font-sans">ChefSpAIce</h1>
               <p className="text-xs text-muted-foreground">Your Kitchen Assistant</p>
             </div>
           </div>
