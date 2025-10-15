@@ -149,9 +149,9 @@ function AppContent() {
       {/* Only show floating FeedbackWidget on non-chat pages */}
       {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
       <SidebarProvider style={style}>
-        <div className="flex h-screen w-full relative">
+        <div className="flex h-screen w-full relative overflow-x-hidden">
           <AppSidebar />
-          <div className="flex flex-col flex-1">
+          <div className="flex flex-col flex-1 min-w-0">
             <header
               className={cn(
                 "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-20",
@@ -175,7 +175,7 @@ function AppContent() {
                 />
               </div>
             </header>
-            <main ref={mainRef} className="flex-1 overflow-auto">
+            <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
               <Router />
             </main>
           </div>
