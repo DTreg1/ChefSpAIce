@@ -18,6 +18,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +70,13 @@ export function AppSidebar() {
   const [location] = useLocation();
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [foodGroupsOpen, setFoodGroupsOpen] = useState(false);
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const { data: storageLocations } = useQuery<StorageLocation[]>({
     queryKey: ["/api/storage-locations"],
@@ -120,7 +128,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === chatItem.path} className="transition-morph hover:pl-1">
-                    <Link href={chatItem.path} data-testid="link-chat">
+                    <Link href={chatItem.path} data-testid="link-chat" onClick={handleLinkClick}>
                       <chatItem.icon className="w-4 h-4 transition-morph" />
                       <span className="flex-1">{chatItem.name}</span>
                     </Link>
@@ -138,7 +146,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/meal-planner"}>
-                    <Link href="/meal-planner" data-testid="link-meal-planner">
+                    <Link href="/meal-planner" data-testid="link-meal-planner" onClick={handleLinkClick}>
                       <CalendarDays className="w-4 h-4" />
                       <span className="flex-1">Meal Planner</span>
                     </Link>
@@ -146,7 +154,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/shopping-list"}>
-                    <Link href="/shopping-list" data-testid="link-shopping-list">
+                    <Link href="/shopping-list" data-testid="link-shopping-list" onClick={handleLinkClick}>
                       <ShoppingCart className="w-4 h-4" />
                       <span className="flex-1">Shopping List</span>
                     </Link>
@@ -164,7 +172,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/cookbook"}>
-                    <Link href="/cookbook" data-testid="link-cookbook">
+                    <Link href="/cookbook" data-testid="link-cookbook" onClick={handleLinkClick}>
                       <BookOpen className="w-4 h-4" />
                       <span className="flex-1">My Cookbook</span>
                     </Link>
@@ -172,7 +180,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/nutrition"}>
-                    <Link href="/nutrition" data-testid="link-nutrition">
+                    <Link href="/nutrition" data-testid="link-nutrition" onClick={handleLinkClick}>
                       <Apple className="w-4 h-4" />
                       <span className="flex-1">Nutrition</span>
                     </Link>
@@ -180,7 +188,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/fdc-search"}>
-                    <Link href="/fdc-search" data-testid="link-fdc-search">
+                    <Link href="/fdc-search" data-testid="link-fdc-search" onClick={handleLinkClick}>
                       <Database className="w-4 h-4" />
                       <span className="flex-1">Food Search</span>
                     </Link>
@@ -198,7 +206,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/appliances"}>
-                    <Link href="/appliances" data-testid="link-appliances">
+                    <Link href="/appliances" data-testid="link-appliances" onClick={handleLinkClick}>
                       <UtensilsCrossed className="w-4 h-4" />
                       <span className="flex-1">My Appliances</span>
                     </Link>
@@ -223,7 +231,7 @@ export function AppSidebar() {
                       <SidebarMenuSub>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={location === "/food-groups"}>
-                            <Link href="/food-groups" data-testid="link-food-groups-all">
+                            <Link href="/food-groups" data-testid="link-food-groups-all" onClick={handleLinkClick}>
                               <LayoutGrid className="w-4 h-4" />
                               <span className="flex-1">View All Categories</span>
                             </Link>
@@ -237,7 +245,7 @@ export function AppSidebar() {
                           return (
                             <SidebarMenuSubItem key={category}>
                               <SidebarMenuSubButton asChild isActive={location.includes(`category=${encodeURIComponent(category)}`)}>
-                                <Link href={categoryPath} data-testid={`link-category-${category.toLowerCase().replace(/\s+/g, '-')}`}>
+                                <Link href={categoryPath} data-testid={`link-category-${category.toLowerCase().replace(/\s+/g, '-')}`} onClick={handleLinkClick}>
                                   <CategoryIcon className="w-4 h-4" />
                                   <span className="flex-1">{displayName}</span>
                                   <Badge 
@@ -275,7 +283,7 @@ export function AppSidebar() {
                       <SidebarMenuSub>
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton asChild isActive={location === "/storage/all"}>
-                            <Link href="/storage/all" data-testid="link-storage-all">
+                            <Link href="/storage/all" data-testid="link-storage-all" onClick={handleLinkClick}>
                               <Home className="w-4 h-4" />
                               <span className="flex-1">View All</span>
                             </Link>
@@ -287,7 +295,7 @@ export function AppSidebar() {
                           return (
                             <SidebarMenuSubItem key={loc.id}>
                               <SidebarMenuSubButton asChild isActive={location === `/storage/${loc.name.toLowerCase()}`}>
-                                <Link href={`/storage/${loc.name.toLowerCase()}`} data-testid={`link-storage-${loc.id}`}>
+                                <Link href={`/storage/${loc.name.toLowerCase()}`} data-testid={`link-storage-${loc.id}`} onClick={handleLinkClick}>
                                   <IconComponent className="w-4 h-4" />
                                   <span className="flex-1">{loc.name}</span>
                                   <Badge 
@@ -318,7 +326,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/feedback"}>
-                    <Link href="/feedback" data-testid="link-feedback">
+                    <Link href="/feedback" data-testid="link-feedback" onClick={handleLinkClick}>
                       <BarChart3 className="w-4 h-4" />
                       <span className="flex-1">Feedback</span>
                     </Link>
@@ -326,7 +334,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/donate"}>
-                    <Link href="/donate" data-testid="link-donate">
+                    <Link href="/donate" data-testid="link-donate" onClick={handleLinkClick}>
                       <Heart className="w-4 h-4" />
                       <span className="flex-1">Support Us</span>
                     </Link>
@@ -334,7 +342,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/settings"}>
-                    <Link href="/settings" data-testid="link-settings">
+                    <Link href="/settings" data-testid="link-settings" onClick={handleLinkClick}>
                       <Settings className="w-4 h-4" />
                       <span className="flex-1">Settings</span>
                     </Link>
@@ -352,7 +360,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/about"}>
-                    <Link href="/about" data-testid="link-about">
+                    <Link href="/about" data-testid="link-about" onClick={handleLinkClick}>
                       <Info className="w-4 h-4" />
                       <span className="flex-1">About</span>
                     </Link>
@@ -360,7 +368,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/privacy"}>
-                    <Link href="/privacy" data-testid="link-privacy">
+                    <Link href="/privacy" data-testid="link-privacy" onClick={handleLinkClick}>
                       <Shield className="w-4 h-4" />
                       <span className="flex-1">Privacy Policy</span>
                     </Link>
@@ -368,7 +376,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/terms"}>
-                    <Link href="/terms" data-testid="link-terms">
+                    <Link href="/terms" data-testid="link-terms" onClick={handleLinkClick}>
                       <ScrollText className="w-4 h-4" />
                       <span className="flex-1">Terms of Service</span>
                     </Link>
