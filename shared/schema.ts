@@ -523,6 +523,7 @@ export const feedback = pgTable("feedback", {
 
 export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   id: true,
+  userId: true,
   createdAt: true,
   resolvedAt: true,
   upvoteCount: true,

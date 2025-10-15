@@ -2223,7 +2223,13 @@ Respond ONLY with a valid JSON object:
   // Feedback System Routes
   app.post("/api/feedback", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub;
+      
+      if (!userId) {
+        console.error("User ID not found in session:", req.user);
+        return res.status(401).json({ error: "User not authenticated properly" });
+      }
+      
       const validated = insertFeedbackSchema.parse(req.body);
       
       let enrichedFeedback = { ...validated };
@@ -2244,8 +2250,8 @@ Respond ONLY with a valid JSON object:
             isFlagged: moderation.isFlagged,
             flagReason: moderation.flagReason,
             category: moderation.category || enrichedFeedback.category,
-            priority: moderation.priority || enrichedFeedback.priority || 'medium',
-            sentiment: moderation.sentiment || enrichedFeedback.sentiment,
+            priority: (moderation.priority as 'low' | 'medium' | 'high' | 'critical') || enrichedFeedback.priority || 'medium',
+            sentiment: (moderation.sentiment as 'positive' | 'negative' | 'neutral' | undefined) || enrichedFeedback.sentiment,
             tags: moderation.tags || enrichedFeedback.tags,
             similarTo: moderation.similarTo,
           };
