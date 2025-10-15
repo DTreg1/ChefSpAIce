@@ -62,31 +62,54 @@
     
     <!-- Feature Icons Row -->
     <g transform="translate(-300, 180)">
-      <!-- Feature 1 -->
+      <!-- Feature 1 - Inventory Icon -->
       <g transform="translate(0, 0)">
         <rect x="-60" y="-60" width="120" height="120" rx="20" fill="white" filter="url(#shadow)"/>
-        <text x="0" y="10" font-family="Ubuntu, sans-serif" font-size="40" text-anchor="middle">📦</text>
+        <g transform="translate(0, -10)">
+          <rect x="-20" y="-15" width="40" height="30" rx="3" fill="none" stroke="#6b8e23" stroke-width="2"/>
+          <line x1="-20" y1="-5" x2="20" y2="-5" stroke="#6b8e23" stroke-width="2"/>
+          <line x1="-10" y1="-5" x2="-10" y2="15" stroke="#6b8e23" stroke-width="1"/>
+          <line x1="0" y1="-5" x2="0" y2="15" stroke="#6b8e23" stroke-width="1"/>
+          <line x1="10" y1="-5" x2="10" y2="15" stroke="#6b8e23" stroke-width="1"/>
+        </g>
         <text x="0" y="40" font-family="Ubuntu, sans-serif" font-size="14" fill="#666" text-anchor="middle">Inventory</text>
       </g>
       
-      <!-- Feature 2 -->
+      <!-- Feature 2 - AI Brain Icon -->
       <g transform="translate(200, 0)">
         <rect x="-60" y="-60" width="120" height="120" rx="20" fill="white" filter="url(#shadow)"/>
-        <text x="0" y="10" font-family="Ubuntu, sans-serif" font-size="40" text-anchor="middle">🤖</text>
+        <g transform="translate(0, -10)">
+          <circle cx="0" cy="0" r="18" fill="none" stroke="#6b8e23" stroke-width="2"/>
+          <path d="M -10 0 Q -10 -8, -5 -8 Q 0 -8, 0 0 Q 0 8, 5 8 Q 10 8, 10 0" 
+                fill="none" stroke="#6b8e23" stroke-width="2"/>
+          <circle cx="-5" cy="-3" r="2" fill="#6b8e23"/>
+          <circle cx="5" cy="3" r="2" fill="#6b8e23"/>
+          <circle cx="0" cy="0" r="2" fill="#ffd700"/>
+        </g>
         <text x="0" y="40" font-family="Ubuntu, sans-serif" font-size="14" fill="#666" text-anchor="middle">AI Recipes</text>
       </g>
       
-      <!-- Feature 3 -->
+      <!-- Feature 3 - Chart Icon -->
       <g transform="translate(400, 0)">
         <rect x="-60" y="-60" width="120" height="120" rx="20" fill="white" filter="url(#shadow)"/>
-        <text x="0" y="10" font-family="Ubuntu, sans-serif" font-size="40" text-anchor="middle">📊</text>
+        <g transform="translate(0, -10)">
+          <rect x="-20" y="-15" width="40" height="30" rx="2" fill="none" stroke="#6b8e23" stroke-width="2"/>
+          <rect x="-15" y="5" width="8" height="10" fill="#6b8e23"/>
+          <rect x="-4" y="-5" width="8" height="20" fill="#7c8f4d"/>
+          <rect x="7" y="0" width="8" height="15" fill="#556b2f"/>
+        </g>
         <text x="0" y="40" font-family="Ubuntu, sans-serif" font-size="14" fill="#666" text-anchor="middle">Nutrition</text>
       </g>
       
-      <!-- Feature 4 -->
+      <!-- Feature 4 - Cart Icon -->
       <g transform="translate(600, 0)">
         <rect x="-60" y="-60" width="120" height="120" rx="20" fill="white" filter="url(#shadow)"/>
-        <text x="0" y="10" font-family="Ubuntu, sans-serif" font-size="40" text-anchor="middle">🛒</text>
+        <g transform="translate(0, -10)">
+          <path d="M -18 -15 L -15 -10 L -10 10 L 15 10 L 18 -10 L -15 -10" 
+                fill="none" stroke="#6b8e23" stroke-width="2"/>
+          <circle cx="-5" cy="15" r="3" fill="#6b8e23"/>
+          <circle cx="10" cy="15" r="3" fill="#6b8e23"/>
+        </g>
         <text x="0" y="40" font-family="Ubuntu, sans-serif" font-size="14" fill="#666" text-anchor="middle">Shopping</text>
       </g>
     </g>
