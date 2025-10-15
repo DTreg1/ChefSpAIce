@@ -52,7 +52,6 @@ function AuthenticatedRouter() {
       <Route path="/fdc-search" component={FdcSearch} />
       <Route path="/feedback-analytics" component={FeedbackAnalytics} />
       <Route path="/feedback" component={FeedbackBoard} />
-      <Route path="/feedback-board" component={FeedbackBoard} />
       <Route path="/donate" component={Donate} />
       <Route path="/donate/success" component={DonateSuccess} />
       <Route path="/settings" component={Settings} />
