@@ -2,7 +2,7 @@ import { useState } from "react";
 import { 
   Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, 
   MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart, Settings, 
-  Database, LayoutGrid, ChevronRight, BarChart3, Heart, Info, Shield, ScrollText
+  Database, LayoutGrid, ChevronRight, BarChart3, Heart, Info, Shield, ScrollText, LogOut
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getCategoryIcon } from "@/lib/categoryIcons";
@@ -385,7 +386,20 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = "/api/logout"}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Log Out
+            </Button>
+          </div>
+          
         </SidebarContent>
+        
       </Sidebar>
     </>
   );
