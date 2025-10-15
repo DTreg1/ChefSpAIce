@@ -90,7 +90,7 @@ export function AppSidebar() {
 
   const chatItem = {
     id: "chat",
-    name: "ChefSpAIce Chat",
+    name: "Chef Chat",
     icon: MessageSquare,
     path: "/",
   };
