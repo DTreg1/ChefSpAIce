@@ -88,12 +88,12 @@ Use Chrome DevTools Device Mode:
 
 ## File Naming Convention
 ```
-chefspice-[feature]-[device]-[variant].png
+chefspaice-[feature]-[device]-[variant].png
 ```
 Examples:
-- chefspice-landing-desktop-hero.png
-- chefspice-chat-mobile-conversation.png
-- chefspice-inventory-tablet-grid.png
+- chefspaice-landing-desktop-hero.png
+- chefspaice-chat-mobile-conversation.png
+- chefspaice-inventory-tablet-grid.png
 
 ## Marketing Screenshot Annotations
 Consider adding:

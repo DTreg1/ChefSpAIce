@@ -5,8 +5,8 @@
 **Tagline:** Your Smart Kitchen Assistant  
 **Launch Date:** October 2025  
 **Platform:** Web, iOS, Android (PWA)  
-**Website:** https://chefspice.app  
-**Contact:** press@chefspice.app  
+**Website:** https://chefspaice.app  
+**Contact:** press@chefspaice.app  
 
 ## Executive Summary
 ChefSpAIce is an AI-powered kitchen management platform that helps users reduce food waste, save money, and discover personalized recipes based on their existing inventory. Powered by GPT-5 and the USDA nutritional database, ChefSpAIce transforms how people interact with their kitchen.
@@ -85,7 +85,7 @@ ChefSpAIce is an AI-powered kitchen management platform that helps users reduce 
 ## Social Media
 - Twitter/X: @ChefSpAIce
 - Instagram: @ChefSpAIce
-- LinkedIn: /company/chefspice
+- LinkedIn: /company/chefspaice
 - TikTok: @ChefSpAIce
 - Facebook: /ChefSpAIceApp
 
@@ -107,9 +107,9 @@ A: Absolutely. ChefSpAIce supports all major dietary preferences including vegan
 A: We're planning integration with smart fridges, grocery delivery services, voice assistants, and expanding our AI capabilities to include cooking technique videos and real-time cooking assistance.
 
 ## Contact Information
-**Media Inquiries:** press@chefspice.app  
-**Partnership Opportunities:** partners@chefspice.app  
-**General Information:** info@chefspice.app  
+**Media Inquiries:** press@chefspaice.app  
+**Partnership Opportunities:** partners@chefspaice.app  
+**General Information:** info@chefspaice.app  
 
 ## Legal
 All assets are available for editorial use. Please credit "ChefSpAIce" when using our materials. For commercial use, please contact our press team.

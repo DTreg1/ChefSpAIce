@@ -7,10 +7,10 @@ Complete marketing materials package for ChefSpAIce - Your Smart Kitchen Assista
 ```
 marketing_assets/
 ├── logos/                    # Brand identity files
-│   ├── chefspice-icon.svg           # Square icon with background
-│   ├── chefspice-icon-white.svg     # White icon for dark backgrounds
-│   ├── chefspice-logo-horizontal.svg # Full logo with text (landscape)
-│   └── chefspice-logo-stacked.svg   # Full logo with text (portrait)
+│   ├── chefspaice-icon.svg           # Square icon with background
+│   ├── chefspaice-icon-white.svg     # White icon for dark backgrounds
+│   ├── chefspaice-logo-horizontal.svg # Full logo with text (landscape)
+│   └── chefspaice-logo-stacked.svg   # Full logo with text (portrait)
 │
 ├── social_media/            # Social platform graphics
 │   ├── instagram-post.svg          # 1080x1080 Instagram template
@@ -45,22 +45,22 @@ marketing_assets/
 - **Fallback:** System sans-serif
 
 ### Logo Usage
-1. **Icon Only** (`chefspice-icon.svg`)
+1. **Icon Only** (`chefspaice-icon.svg`)
    - App icons, favicon, social media profile pictures
    - Minimum size: 32x32px
    - Clear space: 20% of icon size on all sides
 
-2. **Horizontal Logo** (`chefspice-logo-horizontal.svg`)
+2. **Horizontal Logo** (`chefspaice-logo-horizontal.svg`)
    - Website headers, email signatures
    - Ideal for wide spaces
    - Aspect ratio: 4:1
 
-3. **Stacked Logo** (`chefspice-logo-stacked.svg`)
+3. **Stacked Logo** (`chefspaice-logo-stacked.svg`)
    - Marketing materials, presentations
    - Square social media posts
    - Aspect ratio: 4:5
 
-4. **White Version** (`chefspice-icon-white.svg`)
+4. **White Version** (`chefspaice-icon-white.svg`)
    - Dark backgrounds only
    - Maintain sufficient contrast
 

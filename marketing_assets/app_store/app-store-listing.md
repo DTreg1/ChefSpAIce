@@ -66,10 +66,10 @@ Secondary: Health & Fitness
 4+
 
 ## Privacy Policy URL
-https://chefspice.app/privacy
+https://chefspaice.app/privacy
 
 ## Support URL
-https://chefspice.app/support
+https://chefspaice.app/support
 
 ## Marketing URL
-https://chefspice.app
+https://chefspaice.app
