@@ -77,7 +77,7 @@ export default function Landing() {
 
           <Card className="mt-12 w-full max-w-3xl" data-testid="card-feature-ai">
             <CardHeader>
-              <div className="flex items-center gap-3">
+              <div className="flex justify-center gap-3">
                 <Sparkles className="w-8 h-8 text-primary" />
                 <CardTitle className="text-2xl">Powered by AI</CardTitle>
               </div>
