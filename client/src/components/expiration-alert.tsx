@@ -35,6 +35,7 @@ export function ExpirationAlert() {
     },
     onError: (error: any) => {
       console.error("Failed to check for expiring items:", error);
+      localStorage.removeItem("lastExpirationCheck");
       toast({
         title: "Error checking expiration dates",
         description: "Unable to check for expiring items. Please try again later.",
@@ -72,7 +73,13 @@ export function ExpirationAlert() {
   });
 
   useEffect(() => {
-    checkMutation.mutate();
+    const today = new Date().toISOString().split('T')[0];
+    const lastCheck = localStorage.getItem("lastExpirationCheck");
+    
+    if (lastCheck !== today) {
+      localStorage.setItem("lastExpirationCheck", today);
+      checkMutation.mutate();
+    }
   }, []);
 
   const hasNotifications = notifications && notifications.length > 0;
