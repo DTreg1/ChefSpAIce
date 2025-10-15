@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -66,13 +68,12 @@ export default function Settings() {
   const [foodToAvoid, setFoodToAvoid] = useState("");
   const [foodsToAvoidList, setFoodsToAvoidList] = useState<string[]>([]);
 
-  const { data: preferences } = useQuery<UserPreferences>({
+  const { data: preferences } = useCachedQuery<UserPreferences>({
     queryKey: ["/api/user/preferences"],
+    cacheKey: "cache:user:preferences",
   });
 
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations } = useStorageLocations();
 
   const form = useForm<z.infer<typeof preferenceSchema>>({
     resolver: zodResolver(preferenceSchema),

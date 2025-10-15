@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { EmptyState } from "@/components/empty-state";
 import { FoodCard } from "@/components/food-card";
 import { FoodCardSkeletonGrid } from "@/components/food-card-skeleton";
@@ -115,9 +116,7 @@ export default function Storage() {
   const location = params?.location || "all";
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const { data: storageLocations, error: locationsError, isLoading: locationsLoading } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations, error: locationsError, isLoading: locationsLoading } = useStorageLocations();
 
   const { data: allItems, error: itemsError, isLoading: itemsLoading } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],

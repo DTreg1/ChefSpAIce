@@ -24,6 +24,8 @@ import {
   BrainCircuit,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
+import { CacheStorage } from "@/lib/cacheStorage";
 import {
   Sidebar,
   SidebarContent,
@@ -103,9 +105,7 @@ export function AppSidebar() {
     }
   };
 
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations } = useStorageLocations();
 
   const { data: foodItems } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],
@@ -553,7 +553,10 @@ export function AppSidebar() {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => (window.location.href = "/api/logout")}
+              onClick={() => {
+                CacheStorage.clear();
+                window.location.href = "/api/logout";
+              }}
               data-testid="button-logout"
             >
               <LogOut className="w-4 h-4 mr-2" />

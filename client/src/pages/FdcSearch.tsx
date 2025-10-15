@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
 import {
   Card,
   CardContent,
@@ -215,9 +216,7 @@ export default function FdcSearch() {
     });
   
   // Storage locations query
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations } = useStorageLocations();
   
   // Add to inventory mutation
   const addToInventoryMutation = useMutation({
