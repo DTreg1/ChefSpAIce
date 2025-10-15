@@ -20,7 +20,11 @@ import type { InsertFeedback } from "@shared/schema";
 
 type FeedbackType = 'bug' | 'feature' | 'general';
 
-export function FeedbackWidget() {
+interface FeedbackWidgetProps {
+  mode?: 'floating' | 'inline';
+}
+
+export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<FeedbackType>('general');
   const [content, setContent] = useState("");
@@ -85,32 +89,35 @@ export function FeedbackWidget() {
   // Both '/' and '/chat' routes render the Chat component
   const isOnChatPage = location === '/' || location.startsWith('/chat');
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          "fixed z-50",
-          isOnChatPage ? "bottom-48 right-6" : "bottom-6 right-6",
-          "glass-subtle backdrop-blur-md",
-          "rounded-full p-4",
-          "shadow-glass hover:shadow-glass-hover",
-          "transition-all duration-300 hover:scale-105",
-          "group"
-        )}
-        data-testid="button-feedback-widget"
-        title="Send Feedback"
-      >
-        <MessageSquarePlus className="w-5 h-5 text-foreground group-hover:rotate-12 transition-transform" />
-      </button>
-    );
-  }
+  const triggerButton = (
+    <button
+      onClick={() => setIsOpen(true)}
+      className={cn(
+        mode === 'floating' && "fixed z-50",
+        mode === 'floating' && (isOnChatPage ? "bottom-48 right-6" : "bottom-6 right-6"),
+        mode === 'inline' && "flex-shrink-0",
+        "glass-subtle backdrop-blur-md",
+        mode === 'floating' ? "rounded-full p-4" : "rounded-full p-3",
+        "shadow-glass hover:shadow-glass-hover",
+        "transition-all duration-300 hover:scale-105",
+        "group"
+      )}
+      data-testid="button-feedback-widget"
+      title="Send Feedback"
+    >
+      <MessageSquarePlus className={cn(
+        mode === 'floating' ? "w-5 h-5" : "w-4 h-4",
+        "text-foreground group-hover:rotate-12 transition-transform"
+      )} />
+    </button>
+  );
 
-  return (
+  const feedbackForm = (
     <div
       className={cn(
-        "fixed z-50",
-        isOnChatPage ? "bottom-48 right-6" : "bottom-6 right-6",
+        mode === 'floating' && "fixed z-50",
+        mode === 'floating' && (isOnChatPage ? "bottom-48 right-6" : "bottom-6 right-6"),
+        mode === 'inline' && "absolute bottom-full mb-2 right-0 z-50",
         "glass-subtle backdrop-blur-md",
         "rounded-2xl shadow-glass",
         "w-96 max-h-[600px]",
@@ -249,4 +256,15 @@ export function FeedbackWidget() {
       </div>
     </div>
   );
+
+  if (mode === 'inline') {
+    return (
+      <div className="relative">
+        {triggerButton}
+        {isOpen && feedbackForm}
+      </div>
+    );
+  }
+
+  return isOpen ? feedbackForm : triggerButton;
 }

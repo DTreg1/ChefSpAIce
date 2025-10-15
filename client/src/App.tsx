@@ -1,6 +1,6 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added authentication routing
 import { useState, useEffect, useRef } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -86,6 +86,7 @@ function AppContent() {
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+  const [location] = useLocation();
 
   const { data: preferences, isLoading: prefLoading } = useQuery<{
     hasCompletedOnboarding?: boolean;
@@ -145,7 +146,8 @@ function AppContent() {
         open={recipeDialogOpen}
         onOpenChange={setRecipeDialogOpen}
       />
-      <FeedbackWidget />
+      {/* Only show floating FeedbackWidget on non-chat pages */}
+      {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
       <SidebarProvider style={style}>
         <div className="flex h-screen w-full relative">
           <AppSidebar />
