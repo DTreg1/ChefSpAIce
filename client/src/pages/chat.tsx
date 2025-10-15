@@ -236,8 +236,9 @@ export default function Chat() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-gradient-to-br from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
-        <div className="max-w-4xl mx-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="h-full bg-gradient-to-br from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20 rounded-2xl shadow-[inset_0_2px_8px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_2px_8px_rgba(0,0,0,0.3)] overflow-y-auto">
+          <div className="max-w-4xl mx-auto p-6">
           <div className="mb-6">
             <ExpirationAlert />
           </div>
@@ -307,6 +308,7 @@ export default function Chat() {
               <div ref={messagesEndRef} />
             </>
           )}
+          </div>
         </div>
       </div>
 
