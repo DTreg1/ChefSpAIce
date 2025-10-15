@@ -2561,6 +2561,59 @@ Respond ONLY with a valid JSON object:
     }
   });
 
+  // Update donation with donor info (called before payment confirmation)
+  app.post("/api/donations/update-donor-info", async (req: any, res) => {
+    try {
+      const { paymentIntentId, donorName, donorEmail, message, anonymous } = req.body;
+      
+      if (!paymentIntentId) {
+        return res.status(400).json({ error: "Payment intent ID required" });
+      }
+      
+      // Update donation record with donor information
+      const updateData: any = {};
+      if (donorName !== undefined) updateData.donorName = donorName;
+      if (donorEmail !== undefined) updateData.donorEmail = donorEmail;
+      if (message !== undefined) updateData.message = message;
+      if (anonymous !== undefined) updateData.anonymous = anonymous;
+      
+      await storage.updateDonation(paymentIntentId, updateData);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error updating donor info:", error);
+      res.status(500).json({ error: "Failed to update donor information" });
+    }
+  });
+
+  // Confirm donation payment status (called from success page)
+  app.post("/api/donations/confirm", async (req: any, res) => {
+    try {
+      const { paymentIntentId } = req.body;
+      
+      if (!paymentIntentId) {
+        return res.status(400).json({ error: "Payment intent ID required" });
+      }
+      
+      // Get payment intent from Stripe to check status
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      // Update donation status based on Stripe payment status
+      if (paymentIntent.status === 'succeeded') {
+        const donation = await storage.updateDonation(paymentIntentId, {
+          status: 'succeeded'
+        });
+        res.json({ status: 'succeeded', donation });
+      } else if (paymentIntent.status === 'processing') {
+        res.json({ status: 'processing' });
+      } else {
+        res.json({ status: paymentIntent.status });
+      }
+    } catch (error: any) {
+      console.error("Error confirming donation:", error);
+      res.status(500).json({ error: "Failed to confirm donation" });
+    }
+  });
+
   // Get recent donations (public, anonymous info only)
   app.get("/api/donations/recent", async (req: any, res) => {
     try {

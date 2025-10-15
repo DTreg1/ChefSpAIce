@@ -21,18 +21,16 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 // Donation form component that handles payment processing
-const DonationForm = () => {
+const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: { 
+  donorInfo: { donorName: string; donorEmail: string; message: string; anonymous: boolean },
+  setDonorInfo: React.Dispatch<React.SetStateAction<{ donorName: string; donorEmail: string; message: string; anonymous: boolean }>>,
+  clientSecret: string
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [donorInfo, setDonorInfo] = useState({
-    donorName: '',
-    donorEmail: '',
-    message: '',
-    anonymous: false
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +42,19 @@ const DonationForm = () => {
     setIsProcessing(true);
 
     try {
+      // First, update the donation record with donor info on the server
+      // We'll extract the payment intent ID from the clientSecret
+      const paymentIntentId = clientSecret.split('_secret_')[0];
+      
+      await apiRequest("POST", "/api/donations/update-donor-info", {
+        paymentIntentId,
+        donorName: donorInfo.donorName,
+        donorEmail: donorInfo.donorEmail,
+        message: donorInfo.message,
+        anonymous: donorInfo.anonymous
+      });
+
+      // Now confirm the payment (donor info is already saved server-side)
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -213,6 +224,12 @@ export default function DonatePage() {
   const [selectedAmount, setSelectedAmount] = useState(1000); // $10.00 default
   const [customAmount, setCustomAmount] = useState("");
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
+  const [donorInfo, setDonorInfo] = useState({
+    donorName: '',
+    donorEmail: '',
+    message: '',
+    anonymous: false
+  });
   const { toast } = useToast();
 
   // Donation statistics
@@ -243,11 +260,17 @@ export default function DonatePage() {
     await createPaymentIntent(amountInCents);
   };
 
-  const createPaymentIntent = async (amountInCents: number) => {
+  const createPaymentIntent = async (amountInCents: number, donorData?: {
+    donorEmail?: string;
+    donorName?: string;
+    message?: string;
+    anonymous?: boolean;
+  }) => {
     setIsCreatingIntent(true);
     try {
       const response = await apiRequest("POST", "/api/donations/create-payment-intent", { 
-        amount: amountInCents 
+        amount: amountInCents,
+        ...donorData
       });
       const data = await response.json();
       
@@ -365,6 +388,7 @@ export default function DonatePage() {
               </CardHeader>
               <CardContent>
                 <Elements 
+                  key={clientSecret}
                   stripe={stripePromise} 
                   options={{ 
                     clientSecret,
@@ -376,7 +400,7 @@ export default function DonatePage() {
                     }
                   }}
                 >
-                  <DonationForm />
+                  <DonationForm donorInfo={donorInfo} setDonorInfo={setDonorInfo} clientSecret={clientSecret} />
                 </Elements>
               </CardContent>
             </Card>
