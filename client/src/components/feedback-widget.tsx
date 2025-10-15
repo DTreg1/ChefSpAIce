@@ -117,7 +117,7 @@ export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
       className={cn(
         mode === 'floating' && "fixed z-50",
         mode === 'floating' && (isOnChatPage ? "bottom-48 right-6" : "bottom-6 right-6"),
-        mode === 'inline' && "absolute bottom-full mb-2 right-0 z-50",
+        mode === 'inline' && "absolute bottom-full mb-2 left-0 z-50",
         "glass-subtle backdrop-blur-md",
         "rounded-2xl shadow-glass",
         "w-96 max-h-[600px]",
