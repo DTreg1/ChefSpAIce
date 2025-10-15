@@ -2564,22 +2564,37 @@ Respond ONLY with a valid JSON object:
   // Update donation with donor info (called before payment confirmation)
   app.post("/api/donations/update-donor-info", async (req: any, res) => {
     try {
-      const { paymentIntentId, donorName, donorEmail, message, anonymous } = req.body;
+      // Validate request body
+      const updateDonorSchema = z.object({
+        paymentIntentId: z.string().min(1),
+        donorName: z.string().optional(),
+        donorEmail: z.string().email().optional(),
+        message: z.string().optional(),
+        anonymous: z.boolean().optional()
+      });
+
+      const validatedData = updateDonorSchema.parse(req.body);
       
-      if (!paymentIntentId) {
-        return res.status(400).json({ error: "Payment intent ID required" });
+      // Verify the payment intent exists in Stripe before updating
+      try {
+        await stripe.paymentIntents.retrieve(validatedData.paymentIntentId);
+      } catch (stripeError) {
+        return res.status(404).json({ error: "Invalid payment intent" });
       }
       
       // Update donation record with donor information
       const updateData: any = {};
-      if (donorName !== undefined) updateData.donorName = donorName;
-      if (donorEmail !== undefined) updateData.donorEmail = donorEmail;
-      if (message !== undefined) updateData.message = message;
-      if (anonymous !== undefined) updateData.anonymous = anonymous;
+      if (validatedData.donorName !== undefined) updateData.donorName = validatedData.donorName;
+      if (validatedData.donorEmail !== undefined) updateData.donorEmail = validatedData.donorEmail;
+      if (validatedData.message !== undefined) updateData.message = validatedData.message;
+      if (validatedData.anonymous !== undefined) updateData.anonymous = validatedData.anonymous;
       
-      await storage.updateDonation(paymentIntentId, updateData);
+      await storage.updateDonation(validatedData.paymentIntentId, updateData);
       res.json({ success: true });
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid request data", details: error.errors });
+      }
       console.error("Error updating donor info:", error);
       res.status(500).json({ error: "Failed to update donor information" });
     }
@@ -2588,14 +2603,21 @@ Respond ONLY with a valid JSON object:
   // Confirm donation payment status (called from success page)
   app.post("/api/donations/confirm", async (req: any, res) => {
     try {
-      const { paymentIntentId } = req.body;
-      
-      if (!paymentIntentId) {
-        return res.status(400).json({ error: "Payment intent ID required" });
-      }
+      // Validate request body
+      const confirmSchema = z.object({
+        paymentIntentId: z.string().min(1)
+      });
+
+      const { paymentIntentId } = confirmSchema.parse(req.body);
       
       // Get payment intent from Stripe to check status
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      // Verify the donation exists in our database
+      const existingDonation = await storage.getDonationByPaymentIntent(paymentIntentId);
+      if (!existingDonation) {
+        return res.status(404).json({ error: "Donation not found" });
+      }
       
       // Update donation status based on Stripe payment status
       if (paymentIntent.status === 'succeeded') {
@@ -2609,6 +2631,12 @@ Respond ONLY with a valid JSON object:
         res.json({ status: paymentIntent.status });
       }
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid request data", details: error.errors });
+      }
+      if (error.type === 'StripeInvalidRequestError') {
+        return res.status(404).json({ error: "Payment intent not found" });
+      }
       console.error("Error confirming donation:", error);
       res.status(500).json({ error: "Failed to confirm donation" });
     }
