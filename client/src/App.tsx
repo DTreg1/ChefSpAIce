@@ -86,8 +86,10 @@ function AppContent() {
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
-  
-  const { data: preferences, isLoading: prefLoading } = useQuery<{ hasCompletedOnboarding?: boolean }>({
+
+  const { data: preferences, isLoading: prefLoading } = useQuery<{
+    hasCompletedOnboarding?: boolean;
+  }>({
     queryKey: ["/api/user/preferences"],
     enabled: isAuthenticated,
   });
@@ -102,8 +104,8 @@ function AppContent() {
 
     const mainElement = mainRef.current;
     if (mainElement) {
-      mainElement.addEventListener('scroll', handleScroll);
-      return () => mainElement.removeEventListener('scroll', handleScroll);
+      mainElement.addEventListener("scroll", handleScroll);
+      return () => mainElement.removeEventListener("scroll", handleScroll);
     }
   }, []);
 
@@ -125,18 +127,22 @@ function AppContent() {
   // Show app layout with sidebar for authenticated users who completed onboarding
   return (
     <>
-      <AnimatedBackground variant="both" gradientType="soft" particleCount={15} />
-      <CommandPalette 
+      <AnimatedBackground
+        variant="both"
+        gradientType="soft"
+        particleCount={30}
+      />
+      <CommandPalette
         onAddFood={() => setAddFoodOpen(true)}
         onGenerateRecipe={() => setRecipeDialogOpen(true)}
         onScanBarcode={() => {
           // Navigate to FDC search page with barcode scanner
-          window.location.href = '/fdc-search?scanBarcode=true';
+          window.location.href = "/fdc-search?scanBarcode=true";
         }}
       />
       <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
-      <RecipeCustomizationDialog 
-        open={recipeDialogOpen} 
+      <RecipeCustomizationDialog
+        open={recipeDialogOpen}
         onOpenChange={setRecipeDialogOpen}
       />
       <FeedbackWidget />
@@ -144,18 +150,25 @@ function AppContent() {
         <div className="flex h-screen w-full relative">
           <AppSidebar />
           <div className="flex flex-col flex-1">
-            <header className={cn(
-              "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-20",
-              scrolled ? "glass-ultra navbar-scroll scrolled shadow-lg" : "glass-vibrant border-border/30"
-            )}>
-              <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-morph hover:scale-105" />
+            <header
+              className={cn(
+                "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-20",
+                scrolled
+                  ? "glass-ultra navbar-scroll scrolled shadow-lg"
+                  : "glass-vibrant border-border/30",
+              )}
+            >
+              <SidebarTrigger
+                data-testid="button-sidebar-toggle"
+                className="transition-morph hover:scale-105"
+              />
               <div className="ml-auto">
-                <QuickActionsBar 
+                <QuickActionsBar
                   onAddFood={() => setAddFoodOpen(true)}
                   onGenerateRecipe={() => setRecipeDialogOpen(true)}
                   onScanBarcode={() => {
                     // Navigate to FDC search page with barcode scanner
-                    window.location.href = '/fdc-search?scanBarcode=true';
+                    window.location.href = "/fdc-search?scanBarcode=true";
                   }}
                 />
               </div>
