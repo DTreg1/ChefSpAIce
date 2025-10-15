@@ -212,7 +212,7 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b border-border p-4 bg-gradient-to-r from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
+      <div className="border-b border-border p-4 bg-gradient-to-r from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20 shadow-2xl">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Chat with Chef</h2>
@@ -310,7 +310,9 @@ export default function Chat() {
         </div>
       </div>
 
-      <ChatInput onSend={handleSendMessage} disabled={isStreaming} showFeedbackWidget={true} />
+      <div  className="shadow-2xl">
+        <ChatInput onSend={handleSendMessage} disabled={isStreaming} showFeedbackWidget={true} />
+      </div>
     </div>
   );
 }

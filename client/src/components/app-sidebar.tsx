@@ -110,7 +110,7 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar>
+      <Sidebar className="shadow-2xl">
         <SidebarHeader className="p-6 border-b border-sidebar-border/50 glass-vibrant">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center transition-morph hover:scale-110 shadow-lg glow-primary">
