@@ -1,0 +1,6 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="#6e9933" xmlns="http://www.w3.org/2000/svg" style="background-color: #6e9933; color: rgb(212, 212, 212); border-radius: 8px;">
+  <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="1em" width="1em" class="lucide lucide-chef-hat-icon lucide-chef-hat">
+    <path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/>
+    <path d="M6 17h12"/>
+  </svg>
+</svg>
