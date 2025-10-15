@@ -49,6 +49,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getCategoryIcon } from "@/lib/categoryIcons";
+import { Logo } from "@/components/Logo";
 import type { StorageLocation, FoodItem } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
@@ -138,18 +139,15 @@ export function AppSidebar() {
     <>
       <Sidebar className="shadow-2xl">
         <SidebarHeader className="p-6 border-b border-sidebar-border/50 glass-vibrant">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center transition-morph hover:scale-110 shadow-lg glow-primary">
-              <ChefHat className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-gradient-primary font-sans">
-                ChefSpAIce
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Your Kitchen Assistant
-              </p>
-            </div>
+          <div>
+            <Logo 
+              size="lg" 
+              showText 
+              iconClassName="transition-morph hover:scale-110"
+            />
+            <p className="text-xs text-muted-foreground ml-[52px]">
+              Your Kitchen Assistant
+            </p>
           </div>
         </SidebarHeader>
 
