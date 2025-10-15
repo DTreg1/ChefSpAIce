@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,8 +25,21 @@ const MEAL_TYPE_LABELS: Record<MealType, string> = {
   snack: "Snack",
 };
 
+type ViewMode = "day" | "week";
+
 export default function MealPlanner() {
   const { toast } = useToast();
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768 ? "day" : "week";
+    }
+    return "week";
+  });
+  const [currentDate, setCurrentDate] = useState(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -50,10 +63,16 @@ export default function MealPlanner() {
     return dates;
   }, [currentWeekStart]);
 
-  const startDate = weekDates[0].toLocaleDateString("en-CA"); // YYYY-MM-DD format, timezone-safe
-  const endDate = weekDates[6].toLocaleDateString("en-CA");
+  const startDate =
+    viewMode === "day"
+      ? currentDate.toLocaleDateString("en-CA")
+      : weekDates[0].toLocaleDateString("en-CA");
+  const endDate =
+    viewMode === "day"
+      ? currentDate.toLocaleDateString("en-CA")
+      : weekDates[6].toLocaleDateString("en-CA");
 
-  // Fetch meal plans for the week
+  // Fetch meal plans for the current view
   const { data: mealPlans = [], isLoading: mealPlansLoading } = useQuery<
     MealPlan[]
   >({
@@ -104,12 +123,28 @@ export default function MealPlanner() {
   const goToToday = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    setCurrentDate(today);
     const day = today.getDay();
     const diff = today.getDate() - day;
     const weekStart = new Date(today);
     weekStart.setDate(diff);
     weekStart.setHours(0, 0, 0, 0);
     setCurrentWeekStart(weekStart);
+  };
+
+  // Day view navigation
+  const goToPreviousDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 1);
+    newDate.setHours(0, 0, 0, 0);
+    setCurrentDate(newDate);
+  };
+
+  const goToNextDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + 1);
+    newDate.setHours(0, 0, 0, 0);
+    setCurrentDate(newDate);
   };
 
   // Get meal plan for specific date and meal type
@@ -140,6 +175,61 @@ export default function MealPlanner() {
     year: "numeric",
   });
 
+  const dayMonthYear = currentDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  // Responsive view handling
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile && viewMode === "week") {
+        setViewMode("day");
+      } else if (!isMobile && viewMode === "day") {
+        setViewMode("week");
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [viewMode]);
+
+  // Swipe gesture handling for Day view
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const swipeThreshold = 50;
+    // Use changedTouches for touchEnd, fallback to touchEndX or touchStartX
+    const finalX = e.changedTouches[0]?.clientX ?? touchEndX.current ?? touchStartX.current;
+    const swipeDistance = touchStartX.current - finalX;
+
+    if (Math.abs(swipeDistance) > swipeThreshold) {
+      if (swipeDistance > 0) {
+        // Swiped left - go to next day
+        goToNextDay();
+      } else {
+        // Swiped right - go to previous day
+        goToPreviousDay();
+      }
+    }
+
+    // Reset touch refs
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  }, [goToNextDay, goToPreviousDay]);
+
   return (
     <div className="h-full overflow-y-auto bg-muted">
       <div className="max-w-4xl mx-auto p-6">
@@ -150,14 +240,14 @@ export default function MealPlanner() {
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Calendar1 className="w-6 h-6 text-primary" />
               </div>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                Meal Planner
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Plan your meals for the week
-              </p>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Meal Planner
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Plan your meals {viewMode === "day" ? "for the day" : "for the week"}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -169,25 +259,53 @@ export default function MealPlanner() {
                 <CalendarIcon className="w-4 h-4 mr-2" />
                 Today
               </Button>
+            </div>
+          </div>
+
+          {/* View Switcher */}
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="inline-flex rounded-md border border-border bg-card p-1">
+              <Button
+                variant={viewMode === "day" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("day")}
+                data-testid="button-view-day"
+                className="px-4"
+              >
+                Day
+              </Button>
+              <Button
+                variant={viewMode === "week" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("week")}
+                data-testid="button-view-week"
+                className="px-4"
+              >
+                Week
+              </Button>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="icon"
-                onClick={goToPreviousWeek}
-                data-testid="button-prev-week"
+                onClick={viewMode === "day" ? goToPreviousDay : goToPreviousWeek}
+                data-testid={viewMode === "day" ? "button-prev-day" : "button-prev-week"}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <div
                 className="text-sm font-medium min-w-[150px] text-center"
-                data-testid="text-month-year"
+                data-testid="text-date-display"
               >
-                {monthYear}
+                {viewMode === "day" ? dayMonthYear : monthYear}
               </div>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={goToNextWeek}
-                data-testid="button-next-week"
+                onClick={viewMode === "day" ? goToNextDay : goToNextWeek}
+                data-testid={viewMode === "day" ? "button-next-day" : "button-next-week"}
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -198,10 +316,75 @@ export default function MealPlanner() {
           <Card className="flex-1 overflow-hidden">
             <CardContent className="p-0 h-full">
               {mealPlansLoading ? (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex items-center justify-center h-full p-8">
                   <div className="text-muted-foreground">
                     Loading meal plans...
                   </div>
+                </div>
+              ) : viewMode === "day" ? (
+                <div
+                  className="p-4 space-y-4"
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  {MEAL_TYPES.map((mealType) => {
+                    const mealPlan = getMealPlan(currentDate, mealType);
+                    const recipe = getRecipe(mealPlan);
+
+                    return (
+                      <div key={mealType} data-testid={`day-meal-${mealType}`}>
+                        <h3 className="text-sm font-semibold mb-2 text-muted-foreground">
+                          {MEAL_TYPE_LABELS[mealType]}
+                        </h3>
+                        {recipe && mealPlan ? (
+                          <Card className="hover-elevate cursor-pointer">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <CardTitle className="text-base font-medium">
+                                  {recipe.title}
+                                </CardTitle>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteMealPlanMutation.mutate(mealPlan.id);
+                                  }}
+                                  data-testid={`button-remove-${mealPlan.id}`}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <div className="text-sm text-muted-foreground">
+                                {mealPlan.servings}{" "}
+                                {mealPlan.servings === 1 ? "serving" : "servings"}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <button
+                            className="w-full p-6 flex items-center justify-center hover-elevate rounded-md border-2 border-dashed border-border/50 hover:border-primary/50 transition-colors"
+                            onClick={() => {
+                              toast({
+                                title: "Recipe scheduling",
+                                description:
+                                  "Schedule recipes from the cookbook page. This feature will be enhanced soon!",
+                              });
+                            }}
+                            data-testid={`button-add-meal-${mealType}`}
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              + Add meal
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="h-full overflow-auto">
