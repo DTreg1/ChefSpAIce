@@ -2683,6 +2683,49 @@ Respond ONLY with a valid JSON object:
     }
   });
 
+  // Push notification token endpoints
+  app.post("/api/push-token", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { token, platform, deviceInfo } = req.body;
+
+      if (!token || !platform) {
+        return res.status(400).json({ error: "Token and platform are required" });
+      }
+
+      // Validate platform
+      const validPlatforms = ['ios', 'android', 'web'];
+      if (!validPlatforms.includes(platform)) {
+        return res.status(400).json({ error: "Invalid platform. Must be ios, android, or web" });
+      }
+
+      const savedToken = await storage.upsertPushToken(userId, {
+        token,
+        platform,
+        deviceInfo: deviceInfo || null,
+      });
+
+      res.json(savedToken);
+    } catch (error) {
+      console.error("Error saving push token:", error);
+      res.status(500).json({ error: "Failed to save push token" });
+    }
+  });
+
+  app.delete("/api/push-token/:token", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { token } = req.params;
+
+      // This will only delete the token if it belongs to the authenticated user
+      await storage.deletePushToken(userId, token);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting push token:", error);
+      res.status(500).json({ error: "Failed to delete push token" });
+    }
+  });
+
   // Handle 404s for API routes that weren't matched above
   app.use("/api/*", (_req: any, res) => {
     res.status(404).json({ message: "API endpoint not found" });
