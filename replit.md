@@ -1,7 +1,7 @@
-# AI Chef - Smart Kitchen Assistant
+# ChefSpAIce - Smart Kitchen Assistant
 
 ## Overview
-AI Chef is an AI-powered, chat-based kitchen assistant designed to manage home food inventory, reduce waste, and generate personalized recipes. It integrates with the USDA food database for accurate nutritional information and leverages OpenAI GPT-5 for conversational AI. The project aims to provide a comprehensive solution for efficient home food management, including expiration tracking, recipe saving, nutritional dashboards, and meal planning capabilities, thereby enhancing culinary experiences and promoting sustainable food practices.
+ChefSpAIce is an AI-powered, chat-based kitchen assistant designed to manage home food inventory, reduce waste, and generate personalized recipes. It integrates with the USDA food database for accurate nutritional information and leverages OpenAI GPT-5 for conversational AI. The project aims to provide a comprehensive solution for efficient home food management, including expiration tracking, recipe saving, nutritional dashboards, and meal planning capabilities, thereby enhancing culinary experiences and promoting sustainable food practices.
 
 ## User Preferences
 - Design follows ChatGPT-inspired conversational interface
@@ -12,7 +12,7 @@ AI Chef is an AI-powered, chat-based kitchen assistant designed to manage home f
 - Schema-first approach for type consistency
 
 ## System Architecture
-The AI Chef application features a React frontend with TypeScript, Tailwind CSS, and Shadcn UI for a modern, responsive user interface. The backend is built with Express.js and Node.js, interacting with a PostgreSQL database (Neon-backed) via Drizzle ORM for persistent storage and schema management. OpenAI GPT-5 is integrated for real-time, streaming conversational AI, while the USDA FoodData Central API provides comprehensive nutritional data.
+The ChefSpAIce application features a React frontend with TypeScript, Tailwind CSS, and Shadcn UI for a modern, responsive user interface. The backend is built with Express.js and Node.js, interacting with a PostgreSQL database (Neon-backed) via Drizzle ORM for persistent storage and schema management. OpenAI GPT-5 is integrated for real-time, streaming conversational AI, while the USDA FoodData Central API provides comprehensive nutritional data.
 
 Key architectural decisions include:
 - **UI/UX**: ChatGPT-inspired conversational interface, collapsible sidebar navigation, dark/light mode, consistent spacing, and a border-radius of 1.3rem. Typography uses Ubuntu for UI text, Georgia for recipe headings, and Menlo for technical data.
@@ -25,7 +25,7 @@ Key architectural decisions include:
     - **Food Inventory**: CRUD operations for tracking items across storage locations (Fridge, Pantry, Freezer, Counter) with expiration dates, visual indicators, and images. Includes kitchen appliances registry and custom storage areas.
     - **Recipe Management**: AI-generated recipes, saving, favoriting, and rating.
     - **Nutritional Dashboard**: Aggregated calorie and macronutrient breakdowns using USDA data with dual-unit system (quantity × serving size = weightInGrams) for accurate calculations. Displays single horizontal stacked bar for overall macros and mini stacked bars per food item.
-    - **Chat Interface**: Real-time streaming chat with AI Chef. All messages persist to PostgreSQL database, including recipe notifications. Features "Start New Chat" button to manually clear conversation history. Automatic cleanup runs when users access chat (1-hour cooldown per user), deleting messages older than 24 hours to simulate the chef "sleeping" and cleaning up at night.
+    - **Chat Interface**: Real-time streaming chat with ChefSpAIce. All messages persist to PostgreSQL database, including recipe notifications. Features "Start New Chat" button to manually clear conversation history. Automatic cleanup runs when users access chat (1-hour cooldown per user), deleting messages older than 24 hours to simulate the chef "sleeping" and cleaning up at night.
     - **Meal Planning**: Weekly calendar for scheduling recipes with serving customization.
     - **Shopping List**: Auto-generated from planned meals, comparing with inventory.
     - **Quick Actions**: Command palette (Cmd/Ctrl+K) with quick access to Add Food Item, Scan Barcode, and Generate Recipe.

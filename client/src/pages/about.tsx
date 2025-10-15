@@ -82,7 +82,7 @@ export default function About() {
         <div className="flex items-center gap-3">
           <ChefHat className="w-10 h-10 text-primary" />
           <div>
-            <h1 className="text-4xl font-bold">About AI Chef</h1>
+            <h1 className="text-4xl font-bold">About ChefSpAIce</h1>
             <p className="text-muted-foreground mt-2">
               Your intelligent kitchen companion for smarter cooking and food management
             </p>
@@ -99,7 +99,7 @@ export default function About() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            AI Chef is designed to revolutionize how you manage your kitchen and cooking. We combine artificial 
+            ChefSpAIce is designed to revolutionize how you manage your kitchen and cooking. We combine artificial 
             intelligence with practical kitchen management to help you reduce food waste, discover new recipes, 
             and make meal planning effortless.
           </p>
@@ -177,7 +177,7 @@ export default function About() {
 
       <div className="text-center space-y-4 pb-8">
         <p className="text-sm text-muted-foreground">
-          AI Chef © 2025 | Built with <Heart className="w-4 h-4 inline text-red-500" /> for home cooks everywhere
+          ChefSpAIce © 2025 | Built with <Heart className="w-4 h-4 inline text-red-500" /> for home cooks everywhere
         </p>
         <p className="text-xs text-muted-foreground">
           Version 1.0.0 | Last updated: October 2025

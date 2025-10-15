@@ -215,7 +215,7 @@ export default function Chat() {
       <div className="border-b border-border p-4 bg-gradient-to-r from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Chat with AI Chef</h2>
+            <h2 className="text-lg font-semibold text-foreground">Chat with ChefSpAIce</h2>
             <p className="text-sm text-muted-foreground">Get recipe suggestions and manage your inventory</p>
           </div>
           <div className="flex gap-2">

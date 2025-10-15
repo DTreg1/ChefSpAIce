@@ -41,7 +41,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask your AI Chef anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"
+          placeholder="Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"
           className="resize-none min-h-[60px] max-h-[120px] rounded-xl"
           disabled={disabled}
           data-testid="input-chat-message"

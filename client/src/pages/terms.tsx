@@ -9,7 +9,7 @@ export default function Terms() {
     {
       icon: CheckCircle,
       title: "1. Acceptance of Terms",
-      content: `By accessing and using AI Chef ("the Service"), you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service. We reserve the right to update these terms at any time, and continued use of the Service constitutes acceptance of any changes.`
+      content: `By accessing and using ChefSpAIce ("the Service"), you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service. We reserve the right to update these terms at any time, and continued use of the Service constitutes acceptance of any changes.`
     },
     {
       icon: Users,
@@ -19,22 +19,22 @@ export default function Terms() {
     {
       icon: Scale,
       title: "3. Acceptable Use",
-      content: `You agree to use AI Chef only for lawful purposes and in accordance with these Terms. You may not use the Service to: violate any laws or regulations; infringe on intellectual property rights; transmit harmful code or malware; attempt to gain unauthorized access; harass or harm other users; or engage in any activity that disrupts the Service.`
+      content: `You agree to use ChefSpAIce only for lawful purposes and in accordance with these Terms. You may not use the Service to: violate any laws or regulations; infringe on intellectual property rights; transmit harmful code or malware; attempt to gain unauthorized access; harass or harm other users; or engage in any activity that disrupts the Service.`
     },
     {
       icon: Info,
       title: "4. Content and Intellectual Property",
-      content: `The Service and its original content, features, and functionality are owned by AI Chef and are protected by international copyright, trademark, and other intellectual property laws. User-generated content remains the property of the user, but you grant us a license to use, store, and display such content as necessary to provide the Service.`
+      content: `The Service and its original content, features, and functionality are owned by ChefSpAIce and are protected by international copyright, trademark, and other intellectual property laws. User-generated content remains the property of the user, but you grant us a license to use, store, and display such content as necessary to provide the Service.`
     },
     {
       icon: AlertTriangle,
       title: "5. Disclaimers and Limitations",
-      content: `AI Chef is provided "as is" without warranties of any kind. We do not guarantee the accuracy of nutritional information, recipe suggestions, or food safety recommendations. Users should verify all information and use their own judgment regarding food safety and dietary requirements. We are not responsible for any allergic reactions or health issues resulting from use of the Service.`
+      content: `ChefSpAIce is provided "as is" without warranties of any kind. We do not guarantee the accuracy of nutritional information, recipe suggestions, or food safety recommendations. Users should verify all information and use their own judgment regarding food safety and dietary requirements. We are not responsible for any allergic reactions or health issues resulting from use of the Service.`
     },
     {
       icon: Ban,
       title: "6. Limitation of Liability",
-      content: `To the maximum extent permitted by law, AI Chef shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or other intangible losses resulting from your use of the Service, even if we have been advised of the possibility of such damages.`
+      content: `To the maximum extent permitted by law, ChefSpAIce shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or other intangible losses resulting from your use of the Service, even if we have been advised of the possibility of such damages.`
     },
     {
       icon: Gavel,
@@ -103,7 +103,7 @@ export default function Terms() {
       <Alert className="border-primary/50">
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Please read these Terms of Service carefully before using AI Chef. Your use of the Service 
+          Please read these Terms of Service carefully before using ChefSpAIce. Your use of the Service 
           indicates your acceptance of these terms.
         </AlertDescription>
       </Alert>
@@ -114,9 +114,9 @@ export default function Terms() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            These Terms of Service ("Terms") govern your use of AI Chef, including our website, mobile 
+            These Terms of Service ("Terms") govern your use of ChefSpAIce, including our website, mobile 
             applications, and all related services (collectively, the "Service"). This is a legal agreement 
-            between you and AI Chef.
+            between you and ChefSpAIce.
           </p>
           <p className="text-muted-foreground leading-relaxed">
             By using our Service, you acknowledge that you have read, understood, and agree to be bound by 
@@ -176,11 +176,11 @@ export default function Terms() {
           <Alert className="border-warning">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Important:</strong> AI Chef is not a substitute for professional medical or nutritional advice.
+              <strong>Important:</strong> ChefSpAIce is not a substitute for professional medical or nutritional advice.
             </AlertDescription>
           </Alert>
           <p className="text-muted-foreground">
-            The nutritional information and dietary suggestions provided by AI Chef are for informational 
+            The nutritional information and dietary suggestions provided by ChefSpAIce are for informational 
             purposes only. Always consult with a qualified healthcare provider or registered dietitian 
             before making significant changes to your diet, especially if you have health conditions or 
             food allergies.
@@ -221,15 +221,15 @@ export default function Terms() {
           <div className="space-y-2 text-muted-foreground">
             <p>Email: legal@aichef.app</p>
             <p>Support: Use the in-app feedback feature</p>
-            <p>Mailing: AI Chef Legal, PO Box 12345, Tech City, TC 54321</p>
+            <p>Mailing: ChefSpAIce Legal, PO Box 12345, Tech City, TC 54321</p>
           </div>
         </CardContent>
       </AnimatedCard>
 
       <div className="text-center text-sm text-muted-foreground pb-8">
-        <p>© 2025 AI Chef. All rights reserved.</p>
+        <p>© 2025 ChefSpAIce. All rights reserved.</p>
         <p className="mt-2">
-          By using AI Chef, you agree to these Terms of Service and our Privacy Policy.
+          By using ChefSpAIce, you agree to these Terms of Service and our Privacy Policy.
         </p>
       </div>
     </PageTransition>

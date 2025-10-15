@@ -1259,7 +1259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const appliancesContext = appliances.map(a => a.name).join(', ');
 
-      const systemPrompt = `You are an AI Chef assistant. You help users manage their food inventory and suggest recipes.
+      const systemPrompt = `You are an ChefSpAIce assistant. You help users manage their food inventory and suggest recipes.
 
 Current inventory: ${inventoryContext || 'No items in inventory'}${contextNote}
 Available appliances: ${appliancesContext || 'No appliances registered'}
