@@ -9,7 +9,7 @@ export default function Landing() {
         <div className="flex flex-col items-center text-center space-y-8">
           <div className="flex items-center gap-3">
             <ChefHat className="w-12 h-12 text-primary" />
-            <h1 className="text-5xl font-bold">AI Chef</h1>
+            <h1 className="text-5xl font-bold">ChefSpAIce</h1>
           </div>
 
           <p className="text-xl text-muted-foreground max-w-2xl">
