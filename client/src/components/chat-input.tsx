@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Paperclip } from "lucide-react";
+import { FeedbackWidget } from "@/components/feedback-widget";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
+  showFeedbackWidget?: boolean;
 }
 
-export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
+export function ChatInput({ onSend, disabled = false, showFeedbackWidget = false }: ChatInputProps) {
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
@@ -28,14 +30,20 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
   return (
     <div className="border-t border-border bg-background p-4">
       <div className="max-w-4xl mx-auto flex gap-2">
-        <Button
-          size="icon"
-          variant="ghost"
-          className="flex-shrink-0"
-          data-testid="button-attach"
-        >
-          <Paperclip className="w-5 h-5" />
-        </Button>
+        <div className="flex flex-col gap-2 flex-shrink-0">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="flex-shrink-0"
+            data-testid="button-attach"
+          >
+            <Paperclip className="w-5 h-5" />
+          </Button>
+          
+          {showFeedbackWidget && (
+            <FeedbackWidget mode="inline" />
+          )}
+        </div>
 
         <Textarea
           value={message}
