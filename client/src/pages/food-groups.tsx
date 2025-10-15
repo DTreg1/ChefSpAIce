@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,9 +31,7 @@ export default function FoodGroups() {
     queryKey: ["/api/food-items"],
   });
 
-  const { data: storageLocations, isLoading: locationsLoading } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations, isLoading: locationsLoading } = useStorageLocations();
 
   // Group food items by category
   const groupedItems = (foodItems || []).reduce((acc, item) => {

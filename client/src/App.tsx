@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -15,6 +15,7 @@ import { RecipeCustomizationDialog } from "@/components/recipe-customization-dia
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { AnimatedBackground } from "@/components/animated-background";
 import { useAuth } from "@/hooks/useAuth";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
@@ -88,10 +89,11 @@ function AppContent() {
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
 
-  const { data: preferences, isLoading: prefLoading } = useQuery<{
+  const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
     hasCompletedOnboarding?: boolean;
   }>({
     queryKey: ["/api/user/preferences"],
+    cacheKey: "cache:user:preferences",
     enabled: isAuthenticated,
   });
 

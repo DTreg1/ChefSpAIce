@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
 import {
   Dialog,
   DialogContent,
@@ -158,9 +159,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   
   const { toast } = useToast();
 
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations } = useStorageLocations();
 
   // Debounced brand owner search
   const debouncedBrandSearch = useDebouncedCallback(

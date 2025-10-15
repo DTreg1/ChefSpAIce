@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
 import {
   Dialog,
   DialogContent,
@@ -34,9 +35,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
   const [expirationDate, setExpirationDate] = useState("");
   const { toast } = useToast();
 
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations } = useStorageLocations();
 
   useEffect(() => {
     if (item) {

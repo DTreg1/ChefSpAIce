@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
 import {
   Dialog,
   DialogContent,
@@ -45,9 +46,7 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
   const { toast } = useToast();
 
   // Fetch storage locations
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations } = useStorageLocations();
 
   // Get location with most items for default
   const getDefaultLocation = () => {
