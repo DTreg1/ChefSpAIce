@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { deduplicatedFetch } from "./requestDeduplication";
 
 // Enhanced error class for API errors
 export class ApiError extends Error {
@@ -79,7 +80,7 @@ export async function apiRequest(
       }
     }
     
-    const res = await fetch(url, {
+    const res = await deduplicatedFetch(url, {
       method,
       headers: data !== undefined ? { "Content-Type": "application/json" } : {},
       body: bodyString,
@@ -118,7 +119,7 @@ export const getQueryFn: <T>(options: {
     const url = queryKey.map(key => String(key)).join("/");
     
     try {
-      const res = await fetch(url, {
+      const res = await deduplicatedFetch(url, {
         credentials: "include",
         signal, // Use React Query's abort signal
       });
