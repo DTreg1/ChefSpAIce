@@ -128,86 +128,173 @@ export async function setupAuth(app: Express) {
   });
 }
 
-// Map to track active token refreshes per user session
-const activeRefreshes = new Map<string, { promise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>, timestamp: number }>();
+// Map to track active token refreshes per user session with thread-safe operations
+const activeRefreshes = new Map<string, { 
+  promise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>, 
+  timestamp: number,
+  refCount: number  // Track number of waiting requests
+}>();
+
+// Mutex-like lock for concurrent map operations
+const refreshLock = new Map<string, Promise<void>>();
 
 // Clean up stale refresh promises (older than 30 seconds)
 const cleanupStaleRefreshes = () => {
   const now = Date.now();
   const staleTimeout = 30000; // 30 seconds
   
-  Array.from(activeRefreshes.entries()).forEach(([key, value]) => {
-    if (now - value.timestamp > staleTimeout) {
-      activeRefreshes.delete(key);
+  // Use a separate array to avoid mutation during iteration
+  const keysToDelete: string[] = [];
+  
+  activeRefreshes.forEach((value, key) => {
+    // Only clean up if no requests are waiting and it's stale
+    if (value.refCount === 0 && now - value.timestamp > staleTimeout) {
+      keysToDelete.push(key);
     }
   });
+  
+  keysToDelete.forEach(key => {
+    activeRefreshes.delete(key);
+    refreshLock.delete(key);
+  });
 };
+
+// Periodic cleanup task
+const cleanupInterval = setInterval(cleanupStaleRefreshes, 10000); // Run every 10 seconds
+
+// Clean up on process exit
+process.on('SIGTERM', () => {
+  clearInterval(cleanupInterval);
+});
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
+  // Add a 30-second buffer before expiry to refresh proactively
+  if (now <= user.expires_at - 30) {
     return next();
   }
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
   // Create a unique key for this user's refresh operation
   const userId = user.claims?.sub || 'unknown';
-  const refreshKey = `${userId}-${refreshToken.substring(0, 10)}`;
-  
-  // Clean up stale refreshes periodically
-  cleanupStaleRefreshes();
+  const sessionId = req.sessionID || 'no-session';
+  const refreshKey = `${userId}-${sessionId}`;
   
   try {
-    // Check if a refresh is already in progress for this user
-    const existingRefresh = activeRefreshes.get(refreshKey);
-    let tokenResponsePromise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>;
-    
-    if (!existingRefresh) {
-      // No active refresh, start a new one
-      const config = await getOidcConfig();
-      tokenResponsePromise = client.refreshTokenGrant(config, refreshToken);
-      
-      // Store the promise with timestamp so concurrent requests can wait for it
-      activeRefreshes.set(refreshKey, { 
-        promise: tokenResponsePromise, 
-        timestamp: Date.now() 
-      });
-      
-      // Clean up the promise after success, but keep failed ones briefly to prevent retry storms
-      tokenResponsePromise
-        .then(() => {
-          // On success, remove immediately
-          activeRefreshes.delete(refreshKey);
-        })
-        .catch((error) => {
-          // On failure, keep for 5 seconds to prevent immediate retries
-          setTimeout(() => {
-            activeRefreshes.delete(refreshKey);
-          }, 5000);
-        });
-    } else {
-      // Use the existing refresh promise
-      tokenResponsePromise = existingRefresh.promise;
+    // Wait for any existing lock operation to complete
+    const existingLock = refreshLock.get(refreshKey);
+    if (existingLock) {
+      await existingLock;
     }
     
-    // Wait for the refresh to complete
-    const tokenResponse = await tokenResponsePromise;
-    updateUserSession(user, tokenResponse);
-    return next();
-  } catch (error) {
-    console.error('Token refresh failed:', error);
-    res.status(401).json({ message: "Unauthorized" });
+    // Create a new lock for this operation
+    let releaseLock: () => void;
+    const lockPromise = new Promise<void>(resolve => {
+      releaseLock = resolve;
+    });
+    refreshLock.set(refreshKey, lockPromise);
+    
+    try {
+      // Check if a refresh is already in progress for this user
+      const existingRefresh = activeRefreshes.get(refreshKey);
+      let tokenResponsePromise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>;
+      
+      if (!existingRefresh || existingRefresh.timestamp < Date.now() - 30000) {
+        // No active refresh or it's stale, start a new one
+        const config = await getOidcConfig();
+        tokenResponsePromise = client.refreshTokenGrant(config, refreshToken);
+        
+        // Store the promise with timestamp and initial refCount
+        activeRefreshes.set(refreshKey, { 
+          promise: tokenResponsePromise, 
+          timestamp: Date.now(),
+          refCount: 1
+        });
+        
+        // Clean up after completion
+        tokenResponsePromise
+          .finally(() => {
+            // Decrement refCount after a delay
+            setTimeout(() => {
+              const current = activeRefreshes.get(refreshKey);
+              if (current) {
+                current.refCount = Math.max(0, current.refCount - 1);
+                if (current.refCount === 0) {
+                  // Remove after 5 seconds if no one is using it
+                  setTimeout(() => {
+                    const check = activeRefreshes.get(refreshKey);
+                    if (check && check.refCount === 0) {
+                      activeRefreshes.delete(refreshKey);
+                    }
+                  }, 5000);
+                }
+              }
+            }, 100);
+          });
+      } else {
+        // Use the existing refresh promise and increment refCount
+        existingRefresh.refCount++;
+        tokenResponsePromise = existingRefresh.promise;
+        
+        // Decrement refCount when done
+        tokenResponsePromise.finally(() => {
+          setTimeout(() => {
+            const current = activeRefreshes.get(refreshKey);
+            if (current) {
+              current.refCount = Math.max(0, current.refCount - 1);
+            }
+          }, 100);
+        });
+      }
+      
+      // Release the lock before waiting
+      releaseLock!();
+      refreshLock.delete(refreshKey);
+      
+      // Wait for the refresh to complete
+      const tokenResponse = await tokenResponsePromise;
+      updateUserSession(user, tokenResponse);
+      
+      // Save the session to persist the new tokens
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
+      return next();
+    } finally {
+      // Ensure lock is released even on error
+      if (releaseLock!) {
+        releaseLock!();
+        refreshLock.delete(refreshKey);
+      }
+    }
+  } catch (error: any) {
+    console.error('Token refresh failed:', {
+      userId,
+      error: error.message,
+      stack: error.stack
+    });
+    
+    // Clear the failed refresh to allow retry
+    activeRefreshes.delete(refreshKey);
+    
+    res.status(401).json({ 
+      message: "Unauthorized", 
+      error: "Token refresh failed"
+    });
     return;
   }
 };
