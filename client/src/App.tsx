@@ -37,6 +37,7 @@ import DonateSuccess from "@/pages/donate-success";
 import About from "@/pages/about";
 import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
+import CameraTest from "@/pages/camera-test";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
@@ -60,6 +61,7 @@ function AuthenticatedRouter() {
       <Route path="/about" component={About} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
+      <Route path="/camera-test" component={CameraTest} />
       <Route component={NotFound} />
     </Switch>
   );
