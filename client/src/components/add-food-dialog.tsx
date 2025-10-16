@@ -17,6 +17,7 @@ import { Search, Upload, ImageOff, ChevronDown, ChevronUp, Filter, Loader2, Scan
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
+import { getUserErrorMessage } from "@/lib/errorUtils";
 import { ObjectUploader } from "./ObjectUploader";
 import { BarcodeRateLimitInfo } from "./barcode-rate-limit-info";
 import { 
@@ -255,10 +256,10 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       });
       handleClose();
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to add food item",
+        description: getUserErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -312,10 +313,10 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         });
       }
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: "Analysis Error",
-        description: error.message || "Failed to analyze the image",
+        description: getUserErrorMessage(error),
         variant: "destructive",
       });
     },
