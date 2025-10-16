@@ -4,9 +4,8 @@ import { RecipeUpload } from "@/components/recipe-upload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, BookOpen } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { Recipe } from "@shared/schema";
-import { queryClient } from "@/lib/queryClient";
 import { PageTransition } from "@/components/page-transition";
 import { StaggerContainer, StaggerItem } from "@/components/stagger-children";
 import { AnimatedCard } from "@/components/animated-card";
@@ -15,14 +14,8 @@ import { CardSkeleton } from "@/components/skeleton-loader";
 export default function Cookbook() {
   const [filter, setFilter] = useState<"all" | "favorites">("all");
   
-  // Refetch recipes with inventory matching when page becomes active
-  useEffect(() => {
-    // Invalidate to get fresh inventory matching data
-    queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
-  }, []);
-  
   const { data: recipes, isLoading } = useQuery<Recipe[]>({
-    queryKey: ["/api/recipes?includeMatching=true"],
+    queryKey: ["/api/recipes"],
   });
 
   const filteredRecipes = recipes?.filter(recipe => {
