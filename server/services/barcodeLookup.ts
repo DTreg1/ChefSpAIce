@@ -226,7 +226,7 @@ export class BarcodeLookupService {
       throw new ApiError(
         `Failed to look up barcode: ${error.message || 'Unknown error'}`,
         500,
-        { barcode }
+        JSON.stringify({ barcode })
       );
     }
   }
@@ -342,7 +342,7 @@ export class BarcodeLookupService {
       throw new ApiError(
         `Failed to search products: ${error.message || 'Unknown error'}`,
         500,
-        { query }
+        JSON.stringify({ query })
       );
     }
   }
