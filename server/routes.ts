@@ -2113,6 +2113,95 @@ Respond ONLY with a valid JSON object:
     }
   });
 
+  // Generate shopping list from meal plans
+  app.get("/api/meal-plans/shopping-list", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { startDate, endDate } = req.query;
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "Start date and end date are required" });
+      }
+
+      // Get meal plans for the date range
+      const mealPlans = await storage.getMealPlans(userId, startDate as string, endDate as string);
+      
+      // Extract unique recipe IDs from meal plans
+      const recipeIds = new Set<string>();
+      mealPlans.forEach(plan => {
+        if (plan.recipeId) {
+          recipeIds.add(plan.recipeId);
+        }
+      });
+
+      // If no recipes found in meal plans, return empty list
+      if (recipeIds.size === 0) {
+        return res.json({
+          items: [],
+          totalItems: 0,
+          plannedMeals: mealPlans.length,
+          dateRange: { startDate, endDate },
+          message: "No recipes planned for this date range"
+        });
+      }
+
+      // Get recipes and their missing ingredients
+      const recipes = await Promise.all(
+        Array.from(recipeIds).map(id => storage.getRecipe(userId, id))
+      );
+
+      // Get current inventory to check what's already available
+      const inventory = await storage.getFoodItems(userId);
+      const inventoryMap = new Map(
+        inventory.map(item => [item.name.toLowerCase(), item])
+      );
+
+      // Create shopping list items from recipes
+      const shoppingItems = new Map<string, { ingredient: string; neededFor: string[]; servings: number }>();
+      
+      for (const recipe of recipes) {
+        if (recipe && recipe.ingredients) {
+          for (const ingredient of recipe.ingredients) {
+            const ingredientLower = ingredient.toLowerCase();
+            // Check if item is already in inventory
+            if (!inventoryMap.has(ingredientLower)) {
+              if (shoppingItems.has(ingredientLower)) {
+                // Add to existing item
+                const existing = shoppingItems.get(ingredientLower)!;
+                existing.neededFor.push(recipe.title);
+                existing.servings += recipe.servings || 1;
+              } else {
+                // Create new shopping item
+                shoppingItems.set(ingredientLower, {
+                  ingredient,
+                  neededFor: [recipe.title],
+                  servings: recipe.servings || 1
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Convert map to array
+      const items = Array.from(shoppingItems.values()).map(item => ({
+        ingredient: item.ingredient,
+        neededFor: item.neededFor.join(", "),
+        servings: item.servings
+      }));
+
+      res.json({
+        items,
+        totalItems: items.length,
+        plannedMeals: mealPlans.length,
+        dateRange: { startDate, endDate }
+      });
+    } catch (error) {
+      console.error("Error generating shopping list from meal plans:", error);
+      res.status(500).json({ error: "Failed to generate shopping list" });
+    }
+  });
+
   // Shopping list generation (user-scoped)
   app.post("/api/shopping-list/generate", isAuthenticated, async (req: any, res) => {
     try {
