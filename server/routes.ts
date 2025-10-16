@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
-      res.status(500).json({ error: "Failed to fetch user" });
+      throw new ApiError("Failed to fetch user", 500);
     }
   });
 
@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(preferences);
     } catch (error) {
       console.error("Error fetching preferences:", error);
-      res.status(500).json({ error: "Failed to fetch preferences" });
+      throw new ApiError("Failed to fetch preferences", 500);
     }
   });
 
@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(preferences);
     } catch (error) {
       console.error("Error updating preferences:", error);
-      res.status(500).json({ error: "Failed to update preferences" });
+      throw new ApiError("Failed to update preferences", 500);
     }
   });
 
@@ -151,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Account data reset successfully" });
     } catch (error) {
       console.error("Error resetting user data:", error);
-      res.status(500).json({ error: "Failed to reset account data" });
+      throw new ApiError("Failed to reset account data", 500);
     }
   });
 
@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(locations);
     } catch (error) {
       console.error("Error fetching storage locations:", error);
-      res.status(500).json({ error: "Failed to fetch storage locations" });
+      throw new ApiError("Failed to fetch storage locations", 500);
     }
   });
 
@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(location);
     } catch (error) {
       console.error("Error creating storage location:", error);
-      res.status(400).json({ error: "Invalid storage location data" });
+      throw new ApiError("Invalid storage location data", 400);
     }
   });
 
@@ -188,7 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(items);
     } catch (error) {
       console.error("Error fetching food items:", error);
-      res.status(500).json({ error: "Failed to fetch food items" });
+      throw new ApiError("Failed to fetch food items", 500);
     }
   });
 
@@ -270,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(item);
     } catch (error) {
       console.error("Error creating food item:", error);
-      res.status(400).json({ error: "Invalid food item data" });
+      throw new ApiError("Invalid food item data", 400);
     }
   });
 
@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(item);
     } catch (error) {
       console.error("Error updating food item:", error);
-      res.status(400).json({ error: "Failed to update food item" });
+      throw new ApiError("Failed to update food item", 400);
     }
   });
 
@@ -316,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting food item:", error);
-      res.status(500).json({ error: "Failed to delete food item" });
+      throw new ApiError("Failed to delete food item", 500);
     }
   });
 
@@ -330,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const item = items.find(i => i.id === id);
       
       if (!item) {
-        return res.status(404).json({ error: "Food item not found" });
+        throw new ApiError("Food item not found", 404);
       }
 
       let usdaData = null;
@@ -405,11 +405,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         res.json({ success: true, item: updatedItem });
       } else {
-        res.status(404).json({ error: "No nutrition data found for this item" });
+        throw new ApiError("No nutrition data found for this item", 404);
       }
     } catch (error) {
       console.error("Error refreshing nutrition data:", error);
-      res.status(500).json({ error: "Failed to refresh nutrition data" });
+      throw new ApiError("Failed to refresh nutrition data", 500);
     }
   });
 
@@ -420,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(categories);
     } catch (error) {
       console.error("Error fetching food categories:", error);
-      res.status(500).json({ error: "Failed to fetch food categories" });
+      throw new ApiError("Failed to fetch food categories", 500);
     }
   });
 
@@ -432,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(appliances);
     } catch (error) {
       console.error("Error fetching appliances:", error);
-      res.status(500).json({ error: "Failed to fetch appliances" });
+      throw new ApiError("Failed to fetch appliances", 500);
     }
   });
 
@@ -444,7 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(appliance);
     } catch (error) {
       console.error("Error creating appliance:", error);
-      res.status(400).json({ error: "Invalid appliance data" });
+      throw new ApiError("Invalid appliance data", 400);
     }
   });
 
@@ -454,12 +454,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const appliance = await storage.getAppliance(userId, id);
       if (!appliance) {
-        return res.status(404).json({ error: "Appliance not found" });
+        throw new ApiError("Appliance not found", 404);
       }
       res.json(appliance);
     } catch (error) {
       console.error("Error fetching appliance:", error);
-      res.status(500).json({ error: "Failed to fetch appliance" });
+      throw new ApiError("Failed to fetch appliance", 500);
     }
   });
 
@@ -472,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(appliance);
     } catch (error) {
       console.error("Error updating appliance:", error);
-      res.status(400).json({ error: "Invalid appliance data" });
+      throw new ApiError("Invalid appliance data", 400);
     }
   });
 
@@ -484,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting appliance:", error);
-      res.status(500).json({ error: "Failed to delete appliance" });
+      throw new ApiError("Failed to delete appliance", 500);
     }
   });
 
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(categories);
     } catch (error) {
       console.error("Error fetching appliance categories:", error);
-      res.status(500).json({ error: "Failed to fetch appliance categories" });
+      throw new ApiError("Failed to fetch appliance categories", 500);
     }
   });
 
@@ -505,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(category);
     } catch (error) {
       console.error("Error creating appliance category:", error);
-      res.status(400).json({ error: "Invalid category data" });
+      throw new ApiError("Invalid category data", 400);
     }
   });
 
@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(appliances);
     } catch (error) {
       console.error("Error fetching appliances by category:", error);
-      res.status(500).json({ error: "Failed to fetch appliances" });
+      throw new ApiError("Failed to fetch appliances", 500);
     }
   });
 
@@ -531,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(appliances);
     } catch (error) {
       console.error("Error fetching appliances by capability:", error);
-      res.status(500).json({ error: "Failed to fetch appliances" });
+      throw new ApiError("Failed to fetch appliances", 500);
     }
   });
 
@@ -542,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       if (!barcode) {
-        return res.status(400).json({ error: "Barcode is required" });
+        throw new ApiError("Barcode is required", 400);
       }
 
       // Check if barcode product exists in our database
@@ -556,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const apiProduct = await getBarcodeLookupProduct(barcode);
         
         if (!apiProduct) {
-          return res.status(404).json({ error: "Product not found for this barcode" });
+          throw new ApiError("Product not found for this barcode", 404);
         }
 
         // Extract capabilities from description
@@ -597,9 +597,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating appliance from barcode:", error);
       if (error instanceof ApiError) {
-        return res.status(error.statusCode).json({ error: error.message });
+        throw error; // Re-throw ApiError as is
       }
-      res.status(500).json({ error: "Failed to create appliance from barcode" });
+      throw new ApiError("Failed to create appliance from barcode", 500);
     }
   });
 
@@ -608,7 +608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
       if (!query || typeof query !== "string") {
-        return res.status(400).json({ error: "Query parameter is required" });
+        throw new ApiError("Query parameter is required", 400);
       }
 
       const size = pageSize ? parseInt(pageSize as string) : 25;
@@ -662,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Build API URL
       const apiKey = process.env.FDC_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ error: "FDC API key not configured" });
+        throw new ApiError("FDC API key not configured", 500);
       }
 
       const searchUrl = new URL('https://api.nal.usda.gov/fdc/v1/foods/search');
@@ -754,7 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("FDC search error:", error);
-      res.status(500).json({ error: "Failed to search FDC database" });
+      throw new ApiError("Failed to search FDC database", 500);
     }
   });
 
@@ -779,7 +779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const apiKey = process.env.FDC_API_KEY;
       if (!apiKey) {
-        return res.status(500).json({ error: "FDC API key not configured" });
+        throw new ApiError("FDC API key not configured", 500);
       }
 
       const foodUrl = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${apiKey}`;
@@ -787,7 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!response.ok) {
         if (response.status === 404) {
-          return res.status(404).json({ error: "Food not found" });
+          throw new ApiError("Food not found", 404);
         }
         throw new Error(`FDC API error: ${response.statusText}`);
       }
@@ -822,7 +822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("FDC food details error:", error);
-      res.status(500).json({ error: "Failed to fetch food details" });
+      throw new ApiError("Failed to fetch food details", 500);
     }
   });
 
@@ -834,7 +834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: `Cleared cache entries older than ${daysOld} days` });
     } catch (error) {
       console.error("Error clearing cache:", error);
-      res.status(500).json({ error: "Failed to clear cache" });
+      throw new ApiError("Failed to clear cache", 500);
     }
   });
 
@@ -843,7 +843,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
       if (!query || typeof query !== "string") {
-        return res.status(400).json({ error: "Query parameter is required" });
+        throw new ApiError("Query parameter is required", 400);
       }
 
       const size = pageSize ? parseInt(pageSize as string) : 20;
@@ -882,9 +882,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("USDA search error:", error);
       if (error instanceof ApiError) {
-        return res.status(error.statusCode).json({ error: error.message });
+        throw error; // Re-throw ApiError as is
       }
-      res.status(500).json({ error: "Failed to search USDA database" });
+      throw new ApiError("Failed to search USDA database", 500);
     }
   });
 
@@ -893,15 +893,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { fdcId } = req.params;
       const food = await getFoodByFdcId(Number(fdcId));
       if (!food) {
-        return res.status(404).json({ error: "Food not found" });
+        throw new ApiError("Food not found", 404);
       }
       res.json(food);
     } catch (error: any) {
       console.error("USDA food details error:", error);
       if (error instanceof ApiError) {
-        return res.status(error.statusCode).json({ error: error.message });
+        throw error; // Re-throw ApiError as is
       }
-      res.status(500).json({ error: "Failed to fetch food details" });
+      throw new ApiError("Failed to fetch food details", 500);
     }
   });
 
@@ -912,13 +912,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enrichedItem = await getEnrichedOnboardingItem(decodeURIComponent(itemName));
       
       if (!enrichedItem) {
-        return res.status(404).json({ error: "Item not found in onboarding list" });
+        throw new ApiError("Item not found in onboarding list", 404);
       }
       
       res.json(enrichedItem);
     } catch (error: any) {
       console.error("Error fetching enriched onboarding item:", error);
-      res.status(500).json({ error: "Failed to fetch enriched item data" });
+      throw new ApiError("Failed to fetch enriched item data", 500);
     }
   });
 
@@ -932,7 +932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       if (!query || typeof query !== "string") {
-        return res.status(400).json({ error: "Query parameter is required" });
+        throw new ApiError("Query parameter is required", 400);
       }
 
       // Check rate limits before making API call
@@ -955,11 +955,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof ApiError) {
         statusCode = error.statusCode;
         success = false;
-        return res.status(error.statusCode).json({ error: error.message });
+        throw error; // Re-throw ApiError as is
       }
       statusCode = 500;
       success = false;
-      res.status(500).json({ error: "Failed to search Barcode Lookup" });
+      throw new ApiError("Failed to search Barcode Lookup", 500);
     } finally {
       // Use batched logging for better performance
       if (userId && apiCallMade) {
@@ -995,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!product) {
         statusCode = 404;
         success = false;
-        return res.status(404).json({ error: "Product not found" });
+        throw new ApiError("Product not found", 404);
       }
 
       res.json({
@@ -1010,11 +1010,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof ApiError) {
         statusCode = error.statusCode;
         success = false;
-        return res.status(error.statusCode).json({ error: error.message });
+        throw error; // Re-throw ApiError as is
       }
       statusCode = 500;
       success = false;
-      res.status(500).json({ error: "Failed to fetch product details" });
+      throw new ApiError("Failed to fetch product details", 500);
     } finally {
       // Use batched logging for better performance
       if (userId && apiCallMade) {
@@ -1040,9 +1040,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Barcode Lookup rate limits error:", error);
       if (error instanceof ApiError) {
-        return res.status(error.statusCode).json({ error: error.message });
+        throw error; // Re-throw ApiError as is
       }
-      res.status(500).json({ error: "Failed to fetch rate limits" });
+      throw new ApiError("Failed to fetch rate limits", 500);
     }
   });
 
@@ -1056,7 +1056,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       console.error("Error fetching API usage stats:", error);
-      res.status(500).json({ error: "Failed to fetch usage stats" });
+      throw new ApiError("Failed to fetch usage stats", 500);
     }
   });
 
@@ -1070,7 +1070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(logs);
     } catch (error) {
       console.error("Error fetching API usage logs:", error);
-      res.status(500).json({ error: "Failed to fetch usage logs" });
+      throw new ApiError("Failed to fetch usage logs", 500);
     }
   });
 
@@ -1096,13 +1096,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ uploadURL });
     } catch (error) {
       console.error("Error getting upload URL:", error);
-      res.status(500).json({ error: "Failed to get upload URL" });
+      throw new ApiError("Failed to get upload URL", 500);
     }
   });
 
   app.put("/api/food-images", isAuthenticated, async (req, res) => {
     if (!req.body.imageURL) {
-      return res.status(400).json({ error: "imageURL is required" });
+      throw new ApiError("imageURL is required", 400);
     }
 
     try {
@@ -1111,7 +1111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ objectPath });
     } catch (error) {
       console.error("Error setting food image:", error);
-      res.status(500).json({ error: "Internal server error" });
+      throw new ApiError("Internal server error", 500);
     }
   });
 
@@ -1139,7 +1139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Error fetching chat messages:", error);
-      res.status(500).json({ error: "Failed to fetch chat messages" });
+      throw new ApiError("Failed to fetch chat messages", 500);
     }
   });
 
@@ -1156,7 +1156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(message);
     } catch (error) {
       console.error("Error creating chat message:", error);
-      res.status(400).json({ error: "Invalid chat message data" });
+      throw new ApiError("Invalid chat message data", 400);
     }
   });
 
@@ -1168,7 +1168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Chat history cleared" });
     } catch (error) {
       console.error("Error clearing chat messages:", error);
-      res.status(500).json({ error: "Failed to clear chat history" });
+      throw new ApiError("Failed to clear chat history", 500);
     }
   });
 
@@ -1181,7 +1181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, deletedCount: deleted, message: `Deleted messages older than ${hoursOld} hours` });
     } catch (error) {
       console.error("Error cleaning up chat messages:", error);
-      res.status(500).json({ error: "Failed to cleanup chat messages" });
+      throw new ApiError("Failed to cleanup chat messages", 500);
     }
   });
 
@@ -1410,7 +1410,7 @@ When asked for recipes, consider the available inventory and appliances.`;
 
       // Only require inventory if onlyUseOnHand is true
       if (onlyUseOnHand && foodItems.length === 0) {
-        return res.status(400).json({ error: "No ingredients in inventory. Turn off 'Only use ingredients on hand' to generate recipes without inventory." });
+        throw new ApiError("No ingredients in inventory. Turn off 'Only use ingredients on hand' to generate recipes without inventory.", 400);
       }
 
       // Sort items by expiration date to prioritize expiring items
@@ -1556,12 +1556,12 @@ Respond ONLY with a valid JSON object in this exact format:
       } catch (openAIError: any) {
         console.error("OpenAI API error:", openAIError);
         if (openAIError.status === 429) {
-          return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
+          throw new ApiError("Rate limit exceeded. Please try again later.", 429);
         }
         if (openAIError.status === 401 || openAIError.status === 403) {
-          return res.status(503).json({ error: "AI service configuration error. Please contact support." });
+          throw new ApiError("AI service configuration error. Please contact support.", 503);
         }
-        return res.status(500).json({ error: "AI service temporarily unavailable" });
+        throw new ApiError("AI service temporarily unavailable", 500);
       }
 
       const recipeData = JSON.parse(completion.choices[0]?.message?.content || "{}");
@@ -1580,7 +1580,7 @@ Respond ONLY with a valid JSON object in this exact format:
       res.json(recipe);
     } catch (error) {
       console.error("Recipe generation error:", error);
-      res.status(500).json({ error: "Failed to generate recipe" });
+      throw new ApiError("Failed to generate recipe", 500);
     }
   });
 
@@ -1602,7 +1602,7 @@ Respond ONLY with a valid JSON object in this exact format:
       }
     } catch (error) {
       console.error("Error fetching recipes:", error);
-      res.status(500).json({ error: "Failed to fetch recipes" });
+      throw new ApiError("Failed to fetch recipes", 500);
     }
   });
 
@@ -1614,7 +1614,7 @@ Respond ONLY with a valid JSON object in this exact format:
       res.json(recipe);
     } catch (error) {
       console.error("Error updating recipe:", error);
-      res.status(400).json({ error: "Failed to update recipe" });
+      throw new ApiError("Failed to update recipe", 400);
     }
   });
 
@@ -1625,7 +1625,7 @@ Respond ONLY with a valid JSON object in this exact format:
       const { image } = req.body; // Base64 encoded image or image URL
       
       if (!image) {
-        return res.status(400).json({ error: "No image provided" });
+        throw new ApiError("No image provided", 400);
       }
 
       // Create the prompt for recipe extraction
@@ -1676,12 +1676,12 @@ Important:
       } catch (openAIError: any) {
         console.error("OpenAI Vision API error:", openAIError);
         if (openAIError.status === 429) {
-          return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
+          throw new ApiError("Rate limit exceeded. Please try again later.", 429);
         }
         if (openAIError.status === 401 || openAIError.status === 403) {
-          return res.status(503).json({ error: "AI service configuration error. Please contact support." });
+          throw new ApiError("AI service configuration error. Please contact support.", 503);
         }
-        return res.status(500).json({ error: "Failed to process image with AI service" });
+        throw new ApiError("Failed to process image with AI service", 500);
       }
 
       const extractedData = JSON.parse(completion.choices[0]?.message?.content || "{}");
@@ -1720,7 +1720,7 @@ Important:
       const { image } = req.body; // Base64 encoded image or image URL
       
       if (!image) {
-        return res.status(400).json({ error: "No image provided" });
+        throw new ApiError("No image provided", 400);
       }
 
       // Create the prompt for food analysis
@@ -1781,12 +1781,12 @@ Important:
       } catch (openAIError: any) {
         console.error("OpenAI Vision API error:", openAIError);
         if (openAIError.status === 429) {
-          return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
+          throw new ApiError("Rate limit exceeded. Please try again later.", 429);
         }
         if (openAIError.status === 401 || openAIError.status === 403) {
-          return res.status(503).json({ error: "AI service configuration error. Please contact support." });
+          throw new ApiError("AI service configuration error. Please contact support.", 503);
         }
-        return res.status(500).json({ error: "Failed to process image with AI service" });
+        throw new ApiError("Failed to process image with AI service", 500);
       }
 
       const analysisData = JSON.parse(completion.choices[0]?.message?.content || "{}");
@@ -1828,7 +1828,7 @@ Important:
       res.json(validNotifications);
     } catch (error) {
       console.error("Error fetching expiration notifications:", error);
-      res.status(500).json({ error: "Failed to fetch notifications" });
+      throw new ApiError("Failed to fetch notifications", 500);
     }
   });
 
@@ -1882,7 +1882,7 @@ Important:
       res.json({ notifications: validNotifications, count: validNotifications.length });
     } catch (error) {
       console.error("Notification check error:", error);
-      res.status(500).json({ error: "Failed to check for expiring items" });
+      throw new ApiError("Failed to check for expiring items", 500);
     }
   });
 
@@ -1894,7 +1894,7 @@ Important:
       res.json({ success: true });
     } catch (error) {
       console.error("Error dismissing notification:", error);
-      res.status(500).json({ error: "Failed to dismiss notification" });
+      throw new ApiError("Failed to dismiss notification", 500);
     }
   });
 
@@ -1949,7 +1949,7 @@ Important:
       });
     } catch (error) {
       console.error("Error fetching nutrition stats:", error);
-      res.status(500).json({ error: "Failed to fetch nutrition stats" });
+      throw new ApiError("Failed to fetch nutrition stats", 500);
     }
   });
 
@@ -1984,7 +1984,7 @@ Important:
       res.json(itemsWithNutrition);
     } catch (error) {
       console.error("Error fetching nutrition items:", error);
-      res.status(500).json({ error: "Failed to fetch nutrition items" });
+      throw new ApiError("Failed to fetch nutrition items", 500);
     }
   });
 
@@ -2011,7 +2011,7 @@ Important:
       res.json(itemsWithoutNutrition);
     } catch (error) {
       console.error("Error fetching items missing nutrition:", error);
-      res.status(500).json({ error: "Failed to fetch items missing nutrition" });
+      throw new ApiError("Failed to fetch items missing nutrition", 500);
     }
   });
 
@@ -2055,7 +2055,7 @@ Respond ONLY with a valid JSON object:
       res.json(data);
     } catch (error) {
       console.error("Waste reduction error:", error);
-      res.status(500).json({ error: "Failed to generate suggestions" });
+      throw new ApiError("Failed to generate suggestions", 500);
     }
   });
 
@@ -2072,7 +2072,7 @@ Respond ONLY with a valid JSON object:
       res.json(plans);
     } catch (error) {
       console.error("Error fetching meal plans:", error);
-      res.status(500).json({ error: "Failed to fetch meal plans" });
+      throw new ApiError("Failed to fetch meal plans", 500);
     }
   });
 
@@ -2084,7 +2084,7 @@ Respond ONLY with a valid JSON object:
       res.json(plan);
     } catch (error) {
       console.error("Error creating meal plan:", error);
-      res.status(400).json({ error: "Invalid meal plan data" });
+      throw new ApiError("Invalid meal plan data", 400);
     }
   });
 
@@ -2097,7 +2097,7 @@ Respond ONLY with a valid JSON object:
       res.json(plan);
     } catch (error) {
       console.error("Error updating meal plan:", error);
-      res.status(400).json({ error: "Failed to update meal plan" });
+      throw new ApiError("Failed to update meal plan", 400);
     }
   });
 
@@ -2109,7 +2109,7 @@ Respond ONLY with a valid JSON object:
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting meal plan:", error);
-      res.status(500).json({ error: "Failed to delete meal plan" });
+      throw new ApiError("Failed to delete meal plan", 500);
     }
   });
 
@@ -2120,7 +2120,7 @@ Respond ONLY with a valid JSON object:
       const { startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
-        return res.status(400).json({ error: "Start date and end date are required" });
+        throw new ApiError("Start date and end date are required", 400);
       }
 
       // Get meal plans for the date range
@@ -2198,7 +2198,7 @@ Respond ONLY with a valid JSON object:
       });
     } catch (error) {
       console.error("Error generating shopping list from meal plans:", error);
-      res.status(500).json({ error: "Failed to generate shopping list" });
+      throw new ApiError("Failed to generate shopping list", 500);
     }
   });
 
@@ -2209,7 +2209,7 @@ Respond ONLY with a valid JSON object:
       const { recipeIds } = req.body;
 
       if (!recipeIds || !Array.isArray(recipeIds) || recipeIds.length === 0) {
-        return res.status(400).json({ error: "Recipe IDs are required" });
+        throw new ApiError("Recipe IDs are required", 400);
       }
 
       const recipes = await Promise.all(
@@ -2218,7 +2218,7 @@ Respond ONLY with a valid JSON object:
 
       const validRecipes = recipes.filter(r => r !== undefined);
       if (validRecipes.length === 0) {
-        return res.status(404).json({ error: "No valid recipes found" });
+        throw new ApiError("No valid recipes found", 404);
       }
 
       const allMissingIngredients = validRecipes.flatMap(r => r!.missingIngredients || []);
@@ -2227,7 +2227,7 @@ Respond ONLY with a valid JSON object:
       res.json({ items: uniqueIngredients });
     } catch (error) {
       console.error("Shopping list error:", error);
-      res.status(500).json({ error: "Failed to generate shopping list" });
+      throw new ApiError("Failed to generate shopping list", 500);
     }
   });
 
@@ -2239,7 +2239,7 @@ Respond ONLY with a valid JSON object:
       res.json(items);
     } catch (error) {
       console.error("Error fetching shopping list items:", error);
-      res.status(500).json({ error: "Failed to fetch shopping list items" });
+      throw new ApiError("Failed to fetch shopping list items", 500);
     }
   });
 
@@ -2250,7 +2250,7 @@ Respond ONLY with a valid JSON object:
       res.json(newItem);
     } catch (error) {
       console.error("Error creating shopping list item:", error);
-      res.status(500).json({ error: "Failed to create shopping list item" });
+      throw new ApiError("Failed to create shopping list item", 500);
     }
   });
 
@@ -2260,14 +2260,14 @@ Respond ONLY with a valid JSON object:
       const { recipeId, ingredients } = req.body;
 
       if (!recipeId || !ingredients || !Array.isArray(ingredients)) {
-        return res.status(400).json({ error: "Recipe ID and ingredients array are required" });
+        throw new ApiError("Recipe ID and ingredients array are required", 400);
       }
 
       const newItems = await storage.addMissingIngredientsToShoppingList(userId, recipeId, ingredients);
       res.json(newItems);
     } catch (error) {
       console.error("Error adding missing ingredients:", error);
-      res.status(500).json({ error: "Failed to add missing ingredients to shopping list" });
+      throw new ApiError("Failed to add missing ingredients to shopping list", 500);
     }
   });
 
@@ -2279,7 +2279,7 @@ Respond ONLY with a valid JSON object:
       res.json(updated);
     } catch (error) {
       console.error("Error updating shopping list item:", error);
-      res.status(500).json({ error: "Failed to update shopping list item" });
+      throw new ApiError("Failed to update shopping list item", 500);
     }
   });
 
@@ -2291,7 +2291,7 @@ Respond ONLY with a valid JSON object:
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting shopping list item:", error);
-      res.status(500).json({ error: "Failed to delete shopping list item" });
+      throw new ApiError("Failed to delete shopping list item", 500);
     }
   });
 
@@ -2302,7 +2302,7 @@ Respond ONLY with a valid JSON object:
       res.json({ success: true });
     } catch (error) {
       console.error("Error clearing checked items:", error);
-      res.status(500).json({ error: "Failed to clear checked items" });
+      throw new ApiError("Failed to clear checked items", 500);
     }
   });
 
@@ -2313,7 +2313,7 @@ Respond ONLY with a valid JSON object:
       
       if (!userId) {
         console.error("User ID not found in session:", req.user);
-        return res.status(401).json({ error: "User not authenticated properly" });
+        throw new ApiError("User not authenticated properly", 401);
       }
       
       const validated = insertFeedbackSchema.parse(req.body);
@@ -2351,9 +2351,9 @@ Respond ONLY with a valid JSON object:
     } catch (error) {
       console.error("Error creating feedback:", error);
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Invalid feedback data", details: error.errors });
+        throw new ApiError("Invalid feedback data", 400, JSON.stringify({ details: error.errors }));
       } else {
-        res.status(500).json({ error: "Failed to create feedback" });
+        throw new ApiError("Failed to create feedback", 500);
       }
     }
   });
@@ -2366,7 +2366,7 @@ Respond ONLY with a valid JSON object:
       res.json(feedback);
     } catch (error) {
       console.error("Error fetching feedback:", error);
-      res.status(500).json({ error: "Failed to fetch feedback" });
+      throw new ApiError("Failed to fetch feedback", 500);
     }
   });
 
@@ -2382,7 +2382,7 @@ Respond ONLY with a valid JSON object:
       res.json(feedback);
     } catch (error) {
       console.error("Error fetching community feedback:", error);
-      res.status(500).json({ error: "Failed to fetch community feedback" });
+      throw new ApiError("Failed to fetch community feedback", 500);
     }
   });
 
@@ -2393,13 +2393,13 @@ Respond ONLY with a valid JSON object:
       const feedback = await storage.getFeedback(userId, id);
       
       if (!feedback) {
-        return res.status(404).json({ error: "Feedback not found" });
+        throw new ApiError("Feedback not found", 404);
       }
       
       res.json(feedback);
     } catch (error) {
       console.error("Error fetching feedback:", error);
-      res.status(500).json({ error: "Failed to fetch feedback" });
+      throw new ApiError("Failed to fetch feedback", 500);
     }
   });
 
@@ -2410,7 +2410,7 @@ Respond ONLY with a valid JSON object:
       res.json(feedback);
     } catch (error) {
       console.error("Error fetching feedback by context:", error);
-      res.status(500).json({ error: "Failed to fetch feedback by context" });
+      throw new ApiError("Failed to fetch feedback by context", 500);
     }
   });
 
@@ -2422,7 +2422,7 @@ Respond ONLY with a valid JSON object:
       res.json(analytics);
     } catch (error) {
       console.error("Error fetching feedback analytics:", error);
-      res.status(500).json({ error: "Failed to fetch feedback analytics" });
+      throw new ApiError("Failed to fetch feedback analytics", 500);
     }
   });
 
@@ -2432,7 +2432,7 @@ Respond ONLY with a valid JSON object:
       const { status, estimatedTurnaround } = req.body;
       
       if (!status || !['open', 'in_progress', 'completed', 'wont_fix'].includes(status)) {
-        return res.status(400).json({ error: "Invalid status" });
+        throw new ApiError("Invalid status", 400);
       }
       
       const resolvedAt = status === 'completed' ? new Date() : undefined;
@@ -2440,7 +2440,7 @@ Respond ONLY with a valid JSON object:
       res.json(updated);
     } catch (error) {
       console.error("Error updating feedback status:", error);
-      res.status(500).json({ error: "Failed to update feedback status" });
+      throw new ApiError("Failed to update feedback status", 500);
     }
   });
 
@@ -2450,7 +2450,7 @@ Respond ONLY with a valid JSON object:
       const { response, action } = req.body;
       
       if (!response) {
-        return res.status(400).json({ error: "Response is required" });
+        throw new ApiError("Response is required", 400);
       }
       
       const feedbackResponse = await storage.addFeedbackResponse(id, {
@@ -2462,7 +2462,7 @@ Respond ONLY with a valid JSON object:
       res.json(feedbackResponse);
     } catch (error) {
       console.error("Error adding feedback response:", error);
-      res.status(500).json({ error: "Failed to add feedback response" });
+      throw new ApiError("Failed to add feedback response", 500);
     }
   });
 
@@ -2473,7 +2473,7 @@ Respond ONLY with a valid JSON object:
       res.json(responses);
     } catch (error) {
       console.error("Error fetching feedback responses:", error);
-      res.status(500).json({ error: "Failed to fetch feedback responses" });
+      throw new ApiError("Failed to fetch feedback responses", 500);
     }
   });
 
@@ -2488,7 +2488,7 @@ Respond ONLY with a valid JSON object:
       res.json(result);
     } catch (error) {
       console.error("Error fetching all feedback:", error);
-      res.status(500).json({ error: "Failed to fetch all feedback" });
+      throw new ApiError("Failed to fetch all feedback", 500);
     }
   });
 
@@ -2499,7 +2499,7 @@ Respond ONLY with a valid JSON object:
       res.json(analytics);
     } catch (error) {
       console.error("Error fetching global feedback analytics:", error);
-      res.status(500).json({ error: "Failed to fetch global feedback analytics" });
+      throw new ApiError("Failed to fetch global feedback analytics", 500);
     }
   });
 
@@ -2515,7 +2515,7 @@ Respond ONLY with a valid JSON object:
       res.json({ success: true, upvoteCount });
     } catch (error) {
       console.error("Error upvoting feedback:", error);
-      res.status(500).json({ error: "Failed to upvote feedback" });
+      throw new ApiError("Failed to upvote feedback", 500);
     }
   });
 
@@ -2530,7 +2530,7 @@ Respond ONLY with a valid JSON object:
       res.json({ success: true, upvoteCount });
     } catch (error) {
       console.error("Error removing upvote:", error);
-      res.status(500).json({ error: "Failed to remove upvote" });
+      throw new ApiError("Failed to remove upvote", 500);
     }
   });
 
@@ -2546,7 +2546,7 @@ Respond ONLY with a valid JSON object:
       
       // Validate amount
       if (!amount || amount < 100) { // Minimum $1.00
-        return res.status(400).json({ error: "Minimum donation amount is $1.00" });
+        throw new ApiError("Minimum donation amount is $1.00", 400);
       }
       
       // Create Stripe payment intent
@@ -2649,7 +2649,7 @@ Respond ONLY with a valid JSON object:
       res.json(stats);
     } catch (error) {
       console.error("Error fetching donation stats:", error);
-      res.status(500).json({ error: "Failed to fetch donation statistics" });
+      throw new ApiError("Failed to fetch donation statistics", 500);
     }
   });
 
@@ -2671,7 +2671,7 @@ Respond ONLY with a valid JSON object:
       try {
         await stripe.paymentIntents.retrieve(validatedData.paymentIntentId);
       } catch (stripeError) {
-        return res.status(404).json({ error: "Invalid payment intent" });
+        throw new ApiError("Invalid payment intent", 404);
       }
       
       // Update donation record with donor information
@@ -2685,10 +2685,10 @@ Respond ONLY with a valid JSON object:
       res.json({ success: true });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid request data", details: error.errors });
+        throw new ApiError("Invalid request data", 400, JSON.stringify({ details: error.errors }));
       }
       console.error("Error updating donor info:", error);
-      res.status(500).json({ error: "Failed to update donor information" });
+      throw new ApiError("Failed to update donor information", 500);
     }
   });
 
@@ -2708,7 +2708,7 @@ Respond ONLY with a valid JSON object:
       // Verify the donation exists in our database
       const existingDonation = await storage.getDonationByPaymentIntent(paymentIntentId);
       if (!existingDonation) {
-        return res.status(404).json({ error: "Donation not found" });
+        throw new ApiError("Donation not found", 404);
       }
       
       // Update donation status based on Stripe payment status
@@ -2724,13 +2724,13 @@ Respond ONLY with a valid JSON object:
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid request data", details: error.errors });
+        throw new ApiError("Invalid request data", 400, JSON.stringify({ details: error.errors }));
       }
       if (error.type === 'StripeInvalidRequestError') {
-        return res.status(404).json({ error: "Payment intent not found" });
+        throw new ApiError("Payment intent not found", 404);
       }
       console.error("Error confirming donation:", error);
-      res.status(500).json({ error: "Failed to confirm donation" });
+      throw new ApiError("Failed to confirm donation", 500);
     }
   });
 
@@ -2753,7 +2753,7 @@ Respond ONLY with a valid JSON object:
       res.json(publicDonations);
     } catch (error) {
       console.error("Error fetching recent donations:", error);
-      res.status(500).json({ error: "Failed to fetch recent donations" });
+      throw new ApiError("Failed to fetch recent donations", 500);
     }
   });
 
@@ -2765,7 +2765,7 @@ Respond ONLY with a valid JSON object:
       res.json(donations);
     } catch (error) {
       console.error("Error fetching user donations:", error);
-      res.status(500).json({ error: "Failed to fetch your donations" });
+      throw new ApiError("Failed to fetch your donations", 500);
     }
   });
 
@@ -2776,13 +2776,13 @@ Respond ONLY with a valid JSON object:
       const { token, platform, deviceInfo } = req.body;
 
       if (!token || !platform) {
-        return res.status(400).json({ error: "Token and platform are required" });
+        throw new ApiError("Token and platform are required", 400);
       }
 
       // Validate platform
       const validPlatforms = ['ios', 'android', 'web'];
       if (!validPlatforms.includes(platform)) {
-        return res.status(400).json({ error: "Invalid platform. Must be ios, android, or web" });
+        throw new ApiError("Invalid platform. Must be ios, android, or web", 400);
       }
 
       const savedToken = await storage.upsertPushToken(userId, {
@@ -2794,7 +2794,7 @@ Respond ONLY with a valid JSON object:
       res.json(savedToken);
     } catch (error) {
       console.error("Error saving push token:", error);
-      res.status(500).json({ error: "Failed to save push token" });
+      throw new ApiError("Failed to save push token", 500);
     }
   });
 
@@ -2808,7 +2808,7 @@ Respond ONLY with a valid JSON object:
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting push token:", error);
-      res.status(500).json({ error: "Failed to delete push token" });
+      throw new ApiError("Failed to delete push token", 500);
     }
   });
 
@@ -2837,10 +2837,10 @@ Respond ONLY with a valid JSON object:
       res.status(200).json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid web vital data", details: error.errors });
+        throw new ApiError("Invalid web vital data", 400, JSON.stringify({ details: error.errors }));
       }
       console.error("Error recording web vital:", error);
-      res.status(500).json({ error: "Failed to record web vital" });
+      throw new ApiError("Failed to record web vital", 500);
     }
   });
 
@@ -2854,7 +2854,7 @@ Respond ONLY with a valid JSON object:
       if (days) {
         const parsed = parseInt(days as string);
         if (isNaN(parsed) || parsed < 1 || parsed > 365) {
-          return res.status(400).json({ error: "Invalid 'days' parameter. Must be a number between 1 and 365" });
+          throw new ApiError("Invalid 'days' parameter. Must be a number between 1 and 365", 400);
         }
         daysNum = parsed;
       }
@@ -2866,7 +2866,7 @@ Respond ONLY with a valid JSON object:
       res.json(stats);
     } catch (error) {
       console.error("Error getting web vitals stats:", error);
-      res.status(500).json({ error: "Failed to get web vitals stats" });
+      throw new ApiError("Failed to get web vitals stats", 500);
     }
   });
 

@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import { log } from "./vite";
+import { ApiError } from "./apiError";
 
 // Maximum number of users to track in memory
 const MAX_TRACKED_USERS = 1000;

@@ -1,5 +1,6 @@
 import type { BarcodeProduct, InsertBarcodeProduct } from "@shared/schema";
 import type { IStorage } from "../storage";
+import { ApiError } from "../apiError";
 
 export interface BarcodeLookupResponse {
   products: Array<{
@@ -143,7 +144,7 @@ export class BarcodeLookupService {
           console.log(`No product found for barcode: ${barcode}`);
           return null;
         }
-        throw new Error(`Barcode API error: ${response.status} ${response.statusText}`);
+        throw new ApiError(`Barcode API error: ${response.statusText}`, response.status);
       }
 
       const data = await response.json() as BarcodeLookupResponse;
@@ -213,9 +214,20 @@ export class BarcodeLookupService {
       console.log(`Cached barcode product: ${barcode}`);
       
       return savedProduct;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error looking up barcode ${barcode}:`, error);
-      throw error;
+      
+      // If it's already an ApiError, re-throw it
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      
+      // Otherwise, wrap it in an ApiError
+      throw new ApiError(
+        `Failed to look up barcode: ${error.message || 'Unknown error'}`,
+        500,
+        { barcode }
+      );
     }
   }
 
@@ -248,7 +260,7 @@ export class BarcodeLookupService {
           console.log(`No products found for query: ${query}`);
           return [];
         }
-        throw new Error(`Barcode API error: ${response.status} ${response.statusText}`);
+        throw new ApiError(`Barcode API error: ${response.statusText}`, response.status);
       }
 
       const data = await response.json() as BarcodeLookupResponse;
@@ -318,9 +330,20 @@ export class BarcodeLookupService {
 
       console.log(`Cached ${products.length} products from search`);
       return products;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error searching products for query "${query}":`, error);
-      throw error;
+      
+      // If it's already an ApiError, re-throw it
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      
+      // Otherwise, wrap it in an ApiError
+      throw new ApiError(
+        `Failed to search products: ${error.message || 'Unknown error'}`,
+        500,
+        { query }
+      );
     }
   }
 }

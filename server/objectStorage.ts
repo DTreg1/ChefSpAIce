@@ -103,10 +103,12 @@ export class ObjectStorageService {
         
         if (!res.headersSent) {
           const errorMessage = this.getErrorMessage(err);
-          res.status(this.getErrorStatusCode(err)).json({ 
-            error: errorMessage,
-            retries: retryCount
-          });
+          const statusCode = this.getErrorStatusCode(err);
+          throw new ObjectStorageError(
+            errorMessage,
+            statusCode,
+            { retries: retryCount }
+          );
         }
       });
       
@@ -129,10 +131,12 @@ export class ObjectStorageService {
       
       if (!res.headersSent) {
         const errorMessage = this.getErrorMessage(error);
-        res.status(this.getErrorStatusCode(error)).json({ 
-          error: errorMessage,
-          retries: retryCount
-        });
+        const statusCode = this.getErrorStatusCode(error);
+        throw new ObjectStorageError(
+          errorMessage,
+          statusCode,
+          { retries: retryCount }
+        );
       }
     }
   }
@@ -292,7 +296,7 @@ export class ObjectStorageService {
     }
     const pathParts = path.split("/");
     if (pathParts.length < 3) {
-      throw new Error("Invalid path: must contain at least a bucket name");
+      throw new ObjectStorageError("Invalid path: must contain at least a bucket name", 400);
     }
 
     const bucketName = pathParts[1];
@@ -329,8 +333,10 @@ export class ObjectStorageService {
       }
     );
     if (!response.ok) {
-      throw new Error(
-        `Failed to sign object URL, errorcode: ${response.status}`
+      throw new ObjectStorageError(
+        `Failed to sign object URL`,
+        response.status,
+        { bucketName, objectName, method }
       );
     }
 
