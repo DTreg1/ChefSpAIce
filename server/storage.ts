@@ -41,6 +41,8 @@ import {
   type InsertDonation,
   type PushToken,
   type InsertPushToken,
+  type WebVital,
+  type InsertWebVital,
   users,
   userPreferences,
   pushTokens,
@@ -60,7 +62,8 @@ import {
   feedback,
   feedbackUpvotes,
   feedbackResponses,
-  donations
+  donations,
+  webVitals
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -193,6 +196,20 @@ export interface IStorage {
   getDonations(limit?: number, offset?: number): Promise<{ donations: Donation[], total: number }>;
   getUserDonations(userId: string, limit?: number): Promise<Donation[]>;
   getTotalDonations(): Promise<{ totalAmount: number, donationCount: number }>;
+
+  // Web Vitals Analytics
+  recordWebVital(vital: Omit<InsertWebVital, 'id' | 'createdAt'>): Promise<WebVital>;
+  getWebVitals(limit?: number, offset?: number): Promise<{ vitals: WebVital[], total: number }>;
+  getWebVitalsByMetric(metricName: string, limit?: number): Promise<WebVital[]>;
+  getWebVitalsStats(metricName?: string, days?: number): Promise<{
+    average: number;
+    p75: number;
+    p95: number;
+    count: number;
+    goodCount: number;
+    needsImprovementCount: number;
+    poorCount: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1961,6 +1978,98 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting total donations:', error);
       throw new Error('Failed to get total donations');
+    }
+  }
+
+  async recordWebVital(vital: Omit<InsertWebVital, 'id' | 'createdAt'>): Promise<WebVital> {
+    try {
+      const [newVital] = await db.insert(webVitals).values(vital).returning();
+      return newVital;
+    } catch (error) {
+      console.error('Error recording web vital:', error);
+      throw new Error('Failed to record web vital');
+    }
+  }
+
+  async getWebVitals(limit: number = 100, offset: number = 0): Promise<{ vitals: WebVital[], total: number }> {
+    try {
+      const vitals = await db
+        .select()
+        .from(webVitals)
+        .orderBy(sql`${webVitals.createdAt} DESC`)
+        .limit(limit)
+        .offset(offset);
+
+      const [{ count }] = await db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(webVitals);
+
+      return { vitals, total: count };
+    } catch (error) {
+      console.error('Error getting web vitals:', error);
+      throw new Error('Failed to get web vitals');
+    }
+  }
+
+  async getWebVitalsByMetric(metricName: string, limit: number = 100): Promise<WebVital[]> {
+    try {
+      return await db
+        .select()
+        .from(webVitals)
+        .where(eq(webVitals.name, metricName))
+        .orderBy(sql`${webVitals.createdAt} DESC`)
+        .limit(limit);
+    } catch (error) {
+      console.error('Error getting web vitals by metric:', error);
+      throw new Error('Failed to get web vitals by metric');
+    }
+  }
+
+  async getWebVitalsStats(metricName?: string, days: number = 7): Promise<{
+    average: number;
+    p75: number;
+    p95: number;
+    count: number;
+    goodCount: number;
+    needsImprovementCount: number;
+    poorCount: number;
+  }> {
+    try {
+      const dateThreshold = new Date();
+      dateThreshold.setDate(dateThreshold.getDate() - days);
+
+      const whereClause = metricName
+        ? and(
+            eq(webVitals.name, metricName),
+            sql`${webVitals.createdAt} >= ${dateThreshold.toISOString()}`
+          )
+        : sql`${webVitals.createdAt} >= ${dateThreshold.toISOString()}`;
+
+      const stats = await db
+        .select({
+          average: sql<number>`AVG(${webVitals.value})::numeric`,
+          p75: sql<number>`PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY ${webVitals.value})::numeric`,
+          p95: sql<number>`PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY ${webVitals.value})::numeric`,
+          count: sql<number>`COUNT(*)::int`,
+          goodCount: sql<number>`COUNT(*) FILTER (WHERE ${webVitals.rating} = 'good')::int`,
+          needsImprovementCount: sql<number>`COUNT(*) FILTER (WHERE ${webVitals.rating} = 'needs-improvement')::int`,
+          poorCount: sql<number>`COUNT(*) FILTER (WHERE ${webVitals.rating} = 'poor')::int`,
+        })
+        .from(webVitals)
+        .where(whereClause);
+
+      return stats[0] || {
+        average: 0,
+        p75: 0,
+        p95: 0,
+        count: 0,
+        goodCount: 0,
+        needsImprovementCount: 0,
+        poorCount: 0,
+      };
+    } catch (error) {
+      console.error('Error getting web vitals stats:', error);
+      throw new Error('Failed to get web vitals stats');
     }
   }
 }
