@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 app.use(express.json());
@@ -39,25 +40,8 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    
-    // Log the error for debugging
-    console.error(`Error [${status}]: ${message}`);
-    if (err.stack && app.get("env") === "development") {
-      console.error(err.stack);
-    }
-
-    // Send error response to client
-    if (!res.headersSent) {
-      res.status(status).json({ 
-        message,
-        // Include details in development mode for easier debugging
-        ...(app.get("env") === "development" && err.details ? { details: err.details } : {})
-      });
-    }
-  });
+  // Use standardized error handler
+  app.use(errorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
