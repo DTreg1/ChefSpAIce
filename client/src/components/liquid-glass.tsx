@@ -30,11 +30,6 @@ interface LiquidGlassButtonProps {
   className?: string;
   disableAnimation?: boolean;
   showTitle?: boolean;
-  disableShadow?: boolean;
-  customGradient?: {
-    from: string;
-    to: string;
-  };
   enableHaptics?: boolean;
 }
 
@@ -46,17 +41,15 @@ export function LiquidGlassButton({
   icon: Icon,
   title,
   description,
-  colorScheme = "secondary",
-  variant = "colored",
+  colorScheme = "primary",
+  variant = "clear",
   shape = "cube",
   size = "sm",
   textDirection = "vertical",
   onClick,
-  className = "",
+  className = "bg-gradient-to-br from-lime-950/50 to-transparent",
   disableAnimation = true,
   showTitle = false,
-  disableShadow = false,
-  customGradient,
   enableHaptics = true,
 }: LiquidGlassButtonProps) {
   const visualEffectsEnabled = useVisualEffects();
@@ -94,22 +87,12 @@ export function LiquidGlassButton({
     accent: "bg-accent",
     destructive: "bg-destructive",
     muted: "bg-muted",
-    custom: "bg-gradient-to-b from-lime-950/10 to-transparent", // Uses gradientFrom/gradientTo
+    custom: "bg-gradient-to-b from-primary to-transparent", // Uses gradientFrom/gradientTo
   };
 
   // Determine if we should use theme colors or custom gradient
   const useThemeColors = colorScheme !== "custom";
   const backgroundClass = useThemeColors ? themeColorClasses[colorScheme] : "";
-
-  // Use customGradient prop if provided, otherwise fall back to gradientFrom/gradientTo
-  const finalGradientFrom = customGradient?.from;
-  const finalGradientTo = customGradient?.to;
-
-  const gradientStyle = !useThemeColors
-    ? {
-        background: `linear-gradient(90deg, ${finalGradientFrom} 0%, ${finalGradientTo} 100%)`,
-      }
-    : undefined;
 
   // Animation logic:
   // - showTitle={false} → NO animation (no title to reveal)
@@ -117,7 +100,10 @@ export function LiquidGlassButton({
   // - showTitle={true} + textDirection="vertical" → WITH animation (reveals hidden title)
   // - visualEffectsEnabled={false} → NO animation (user preference)
   const shouldDisableAnimation =
-    disableAnimation || !showTitle || textDirection === "horizontal" || !visualEffectsEnabled;
+    disableAnimation ||
+    !showTitle ||
+    textDirection === "horizontal" ||
+    !visualEffectsEnabled;
 
   // Icon size variants
   const iconSizes = {
@@ -174,10 +160,9 @@ export function LiquidGlassButton({
             items-center 
             justify-center
             ${shouldDisableAnimation ? "" : "transition-transform duration-300 ease-out"}
-            ${!disableShadow ? "shadow-xl drop-shadow-lg" : ""}
+            shadow-xl drop-shadow-lg
             flex-shrink-0
           `}
-          style={variant === "colored" ? gradientStyle : undefined}
         >
           {/* Icon */}
           <Icon
@@ -186,14 +171,6 @@ export function LiquidGlassButton({
               ${variant === "clear" ? "text-foreground" : "text-white"}
             `}
             strokeWidth={1.5}
-            style={
-              !disableShadow
-                ? {
-                    filter:
-                      "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8))",
-                  }
-                : undefined
-            }
           />
         </div>
 
@@ -247,13 +224,12 @@ export function LiquidGlassButton({
           items-center 
           justify-center
           ${shouldDisableAnimation ? "" : "transition-transform duration-300 ease-out"}
-          ${!disableShadow ? "shadow-xl drop-shadow-lg" : ""}
+          shadow-xl drop-shadow-lg
           mx-auto
           mb-1
           z-10
           ${shouldDisableAnimation ? "" : hoverMovement[size]}
         `}
-        style={variant === "colored" ? gradientStyle : undefined}
       >
         {/* Icon */}
         <Icon
@@ -262,14 +238,6 @@ export function LiquidGlassButton({
             ${variant === "clear" ? "text-foreground" : "text-white"}
           `}
           strokeWidth={1.5}
-          style={
-            !disableShadow
-              ? {
-                  filter:
-                    "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8))",
-                }
-              : undefined
-          }
         />
       </div>
 
