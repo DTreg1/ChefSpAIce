@@ -1588,20 +1588,16 @@ Respond ONLY with a valid JSON object in this exact format:
       const userId = req.user.claims.sub;
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
-      const includeMatching = req.query.includeMatching === 'true';
       
-      // If requesting inventory matching, use enriched method
-      if (includeMatching) {
-        const recipesWithMatching = await storage.getRecipesWithInventoryMatching(userId);
-        res.json(recipesWithMatching);
-      } else if (req.query.page || req.query.limit) {
+      // Always include inventory matching by default for better caching
+      if (req.query.page || req.query.limit) {
         // If pagination params are provided, use paginated method
         const result = await storage.getRecipesPaginated(userId, page, limit);
         res.json(result);
       } else {
-        // Fallback to non-paginated for backward compatibility
-        const recipes = await storage.getRecipes(userId);
-        res.json(recipes);
+        // Default: always include inventory matching data
+        const recipesWithMatching = await storage.getRecipesWithInventoryMatching(userId);
+        res.json(recipesWithMatching);
       }
     } catch (error) {
       console.error("Error fetching recipes:", error);
