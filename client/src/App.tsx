@@ -4,6 +4,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { ChefHat } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -155,7 +156,6 @@ function AppContent() {
       {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
       <SidebarProvider style={style}>
         <div className="flex h-screen w-full relative overflow-x-hidden">
-          <AppSidebar />
           <div className="flex flex-col flex-1 min-w-0">
             <header
               className={cn(
@@ -169,6 +169,19 @@ function AppContent() {
                 data-testid="button-sidebar-toggle"
                 className="transition-morph hover:scale-105"
               />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center transition-morph hover:scale-110 shadow-lg glow-primary">
+                  <ChefHat className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold text-gradient-primary font-sans">
+                    ChefSpAIce
+                  </h1>
+                  <p className="text-xs text-muted-foreground">
+                    Your Kitchen Assistant
+                  </p>
+                </div>
+              </div>
               <div className="ml-auto">
                 <QuickActionsBar
                   onAddFood={() => setAddFoodOpen(true)}
@@ -180,6 +193,8 @@ function AppContent() {
                 />
               </div>
             </header>
+            <AppSidebar />
+
             <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
               <Router />
             </main>
