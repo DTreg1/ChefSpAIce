@@ -1,0 +1,38 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+12:23:11 AM [express] serving on port 5000
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+12:23:21 AM [express] GET /api/auth/user 304 in 364ms :: {"id":"39962387","email":"dtreg1@gmail.com",…
+12:23:21 AM [express] GET /api/notifications/expiration 304 in 98ms :: []
+12:23:22 AM [express] GET /api/chat/messages 304 in 189ms :: []
+12:23:22 AM [express] GET /api/food-items 304 in 200ms :: [{"id":"1132a993-2645-49a8-aab8-52de5b88adf…
+12:23:22 AM [express] POST /api/notifications/expiration/check 200 in 223ms :: {"notifications":[],"c…
+12:23:22 AM [express] GET /api/notifications/expiration 304 in 74ms :: []
+Waste reduction error: BadRequestError: 400 Unknown model: gpt-3.5-turbo
+    at Function.generate (/home/runner/workspace/node_modules/openai/src/core/error.ts:72:14)
+    at OpenAI.makeStatusError (/home/runner/workspace/node_modules/openai/src/client.ts:478:28)
+    at OpenAI.makeRequest (/home/runner/workspace/node_modules/openai/src/client.ts:728:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:2050:26) {
+  status: 400,
+  headers: Headers {
+    'content-type': 'application/json; charset=utf-8',
+    date: 'Thu, 16 Oct 2025 00:23:22 GMT',
+    via: '1.1 google',
+    'x-request-id': '1bc01c12-43d4-4111-8628-4acc12d6d353',
+    'transfer-encoding': 'chunked'
+  },
+  requestID: '1bc01c12-43d4-4111-8628-4acc12d6d353',
+  error: {
+    code: 'unknown_model',
+    message: 'Unknown model: gpt-3.5-turbo',
+    details: 'Unknown model: gpt-3.5-turbo'
+  },
+  code: 'unknown_model',
+  param: undefined,
+  type: undefined
+}
+12:23:22 AM [express] GET /api/suggestions/waste-reduction 500 in 873ms :: {"error":"Failed to genera…
