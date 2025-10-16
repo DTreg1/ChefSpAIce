@@ -22,6 +22,7 @@ import {
   insertUserPreferencesSchema,
   insertStorageLocationSchema,
   insertFeedbackSchema,
+  insertWebVitalSchema,
   type BarcodeProduct
 } from "@shared/schema";
 
@@ -2719,6 +2720,64 @@ Respond ONLY with a valid JSON object:
     } catch (error) {
       console.error("Error deleting push token:", error);
       res.status(500).json({ error: "Failed to delete push token" });
+    }
+  });
+
+  // Web Vitals Analytics endpoint
+  app.post("/api/analytics", async (req: any, res) => {
+    try {
+      // Get user ID if authenticated, otherwise null for anonymous tracking
+      const userId = req.user?.claims?.sub || null;
+
+      // Capture request metadata
+      const userAgent = req.headers['user-agent'] || null;
+      const url = req.headers['referer'] || req.headers['origin'] || null;
+
+      // Validate using Zod schema
+      const validated = insertWebVitalSchema.parse({
+        ...req.body,
+        userId,
+        metricId: req.body.id, // Map 'id' from web-vitals to 'metricId'
+        navigationType: req.body.navigationType || null,
+        userAgent,
+        url,
+      });
+
+      await storage.recordWebVital(validated);
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid web vital data", details: error.errors });
+      }
+      console.error("Error recording web vital:", error);
+      res.status(500).json({ error: "Failed to record web vital" });
+    }
+  });
+
+  // Get Web Vitals statistics (optional admin endpoint)
+  app.get("/api/analytics/stats", async (req: any, res) => {
+    try {
+      const { metric, days } = req.query;
+      
+      // Validate days parameter
+      let daysNum = 7; // default
+      if (days) {
+        const parsed = parseInt(days as string);
+        if (isNaN(parsed) || parsed < 1 || parsed > 365) {
+          return res.status(400).json({ error: "Invalid 'days' parameter. Must be a number between 1 and 365" });
+        }
+        daysNum = parsed;
+      }
+
+      const stats = await storage.getWebVitalsStats(
+        metric as string | undefined,
+        daysNum
+      );
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting web vitals stats:", error);
+      res.status(500).json({ error: "Failed to get web vitals stats" });
     }
   });
 

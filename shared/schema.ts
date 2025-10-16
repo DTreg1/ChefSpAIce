@@ -664,3 +664,37 @@ export const insertDonationSchema = createInsertSchema(donations).omit({
 
 export type InsertDonation = z.infer<typeof insertDonationSchema>;
 export type Donation = typeof donations.$inferSelect;
+
+// Web Vitals Analytics - Track Core Web Vitals metrics
+export const webVitals = pgTable("web_vitals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }), // Optional - can be anonymous
+  name: text("name").notNull(), // LCP, FID, CLS, FCP, TTFB, INP
+  value: real("value").notNull(),
+  rating: text("rating").notNull(), // 'good', 'needs-improvement', 'poor'
+  delta: real("delta").notNull(),
+  metricId: text("metric_id").notNull(), // Unique ID for the metric
+  navigationType: text("navigation_type"), // 'navigate', 'reload', 'back-forward', etc.
+  userAgent: text("user_agent"),
+  url: text("url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("web_vitals_user_id_idx").on(table.userId),
+  index("web_vitals_name_idx").on(table.name),
+  index("web_vitals_created_at_idx").on(table.createdAt),
+  index("web_vitals_rating_idx").on(table.rating),
+]);
+
+export const insertWebVitalSchema = createInsertSchema(webVitals).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  name: z.enum(['LCP', 'FID', 'CLS', 'FCP', 'TTFB', 'INP']),
+  rating: z.enum(['good', 'needs-improvement', 'poor']),
+  value: z.number(),
+  delta: z.number(),
+  metricId: z.string(),
+});
+
+export type InsertWebVital = z.infer<typeof insertWebVitalSchema>;
+export type WebVital = typeof webVitals.$inferSelect;
