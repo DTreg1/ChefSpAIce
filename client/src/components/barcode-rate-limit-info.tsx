@@ -11,7 +11,6 @@ interface RateLimitData {
 export function BarcodeRateLimitInfo() {
   const { data: rateLimits, isLoading, error } = useQuery<RateLimitData>({
     queryKey: ["/api/barcodelookup/rate-limits"],
-    refetchInterval: 60000, // Refresh every minute
   });
 
   if (isLoading) {
