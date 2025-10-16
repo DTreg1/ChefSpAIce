@@ -1,0 +1,7 @@
+dist
+node_modules
+*.config.ts
+*.config.js
+drizzle.config.ts
+vite.config.ts
+tailwind.config.ts
