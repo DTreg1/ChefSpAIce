@@ -223,7 +223,7 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-muted">
+      <DialogContent className="max-w-md">
         {scannerState === "scanning" && (
           <>
             <DialogHeader>

@@ -1,19 +1,35 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, CheckCircle, XCircle, AlertCircle, ScanLine } from "lucide-react";
+import {
+  Camera,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  ScanLine,
+} from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CameraTest() {
   const { toast } = useToast();
-  const [cameraPermission, setCameraPermission] = useState<'unknown' | 'granted' | 'denied'>('unknown');
+  const [cameraPermission, setCameraPermission] = useState<
+    "unknown" | "granted" | "denied"
+  >("unknown");
   const [isHttps, setIsHttps] = useState(false);
-  const [browserInfo, setBrowserInfo] = useState<string>('');
-  const [cameraList, setCameraList] = useState<Array<{ id: string; label: string }>>([]);
+  const [browserInfo, setBrowserInfo] = useState<string>("");
+  const [cameraList, setCameraList] = useState<
+    Array<{ id: string; label: string }>
+  >([]);
   const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<string>('');
+  const [scanResult, setScanResult] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -21,8 +37,8 @@ export default function CameraTest() {
 
   useEffect(() => {
     // Check HTTPS
-    setIsHttps(window.location.protocol === 'https:');
-    
+    setIsHttps(window.location.protocol === "https:");
+
     // Get browser info
     setBrowserInfo(navigator.userAgent);
 
@@ -32,30 +48,37 @@ export default function CameraTest() {
     // Cleanup on unmount
     return () => {
       if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
+        videoStream.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
 
   const addError = (error: string) => {
-    setErrors(prev => [...prev, `${new Date().toLocaleTimeString()}: ${error}`]);
+    setErrors((prev) => [
+      ...prev,
+      `${new Date().toLocaleTimeString()}: ${error}`,
+    ]);
   };
 
   const checkCameraPermission = async () => {
     try {
-      const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
-      setCameraPermission(result.state as 'granted' | 'denied');
+      const result = await navigator.permissions.query({
+        name: "camera" as PermissionName,
+      });
+      setCameraPermission(result.state as "granted" | "denied");
       addError(`Permission state: ${result.state}`);
     } catch (err: any) {
       addError(`Permission check failed: ${err.message}`);
       // Fallback: try to access camera directly
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        stream.getTracks().forEach(track => track.stop());
-        setCameraPermission('granted');
-        addError('Camera access granted (fallback check)');
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        stream.getTracks().forEach((track) => track.stop());
+        setCameraPermission("granted");
+        addError("Camera access granted (fallback check)");
       } catch (mediaErr: any) {
-        setCameraPermission('denied');
+        setCameraPermission("denied");
         addError(`Camera access denied: ${mediaErr.message}`);
       }
     }
@@ -65,10 +88,10 @@ export default function CameraTest() {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameras = devices
-        .filter(device => device.kind === 'videoinput')
-        .map(device => ({
+        .filter((device) => device.kind === "videoinput")
+        .map((device) => ({
           id: device.deviceId,
-          label: device.label || `Camera ${device.deviceId.substring(0, 8)}...`
+          label: device.label || `Camera ${device.deviceId.substring(0, 8)}...`,
         }));
       setCameraList(cameras);
       addError(`Found ${cameras.length} camera(s)`);
@@ -81,36 +104,36 @@ export default function CameraTest() {
     try {
       // Stop any existing stream
       if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
+        videoStream.getTracks().forEach((track) => track.stop());
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setVideoStream(stream);
-        addError('Camera stream started successfully');
+        addError("Camera stream started successfully");
       }
     } catch (err: any) {
       addError(`Camera stream failed: ${err.message}`);
       toast({
         title: "Camera Error",
         description: err.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const stopBasicCamera = () => {
     if (videoStream) {
-      videoStream.getTracks().forEach(track => track.stop());
+      videoStream.getTracks().forEach((track) => track.stop());
       setVideoStream(null);
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-      addError('Camera stream stopped');
+      addError("Camera stream stopped");
     }
   };
 
@@ -130,22 +153,22 @@ export default function CameraTest() {
           addError(`Scanned: ${decodedText}`);
           toast({
             title: "Barcode Scanned!",
-            description: decodedText
+            description: decodedText,
           });
         },
         () => {
           // Silent error for continuous scanning
-        }
+        },
       );
 
       setIsScanning(true);
-      addError('Barcode scanner started');
+      addError("Barcode scanner started");
     } catch (err: any) {
       addError(`Scanner start error: ${err.message}`);
       toast({
         title: "Scanner Error",
         description: err.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -157,7 +180,7 @@ export default function CameraTest() {
         scannerRef.current.clear();
         scannerRef.current = null;
         setIsScanning(false);
-        addError('Barcode scanner stopped');
+        addError("Barcode scanner stopped");
       } catch (err: any) {
         addError(`Scanner stop error: ${err.message}`);
       }
@@ -171,7 +194,9 @@ export default function CameraTest() {
   return (
     <div className="container mx-auto p-4 max-w-4xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Camera & Barcode Scanner Test</h1>
+        <h1 className="text-3xl font-bold mb-2">
+          Camera & Barcode Scanner Test
+        </h1>
         <p className="text-muted-foreground">
           Diagnostic page to troubleshoot camera and barcode scanning issues
         </p>
@@ -186,33 +211,47 @@ export default function CameraTest() {
           <div className="flex items-center gap-2">
             <span className="font-medium">HTTPS:</span>
             {isHttps ? (
-              <Badge className="gap-1"><CheckCircle className="w-3 h-3" /> Enabled</Badge>
+              <Badge className="gap-1">
+                <CheckCircle className="w-3 h-3" /> Enabled
+              </Badge>
             ) : (
-              <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" /> Disabled (Required!)</Badge>
+              <Badge variant="destructive" className="gap-1">
+                <XCircle className="w-3 h-3" /> Disabled (Required!)
+              </Badge>
             )}
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="font-medium">Camera Permission:</span>
-              {cameraPermission === 'granted' && (
-                <Badge className="gap-1"><CheckCircle className="w-3 h-3" /> Granted</Badge>
+              {cameraPermission === "granted" && (
+                <Badge className="gap-1">
+                  <CheckCircle className="w-3 h-3" /> Granted
+                </Badge>
               )}
-              {cameraPermission === 'denied' && (
-                <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" /> Denied</Badge>
+              {cameraPermission === "denied" && (
+                <Badge variant="destructive" className="gap-1">
+                  <XCircle className="w-3 h-3" /> Denied
+                </Badge>
               )}
-              {cameraPermission === 'unknown' && (
-                <Badge variant="secondary" className="gap-1"><AlertCircle className="w-3 h-3" /> Unknown</Badge>
+              {cameraPermission === "unknown" && (
+                <Badge variant="secondary" className="gap-1">
+                  <AlertCircle className="w-3 h-3" /> Unknown
+                </Badge>
               )}
             </div>
-            {cameraPermission === 'unknown' && (
+            {cameraPermission === "unknown" && (
               <p className="text-xs text-muted-foreground">
-                Note: "Unknown" is normal after page refresh. The browser still remembers your permission - the API just hasn't checked yet. The camera will work without asking again.
+                Note: "Unknown" is normal after page refresh. The browser still
+                remembers your permission - the API just hasn't checked yet. The
+                camera will work without asking again.
               </p>
             )}
           </div>
           <div>
             <span className="font-medium">Browser:</span>
-            <p className="text-sm text-muted-foreground mt-1 break-all">{browserInfo}</p>
+            <p className="text-sm text-muted-foreground mt-1 break-all">
+              {browserInfo}
+            </p>
           </div>
           <div>
             <span className="font-medium">Available Cameras:</span>
@@ -225,7 +264,9 @@ export default function CameraTest() {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground mt-1">Click "Get Camera List" to enumerate</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Click "Get Camera List" to enumerate
+              </p>
             )}
           </div>
         </CardContent>
@@ -235,17 +276,22 @@ export default function CameraTest() {
       <Card>
         <CardHeader>
           <CardTitle>Diagnostic Tests</CardTitle>
-          <CardDescription>Run these tests to identify camera issues</CardDescription>
+          <CardDescription>
+            Run these tests to identify camera issues
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            <Button onClick={checkCameraPermission} data-testid="button-check-permission">
+            <Button
+              onClick={checkCameraPermission}
+              data-testid="button-check-permission"
+            >
               Check Permission
             </Button>
             <Button onClick={getCameraList} data-testid="button-get-cameras">
               Get Camera List
             </Button>
-            <Button 
+            <Button
               onClick={videoStream ? stopBasicCamera : testBasicCamera}
               variant={videoStream ? "destructive" : "default"}
               data-testid="button-test-camera"
@@ -291,11 +337,17 @@ export default function CameraTest() {
             {isScanning ? "Stop Scanner" : "Start Scanner"}
           </Button>
 
-          <div id="qr-reader-test" className="w-full" data-testid="qr-reader-test" />
+          <div
+            id="qr-reader-test"
+            className="w-full"
+            data-testid="qr-reader-test"
+          />
 
           {scanResult && (
             <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-md">
-              <p className="font-medium text-green-600 dark:text-green-400">Last Scan Result:</p>
+              <p className="font-medium text-green-600 dark:text-green-400">
+                Last Scan Result:
+              </p>
               <p className="text-sm mt-1 break-all">{scanResult}</p>
             </div>
           )}
@@ -307,7 +359,9 @@ export default function CameraTest() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Diagnostic Log</CardTitle>
-            <CardDescription>Real-time error and status messages</CardDescription>
+            <CardDescription>
+              Real-time error and status messages
+            </CardDescription>
           </div>
           <Button onClick={clearErrors} variant="outline" size="sm">
             Clear Log
@@ -315,7 +369,9 @@ export default function CameraTest() {
         </CardHeader>
         <CardContent>
           {errors.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No messages yet. Run tests above to see diagnostics.</p>
+            <p className="text-sm text-muted-foreground">
+              No messages yet. Run tests above to see diagnostics.
+            </p>
           ) : (
             <div className="space-y-1 max-h-64 overflow-y-auto font-mono text-xs">
               {errors.map((error, idx) => (
@@ -338,21 +394,30 @@ export default function CameraTest() {
             <AlertCircle className="w-4 h-4 mt-0.5 text-yellow-500" />
             <div>
               <p className="font-medium">HTTPS Required</p>
-              <p className="text-muted-foreground">Camera access requires HTTPS on most browsers. HTTP only works on localhost.</p>
+              <p className="text-muted-foreground">
+                Camera access requires HTTPS on most browsers. HTTP only works
+                on localhost.
+              </p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 mt-0.5 text-yellow-500" />
             <div>
               <p className="font-medium">Permission Denied</p>
-              <p className="text-muted-foreground">Check browser settings and site permissions. On iOS, check Settings → Safari → Camera.</p>
+              <p className="text-muted-foreground">
+                Check browser settings and site permissions. On iOS, check
+                Settings → Safari → Camera.
+              </p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 mt-0.5 text-yellow-500" />
             <div>
               <p className="font-medium">Safari iOS Issues</p>
-              <p className="text-muted-foreground">Safari on iOS can be restrictive. Try Chrome or Firefox on iOS, or test in a different browser.</p>
+              <p className="text-muted-foreground">
+                Safari on iOS can be restrictive. Try Chrome or Firefox on iOS,
+                or test in a different browser.
+              </p>
             </div>
           </div>
         </CardContent>
