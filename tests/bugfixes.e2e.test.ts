@@ -10,7 +10,7 @@ test.describe('Bug Fixes E2E Tests', () => {
       await page.goto('/');
       
       // Trigger multiple concurrent API calls that may need token refresh
-      const promises = [];
+      const promises: Promise<any>[] = [];
       for (let i = 0; i < 5; i++) {
         promises.push(
           page.evaluate(() => {
@@ -22,7 +22,7 @@ test.describe('Bug Fixes E2E Tests', () => {
       
       // All requests should succeed without duplicate refresh attempts
       const results = await Promise.all(promises);
-      results.forEach(result => {
+      results.forEach((result: any) => {
         expect(result.error).toBeUndefined();
       });
     });
@@ -173,7 +173,8 @@ test.describe('Bug Fixes E2E Tests', () => {
       
       // Verify no memory leaks (check console for warnings)
       const consoleLogs = await page.evaluate(() => {
-        return window.console.logs || [];
+        // @ts-ignore - custom property for testing
+        return window.consoleLogs || [];
       });
       
       const memoryWarnings = consoleLogs.filter((log: any) => 
@@ -233,7 +234,7 @@ test.describe('Bug Fixes E2E Tests', () => {
       });
       
       // Make multiple identical concurrent requests
-      const promises = [];
+      const promises: Promise<any>[] = [];
       for (let i = 0; i < 5; i++) {
         promises.push(
           page.evaluate(() => {
@@ -247,7 +248,7 @@ test.describe('Bug Fixes E2E Tests', () => {
       
       // All results should be identical (same response)
       const firstResult = results[0];
-      results.forEach(result => {
+      results.forEach((result: any) => {
         expect(result).toEqual(firstResult);
       });
       
@@ -401,7 +402,7 @@ test.describe('Bug Fixes E2E Tests', () => {
       });
       
       // Make multiple requests
-      const responses = [];
+      const responses: any[] = [];
       for (let i = 0; i < 4; i++) {
         const response = await page.evaluate(() => {
           return fetch('/api/barcodelookup/search?query=test')

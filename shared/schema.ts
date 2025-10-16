@@ -554,7 +554,6 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   createdAt: true,
   resolvedAt: true,
   upvoteCount: true,
-  similarTo: true,
 }).extend({
   type: z.enum(['chat_response', 'recipe', 'food_item', 'bug', 'feature', 'general']),
   sentiment: z.enum(['positive', 'negative', 'neutral']).optional(),
@@ -563,6 +562,7 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   status: z.enum(['open', 'in_progress', 'completed', 'wont_fix']).optional(),
   isFlagged: z.boolean().optional(),
   flagReason: z.string().optional(),
+  similarTo: z.string().optional(),
 });
 
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
