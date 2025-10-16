@@ -77,7 +77,17 @@ export function errorHandler(
   if (err instanceof ApiError) {
     statusCode = err.statusCode;
     message = err.message;
-    details = err.details ? JSON.parse(err.details) : undefined;
+    // Safely handle details - it might be a string or already parsed JSON
+    if (err.details) {
+      try {
+        details = typeof err.details === 'string' 
+          ? JSON.parse(err.details) 
+          : err.details;
+      } catch (parseError) {
+        // If JSON parsing fails, treat it as a plain string
+        details = { message: err.details };
+      }
+    }
     code = ERROR_CODES[statusCode] || code;
   } else if (err instanceof z.ZodError) {
     statusCode = 422;
