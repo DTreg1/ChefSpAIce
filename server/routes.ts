@@ -12,6 +12,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ApiError } from "./apiError";
 import { batchedApiLogger } from "./batchedApiLogger";
 import { cleanupOldMessagesForUser } from "./chatCleanup";
+import { rateLimiter, barcodeRateLimiter, chatRateLimiter } from "./middleware/rateLimiter";
 import { z } from "zod";
 import { 
   insertFoodItemSchema, 
@@ -107,6 +108,10 @@ function determineApplianceType(barcodeProduct: BarcodeProduct): string {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware (from blueprint:javascript_log_in_with_replit)
   await setupAuth(app);
+
+  // Apply general rate limiting to all API endpoints
+  // Specific endpoints will override with their own rate limiters
+  app.use('/api/', rateLimiter);
 
   // Auth routes (from blueprint:javascript_log_in_with_replit)
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -923,7 +928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Barcode Lookup - Product Images (public)
-  app.get("/api/barcodelookup/search", async (req: any, res) => {
+  app.get("/api/barcodelookup/search", barcodeRateLimiter, async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     const { query } = req.query;
     let apiCallMade = false;
@@ -978,7 +983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/barcodelookup/product/:barcode", async (req: any, res) => {
+  app.get("/api/barcodelookup/product/:barcode", barcodeRateLimiter, async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     const { barcode } = req.params;
     let apiCallMade = false;
@@ -1193,7 +1198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .trim()
   });
 
-  app.post("/api/chat", isAuthenticated, async (req: any, res) => {
+  app.post("/api/chat", isAuthenticated, chatRateLimiter, async (req: any, res) => {
     const abortController = new AbortController();
     
     req.on('close', () => {
