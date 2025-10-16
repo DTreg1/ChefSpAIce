@@ -2871,8 +2871,10 @@ Respond ONLY with a valid JSON object:
   });
 
   // Handle 404s for API routes that weren't matched above
-  app.use("/api/*", (_req: any, res) => {
-    res.status(404).json({ message: "API endpoint not found" });
+  app.use("/api/*", (req: any, res, next) => {
+    // Create a standardized 404 error and pass it to the error handler
+    const error = new ApiError("API endpoint not found", 404);
+    next(error);
   });
 
   const httpServer = createServer(app);

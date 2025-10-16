@@ -80,14 +80,22 @@ export async function apiRequest(
       }
     }
     
-    const res = await deduplicatedFetch(url, {
+    const fetchOptions: RequestInit = {
       method,
-      headers: data !== undefined ? { "Content-Type": "application/json" } : {},
-      body: bodyString,
       credentials: "include",
       // Add timeout to prevent hanging requests
       signal: AbortSignal.timeout(30000), // 30 second timeout
-    });
+    };
+    
+    // Only add body and Content-Type header for non-GET/HEAD methods
+    if (method !== "GET" && method !== "HEAD") {
+      if (data !== undefined) {
+        fetchOptions.headers = { "Content-Type": "application/json" };
+      }
+      fetchOptions.body = bodyString;
+    }
+    
+    const res = await deduplicatedFetch(url, fetchOptions);
 
     await throwIfResNotOk(res);
     return res;
