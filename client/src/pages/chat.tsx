@@ -114,7 +114,7 @@ export default function Chat() {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, retryCount = 0) => {
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
       userId: user?.id || "",
@@ -124,12 +124,28 @@ export default function Chat() {
       metadata: null,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Only add user message on first attempt
+    if (retryCount === 0) {
+      setMessages((prev) => [...prev, userMessage]);
+    }
+    
     setIsStreaming(true);
     setStreamingContent("");
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
+
+    // Set timeout for streaming (60 seconds)
+    const timeoutId = setTimeout(() => {
+      if (abortController && !abortController.signal.aborted) {
+        abortController.abort();
+        toast({
+          title: "Connection Timeout",
+          description: "The response is taking too long. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }, 60000);
 
     try {
       const response = await fetch("/api/chat", {
@@ -139,30 +155,59 @@ export default function Chat() {
         signal: abortController.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error("Failed to send message");
+        const errorText = await response.text();
+        let errorMessage = `Server error: ${response.status}`;
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        } catch {
+          if (errorText) {
+            errorMessage = errorText.substring(0, 200);
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
 
       if (!reader) {
-        throw new Error("No response body");
+        throw new Error("No response body received from server");
       }
 
       let accumulated = "";
+      let buffer = ""; // Buffer for incomplete lines
+      let lastActivityTime = Date.now();
+      
+      // Monitor for stalled streams
+      const stallCheckInterval = setInterval(() => {
+        if (Date.now() - lastActivityTime > 30000) { // 30 seconds of no activity
+          clearInterval(stallCheckInterval);
+          if (!abortController.signal.aborted) {
+            abortController.abort();
+            toast({
+              title: "Connection Stalled",
+              description: "The stream has stopped responding. Please try again.",
+              variant: "destructive",
+            });
+          }
+        }
+      }, 5000);
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            clearInterval(stallCheckInterval);
+            
+            // Handle case where stream ended without [DONE] marker
+            if (accumulated && !abortController.signal.aborted) {
               const aiMessage: ChatMessageType = {
                 id: (Date.now() + 1).toString(),
                 userId: user?.id || "",
@@ -174,39 +219,117 @@ export default function Chat() {
               setMessages((prev) => [...prev, aiMessage]);
               setStreamingContent("");
               setIsStreaming(false);
-              abortControllerRef.current = null;
               
               // Invalidate chat messages query to refetch with saved messages
               await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
-              return;
             }
+            break;
+          }
 
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.content) {
-                accumulated += parsed.content;
-                setStreamingContent(accumulated);
+          lastActivityTime = Date.now();
+          const chunk = decoder.decode(value, { stream: true });
+          
+          // Combine with buffer from previous incomplete chunk
+          const fullChunk = buffer + chunk;
+          const lines = fullChunk.split("\n");
+          
+          // Keep last line in buffer if it's incomplete
+          buffer = lines[lines.length - 1];
+          const completeLines = lines.slice(0, -1);
+
+          for (const line of completeLines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6).trim();
+              
+              if (data === "[DONE]") {
+                clearInterval(stallCheckInterval);
+                const aiMessage: ChatMessageType = {
+                  id: (Date.now() + 1).toString(),
+                  userId: user?.id || "",
+                  role: "assistant",
+                  content: accumulated || "I apologize, but I couldn't generate a response. Please try again.",
+                  timestamp: new Date(),
+                  metadata: null,
+                };
+                setMessages((prev) => [...prev, aiMessage]);
+                setStreamingContent("");
+                setIsStreaming(false);
+                abortControllerRef.current = null;
+                
+                // Invalidate chat messages query to refetch with saved messages
+                await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+                return;
               }
-            } catch (e) {
-              // Skip invalid JSON
+
+              if (data) {
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.content) {
+                    accumulated += parsed.content;
+                    setStreamingContent(accumulated);
+                  } else if (parsed.error) {
+                    // Handle error messages in stream
+                    throw new Error(parsed.error);
+                  }
+                } catch (e) {
+                  console.warn("Failed to parse SSE data:", data, e);
+                  // Continue processing other lines
+                }
+              }
             }
           }
         }
+      } finally {
+        clearInterval(stallCheckInterval);
       }
+      
+      abortControllerRef.current = null;
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Chat stream aborted');
-        abortControllerRef.current = null;
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      clearTimeout(timeoutId);
       setIsStreaming(false);
       setStreamingContent("");
       abortControllerRef.current = null;
+      
+      if (error.name === 'AbortError') {
+        console.log('Chat stream aborted by user or timeout');
+        return;
+      }
+      
+      // Retry logic for network errors
+      if (retryCount < 2 && (error.message.includes('fetch') || error.message.includes('network'))) {
+        toast({
+          title: "Connection Error",
+          description: `Retrying... (${retryCount + 1}/2)`,
+          variant: "default",
+        });
+        
+        // Wait 2 seconds before retry
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return handleSendMessage(content, retryCount + 1);
+      }
+      
+      // Show specific error messages
+      let errorTitle = "Error";
+      let errorDescription = "Failed to send message. Please try again.";
+      
+      if (error.message.includes('network') || error.message.includes('fetch')) {
+        errorTitle = "Network Error";
+        errorDescription = "Unable to connect to the server. Please check your connection.";
+      } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        errorTitle = "Authentication Error";
+        errorDescription = "Your session has expired. Please refresh the page to log in again.";
+      } else if (error.message.includes('500') || error.message.includes('Internal')) {
+        errorTitle = "Server Error";
+        errorDescription = "The server encountered an error. Please try again later.";
+      } else if (error.message) {
+        errorDescription = error.message.substring(0, 200);
+      }
+      
+      toast({
+        title: errorTitle,
+        description: errorDescription,
+        variant: "destructive",
+      });
     }
   };
 
