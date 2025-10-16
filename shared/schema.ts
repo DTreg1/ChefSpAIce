@@ -554,8 +554,6 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   createdAt: true,
   resolvedAt: true,
   upvoteCount: true,
-  isFlagged: true,
-  flagReason: true,
   similarTo: true,
 }).extend({
   type: z.enum(['chat_response', 'recipe', 'food_item', 'bug', 'feature', 'general']),
@@ -563,6 +561,8 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
   rating: z.number().int().min(1).max(5).optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   status: z.enum(['open', 'in_progress', 'completed', 'wont_fix']).optional(),
+  isFlagged: z.boolean().optional(),
+  flagReason: z.string().optional(),
 });
 
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
