@@ -26,6 +26,9 @@ export default function CameraTest() {
     // Get browser info
     setBrowserInfo(navigator.userAgent);
 
+    // Auto-check camera permission on load
+    checkCameraPermission();
+
     // Cleanup on unmount
     return () => {
       if (videoStream) {
@@ -188,16 +191,23 @@ export default function CameraTest() {
               <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" /> Disabled (Required!)</Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">Camera Permission:</span>
-            {cameraPermission === 'granted' && (
-              <Badge className="gap-1"><CheckCircle className="w-3 h-3" /> Granted</Badge>
-            )}
-            {cameraPermission === 'denied' && (
-              <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" /> Denied</Badge>
-            )}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Camera Permission:</span>
+              {cameraPermission === 'granted' && (
+                <Badge className="gap-1"><CheckCircle className="w-3 h-3" /> Granted</Badge>
+              )}
+              {cameraPermission === 'denied' && (
+                <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" /> Denied</Badge>
+              )}
+              {cameraPermission === 'unknown' && (
+                <Badge variant="secondary" className="gap-1"><AlertCircle className="w-3 h-3" /> Unknown</Badge>
+              )}
+            </div>
             {cameraPermission === 'unknown' && (
-              <Badge variant="secondary" className="gap-1"><AlertCircle className="w-3 h-3" /> Unknown</Badge>
+              <p className="text-xs text-muted-foreground">
+                Note: "Unknown" is normal after page refresh. The browser still remembers your permission - the API just hasn't checked yet. The camera will work without asking again.
+              </p>
             )}
           </div>
           <div>
