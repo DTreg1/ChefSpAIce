@@ -609,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // FDC Food Search with Cache (public)
-  app.get("/api/fdc/search", async (req, res) => {
+  app.get("/api/fdc/search", async (req, res, next) => {
     try {
       const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
       
@@ -767,12 +767,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("FDC search error:", error);
-      throw new ApiError("Failed to search FDC database", 500);
+      if (error instanceof ApiError) {
+        return next(error); // Pass ApiError to error handler middleware
+      }
+      return next(new ApiError("Failed to search FDC database", 500));
     }
   });
 
   // FDC Food Details with Cache (public)
-  app.get("/api/fdc/food/:fdcId", async (req, res) => {
+  app.get("/api/fdc/food/:fdcId", async (req, res, next) => {
     try {
       const { fdcId } = req.params;
       
@@ -835,7 +838,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("FDC food details error:", error);
-      throw new ApiError("Failed to fetch food details", 500);
+      if (error instanceof ApiError) {
+        return next(error); // Pass ApiError to error handler middleware
+      }
+      return next(new ApiError("Failed to fetch food details", 500));
     }
   });
 
@@ -851,8 +857,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // USDA Food Search (public) - Enhanced with all FDC search parameters
-  app.get("/api/usda/search", async (req, res) => {
+  // USDA Food Search (public) - Enhanced with all FDC search parameters  
+  app.get("/api/usda/search", async (req, res, next) => {
     try {
       const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
       if (!query || typeof query !== "string") {
@@ -901,13 +907,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("USDA search error:", error);
       if (error instanceof ApiError) {
-        throw error; // Re-throw ApiError as is
+        return next(error); // Pass ApiError to error handler middleware
       }
-      throw new ApiError("Failed to search USDA database", 500);
+      return next(new ApiError("Failed to search USDA database", 500));
     }
   });
 
-  app.get("/api/usda/food/:fdcId", async (req, res) => {
+  app.get("/api/usda/food/:fdcId", async (req, res, next) => {
     try {
       const { fdcId } = req.params;
       const food = await getFoodByFdcId(Number(fdcId));
@@ -918,9 +924,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("USDA food details error:", error);
       if (error instanceof ApiError) {
-        throw error; // Re-throw ApiError as is
+        return next(error); // Pass ApiError to error handler middleware
       }
-      throw new ApiError("Failed to fetch food details", 500);
+      return next(new ApiError("Failed to fetch food details", 500));
     }
   });
 
