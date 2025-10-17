@@ -1,4 +1,3 @@
-import { startTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, ScanLine, ChefHat } from "lucide-react";
 import { 
@@ -26,7 +25,7 @@ export function QuickActionsBar({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              onClick={() => onAddFood && startTransition(() => onAddFood())}
+              onClick={onAddFood}
               data-testid="button-quick-add-food"
               className="transition-all-smooth h-9 w-9 p-0 lg:w-auto lg:px-3"
             >
@@ -43,7 +42,7 @@ export function QuickActionsBar({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              onClick={() => onScanBarcode && startTransition(() => onScanBarcode())}
+              onClick={onScanBarcode}
               data-testid="button-quick-scan-barcode"
               className="transition-all-smooth h-9 w-9 p-0 lg:w-auto lg:px-3"
             >
@@ -60,7 +59,7 @@ export function QuickActionsBar({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              onClick={() => onGenerateRecipe && startTransition(() => onGenerateRecipe())}
+              onClick={onGenerateRecipe}
               data-testid="button-quick-generate-recipe"
               className="transition-all-smooth h-9 w-9 p-0 lg:w-auto lg:px-3"
             >

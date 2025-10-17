@@ -32,10 +32,6 @@ export function getSession() {
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
-    // Add error logging for debugging
-    errorLog: (error: any) => {
-      console.error('Session store error:', error);
-    }
   });
   return session({
     secret: process.env.SESSION_SECRET!,
@@ -46,10 +42,7 @@ export function getSession() {
       httpOnly: true,
       secure: true,
       maxAge: sessionTtl,
-      sameSite: 'lax', // Add sameSite for better security
     },
-    // Add session touch to update expiry on activity
-    rolling: true,
   });
 }
 
@@ -148,15 +141,14 @@ const activeRefreshes = new Map<string, {
   timestamp: number;
 }>();
 
-// Clean up expired refresh promises (older than 10 seconds)
+// Clean up expired refresh promises (older than 2 seconds)
 const cleanupExpiredRefreshes = () => {
   const now = Date.now();
   const expiredKeys: string[] = [];
   
   activeRefreshes.forEach((value, key) => {
-    // Keep the promise for at least 10 seconds to handle burst requests
-    // This ensures concurrent requests within 10 seconds reuse the same refresh
-    if (now - value.timestamp > 10000) {
+    // Keep the promise for at least 2 seconds to handle burst requests
+    if (now - value.timestamp > 2000) {
       expiredKeys.push(key);
     }
   });
@@ -164,26 +156,20 @@ const cleanupExpiredRefreshes = () => {
   expiredKeys.forEach(key => activeRefreshes.delete(key));
 };
 
-// Run cleanup every 15 seconds
-setInterval(cleanupExpiredRefreshes, 15000);
+// Run cleanup every 5 seconds
+setInterval(cleanupExpiredRefreshes, 5000);
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user?.claims?.sub) {
+  if (!req.isAuthenticated() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  // Check if we have an expires_at value
-  if (!user.expires_at) {
-    // If no expiry set, treat token as expired to force refresh
-    console.warn(`No expiry time for user ${user.claims?.sub}, forcing token refresh`);
-  } else {
-    const now = Math.floor(Date.now() / 1000);
-    // Add a 60-second buffer before expiry to refresh proactively
-    if (now <= user.expires_at - 60) {
-      return next();
-    }
+  const now = Math.floor(Date.now() / 1000);
+  // Add a 30-second buffer before expiry to refresh proactively
+  if (now <= user.expires_at - 30) {
+    return next();
   }
 
   const refreshToken = user.refresh_token;
@@ -233,43 +219,71 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     const tokenResponse = await refreshEntry.promise;
     updateUserSession(user, tokenResponse);
     
-    // Simplified session save with single retry
-    try {
-      await new Promise<void>((resolve, reject) => {
-        req.session.save((err) => {
-          if (err) {
-            console.error(`Failed to save session after token refresh for user ${userId}:`, err);
-            reject(err);
-          } else {
-            console.log(`Session saved successfully for user: ${userId}`);
-            resolve();
-          }
-        });
-      });
-    } catch (sessionError: any) {
-      // Try once more after a brief delay
-      console.log(`Retrying session save for user ${userId}`);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+    // Save the session to persist the new tokens with better error handling
+    let saveAttempts = 0;
+    const maxSaveAttempts = 3;
+    let saveSuccessful = false;
+    
+    while (saveAttempts < maxSaveAttempts && !saveSuccessful) {
       try {
         await new Promise<void>((resolve, reject) => {
+          // Add a timeout for session save operation
+          const saveTimeout = setTimeout(() => {
+            reject(new Error('Session save timeout'));
+          }, 5000); // 5 second timeout
+          
           req.session.save((err) => {
+            clearTimeout(saveTimeout);
             if (err) {
+              console.error(`Failed to save session after token refresh for user ${userId} (attempt ${saveAttempts + 1}/${maxSaveAttempts}):`, err);
               reject(err);
             } else {
-              console.log(`Session saved successfully on retry for user: ${userId}`);
+              console.log(`Session saved successfully for user: ${userId}`);
+              saveSuccessful = true;
               resolve();
             }
           });
         });
-      } catch (finalError: any) {
-        // If both attempts fail, log but continue
-        // The token refresh succeeded, so the user is authenticated
-        console.error('Session save failed after retry, continuing anyway:', {
-          userId,
-          error: finalError.message
-        });
-        // Don't block the request since authentication succeeded
+      } catch (sessionError: any) {
+        saveAttempts++;
+        if (saveAttempts < maxSaveAttempts) {
+          // Wait briefly before retry
+          await new Promise(resolve => setTimeout(resolve, 100 * saveAttempts));
+          console.log(`Retrying session save for user ${userId} (attempt ${saveAttempts + 1}/${maxSaveAttempts})`);
+        } else {
+          // Final attempt failed
+          console.error('Critical: Session save failed after all retries:', {
+            userId,
+            error: sessionError.message,
+            attempts: saveAttempts
+          });
+          
+          // Remove the refresh entry to allow retry on next request
+          activeRefreshes.delete(refreshKey);
+          
+          // Determine if we should fail or continue based on the error type
+          const isRecoverableError = sessionError.message?.includes('timeout') || 
+                                     sessionError.message?.includes('ECONNREFUSED') ||
+                                     sessionError.code === 'ETIMEDOUT';
+          
+          if (isRecoverableError) {
+            // For recoverable errors, allow the request to continue
+            // but inform the client about the issue
+            console.warn(`Allowing request to continue despite recoverable session save failure for user ${userId}`);
+            
+            // Set tokens in response headers as fallback
+            res.setHeader('X-Token-Refresh-Warning', 'Session persistence failed, tokens may not be saved');
+            res.setHeader('X-Token-Refresh-Status', 'temporary-failure');
+          } else {
+            // For non-recoverable errors, fail the request to maintain consistency
+            console.error(`Blocking request due to non-recoverable session save failure for user ${userId}`);
+            return res.status(503).json({
+              message: "Service temporarily unavailable",
+              error: "Session persistence failed. Please try again later.",
+              retryable: true
+            });
+          }
+        }
       }
     }
     

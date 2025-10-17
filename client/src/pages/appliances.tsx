@@ -1,4 +1,4 @@
-import { useState, startTransition } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,11 +198,11 @@ export default function Appliances() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => startTransition(() => setIsScanDialogOpen(true))} variant="outline" data-testid="button-scan-barcode">
+          <Button onClick={() => setIsScanDialogOpen(true)} variant="outline" data-testid="button-scan-barcode">
             <Scan className="w-4 h-4 mr-2" />
             Scan Barcode
           </Button>
-          <Button onClick={() => startTransition(() => setIsAddDialogOpen(true))} data-testid="button-add-appliance">
+          <Button onClick={() => setIsAddDialogOpen(true)} data-testid="button-add-appliance">
             <Plus className="w-4 h-4 mr-2" />
             Add Manually
           </Button>
@@ -276,7 +276,7 @@ export default function Appliances() {
                 ? "Try adjusting your filters" 
                 : "Add your first appliance to get started"}
             </p>
-            <Button onClick={() => startTransition(() => setIsScanDialogOpen(true))} data-testid="button-scan-first">
+            <Button onClick={() => setIsScanDialogOpen(true)} data-testid="button-scan-first">
               <Scan className="w-4 h-4 mr-2" />
               Scan Barcode
             </Button>

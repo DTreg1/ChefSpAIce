@@ -142,11 +142,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   }));
 
-  // Health check endpoint for connection warming (no auth required)
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: Date.now() });
-  });
-
   // Batch initialization endpoint to reduce initial API calls
   app.get('/api/init', isAuthenticated, async (req: any, res, next) => {
     try {

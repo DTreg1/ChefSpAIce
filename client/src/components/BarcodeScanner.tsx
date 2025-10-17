@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, startTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,7 +97,7 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => startTransition(() => setIsOpen(true))}
+        onClick={() => setIsOpen(true)}
         data-testid="button-scan-barcode"
       >
         <ScanLine className="w-4 h-4" />
@@ -123,7 +123,7 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => startTransition(() => setIsOpen(false))}
+                  onClick={() => setIsOpen(false)}
                   data-testid="button-close-scanner"
                 >
                   <X className="w-4 h-4 mr-1" />

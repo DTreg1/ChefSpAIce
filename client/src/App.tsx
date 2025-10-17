@@ -1,33 +1,30 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added authentication routing
-import { useState, useEffect, useRef, lazy, Suspense, startTransition } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { ChefHat, Loader2 } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { CommandPalette } from "@/components/command-palette";
+import { QuickActionsBar } from "@/components/quick-actions-bar";
+import { AddFoodDialog } from "@/components/add-food-dialog";
+import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
+import { FeedbackWidget } from "@/components/feedback-widget";
+import { AnimatedBackground } from "@/components/animated-background";
+import { OfflineIndicator } from "@/components/offline-indicator";
 import { useAuth } from "@/hooks/useAuth";
+import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useInitialData } from "@/hooks/useInitialData";
-import { useReplitWarmup } from "@/hooks/useReplitWarmup";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
-import { OfflineIndicator } from "@/components/offline-indicator";
-import { InitialLoadingScreen } from "@/components/InitialLoadingScreen";
-
-// Lazy load all heavy components to improve initial load
-const AppSidebar = lazy(() => import("@/components/app-sidebar").then(m => ({ default: m.AppSidebar })));
-const CommandPalette = lazy(() => import("@/components/command-palette").then(m => ({ default: m.CommandPalette })));
-const QuickActionsBar = lazy(() => import("@/components/quick-actions-bar").then(m => ({ default: m.QuickActionsBar })));
-const AddFoodDialog = lazy(() => import("@/components/add-food-dialog").then(m => ({ default: m.AddFoodDialog })));
-const RecipeCustomizationDialog = lazy(() => import("@/components/recipe-customization-dialog").then(m => ({ default: m.RecipeCustomizationDialog })));
-const FeedbackWidget = lazy(() => import("@/components/feedback-widget").then(m => ({ default: m.FeedbackWidget })));
-const AnimatedBackground = lazy(() => import("@/components/animated-background").then(m => ({ default: m.AnimatedBackground })));
 
 // Eagerly loaded core pages (only the most critical)
-const Landing = lazy(() => import("@/pages/landing"));
-const Chat = lazy(() => import("@/pages/chat"));
+import Landing from "@/pages/landing";
+import Chat from "@/pages/chat";
 
 // Lazy load onboarding since it's only shown for new users
 const Onboarding = lazy(() => import("@/pages/onboarding"));
@@ -95,25 +92,30 @@ function AuthenticatedRouter() {
 
 function Router() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  // If we're authenticated, prefetch all initial data in parallel
+  const { isLoading: initLoading } = useInitialData(isAuthenticated);
 
   // Show landing page for non-authenticated users
   if (authLoading || !isAuthenticated) {
     return (
-      <Suspense fallback={<PageLoader />}>
-        <Switch>
-          <Route path="/" component={Landing} />
-          <Route component={Landing} />
-        </Switch>
-      </Suspense>
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route component={Landing} />
+      </Switch>
     );
   }
 
-  // Show authenticated app with sidebar (data loading happens in components)
+  // Wait for initial data to be loaded
+  if (initLoading) {
+    return <PageLoader />;
+  }
+
+  // Show authenticated app with sidebar
   return <AuthenticatedRouter />;
 }
 
 function AppContent() {
-  const { isWarmedUp } = useReplitWarmup();
   const { isAuthenticated, isLoading } = useAuth();
   const [addFoodOpen, setAddFoodOpen] = useState(false);
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
@@ -148,13 +150,8 @@ function AppContent() {
     "--sidebar-width-icon": "4rem",
   } as React.CSSProperties;
 
-  // Show loading screen while warming up connection or checking authentication
-  if (!isWarmedUp || isLoading) {
-    return <InitialLoadingScreen />;
-  }
-  
   // Show landing page layout for non-authenticated users
-  if (!isAuthenticated) {
+  if (isLoading || !isAuthenticated) {
     return <Router />;
   }
 
@@ -170,28 +167,26 @@ function AppContent() {
   // Show app layout with sidebar for authenticated users who completed onboarding
   return (
     <>
-      <Suspense fallback={null}>
-        <AnimatedBackground
-          variant="both"
-          gradientType="soft"
-          particleCount={30}
-        />
-        <CommandPalette
-          onAddFood={() => startTransition(() => setAddFoodOpen(true))}
-          onGenerateRecipe={() => startTransition(() => setRecipeDialogOpen(true))}
-          onScanBarcode={() => {
-            // Navigate to FDC search page with barcode scanner
-            window.location.href = "/fdc-search?scanBarcode=true";
-          }}
-        />
-        <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
-        <RecipeCustomizationDialog
-          open={recipeDialogOpen}
-          onOpenChange={setRecipeDialogOpen}
-        />
-        {/* Only show floating FeedbackWidget on non-chat pages */}
-        {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
-      </Suspense>
+      <AnimatedBackground
+        variant="both"
+        gradientType="soft"
+        particleCount={30}
+      />
+      <CommandPalette
+        onAddFood={() => setAddFoodOpen(true)}
+        onGenerateRecipe={() => setRecipeDialogOpen(true)}
+        onScanBarcode={() => {
+          // Navigate to FDC search page with barcode scanner
+          window.location.href = "/fdc-search?scanBarcode=true";
+        }}
+      />
+      <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
+      <RecipeCustomizationDialog
+        open={recipeDialogOpen}
+        onOpenChange={setRecipeDialogOpen}
+      />
+      {/* Only show floating FeedbackWidget on non-chat pages */}
+      {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
           {/* Header is now at the top level, outside the flex container with sidebar */}
@@ -221,24 +216,20 @@ function AppContent() {
               </div>
             </div>
             <div className="ml-auto">
-              <Suspense fallback={null}>
-                <QuickActionsBar
-                  onAddFood={() => startTransition(() => setAddFoodOpen(true))}
-                  onGenerateRecipe={() => startTransition(() => setRecipeDialogOpen(true))}
-                  onScanBarcode={() => {
-                    // Navigate to FDC search page with barcode scanner
-                    window.location.href = "/fdc-search?scanBarcode=true";
-                  }}
-                />
-              </Suspense>
+              <QuickActionsBar
+                onAddFood={() => setAddFoodOpen(true)}
+                onGenerateRecipe={() => setRecipeDialogOpen(true)}
+                onScanBarcode={() => {
+                  // Navigate to FDC search page with barcode scanner
+                  window.location.href = "/fdc-search?scanBarcode=true";
+                }}
+              />
             </div>
           </header>
           
           {/* Main content area with sidebar and main content */}
           <div className="flex flex-1 min-h-0 w-full">
-            <Suspense fallback={null}>
-              <AppSidebar />
-            </Suspense>
+            <AppSidebar />
             <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
               <Router />
             </main>
