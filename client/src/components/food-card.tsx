@@ -37,11 +37,14 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
     if (!date) return null;
     const expiry = new Date(date);
     const now = new Date();
-    const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    // Use floor to get accurate days - items expiring today should show 0 days
+    const daysUntil = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     if (daysUntil < 0) return { color: "bg-red-500", text: "Expired" };
-    if (daysUntil <= 3) return { color: "bg-amber-500", text: `${daysUntil}d left` };
-    return { color: "bg-green-500", text: `${daysUntil}d left` };
+    if (daysUntil === 0) return { color: "bg-red-500", text: "Expires today" };
+    if (daysUntil === 1) return { color: "bg-amber-500", text: "1 day left" };
+    if (daysUntil <= 3) return { color: "bg-amber-500", text: `${daysUntil} days left` };
+    return { color: "bg-green-500", text: `${daysUntil} days left` };
   };
 
   const deleteMutation = useMutation({
