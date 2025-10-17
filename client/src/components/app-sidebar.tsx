@@ -22,6 +22,8 @@ import {
   ScrollText,
   LogOut,
   BrainCircuit,
+  Package,
+  ShoppingBag,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
@@ -196,6 +198,51 @@ export function AppSidebar() {
                     >
                       <ShoppingCart className="w-4 h-4" />
                       <span className="flex-1">Shopping List</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/products"}
+                  >
+                    <Link
+                      href="/products"
+                      data-testid="link-products"
+                      onClick={handleLinkClick}
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span className="flex-1">Shop Products</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/cart"}
+                  >
+                    <Link
+                      href="/cart"
+                      data-testid="link-cart"
+                      onClick={handleLinkClick}
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      <span className="flex-1">My Cart</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/orders"}
+                  >
+                    <Link
+                      href="/orders"
+                      data-testid="link-orders"
+                      onClick={handleLinkClick}
+                    >
+                      <Package className="w-4 h-4" />
+                      <span className="flex-1">My Orders</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
