@@ -1,10 +1,17 @@
 export function validateEnvironmentVariables(): void {
+  // Check if running in Replit environment
+  const isReplit = process.env.REPLIT_DOMAINS || process.env.REPL_ID;
+  
+  // Core required variables
   const requiredVars = [
     'DATABASE_URL',
-    'REPLIT_DOMAINS',
-    'SESSION_SECRET',
-    'REPL_ID'
+    'SESSION_SECRET'
   ];
+  
+  // Add Replit-specific variables only when running in Replit
+  if (isReplit) {
+    requiredVars.push('REPLIT_DOMAINS', 'REPL_ID');
+  }
 
   const missingVars: string[] = [];
   
@@ -33,6 +40,12 @@ export function validateEnvironmentVariables(): void {
     }
     
     throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  }
+  
+  // If not in Replit but Replit vars are needed for auth, warn
+  if (!isReplit) {
+    console.warn('⚠️  Not running in Replit environment. Authentication features may be limited.');
+    console.warn('   For local development, consider setting REPLIT_DOMAINS and REPL_ID manually.');
   }
   
   // Warn about optional but recommended variables

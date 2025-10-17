@@ -138,7 +138,7 @@ export default function Chat() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    // Set timeout for streaming (60 seconds)
+    // Set timeout for streaming (15 seconds - matches stall detection)
     const timeoutId = setTimeout(() => {
       if (abortController && !abortController.signal.aborted) {
         abortController.abort();
@@ -163,7 +163,7 @@ export default function Chat() {
           variant: "destructive",
         });
       }
-    }, 60000);
+    }, 15000); // 15 seconds timeout
 
     try {
       const response = await fetch("/api/chat", {
