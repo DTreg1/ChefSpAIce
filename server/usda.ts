@@ -1,8 +1,15 @@
 import type { USDAFoodItem, USDASearchResponse, NutritionInfo } from "@shared/schema";
 import { ApiError } from "./apiError";
+import { createApiClient, API_TIMEOUTS, CircuitBreaker, makeApiCallWithTimeout } from "./utils/apiTimeout";
 
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
 const API_KEY = process.env.USDA_FDC_API_KEY;
+
+// Create axios client with timeout and retry logic
+const usdaClient = createApiClient(USDA_API_BASE, API_TIMEOUTS.USDA.search, API_TIMEOUTS.USDA.retries);
+
+// Circuit breaker for USDA API
+const usdaCircuitBreaker = new CircuitBreaker(5, 60000, 'USDA API');
 
 interface FDCNutrient {
   nutrientId?: number;

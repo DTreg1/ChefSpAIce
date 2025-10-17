@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useInitialData } from "@/hooks/useInitialData";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
 
 // Eagerly loaded core pages (only the most critical)
 import Landing from "@/pages/landing";
@@ -241,14 +242,16 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AppContent />
-          <Toaster />
-          <OfflineIndicator />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <GlobalErrorBoundary>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <AppContent />
+            <Toaster />
+            <OfflineIndicator />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </GlobalErrorBoundary>
   );
 }

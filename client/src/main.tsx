@@ -3,6 +3,7 @@ import App from "./App";
 import "./index.css";
 import { registerServiceWorker } from "./utils/registerServiceWorker";
 import { logWebVitalsToConsole, reportWebVitals } from "./utils/reportWebVitals";
+import { initializePerformanceOptimizations } from "./utils/performanceOptimizer";
 
 // Global error handlers
 window.addEventListener('unhandledrejection', (event) => {
@@ -41,6 +42,9 @@ window.addEventListener('error', (event) => {
 });
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Initialize performance optimizations after initial render
+initializePerformanceOptimizations();
 
 // Defer service worker registration until after page load
 // This prevents blocking the initial render
