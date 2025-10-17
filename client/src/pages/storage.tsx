@@ -61,7 +61,7 @@ function VirtualizedFoodGrid({ items, storageLocations, scrollContainerRef }: Vi
   return (
     <div
       ref={scrollContainerRef}
-      className="h-[600px] overflow-auto"
+      className="max-h-[calc(100vh-240px)] min-h-[400px] overflow-auto"
       style={{ contain: 'strict' }}
     >
       <div
