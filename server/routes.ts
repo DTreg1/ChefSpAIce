@@ -125,6 +125,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch initialization endpoint to reduce initial API calls
+  app.get('/api/init', isAuthenticated, async (req: any, res, next) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Run all initial queries in parallel
+      const [user, preferences, storageLocations, foodItems, recipes] = await Promise.all([
+        storage.getUser(userId),
+        storage.getUserPreferences(userId),
+        storage.getStorageLocations(userId),
+        storage.getFoodItems(userId),
+        storage.getRecipes(userId)
+      ]);
+      
+      // Send combined response
+      res.json({
+        user,
+        preferences,
+        storageLocations,
+        foodItems,
+        recipes
+      });
+    } catch (error) {
+      console.error("Error fetching initial data:", error);
+      return next(new ApiError("Failed to fetch initial data", 500));
+    }
+  });
+
   // User Preferences
   app.get('/api/user/preferences', isAuthenticated, async (req: any, res) => {
     try {

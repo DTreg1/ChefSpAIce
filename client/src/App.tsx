@@ -1,10 +1,10 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added authentication routing
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { ChefHat } from "lucide-react";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { ChefHat, Loader2 } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -18,67 +18,118 @@ import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useInitialData } from "@/hooks/useInitialData";
 import ErrorBoundary from "@/components/ErrorBoundary";
+
+// Eagerly loaded core pages
 import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
 import Chat from "@/pages/chat";
-import Storage from "@/pages/storage";
-import Cookbook from "@/pages/cookbook";
-import Nutrition from "@/pages/nutrition";
-import MealPlanner from "@/pages/meal-planner";
-import ShoppingList from "@/pages/shopping-list";
-import Appliances from "@/pages/appliances";
-import Settings from "@/pages/settings";
-import FdcSearch from "@/pages/FdcSearch";
-import FoodGroups from "@/pages/food-groups";
-import FeedbackAnalytics from "@/pages/feedback-analytics";
-import FeedbackBoard from "@/pages/feedback-board";
-import Donate from "@/pages/donate";
-import DonateSuccess from "@/pages/donate-success";
-import About from "@/pages/about";
-import Privacy from "@/pages/privacy";
-import Terms from "@/pages/terms";
-import CameraTest from "@/pages/camera-test";
-import NotFound from "@/pages/not-found";
+
+// Lazy load all secondary pages to improve initial load performance
+const Storage = lazy(() => import("@/pages/storage"));
+const Cookbook = lazy(() => import("@/pages/cookbook"));
+const Nutrition = lazy(() => import("@/pages/nutrition"));
+const MealPlanner = lazy(() => import("@/pages/meal-planner"));
+const ShoppingList = lazy(() => import("@/pages/shopping-list"));
+const Appliances = lazy(() => import("@/pages/appliances"));
+const Settings = lazy(() => import("@/pages/settings"));
+const FdcSearch = lazy(() => import("@/pages/FdcSearch"));
+const FoodGroups = lazy(() => import("@/pages/food-groups"));
+const FeedbackAnalytics = lazy(() => import("@/pages/feedback-analytics"));
+const FeedbackBoard = lazy(() => import("@/pages/feedback-board"));
+const Donate = lazy(() => import("@/pages/donate"));
+const DonateSuccess = lazy(() => import("@/pages/donate-success"));
+const About = lazy(() => import("@/pages/about"));
+const Privacy = lazy(() => import("@/pages/privacy"));
+const Terms = lazy(() => import("@/pages/terms"));
+const CameraTest = lazy(() => import("@/pages/camera-test"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+// Loading fallback component for lazy loaded routes
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[400px]">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 function AuthenticatedRouter() {
   return (
-    <Switch>
-      <Route path="/" component={Chat} />
-      <Route path="/chat" component={Chat} />
-      <Route path="/cookbook" component={Cookbook} />
-      <Route path="/nutrition" component={Nutrition} />
-      <Route path="/meal-planner" component={MealPlanner} />
-      <Route path="/shopping-list" component={ShoppingList} />
-      <Route path="/appliances" component={Appliances} />
-      <Route path="/storage/:location" component={Storage} />
-      <Route path="/food-groups" component={FoodGroups} />
-      <Route path="/fdc-search" component={FdcSearch} />
-      <Route path="/feedback-analytics" component={FeedbackAnalytics} />
-      <Route path="/feedback" component={FeedbackBoard} />
-      <Route path="/donate" component={Donate} />
-      <Route path="/donate/success" component={DonateSuccess} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/about" component={About} />
-      <Route path="/privacy" component={Privacy} />
-      <Route path="/terms" component={Terms} />
-      <Route path="/camera-test" component={CameraTest} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageLoader />}>
+      <Switch>
+        <Route path="/" component={Chat} />
+        <Route path="/chat" component={Chat} />
+        <Route path="/cookbook" component={Cookbook} />
+        <Route path="/nutrition" component={Nutrition} />
+        <Route path="/meal-planner" component={MealPlanner} />
+        <Route path="/shopping-list" component={ShoppingList} />
+        <Route path="/appliances" component={Appliances} />
+        <Route path="/storage/:location" component={Storage} />
+        <Route path="/food-groups" component={FoodGroups} />
+        <Route path="/fdc-search" component={FdcSearch} />
+        <Route path="/feedback-analytics" component={FeedbackAnalytics} />
+        <Route path="/feedback" component={FeedbackBoard} />
+        <Route path="/donate" component={Donate} />
+        <Route path="/donate/success" component={DonateSuccess} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/about" component={About} />
+        <Route path="/privacy" component={Privacy} />
+        <Route path="/terms" component={Terms} />
+        <Route path="/camera-test" component={CameraTest} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { data: user, isLoading: authLoading } = useQuery<any>({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  const isAuthenticated = !!user;
+
+  // If we're authenticated, prefetch all initial data in parallel
+  const { isLoading: initLoading } = useQuery({
+    queryKey: ["/api/init"],
+    queryFn: async () => {
+      const response = await fetch("/api/init");
+      if (!response.ok) throw new Error("Failed to fetch initial data");
+      const data = await response.json();
+      
+      // Populate individual query caches to prevent redundant fetches
+      queryClient.setQueryData(["/api/auth/user"], data.user);
+      queryClient.setQueryData(["/api/user/preferences"], data.preferences);
+      queryClient.setQueryData(["/api/storage-locations"], data.storageLocations);
+      queryClient.setQueryData(["/api/food-items"], data.foodItems);
+      queryClient.setQueryData(["/api/recipes"], data.recipes);
+      
+      return data;
+    },
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Show landing page for non-authenticated users
-  if (isLoading || !isAuthenticated) {
+  if (authLoading || !isAuthenticated) {
     return (
       <Switch>
         <Route path="/" component={Landing} />
         <Route component={Landing} />
       </Switch>
     );
+  }
+
+  // Wait for initial data to be loaded
+  if (initLoading) {
+    return <PageLoader />;
   }
 
   // Show authenticated app with sidebar
@@ -93,13 +144,12 @@ function AppContent() {
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
 
-  const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
-    hasCompletedOnboarding?: boolean;
-  }>({
-    queryKey: ["/api/user/preferences"],
-    cacheKey: "cache:user:preferences",
-    enabled: isAuthenticated,
-  });
+  // Use batch initialization for better performance
+  // This will fetch all initial data in one request and populate individual query caches
+  const { data: initialData, isLoading: initialDataLoading } = useInitialData(isAuthenticated);
+
+  const preferences = initialData?.preferences;
+  const prefLoading = initialDataLoading;
 
   useEffect(() => {
     const handleScroll = () => {
