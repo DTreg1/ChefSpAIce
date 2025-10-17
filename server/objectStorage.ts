@@ -214,27 +214,45 @@ export class ObjectStorageService {
       throw new ObjectNotFoundError(objectPath);
     }
 
-    // Sanitize entityId to prevent directory traversal attacks
+    // Extract and normalize the entityId
     const entityId = parts.slice(1).join("/");
     
-    // Check for path traversal attempts
-    if (entityId.includes("..") || entityId.includes("//") || entityId.includes("\\")) {
-      console.error("Potential path traversal attempt detected:", objectPath);
+    // Comprehensive path sanitization
+    const sanitizedEntityId = this.sanitizePath(entityId);
+    
+    // Check if sanitization changed the path (indicating malicious input)
+    if (sanitizedEntityId !== entityId) {
+      console.error("Path sanitization detected malicious input:", {
+        original: objectPath,
+        entityId,
+        sanitized: sanitizedEntityId
+      });
       throw new ObjectStorageError(
         "Invalid file path",
         400,
-        { reason: "Path traversal detected", path: objectPath }
+        { reason: "Path contains invalid sequences" }
       );
     }
     
-    // Additional validation: ensure entityId only contains alphanumeric, dash, underscore, and forward slash
-    const isValidPath = /^[a-zA-Z0-9\-_\/]+$/.test(entityId);
+    // Additional validation: ensure entityId only contains safe characters
+    // Allow: alphanumeric, dash, underscore, forward slash, and dots (for file extensions)
+    const isValidPath = /^[a-zA-Z0-9\-_\/]+(\.[a-zA-Z0-9]+)?$/.test(sanitizedEntityId);
     if (!isValidPath) {
       console.error("Invalid characters in path:", objectPath);
       throw new ObjectStorageError(
         "Invalid file path",
         400,
-        { reason: "Invalid characters", path: objectPath }
+        { reason: "Path contains invalid characters" }
+      );
+    }
+    
+    // Ensure the path doesn't try to escape the uploads directory
+    if (sanitizedEntityId.startsWith("/") || sanitizedEntityId.startsWith("../")) {
+      console.error("Path tries to escape directory:", objectPath);
+      throw new ObjectStorageError(
+        "Invalid file path",
+        400,
+        { reason: "Path attempts to escape directory" }
       );
     }
     
@@ -243,8 +261,26 @@ export class ObjectStorageService {
       if (!entityDir.endsWith("/")) {
         entityDir = `${entityDir}/`;
       }
-      const objectEntityPath = `${entityDir}${entityId}`;
-      const { bucketName, objectName } = this.parseObjectPath(objectEntityPath);
+      
+      // Use path.join equivalent logic to safely construct the path
+      const objectEntityPath = `${entityDir}${sanitizedEntityId}`;
+      
+      // Final validation: ensure the resulting path is still within the private directory
+      const normalizedEntityDir = entityDir.replace(/\/+/g, '/');
+      const normalizedObjectPath = objectEntityPath.replace(/\/+/g, '/');
+      if (!normalizedObjectPath.startsWith(normalizedEntityDir)) {
+        console.error("Final path escapes private directory:", {
+          entityDir: normalizedEntityDir,
+          objectPath: normalizedObjectPath
+        });
+        throw new ObjectStorageError(
+          "Invalid file path",
+          400,
+          { reason: "Path validation failed" }
+        );
+      }
+      
+      const { bucketName, objectName } = this.parseObjectPath(normalizedObjectPath);
       const bucket = objectStorageClient.bucket(bucketName);
       const objectFile = bucket.file(objectName);
       
@@ -265,6 +301,49 @@ export class ObjectStorageService {
         { originalError: error.message, path: objectPath }
       );
     }
+  }
+
+  /**
+   * Sanitize a path to prevent directory traversal attacks
+   * @param path The path to sanitize
+   * @returns The sanitized path
+   */
+  private sanitizePath(path: string): string {
+    // Remove any null bytes
+    let sanitized = path.replace(/\0/g, '');
+    
+    // Normalize multiple slashes
+    sanitized = sanitized.replace(/\/+/g, '/');
+    
+    // Remove any backslashes (Windows-style paths not allowed)
+    sanitized = sanitized.replace(/\\/g, '');
+    
+    // Split into segments and process each
+    const segments = sanitized.split('/');
+    const cleanSegments: string[] = [];
+    
+    for (const segment of segments) {
+      // Skip empty segments and current directory references
+      if (segment === '' || segment === '.') {
+        continue;
+      }
+      
+      // Reject parent directory references
+      if (segment === '..') {
+        continue;
+      }
+      
+      // Remove any URL encoding that might hide malicious sequences
+      const decoded = decodeURIComponent(segment);
+      if (decoded !== segment && (decoded.includes('..') || decoded.includes('/'))) {
+        // URL encoding was hiding something suspicious
+        continue;
+      }
+      
+      cleanSegments.push(segment);
+    }
+    
+    return cleanSegments.join('/');
   }
 
   normalizeObjectEntityPath(rawPath: string): string {

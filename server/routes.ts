@@ -954,6 +954,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let apiCallMade = false;
     let statusCode = 200;
     let success = true;
+    let sanitizedQuery = ''; // Declare at outer scope for access in finally block
     
     try {
       if (!query || typeof query !== "string") {
@@ -961,7 +962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Sanitize search query - limit length and remove potentially harmful characters
-      const sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
+      sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
       if (!sanitizedQuery) {
         throw new ApiError("Invalid search query", 400);
       }
@@ -993,7 +994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       throw new ApiError("Failed to search Barcode Lookup", 500);
     } finally {
       // Use batched logging for better performance
-      if (userId && apiCallMade) {
+      if (userId && apiCallMade && sanitizedQuery) {
         try {
           await batchedApiLogger.logApiUsage(userId, {
             apiName: 'barcode_lookup',
@@ -2575,19 +2576,40 @@ Respond ONLY with a valid JSON object:
     try {
       const { amount, donorEmail, donorName, message, anonymous } = req.body;
       
-      // Validate amount
-      if (!amount || amount < 100) { // Minimum $1.00
+      // Validate amount (in cents)
+      if (!amount || typeof amount !== 'number') {
+        throw new ApiError("Invalid donation amount", 400);
+      }
+      
+      // Ensure amount is an integer (cents)
+      const amountInCents = Math.round(amount);
+      
+      // Validate amount range: $1.00 minimum, $10,000 maximum
+      if (amountInCents < 100) { // Minimum $1.00
         throw new ApiError("Minimum donation amount is $1.00", 400);
       }
       
+      if (amountInCents > 1000000) { // Maximum $10,000.00
+        throw new ApiError("Maximum donation amount is $10,000.00", 400);
+      }
+      
+      // Validate email format if provided
+      if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) {
+        throw new ApiError("Invalid email format", 400);
+      }
+      
+      // Sanitize donor name and message to prevent XSS
+      const sanitizedDonorName = (donorName || 'Anonymous').slice(0, 100).replace(/[<>]/g, '');
+      const sanitizedMessage = (message || '').slice(0, 500).replace(/[<>]/g, '');
+      
       // Create Stripe payment intent
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount), // Amount is already in cents
+        amount: amountInCents,
         currency: "usd",
         metadata: {
           donorEmail: donorEmail || '',
-          donorName: donorName || 'Anonymous',
-          message: message || '',
+          donorName: sanitizedDonorName,
+          message: sanitizedMessage,
           anonymous: String(anonymous || false)
         }
       });
