@@ -76,12 +76,43 @@ class BatchedApiLogger {
             const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
             const retryCount = (this.failureRetryCount.get(logKey) || 0) + 1;
             
-            // Only retry up to 3 times
-            if (retryCount < 3) {
+            // Increase retry attempts to 5 for better resilience
+            const maxRetries = 5;
+            
+            // Determine if error is definitely non-retryable
+            // Only skip retries for explicit non-retryable errors
+            let shouldRetry = true;
+            
+            if (error instanceof Error) {
+              // Check error codes first (more reliable than messages)
+              const errorCode = (error as any).code;
+              const nonRetryableCodes = ['EACCES', 'EPERM', 'ENOENT'];
+              
+              if (nonRetryableCodes.includes(errorCode)) {
+                shouldRetry = false;
+              } else if (error.message) {
+                // Only skip retry for clearly permanent errors
+                const nonRetryablePatterns = [
+                  'permission denied',
+                  'access denied',
+                  'invalid credentials',
+                  'authentication failed',
+                  'not authorized'
+                ];
+                
+                const errorLower = error.message.toLowerCase();
+                shouldRetry = !nonRetryablePatterns.some(pattern => errorLower.includes(pattern));
+              }
+            }
+            
+            // Default to retrying for unknown errors (they could be transient)
+            if (retryCount < maxRetries && shouldRetry) {
               this.failureRetryCount.set(logKey, retryCount);
               failedLogs.push(queuedLog);
+              console.warn(`Retrying API log (attempt ${retryCount}/${maxRetries}): ${logKey}`);
             } else {
-              console.error(`Dropping API log after 3 failed attempts: ${logKey}`);
+              const reason = shouldRetry ? 'max retries reached' : 'non-retryable error';
+              console.error(`Dropping API log (${reason}) after ${retryCount} attempts: ${logKey}`, error);
               this.failureRetryCount.delete(logKey);
               // IMPORTANT: Remove from queuedLogKeys to allow future logs with same key
               this.queuedLogKeys.delete(logKey);

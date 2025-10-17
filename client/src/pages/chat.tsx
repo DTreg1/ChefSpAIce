@@ -217,7 +217,7 @@ export default function Chat() {
       const stallCheckInterval = setInterval(() => {
         const timeSinceLastActivity = Date.now() - lastActivityTime;
         
-        // Show warning after 10 seconds, abort after 15 seconds
+        // Show warning after 10 seconds, abort after 20 seconds (increased tolerance)
         if (timeSinceLastActivity > 10000 && !stallWarningShown && hasReceivedData) {
           stallWarningShown = true;
           toast({
@@ -227,7 +227,10 @@ export default function Chat() {
           });
         }
         
-        if (timeSinceLastActivity > 15000) { // 15 seconds of no activity (reduced from 30)
+        // Only abort if we haven't received ANY data, or after a longer timeout if we have
+        const timeoutThreshold = hasReceivedData ? 20000 : 15000;
+        
+        if (timeSinceLastActivity > timeoutThreshold) {
           clearInterval(stallCheckInterval);
           if (!abortController.signal.aborted) {
             try {
@@ -235,7 +238,7 @@ export default function Chat() {
               abortControllerRef.current = null;
               
               // Save partial content if available
-              if (accumulatedContent) {
+              if (accumulatedContent && accumulatedContent.trim()) {
                 const partialMessage: ChatMessageType = {
                   id: (Date.now() + 1).toString(),
                   userId: user?.id || "",
@@ -267,7 +270,7 @@ export default function Chat() {
             }
           }
         }
-      }, 2000); // Check more frequently (every 2 seconds instead of 5)
+      }, 2000); // Check every 2 seconds
 
       try {
         while (true) {

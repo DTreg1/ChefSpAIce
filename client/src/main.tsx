@@ -4,6 +4,42 @@ import "./index.css";
 import { registerServiceWorker } from "./utils/registerServiceWorker";
 import { logWebVitalsToConsole, reportWebVitals } from "./utils/reportWebVitals";
 
+// Global error handlers
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+  
+  // Log the error but don't prevent default behavior in production
+  // This allows proper error reporting to monitoring services
+  if (import.meta.env.DEV) {
+    // In development, we might want to see the full error
+    console.error('Promise rejection details:', {
+      promise: event.promise,
+      reason: event.reason,
+      stack: event.reason?.stack
+    });
+  }
+  
+  // Report to error tracking service if available
+  if (typeof window.reportError === 'function') {
+    window.reportError(event.reason);
+  }
+});
+
+window.addEventListener('error', (event) => {
+  console.error('Global error:', event.error);
+  
+  // Log additional context in development
+  if (import.meta.env.DEV) {
+    console.error('Error details:', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      error: event.error
+    });
+  }
+});
+
 createRoot(document.getElementById("root")!).render(<App />);
 
 // Defer service worker registration until after page load

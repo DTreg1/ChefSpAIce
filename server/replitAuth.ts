@@ -15,9 +15,10 @@ if (!process.env.REPLIT_DOMAINS) {
 
 const getOidcConfig = memoize(
   async () => {
+    const replId = process.env.REPL_ID || process.env.REPLIT_DOMAINS?.split(',')[0] || 'unknown';
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
+      replId
     );
   },
   { maxAge: 3600 * 1000 }
@@ -123,9 +124,10 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
+      const replId = process.env.REPL_ID || process.env.REPLIT_DOMAINS?.split(',')[0] || 'unknown';
       res.redirect(
         client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
+          client_id: replId,
           post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
         }).href
       );

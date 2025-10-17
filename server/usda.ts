@@ -232,7 +232,13 @@ export async function searchUSDAFoods(
   options: USDASearchOptions | string
 ): Promise<USDASearchResponse> {
   if (!API_KEY) {
-    throw new Error("USDA_FDC_API_KEY is not configured");
+    console.warn("USDA_FDC_API_KEY is not configured - returning empty results");
+    return {
+      foods: [],
+      totalHits: 0,
+      currentPage: 1,
+      totalPages: 0
+    };
   }
 
   // Handle backward compatibility - if just a string is passed, treat it as query
@@ -308,13 +314,30 @@ export async function searchUSDAFoods(
       throw new ApiError(`USDA API error: ${response.status} ${response.statusText}`, response.status);
     }
 
-    const data: FDCSearchResult = await response.json();
+    let data: FDCSearchResult;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      console.error("Failed to parse USDA API response:", jsonError);
+      throw new ApiError("Invalid response format from USDA API", 502);
+    }
+
+    // Validate response structure
+    if (!data || !Array.isArray(data.foods)) {
+      console.error("Invalid USDA API response structure:", data);
+      return {
+        foods: [],
+        totalHits: 0,
+        currentPage: 1,
+        totalPages: 0
+      };
+    }
 
     return {
       foods: data.foods.map(mapFDCFoodToUSDAItem),
-      totalHits: data.totalHits,
-      currentPage: data.currentPage,
-      totalPages: data.totalPages,
+      totalHits: data.totalHits || 0,
+      currentPage: data.currentPage || 1,
+      totalPages: data.totalPages || 0,
     };
   } catch (error: any) {
     if (error instanceof ApiError) {
@@ -327,7 +350,8 @@ export async function searchUSDAFoods(
 
 export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null> {
   if (!API_KEY) {
-    throw new Error("USDA_FDC_API_KEY is not configured");
+    console.warn("USDA_FDC_API_KEY is not configured - returning null");
+    return null;
   }
 
   try {
@@ -362,7 +386,20 @@ export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null
       throw new ApiError(`USDA API error: ${response.status} ${response.statusText}`, response.status);
     }
 
-    const food: FDCFood = await response.json();
+    let food: FDCFood;
+    try {
+      food = await response.json();
+    } catch (jsonError) {
+      console.error("Failed to parse USDA API response:", jsonError);
+      return null;
+    }
+    
+    // Validate response structure
+    if (!food || typeof food !== 'object' || !food.fdcId) {
+      console.error("Invalid USDA API response structure for FDC ID:", fdcId);
+      return null;
+    }
+    
     return mapFDCFoodToUSDAItem(food);
   } catch (error: any) {
     if (error instanceof ApiError) {
