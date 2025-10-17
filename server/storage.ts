@@ -363,7 +363,7 @@ export class DatabaseStorage implements IStorage {
           .set({
             firstName: userData.firstName,
             lastName: userData.lastName,
-            profileImage: userData.profileImage,
+            profileImageUrl: userData.profileImageUrl,
             updatedAt: new Date(),
           })
           .where(eq(users.id, existingUser.id))
@@ -381,7 +381,7 @@ export class DatabaseStorage implements IStorage {
             firstName: userData.firstName,
             lastName: userData.lastName,
             email: userData.email,
-            profileImage: userData.profileImage,
+            profileImageUrl: userData.profileImageUrl,
             updatedAt: new Date(),
           },
         })
