@@ -113,6 +113,8 @@ class RateLimitStore {
   /**
    * Cleanup all expired entries to prevent memory leaks
    */
+  private cleanupCount = 0;
+  
   cleanup(): void {
     const now = Date.now();
     const maxWindowMs = Math.max(...Object.values(RATE_LIMIT_CONFIGS).map(c => c.windowMs));
@@ -129,9 +131,12 @@ class RateLimitStore {
       }
     }
     
-    // Log cleanup stats in development
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[RateLimiter] Cleanup completed. Active identifiers: ${this.store.size}`);
+    // Log cleanup stats in development but only every 10 cleanups (every 10 minutes)
+    // to reduce log noise
+    this.cleanupCount++;
+    if (process.env.NODE_ENV === "development" && this.cleanupCount % 10 === 0) {
+      console.log(`[RateLimiter] Periodic cleanup: ${this.store.size} active identifiers`);
+      this.cleanupCount = 0; // Reset counter to prevent overflow
     }
   }
   

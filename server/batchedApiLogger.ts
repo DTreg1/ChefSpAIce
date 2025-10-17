@@ -27,6 +27,12 @@ class BatchedApiLogger {
   }
 
   async logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>) {
+    // Validate required fields
+    if (!log.apiName || !log.endpoint) {
+      console.warn('Skipping API log with missing apiName or endpoint');
+      return;
+    }
+    
     // Create deterministic key to prevent duplicates
     const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
     
@@ -96,11 +102,13 @@ class BatchedApiLogger {
 
       // Clean up tracking for successful logs
       successfulLogs.forEach(({ userId, log }) => {
-        const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
-        // Remove from queued keys set
-        this.queuedLogKeys.delete(logKey);
-        // Remove from retry count map
-        this.failureRetryCount.delete(logKey);
+        if (log.apiName && log.endpoint) {
+          const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
+          // Remove from queued keys set
+          this.queuedLogKeys.delete(logKey);
+          // Remove from retry count map
+          this.failureRetryCount.delete(logKey);
+        }
       });
     } finally {
       this.isFlushInProgress = false;

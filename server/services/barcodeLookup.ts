@@ -65,7 +65,7 @@ export class BarcodeLookupService {
    */
   private extractCapabilities(product: BarcodeLookupResponse['products'][0]): string[] {
     const capabilities: string[] = [];
-    const text = `${product.title} ${product.description || ''}`.toLowerCase();
+    const text = `${product.title || ''} ${product.description || ''}`.toLowerCase();
     
     // Define capability keywords to look for
     const capabilityKeywords = {
@@ -102,7 +102,7 @@ export class BarcodeLookupService {
     capacity?: string;
     servingSize?: string;
   } {
-    const text = `${product.title} ${product.description || ''}`;
+    const text = `${product.title || ''} ${product.description || ''}`;
     
     // Look for capacity patterns (e.g., "4-qt", "6 quart", "5L")
     const capacityMatch = text.match(/(\d+(?:\.\d+)?)\s*[-\s]?(qt|quart|l|liter|litre|gal|gallon|oz|cup)/i);

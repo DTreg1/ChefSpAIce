@@ -201,10 +201,51 @@ export default function Chat() {
 
       try {
         while (true) {
-          const { done, value } = await reader.read();
+          let result;
+          try {
+            result = await reader.read();
+          } catch (readError: any) {
+            console.error("Error reading from stream:", readError);
+            clearInterval(stallCheckInterval);
+            
+            // If we have accumulated content, save it before erroring
+            if (accumulated && !abortController.signal.aborted) {
+              const aiMessage: ChatMessageType = {
+                id: (Date.now() + 1).toString(),
+                userId: user?.id || "",
+                role: "assistant",
+                content: accumulated,
+                timestamp: new Date(),
+                metadata: null,
+              };
+              setMessages((prev) => [...prev, aiMessage]);
+              setStreamingContent("");
+              setIsStreaming(false);
+              await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+            }
+            
+            throw new Error(`Stream read error: ${readError.message || 'Unknown error'}`);
+          }
+          
+          const { done, value } = result;
           
           if (done) {
             clearInterval(stallCheckInterval);
+            
+            // Process any remaining buffer content
+            if (buffer.trim() && buffer.startsWith("data: ")) {
+              const data = buffer.slice(6).trim();
+              if (data && data !== "[DONE]") {
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.content) {
+                    accumulated += parsed.content;
+                  }
+                } catch (e) {
+                  console.warn("Failed to parse final buffer data:", data);
+                }
+              }
+            }
             
             // Handle case where stream ended without [DONE] marker
             if (accumulated && !abortController.signal.aborted) {
@@ -226,18 +267,32 @@ export default function Chat() {
             break;
           }
 
+          if (!value) {
+            console.warn("Received empty chunk from stream");
+            continue;
+          }
+
           lastActivityTime = Date.now();
-          const chunk = decoder.decode(value, { stream: true });
+          
+          let chunk;
+          try {
+            chunk = decoder.decode(value, { stream: true });
+          } catch (decodeError: any) {
+            console.error("Error decoding chunk:", decodeError);
+            continue; // Skip this chunk but continue processing
+          }
           
           // Combine with buffer from previous incomplete chunk
           const fullChunk = buffer + chunk;
           const lines = fullChunk.split("\n");
           
-          // Keep last line in buffer if it's incomplete
-          buffer = lines[lines.length - 1];
+          // Keep last line in buffer if it's incomplete (and not empty)
+          buffer = lines.length > 1 ? lines[lines.length - 1] : "";
           const completeLines = lines.slice(0, -1);
 
           for (const line of completeLines) {
+            if (!line.trim()) continue; // Skip empty lines
+            
             if (line.startsWith("data: ")) {
               const data = line.slice(6).trim();
               
@@ -261,18 +316,22 @@ export default function Chat() {
                 return;
               }
 
-              if (data) {
+              if (data && data.startsWith("{") && data.endsWith("}")) {
                 try {
                   const parsed = JSON.parse(data);
-                  if (parsed.content) {
+                  if (parsed.content !== undefined && parsed.content !== null) {
                     accumulated += parsed.content;
                     setStreamingContent(accumulated);
                   } else if (parsed.error) {
                     // Handle error messages in stream
+                    console.error("Stream error:", parsed.error);
                     throw new Error(parsed.error);
                   }
-                } catch (e) {
-                  console.warn("Failed to parse SSE data:", data, e);
+                } catch (parseError: any) {
+                  // Only log if it looks like JSON but failed to parse
+                  if (data.includes('"') || data.includes("{")) {
+                    console.warn("Failed to parse SSE data:", data, parseError);
+                  }
                   // Continue processing other lines
                 }
               }

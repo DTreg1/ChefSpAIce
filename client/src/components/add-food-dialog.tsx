@@ -363,10 +363,78 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   };
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful.length > 0) {
-      const uploadedUrl = result.successful[0].uploadURL;
+    try {
+      // Validate result structure
+      if (!result || !result.successful || !Array.isArray(result.successful)) {
+        console.error("Invalid upload result structure:", result);
+        toast({
+          title: "Upload Error",
+          description: "Upload completed but response was invalid. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (result.successful.length === 0) {
+        // Check if there were failed uploads
+        if (result.failed && result.failed.length > 0) {
+          const failedItem = result.failed[0];
+          // The error might be stored in different ways depending on the upload library
+          const errorMessage = (() => {
+            if (!failedItem) return "Upload failed for unknown reason";
+            
+            // Check if error is a string
+            if (typeof failedItem.error === 'string') {
+              return failedItem.error;
+            }
+            
+            // Check if error is an object with message property
+            if (failedItem.error && typeof failedItem.error === 'object' && 'message' in failedItem.error) {
+              return (failedItem.error as any).message;
+            }
+            
+            // Check for response or meta property that might contain error info
+            if ((failedItem as any).response?.error) {
+              return (failedItem as any).response.error;
+            }
+            
+            return "Upload failed for unknown reason";
+          })();
+          toast({
+            title: "Upload Failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Upload Failed",
+            description: "No files were uploaded successfully. Please try again.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      // Safely access the first successful upload
+      const firstSuccess = result.successful[0];
+      if (!firstSuccess || !firstSuccess.uploadURL) {
+        console.error("Missing uploadURL in successful upload:", firstSuccess);
+        toast({
+          title: "Upload Error",
+          description: "Upload completed but no URL was returned. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const uploadedUrl = firstSuccess.uploadURL;
       const response = await apiRequest("PUT", "/api/food-images", { imageURL: uploadedUrl });
       const data = await response.json();
+      
+      if (!data || !data.objectPath) {
+        throw new Error("Invalid response from food-images API");
+      }
+      
       setImageUrl(data.objectPath);
       setImageSource("upload");
       // Reset analysis when new image is uploaded
@@ -375,6 +443,13 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       toast({
         title: "Image uploaded",
         description: "Photo uploaded successfully. You can now analyze it to detect ingredients.",
+      });
+    } catch (error: any) {
+      console.error("Error handling upload completion:", error);
+      toast({
+        title: "Upload Error",
+        description: error.message || "Failed to process uploaded image. Please try again.",
+        variant: "destructive",
       });
     }
   };

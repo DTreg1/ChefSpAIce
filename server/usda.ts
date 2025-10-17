@@ -109,15 +109,15 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
   if (food.labelNutrients) {
     const label = food.labelNutrients;
     const nutrition: NutritionInfo = {
-      calories: label.calories?.value || 0,
-      protein: label.protein?.value || 0,
-      carbs: label.carbohydrates?.value || 0,
-      fat: label.fat?.value || 0,
-      fiber: label.fiber?.value,
-      sugar: label.sugars?.value,
-      sodium: label.sodium?.value,
-      servingSize: food.servingSize?.toString() || "100",
-      servingUnit: food.servingSizeUnit || "g",
+      calories: label?.calories?.value || 0,
+      protein: label?.protein?.value || 0,
+      carbs: label?.carbohydrates?.value || 0,
+      fat: label?.fat?.value || 0,
+      fiber: label?.fiber?.value,
+      sugar: label?.sugars?.value,
+      sodium: label?.sodium?.value,
+      servingSize: food?.servingSize?.toString() || "100",
+      servingUnit: food?.servingSizeUnit || "g",
     };
 
     // Validate the nutrition data
