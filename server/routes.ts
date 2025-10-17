@@ -27,16 +27,6 @@ import {
   insertWebVitalSchema,
   type BarcodeProduct
 } from "@shared/schema";
-import {
-  searchQuerySchema,
-  barcodeQuerySchema,
-  paginationSchema,
-  dateSchema,
-  feedbackContentSchema,
-  imageUploadSchema,
-  validateExternalApiResponse,
-  barcodeLookupProductSchema,
-} from "./validation/apiSchemas";
 
 // Helper functions for appliance barcode processing
 function extractApplianceCapabilities(product: any): string[] {
@@ -666,16 +656,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FDC Food Search with Cache (public)
   app.get("/api/fdc/search", async (req, res, next) => {
     try {
-      // Use Zod schema for validation and transformation
-      const validatedQuery = searchQuerySchema.parse(req.query);
+      const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
       
-      const sanitizedQuery = validatedQuery.query;
-      const size = validatedQuery.pageSize;
-      const page = validatedQuery.pageNumber;
-      const dataTypes = validatedQuery.dataType || [];
-      const brandOwners = validatedQuery.brandOwner || [];
-      const sort = validatedQuery.sortBy;
-      const order = validatedQuery.sortOrder;
+      // Validate and sanitize query parameter
+      if (!query || typeof query !== "string") {
+        throw new ApiError("Query parameter is required", 400);
+      }
+      
+      // Sanitize search query - limit length and remove potentially harmful characters
+      const sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
+      if (!sanitizedQuery) {
+        throw new ApiError("Invalid search query", 400);
+      }
+
+      const size = pageSize ? parseInt(pageSize as string) : 25;
+      const page = pageNumber ? parseInt(pageNumber as string) : 1;
+      
+      // Parse dataType - can be comma-separated string or array
+      let dataTypes: string[] = [];
+      if (dataType) {
+        if (Array.isArray(dataType)) {
+          dataTypes = dataType as string[];
+        } else if (typeof dataType === 'string') {
+          dataTypes = dataType.split(',').map(t => t.trim()).filter(Boolean);
+        }
+      }
+      
+      // Parse brandOwner - Express automatically handles multiple params as array
+      let brandOwners: string[] = [];
+      if (brandOwner) {
+        if (Array.isArray(brandOwner)) {
+          brandOwners = brandOwner as string[];
+        } else if (typeof brandOwner === 'string') {
+          brandOwners = [brandOwner];
+        }
+      }
+      
+      const sort = sortBy as string | undefined;
+      const order = sortOrder as string | undefined;
 
       // Only cache the simplest searches (query + page) to avoid stale results with filters
       // Advanced filters (dataType, sort, brand) bypass cache completely
@@ -1160,17 +1178,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/food-images", isAuthenticated, async (req, res) => {
+    if (!req.body.imageURL) {
+      throw new ApiError("imageURL is required", 400);
+    }
+
     try {
-      // Validate request body
-      const validated = imageUploadSchema.parse(req.body);
-      
       const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(validated.imageURL);
+      const objectPath = objectStorageService.normalizeObjectEntityPath(req.body.imageURL);
       res.status(200).json({ objectPath });
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        throw new ApiError(error.errors[0]?.message || "Invalid request", 400);
-      }
+    } catch (error) {
       console.error("Error setting food image:", error);
       throw new ApiError("Internal server error", 500);
     }
@@ -1186,8 +1202,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Background cleanup error:', err)
       );
       
-      // Use Zod for pagination validation
-      const { page, limit } = paginationSchema.parse(req.query);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100); // Max 100 per page
       
       // If pagination params are provided, use paginated method
       if (req.query.page || req.query.limit) {
@@ -1198,10 +1214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const messages = await storage.getChatMessages(userId);
         res.json(messages);
       }
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        throw new ApiError("Invalid pagination parameters", 400);
-      }
+    } catch (error) {
       console.error("Error fetching chat messages:", error);
       throw new ApiError("Failed to fetch chat messages", 500);
     }
@@ -2874,376 +2887,6 @@ Respond ONLY with a valid JSON object:
     } catch (error) {
       console.error("Error fetching user donations:", error);
       throw new ApiError("Failed to fetch your donations", 500);
-    }
-  });
-
-  // Product Management Routes
-  // Get all products (public)
-  app.get("/api/products", async (req: any, res) => {
-    try {
-      const activeOnly = req.query.active !== 'false';
-      const products = await storage.getProducts(activeOnly);
-      res.json(products);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      throw new ApiError("Failed to fetch products", 500);
-    }
-  });
-
-  // Get single product (public)
-  app.get("/api/products/:id", async (req: any, res) => {
-    try {
-      const product = await storage.getProduct(req.params.id);
-      if (!product) {
-        throw new NotFoundError("Product not found");
-      }
-      res.json(product);
-    } catch (error) {
-      console.error("Error fetching product:", error);
-      throw error instanceof ApiError ? error : new ApiError("Failed to fetch product", 500);
-    }
-  });
-
-  // Shopping Cart Routes
-  // Get user's cart items (authenticated)
-  app.get("/api/cart", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const cartItems = await storage.getCartItems(userId);
-      res.json(cartItems);
-    } catch (error) {
-      console.error("Error fetching cart:", error);
-      throw new ApiError("Failed to fetch cart", 500);
-    }
-  });
-
-  // Add item to cart (authenticated)
-  app.post("/api/cart", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { productId, quantity } = req.body;
-
-      if (!productId || !quantity || quantity < 1) {
-        throw new ValidationError("Product ID and quantity (min 1) are required");
-      }
-
-      // Verify product exists
-      const product = await storage.getProduct(productId);
-      if (!product || !product.isActive) {
-        throw new NotFoundError("Product not available");
-      }
-
-      const cartItem = await storage.addToCart(userId, productId, quantity);
-      res.json(cartItem);
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      throw error instanceof ApiError ? error : new ApiError("Failed to add to cart", 500);
-    }
-  });
-
-  // Update cart item quantity (authenticated)
-  app.put("/api/cart/:productId", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { productId } = req.params;
-      const { quantity } = req.body;
-
-      if (quantity < 0) {
-        throw new ValidationError("Quantity must be positive");
-      }
-
-      if (quantity === 0) {
-        // Remove item if quantity is 0
-        await storage.removeFromCart(userId, productId);
-        res.json({ success: true });
-      } else {
-        const updated = await storage.updateCartItem(userId, productId, quantity);
-        res.json(updated);
-      }
-    } catch (error) {
-      console.error("Error updating cart item:", error);
-      throw error instanceof ApiError ? error : new ApiError("Failed to update cart", 500);
-    }
-  });
-
-  // Remove item from cart (authenticated)
-  app.delete("/api/cart/:productId", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { productId } = req.params;
-      await storage.removeFromCart(userId, productId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error removing from cart:", error);
-      throw new ApiError("Failed to remove from cart", 500);
-    }
-  });
-
-  // Clear entire cart (authenticated)
-  app.delete("/api/cart", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      await storage.clearCart(userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error clearing cart:", error);
-      throw new ApiError("Failed to clear cart", 500);
-    }
-  });
-
-  // Checkout and Payment Routes
-  // Create payment intent for product purchase
-  app.post("/api/checkout/create-payment-intent", isAuthenticated, async (req: any, res) => {
-    try {
-      if (!process.env.STRIPE_SECRET_KEY) {
-        throw new ApiError("Payment system not configured", 503);
-      }
-
-      const userId = req.user.claims.sub;
-      const { customerEmail, customerName, shippingAddress } = req.body;
-
-      if (!customerEmail) {
-        throw new ValidationError("Customer email is required");
-      }
-
-      // Get user's cart items
-      const cartItems = await storage.getCartItems(userId);
-      if (cartItems.length === 0) {
-        throw new ValidationError("Cart is empty");
-      }
-
-      // Calculate total
-      let totalAmount = 0;
-      const orderItemsData = [];
-
-      for (const item of cartItems) {
-        const product = item.product;
-        if (!product.isActive) {
-          throw new ValidationError(`Product "${product.name}" is no longer available`);
-        }
-        if (product.stock < item.quantity) {
-          throw new ValidationError(`Insufficient stock for "${product.name}"`);
-        }
-
-        const subtotal = product.price * item.quantity;
-        totalAmount += subtotal;
-
-        orderItemsData.push({
-          productId: product.id,
-          productName: product.name,
-          productPrice: product.price,
-          quantity: item.quantity,
-          subtotal
-        });
-      }
-
-      if (totalAmount < 100) { // Minimum $1.00
-        throw new ValidationError("Order minimum is $1.00");
-      }
-
-      // Initialize Stripe
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: '2024-12-18.acacia' as any,
-      });
-
-      // Create payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: totalAmount,
-        currency: 'usd',
-        automatic_payment_methods: {
-          enabled: true,
-        },
-        metadata: {
-          userId,
-          itemCount: cartItems.length.toString(),
-        },
-      });
-
-      // Create order record
-      const order = await storage.createOrder({
-        userId,
-        stripePaymentIntentId: paymentIntent.id,
-        amount: totalAmount,
-        currency: 'usd',
-        status: 'pending',
-        customerEmail,
-        customerName,
-        shippingAddress,
-      });
-
-      // Create order items
-      const orderItemsWithOrderId = orderItemsData.map(item => ({
-        ...item,
-        orderId: order.id,
-      }));
-      await storage.createOrderItems(orderItemsWithOrderId);
-
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-        orderId: order.id,
-        amount: totalAmount,
-      });
-    } catch (error) {
-      console.error("Error creating checkout payment intent:", error);
-      throw error instanceof ApiError ? error : new ApiError("Failed to create payment intent", 500);
-    }
-  });
-
-  // Confirm order payment
-  app.post("/api/checkout/confirm", isAuthenticated, async (req: any, res) => {
-    try {
-      if (!process.env.STRIPE_SECRET_KEY) {
-        throw new ApiError("Payment system not configured", 503);
-      }
-
-      const userId = req.user.claims.sub;
-      const { paymentIntentId } = req.body;
-
-      if (!paymentIntentId) {
-        throw new ValidationError("Payment intent ID is required");
-      }
-
-      // Initialize Stripe
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: '2024-12-18.acacia' as any,
-      });
-
-      // Retrieve the payment intent
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-      // Verify the order exists
-      const order = await storage.getOrderByPaymentIntent(paymentIntentId);
-      if (!order) {
-        throw new NotFoundError("Order not found");
-      }
-
-      // Update order status based on payment status
-      if (paymentIntent.status === 'succeeded') {
-        await storage.updateOrder(order.id, {
-          status: 'succeeded',
-        });
-
-        // Clear the user's cart after successful payment
-        await storage.clearCart(userId);
-
-        // Update product stock
-        const orderItems = await storage.getOrderItems(order.id);
-        for (const item of orderItems) {
-          const product = await storage.getProduct(item.productId);
-          if (product) {
-            await storage.updateProduct(item.productId, {
-              stock: product.stock - item.quantity,
-            });
-          }
-        }
-
-        res.json({ status: 'succeeded', order });
-      } else {
-        res.json({ 
-          status: paymentIntent.status, 
-          order,
-          message: 'Payment is still processing' 
-        });
-      }
-    } catch (error) {
-      console.error("Error confirming order:", error);
-      throw error instanceof ApiError ? error : new ApiError("Failed to confirm order", 500);
-    }
-  });
-
-  // Get user's orders (authenticated)
-  app.get("/api/orders", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const limit = parseInt(req.query.limit as string) || 50;
-      const orders = await storage.getUserOrders(userId, limit);
-      res.json(orders);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      throw new ApiError("Failed to fetch orders", 500);
-    }
-  });
-
-  // Get single order with items (authenticated)
-  app.get("/api/orders/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const orderWithItems = await storage.getOrderWithItems(req.params.id);
-      
-      if (!orderWithItems) {
-        throw new NotFoundError("Order not found");
-      }
-
-      // Verify the order belongs to the user
-      if (orderWithItems.userId !== userId) {
-        throw new ApiError("Unauthorized", 403);
-      }
-
-      res.json(orderWithItems);
-    } catch (error) {
-      console.error("Error fetching order:", error);
-      throw error instanceof ApiError ? error : new ApiError("Failed to fetch order", 500);
-    }
-  });
-
-  // Stripe webhook for product orders
-  app.post("/api/checkout/webhook", async (req: any, res) => {
-    const sig = req.headers['stripe-signature'];
-
-    if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
-      console.error("Stripe configuration missing");
-      return res.status(400).send('Webhook configuration error');
-    }
-
-    let event;
-
-    try {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: '2024-12-18.acacia' as any,
-      });
-
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    // Handle the event
-    try {
-      switch (event.type) {
-        case 'payment_intent.succeeded':
-          const paymentIntent = event.data.object as any;
-          await storage.updateOrder(paymentIntent.id, {
-            status: 'succeeded',
-          });
-          break;
-
-        case 'payment_intent.payment_failed':
-          const failedPaymentIntent = event.data.object as any;
-          await storage.updateOrder(failedPaymentIntent.id, {
-            status: 'failed',
-          });
-          break;
-
-        case 'payment_intent.canceled':
-          const canceledPaymentIntent = event.data.object as any;
-          await storage.updateOrder(canceledPaymentIntent.id, {
-            status: 'failed',
-          });
-          break;
-
-        default:
-          console.log(`Unhandled event type ${event.type}`);
-      }
-
-      res.json({ received: true });
-    } catch (error) {
-      console.error('Error handling webhook:', error);
-      res.status(500).json({ error: 'Webhook processing failed' });
     }
   });
 

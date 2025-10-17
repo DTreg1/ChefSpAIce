@@ -105,23 +105,17 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
 }
 
 function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
-  // Validate food object exists
-  if (!food || typeof food !== 'object') {
-    console.warn('Invalid food object provided to extractNutritionInfo');
-    return undefined;
-  }
-
   // First try labelNutrients (Branded Foods)
-  if (food.labelNutrients && typeof food.labelNutrients === 'object') {
+  if (food.labelNutrients) {
     const label = food.labelNutrients;
     const nutrition: NutritionInfo = {
-      calories: (label?.calories && typeof label.calories.value === 'number') ? label.calories.value : 0,
-      protein: (label?.protein && typeof label.protein.value === 'number') ? label.protein.value : 0,
-      carbs: (label?.carbohydrates && typeof label.carbohydrates.value === 'number') ? label.carbohydrates.value : 0,
-      fat: (label?.fat && typeof label.fat.value === 'number') ? label.fat.value : 0,
-      fiber: (label?.fiber && typeof label.fiber.value === 'number') ? label.fiber.value : undefined,
-      sugar: (label?.sugars && typeof label.sugars.value === 'number') ? label.sugars.value : undefined,
-      sodium: (label?.sodium && typeof label.sodium.value === 'number') ? label.sodium.value : undefined,
+      calories: label?.calories?.value || 0,
+      protein: label?.protein?.value || 0,
+      carbs: label?.carbohydrates?.value || 0,
+      fat: label?.fat?.value || 0,
+      fiber: label?.fiber?.value,
+      sugar: label?.sugars?.value,
+      sodium: label?.sodium?.value,
       servingSize: food?.servingSize?.toString() || "100",
       servingUnit: food?.servingSizeUnit || "g",
     };
@@ -185,29 +179,20 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
 }
 
 function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
-  // Validate food object
-  if (!food || typeof food !== 'object') {
-    throw new Error('Invalid food object provided to mapFDCFoodToUSDAItem');
-  }
-
-  // Extract foodCategory - handle both string and object formats safely
+  // Extract foodCategory - handle both string and object formats
   let foodCategory: string | undefined;
-  if (food.foodCategory) {
-    if (typeof food.foodCategory === 'object' && 'description' in food.foodCategory) {
-      foodCategory = food.foodCategory.description;
-    } else if (typeof food.foodCategory === 'string') {
-      foodCategory = food.foodCategory;
-    }
-  }
-  // Fall back to brandedFoodCategory if foodCategory is not available
-  if (!foodCategory && food.brandedFoodCategory) {
+  if (typeof food.foodCategory === 'object' && food.foodCategory !== null) {
+    foodCategory = food.foodCategory.description;
+  } else if (typeof food.foodCategory === 'string') {
+    foodCategory = food.foodCategory;
+  } else {
     foodCategory = food.brandedFoodCategory;
   }
 
   return {
-    fdcId: food.fdcId || 0,
-    description: food.description || 'Unknown Food',
-    dataType: food.dataType || 'Unknown',
+    fdcId: food.fdcId,
+    description: food.description,
+    dataType: food.dataType,
     brandOwner: food.brandOwner,
     gtinUpc: food.gtinUpc,
     ingredients: food.ingredients,

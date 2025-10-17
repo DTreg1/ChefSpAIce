@@ -46,13 +46,6 @@ const Terms = lazy(() => import("@/pages/terms"));
 const CameraTest = lazy(() => import("@/pages/camera-test"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
-// Payment and commerce pages
-const Products = lazy(() => import("@/pages/products"));
-const Cart = lazy(() => import("@/pages/cart"));
-const Checkout = lazy(() => import("@/pages/checkout"));
-const CheckoutSuccess = lazy(() => import("@/pages/checkout-success"));
-const Orders = lazy(() => import("@/pages/orders"));
-
 // Loading fallback component for lazy loaded routes
 function PageLoader() {
   return (
@@ -83,11 +76,6 @@ function AuthenticatedRouter() {
         <Route path="/feedback" component={FeedbackBoard} />
         <Route path="/donate" component={Donate} />
         <Route path="/donate/success" component={DonateSuccess} />
-        <Route path="/products" component={Products} />
-        <Route path="/cart" component={Cart} />
-        <Route path="/checkout" component={Checkout} />
-        <Route path="/checkout/success" component={CheckoutSuccess} />
-        <Route path="/orders" component={Orders} />
         <Route path="/settings" component={Settings} />
         <Route path="/about" component={About} />
         <Route path="/privacy" component={Privacy} />
@@ -101,6 +89,9 @@ function AuthenticatedRouter() {
 
 function Router() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  // If we're authenticated, prefetch all initial data in parallel
+  const { isLoading: initLoading } = useInitialData(isAuthenticated);
 
   // Show landing page for non-authenticated users
   if (authLoading || !isAuthenticated) {
@@ -110,6 +101,11 @@ function Router() {
         <Route component={Landing} />
       </Switch>
     );
+  }
+
+  // Wait for initial data to be loaded
+  if (initLoading) {
+    return <PageLoader />;
   }
 
   // Show authenticated app with sidebar
@@ -156,13 +152,8 @@ function AppContent() {
     return <Router />;
   }
 
-  // Wait for initial data to load before showing any authenticated content
-  if (initialDataLoading) {
-    return <PageLoader />;
-  }
-
   // Show onboarding full-screen without sidebar if not completed
-  if (!preferences || !preferences.hasCompletedOnboarding) {
+  if (!prefLoading && (!preferences || !preferences.hasCompletedOnboarding)) {
     return <Onboarding />;
   }
 

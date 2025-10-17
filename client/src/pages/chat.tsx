@@ -29,9 +29,7 @@ export default function Chat() {
     if (!user) return "";
     const firstName = user.firstName || "";
     const lastName = user.lastName || "";
-    const firstInitial = firstName ? firstName.charAt(0) : "";
-    const lastInitial = lastName ? lastName.charAt(0) : "";
-    return `${firstInitial}${lastInitial}`.toUpperCase();
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
   const { data: chatHistory } = useQuery<ChatMessageType[]>({

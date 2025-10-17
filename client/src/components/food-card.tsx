@@ -36,31 +36,22 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   const getExpiryStatus = (date?: string | null) => {
     if (!date) return null;
     
-    // Validate date string before parsing
-    try {
-      const expiry = new Date(date);
-      // Check if date is valid
-      if (isNaN(expiry.getTime())) {
-        return null;
-      }
-      expiry.setHours(0, 0, 0, 0);
+    // Parse the expiry date and normalize to start of day
+    const expiry = new Date(date);
+    expiry.setHours(0, 0, 0, 0);
     
-      // Get today's date normalized to start of day
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      
-      // Calculate days until expiry (both dates are at midnight)
-      const daysUntil = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    // Get today's date normalized to start of day
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    // Calculate days until expiry (both dates are at midnight)
+    const daysUntil = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-      if (daysUntil < 0) return { color: "bg-red-500", text: "Expired" };
-      if (daysUntil === 0) return { color: "bg-red-500", text: "Expires today" };
-      if (daysUntil === 1) return { color: "bg-amber-500", text: "1 day left" };
-      if (daysUntil <= 3) return { color: "bg-amber-500", text: `${daysUntil} days left` };
-      return { color: "bg-green-500", text: `${daysUntil} days left` };
-    } catch (error) {
-      console.error("Error parsing expiration date:", date, error);
-      return null;
-    }
+    if (daysUntil < 0) return { color: "bg-red-500", text: "Expired" };
+    if (daysUntil === 0) return { color: "bg-red-500", text: "Expires today" };
+    if (daysUntil === 1) return { color: "bg-amber-500", text: "1 day left" };
+    if (daysUntil <= 3) return { color: "bg-amber-500", text: `${daysUntil} days left` };
+    return { color: "bg-green-500", text: `${daysUntil} days left` };
   };
 
   const deleteMutation = useMutation({
