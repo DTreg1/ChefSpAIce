@@ -156,8 +156,13 @@ function AppContent() {
     return <Router />;
   }
 
+  // Wait for initial data to load before showing any authenticated content
+  if (initialDataLoading) {
+    return <PageLoader />;
+  }
+
   // Show onboarding full-screen without sidebar if not completed
-  if (!prefLoading && (!preferences || !preferences.hasCompletedOnboarding)) {
+  if (!preferences || !preferences.hasCompletedOnboarding) {
     return <Onboarding />;
   }
 
