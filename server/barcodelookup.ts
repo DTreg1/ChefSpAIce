@@ -62,6 +62,12 @@ export async function searchBarcodeLookup(query: string): Promise<BarcodeLookupS
       query
     });
     
+    // Handle 404 gracefully - return empty results when no products are found
+    if (status === 404) {
+      console.log(`No products found for search query: ${query}`);
+      return { products: [] };
+    }
+    
     if (status === 401 || status === 403) {
       throw new ApiError('Barcode Lookup API authentication failed. Please check your API key.', 401);
     } else if (status === 429) {
