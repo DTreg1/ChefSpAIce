@@ -73,9 +73,23 @@ export async function deduplicatedFetch(
       // Clone the response so each caller gets their own copy
       const response = await existingRequest.promise;
       return response.clone();
+    } catch (error) {
+      // Re-throw the error after cleanup
+      throw error;
     } finally {
-      // Decrement ref count when done
+      // Always decrement ref count when done (success or error)
       existingRequest.refCount--;
+      
+      // Clean up if this was the last reference and there was an error
+      if (existingRequest.refCount === 0) {
+        // Schedule removal to allow for immediate subsequent requests
+        setTimeout(() => {
+          const cachedRequest = pendingRequests.get(requestKey);
+          if (cachedRequest && cachedRequest.refCount === 0) {
+            pendingRequests.delete(requestKey);
+          }
+        }, 100);
+      }
     }
   }
   
@@ -91,8 +105,11 @@ export async function deduplicatedFetch(
   try {
     const response = await requestPromise;
     return response;
+  } catch (error) {
+    // Re-throw the error after cleanup
+    throw error;
   } finally {
-    // Decrement ref count
+    // Always decrement ref count (success or error)
     const request = pendingRequests.get(requestKey);
     if (request) {
       request.refCount--;
