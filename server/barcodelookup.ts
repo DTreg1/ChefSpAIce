@@ -38,17 +38,44 @@ export async function searchBarcodeLookup(query: string): Promise<BarcodeLookupS
     throw new Error('BARCODE_LOOKUP_API_KEY is not configured');
   }
 
+  // Validate query parameter
+  if (!query || typeof query !== 'string' || query.trim().length === 0) {
+    throw new ApiError('Invalid search query provided', 400);
+  }
+
   try {
     const response = await axios.get(`${BARCODE_LOOKUP_API_BASE}/products`, {
       params: {
-        search: query,
+        search: query.trim(),
         key: apiKey,
       },
       headers: {
         'Accept': 'application/json'
       },
-      timeout: 15000 // 15 second timeout
+      timeout: 15000, // 15 second timeout
+      validateStatus: (status) => status < 500 // Don't throw for 4xx errors
     });
+
+    // Check response status manually
+    if (response.status === 404) {
+      console.log(`No products found for search query: ${query}`);
+      return { products: [] };
+    }
+
+    if (response.status >= 400) {
+      throw new ApiError(`Barcode Lookup API error: ${response.status}`, response.status);
+    }
+
+    // Validate response data structure
+    if (!response.data || typeof response.data !== 'object') {
+      console.warn('Invalid response format from Barcode Lookup API:', response.data);
+      return { products: [] };
+    }
+
+    // Ensure products array exists
+    if (!response.data.products || !Array.isArray(response.data.products)) {
+      response.data.products = [];
+    }
 
     return response.data;
   } catch (error: any) {
@@ -96,19 +123,41 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
     throw new Error('BARCODE_LOOKUP_API_KEY is not configured');
   }
 
+  // Validate barcode parameter
+  if (!barcode || typeof barcode !== 'string' || barcode.trim().length === 0) {
+    throw new ApiError('Invalid barcode provided', 400);
+  }
+
   try {
     const response = await axios.get(`${BARCODE_LOOKUP_API_BASE}/products`, {
       params: {
-        barcode: barcode,
+        barcode: barcode.trim(),
         key: apiKey,
       },
       headers: {
         'Accept': 'application/json'
       },
-      timeout: 15000 // 15 second timeout
+      timeout: 15000, // 15 second timeout
+      validateStatus: (status) => status < 500 // Don't throw for 4xx errors
     });
 
-    if (response.data.products && response.data.products.length > 0) {
+    // Check response status manually
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (response.status >= 400) {
+      throw new ApiError(`Barcode Lookup API error: ${response.status}`, response.status);
+    }
+
+    // Validate response data structure
+    if (!response.data || typeof response.data !== 'object') {
+      console.warn('Invalid response format from Barcode Lookup API:', response.data);
+      return null;
+    }
+
+    // Safely check for products array
+    if (response.data.products && Array.isArray(response.data.products) && response.data.products.length > 0) {
       return response.data.products[0];
     }
     return null;

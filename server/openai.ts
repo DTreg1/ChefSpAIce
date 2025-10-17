@@ -61,10 +61,11 @@ if (!isOpenAIConfigured) {
   });
 }
 
-// Wrapper function for safe OpenAI calls with better error handling
+// Wrapper function for safe OpenAI calls with better error handling and retry logic
 export async function safeOpenAICall<T>(
   operation: () => Promise<T>,
-  fallbackMessage?: string
+  fallbackMessage?: string,
+  retryCount: number = 0
 ): Promise<T> {
   if (!isOpenAIConfigured) {
     throw new OpenAIConfigError();
@@ -77,10 +78,30 @@ export async function safeOpenAICall<T>(
     if (error?.status === 401) {
       throw new ApiError("OpenAI authentication failed. Please check your API configuration.", 401);
     } else if (error?.status === 429) {
+      // Implement exponential backoff for rate limits
+      if (retryCount < 3) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+        console.log(`[OpenAI] Rate limited, retrying after ${delay}ms (attempt ${retryCount + 1}/3)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return safeOpenAICall(operation, fallbackMessage, retryCount + 1);
+      }
       throw new ApiError("AI service rate limit exceeded. Please try again in a few moments.", 429);
     } else if (error?.status === 500 || error?.status === 502 || error?.status === 503) {
+      // Retry on server errors with exponential backoff
+      if (retryCount < 2) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+        console.log(`[OpenAI] Server error, retrying after ${delay}ms (attempt ${retryCount + 1}/2)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return safeOpenAICall(operation, fallbackMessage, retryCount + 1);
+      }
       throw new ApiError(fallbackMessage || "AI service is temporarily unavailable. Please try again later.", 503);
-    } else if (error?.code === 'ECONNREFUSED' || error?.code === 'ENOTFOUND') {
+    } else if (error?.code === 'ECONNREFUSED' || error?.code === 'ENOTFOUND' || error?.code === 'ETIMEDOUT') {
+      // Network errors - retry once
+      if (retryCount < 1) {
+        console.log(`[OpenAI] Network error, retrying (attempt ${retryCount + 1}/1)`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return safeOpenAICall(operation, fallbackMessage, retryCount + 1);
+      }
       throw new ApiError("Cannot connect to AI service. Please check your internet connection.", 503);
     } else if (error instanceof OpenAIConfigError) {
       throw error;

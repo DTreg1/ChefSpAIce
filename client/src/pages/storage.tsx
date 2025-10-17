@@ -151,12 +151,13 @@ export default function Storage() {
     (loc) => loc.name.toLowerCase() === location.toLowerCase()
   );
 
+  // Provide safe default for items
   let items = location === "all" 
-    ? allItems 
-    : allItems?.filter((item) => item.storageLocationId === currentLocation?.id);
+    ? (allItems || [])
+    : (allItems?.filter((item) => item.storageLocationId === currentLocation?.id) || []);
   
   // Apply category filter if selected
-  if (selectedCategory && items) {
+  if (selectedCategory && items.length > 0) {
     items = items.filter((item) => item.foodCategory === selectedCategory);
   }
 

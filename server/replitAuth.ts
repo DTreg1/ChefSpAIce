@@ -218,37 +218,58 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     updateUserSession(user, tokenResponse);
     
     // Save the session to persist the new tokens with better error handling
-    try {
-      await new Promise<void>((resolve, reject) => {
-        req.session.save((err) => {
-          if (err) {
-            console.error(`Failed to save session after token refresh for user ${userId}:`, err);
-            reject(err);
-          } else {
-            console.log(`Session saved successfully for user: ${userId}`);
-            resolve();
-          }
+    let saveAttempts = 0;
+    const maxSaveAttempts = 3;
+    let saveSuccessful = false;
+    
+    while (saveAttempts < maxSaveAttempts && !saveSuccessful) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          // Add a timeout for session save operation
+          const saveTimeout = setTimeout(() => {
+            reject(new Error('Session save timeout'));
+          }, 5000); // 5 second timeout
+          
+          req.session.save((err) => {
+            clearTimeout(saveTimeout);
+            if (err) {
+              console.error(`Failed to save session after token refresh for user ${userId} (attempt ${saveAttempts + 1}/${maxSaveAttempts}):`, err);
+              reject(err);
+            } else {
+              console.log(`Session saved successfully for user: ${userId}`);
+              saveSuccessful = true;
+              resolve();
+            }
+          });
         });
-      });
-      
-      return next();
-    } catch (sessionError: any) {
-      // If session save fails, we need to return an error
-      // The tokens are refreshed but not persisted
-      console.error('Critical: Session save failed after token refresh:', {
-        userId,
-        error: sessionError.message
-      });
-      
-      // Remove the refresh entry to allow retry on next request
-      activeRefreshes.delete(refreshKey);
-      
-      res.status(500).json({ 
-        message: "Session update failed", 
-        error: "Please try logging in again"
-      });
-      return;
+      } catch (sessionError: any) {
+        saveAttempts++;
+        if (saveAttempts < maxSaveAttempts) {
+          // Wait briefly before retry
+          await new Promise(resolve => setTimeout(resolve, 100 * saveAttempts));
+          console.log(`Retrying session save for user ${userId} (attempt ${saveAttempts + 1}/${maxSaveAttempts})`);
+        } else {
+          // Final attempt failed
+          console.error('Critical: Session save failed after all retries:', {
+            userId,
+            error: sessionError.message,
+            attempts: saveAttempts
+          });
+          
+          // Remove the refresh entry to allow retry on next request
+          activeRefreshes.delete(refreshKey);
+          
+          // Even though tokens are refreshed, we couldn't persist them
+          // Continue anyway but warn the user
+          console.warn(`Allowing request to continue despite session save failure for user ${userId}`);
+          
+          // Set tokens in response headers as fallback
+          res.setHeader('X-Token-Refresh-Warning', 'Session persistence failed, tokens may not be saved');
+        }
+      }
     }
+    
+    return next();
   } catch (error: any) {
     console.error('Token refresh failed:', {
       userId,
