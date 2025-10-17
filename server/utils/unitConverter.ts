@@ -11,9 +11,12 @@ const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {
     liter: 1000,
     liters: 1000,
     tsp: 4.92892,
+    t: 4.92892, // Common abbreviation for teaspoon
     teaspoon: 4.92892,
     teaspoons: 4.92892,
     tbsp: 14.7868,
+    'tbsp.': 14.7868,
+    'T': 14.7868, // Common abbreviation for tablespoon
     tablespoon: 14.7868,
     tablespoons: 14.7868,
     'fl oz': 29.5735,
@@ -27,6 +30,10 @@ const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {
     quarts: 946.353,
     gallon: 3785.41,
     gallons: 3785.41,
+    dash: 0.616, // ~1/8 teaspoon
+    pinch: 0.308, // ~1/16 teaspoon
+    drop: 0.05, // approximate
+    drops: 0.05,
   },
   // Weight conversions (base unit: grams)
   weight: {
@@ -58,6 +65,7 @@ const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {
     cans: 1,
     package: 1,
     packages: 1,
+    pkg: 1,
     bag: 1,
     bags: 1,
     box: 1,
@@ -70,6 +78,19 @@ const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {
     heads: 1,
     stick: 1,
     sticks: 1,
+    slice: 1,
+    slices: 1,
+    small: 1,
+    medium: 1,
+    large: 1,
+    handful: 1,
+    handfuls: 1,
+    sprig: 1,
+    sprigs: 1,
+    stalk: 1,
+    stalks: 1,
+    sheet: 1,
+    sheets: 1,
   },
 };
 
@@ -121,21 +142,62 @@ export function parseIngredient(ingredientStr: string): {
   unit: string;
   name: string;
 } {
-  // First, normalize commas in the ingredient name (e.g., "olive oil, extra virgin" -> "olive oil extra virgin")
-  let cleanStr = ingredientStr.replace(/,\s*/g, ' ');
+  // Handle unicode fractions
+  let cleanStr = ingredientStr
+    .replace(/½/g, '1/2')
+    .replace(/¼/g, '1/4')
+    .replace(/¾/g, '3/4')
+    .replace(/⅓/g, '1/3')
+    .replace(/⅔/g, '2/3')
+    .replace(/⅛/g, '1/8')
+    .replace(/⅜/g, '3/8')
+    .replace(/⅝/g, '5/8')
+    .replace(/⅞/g, '7/8');
+    
+  // Normalize commas in the ingredient name
+  cleanStr = cleanStr.replace(/,\s*/g, ' ');
   // Remove parenthetical notes
   cleanStr = cleanStr.replace(/\([^)]*\)/g, '').trim();
   
+  // Handle approximate quantities (remove them but set default quantity)
+  let isApproximate = false;
+  if (cleanStr.match(/^(about|approximately|around|roughly)\s+/i)) {
+    isApproximate = true;
+    cleanStr = cleanStr.replace(/^(about|approximately|around|roughly)\s+/i, '');
+  }
+  
+  // Handle "a few", "several", "handful of" etc
+  if (cleanStr.match(/^(a\s+)?few\s+/i)) {
+    cleanStr = cleanStr.replace(/^(a\s+)?few\s+/i, '3 ');
+  }
+  if (cleanStr.match(/^several\s+/i)) {
+    cleanStr = cleanStr.replace(/^several\s+/i, '4 ');
+  }
+  if (cleanStr.match(/^(a\s+)?handful(\s+of)?\s+/i)) {
+    cleanStr = cleanStr.replace(/^(a\s+)?handful(\s+of)?\s+/i, '1 handful ');
+  }
+  
+  // Handle ranges (take average)
+  const rangeMatch = cleanStr.match(/^(\d+\.?\d*)\s*[-–to]\s*(\d+\.?\d*)\s+([a-zA-Z\s.]+?)\s+(.+)$/);
+  if (rangeMatch) {
+    const min = parseFloat(rangeMatch[1]);
+    const max = parseFloat(rangeMatch[2]);
+    const quantity = (min + max) / 2;
+    return { quantity, unit: rangeMatch[3].trim(), name: rangeMatch[4].trim() };
+  }
+  
   // Match patterns like "2 cups flour" or "1/2 cup sugar" or "3.5 oz cheese"
   const patterns = [
-    // Fraction followed by unit and name
-    /^(\d+\/\d+)\s+([a-zA-Z\s]+?)\s+(.+)$/,
     // Mixed number (e.g., "1 1/2")
-    /^(\d+\s+\d+\/\d+)\s+([a-zA-Z\s]+?)\s+(.+)$/,
-    // Decimal number
-    /^(\d+\.?\d*)\s+([a-zA-Z\s]+?)\s+(.+)$/,
+    /^(\d+\s+\d+\/\d+)\s+([a-zA-Z\s.]+?)\s+(.+)$/,
+    // Fraction followed by unit and name
+    /^(\d+\/\d+)\s+([a-zA-Z\s.]+?)\s+(.+)$/,
+    // Decimal number with unit
+    /^(\d+\.?\d*)\s+([a-zA-Z\s.]+?)\s+(.+)$/,
     // Just a number (count)
     /^(\d+\.?\d*)\s+(.+)$/,
+    // "a" or "an" before unit (means 1)
+    /^(a|an)\s+([a-zA-Z\s.]+?)\s+(.+)$/,
   ];
 
   for (const pattern of patterns) {
@@ -145,7 +207,12 @@ export function parseIngredient(ingredientStr: string): {
       let unit: string;
       let name: string;
 
-      if (pattern.source.includes('Mixed number')) {
+      if (match[1] === 'a' || match[1] === 'an') {
+        // Handle "a cup" or "an ounce"
+        quantity = 1;
+        unit = match[2];
+        name = match[3];
+      } else if (match[1].includes(' ') && match[1].includes('/')) {
         // Handle mixed numbers like "1 1/2"
         const parts = match[1].split(/\s+/);
         const whole = parseFloat(parts[0]);
@@ -169,6 +236,11 @@ export function parseIngredient(ingredientStr: string): {
         quantity = parseFloat(match[1]);
         unit = match[2];
         name = match[3];
+      }
+
+      // Validate quantity
+      if (isNaN(quantity) || quantity <= 0) {
+        quantity = 1;
       }
 
       return { quantity, unit: unit.trim(), name: name.trim() };
