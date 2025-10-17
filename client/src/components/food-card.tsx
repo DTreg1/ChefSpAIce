@@ -12,6 +12,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSwipe } from "@/hooks/use-swipe";
 import type { FoodItem } from "@shared/schema";
+import { differenceInDays, parseISO, startOfDay } from "date-fns";
 
 interface FoodCardProps {
   item: FoodItem;
@@ -38,19 +39,18 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
     
     // Validate date string before parsing
     try {
-      const expiry = new Date(date);
+      // Parse the date using date-fns for better handling
+      const expiry = parseISO(date);
+      
       // Check if date is valid
       if (isNaN(expiry.getTime())) {
         return null;
       }
-      expiry.setHours(0, 0, 0, 0);
-    
-      // Get today's date normalized to start of day
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
       
-      // Calculate days until expiry (both dates are at midnight)
-      const daysUntil = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      // Use date-fns to calculate days accurately, accounting for timezone and DST
+      const today = startOfDay(new Date());
+      const expiryDay = startOfDay(expiry);
+      const daysUntil = differenceInDays(expiryDay, today);
 
       if (daysUntil < 0) return { color: "bg-red-500", text: "Expired" };
       if (daysUntil === 0) return { color: "bg-red-500", text: "Expires today" };
