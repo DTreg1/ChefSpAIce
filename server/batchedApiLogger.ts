@@ -33,10 +33,12 @@ class BatchedApiLogger {
       return;
     }
     
-    // Create deterministic key to prevent duplicates
-    const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
+    // Create unique key with timestamp to allow multiple logs for same endpoint
+    // This prevents the memory leak while still allowing deduplication within the same millisecond
+    const timestamp = Date.now();
+    const logKey = `${userId}-${log.apiName}-${log.endpoint}-${timestamp}`;
     
-    // Skip if already queued
+    // Skip if already queued (unlikely with timestamp, but still check)
     if (this.queuedLogKeys.has(logKey)) {
       return;
     }
@@ -72,9 +74,10 @@ class BatchedApiLogger {
           } catch (error) {
             console.error('Failed to write API log:', error);
             
-            // Create a deterministic key for this log (no timestamp for proper retry tracking)
-            const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
-            const retryCount = (this.failureRetryCount.get(logKey) || 0) + 1;
+            // Use same key format as in logApiUsage for retry tracking
+            // For retry tracking, we need to use a stable key without timestamp
+            const retryKey = `${userId}-${log.apiName}-${log.endpoint}`;
+            const retryCount = (this.failureRetryCount.get(retryKey) || 0) + 1;
             
             // Increase retry attempts to 5 for better resilience
             const maxRetries = 5;
@@ -107,15 +110,19 @@ class BatchedApiLogger {
             
             // Default to retrying for unknown errors (they could be transient)
             if (retryCount < maxRetries && shouldRetry) {
-              this.failureRetryCount.set(logKey, retryCount);
+              this.failureRetryCount.set(retryKey, retryCount);
               failedLogs.push(queuedLog);
-              console.warn(`Retrying API log (attempt ${retryCount}/${maxRetries}): ${logKey}`);
+              console.warn(`Retrying API log (attempt ${retryCount}/${maxRetries}): ${retryKey}`);
             } else {
               const reason = shouldRetry ? 'max retries reached' : 'non-retryable error';
-              console.error(`Dropping API log (${reason}) after ${retryCount} attempts: ${logKey}`, error);
-              this.failureRetryCount.delete(logKey);
+              console.error(`Dropping API log (${reason}) after ${retryCount} attempts: ${retryKey}`, error);
+              this.failureRetryCount.delete(retryKey);
               // IMPORTANT: Remove from queuedLogKeys to allow future logs with same key
-              this.queuedLogKeys.delete(logKey);
+              // We need to find and remove the actual key with timestamp
+              const keysToRemove = Array.from(this.queuedLogKeys).filter(key => 
+                key.startsWith(`${userId}-${log.apiName}-${log.endpoint}-`)
+              );
+              keysToRemove.forEach(key => this.queuedLogKeys.delete(key));
             }
             
             return { success: false, queuedLog };
@@ -136,11 +143,15 @@ class BatchedApiLogger {
       // Clean up tracking for successful logs
       successfulLogs.forEach(({ userId, log }) => {
         if (log.apiName && log.endpoint) {
-          const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
-          // Remove from queued keys set
-          this.queuedLogKeys.delete(logKey);
-          // Remove from retry count map
-          this.failureRetryCount.delete(logKey);
+          // Remove from queued keys set (need to find the key with timestamp)
+          const keysToRemove = Array.from(this.queuedLogKeys).filter(key => 
+            key.startsWith(`${userId}-${log.apiName}-${log.endpoint}-`)
+          );
+          keysToRemove.forEach(key => this.queuedLogKeys.delete(key));
+          
+          // Remove from retry count map (uses key without timestamp)
+          const retryKey = `${userId}-${log.apiName}-${log.endpoint}`;
+          this.failureRetryCount.delete(retryKey);
         }
       });
     } finally {
