@@ -1,5 +1,5 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added authentication routing
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense, startTransition } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useInitialData } from "@/hooks/useInitialData";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
+import { OfflineIndicator } from "@/components/offline-indicator";
 
 // Lazy load all heavy components to improve initial load
 const AppSidebar = lazy(() => import("@/components/app-sidebar").then(m => ({ default: m.AppSidebar })));
@@ -21,7 +22,6 @@ const AddFoodDialog = lazy(() => import("@/components/add-food-dialog").then(m =
 const RecipeCustomizationDialog = lazy(() => import("@/components/recipe-customization-dialog").then(m => ({ default: m.RecipeCustomizationDialog })));
 const FeedbackWidget = lazy(() => import("@/components/feedback-widget").then(m => ({ default: m.FeedbackWidget })));
 const AnimatedBackground = lazy(() => import("@/components/animated-background").then(m => ({ default: m.AnimatedBackground })));
-const OfflineIndicator = lazy(() => import("@/components/offline-indicator").then(m => ({ default: m.OfflineIndicator })));
 
 // Eagerly loaded core pages (only the most critical)
 const Landing = lazy(() => import("@/pages/landing"));
@@ -169,8 +169,8 @@ function AppContent() {
           particleCount={30}
         />
         <CommandPalette
-          onAddFood={() => setAddFoodOpen(true)}
-          onGenerateRecipe={() => setRecipeDialogOpen(true)}
+          onAddFood={() => startTransition(() => setAddFoodOpen(true))}
+          onGenerateRecipe={() => startTransition(() => setRecipeDialogOpen(true))}
           onScanBarcode={() => {
             // Navigate to FDC search page with barcode scanner
             window.location.href = "/fdc-search?scanBarcode=true";
@@ -215,8 +215,8 @@ function AppContent() {
             <div className="ml-auto">
               <Suspense fallback={null}>
                 <QuickActionsBar
-                  onAddFood={() => setAddFoodOpen(true)}
-                  onGenerateRecipe={() => setRecipeDialogOpen(true)}
+                  onAddFood={() => startTransition(() => setAddFoodOpen(true))}
+                  onGenerateRecipe={() => startTransition(() => setRecipeDialogOpen(true))}
                   onScanBarcode={() => {
                     // Navigate to FDC search page with barcode scanner
                     window.location.href = "/fdc-search?scanBarcode=true";
@@ -249,9 +249,7 @@ export default function App() {
           <TooltipProvider>
             <AppContent />
             <Toaster />
-            <Suspense fallback={null}>
-              <OfflineIndicator />
-            </Suspense>
+            <OfflineIndicator />
           </TooltipProvider>
         </QueryClientProvider>
       </ErrorBoundary>
