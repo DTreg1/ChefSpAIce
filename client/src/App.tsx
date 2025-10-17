@@ -13,6 +13,7 @@ import { useInitialData } from "@/hooks/useInitialData";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
 import { OfflineIndicator } from "@/components/offline-indicator";
+import { InitialLoadingScreen } from "@/components/InitialLoadingScreen";
 
 // Lazy load all heavy components to improve initial load
 const AppSidebar = lazy(() => import("@/components/app-sidebar").then(m => ({ default: m.AppSidebar })));
@@ -145,8 +146,13 @@ function AppContent() {
     "--sidebar-width-icon": "4rem",
   } as React.CSSProperties;
 
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return <InitialLoadingScreen />;
+  }
+  
   // Show landing page layout for non-authenticated users
-  if (isLoading || !isAuthenticated) {
+  if (!isAuthenticated) {
     return <Router />;
   }
 
