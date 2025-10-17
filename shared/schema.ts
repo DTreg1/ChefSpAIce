@@ -665,6 +665,115 @@ export const insertDonationSchema = createInsertSchema(donations).omit({
 export type InsertDonation = z.infer<typeof insertDonationSchema>;
 export type Donation = typeof donations.$inferSelect;
 
+// Products - Items available for purchase
+export const products = pgTable("products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: integer("price").notNull(), // Price in cents
+  currency: text("currency").notNull().default('usd'),
+  imageUrl: text("image_url"),
+  stock: integer("stock").notNull().default(0),
+  category: text("category"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("products_is_active_idx").on(table.isActive),
+  index("products_category_idx").on(table.category),
+]);
+
+export const insertProductSchema = createInsertSchema(products).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type Product = typeof products.$inferSelect;
+
+// Orders - Track customer purchases  
+export const orders = pgTable("orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  stripePaymentIntentId: text("stripe_payment_intent_id").notNull().unique(),
+  amount: integer("amount").notNull(), // Total amount in cents
+  currency: text("currency").notNull().default('usd'),
+  status: text("status").notNull(), // 'pending', 'processing', 'succeeded', 'failed', 'refunded'
+  customerEmail: text("customer_email").notNull(),
+  customerName: text("customer_name"),
+  shippingAddress: jsonb("shipping_address").$type<{
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  }>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("orders_user_id_idx").on(table.userId),
+  index("orders_status_idx").on(table.status),
+  index("orders_created_at_idx").on(table.createdAt),
+]);
+
+export const insertOrderSchema = createInsertSchema(orders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  status: z.enum(['pending', 'processing', 'succeeded', 'failed', 'refunded']),
+});
+
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type Order = typeof orders.$inferSelect;
+
+// Order Items - Individual items in an order
+export const orderItems = pgTable("order_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id),
+  productName: text("product_name").notNull(), // Denormalized for history
+  productPrice: integer("product_price").notNull(), // Price at time of purchase (cents)
+  quantity: integer("quantity").notNull(),
+  subtotal: integer("subtotal").notNull(), // quantity * productPrice
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("order_items_order_id_idx").on(table.orderId),
+  index("order_items_product_id_idx").on(table.productId),
+]);
+
+export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+export type OrderItem = typeof orderItems.$inferSelect;
+
+// Cart Items - Temporary shopping cart items (optional, can use client state instead)
+export const cartItems = pgTable("cart_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  quantity: integer("quantity").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("cart_items_user_id_idx").on(table.userId),
+  uniqueIndex("cart_items_unique_idx").on(table.userId, table.productId),
+]);
+
+export const insertCartItemSchema = createInsertSchema(cartItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
+export type CartItem = typeof cartItems.$inferSelect;
+
 // Web Vitals Analytics - Track Core Web Vitals metrics
 export const webVitals = pgTable("web_vitals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
