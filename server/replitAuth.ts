@@ -133,15 +133,19 @@ export async function setupAuth(app: Express) {
   });
 }
 
-// Simplified map to track active token refreshes per user
-// Using WeakMap for automatic garbage collection when sessions are destroyed
+// Map to track active token refreshes per user to prevent concurrent refreshes
 const activeRefreshes = new Map<string, Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>>();
 
-// Clean up completed promises after a short delay
-const cleanupRefresh = (key: string) => {
-  setTimeout(() => {
+// Clean up completed promises consistently
+const cleanupRefresh = (key: string, immediate: boolean = false) => {
+  if (immediate) {
     activeRefreshes.delete(key);
-  }, 100); // Clean up shortly after completion
+  } else {
+    // Small delay to allow concurrent requests to reuse the result
+    setTimeout(() => {
+      activeRefreshes.delete(key);
+    }, 100);
+  }
 };
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
@@ -179,9 +183,9 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       activeRefreshes.set(refreshKey, tokenResponsePromise);
       
       // Clean up after completion (success or failure)
-      tokenResponsePromise.finally(() => {
-        cleanupRefresh(refreshKey);
-      });
+      tokenResponsePromise
+        .then(() => cleanupRefresh(refreshKey, false)) // Success: delay cleanup
+        .catch(() => cleanupRefresh(refreshKey, true)); // Error: immediate cleanup
     }
     
     // Wait for the refresh to complete
@@ -203,8 +207,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       error: error.message
     });
     
-    // Clear the failed refresh to allow retry
-    activeRefreshes.delete(refreshKey);
+    // Don't delete here since it's already handled in the promise chain
     
     res.status(401).json({ 
       message: "Unauthorized", 
