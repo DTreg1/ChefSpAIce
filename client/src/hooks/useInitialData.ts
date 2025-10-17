@@ -17,6 +17,8 @@ export function useInitialData(enabled = true) {
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (gcTime in TanStack Query v5)
     enabled,
+    retry: 1, // Only retry once for initial data
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   // When we get the batch data, populate individual query caches
