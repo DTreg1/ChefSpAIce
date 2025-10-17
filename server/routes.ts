@@ -161,43 +161,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Storage Locations (user-scoped)
-  app.get("/api/storage-locations", isAuthenticated, async (req: any, res) => {
+  app.get("/api/storage-locations", isAuthenticated, async (req: any, res, next) => {
     try {
       const userId = req.user.claims.sub;
       const locations = await storage.getStorageLocations(userId);
       res.json(locations);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching storage locations:", error);
-      throw new ApiError("Failed to fetch storage locations", 500);
+      if (error instanceof ApiError) {
+        return next(error);
+      }
+      return next(new ApiError("Failed to fetch storage locations", 500));
     }
   });
 
-  app.post("/api/storage-locations", isAuthenticated, async (req: any, res) => {
+  app.post("/api/storage-locations", isAuthenticated, async (req: any, res, next) => {
     try {
       const userId = req.user.claims.sub;
       const validated = insertStorageLocationSchema.parse(req.body);
       const location = await storage.createStorageLocation(userId, validated);
       res.json(location);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating storage location:", error);
-      throw new ApiError("Invalid storage location data", 400);
+      if (error instanceof z.ZodError) {
+        return next(new ApiError("Invalid storage location data", 400, JSON.stringify(error.errors)));
+      }
+      if (error instanceof ApiError) {
+        return next(error);
+      }
+      return next(new ApiError("Failed to create storage location", 500));
     }
   });
 
   // Food Items (user-scoped)
-  app.get("/api/food-items", isAuthenticated, async (req: any, res) => {
+  app.get("/api/food-items", isAuthenticated, async (req: any, res, next) => {
     try {
       const userId = req.user.claims.sub;
       const { storageLocationId } = req.query;
       const items = await storage.getFoodItems(userId, storageLocationId as string | undefined);
       res.json(items);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching food items:", error);
-      throw new ApiError("Failed to fetch food items", 500);
+      if (error instanceof ApiError) {
+        return next(error);
+      }
+      return next(new ApiError("Failed to fetch food items", 500));
     }
   });
 
-  app.post("/api/food-items", isAuthenticated, async (req: any, res) => {
+  app.post("/api/food-items", isAuthenticated, async (req: any, res, next) => {
     try {
       const userId = req.user.claims.sub;
       const validated = insertFoodItemSchema.parse(req.body);
@@ -273,9 +285,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         weightInGrams,
       });
       res.json(item);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating food item:", error);
-      throw new ApiError("Invalid food item data", 400);
+      if (error instanceof z.ZodError) {
+        return next(new ApiError("Invalid food item data", 400, JSON.stringify(error.errors)));
+      }
+      if (error instanceof ApiError) {
+        return next(error);
+      }
+      return next(new ApiError("Failed to create food item", 500));
     }
   });
 
