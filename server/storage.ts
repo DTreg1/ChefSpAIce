@@ -43,6 +43,14 @@ import {
   type InsertPushToken,
   type WebVital,
   type InsertWebVital,
+  type Product,
+  type InsertProduct,
+  type Order,
+  type InsertOrder,
+  type OrderItem,
+  type InsertOrderItem,
+  type CartItem,
+  type InsertCartItem,
   users,
   userPreferences,
   pushTokens,
@@ -63,7 +71,11 @@ import {
   feedbackUpvotes,
   feedbackResponses,
   donations,
-  webVitals
+  webVitals,
+  products,
+  orders,
+  orderItems,
+  cartItems
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -196,6 +208,32 @@ export interface IStorage {
   getDonations(limit?: number, offset?: number): Promise<{ donations: Donation[], total: number }>;
   getUserDonations(userId: string, limit?: number): Promise<Donation[]>;
   getTotalDonations(): Promise<{ totalAmount: number, donationCount: number }>;
+
+  // Product Management
+  getProducts(activeOnly?: boolean): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product>;
+  deleteProduct(id: string): Promise<void>;
+
+  // Order Management
+  createOrder(order: InsertOrder): Promise<Order>;
+  getOrder(id: string): Promise<Order | undefined>;
+  getOrderByPaymentIntent(stripePaymentIntentId: string): Promise<Order | undefined>;
+  updateOrder(id: string, updates: Partial<InsertOrder>): Promise<Order>;
+  getUserOrders(userId: string, limit?: number): Promise<Order[]>;
+  getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined>;
+
+  // Order Items
+  createOrderItems(items: InsertOrderItem[]): Promise<OrderItem[]>;
+  getOrderItems(orderId: string): Promise<OrderItem[]>;
+
+  // Shopping Cart
+  getCartItems(userId: string): Promise<(CartItem & { product: Product })[]>;
+  addToCart(userId: string, productId: string, quantity: number): Promise<CartItem>;
+  updateCartItem(userId: string, productId: string, quantity: number): Promise<CartItem>;
+  removeFromCart(userId: string, productId: string): Promise<void>;
+  clearCart(userId: string): Promise<void>;
 
   // Web Vitals Analytics
   recordWebVital(vital: Omit<InsertWebVital, 'id' | 'createdAt'>): Promise<WebVital>;
@@ -1978,6 +2016,261 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting total donations:', error);
       throw new Error('Failed to get total donations');
+    }
+  }
+
+  // Product Management Implementation
+  async getProducts(activeOnly: boolean = true): Promise<Product[]> {
+    try {
+      const query = activeOnly 
+        ? db.select().from(products).where(eq(products.isActive, true))
+        : db.select().from(products);
+      
+      return await query;
+    } catch (error) {
+      console.error('Error getting products:', error);
+      throw new Error('Failed to get products');
+    }
+  }
+
+  async getProduct(id: string): Promise<Product | undefined> {
+    try {
+      const [product] = await db.select().from(products).where(eq(products.id, id));
+      return product;
+    } catch (error) {
+      console.error('Error getting product:', error);
+      throw new Error('Failed to get product');
+    }
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    try {
+      const [newProduct] = await db.insert(products).values(product).returning();
+      return newProduct;
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw new Error('Failed to create product');
+    }
+  }
+
+  async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product> {
+    try {
+      const [updated] = await db
+        .update(products)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(products.id, id))
+        .returning();
+      
+      if (!updated) {
+        throw new Error('Product not found');
+      }
+      return updated;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw new Error('Failed to update product');
+    }
+  }
+
+  async deleteProduct(id: string): Promise<void> {
+    try {
+      await db.delete(products).where(eq(products.id, id));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw new Error('Failed to delete product');
+    }
+  }
+
+  // Order Management Implementation  
+  async createOrder(order: InsertOrder): Promise<Order> {
+    try {
+      const [newOrder] = await db.insert(orders).values(order).returning();
+      return newOrder;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw new Error('Failed to create order');
+    }
+  }
+
+  async getOrder(id: string): Promise<Order | undefined> {
+    try {
+      const [order] = await db.select().from(orders).where(eq(orders.id, id));
+      return order;
+    } catch (error) {
+      console.error('Error getting order:', error);
+      throw new Error('Failed to get order');
+    }
+  }
+
+  async getOrderByPaymentIntent(stripePaymentIntentId: string): Promise<Order | undefined> {
+    try {
+      const [order] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.stripePaymentIntentId, stripePaymentIntentId));
+      return order;
+    } catch (error) {
+      console.error('Error getting order by payment intent:', error);
+      throw new Error('Failed to get order');
+    }
+  }
+
+  async updateOrder(id: string, updates: Partial<InsertOrder>): Promise<Order> {
+    try {
+      const [updated] = await db
+        .update(orders)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(orders.id, id))
+        .returning();
+      
+      if (!updated) {
+        throw new Error('Order not found');
+      }
+      return updated;
+    } catch (error) {
+      console.error('Error updating order:', error);
+      throw new Error('Failed to update order');
+    }
+  }
+
+  async getUserOrders(userId: string, limit: number = 50): Promise<Order[]> {
+    try {
+      return await db
+        .select()
+        .from(orders)
+        .where(eq(orders.userId, userId))
+        .orderBy(sql`${orders.createdAt} DESC`)
+        .limit(limit);
+    } catch (error) {
+      console.error('Error getting user orders:', error);
+      throw new Error('Failed to get user orders');
+    }
+  }
+
+  async getOrderWithItems(id: string): Promise<(Order & { items: OrderItem[] }) | undefined> {
+    try {
+      const [order] = await db.select().from(orders).where(eq(orders.id, id));
+      if (!order) return undefined;
+
+      const items = await db
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.orderId, id));
+
+      return { ...order, items };
+    } catch (error) {
+      console.error('Error getting order with items:', error);
+      throw new Error('Failed to get order with items');
+    }
+  }
+
+  // Order Items Implementation
+  async createOrderItems(items: InsertOrderItem[]): Promise<OrderItem[]> {
+    try {
+      return await db.insert(orderItems).values(items).returning();
+    } catch (error) {
+      console.error('Error creating order items:', error);
+      throw new Error('Failed to create order items');
+    }
+  }
+
+  async getOrderItems(orderId: string): Promise<OrderItem[]> {
+    try {
+      return await db
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.orderId, orderId));
+    } catch (error) {
+      console.error('Error getting order items:', error);
+      throw new Error('Failed to get order items');
+    }
+  }
+
+  // Shopping Cart Implementation
+  async getCartItems(userId: string): Promise<(CartItem & { product: Product })[]> {
+    try {
+      const items = await db
+        .select({
+          id: cartItems.id,
+          userId: cartItems.userId,
+          productId: cartItems.productId,
+          quantity: cartItems.quantity,
+          createdAt: cartItems.createdAt,
+          updatedAt: cartItems.updatedAt,
+          product: products,
+        })
+        .from(cartItems)
+        .innerJoin(products, eq(cartItems.productId, products.id))
+        .where(eq(cartItems.userId, userId));
+      
+      return items;
+    } catch (error) {
+      console.error('Error getting cart items:', error);
+      throw new Error('Failed to get cart items');
+    }
+  }
+
+  async addToCart(userId: string, productId: string, quantity: number): Promise<CartItem> {
+    try {
+      const [item] = await db
+        .insert(cartItems)
+        .values({ userId, productId, quantity })
+        .onConflictDoUpdate({
+          target: [cartItems.userId, cartItems.productId],
+          set: {
+            quantity: sql`${cartItems.quantity} + ${quantity}`,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      
+      return item;
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      throw new Error('Failed to add to cart');
+    }
+  }
+
+  async updateCartItem(userId: string, productId: string, quantity: number): Promise<CartItem> {
+    try {
+      const [updated] = await db
+        .update(cartItems)
+        .set({ quantity, updatedAt: new Date() })
+        .where(and(
+          eq(cartItems.userId, userId),
+          eq(cartItems.productId, productId)
+        ))
+        .returning();
+      
+      if (!updated) {
+        throw new Error('Cart item not found');
+      }
+      return updated;
+    } catch (error) {
+      console.error('Error updating cart item:', error);
+      throw new Error('Failed to update cart item');
+    }
+  }
+
+  async removeFromCart(userId: string, productId: string): Promise<void> {
+    try {
+      await db
+        .delete(cartItems)
+        .where(and(
+          eq(cartItems.userId, userId),
+          eq(cartItems.productId, productId)
+        ));
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      throw new Error('Failed to remove from cart');
+    }
+  }
+
+  async clearCart(userId: string): Promise<void> {
+    try {
+      await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      throw new Error('Failed to clear cart');
     }
   }
 
