@@ -89,9 +89,7 @@ function AuthenticatedRouter() {
 
 function Router() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  
-  // If we're authenticated, prefetch all initial data in parallel
-  const { isLoading: initLoading } = useInitialData(isAuthenticated);
+  const { data: initialData, isLoading: initLoading } = useInitialData(isAuthenticated);
 
   // Show landing page for non-authenticated users
   if (authLoading || !isAuthenticated) {
