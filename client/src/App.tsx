@@ -101,9 +101,6 @@ function AuthenticatedRouter() {
 
 function Router() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  
-  // If we're authenticated, prefetch all initial data in parallel
-  const { isLoading: initLoading } = useInitialData(isAuthenticated);
 
   // Show landing page for non-authenticated users
   if (authLoading || !isAuthenticated) {
@@ -113,11 +110,6 @@ function Router() {
         <Route component={Landing} />
       </Switch>
     );
-  }
-
-  // Wait for initial data to be loaded
-  if (initLoading) {
-    return <PageLoader />;
   }
 
   // Show authenticated app with sidebar
