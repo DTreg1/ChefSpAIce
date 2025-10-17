@@ -1301,13 +1301,12 @@ export class DatabaseStorage implements IStorage {
         .orderBy(sql`${fdcSearchCache.cachedAt} DESC`)
         .limit(1);
       
-      // Use more reasonable TTL: shorter for complex searches, moderate for simple searches
-      // This ensures data freshness while still benefiting from caching
+      // Use shorter TTL for complex searches (2 hours), longer for simple searches (24 hours)
       if (cached) {
         const cacheAge = Date.now() - new Date(cached.cachedAt).getTime();
         const ttlMs = isComplexSearch 
-          ? 1 * 60 * 60 * 1000  // 1 hour for complex searches with filters
-          : 6 * 60 * 60 * 1000;  // 6 hours for simple searches (reduced from 24)
+          ? 2 * 60 * 60 * 1000  // 2 hours for complex searches with filters
+          : 24 * 60 * 60 * 1000; // 24 hours for simple searches
         
         if (cacheAge < ttlMs) {
           return cached;

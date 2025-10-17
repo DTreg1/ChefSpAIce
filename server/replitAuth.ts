@@ -15,10 +15,9 @@ if (!process.env.REPLIT_DOMAINS) {
 
 const getOidcConfig = memoize(
   async () => {
-    const replId = process.env.REPL_ID || process.env.REPLIT_DOMAINS?.split(',')[0] || 'unknown';
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      replId
+      process.env.REPL_ID!
     );
   },
   { maxAge: 3600 * 1000 }
@@ -124,10 +123,9 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
-      const replId = process.env.REPL_ID || process.env.REPLIT_DOMAINS?.split(',')[0] || 'unknown';
       res.redirect(
         client.buildEndSessionUrl(config, {
-          client_id: replId,
+          client_id: process.env.REPL_ID!,
           post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
         }).href
       );
@@ -261,28 +259,12 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
           // Remove the refresh entry to allow retry on next request
           activeRefreshes.delete(refreshKey);
           
-          // Determine if we should fail or continue based on the error type
-          const isRecoverableError = sessionError.message?.includes('timeout') || 
-                                     sessionError.message?.includes('ECONNREFUSED') ||
-                                     sessionError.code === 'ETIMEDOUT';
+          // Even though tokens are refreshed, we couldn't persist them
+          // Continue anyway but warn the user
+          console.warn(`Allowing request to continue despite session save failure for user ${userId}`);
           
-          if (isRecoverableError) {
-            // For recoverable errors, allow the request to continue
-            // but inform the client about the issue
-            console.warn(`Allowing request to continue despite recoverable session save failure for user ${userId}`);
-            
-            // Set tokens in response headers as fallback
-            res.setHeader('X-Token-Refresh-Warning', 'Session persistence failed, tokens may not be saved');
-            res.setHeader('X-Token-Refresh-Status', 'temporary-failure');
-          } else {
-            // For non-recoverable errors, fail the request to maintain consistency
-            console.error(`Blocking request due to non-recoverable session save failure for user ${userId}`);
-            return res.status(503).json({
-              message: "Service temporarily unavailable",
-              error: "Session persistence failed. Please try again later.",
-              retryable: true
-            });
-          }
+          // Set tokens in response headers as fallback
+          res.setHeader('X-Token-Refresh-Warning', 'Session persistence failed, tokens may not be saved');
         }
       }
     }

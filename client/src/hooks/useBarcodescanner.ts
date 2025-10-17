@@ -37,29 +37,8 @@ export function useBarcodeScanner({ onScan, onError }: UseBarcodeScannerOptions)
       console.error("Scanner start error:", err);
       isInitializedRef.current = false;
       scannerRef.current = null;
-      
-      // Provide more specific error messages based on error type
-      let errorMessage = "Failed to start barcode scanner.";
-      
-      if (err?.message) {
-        const errorString = err.message.toLowerCase();
-        
-        if (errorString.includes("permission") || errorString.includes("denied")) {
-          errorMessage = "Camera permission denied. Please allow camera access in your browser settings to scan barcodes.";
-        } else if (errorString.includes("not found") || errorString.includes("no camera")) {
-          errorMessage = "No camera found. Please ensure your device has a working camera.";
-        } else if (errorString.includes("secure") || errorString.includes("https")) {
-          errorMessage = "Camera access requires a secure connection (HTTPS). Please use a secure URL.";
-        } else if (errorString.includes("busy") || errorString.includes("in use")) {
-          errorMessage = "Camera is already in use by another application. Please close other apps using the camera.";
-        } else if (errorString.includes("constraint") || errorString.includes("facing mode")) {
-          errorMessage = "Unable to access rear camera. Switching to front camera or trying again may help.";
-        } else {
-          // Use the original error message if it's descriptive enough
-          errorMessage = err.message;
-        }
-      }
-      
+      // Safely handle error callback with better null checking
+      const errorMessage = err?.message || "Failed to access camera. Please check permissions.";
       if (onError && typeof onError === 'function') {
         onError(errorMessage);
       }

@@ -38,14 +38,6 @@ import {
   barcodeLookupProductSchema,
 } from "./validation/apiSchemas";
 
-// Safely extract user ID from authenticated request
-function getUserId(req: any): string {
-  if (!req.user?.claims?.sub) {
-    throw new ApiError("User authentication information not found", 401);
-  }
-  return req.user.claims.sub;
-}
-
 // Helper functions for appliance barcode processing
 function extractApplianceCapabilities(product: any): string[] {
   const capabilities: string[] = [];
@@ -134,10 +126,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes (from blueprint:javascript_log_in_with_replit)
   app.get('/api/auth/user', isAuthenticated, asyncHandler(async (req: any, res) => {
-    const userId = getUserId(req);
+    const userId = req.user.claims.sub;
     const user = await storage.getUser(userId);
     if (!user) {
-      throw NotFoundError("User not found");
+      throw new NotFoundError("User not found");
     }
     res.json(user);
   }));
@@ -145,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Batch initialization endpoint to reduce initial API calls
   app.get('/api/init', isAuthenticated, async (req: any, res, next) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       
       // Run all initial queries in parallel
       const [user, preferences, storageLocations, foodItems, recipes] = await Promise.all([
@@ -173,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Preferences
   app.get('/api/user/preferences', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const preferences = await storage.getUserPreferences(userId);
       res.json(preferences);
     } catch (error) {
@@ -184,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/user/preferences', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const validated = insertUserPreferencesSchema.parse(req.body);
       const preferences = await storage.upsertUserPreferences({ ...validated, userId });
       res.json(preferences);
@@ -196,7 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/user/reset', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       await storage.resetUserData(userId);
       res.json({ success: true, message: "Account data reset successfully" });
     } catch (error) {
@@ -208,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Storage Locations (user-scoped)
   app.get("/api/storage-locations", isAuthenticated, async (req: any, res, next) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const locations = await storage.getStorageLocations(userId);
       res.json(locations);
     } catch (error: any) {
@@ -222,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/storage-locations", isAuthenticated, async (req: any, res, next) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const validated = insertStorageLocationSchema.parse(req.body);
       const location = await storage.createStorageLocation(userId, validated);
       res.json(location);
@@ -241,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Food Items (user-scoped)
   app.get("/api/food-items", isAuthenticated, async (req: any, res, next) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { storageLocationId } = req.query;
       const items = await storage.getFoodItems(userId, storageLocationId as string | undefined);
       res.json(items);
@@ -256,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/food-items", isAuthenticated, async (req: any, res, next) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const validated = insertFoodItemSchema.parse(req.body);
       
       let nutrition = validated.nutrition;
@@ -344,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/food-items/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       const updateSchema = insertFoodItemSchema.partial().required({
         quantity: true,
@@ -378,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/food-items/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       await storage.deleteFoodItem(userId, id);
       res.json({ success: true });
@@ -390,7 +382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/food-items/:id/refresh-nutrition", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       
       // Get the current food item
@@ -483,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/food-categories", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const categories = await storage.getFoodCategories(userId);
       res.json(categories);
     } catch (error) {
@@ -495,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Appliances (user-scoped)
   app.get("/api/appliances", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const appliances = await storage.getAppliances(userId);
       res.json(appliances);
     } catch (error) {
@@ -506,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/appliances", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const validated = insertApplianceSchema.parse(req.body);
       const appliance = await storage.createAppliance(userId, validated);
       res.json(appliance);
@@ -518,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       const appliance = await storage.getAppliance(userId, id);
       if (!appliance) {
@@ -533,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       const validated = insertApplianceSchema.partial().parse(req.body);
       const appliance = await storage.updateAppliance(userId, id, validated);
@@ -546,7 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       await storage.deleteAppliance(userId, id);
       res.json({ success: true });
@@ -580,7 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get appliances by category
   app.get("/api/appliances/category/:categoryId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { categoryId } = req.params;
       const appliances = await storage.getAppliancesByCategory(userId, categoryId);
       res.json(appliances);
@@ -593,7 +585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get appliances by capability
   app.get("/api/appliances/capability/:capability", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { capability } = req.params;
       const appliances = await storage.getAppliancesByCapability(userId, capability);
       res.json(appliances);
@@ -605,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create appliance from barcode
   app.post("/api/appliances/from-barcode", isAuthenticated, async (req: any, res) => {
-    const userId = getUserId(req);
+    const userId = req.user.claims.sub;
     const { barcode, nickname, notes } = req.body;
     
     try {
@@ -1115,7 +1107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/barcodelookup/usage/stats", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { days } = req.query;
       const daysParam = days ? parseInt(days as string) : 30;
       
@@ -1129,7 +1121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/barcodelookup/usage/logs", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { limit } = req.query;
       const limitParam = limit ? parseInt(limit as string) : 50;
       
@@ -1187,7 +1179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat Messages (user-scoped) - Now with pagination support
   app.get("/api/chat/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       
       // Trigger automatic cleanup of old messages (runs in background)
       cleanupOldMessagesForUser(userId).catch(err => 
@@ -1218,7 +1210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a single chat message
   app.post("/api/chat/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const messageData = {
         role: req.body.role,
         content: req.body.content,
@@ -1235,7 +1227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Clear all chat messages for a user
   app.delete("/api/chat/messages", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       await storage.clearChatMessages(userId);
       res.json({ success: true, message: "Chat history cleared" });
     } catch (error) {
@@ -1247,7 +1239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete old chat messages (older than specified hours)
   app.post("/api/chat/messages/cleanup", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { hoursOld = 24 } = req.body;
       const deleted = await storage.deleteOldChatMessages(userId, hoursOld);
       res.json({ success: true, deletedCount: deleted, message: `Deleted messages older than ${hoursOld} hours` });
@@ -1273,7 +1265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       
       // Validate request body using Zod
       const validation = chatMessageRequestSchema.safeParse(req.body);
@@ -1466,7 +1458,7 @@ When asked for recipes, consider the available inventory and appliances.`;
   // Recipe Generation (user-scoped)
   app.post("/api/recipes/generate", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const foodItems = await storage.getFoodItems(userId);
       const appliances = await storage.getAppliances(userId);
 
@@ -1636,13 +1628,7 @@ Respond ONLY with a valid JSON object in this exact format:
         throw new ApiError("AI service temporarily unavailable", 500);
       }
 
-      let recipeData;
-      try {
-        recipeData = JSON.parse(completion.choices[0]?.message?.content || "{}");
-      } catch (parseError) {
-        console.error("Failed to parse recipe JSON from AI response:", parseError);
-        throw new ApiError("Invalid recipe format returned by AI service", 500);
-      }
+      const recipeData = JSON.parse(completion.choices[0]?.message?.content || "{}");
       
       const recipe = await storage.createRecipe(userId, {
         title: recipeData.title,
@@ -1664,7 +1650,7 @@ Respond ONLY with a valid JSON object in this exact format:
 
   app.get("/api/recipes", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
       
@@ -1686,7 +1672,7 @@ Respond ONLY with a valid JSON object in this exact format:
 
   app.patch("/api/recipes/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       const recipe = await storage.updateRecipe(userId, id, req.body);
       res.json(recipe);
@@ -1699,7 +1685,7 @@ Respond ONLY with a valid JSON object in this exact format:
   // Process recipe from image upload
   app.post("/api/recipes/from-image", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { image } = req.body; // Base64 encoded image or image URL
       
       if (!image) {
@@ -1762,13 +1748,7 @@ Important:
         throw new ApiError("Failed to process image with AI service", 500);
       }
 
-      let extractedData;
-      try {
-        extractedData = JSON.parse(completion.choices[0]?.message?.content || "{}");
-      } catch (parseError) {
-        console.error("Failed to parse extracted recipe JSON from AI response:", parseError);
-        throw new ApiError("Invalid recipe format extracted from image", 500);
-      }
+      const extractedData = JSON.parse(completion.choices[0]?.message?.content || "{}");
       
       // Validate the extracted data
       if (!extractedData.title || !extractedData.ingredients || !extractedData.instructions) {
@@ -1800,7 +1780,7 @@ Important:
   // Analyze food item from image (for leftovers)
   app.post("/api/food/analyze-image", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { image } = req.body; // Base64 encoded image or image URL
       
       if (!image) {
@@ -1873,13 +1853,7 @@ Important:
         throw new ApiError("Failed to process image with AI service", 500);
       }
 
-      let analysisData;
-      try {
-        analysisData = JSON.parse(completion.choices[0]?.message?.content || "{}");
-      } catch (parseError) {
-        console.error("Failed to parse food analysis JSON from AI response:", parseError);
-        throw new ApiError("Invalid analysis format returned by AI service", 500);
-      }
+      const analysisData = JSON.parse(completion.choices[0]?.message?.content || "{}");
       
       // Validate the analyzed data
       if (!analysisData.name || analysisData.confidence === undefined) {
@@ -1903,7 +1877,7 @@ Important:
   // Expiration Notifications (user-scoped)
   app.get("/api/notifications/expiration", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const notifications = await storage.getExpirationNotifications(userId);
       
       const now = new Date();
@@ -1924,7 +1898,7 @@ Important:
 
   app.post("/api/notifications/expiration/check", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const expiringItems = await storage.getExpiringItems(userId, 3);
       const now = new Date();
       
@@ -1978,7 +1952,7 @@ Important:
 
   app.post("/api/notifications/:id/dismiss", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       await storage.dismissNotification(userId, id);
       res.json({ success: true });
@@ -1991,7 +1965,7 @@ Important:
   // Nutrition Statistics (user-scoped)
   app.get("/api/nutrition/stats", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const foodItems = await storage.getFoodItems(userId);
       
       let totalCalories = 0;
@@ -2045,7 +2019,7 @@ Important:
 
   app.get("/api/nutrition/items", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const foodItems = await storage.getFoodItems(userId);
       const locations = await storage.getStorageLocations(userId);
       
@@ -2080,7 +2054,7 @@ Important:
 
   app.get("/api/nutrition/items/missing", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const foodItems = await storage.getFoodItems(userId);
       const locations = await storage.getStorageLocations(userId);
       
@@ -2108,7 +2082,7 @@ Important:
   // Waste reduction suggestions (user-scoped)
   app.get("/api/suggestions/waste-reduction", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const expiringItems = await storage.getExpiringItems(userId, 5);
       
       if (expiringItems.length === 0) {
@@ -2141,14 +2115,7 @@ Respond ONLY with a valid JSON object:
         max_completion_tokens: 8192,
       });
 
-      let data;
-      try {
-        data = JSON.parse(completion.choices[0].message.content || '{"suggestions":[]}');
-      } catch (parseError) {
-        console.error("Failed to parse waste reduction suggestions from AI response:", parseError);
-        // Return empty suggestions instead of crashing
-        data = { suggestions: [] };
-      }
+      const data = JSON.parse(completion.choices[0].message.content || '{"suggestions":[]}');
       res.json(data);
     } catch (error) {
       console.error("Waste reduction error:", error);
@@ -2159,7 +2126,7 @@ Respond ONLY with a valid JSON object:
   // Meal Plans (user-scoped)
   app.get("/api/meal-plans", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { startDate, endDate } = req.query;
       const plans = await storage.getMealPlans(
         userId,
@@ -2175,7 +2142,7 @@ Respond ONLY with a valid JSON object:
 
   app.post("/api/meal-plans", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const validated = insertMealPlanSchema.parse(req.body);
       const plan = await storage.createMealPlan(userId, validated);
       res.json(plan);
@@ -2187,7 +2154,7 @@ Respond ONLY with a valid JSON object:
 
   app.put("/api/meal-plans/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       const validated = insertMealPlanSchema.partial().parse(req.body);
       const plan = await storage.updateMealPlan(userId, id, validated);
@@ -2200,7 +2167,7 @@ Respond ONLY with a valid JSON object:
 
   app.delete("/api/meal-plans/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       await storage.deleteMealPlan(userId, id);
       res.json({ success: true });
@@ -2213,7 +2180,7 @@ Respond ONLY with a valid JSON object:
   // Generate shopping list from meal plans
   app.get("/api/meal-plans/shopping-list", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
@@ -2302,7 +2269,7 @@ Respond ONLY with a valid JSON object:
   // Shopping list generation (user-scoped)
   app.post("/api/shopping-list/generate", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { recipeIds } = req.body;
 
       if (!recipeIds || !Array.isArray(recipeIds) || recipeIds.length === 0) {
@@ -2331,7 +2298,7 @@ Respond ONLY with a valid JSON object:
   // Shopping List Item endpoints
   app.get("/api/shopping-list/items", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const items = await storage.getShoppingListItems(userId);
       res.json(items);
     } catch (error) {
@@ -2342,7 +2309,7 @@ Respond ONLY with a valid JSON object:
 
   app.post("/api/shopping-list/items", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const newItem = await storage.createShoppingListItem(userId, req.body);
       res.json(newItem);
     } catch (error) {
@@ -2353,7 +2320,7 @@ Respond ONLY with a valid JSON object:
 
   app.post("/api/shopping-list/add-missing", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { recipeId, ingredients } = req.body;
 
       if (!recipeId || !ingredients || !Array.isArray(ingredients)) {
@@ -2370,7 +2337,7 @@ Respond ONLY with a valid JSON object:
 
   app.patch("/api/shopping-list/items/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       const updated = await storage.updateShoppingListItem(userId, id, req.body);
       res.json(updated);
@@ -2382,7 +2349,7 @@ Respond ONLY with a valid JSON object:
 
   app.delete("/api/shopping-list/items/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       await storage.deleteShoppingListItem(userId, id);
       res.json({ success: true });
@@ -2394,7 +2361,7 @@ Respond ONLY with a valid JSON object:
 
   app.delete("/api/shopping-list/clear-checked", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       await storage.clearCheckedShoppingListItems(userId);
       res.json({ success: true });
     } catch (error) {
@@ -2457,7 +2424,7 @@ Respond ONLY with a valid JSON object:
 
   app.get("/api/feedback", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const limit = parseInt(req.query.limit as string) || 50;
       const feedback = await storage.getUserFeedback(userId, limit);
       res.json(feedback);
@@ -2470,7 +2437,7 @@ Respond ONLY with a valid JSON object:
   // Community Feedback Routes - must come before /api/feedback/:id to avoid route collision
   app.get("/api/feedback/community", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const type = req.query.type as string | undefined;
       const sortBy = (req.query.sortBy as 'upvotes' | 'recent') || 'recent';
       const limit = parseInt(req.query.limit as string) || 50;
@@ -2485,7 +2452,7 @@ Respond ONLY with a valid JSON object:
 
   app.get("/api/feedback/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       const feedback = await storage.getFeedback(userId, id);
       
@@ -2513,7 +2480,7 @@ Respond ONLY with a valid JSON object:
 
   app.get("/api/feedback/analytics/summary", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const days = parseInt(req.query.days as string) || 30;
       const analytics = await storage.getFeedbackAnalytics(userId, days);
       res.json(analytics);
@@ -2553,7 +2520,7 @@ Respond ONLY with a valid JSON object:
       const feedbackResponse = await storage.addFeedbackResponse(id, {
         response,
         action,
-        responderId: getUserId(req)
+        responderId: req.user.claims.sub
       });
       
       res.json(feedbackResponse);
@@ -2603,7 +2570,7 @@ Respond ONLY with a valid JSON object:
   // Upvote routes
   app.post("/api/feedback/:id/upvote", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       
       await storage.upvoteFeedback(userId, id);
@@ -2618,7 +2585,7 @@ Respond ONLY with a valid JSON object:
 
   app.delete("/api/feedback/:id/upvote", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { id } = req.params;
       
       await storage.removeUpvote(userId, id);
@@ -2901,7 +2868,7 @@ Respond ONLY with a valid JSON object:
   // Get user's own donations (authenticated)
   app.get("/api/donations/my-donations", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const donations = await storage.getUserDonations(userId);
       res.json(donations);
     } catch (error) {
@@ -2913,7 +2880,7 @@ Respond ONLY with a valid JSON object:
   // Push notification token endpoints
   app.post("/api/push-token", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { token, platform, deviceInfo } = req.body;
 
       if (!token || !platform) {
@@ -2941,7 +2908,7 @@ Respond ONLY with a valid JSON object:
 
   app.delete("/api/push-token/:token", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = getUserId(req);
+      const userId = req.user.claims.sub;
       const { token } = req.params;
 
       // This will only delete the token if it belongs to the authenticated user

@@ -66,8 +66,7 @@ self.addEventListener('fetch', (event) => {
           // Clone the response before caching
           const responseClone = response.clone();
           caches.open(RUNTIME_CACHE)
-            .then((cache) => cache.put(request, responseClone))
-            .catch((err) => console.error('Failed to cache response:', err));
+            .then((cache) => cache.put(request, responseClone));
           return response;
         })
         .catch(() => {
@@ -105,8 +104,7 @@ self.addEventListener('fetch', (event) => {
               if (response && response.status === 200) {
                 const responseClone = response.clone();
                 caches.open(RUNTIME_CACHE)
-                  .then((cache) => cache.put(request, responseClone))
-                  .catch((err) => console.error('Failed to cache static response:', err));
+                  .then((cache) => cache.put(request, responseClone));
               }
               return response;
             });

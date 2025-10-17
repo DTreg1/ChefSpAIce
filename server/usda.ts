@@ -1,15 +1,8 @@
 import type { USDAFoodItem, USDASearchResponse, NutritionInfo } from "@shared/schema";
 import { ApiError } from "./apiError";
-import { createApiClient, API_TIMEOUTS, CircuitBreaker, makeApiCallWithTimeout } from "./utils/apiTimeout";
 
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
 const API_KEY = process.env.USDA_FDC_API_KEY;
-
-// Create axios client with timeout and retry logic
-const usdaClient = createApiClient(USDA_API_BASE, API_TIMEOUTS.USDA.search, API_TIMEOUTS.USDA.retries);
-
-// Circuit breaker for USDA API
-const usdaCircuitBreaker = new CircuitBreaker(5, 60000, 'USDA API');
 
 interface FDCNutrient {
   nutrientId?: number;
@@ -239,13 +232,7 @@ export async function searchUSDAFoods(
   options: USDASearchOptions | string
 ): Promise<USDASearchResponse> {
   if (!API_KEY) {
-    console.warn("USDA_FDC_API_KEY is not configured - returning empty results");
-    return {
-      foods: [],
-      totalHits: 0,
-      currentPage: 1,
-      totalPages: 0
-    };
+    throw new Error("USDA_FDC_API_KEY is not configured");
   }
 
   // Handle backward compatibility - if just a string is passed, treat it as query
@@ -321,30 +308,13 @@ export async function searchUSDAFoods(
       throw new ApiError(`USDA API error: ${response.status} ${response.statusText}`, response.status);
     }
 
-    let data: FDCSearchResult;
-    try {
-      data = await response.json();
-    } catch (jsonError) {
-      console.error("Failed to parse USDA API response:", jsonError);
-      throw new ApiError("Invalid response format from USDA API", 502);
-    }
-
-    // Validate response structure
-    if (!data || !Array.isArray(data.foods)) {
-      console.error("Invalid USDA API response structure:", data);
-      return {
-        foods: [],
-        totalHits: 0,
-        currentPage: 1,
-        totalPages: 0
-      };
-    }
+    const data: FDCSearchResult = await response.json();
 
     return {
       foods: data.foods.map(mapFDCFoodToUSDAItem),
-      totalHits: data.totalHits || 0,
-      currentPage: data.currentPage || 1,
-      totalPages: data.totalPages || 0,
+      totalHits: data.totalHits,
+      currentPage: data.currentPage,
+      totalPages: data.totalPages,
     };
   } catch (error: any) {
     if (error instanceof ApiError) {
@@ -357,8 +327,7 @@ export async function searchUSDAFoods(
 
 export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null> {
   if (!API_KEY) {
-    console.warn("USDA_FDC_API_KEY is not configured - returning null");
-    return null;
+    throw new Error("USDA_FDC_API_KEY is not configured");
   }
 
   try {
@@ -393,20 +362,7 @@ export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null
       throw new ApiError(`USDA API error: ${response.status} ${response.statusText}`, response.status);
     }
 
-    let food: FDCFood;
-    try {
-      food = await response.json();
-    } catch (jsonError) {
-      console.error("Failed to parse USDA API response:", jsonError);
-      return null;
-    }
-    
-    // Validate response structure
-    if (!food || typeof food !== 'object' || !food.fdcId) {
-      console.error("Invalid USDA API response structure for FDC ID:", fdcId);
-      return null;
-    }
-    
+    const food: FDCFood = await response.json();
     return mapFDCFoodToUSDAItem(food);
   } catch (error: any) {
     if (error instanceof ApiError) {

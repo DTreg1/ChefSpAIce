@@ -76,10 +76,8 @@ export default function Chat() {
 
   useEffect(() => {
     return () => {
-      // Safely abort any ongoing request on unmount
-      if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+      if (abortControllerRef.current) {
         abortControllerRef.current.abort();
-        abortControllerRef.current = null;
       }
     };
   }, []);
@@ -145,32 +143,27 @@ export default function Chat() {
     // Set timeout for streaming (15 seconds - matches stall detection)
     const timeoutId = setTimeout(() => {
       if (abortController && !abortController.signal.aborted) {
-        try {
-          abortController.abort();
-          abortControllerRef.current = null;
-          
-          // Save any accumulated content before aborting
-          if (accumulatedContent) {
-            const partialMessage: ChatMessageType = {
-              id: (Date.now() + 1).toString(),
-              userId: user?.id || "",
-              role: "assistant",
-              content: accumulatedContent + "\n\n[Response interrupted due to timeout]",
-              timestamp: new Date(),
-              metadata: null,
-            };
-            setMessages((prev) => [...prev, partialMessage]);
-            setStreamingContent("");
-          }
-          
-          toast({
-            title: "Connection Timeout",
-            description: "The response took too long. Partial response has been saved.",
-            variant: "destructive",
-          });
-        } catch (error) {
-          console.error("Error during timeout abort:", error);
+        abortController.abort();
+        
+        // Save any accumulated content before aborting
+        if (accumulatedContent) {
+          const partialMessage: ChatMessageType = {
+            id: (Date.now() + 1).toString(),
+            userId: user?.id || "",
+            role: "assistant",
+            content: accumulatedContent + "\n\n[Response interrupted due to timeout]",
+            timestamp: new Date(),
+            metadata: null,
+          };
+          setMessages((prev) => [...prev, partialMessage]);
+          setStreamingContent("");
         }
+        
+        toast({
+          title: "Connection Timeout",
+          description: "The response took too long. Partial response has been saved.",
+          variant: "destructive",
+        });
       }
     }, 15000); // 15 seconds timeout
 
@@ -217,7 +210,7 @@ export default function Chat() {
       const stallCheckInterval = setInterval(() => {
         const timeSinceLastActivity = Date.now() - lastActivityTime;
         
-        // Show warning after 10 seconds, abort after 20 seconds (increased tolerance)
+        // Show warning after 10 seconds, abort after 15 seconds
         if (timeSinceLastActivity > 10000 && !stallWarningShown && hasReceivedData) {
           stallWarningShown = true;
           toast({
@@ -227,50 +220,39 @@ export default function Chat() {
           });
         }
         
-        // Only abort if we haven't received ANY data, or after a longer timeout if we have
-        const timeoutThreshold = hasReceivedData ? 20000 : 15000;
-        
-        if (timeSinceLastActivity > timeoutThreshold) {
+        if (timeSinceLastActivity > 15000) { // 15 seconds of no activity (reduced from 30)
           clearInterval(stallCheckInterval);
           if (!abortController.signal.aborted) {
-            try {
-              abortController.abort();
-              abortControllerRef.current = null;
+            abortController.abort();
+            
+            // Save partial content if available
+            if (accumulatedContent) {
+              const partialMessage: ChatMessageType = {
+                id: (Date.now() + 1).toString(),
+                userId: user?.id || "",
+                role: "assistant",
+                content: accumulatedContent + "\n\n[Stream interrupted - partial response saved]",
+                timestamp: new Date(),
+                metadata: null,
+              };
+              setMessages((prev) => [...prev, partialMessage]);
+              setStreamingContent("");
               
-              // Save partial content if available
-              if (accumulatedContent && accumulatedContent.trim()) {
-                const partialMessage: ChatMessageType = {
-                  id: (Date.now() + 1).toString(),
-                  userId: user?.id || "",
-                  role: "assistant",
-                  content: accumulatedContent + "\n\n[Stream interrupted - partial response saved]",
-                  timestamp: new Date(),
-                  metadata: null,
-                };
-                setMessages((prev) => [...prev, partialMessage]);
-                setStreamingContent("");
-                setIsStreaming(false);
-                
-                toast({
-                  title: "Connection Timeout",
-                  description: "Response saved. You can continue the conversation.",
-                  variant: "default",
-                });
-              } else {
-                setIsStreaming(false);
-                toast({
-                  title: "Connection Timeout",
-                  description: "Stream stopped responding. Please try again.",
-                  variant: "destructive",
-                });
-              }
-            } catch (error) {
-              console.error("Error during stall abort:", error);
-              setIsStreaming(false);
+              toast({
+                title: "Connection Timeout",
+                description: "Response saved. You can continue the conversation.",
+                variant: "default",
+              });
+            } else {
+              toast({
+                title: "Connection Timeout",
+                description: "Stream stopped responding. Please try again.",
+                variant: "destructive",
+              });
             }
           }
         }
-      }, 2000); // Check every 2 seconds
+      }, 2000); // Check more frequently (every 2 seconds instead of 5)
 
       try {
         while (true) {
@@ -353,18 +335,6 @@ export default function Chat() {
             chunk = decoder.decode(value, { stream: true });
           } catch (decodeError: any) {
             console.error("Error decoding chunk:", decodeError);
-            // If we can't decode, but have accumulated content, save it
-            if (accumulatedContent && retryCount === 0) {
-              const partialMessage: ChatMessageType = {
-                id: (Date.now() + 1).toString(),
-                userId: user?.id || "",
-                role: "assistant",
-                content: accumulatedContent + "\n\n[Decoding error - partial response saved]",
-                timestamp: new Date(),
-                metadata: null,
-              };
-              setMessages((prev) => [...prev, partialMessage]);
-            }
             continue; // Skip this chunk but continue processing
           }
           
