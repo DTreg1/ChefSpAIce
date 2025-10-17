@@ -2652,9 +2652,32 @@ Respond ONLY with a valid JSON object:
       });
     } catch (error: any) {
       console.error("Error creating payment intent:", error);
+      
+      // Handle validation errors with proper status codes
+      if (error instanceof ApiError) {
+        return res.status(error.statusCode).json({
+          error: error.message,
+          details: error.details
+        });
+      }
+      
+      // Handle Stripe-specific errors
+      if (error.type === 'StripeCardError') {
+        return res.status(400).json({
+          error: "Card error",
+          message: error.message
+        });
+      } else if (error.type === 'StripeInvalidRequestError') {
+        return res.status(400).json({
+          error: "Invalid request",
+          message: error.message
+        });
+      }
+      
+      // Generic server error for unexpected issues
       res.status(500).json({ 
         error: "Failed to create payment intent",
-        message: error.message 
+        message: "An unexpected error occurred. Please try again."
       });
     }
   });
