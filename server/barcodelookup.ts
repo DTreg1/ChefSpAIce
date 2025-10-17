@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { ApiError } from './apiError';
+import { handleApiError } from './utils/apiErrorHandler';
 
 const BARCODE_LOOKUP_API_BASE = 'https://api.barcodelookup.com/v3';
 

@@ -1,6 +1,7 @@
 import type { USDAFoodItem, USDASearchResponse, NutritionInfo } from "@shared/schema";
 import { ApiError } from "./apiError";
 import { createApiClient, API_TIMEOUTS, CircuitBreaker, makeApiCallWithTimeout } from "./utils/apiTimeout";
+import { handleApiError } from "./utils/apiErrorHandler";
 
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
 const API_KEY = process.env.USDA_FDC_API_KEY;
