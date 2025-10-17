@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
@@ -146,7 +146,7 @@ export default function FdcSearch() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('scanBarcode') === 'true') {
-      setShowBarcodeScanner(true);
+      startTransition(() => setShowBarcodeScanner(true));
       // Clean up URL
       window.history.replaceState({}, '', '/fdc-search');
     }
@@ -257,7 +257,7 @@ export default function FdcSearch() {
 
   const handleViewDetails = (fdcId: string) => {
     setSelectedFood(fdcId);
-    setDetailsOpen(true);
+    startTransition(() => setDetailsOpen(true));
   };
   
   const handleAddToInventory = (food: FoodItem) => {

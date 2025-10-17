@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect, startTransition } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,8 +157,10 @@ export default function MealPlanner() {
   // Handler for opening the add meal modal
   const openAddMealModal = (date: Date, mealType: MealType) => {
     const dateStr = date.toLocaleDateString("en-CA");
-    setSelectedMealSlot({ date: dateStr, mealType });
-    setIsAddMealOpen(true);
+    startTransition(() => {
+      setSelectedMealSlot({ date: dateStr, mealType });
+      setIsAddMealOpen(true);
+    });
   };
   
   // Handler for adding a meal

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, startTransition } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -208,7 +208,7 @@ export default function Storage() {
             <div className="flex gap-2">
               <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
               <Button 
-                onClick={() => setAddDialogOpen(true)} 
+                onClick={() => startTransition(() => setAddDialogOpen(true))} 
                 className="touch-target"
                 data-testid="button-add-item-page"
               >
@@ -222,7 +222,7 @@ export default function Storage() {
           {itemsLoading || locationsLoading ? (
             <FoodCardSkeletonGrid count={6} />
           ) : !items || items.length === 0 ? (
-            <EmptyState type="inventory" onAction={() => setAddDialogOpen(true)} />
+            <EmptyState type="inventory" onAction={() => startTransition(() => setAddDialogOpen(true))} />
           ) : items.length > 50 ? (
             // Use virtual scrolling for large lists (>50 items)
             <VirtualizedFoodGrid 
