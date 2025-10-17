@@ -51,11 +51,12 @@ export async function deduplicatedFetch(
     (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : 
     undefined;
   
-  // Only deduplicate GET requests and idempotent POST requests (like queries)
+  // Only deduplicate GET requests and certain idempotent POST requests
+  // Note: Chat messages are NOT idempotent and should never be deduplicated
   const shouldDeduplicate = 
     method === 'GET' || 
-    (method === 'POST' && url.includes('/api/chat/messages')) ||
-    (method === 'POST' && url.includes('/api/search'));
+    (method === 'POST' && url.includes('/api/search')) ||
+    (method === 'POST' && url.includes('/api/fdc/search'));
   
   if (!shouldDeduplicate) {
     // Don't deduplicate mutations or non-idempotent requests
