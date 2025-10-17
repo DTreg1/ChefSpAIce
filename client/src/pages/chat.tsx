@@ -202,38 +202,55 @@ export default function Chat() {
       let buffer = ""; // Buffer for incomplete lines
       let lastActivityTime = Date.now();
       let hasReceivedData = false; // Track if we've received any data
+      let stallWarningShown = false; // Track if we've shown the stall warning
       
-      // Monitor for stalled streams with better detection
+      // Monitor for stalled streams with improved detection
       const stallCheckInterval = setInterval(() => {
         const timeSinceLastActivity = Date.now() - lastActivityTime;
         
-        if (timeSinceLastActivity > 30000) { // 30 seconds of no activity
+        // Show warning after 10 seconds, abort after 15 seconds
+        if (timeSinceLastActivity > 10000 && !stallWarningShown && hasReceivedData) {
+          stallWarningShown = true;
+          toast({
+            title: "Slow Connection",
+            description: "Response is taking longer than usual...",
+            variant: "default",
+          });
+        }
+        
+        if (timeSinceLastActivity > 15000) { // 15 seconds of no activity (reduced from 30)
           clearInterval(stallCheckInterval);
           if (!abortController.signal.aborted) {
             abortController.abort();
             
             // Save partial content if available
-            if (accumulatedContent && !hasReceivedData) {
+            if (accumulatedContent) {
               const partialMessage: ChatMessageType = {
                 id: (Date.now() + 1).toString(),
                 userId: user?.id || "",
                 role: "assistant",
-                content: accumulatedContent + "\n\n[Stream interrupted - partial response]",
+                content: accumulatedContent + "\n\n[Stream interrupted - partial response saved]",
                 timestamp: new Date(),
                 metadata: null,
               };
               setMessages((prev) => [...prev, partialMessage]);
               setStreamingContent("");
+              
+              toast({
+                title: "Connection Timeout",
+                description: "Response saved. You can continue the conversation.",
+                variant: "default",
+              });
+            } else {
+              toast({
+                title: "Connection Timeout",
+                description: "Stream stopped responding. Please try again.",
+                variant: "destructive",
+              });
             }
-            
-            toast({
-              title: "Connection Stalled",
-              description: accumulatedContent ? "Stream stopped. Partial response saved." : "Stream stopped responding.",
-              variant: "destructive",
-            });
           }
         }
-      }, 5000);
+      }, 2000); // Check more frequently (every 2 seconds instead of 5)
 
       try {
         while (true) {
