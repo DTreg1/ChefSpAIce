@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import {
   Home,
   Refrigerator,
@@ -48,7 +48,8 @@ import {
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
+import { TransitionLink } from "@/components/TransitionLink";
 import { cn } from "@/lib/utils";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import { Logo } from "@/components/Logo";
@@ -149,14 +150,14 @@ export function AppSidebar() {
                     isActive={location === chatItem.path}
                     className="transition-morph hover:pl-1"
                   >
-                    <Link
+                    <TransitionLink
                       href={chatItem.path}
                       data-testid="link-chat"
                       onClick={handleLinkClick}
                     >
                       <chatItem.icon className="w-4 h-4 transition-morph" />
                       <span className="flex-1">{chatItem.name}</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -174,14 +175,14 @@ export function AppSidebar() {
                     asChild
                     isActive={location === "/meal-planner"}
                   >
-                    <Link
+                    <TransitionLink
                       href="/meal-planner"
                       data-testid="link-meal-planner"
                       onClick={handleLinkClick}
                     >
                       <CalendarDays className="w-4 h-4" />
                       <span className="flex-1">Meal Planner</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -189,14 +190,14 @@ export function AppSidebar() {
                     asChild
                     isActive={location === "/shopping-list"}
                   >
-                    <Link
+                    <TransitionLink
                       href="/shopping-list"
                       data-testid="link-shopping-list"
                       onClick={handleLinkClick}
                     >
                       <ShoppingCart className="w-4 h-4" />
                       <span className="flex-1">Shopping List</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -214,14 +215,14 @@ export function AppSidebar() {
                     asChild
                     isActive={location === "/cookbook"}
                   >
-                    <Link
+                    <TransitionLink
                       href="/cookbook"
                       data-testid="link-cookbook"
                       onClick={handleLinkClick}
                     >
                       <BookOpen className="w-4 h-4" />
                       <span className="flex-1">My Cookbook</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -229,14 +230,14 @@ export function AppSidebar() {
                     asChild
                     isActive={location === "/nutrition"}
                   >
-                    <Link
+                    <TransitionLink
                       href="/nutrition"
                       data-testid="link-nutrition"
                       onClick={handleLinkClick}
                     >
                       <Apple className="w-4 h-4" />
                       <span className="flex-1">Nutrition</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -244,14 +245,14 @@ export function AppSidebar() {
                     asChild
                     isActive={location === "/fdc-search"}
                   >
-                    <Link
+                    <TransitionLink
                       href="/fdc-search"
                       data-testid="link-fdc-search"
                       onClick={handleLinkClick}
                     >
                       <Database className="w-4 h-4" />
                       <span className="flex-1">Food Search</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -269,14 +270,14 @@ export function AppSidebar() {
                     asChild
                     isActive={location === "/appliances"}
                   >
-                    <Link
+                    <TransitionLink
                       href="/appliances"
                       data-testid="link-appliances"
                       onClick={handleLinkClick}
                     >
                       <UtensilsCrossed className="w-4 h-4" />
                       <span className="flex-1">My Appliances</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <Collapsible
@@ -309,7 +310,7 @@ export function AppSidebar() {
                             asChild
                             isActive={location === "/food-groups"}
                           >
-                            <Link
+                            <TransitionLink
                               href="/food-groups"
                               data-testid="link-food-groups-all"
                               onClick={handleLinkClick}
@@ -318,7 +319,7 @@ export function AppSidebar() {
                               <span className="flex-1">
                                 View All Categories
                               </span>
-                            </Link>
+                            </TransitionLink>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         {foodCategories.map((category) => {
@@ -334,7 +335,7 @@ export function AppSidebar() {
                                   `category=${encodeURIComponent(category)}`,
                                 )}
                               >
-                                <Link
+                                <TransitionLink
                                   href={categoryPath}
                                   data-testid={`link-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
                                   onClick={handleLinkClick}
@@ -348,7 +349,7 @@ export function AppSidebar() {
                                   >
                                     {categoryItems.length}
                                   </Badge>
-                                </Link>
+                                </TransitionLink>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                           );
@@ -387,14 +388,14 @@ export function AppSidebar() {
                             asChild
                             isActive={location === "/storage/all"}
                           >
-                            <Link
+                            <TransitionLink
                               href="/storage/all"
                               data-testid="link-storage-all"
                               onClick={handleLinkClick}
                             >
                               <Home className="w-4 h-4" />
                               <span className="flex-1">View All</span>
-                            </Link>
+                            </TransitionLink>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         {storageLocations?.map((loc) => {
@@ -413,7 +414,7 @@ export function AppSidebar() {
                                   `/storage/${loc.name.toLowerCase()}`
                                 }
                               >
-                                <Link
+                                <TransitionLink
                                   href={`/storage/${loc.name.toLowerCase()}`}
                                   data-testid={`link-storage-${loc.id}`}
                                   onClick={handleLinkClick}
@@ -427,7 +428,7 @@ export function AppSidebar() {
                                   >
                                     {locCount}
                                   </Badge>
-                                </Link>
+                                </TransitionLink>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                           );
@@ -451,26 +452,26 @@ export function AppSidebar() {
                     asChild
                     isActive={location === "/feedback"}
                   >
-                    <Link
+                    <TransitionLink
                       href="/feedback"
                       data-testid="link-feedback"
                       onClick={handleLinkClick}
                     >
                       <BarChart3 className="w-4 h-4" />
                       <span className="flex-1">Feedback</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/donate"}>
-                    <Link
+                    <TransitionLink
                       href="/donate"
                       data-testid="link-donate"
                       onClick={handleLinkClick}
                     >
                       <Heart className="w-4 h-4" />
                       <span className="flex-1">Support Us</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -478,14 +479,14 @@ export function AppSidebar() {
                     asChild
                     isActive={location === "/settings"}
                   >
-                    <Link
+                    <TransitionLink
                       href="/settings"
                       data-testid="link-settings"
                       onClick={handleLinkClick}
                     >
                       <Settings className="w-4 h-4" />
                       <span className="flex-1">Settings</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -500,38 +501,38 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/about"}>
-                    <Link
+                    <TransitionLink
                       href="/about"
                       data-testid="link-about"
                       onClick={handleLinkClick}
                     >
                       <Info className="w-4 h-4" />
                       <span className="flex-1">About</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/privacy"}>
-                    <Link
+                    <TransitionLink
                       href="/privacy"
                       data-testid="link-privacy"
                       onClick={handleLinkClick}
                     >
                       <Shield className="w-4 h-4" />
                       <span className="flex-1">Privacy Policy</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/terms"}>
-                    <Link
+                    <TransitionLink
                       href="/terms"
                       data-testid="link-terms"
                       onClick={handleLinkClick}
                     >
                       <ScrollText className="w-4 h-4" />
                       <span className="flex-1">Terms of Service</span>
-                    </Link>
+                    </TransitionLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
