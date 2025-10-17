@@ -21,10 +21,12 @@ import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useInitialData } from "@/hooks/useInitialData";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-// Eagerly loaded core pages
+// Eagerly loaded core pages (only the most critical)
 import Landing from "@/pages/landing";
-import Onboarding from "@/pages/onboarding";
 import Chat from "@/pages/chat";
+
+// Lazy load onboarding since it's only shown for new users
+const Onboarding = lazy(() => import("@/pages/onboarding"));
 
 // Lazy load all secondary pages to improve initial load performance
 const Storage = lazy(() => import("@/pages/storage"));
@@ -154,7 +156,11 @@ function AppContent() {
 
   // Show onboarding full-screen without sidebar if not completed
   if (!prefLoading && (!preferences || !preferences.hasCompletedOnboarding)) {
-    return <Onboarding />;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <Onboarding />
+      </Suspense>
+    );
   }
 
   // Show app layout with sidebar for authenticated users who completed onboarding

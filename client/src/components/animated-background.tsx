@@ -30,25 +30,58 @@ export function AnimatedBackground({
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
-    const colors = [
-      "hsla(82, 39%, 30%, 0.3)",
-      "hsla(60, 10%, 40%, 0.3)",
-      "hsla(102, 20%, 35%, 0.3)",
-      "hsla(92, 25%, 35%, 0.3)",
-    ];
+    // Delay particle creation until after initial render to improve FCP
+    const timer = 'requestIdleCallback' in window ? 
+      (window as any).requestIdleCallback(() => {
+        const colors = [
+          "hsla(82, 39%, 30%, 0.3)",
+          "hsla(60, 10%, 40%, 0.3)",
+          "hsla(102, 20%, 35%, 0.3)",
+          "hsla(92, 25%, 35%, 0.3)",
+        ];
 
-    const newParticles: Particle[] = Array.from({ length: particleCount }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 4 + 2,
-      duration: Math.random() * 20 + 20,
-      delay: Math.random() * 10,
-      path: ["up", "diagonal", "zigzag"][Math.floor(Math.random() * 3)] as Particle["path"],
-      color: colors[Math.floor(Math.random() * colors.length)],
-    }));
+        const newParticles: Particle[] = Array.from({ length: particleCount }, (_, i) => ({
+          id: i,
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          size: Math.random() * 4 + 2,
+          duration: Math.random() * 20 + 20,
+          delay: Math.random() * 10,
+          path: ["up", "diagonal", "zigzag"][Math.floor(Math.random() * 3)] as Particle["path"],
+          color: colors[Math.floor(Math.random() * colors.length)],
+        }));
 
-    setParticles(newParticles);
+        setParticles(newParticles);
+      }, { timeout: 1000 }) :
+      setTimeout(() => {
+        const colors = [
+          "hsla(82, 39%, 30%, 0.3)",
+          "hsla(60, 10%, 40%, 0.3)",
+          "hsla(102, 20%, 35%, 0.3)",
+          "hsla(92, 25%, 35%, 0.3)",
+        ];
+
+        const newParticles: Particle[] = Array.from({ length: particleCount }, (_, i) => ({
+          id: i,
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          size: Math.random() * 4 + 2,
+          duration: Math.random() * 20 + 20,
+          delay: Math.random() * 10,
+          path: ["up", "diagonal", "zigzag"][Math.floor(Math.random() * 3)] as Particle["path"],
+          color: colors[Math.floor(Math.random() * colors.length)],
+        }));
+
+        setParticles(newParticles);
+      }, 100);
+    
+    return () => {
+      if ('requestIdleCallback' in window && timer) {
+        (window as any).cancelIdleCallback(timer);
+      } else if (timer) {
+        clearTimeout(timer as number);
+      }
+    };
   }, [particleCount]);
 
   const gradientClasses = {

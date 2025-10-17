@@ -61,7 +61,20 @@ Respond ONLY with a valid JSON object in this exact format:
       response_format: { type: "json_object" }
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    let result;
+    try {
+      result = JSON.parse(response.choices[0].message.content || "{}");
+    } catch (parseError) {
+      console.error("Failed to parse moderation JSON from AI response:", parseError);
+      // Return safe defaults if parsing fails
+      return {
+        isFlagged: false,
+        category: "other",
+        priority: type === "bug" ? "medium" : "low",
+        sentiment: "neutral",
+        tags: [],
+      };
+    }
     
     return {
       isFlagged: result.isFlagged || false,

@@ -55,6 +55,10 @@ export function useSwipe(handlers: SwipeHandlers) {
         handlers.onSwipeDown();
       }
     }
+    
+    // Reset touch states after processing to prevent memory leak and incorrect subsequent swipe detection
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
   return {

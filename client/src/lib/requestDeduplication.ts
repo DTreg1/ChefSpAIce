@@ -47,9 +47,15 @@ export async function deduplicatedFetch(
   options?: RequestInit
 ): Promise<Response> {
   const method = options?.method || 'GET';
-  const body = options?.body ? 
-    (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : 
-    undefined;
+  let body;
+  try {
+    body = options?.body ? 
+      (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : 
+      undefined;
+  } catch (parseError) {
+    // If we can't parse the body, treat it as a string
+    body = options?.body;
+  }
   
   // Only deduplicate GET requests and certain idempotent POST requests
   // Note: Chat messages are NOT idempotent and should never be deduplicated
