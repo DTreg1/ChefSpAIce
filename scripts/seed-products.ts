@@ -71,10 +71,8 @@ async function seedProducts() {
       await db.insert(products)
         .values({
           ...product,
-          metadata: {
-            featured: product.price > 2000,
-            stock: Math.floor(Math.random() * 100) + 10
-          }
+          imageUrl: product.image,
+          stock: Math.floor(Math.random() * 100) + 10
         })
         .onConflictDoUpdate({
           target: products.id,
@@ -82,8 +80,9 @@ async function seedProducts() {
             name: product.name,
             description: product.description,
             price: product.price,
-            image: product.image,
+            imageUrl: product.image,
             category: product.category,
+            stock: Math.floor(Math.random() * 100) + 10,
             updatedAt: new Date()
           }
         });
