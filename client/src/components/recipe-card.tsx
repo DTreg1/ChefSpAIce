@@ -84,12 +84,28 @@ export function RecipeCard({
   });
 
   const toggleFavorite = () => {
+    if (!id) {
+      toast({
+        title: "Error",
+        description: "Cannot update unsaved recipe",
+        variant: "destructive",
+      });
+      return;
+    }
     const newFavorite = !localFavorite;
     setLocalFavorite(newFavorite);
     updateMutation.mutate({ isFavorite: newFavorite });
   };
 
   const setRating = (newRating: number) => {
+    if (!id) {
+      toast({
+        title: "Error",
+        description: "Cannot rate unsaved recipe",
+        variant: "destructive",
+      });
+      return;
+    }
     setLocalRating(newRating);
     updateMutation.mutate({ rating: newRating });
   };

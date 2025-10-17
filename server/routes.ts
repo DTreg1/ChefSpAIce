@@ -612,8 +612,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/fdc/search", async (req, res) => {
     try {
       const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
+      
+      // Validate and sanitize query parameter
       if (!query || typeof query !== "string") {
         throw new ApiError("Query parameter is required", 400);
+      }
+      
+      // Sanitize search query - limit length and remove potentially harmful characters
+      const sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
+      if (!sanitizedQuery) {
+        throw new ApiError("Invalid search query", 400);
       }
 
       const size = pageSize ? parseInt(pageSize as string) : 25;
@@ -647,11 +655,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasAnyFilters = !!(sort || brandOwners.length > 0 || dataTypes.length > 0 || size !== 25);
       
       // Use shorter TTL for complex searches, longer TTL for simple searches
-      const cachedResults = await storage.getCachedSearchResults(query, undefined, page, hasAnyFilters);
+      const cachedResults = await storage.getCachedSearchResults(sanitizedQuery, undefined, page, hasAnyFilters);
       if (cachedResults && 
           cachedResults.results &&
           cachedResults.pageSize === size) {
-        console.log(`FDC search cache hit for query: ${query} (complex: ${hasAnyFilters})`);
+        console.log(`FDC search cache hit for query: ${sanitizedQuery} (complex: ${hasAnyFilters})`);
         return res.json({
             foods: cachedResults.results,
             totalHits: cachedResults.totalHits,
@@ -662,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // If not in cache, call FDC API
-      console.log(`FDC search calling API for query: ${query}`);
+      console.log(`FDC search calling API for query: ${sanitizedQuery}`);
       
       // Build API URL
       const apiKey = process.env.FDC_API_KEY;
@@ -672,7 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const searchUrl = new URL('https://api.nal.usda.gov/fdc/v1/foods/search');
       searchUrl.searchParams.append('api_key', apiKey);
-      searchUrl.searchParams.append('query', query);
+      searchUrl.searchParams.append('query', sanitizedQuery);
       searchUrl.searchParams.append('pageSize', size.toString());
       searchUrl.searchParams.append('pageNumber', page.toString());
       
@@ -718,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Cache all searches, but complex searches will have shorter TTL (2 hours vs 24 hours)
       // This is handled by the getCachedSearchResults method which checks isComplexSearch
       await storage.cacheSearchResults({
-        query,
+        query: sanitizedQuery,
         dataType: null,
         pageNumber: page,
         pageSize: size,
@@ -850,6 +858,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!query || typeof query !== "string") {
         throw new ApiError("Query parameter is required", 400);
       }
+      
+      // Sanitize search query - limit length and remove potentially harmful characters
+      const sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
+      if (!sanitizedQuery) {
+        throw new ApiError("Invalid search query", 400);
+      }
 
       const size = pageSize ? parseInt(pageSize as string) : 20;
       const page = pageNumber ? parseInt(pageNumber as string) : 1;
@@ -875,7 +889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const results = await searchUSDAFoods({
-        query,
+        query: sanitizedQuery,
         pageSize: size,
         pageNumber: page,
         dataType: dataTypes.length > 0 ? dataTypes : undefined,
@@ -939,12 +953,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!query || typeof query !== "string") {
         throw new ApiError("Query parameter is required", 400);
       }
+      
+      // Sanitize search query - limit length and remove potentially harmful characters
+      const sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
+      if (!sanitizedQuery) {
+        throw new ApiError("Invalid search query", 400);
+      }
 
       // Check rate limits before making API call
       await checkRateLimitBeforeCall();
 
       apiCallMade = true;
-      const results = await searchBarcodeLookup(query);
+      const results = await searchBarcodeLookup(sanitizedQuery);
       
       const products = results.products.map(product => ({
         code: product.barcode_number || '',
@@ -972,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await batchedApiLogger.logApiUsage(userId, {
             apiName: 'barcode_lookup',
             endpoint: 'search',
-            queryParams: `query=${query}`,
+            queryParams: `query=${sanitizedQuery}`,
             statusCode,
             success
           });

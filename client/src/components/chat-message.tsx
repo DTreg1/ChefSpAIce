@@ -37,9 +37,9 @@ export function ChatMessage({ role, content, timestamp, children, userProfileIma
     >
       {isUser ? (
         <Avatar className="w-8 h-8 flex-shrink-0 transition-spring">
-          <AvatarImage src={userProfileImageUrl || undefined} />
+          <AvatarImage src={userProfileImageUrl && userProfileImageUrl.trim() ? userProfileImageUrl : undefined} />
           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-            {userInitials || <User className="w-4 h-4" />}
+            {userInitials && userInitials.trim() ? userInitials : <User className="w-4 h-4" />}
           </AvatarFallback>
         </Avatar>
       ) : (
