@@ -9,13 +9,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
-import { AddFoodDialog } from "@/components/add-food-dialog";
-import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
-import { FeedbackWidget } from "@/components/feedback-widget";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
+
+// Lazy load dialogs and non-critical UI components
+const CommandPalette = lazy(() => import("@/components/command-palette").then(module => ({ default: module.CommandPalette })));
+const AddFoodDialog = lazy(() => import("@/components/add-food-dialog").then(module => ({ default: module.AddFoodDialog })));
+const RecipeCustomizationDialog = lazy(() => import("@/components/recipe-customization-dialog").then(module => ({ default: module.RecipeCustomizationDialog })));
+const FeedbackWidget = lazy(() => import("@/components/feedback-widget").then(module => ({ default: module.FeedbackWidget })));
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useInitialData } from "@/hooks/useInitialData";
@@ -24,9 +26,9 @@ import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
 
 // Eagerly loaded core pages (only the most critical)
 import Landing from "@/pages/landing";
-import Chat from "@/pages/chat";
 
-// Lazy load onboarding since it's only shown for new users
+// Lazy load all pages except Landing to improve initial load performance
+const Chat = lazy(() => import("@/pages/chat"));
 const Onboarding = lazy(() => import("@/pages/onboarding"));
 
 // Lazy load all secondary pages to improve initial load performance
@@ -167,25 +169,27 @@ function AppContent() {
   return (
     <>
       <AnimatedBackground
-        variant="both"
+        variant="gradient"
         gradientType="soft"
-        particleCount={30}
+        particleCount={15}
       />
-      <CommandPalette
-        onAddFood={() => setAddFoodOpen(true)}
-        onGenerateRecipe={() => setRecipeDialogOpen(true)}
-        onScanBarcode={() => {
-          // Navigate to FDC search page with barcode scanner
-          window.location.href = "/fdc-search?scanBarcode=true";
-        }}
-      />
-      <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
-      <RecipeCustomizationDialog
-        open={recipeDialogOpen}
-        onOpenChange={setRecipeDialogOpen}
-      />
-      {/* Only show floating FeedbackWidget on non-chat pages */}
-      {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
+      <Suspense fallback={null}>
+        <CommandPalette
+          onAddFood={() => setAddFoodOpen(true)}
+          onGenerateRecipe={() => setRecipeDialogOpen(true)}
+          onScanBarcode={() => {
+            // Navigate to FDC search page with barcode scanner
+            window.location.href = "/fdc-search?scanBarcode=true";
+          }}
+        />
+        <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
+        <RecipeCustomizationDialog
+          open={recipeDialogOpen}
+          onOpenChange={setRecipeDialogOpen}
+        />
+        {/* Only show floating FeedbackWidget on non-chat pages */}
+        {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
+      </Suspense>
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
           {/* Header is now at the top level, outside the flex container with sidebar */}
