@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, startTransition } from "react";
 import { useLocation } from "wouter";
 import {
   CommandDialog,
@@ -48,13 +48,17 @@ export function CommandPalette({ onAddFood, onGenerateRecipe, onScanBarcode }: C
   }, [handleKeyDown]);
 
   const navigate = (path: string) => {
-    setLocation(path);
-    setOpen(false);
+    startTransition(() => {
+      setLocation(path);
+      setOpen(false);
+    });
   };
 
   const runAction = (action: () => void) => {
-    action();
-    setOpen(false);
+    startTransition(() => {
+      action();
+      setOpen(false);
+    });
   };
 
   return (
