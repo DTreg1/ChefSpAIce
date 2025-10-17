@@ -83,6 +83,8 @@ class BatchedApiLogger {
             } else {
               console.error(`Dropping API log after 3 failed attempts: ${logKey}`);
               this.failureRetryCount.delete(logKey);
+              // IMPORTANT: Remove from queuedLogKeys to allow future logs with same key
+              this.queuedLogKeys.delete(logKey);
             }
             
             return { success: false, queuedLog };
