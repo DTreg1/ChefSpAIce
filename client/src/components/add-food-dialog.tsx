@@ -480,15 +480,15 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
     // Check all required fields individually for better error reporting
     const missingFields = [];
-    if (!quantity) missingFields.push("quantity");
-    if (!unit) missingFields.push("unit");
-    if (!storageLocationId) missingFields.push("storage location");
-    if (!expirationDate) missingFields.push("expiration date");
+    if (!quantity) missingFields.push("quantity (e.g., 2, 1.5)");
+    if (!unit) missingFields.push("unit (e.g., pieces, cups, lbs)");
+    if (!storageLocationId) missingFields.push("storage location (select where you'll store this item)");
+    if (!expirationDate) missingFields.push("expiration date (YYYY-MM-DD format)");
 
     if (missingFields.length > 0) {
       toast({
-        title: "Error",
-        description: `Please fill in: ${missingFields.join(", ")}`,
+        title: "Please complete all required fields",
+        description: `Missing: ${missingFields.join(", ")}`,
         variant: "destructive",
       });
       console.error("Missing fields:", missingFields);

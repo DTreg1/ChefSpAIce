@@ -72,10 +72,16 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
   });
 
   const handleSubmit = () => {
-    if (!quantity || !unit || !storageLocationId || !expirationDate) {
+    const missingFields = [];
+    if (!quantity) missingFields.push("quantity");
+    if (!unit) missingFields.push("unit");
+    if (!storageLocationId) missingFields.push("storage location");
+    if (!expirationDate) missingFields.push("expiration date");
+
+    if (missingFields.length > 0) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Please complete all required fields",
+        description: `Missing: ${missingFields.join(", ")}. All fields marked with * are required.`,
         variant: "destructive",
       });
       return;
