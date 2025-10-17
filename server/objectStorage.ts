@@ -66,7 +66,25 @@ export class ObjectStorageService {
         { missingEnv: "PRIVATE_OBJECT_DIR" }
       );
     }
+    // Validate the directory path format
+    if (!this.isValidPath(dir)) {
+      throw new ObjectStorageError(
+        "Invalid object storage directory configuration",
+        500,
+        { invalidDir: dir }
+      );
+    }
     return dir;
+  }
+
+  private isValidPath(pathStr: string): boolean {
+    // Check for path traversal attempts and invalid characters
+    if (!pathStr || typeof pathStr !== 'string') return false;
+    if (pathStr.includes('..')) return false;
+    if (pathStr.includes('~')) return false;
+    if (/[<>"|?*\x00-\x1F]/.test(pathStr)) return false;
+    if (pathStr.length > 255) return false;
+    return true;
   }
 
   async downloadObject(file: File, res: Response, retryCount = 0): Promise<void> {

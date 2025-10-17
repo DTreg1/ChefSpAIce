@@ -27,6 +27,16 @@ import {
   insertWebVitalSchema,
   type BarcodeProduct
 } from "@shared/schema";
+import {
+  searchQuerySchema,
+  barcodeQuerySchema,
+  paginationSchema,
+  dateSchema,
+  feedbackContentSchema,
+  imageUploadSchema,
+  validateExternalApiResponse,
+  barcodeLookupProductSchema,
+} from "./validation/apiSchemas";
 
 // Helper functions for appliance barcode processing
 function extractApplianceCapabilities(product: any): string[] {
@@ -656,44 +666,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // FDC Food Search with Cache (public)
   app.get("/api/fdc/search", async (req, res, next) => {
     try {
-      const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
+      // Use Zod schema for validation and transformation
+      const validatedQuery = searchQuerySchema.parse(req.query);
       
-      // Validate and sanitize query parameter
-      if (!query || typeof query !== "string") {
-        throw new ApiError("Query parameter is required", 400);
-      }
-      
-      // Sanitize search query - limit length and remove potentially harmful characters
-      const sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
-      if (!sanitizedQuery) {
-        throw new ApiError("Invalid search query", 400);
-      }
-
-      const size = pageSize ? parseInt(pageSize as string) : 25;
-      const page = pageNumber ? parseInt(pageNumber as string) : 1;
-      
-      // Parse dataType - can be comma-separated string or array
-      let dataTypes: string[] = [];
-      if (dataType) {
-        if (Array.isArray(dataType)) {
-          dataTypes = dataType as string[];
-        } else if (typeof dataType === 'string') {
-          dataTypes = dataType.split(',').map(t => t.trim()).filter(Boolean);
-        }
-      }
-      
-      // Parse brandOwner - Express automatically handles multiple params as array
-      let brandOwners: string[] = [];
-      if (brandOwner) {
-        if (Array.isArray(brandOwner)) {
-          brandOwners = brandOwner as string[];
-        } else if (typeof brandOwner === 'string') {
-          brandOwners = [brandOwner];
-        }
-      }
-      
-      const sort = sortBy as string | undefined;
-      const order = sortOrder as string | undefined;
+      const sanitizedQuery = validatedQuery.query;
+      const size = validatedQuery.pageSize;
+      const page = validatedQuery.pageNumber;
+      const dataTypes = validatedQuery.dataType || [];
+      const brandOwners = validatedQuery.brandOwner || [];
+      const sort = validatedQuery.sortBy;
+      const order = validatedQuery.sortOrder;
 
       // Only cache the simplest searches (query + page) to avoid stale results with filters
       // Advanced filters (dataType, sort, brand) bypass cache completely
@@ -1178,15 +1160,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/food-images", isAuthenticated, async (req, res) => {
-    if (!req.body.imageURL) {
-      throw new ApiError("imageURL is required", 400);
-    }
-
     try {
+      // Validate request body
+      const validated = imageUploadSchema.parse(req.body);
+      
       const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(req.body.imageURL);
+      const objectPath = objectStorageService.normalizeObjectEntityPath(validated.imageURL);
       res.status(200).json({ objectPath });
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        throw new ApiError(error.errors[0]?.message || "Invalid request", 400);
+      }
       console.error("Error setting food image:", error);
       throw new ApiError("Internal server error", 500);
     }
@@ -1202,8 +1186,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Background cleanup error:', err)
       );
       
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100); // Max 100 per page
+      // Use Zod for pagination validation
+      const { page, limit } = paginationSchema.parse(req.query);
       
       // If pagination params are provided, use paginated method
       if (req.query.page || req.query.limit) {
@@ -1214,7 +1198,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const messages = await storage.getChatMessages(userId);
         res.json(messages);
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        throw new ApiError("Invalid pagination parameters", 400);
+      }
       console.error("Error fetching chat messages:", error);
       throw new ApiError("Failed to fetch chat messages", 500);
     }
