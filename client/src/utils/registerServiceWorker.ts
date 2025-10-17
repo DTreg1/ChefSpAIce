@@ -1,5 +1,16 @@
-// Helper function to show user-friendly notification
+// Track active notifications to prevent duplicates
+const activeNotifications = new Map<string, HTMLDivElement>();
+
+// Helper function to show user-friendly notification with deduplication
 function showNotification(message: string, isError: boolean = false) {
+  // Create a unique key for this message type
+  const notificationKey = `${message}-${isError}`;
+  
+  // If this notification is already showing, don't create a duplicate
+  if (activeNotifications.has(notificationKey)) {
+    return;
+  }
+  
   // Create a simple notification div that mimics toast appearance
   const notification = document.createElement('div');
   notification.className = `fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
@@ -8,12 +19,19 @@ function showNotification(message: string, isError: boolean = false) {
   notification.style.transform = 'translateX(-50%)';
   notification.textContent = message;
   
+  // Track this notification
+  activeNotifications.set(notificationKey, notification);
+  
   document.body.appendChild(notification);
   
   // Auto-remove after 5 seconds
   setTimeout(() => {
     notification.style.opacity = '0';
-    setTimeout(() => notification.remove(), 300);
+    setTimeout(() => {
+      notification.remove();
+      // Remove from tracking map when removed from DOM
+      activeNotifications.delete(notificationKey);
+    }, 300);
   }, 5000);
 }
 
