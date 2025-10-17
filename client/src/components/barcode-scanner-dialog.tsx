@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScanLine, CheckCircle, XCircle, Plus, Save, Loader2 } from "lucide-react";
+import { ScanLine, CheckCircle, XCircle, Plus, Save, Loader2, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useBarcodeScanner } from "@/hooks/useBarcodescanner";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -329,13 +329,21 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
 
               <div className="space-y-2">
                 <Label htmlFor="expiration">Expiration Date</Label>
-                <Input
-                  id="expiration"
-                  type="date"
-                  value={expirationDate}
-                  onChange={(e) => setExpirationDate(e.target.value)}
-                  data-testid="input-expiration"
-                />
+                <div className="relative">
+                  <Input
+                    id="expiration"
+                    type="date"
+                    value={expirationDate}
+                    onChange={(e) => setExpirationDate(e.target.value)}
+                    placeholder="YYYY-MM-DD"
+                    className="pr-10"
+                    data-testid="input-expiration"
+                  />
+                  <CalendarIcon className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Format: YYYY-MM-DD (e.g., {new Date().toISOString().split('T')[0]})
+                </p>
               </div>
             </div>
 

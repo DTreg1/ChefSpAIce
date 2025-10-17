@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Upload, ImageOff, ChevronDown, ChevronUp, Filter, Loader2, ScanEye } from "lucide-react";
+import { Search, Upload, ImageOff, ChevronDown, ChevronUp, Filter, Loader2, ScanEye, Calendar as CalendarIcon } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
@@ -805,15 +805,20 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
           <div className="space-y-2">
             <Label htmlFor="expiration">Expiration Date *</Label>
-            <Input
-              id="expiration"
-              type="date"
-              value={expirationDate}
-              onChange={(e) => setExpirationDate(e.target.value)}
-              data-testid="input-expiration"
-            />
+            <div className="relative">
+              <Input
+                id="expiration"
+                type="date"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+                placeholder="YYYY-MM-DD"
+                className="pr-10"
+                data-testid="input-expiration"
+              />
+              <CalendarIcon className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
             <p className="text-xs text-muted-foreground">
-              Auto-suggested based on food type. Always verify with the package label.
+              Format: YYYY-MM-DD (e.g., {new Date().toISOString().split('T')[0]}). Auto-suggested based on food type.
             </p>
           </div>
 
