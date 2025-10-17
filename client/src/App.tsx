@@ -249,7 +249,9 @@ export default function App() {
           <TooltipProvider>
             <AppContent />
             <Toaster />
-            <OfflineIndicator />
+            <Suspense fallback={null}>
+              <OfflineIndicator />
+            </Suspense>
           </TooltipProvider>
         </QueryClientProvider>
       </ErrorBoundary>
