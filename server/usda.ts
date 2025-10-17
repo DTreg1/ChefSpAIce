@@ -263,7 +263,13 @@ export async function searchUSDAFoods(
       });
     }
 
-    const response = await fetch(url);
+    // Add timeout using AbortController (15 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    const response = await fetch(url, {
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeoutId));
 
     if (!response.ok) {
       console.error("USDA API error:", {
@@ -310,9 +316,14 @@ export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null
   }
 
   try {
+    // Add timeout using AbortController (15 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
     const response = await fetch(
-      `${USDA_API_BASE}/food/${fdcId}?api_key=${API_KEY}`
-    );
+      `${USDA_API_BASE}/food/${fdcId}?api_key=${API_KEY}`,
+      { signal: controller.signal }
+    ).finally(() => clearTimeout(timeoutId));
 
     if (!response.ok) {
       if (response.status === 404) {

@@ -46,7 +46,8 @@ export async function searchBarcodeLookup(query: string): Promise<BarcodeLookupS
       },
       headers: {
         'Accept': 'application/json'
-      }
+      },
+      timeout: 15000 // 15 second timeout
     });
 
     return response.data;
@@ -103,7 +104,8 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
       },
       headers: {
         'Accept': 'application/json'
-      }
+      },
+      timeout: 15000 // 15 second timeout
     });
 
     if (response.data.products && response.data.products.length > 0) {
@@ -209,7 +211,8 @@ export async function getBarcodeLookupRateLimits(): Promise<RateLimitResponse> {
       },
       headers: {
         'Accept': 'application/json'
-      }
+      },
+      timeout: 10000 // 10 second timeout for rate limit check
     });
 
     // Map the API response to our expected format
