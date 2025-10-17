@@ -10,6 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useInitialData } from "@/hooks/useInitialData";
+import { useReplitWarmup } from "@/hooks/useReplitWarmup";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
 import { OfflineIndicator } from "@/components/offline-indicator";
@@ -112,6 +113,7 @@ function Router() {
 }
 
 function AppContent() {
+  const { isWarmedUp } = useReplitWarmup();
   const { isAuthenticated, isLoading } = useAuth();
   const [addFoodOpen, setAddFoodOpen] = useState(false);
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
@@ -146,8 +148,8 @@ function AppContent() {
     "--sidebar-width-icon": "4rem",
   } as React.CSSProperties;
 
-  // Show loading screen while checking authentication
-  if (isLoading) {
+  // Show loading screen while warming up connection or checking authentication
+  if (!isWarmedUp || isLoading) {
     return <InitialLoadingScreen />;
   }
   

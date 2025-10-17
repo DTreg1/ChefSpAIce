@@ -107,6 +107,15 @@ const RETRY_CONFIG = {
   jitterRange: 300, // ± 300ms random jitter
 };
 
+// Special configuration for critical startup requests
+const STARTUP_RETRY_CONFIG = {
+  maxRetries: 5, // More retries for startup
+  initialDelay: 200, // Start with shorter delay
+  maxDelay: 1000, // Cap at 1 second
+  backoffMultiplier: 1.5, // Less aggressive backoff
+  jitterRange: 100, // Less jitter
+};
+
 // Determine if an error is retryable
 function isRetryableError(status: number, error?: any): boolean {
   // Network errors are retryable
@@ -128,14 +137,16 @@ function isRetryableError(status: number, error?: any): boolean {
 }
 
 // Calculate retry delay with exponential backoff and jitter
-function calculateRetryDelay(attemptNumber: number): number {
+function calculateRetryDelay(attemptNumber: number, isStartupRequest = false): number {
+  const config = isStartupRequest ? STARTUP_RETRY_CONFIG : RETRY_CONFIG;
+  
   const baseDelay = Math.min(
-    RETRY_CONFIG.initialDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, attemptNumber - 1),
-    RETRY_CONFIG.maxDelay
+    config.initialDelay * Math.pow(config.backoffMultiplier, attemptNumber - 1),
+    config.maxDelay
   );
   
   // Add random jitter to prevent thundering herd
-  const jitter = Math.random() * RETRY_CONFIG.jitterRange * 2 - RETRY_CONFIG.jitterRange;
+  const jitter = Math.random() * config.jitterRange * 2 - config.jitterRange;
   
   return Math.max(0, baseDelay + jitter);
 }
@@ -208,6 +219,13 @@ async function performRequestWithRetry(
   options: RequestInit,
   retryCount = 0
 ): Promise<Response> {
+  // Detect if this is a critical startup request
+  const isStartupRequest = url.includes('/api/auth/user') || 
+                          url.includes('/api/init') ||
+                          url.includes('/api/user/preferences');
+  
+  const config = isStartupRequest ? STARTUP_RETRY_CONFIG : RETRY_CONFIG;
+  
   try {
     const res = await deduplicatedFetch(url, options);
     await throwIfResNotOk(res);
@@ -217,7 +235,7 @@ async function performRequestWithRetry(
     const status = apiError?.status || 0;
     
     // Determine if we should retry
-    const shouldRetry = retryCount < RETRY_CONFIG.maxRetries && 
+    const shouldRetry = retryCount < config.maxRetries && 
                        (apiError?.retryable || isRetryableError(status, error));
     
     if (!shouldRetry) {
@@ -237,10 +255,12 @@ async function performRequestWithRetry(
     }
     
     // Calculate retry delay
-    const delay = calculateRetryDelay(retryCount + 1);
+    const delay = calculateRetryDelay(retryCount + 1, isStartupRequest);
     
-    // Log retry attempt
-    console.log(`Retrying request to ${url} after ${delay}ms (attempt ${retryCount + 1}/${RETRY_CONFIG.maxRetries})`);
+    // Log retry attempt (but be less verbose for startup requests)
+    if (!isStartupRequest || retryCount >= 2) {
+      console.log(`Retrying request to ${url} after ${delay}ms (attempt ${retryCount + 1}/${config.maxRetries})`);
+    }
     
     // Wait before retrying
     await new Promise(resolve => setTimeout(resolve, delay));
