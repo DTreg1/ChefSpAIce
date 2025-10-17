@@ -205,7 +205,12 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
           console.log(`Token refresh successful for user: ${userId}`);
         })
         .catch((err: any) => {
-          console.error(`Token refresh failed for user: ${userId}`, err.message);
+          console.error(`Token refresh failed for user: ${userId}`, {
+            message: err.message,
+            statusCode: err.statusCode,
+            body: err.body,
+            error: err.error
+          });
           // Remove failed refresh immediately so retries can occur
           activeRefreshes.delete(refreshKey);
         });
@@ -252,16 +257,35 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   } catch (error: any) {
     console.error('Token refresh failed:', {
       userId,
-      error: error.message
+      error: error.message,
+      statusCode: error.statusCode,
+      body: error.body,
+      details: error.error
     });
     
     // Remove failed refresh to allow retry
     activeRefreshes.delete(refreshKey);
     
-    res.status(401).json({ 
-      message: "Unauthorized", 
-      error: "Token refresh failed"
-    });
+    // Check if it's a temporary error that should be retried
+    const isTemporaryError = error.statusCode === 503 || 
+                            error.statusCode === 502 || 
+                            error.statusCode === 504 ||
+                            error.code === 'ECONNRESET' ||
+                            error.code === 'ETIMEDOUT';
+    
+    if (isTemporaryError) {
+      res.status(503).json({ 
+        message: "Service temporarily unavailable", 
+        error: "Token refresh temporarily failed. Please try again.",
+        retryable: true
+      });
+    } else {
+      res.status(401).json({ 
+        message: "Unauthorized", 
+        error: "Token refresh failed. Please log in again.",
+        retryable: false
+      });
+    }
     return;
   }
 };
