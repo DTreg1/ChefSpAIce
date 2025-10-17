@@ -134,20 +134,28 @@ export async function setupAuth(app: Express) {
 }
 
 // Map to track active token refreshes per user to prevent concurrent refreshes
-const activeRefreshes = new Map<string, Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>>();
+const activeRefreshes = new Map<string, {
+  promise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>;
+  timestamp: number;
+}>();
 
-// Clean up completed promises consistently with longer delay to prevent race conditions
-const cleanupRefresh = (key: string, immediate: boolean = false) => {
-  if (immediate) {
-    activeRefreshes.delete(key);
-  } else {
-    // Longer delay (500ms) to ensure all concurrent requests can reuse the result
-    // This prevents race conditions under high load
-    setTimeout(() => {
-      activeRefreshes.delete(key);
-    }, 500);
-  }
+// Clean up expired refresh promises (older than 2 seconds)
+const cleanupExpiredRefreshes = () => {
+  const now = Date.now();
+  const expiredKeys: string[] = [];
+  
+  activeRefreshes.forEach((value, key) => {
+    // Keep the promise for at least 2 seconds to handle burst requests
+    if (now - value.timestamp > 2000) {
+      expiredKeys.push(key);
+    }
+  });
+  
+  expiredKeys.forEach(key => activeRefreshes.delete(key));
 };
+
+// Run cleanup every 5 seconds
+setInterval(cleanupExpiredRefreshes, 5000);
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
@@ -174,57 +182,81 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   
   try {
     // Check if a refresh is already in progress for this user
-    let tokenResponsePromise = activeRefreshes.get(refreshKey);
+    let refreshEntry = activeRefreshes.get(refreshKey);
     
-    if (!tokenResponsePromise) {
+    if (!refreshEntry) {
       // Log the start of a new refresh operation
       console.log(`Starting token refresh for user: ${userId}`);
       
       // Start a new refresh operation
       const config = await getOidcConfig();
-      tokenResponsePromise = client.refreshTokenGrant(config, refreshToken);
+      const tokenPromise = client.refreshTokenGrant(config, refreshToken);
       
-      // Store the promise for concurrent requests to reuse
-      activeRefreshes.set(refreshKey, tokenResponsePromise);
+      // Store the promise with timestamp for concurrent requests to reuse
+      refreshEntry = {
+        promise: tokenPromise,
+        timestamp: Date.now()
+      };
+      activeRefreshes.set(refreshKey, refreshEntry);
       
-      // Clean up after completion (success or failure)
-      tokenResponsePromise
+      // Clean up on completion (let the interval handle cleanup)
+      tokenPromise
         .then(() => {
           console.log(`Token refresh successful for user: ${userId}`);
-          cleanupRefresh(refreshKey, false); // Success: delay cleanup
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error(`Token refresh failed for user: ${userId}`, err.message);
-          cleanupRefresh(refreshKey, true); // Error: immediate cleanup
+          // Remove failed refresh immediately so retries can occur
+          activeRefreshes.delete(refreshKey);
         });
     } else {
       console.log(`Reusing existing refresh promise for user: ${userId}`);
     }
     
     // Wait for the refresh to complete
-    const tokenResponse = await tokenResponsePromise;
+    const tokenResponse = await refreshEntry.promise;
     updateUserSession(user, tokenResponse);
     
-    // Save the session to persist the new tokens with error handling
-    await new Promise<void>((resolve, reject) => {
-      req.session.save((err) => {
-        if (err) {
-          console.error(`Failed to save session after token refresh for user ${userId}:`, err);
-          reject(err);
-        } else {
-          resolve();
-        }
+    // Save the session to persist the new tokens with better error handling
+    try {
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error(`Failed to save session after token refresh for user ${userId}:`, err);
+            reject(err);
+          } else {
+            console.log(`Session saved successfully for user: ${userId}`);
+            resolve();
+          }
+        });
       });
-    });
-    
-    return next();
+      
+      return next();
+    } catch (sessionError: any) {
+      // If session save fails, we need to return an error
+      // The tokens are refreshed but not persisted
+      console.error('Critical: Session save failed after token refresh:', {
+        userId,
+        error: sessionError.message
+      });
+      
+      // Remove the refresh entry to allow retry on next request
+      activeRefreshes.delete(refreshKey);
+      
+      res.status(500).json({ 
+        message: "Session update failed", 
+        error: "Please try logging in again"
+      });
+      return;
+    }
   } catch (error: any) {
     console.error('Token refresh failed:', {
       userId,
       error: error.message
     });
     
-    // Don't delete here since it's already handled in the promise chain
+    // Remove failed refresh to allow retry
+    activeRefreshes.delete(refreshKey);
     
     res.status(401).json({ 
       message: "Unauthorized", 
