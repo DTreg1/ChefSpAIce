@@ -109,6 +109,11 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
+  // Redirect from incorrect endpoint to correct one (fixing 404 error)
+  app.get("/api/auth/login-with-replit", (req, res) => {
+    res.redirect("/api/login");
+  });
+
   app.get("/api/callback", (req, res, next) => {
     passport.authenticate(`replitauth:${req.hostname}`, {
       successReturnToOrRedirect: "/",
