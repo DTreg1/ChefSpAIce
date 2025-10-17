@@ -145,14 +145,12 @@ export function LiquidGlassButton({
   if (textDirection === "horizontal") {
     return (
       <div
-        className={`liquid-glass-app-icon flex items-center cursor-pointer rounded-lg ${shouldDisableAnimation ? "" : "group"} gap-2 ${className}`}
+        className={`flex items-center cursor-pointer rounded-lg ${shouldDisableAnimation ? "" : "group"} gap-2 ${className}`}
         onClick={handleClick}
       >
         {/* Main Glass Icon Container */}
         <div
           className={` self-start
-            ${variant === "clear" ? "liquid-glass-app-icon-clear" : "liquid-glass-app-icon"}
-            ${shouldDisableAnimation ? "no-animation" : ""}
             ${sizeClasses[size]} 
             ${shape === "bubble" ? "rounded-full" : roundedCorners[size]}
             ${useThemeColors ? backgroundClass : ""}
@@ -162,6 +160,7 @@ export function LiquidGlassButton({
             ${shouldDisableAnimation ? "" : "transition-transform duration-300 ease-out"}
             shadow-xl drop-shadow-lg
             flex-shrink-0
+            ${variant === "clear" ? "backdrop-blur-md bg-white/10" : "backdrop-blur-xl bg-white/20"}
           `}
         >
           {/* Icon */}
@@ -209,14 +208,12 @@ export function LiquidGlassButton({
 
   return (
     <div
-      className={`liquid-glass-app-icon relative flex flex-col items-center justify-center cursor-pointer ${shouldDisableAnimation ? "" : "group"} ${containerHeights[size]} ${className}`}
+      className={`relative flex flex-col items-center justify-center cursor-pointer ${shouldDisableAnimation ? "" : "group"} ${containerHeights[size]} ${className}`}
       onClick={handleClick}
     >
       {/* Main Glass Icon Container */}
       <div
         className={`
-          ${variant === "clear" ? "liquid-glass-container-clear" : "liquid-glass-container"}
-          ${shouldDisableAnimation ? "no-animation" : ""}
           ${sizeClasses[size]} 
           ${shape === "bubble" ? "rounded-full" : roundedCorners[size]}
           ${useThemeColors && variant === "colored" ? backgroundClass : ""}
@@ -229,6 +226,7 @@ export function LiquidGlassButton({
           mb-1
           z-10
           ${shouldDisableAnimation ? "" : hoverMovement[size]}
+          ${variant === "clear" ? "backdrop-blur-md bg-white/10" : "backdrop-blur-xl bg-white/20"}
         `}
       >
         {/* Icon */}
