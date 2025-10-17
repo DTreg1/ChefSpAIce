@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useInitialData } from "@/hooks/useInitialData";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 
 // Eagerly loaded core pages
 import Landing from "@/pages/landing";
@@ -236,7 +237,9 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AppContent />
+          <AuthErrorBoundary>
+            <AppContent />
+          </AuthErrorBoundary>
           <Toaster />
           <OfflineIndicator />
         </TooltipProvider>
