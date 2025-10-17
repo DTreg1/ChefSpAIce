@@ -13,6 +13,7 @@ import { ApiError } from "./apiError";
 import { batchedApiLogger } from "./batchedApiLogger";
 import { cleanupOldMessagesForUser } from "./chatCleanup";
 import { rateLimiter, barcodeRateLimiter, chatRateLimiter } from "./middleware/rateLimiter";
+import { asyncHandler, BadRequestError, NotFoundError, ValidationError, InternalError } from "./middleware/errorHandler";
 import { z } from "zod";
 import { 
   insertFoodItemSchema, 
@@ -114,16 +115,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/', rateLimiter);
 
   // Auth routes (from blueprint:javascript_log_in_with_replit)
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      throw new ApiError("Failed to fetch user", 500);
+  app.get('/api/auth/user', isAuthenticated, asyncHandler(async (req: any, res) => {
+    const userId = req.user.claims.sub;
+    const user = await storage.getUser(userId);
+    if (!user) {
+      throw new NotFoundError("User not found");
     }
-  });
+    res.json(user);
+  }));
 
   // Batch initialization endpoint to reduce initial API calls
   app.get('/api/init', isAuthenticated, async (req: any, res, next) => {
