@@ -131,6 +131,9 @@ export default function Chat() {
     
     setIsStreaming(true);
     setStreamingContent("");
+    
+    // Track accumulated content separately to prevent loss on error
+    let accumulatedContent = "";
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -139,9 +142,24 @@ export default function Chat() {
     const timeoutId = setTimeout(() => {
       if (abortController && !abortController.signal.aborted) {
         abortController.abort();
+        
+        // Save any accumulated content before aborting
+        if (accumulatedContent) {
+          const partialMessage: ChatMessageType = {
+            id: (Date.now() + 1).toString(),
+            userId: user?.id || "",
+            role: "assistant",
+            content: accumulatedContent + "\n\n[Response interrupted due to timeout]",
+            timestamp: new Date(),
+            metadata: null,
+          };
+          setMessages((prev) => [...prev, partialMessage]);
+          setStreamingContent("");
+        }
+        
         toast({
           title: "Connection Timeout",
-          description: "The response is taking too long. Please try again.",
+          description: "The response took too long. Partial response has been saved.",
           variant: "destructive",
         });
       }
@@ -180,19 +198,37 @@ export default function Chat() {
         throw new Error("No response body received from server");
       }
 
-      let accumulated = "";
+      // Use the accumulatedContent variable declared above
       let buffer = ""; // Buffer for incomplete lines
       let lastActivityTime = Date.now();
+      let hasReceivedData = false; // Track if we've received any data
       
-      // Monitor for stalled streams
+      // Monitor for stalled streams with better detection
       const stallCheckInterval = setInterval(() => {
-        if (Date.now() - lastActivityTime > 30000) { // 30 seconds of no activity
+        const timeSinceLastActivity = Date.now() - lastActivityTime;
+        
+        if (timeSinceLastActivity > 30000) { // 30 seconds of no activity
           clearInterval(stallCheckInterval);
           if (!abortController.signal.aborted) {
             abortController.abort();
+            
+            // Save partial content if available
+            if (accumulatedContent && !hasReceivedData) {
+              const partialMessage: ChatMessageType = {
+                id: (Date.now() + 1).toString(),
+                userId: user?.id || "",
+                role: "assistant",
+                content: accumulatedContent + "\n\n[Stream interrupted - partial response]",
+                timestamp: new Date(),
+                metadata: null,
+              };
+              setMessages((prev) => [...prev, partialMessage]);
+              setStreamingContent("");
+            }
+            
             toast({
               title: "Connection Stalled",
-              description: "The stream has stopped responding. Please try again.",
+              description: accumulatedContent ? "Stream stopped. Partial response saved." : "Stream stopped responding.",
               variant: "destructive",
             });
           }
@@ -209,12 +245,12 @@ export default function Chat() {
             clearInterval(stallCheckInterval);
             
             // If we have accumulated content, save it before erroring
-            if (accumulated && !abortController.signal.aborted) {
+            if (accumulatedContent && !abortController.signal.aborted) {
               const aiMessage: ChatMessageType = {
                 id: (Date.now() + 1).toString(),
                 userId: user?.id || "",
                 role: "assistant",
-                content: accumulated,
+                content: accumulatedContent,
                 timestamp: new Date(),
                 metadata: null,
               };
@@ -239,7 +275,7 @@ export default function Chat() {
                 try {
                   const parsed = JSON.parse(data);
                   if (parsed.content) {
-                    accumulated += parsed.content;
+                    accumulatedContent += parsed.content;
                   }
                 } catch (e) {
                   console.warn("Failed to parse final buffer data:", data);
@@ -248,12 +284,12 @@ export default function Chat() {
             }
             
             // Handle case where stream ended without [DONE] marker
-            if (accumulated && !abortController.signal.aborted) {
+            if (accumulatedContent && !abortController.signal.aborted) {
               const aiMessage: ChatMessageType = {
                 id: (Date.now() + 1).toString(),
                 userId: user?.id || "",
                 role: "assistant",
-                content: accumulated,
+                content: accumulatedContent,
                 timestamp: new Date(),
                 metadata: null,
               };
@@ -273,6 +309,7 @@ export default function Chat() {
           }
 
           lastActivityTime = Date.now();
+          hasReceivedData = true;
           
           let chunk;
           try {
@@ -302,7 +339,7 @@ export default function Chat() {
                   id: (Date.now() + 1).toString(),
                   userId: user?.id || "",
                   role: "assistant",
-                  content: accumulated || "I apologize, but I couldn't generate a response. Please try again.",
+                  content: accumulatedContent || "I apologize, but I couldn't generate a response. Please try again.",
                   timestamp: new Date(),
                   metadata: null,
                 };
@@ -320,8 +357,8 @@ export default function Chat() {
                 try {
                   const parsed = JSON.parse(data);
                   if (parsed.content !== undefined && parsed.content !== null) {
-                    accumulated += parsed.content;
-                    setStreamingContent(accumulated);
+                    accumulatedContent += parsed.content;
+                    setStreamingContent(accumulatedContent);
                   } else if (parsed.error) {
                     // Handle error messages in stream
                     console.error("Stream error:", parsed.error);
