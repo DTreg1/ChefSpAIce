@@ -90,12 +90,11 @@ function AuthenticatedRouter() {
   );
 }
 
-function Router() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  
-  // If we're authenticated, prefetch all initial data in parallel
-  const { isLoading: initLoading } = useInitialData(isAuthenticated);
-
+function Router({ isAuthenticated, isLoading: authLoading, initLoading }: { 
+  isAuthenticated: boolean; 
+  isLoading: boolean; 
+  initLoading: boolean;
+}) {
   // Show landing page for non-authenticated users
   if (authLoading || !isAuthenticated) {
     return (
@@ -152,7 +151,7 @@ function AppContent() {
 
   // Show landing page layout for non-authenticated users
   if (isLoading || !isAuthenticated) {
-    return <Router />;
+    return <Router isAuthenticated={isAuthenticated} isLoading={isLoading} initLoading={initialDataLoading} />;
   }
 
   // Show onboarding full-screen without sidebar if not completed
@@ -231,7 +230,7 @@ function AppContent() {
           <div className="flex flex-1 min-h-0 w-full">
             <AppSidebar />
             <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-              <Router />
+              <Router isAuthenticated={isAuthenticated} isLoading={isLoading} initLoading={initialDataLoading} />
             </main>
           </div>
         </div>
