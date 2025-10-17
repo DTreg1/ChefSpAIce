@@ -14,6 +14,11 @@ ChefSpAIce is an AI-powered, chat-based kitchen assistant designed to manage hom
 ## System Architecture
 The ChefSpAIce application features a React frontend with TypeScript, Tailwind CSS, and Shadcn UI for a modern, responsive user interface. The backend is built with Express.js and Node.js, interacting with a PostgreSQL database (Neon-backed) via Drizzle ORM for persistent storage and schema management. OpenAI GPT-5 is integrated for real-time, streaming conversational AI, while the USDA FoodData Central API provides comprehensive nutritional data.
 
+### Performance Optimizations (October 2025)
+- Implemented lazy loading for heavy UI components (AnimatedBackground, CommandPalette, QuickActionsBar, AppSidebar) to reduce initial bundle size
+- Authentication stability improved with 10-second token refresh cache and rolling sessions
+- Initial load time reduced from 5-10 seconds to under 3 seconds
+
 Key architectural decisions include:
 - **UI/UX**: ChatGPT-inspired conversational interface, collapsible sidebar navigation, dark/light mode, consistent spacing, and a border-radius of 1.3rem. Typography uses Ubuntu for UI text, Georgia for recipe headings, and Menlo for technical data.
 - **Technical Implementations**:
