@@ -88,34 +88,10 @@ function AuthenticatedRouter() {
 }
 
 function Router() {
-  const { data: user, isLoading: authLoading } = useQuery<any>({
-    queryKey: ["/api/auth/user"],
-    retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   
-  const isAuthenticated = !!user;
-
   // If we're authenticated, prefetch all initial data in parallel
-  const { isLoading: initLoading } = useQuery({
-    queryKey: ["/api/init"],
-    queryFn: async () => {
-      const response = await fetch("/api/init");
-      if (!response.ok) throw new Error("Failed to fetch initial data");
-      const data = await response.json();
-      
-      // Populate individual query caches to prevent redundant fetches
-      queryClient.setQueryData(["/api/auth/user"], data.user);
-      queryClient.setQueryData(["/api/user/preferences"], data.preferences);
-      queryClient.setQueryData(["/api/storage-locations"], data.storageLocations);
-      queryClient.setQueryData(["/api/food-items"], data.foodItems);
-      queryClient.setQueryData(["/api/recipes"], data.recipes);
-      
-      return data;
-    },
-    enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { isLoading: initLoading } = useInitialData(isAuthenticated);
 
   // Show landing page for non-authenticated users
   if (authLoading || !isAuthenticated) {
