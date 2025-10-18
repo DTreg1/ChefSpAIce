@@ -32,17 +32,21 @@ export function getSession() {
     ttl: sessionTtl,
     tableName: "sessions",
   });
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     rolling: true,  // Reset expiry on activity
+    proxy: true,  // Trust the proxy
     cookie: {
       httpOnly: true,
-      secure: true,  // Always true in Replit environment (behind HTTPS proxy)
+      secure: isProduction,  // Only require secure in production
       sameSite: "lax",  // CSRF protection while allowing normal navigation
       maxAge: sessionTtl,
+      path: '/',  // Ensure cookie is available on all paths
     },
   });
 }

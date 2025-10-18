@@ -71,6 +71,9 @@ function AuthenticatedRouter() {
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Debug logging
+  console.log("[Router] Auth state:", { isAuthenticated, isLoading });
+
   // Show landing page for non-authenticated users
   if (isLoading || !isAuthenticated) {
     return (
@@ -92,6 +95,25 @@ function AppContent() {
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
+
+  // Manual auth test
+  useEffect(() => {
+    console.log("[AppContent] Testing manual auth check...");
+    fetch('/api/auth/user', { 
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(res => {
+        console.log("[AppContent] Manual auth check response:", res.status);
+        return res.status === 401 ? null : res.json();
+      })
+      .then(data => {
+        console.log("[AppContent] Manual auth check data:", data);
+      })
+      .catch(err => {
+        console.error("[AppContent] Manual auth check error:", err);
+      });
+  }, []);
 
   const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
     hasCompletedOnboarding?: boolean;
