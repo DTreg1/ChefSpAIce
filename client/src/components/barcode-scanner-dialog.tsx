@@ -48,16 +48,19 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
   // Fetch storage locations
   const { data: storageLocations } = useStorageLocations();
 
-  // Get location with most items for default
+  // Get default storage location (prefer Fridge, otherwise first available)
   const getDefaultLocation = () => {
     if (!storageLocations || storageLocations.length === 0) return "";
     
-    // Sort by item count and return the ID of the location with most items
-    const sorted = [...storageLocations].sort((a, b) => 
-      (b.itemCount || 0) - (a.itemCount || 0)
+    // Try to find "Fridge" as most common default
+    const fridge = storageLocations.find(loc => 
+      loc.name.toLowerCase().includes('fridge') || loc.name.toLowerCase().includes('refrigerator')
     );
     
-    return sorted[0]?.id || "";
+    if (fridge) return fridge.id;
+    
+    // Otherwise return first location
+    return storageLocations[0]?.id || "";
   };
 
   // Handle barcode scan
