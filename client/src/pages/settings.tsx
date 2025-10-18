@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { CacheStorage } from "@/lib/cacheStorage";
+import { forceRefresh, clearAllCaches, getServiceWorkerVersion } from "@/utils/registerServiceWorker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
@@ -17,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette } from "lucide-react";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, RefreshCw, HardDrive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { User, UserPreferences, StorageLocation } from "@shared/schema";
@@ -55,6 +56,28 @@ const preferenceSchema = z.object({
   foodsToAvoid: z.array(z.string()).optional(),
   expirationAlertDays: z.number().int().min(1).max(14),
 });
+
+// Component to display service worker version
+function ServiceWorkerVersion() {
+  const [version, setVersion] = useState<string | null>(null);
+  
+  useEffect(() => {
+    getServiceWorkerVersion().then(v => {
+      if (v) {
+        // Format timestamp as date
+        const date = new Date(parseInt(v));
+        setVersion(date.toLocaleString());
+      }
+    });
+  }, []);
+  
+  return (
+    <div className="text-sm">
+      <span className="text-muted-foreground">Version: </span>
+      <span className="font-mono">{version || 'Loading...'}</span>
+    </div>
+  );
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -706,6 +729,94 @@ export default function Settings() {
           </CardHeader>
           <CardContent>
             <ApiUsageSection />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HardDrive className="w-5 h-5" />
+              Cache Management
+            </CardTitle>
+            <CardDescription>
+              Manage application cache and force refresh if you're seeing outdated content
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 border rounded-lg space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">Application Version</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  If you're experiencing issues with outdated content, you can force refresh the application.
+                </p>
+                <ServiceWorkerVersion />
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h4 className="font-medium mb-2">Clear Cache</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Clears browser cache and localStorage. Your data is safe - this only clears temporary files.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    await clearAllCaches();
+                    toast({
+                      title: "Cache Cleared",
+                      description: "All temporary cache files have been cleared.",
+                    });
+                  }}
+                  data-testid="button-clear-cache"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Clear Cache
+                </Button>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h4 className="font-medium mb-2">Force Refresh</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Completely refreshes the application, clearing all caches and reloading the latest version.
+                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="default"
+                      data-testid="button-force-refresh"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Force Refresh
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Force Refresh Application?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will:
+                        <ul className="list-disc list-inside mt-2 space-y-1">
+                          <li>Clear all browser caches</li>
+                          <li>Clear service worker caches</li>
+                          <li>Reload the latest version of the app</li>
+                        </ul>
+                        <p className="mt-3">Your data is safe and will not be affected.</p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => forceRefresh()}
+                      >
+                        Force Refresh Now
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

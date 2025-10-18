@@ -7,8 +7,10 @@ import { logWebVitalsToConsole, reportWebVitals } from "./utils/reportWebVitals"
 createRoot(document.getElementById("root")!).render(<App />);
 
 // Register service worker for offline functionality
+// Enable in both dev and prod to test cache-busting
+registerServiceWorker();
+
 if (import.meta.env.PROD) {
-  registerServiceWorker();
   reportWebVitals();
 }
 
