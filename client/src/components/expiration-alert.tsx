@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 type ExpirationNotification = {
   id: string;
@@ -24,7 +24,6 @@ type WasteReductionSuggestion = {
 
 export function ExpirationAlert() {
   const { toast } = useToast();
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Check for expiring items on mount
   const checkMutation = useMutation({
@@ -48,21 +47,23 @@ export function ExpirationAlert() {
   // Mutation to refresh waste reduction tips
   const refreshTipsMutation = useMutation({
     mutationFn: async () => {
-      setIsRefreshing(true);
-      // Force a cache refresh by invalidating and refetching
-      await queryClient.invalidateQueries({ queryKey: ["/api/suggestions/waste-reduction"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/suggestions/waste-reduction"] });
-      return true;
+      // Force refetch with a timestamp to bypass cache
+      const timestamp = Date.now();
+      const response = await fetch(`/api/suggestions/waste-reduction?refresh=${timestamp}`);
+      if (!response.ok) throw new Error('Failed to fetch suggestions');
+      const data = await response.json();
+      
+      // Update the cache with new data
+      queryClient.setQueryData(["/api/suggestions/waste-reduction"], data);
+      return data;
     },
     onSuccess: () => {
-      setIsRefreshing(false);
       toast({
-        title: "Tips refreshed",
-        description: "New waste reduction tips have been loaded based on your expiring items.",
+        title: "Tips refreshed!",
+        description: "New waste reduction tips have been generated for your expiring items.",
       });
     },
     onError: (error: any) => {
-      setIsRefreshing(false);
       console.error("Failed to refresh tips:", error);
       toast({
         title: "Error refreshing tips",
@@ -165,11 +166,11 @@ export function ExpirationAlert() {
               size="icon"
               className="h-8 w-8"
               onClick={() => refreshTipsMutation.mutate()}
-              disabled={isRefreshing || refreshTipsMutation.isPending}
+              disabled={refreshTipsMutation.isPending}
               data-testid="button-refresh-tips"
             >
               <RefreshCw 
-                className={`h-4 w-4 ${isRefreshing || refreshTipsMutation.isPending ? 'animate-spin' : ''}`}
+                className={`h-4 w-4 ${refreshTipsMutation.isPending ? 'animate-spin' : ''}`}
               />
             </Button>
           </CardHeader>
