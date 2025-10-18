@@ -4,6 +4,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { ChefHat } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -135,8 +136,8 @@ function AppContent() {
     <>
       <AnimatedBackground
         variant="both"
-        gradientType="soft"
-        particleCount={30}
+        gradientType="primary"
+        particleCount={3000}
       />
       <CommandPalette
         onAddFood={() => setAddFoodOpen(true)}
@@ -154,32 +155,48 @@ function AppContent() {
       {/* Only show floating FeedbackWidget on non-chat pages */}
       {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
       <SidebarProvider style={style}>
-        <div className="flex h-screen w-full relative overflow-x-hidden">
-          <AppSidebar />
-          <div className="flex flex-col flex-1 min-w-0">
-            <header
-              className={cn(
-                "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-20",
-                scrolled
-                  ? "glass-ultra navbar-scroll scrolled shadow-lg"
-                  : "glass-vibrant border-border/30",
-              )}
-            >
-              <SidebarTrigger
-                data-testid="button-sidebar-toggle"
-                className="transition-morph hover:scale-105"
-              />
-              <div className="ml-auto">
-                <QuickActionsBar
-                  onAddFood={() => setAddFoodOpen(true)}
-                  onGenerateRecipe={() => setRecipeDialogOpen(true)}
-                  onScanBarcode={() => {
-                    // Navigate to FDC search page with barcode scanner
-                    window.location.href = "/fdc-search?scanBarcode=true";
-                  }}
-                />
+        <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
+          {/* Header is now at the top level, outside the flex container with sidebar */}
+          <header
+            className={cn(
+              "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-[60] w-full",
+              scrolled
+                ? "glass-ultra navbar-scroll scrolled shadow-lg"
+                : "glass-vibrant border-border/30",
+            )}
+          >
+            <SidebarTrigger
+              data-testid="button-sidebar-toggle"
+              className="transition-morph hover:scale-105"
+            />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center transition-morph hover:scale-110 shadow-lg glow-primary">
+                <ChefHat className="w-6 h-6 text-primary-foreground" />
               </div>
-            </header>
+              <div>
+                <h1 className="text-xl font-semibold text-gradient-primary font-sans">
+                  ChefSpAIce
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  Your Kitchen Assistant
+                </p>
+              </div>
+            </div>
+            <div className="ml-auto">
+              <QuickActionsBar
+                onAddFood={() => setAddFoodOpen(true)}
+                onGenerateRecipe={() => setRecipeDialogOpen(true)}
+                onScanBarcode={() => {
+                  // Navigate to FDC search page with barcode scanner
+                  window.location.href = "/fdc-search?scanBarcode=true";
+                }}
+              />
+            </div>
+          </header>
+
+          {/* Main content area with sidebar and main content */}
+          <div className="flex flex-1 min-h-0 w-full">
+            <AppSidebar />
             <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
               <Router />
             </main>

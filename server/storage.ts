@@ -170,7 +170,7 @@ export interface IStorage {
   resetUserData(userId: string): Promise<void>;
 
   // Feedback System
-  createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'>): Promise<Feedback>;
+  createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'> & { isFlagged?: boolean; flagReason?: string | null; similarTo?: string | null }): Promise<Feedback>;
   getFeedback(userId: string, id: string): Promise<Feedback | undefined>;
   getUserFeedback(userId: string, limit?: number): Promise<Feedback[]>;
   getAllFeedback(limit?: number, offset?: number, status?: string): Promise<{ items: Feedback[], total: number }>;
@@ -1492,7 +1492,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Feedback System Implementation
-  async createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'>): Promise<Feedback> {
+  async createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'> & { isFlagged?: boolean; flagReason?: string | null; similarTo?: string | null }): Promise<Feedback> {
     try {
       const [newFeedback] = await db
         .insert(feedback)

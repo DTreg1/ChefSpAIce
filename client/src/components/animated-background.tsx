@@ -41,7 +41,7 @@ export function AnimatedBackground({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 4 + 2,
+      size: Math.random() * 4 + 3,
       duration: Math.random() * 20 + 20,
       delay: Math.random() * 10,
       path: ["up", "diagonal", "zigzag"][Math.floor(Math.random() * 3)] as Particle["path"],

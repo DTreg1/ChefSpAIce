@@ -2229,7 +2229,7 @@ Respond ONLY with a valid JSON object:
       
       const validated = insertFeedbackSchema.parse(req.body);
       
-      let enrichedFeedback = { ...validated };
+      let enrichedFeedback: typeof validated & { isFlagged?: boolean; flagReason?: string | null; similarTo?: string | null } = { ...validated };
       
       if (validated.content && validated.content.length > 10) {
         try {
