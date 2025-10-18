@@ -3,14 +3,12 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Edit, Trash2, UtensilsCrossed, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditFoodDialog } from "./edit-food-dialog";
 import { NutritionFactsDialog } from "./nutrition-facts-dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useSwipe } from "@/hooks/use-swipe";
 import type { FoodItem } from "@shared/schema";
 
 interface FoodCardProps {
@@ -25,12 +23,12 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
 
   const getStorageBadgeColor = (location: string) => {
     const colors: Record<string, string> = {
-      fridge: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-800",
-      freezer: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800",
-      pantry: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-      counter: "bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400 border-green-200 dark:border-green-800",
+      fridge: "bg-blue-100 text-blue-700 border-blue-200",
+      freezer: "bg-cyan-100 text-cyan-700 border-cyan-200",
+      pantry: "bg-amber-100 text-amber-700 border-amber-200",
+      counter: "bg-green-100 text-green-700 border-green-200",
     };
-    return colors[location.toLowerCase()] || "bg-gray-500/10 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border-gray-200 dark:border-gray-800";
+    return colors[location.toLowerCase()] || "bg-gray-100 text-gray-700 border-gray-200";
   };
 
   const getExpiryStatus = (date?: string | null) => {
@@ -73,20 +71,18 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   return (
     <>
       <Card 
-        className="glass-morph hover-elevate active-elevate-2 card-hover border border-card-border/50 shadow-glass hover:shadow-glass-hover transition-morph" 
+        className="hover-elevate border border-card-border shadow-sm" 
         data-testid={`card-food-${item.id}`}
       >
         <CardContent className="p-4">
           <div className="flex gap-3">
             {item.imageUrl ? (
-              <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 group">
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  data-testid={`img-food-${item.id}`}
-                />
-              </div>
+              <img
+                src={item.imageUrl}
+                alt={item.name}
+                className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                data-testid={`img-food-${item.id}`}
+              />
             ) : (
               <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                 <UtensilsCrossed className="w-8 h-8 text-muted-foreground" />
@@ -119,97 +115,45 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
               </div>
 
               {expiryStatus && (
-                <div className="mb-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground" data-testid={`text-expiry-${item.id}`}>
-                      {expiryStatus.text}
-                    </span>
-                    {item.expirationDate && (
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(item.expirationDate).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className={cn("h-full rounded-full transition-all-smooth", expiryStatus.color)}
-                      style={{
-                        width: (() => {
-                          const now = new Date().getTime();
-                          const expiry = new Date(item.expirationDate!).getTime();
-                          const daysUntil = (expiry - now) / (24 * 60 * 60 * 1000);
-                          
-                          // For expired items, show 10% width as a minimum visual indicator
-                          if (daysUntil < 0) return '10%';
-                          
-                          // For items expiring within 3 days, scale from 10% to 30%
-                          if (daysUntil <= 3) return `${10 + (daysUntil / 3) * 20}%`;
-                          
-                          // For items expiring within 7 days, scale from 30% to 60%
-                          if (daysUntil <= 7) return `${30 + ((daysUntil - 3) / 4) * 30}%`;
-                          
-                          // For items with more than 7 days, scale from 60% to 100%
-                          // Max out at 30 days for full bar
-                          return `${Math.min(100, 60 + ((daysUntil - 7) / 23) * 40)}%`;
-                        })()
-                      }}
-                    />
-                  </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={cn("w-full h-1 rounded-full", expiryStatus.color)} />
+                  <span className="text-xs text-muted-foreground flex-shrink-0" data-testid={`text-expiry-${item.id}`}>
+                    {expiryStatus.text}
+                  </span>
                 </div>
               )}
 
               <div className="flex items-center gap-1">
                 {hasNutrition && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 scale-touch"
-                        onClick={() => setNutritionDialogOpen(true)}
-                        data-testid={`button-nutrition-${item.id}`}
-                      >
-                        <Info className="w-3.5 h-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>View nutrition facts</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={() => setNutritionDialogOpen(true)}
+                    data-testid={`button-nutrition-${item.id}`}
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </Button>
                 )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 scale-touch"
-                      onClick={() => setEditDialogOpen(true)}
-                      data-testid={`button-edit-${item.id}`}
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Edit item</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive hover:text-destructive scale-touch"
-                      onClick={() => deleteMutation.mutate()}
-                      disabled={deleteMutation.isPending}
-                      data-testid={`button-delete-${item.id}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Delete item</p>
-                  </TooltipContent>
-                </Tooltip>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => setEditDialogOpen(true)}
+                  data-testid={`button-edit-${item.id}`}
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={() => deleteMutation.mutate()}
+                  disabled={deleteMutation.isPending}
+                  data-testid={`button-delete-${item.id}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
               </div>
             </div>
           </div>

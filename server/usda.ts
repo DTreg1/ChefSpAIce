@@ -1,5 +1,4 @@
 import type { USDAFoodItem, USDASearchResponse, NutritionInfo } from "@shared/schema";
-import { ApiError } from "./apiError";
 
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
 const API_KEY = process.env.USDA_FDC_API_KEY;
@@ -52,9 +51,8 @@ interface FDCFood {
   description: string;
   dataType: string;
   brandOwner?: string;
-  gtinUpc?: string;
   ingredients?: string;
-  foodCategory?: string | { id: number; code: string; description: string };
+  foodCategory?: string;
   brandedFoodCategory?: string;
   servingSize?: number;
   servingSizeUnit?: string;
@@ -70,62 +68,21 @@ interface FDCSearchResult {
   foods: FDCFood[];
 }
 
-export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: string): boolean {
-  // Check if all major macronutrients are zero (suspicious)
-  const allMacrosZero = nutrition.calories === 0 && 
-                        nutrition.protein === 0 && 
-                        nutrition.carbs === 0 && 
-                        nutrition.fat === 0;
-  
-  if (allMacrosZero) {
-    console.warn(`Suspicious nutrition data for "${foodDescription}": all macronutrients are zero`);
-    return false;
-  }
-
-  // Check for specific food types that should have certain nutrients
-  const descLower = foodDescription.toLowerCase();
-  
-  // Oils and fats should have significant fat content
-  if ((descLower.includes('oil') || descLower.includes('butter') || descLower.includes('lard')) && 
-      nutrition.fat === 0) {
-    console.warn(`Invalid nutrition data for "${foodDescription}": oil/fat product with zero fat`);
-    return false;
-  }
-
-  // Protein-rich foods should have protein
-  if ((descLower.includes('meat') || descLower.includes('chicken') || 
-       descLower.includes('beef') || descLower.includes('pork') || 
-       descLower.includes('fish') || descLower.includes('egg')) && 
-      nutrition.protein === 0 && nutrition.calories > 0) {
-    console.warn(`Invalid nutrition data for "${foodDescription}": protein food with zero protein`);
-    return false;
-  }
-
-  return true;
-}
-
 function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
   // First try labelNutrients (Branded Foods)
   if (food.labelNutrients) {
     const label = food.labelNutrients;
-    const nutrition: NutritionInfo = {
-      calories: label?.calories?.value || 0,
-      protein: label?.protein?.value || 0,
-      carbs: label?.carbohydrates?.value || 0,
-      fat: label?.fat?.value || 0,
-      fiber: label?.fiber?.value,
-      sugar: label?.sugars?.value,
-      sodium: label?.sodium?.value,
-      servingSize: food?.servingSize?.toString() || "100",
-      servingUnit: food?.servingSizeUnit || "g",
+    return {
+      calories: label.calories?.value || 0,
+      protein: label.protein?.value || 0,
+      carbs: label.carbohydrates?.value || 0,
+      fat: label.fat?.value || 0,
+      fiber: label.fiber?.value,
+      sugar: label.sugars?.value,
+      sodium: label.sodium?.value,
+      servingSize: food.servingSize?.toString() || "100",
+      servingUnit: food.servingSizeUnit || "g",
     };
-
-    // Validate the nutrition data
-    if (!isNutritionDataValid(nutrition, food.description)) {
-      return undefined;
-    }
-
-    return nutrition;
   }
 
   // Fall back to foodNutrients (Foundation/SR Legacy/Survey Foods and Branded Foods)
@@ -155,7 +112,7 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
     const sugar = getNutrientValue(["269"]);
     const sodium = getNutrientValue(["307"]);
 
-    const nutrition: NutritionInfo = {
+    return {
       calories,
       protein,
       carbs,
@@ -166,131 +123,51 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
       servingSize: "100",
       servingUnit: "g",
     };
-
-    // Validate the nutrition data
-    if (!isNutritionDataValid(nutrition, food.description)) {
-      return undefined;
-    }
-
-    return nutrition;
   }
 
   return undefined;
 }
 
 function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
-  // Extract foodCategory - handle both string and object formats
-  let foodCategory: string | undefined;
-  if (typeof food.foodCategory === 'object' && food.foodCategory !== null) {
-    foodCategory = food.foodCategory.description;
-  } else if (typeof food.foodCategory === 'string') {
-    foodCategory = food.foodCategory;
-  } else {
-    foodCategory = food.brandedFoodCategory;
-  }
-
   return {
     fdcId: food.fdcId,
     description: food.description,
     dataType: food.dataType,
     brandOwner: food.brandOwner,
-    gtinUpc: food.gtinUpc,
     ingredients: food.ingredients,
-    foodCategory: foodCategory,
-    servingSize: food.servingSize,
-    servingSizeUnit: food.servingSizeUnit,
+    foodCategory: food.foodCategory || food.brandedFoodCategory,
     nutrition: extractNutritionInfo(food),
   };
 }
 
-export interface USDASearchOptions {
-  query: string;
-  pageSize?: number;
-  pageNumber?: number;
-  dataType?: string[];
-  sortBy?: 'dataType.keyword' | 'lowercaseDescription.keyword' | 'fdcId' | 'publishedDate';
-  sortOrder?: 'asc' | 'desc';
-  brandOwner?: string[];
-}
-
 export async function searchUSDAFoods(
-  options: USDASearchOptions | string
+  query: string, 
+  pageSize: number = 20,
+  pageNumber: number = 1,
+  dataType?: string[]
 ): Promise<USDASearchResponse> {
   if (!API_KEY) {
     throw new Error("USDA_FDC_API_KEY is not configured");
   }
 
-  // Handle backward compatibility - if just a string is passed, treat it as query
-  let searchOptions: USDASearchOptions;
-  if (typeof options === 'string') {
-    searchOptions = { query: options, pageSize: 20, pageNumber: 1 };
-  } else {
-    searchOptions = {
-      pageSize: 20,
-      pageNumber: 1,
-      ...options
-    };
-  }
-
-  const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = searchOptions;
-
   try {
-    const url = new URL(`${USDA_API_BASE}/foods/search`);
-    url.searchParams.append('api_key', API_KEY);
-    url.searchParams.append('query', query);
-    url.searchParams.append('pageSize', (pageSize || 20).toString());
-    url.searchParams.append('pageNumber', (pageNumber || 1).toString());
+    const params = new URLSearchParams({
+      api_key: API_KEY,
+      query: query,
+      pageSize: pageSize.toString(),
+      pageNumber: pageNumber.toString(),
+    });
 
-    // Add each dataType as a separate parameter for FDC API array handling
     if (dataType && dataType.length > 0) {
-      dataType.forEach(type => {
-        url.searchParams.append('dataType', type);
-      });
+      params.append("dataType", dataType.join(","));
     }
 
-    if (sortBy) {
-      url.searchParams.append('sortBy', sortBy);
-    }
-
-    if (sortOrder) {
-      url.searchParams.append('sortOrder', sortOrder);
-    }
-
-    // Add each brandOwner as a separate parameter for FDC API array handling
-    if (brandOwner && brandOwner.length > 0) {
-      brandOwner.forEach(brand => {
-        url.searchParams.append('brandOwner', brand);
-      });
-    }
-
-    // Add timeout using AbortController (15 seconds)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
-    const response = await fetch(url, {
-      signal: controller.signal
-    }).finally(() => clearTimeout(timeoutId));
+    const response = await fetch(
+      `${USDA_API_BASE}/foods/search?${params.toString()}`
+    );
 
     if (!response.ok) {
-      console.error("USDA API error:", {
-        status: response.status,
-        statusText: response.statusText,
-        query,
-        pageSize,
-        pageNumber
-      });
-      
-      if (response.status === 401 || response.status === 403) {
-        throw new ApiError("USDA API authentication failed. Please check your API key.", 401);
-      } else if (response.status === 400) {
-        throw new ApiError("Invalid request to USDA API. Please check search parameters.", 400);
-      } else if (response.status === 429) {
-        throw new ApiError("USDA API rate limit exceeded. Please try again later.", 429);
-      } else if (response.status >= 500) {
-        throw new ApiError("USDA API service is temporarily unavailable.", 503);
-      }
-      
-      throw new ApiError(`USDA API error: ${response.status} ${response.statusText}`, response.status);
+      throw new Error(`USDA API error: ${response.status} ${response.statusText}`);
     }
 
     const data: FDCSearchResult = await response.json();
@@ -301,12 +178,9 @@ export async function searchUSDAFoods(
       currentPage: data.currentPage,
       totalPages: data.totalPages,
     };
-  } catch (error: any) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
+  } catch (error) {
     console.error("USDA API error:", error);
-    throw new ApiError("Failed to search USDA database", 500);
+    throw new Error("Failed to search USDA database");
   }
 }
 
@@ -316,43 +190,20 @@ export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null
   }
 
   try {
-    // Add timeout using AbortController (15 seconds)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
     const response = await fetch(
-      `${USDA_API_BASE}/food/${fdcId}?api_key=${API_KEY}`,
-      { signal: controller.signal }
-    ).finally(() => clearTimeout(timeoutId));
+      `${USDA_API_BASE}/food/${fdcId}?api_key=${API_KEY}`
+    );
 
     if (!response.ok) {
       if (response.status === 404) {
         return null;
       }
-      
-      console.error("USDA API error:", {
-        status: response.status,
-        statusText: response.statusText,
-        fdcId
-      });
-      
-      if (response.status === 401 || response.status === 403) {
-        throw new ApiError("USDA API authentication failed. Please check your API key.", 401);
-      } else if (response.status === 429) {
-        throw new ApiError("USDA API rate limit exceeded. Please try again later.", 429);
-      } else if (response.status >= 500) {
-        throw new ApiError("USDA API service is temporarily unavailable.", 503);
-      }
-      
-      throw new ApiError(`USDA API error: ${response.status} ${response.statusText}`, response.status);
+      throw new Error(`USDA API error: ${response.status} ${response.statusText}`);
     }
 
     const food: FDCFood = await response.json();
     return mapFDCFoodToUSDAItem(food);
-  } catch (error: any) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
+  } catch (error) {
     console.error("USDA API error:", error);
     return null;
   }

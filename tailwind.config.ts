@@ -3,13 +3,6 @@ import type { Config } from "tailwindcss";
 export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
-  safelist: [
-    'backdrop-blur-sm',
-    'backdrop-blur',
-    'backdrop-blur-md',
-    'bg-card/80',
-    'bg-sidebar/90',
-  ],
   theme: {
     extend: {
       borderRadius: {

@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useStorageLocations } from "@/hooks/useStorageLocations";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar as CalendarIcon } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { StorageLocation, FoodItem } from "@shared/schema";
@@ -36,7 +33,9 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
   const [expirationDate, setExpirationDate] = useState("");
   const { toast } = useToast();
 
-  const { data: storageLocations } = useStorageLocations();
+  const { data: storageLocations } = useQuery<StorageLocation[]>({
+    queryKey: ["/api/storage-locations"],
+  });
 
   useEffect(() => {
     if (item) {
@@ -72,16 +71,10 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
   });
 
   const handleSubmit = () => {
-    const missingFields = [];
-    if (!quantity) missingFields.push("quantity");
-    if (!unit) missingFields.push("unit");
-    if (!storageLocationId) missingFields.push("storage location");
-    if (!expirationDate) missingFields.push("expiration date");
-
-    if (missingFields.length > 0) {
+    if (!quantity || !storageLocationId) {
       toast({
-        title: "Please complete all required fields",
-        description: `Missing: ${missingFields.join(", ")}. All fields marked with * are required.`,
+        title: "Error",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -91,9 +84,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
       quantity,
       unit,
       storageLocationId,
-      expirationDate,
-      // Include nutrition to ensure weightInGrams is recalculated when quantity changes
-      nutrition: item?.nutrition || null,
+      expirationDate: expirationDate || null,
     });
   };
 
@@ -101,12 +92,9 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-muted">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit {item.name}</DialogTitle>
-          <DialogDescription>
-            Update quantity, storage location, or expiration date
-          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -122,7 +110,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-unit">Unit *</Label>
+              <Label htmlFor="edit-unit">Unit</Label>
               <Input
                 id="edit-unit"
                 value={unit}
@@ -149,22 +137,14 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-expiration">Expiration Date *</Label>
-            <div className="relative">
-              <Input
-                id="edit-expiration"
-                type="date"
-                value={expirationDate}
-                onChange={(e) => setExpirationDate(e.target.value)}
-                placeholder="YYYY-MM-DD"
-                className="pr-10"
-                data-testid="input-edit-expiration"
-              />
-              <CalendarIcon className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Format: YYYY-MM-DD (e.g., {new Date().toISOString().split('T')[0]})
-            </p>
+            <Label htmlFor="edit-expiration">Expiration Date</Label>
+            <Input
+              id="edit-expiration"
+              type="date"
+              value={expirationDate}
+              onChange={(e) => setExpirationDate(e.target.value)}
+              data-testid="input-edit-expiration"
+            />
           </div>
         </div>
 

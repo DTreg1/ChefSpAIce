@@ -1,1318 +1,171 @@
-// Referenced from blueprint:javascript_log_in_with_replit - Added authentication and user-scoped routes
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
-import Stripe from "stripe";
-import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "./usda";
-import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
-import { getEnrichedOnboardingItem } from "./onboarding-usda";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { ApiError } from "./apiError";
-import { batchedApiLogger } from "./batchedApiLogger";
-import { cleanupOldMessagesForUser } from "./chatCleanup";
-import { rateLimiter, barcodeRateLimiter, chatRateLimiter } from "./middleware/rateLimiter";
-import { z } from "zod";
+import { searchUSDAFoods, getFoodByFdcId } from "./usda";
 import { 
   insertFoodItemSchema, 
   insertChatMessageSchema,
   insertRecipeSchema,
   insertApplianceSchema,
-  insertMealPlanSchema,
-  insertUserPreferencesSchema,
-  insertStorageLocationSchema,
-  insertFeedbackSchema,
-  insertWebVitalSchema,
-  type BarcodeProduct
+  insertMealPlanSchema
 } from "@shared/schema";
 
-// Helper functions for appliance barcode processing
-function extractApplianceCapabilities(product: any): string[] {
-  const capabilities: string[] = [];
-  const text = `${product.title || ''} ${product.description || ''}`.toLowerCase();
-  
-  const capabilityKeywords = {
-    grill: ['grill', 'grilling'],
-    bake: ['bake', 'baking', 'oven'],
-    air_fry: ['air fry', 'air fryer', 'air crisp', 'air-fry'],
-    dehydrate: ['dehydrate', 'dehydrator'],
-    broil: ['broil', 'broiling'],
-    toast: ['toast', 'toaster'],
-    roast: ['roast', 'roasting'],
-    steam: ['steam', 'steamer'],
-    pressure_cook: ['pressure cook', 'pressure cooker', 'instant pot'],
-    slow_cook: ['slow cook', 'slow cooker', 'crock pot'],
-    blend: ['blend', 'blender', 'mix'],
-    food_process: ['food process', 'processor', 'chop', 'dice'],
-    warm: ['warm', 'warmer', 'keep warm'],
-    reheat: ['reheat', 'microwave'],
-    sauté: ['sauté', 'saute', 'pan fry']
-  };
-  
-  for (const [capability, keywords] of Object.entries(capabilityKeywords)) {
-    if (keywords.some(keyword => text.includes(keyword))) {
-      capabilities.push(capability);
-    }
-  }
-  
-  return capabilities;
-}
-
-function extractApplianceCapacity(product: any): { capacity?: string; servingSize?: string } {
-  const text = `${product.title || ''} ${product.description || ''}`;
-  
-  // Look for capacity patterns (e.g., "4-qt", "6 quart", "5L")
-  const capacityMatch = text.match(/(\d+(?:\.\d+)?)\s*[-\s]?(qt|quart|l|liter|litre|gal|gallon|oz|cup)/i);
-  
-  // Look for serving patterns (e.g., "serves 4", "4 servings", "up to 6 people")
-  const servingMatch = text.match(/(?:serves?|serving[s]?|up to)\s+(\d+)\s*(?:people|person|servings?)?/i);
-  
-  return {
-    capacity: capacityMatch ? capacityMatch[0] : undefined,
-    servingSize: servingMatch ? `up to ${servingMatch[1]} servings` : undefined
-  };
-}
-
-function determineApplianceType(barcodeProduct: BarcodeProduct): string {
-  const title = (barcodeProduct.title || '').toLowerCase();
-  const category = (barcodeProduct.category || '').toLowerCase();
-  const description = (barcodeProduct.description || '').toLowerCase();
-  const combined = `${title} ${category} ${description}`;
-  
-  // Check for specific appliance types
-  if (combined.includes('bake') || combined.includes('oven')) return 'baking';
-  if (combined.includes('grill') || combined.includes('bbq')) return 'cooking';
-  if (combined.includes('fryer') || combined.includes('fry')) return 'cooking';
-  if (combined.includes('pressure') || combined.includes('instant pot')) return 'cooking';
-  if (combined.includes('slow cook') || combined.includes('crock')) return 'cooking';
-  if (combined.includes('microwave')) return 'cooking';
-  if (combined.includes('blender') || combined.includes('mixer') || combined.includes('processor')) return 'prep';
-  if (combined.includes('whisk') || combined.includes('masher') || combined.includes('slicer')) return 'prep';
-  if (combined.includes('pan') || combined.includes('pot') || combined.includes('skillet')) return 'bakeware';
-  if (combined.includes('sheet') || combined.includes('tin') || combined.includes('mold')) return 'bakeware';
-  
-  // Default based on capabilities if available
-  if (barcodeProduct.capabilities?.length) {
-    if (barcodeProduct.capabilities.some(c => ['grill', 'bake', 'air_fry', 'broil'].includes(c))) {
-      return 'cooking';
-    }
-    if (barcodeProduct.capabilities.some(c => ['blend', 'food_process', 'chop'].includes(c))) {
-      return 'prep';
-    }
-  }
-  
-  return 'cooking'; // default
-}
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware (from blueprint:javascript_log_in_with_replit)
-  await setupAuth(app);
-
-  // Apply general rate limiting to all API endpoints
-  // Specific endpoints will override with their own rate limiters
-  app.use('/api/', rateLimiter);
-
-  // Auth routes (from blueprint:javascript_log_in_with_replit)
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Storage Locations
+  app.get("/api/storage-locations", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      throw new ApiError("Failed to fetch user", 500);
-    }
-  });
-
-  // User Preferences
-  app.get('/api/user/preferences', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const preferences = await storage.getUserPreferences(userId);
-      res.json(preferences);
-    } catch (error) {
-      console.error("Error fetching preferences:", error);
-      throw new ApiError("Failed to fetch preferences", 500);
-    }
-  });
-
-  app.put('/api/user/preferences', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const validated = insertUserPreferencesSchema.parse(req.body);
-      const preferences = await storage.upsertUserPreferences({ ...validated, userId });
-      res.json(preferences);
-    } catch (error) {
-      console.error("Error updating preferences:", error);
-      throw new ApiError("Failed to update preferences", 500);
-    }
-  });
-
-  app.post('/api/user/reset', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      await storage.resetUserData(userId);
-      res.json({ success: true, message: "Account data reset successfully" });
-    } catch (error) {
-      console.error("Error resetting user data:", error);
-      throw new ApiError("Failed to reset account data", 500);
-    }
-  });
-
-  // Storage Locations (user-scoped)
-  app.get("/api/storage-locations", isAuthenticated, async (req: any, res, next) => {
-    try {
-      const userId = req.user.claims.sub;
-      const locations = await storage.getStorageLocations(userId);
+      const locations = await storage.getStorageLocations();
       res.json(locations);
-    } catch (error: any) {
-      console.error("Error fetching storage locations:", error);
-      if (error instanceof ApiError) {
-        return next(error);
-      }
-      return next(new ApiError("Failed to fetch storage locations", 500));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch storage locations" });
     }
   });
 
-  app.post("/api/storage-locations", isAuthenticated, async (req: any, res, next) => {
+  // Food Items
+  app.get("/api/food-items", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const validated = insertStorageLocationSchema.parse(req.body);
-      const location = await storage.createStorageLocation(userId, validated);
-      res.json(location);
-    } catch (error: any) {
-      console.error("Error creating storage location:", error);
-      if (error instanceof z.ZodError) {
-        return next(new ApiError("Invalid storage location data", 400, JSON.stringify(error.errors)));
-      }
-      if (error instanceof ApiError) {
-        return next(error);
-      }
-      return next(new ApiError("Failed to create storage location", 500));
-    }
-  });
-
-  // Food Items (user-scoped)
-  app.get("/api/food-items", isAuthenticated, async (req: any, res, next) => {
-    try {
-      const userId = req.user.claims.sub;
       const { storageLocationId } = req.query;
-      const items = await storage.getFoodItems(userId, storageLocationId as string | undefined);
+      const items = await storage.getFoodItems(storageLocationId as string | undefined);
       res.json(items);
-    } catch (error: any) {
-      console.error("Error fetching food items:", error);
-      if (error instanceof ApiError) {
-        return next(error);
-      }
-      return next(new ApiError("Failed to fetch food items", 500));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch food items" });
     }
   });
 
-  app.post("/api/food-items", isAuthenticated, async (req: any, res, next) => {
+  app.post("/api/food-items", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const validated = insertFoodItemSchema.parse(req.body);
-      
-      let nutrition = validated.nutrition;
-      let usdaData = validated.usdaData;
-      
-      // Always validate nutrition if provided
-      let needsFreshNutrition = !nutrition;
-      
-      if (nutrition) {
-        try {
-          const parsedNutrition = JSON.parse(nutrition);
-          if (!isNutritionDataValid(parsedNutrition, validated.name)) {
-            console.log(`Invalid nutrition detected for "${validated.name}"`);
-            // If we have an FDC ID, try to fetch fresh data
-            if (validated.fcdId) {
-              console.log(`Will fetch fresh data from USDA`);
-              needsFreshNutrition = true;
-            } else {
-              // No FDC ID, can't fetch fresh data - reject invalid nutrition
-              console.log(`No FDC ID available, clearing invalid nutrition`);
-              nutrition = null;
-              usdaData = null;
-            }
-          }
-        } catch (e) {
-          console.error("Error parsing/validating nutrition:", e);
-          // If we have an FDC ID, try to fetch fresh data
-          if (validated.fcdId) {
-            needsFreshNutrition = true;
-          } else {
-            // No FDC ID, clear malformed nutrition
-            nutrition = null;
-            usdaData = null;
-          }
-        }
-      }
-      
-      // If we have an FDC ID and need fresh nutrition, fetch full details
-      if (validated.fcdId && needsFreshNutrition) {
-        console.log(`Fetching full USDA details for FDC ID ${validated.fcdId} during item creation`);
-        const foodDetails = await getFoodByFdcId(parseInt(validated.fcdId));
-        if (foodDetails && foodDetails.nutrition) {
-          console.log(`Found valid nutrition data for FDC ID ${validated.fcdId}`);
-          nutrition = JSON.stringify(foodDetails.nutrition);
-          usdaData = JSON.stringify(foodDetails);
-        } else {
-          // If we couldn't get valid nutrition, clear any invalid nutrition
-          console.log(`Could not fetch valid nutrition for FDC ID ${validated.fcdId}, storing without nutrition`);
-          nutrition = null;
-          usdaData = null;
-        }
-      }
-      
-      // Calculate weightInGrams from quantity and USDA serving size
-      let weightInGrams: number | null = null;
-      if (nutrition) {
-        try {
-          const nutritionData = JSON.parse(nutrition);
-          const quantity = parseFloat(validated.quantity) || 1;
-          const servingSize = parseFloat(nutritionData.servingSize) || 100;
-          weightInGrams = quantity * servingSize;
-        } catch (e) {
-          console.error("Error calculating weight:", e);
-        }
-      }
-      
-      const item = await storage.createFoodItem(userId, {
-        ...validated,
-        nutrition,
-        usdaData,
-        weightInGrams,
-      });
-      res.json(item);
-    } catch (error: any) {
-      console.error("Error creating food item:", error);
-      if (error instanceof z.ZodError) {
-        return next(new ApiError("Invalid food item data", 400, JSON.stringify(error.errors)));
-      }
-      if (error instanceof ApiError) {
-        return next(error);
-      }
-      return next(new ApiError("Failed to create food item", 500));
-    }
-  });
-
-  app.put("/api/food-items/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      const updateSchema = insertFoodItemSchema.partial().required({
-        quantity: true,
-        unit: true,
-        storageLocationId: true,
-        expirationDate: true,
-      });
-      const validated = updateSchema.parse(req.body);
-      
-      // Recalculate weightInGrams if quantity or nutrition changes
-      let weightInGrams: number | null | undefined = undefined;
-      if (validated.quantity && validated.nutrition) {
-        try {
-          const nutritionData = JSON.parse(validated.nutrition);
-          const quantity = parseFloat(validated.quantity) || 1;
-          const servingSize = parseFloat(nutritionData.servingSize) || 100;
-          weightInGrams = quantity * servingSize;
-        } catch (e) {
-          console.error("Error calculating weight:", e);
-        }
-      }
-      
-      const updateData = weightInGrams !== undefined ? { ...validated, weightInGrams } : validated;
-      const item = await storage.updateFoodItem(userId, id, updateData);
+      const item = await storage.createFoodItem(validated);
       res.json(item);
     } catch (error) {
-      console.error("Error updating food item:", error);
-      throw new ApiError("Failed to update food item", 400);
+      res.status(400).json({ error: "Invalid food item data" });
     }
   });
 
-  app.delete("/api/food-items/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/food-items/:id", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { id } = req.params;
-      await storage.deleteFoodItem(userId, id);
+      const item = await storage.updateFoodItem(id, req.body);
+      res.json(item);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update food item" });
+    }
+  });
+
+  app.delete("/api/food-items/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteFoodItem(id);
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting food item:", error);
-      throw new ApiError("Failed to delete food item", 500);
+      res.status(500).json({ error: "Failed to delete food item" });
     }
   });
 
-  app.post("/api/food-items/:id/refresh-nutrition", isAuthenticated, async (req: any, res) => {
+  // Appliances
+  app.get("/api/appliances", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      
-      // Get the current food item
-      const items = await storage.getFoodItems(userId);
-      const item = items.find(i => i.id === id);
-      
-      if (!item) {
-        throw new ApiError("Food item not found", 404);
-      }
-
-      let usdaData = null;
-      let nutrition = null;
-
-      // Try to fetch fresh USDA data
-      if (item.fcdId) {
-        // If we have an FDC ID, try to fetch by ID first
-        console.log(`Refreshing nutrition for "${item.name}" using FDC ID: ${item.fcdId}`);
-        usdaData = await getFoodByFdcId(parseInt(item.fcdId));
-        
-        if (usdaData && usdaData.nutrition) {
-          nutrition = JSON.stringify(usdaData.nutrition);
-        }
-      }
-      
-      // If no FDC ID or fetch failed, try searching by name
-      if (!nutrition) {
-        console.log(`Searching USDA for "${item.name}" to refresh nutrition data`);
-        const searchResults = await searchUSDAFoods(item.name);
-        
-        if (searchResults.foods && searchResults.foods.length > 0) {
-          // Try multiple search results until we find one with valid nutrition
-          for (const searchResult of searchResults.foods) {
-            try {
-              console.log(`Trying FDC ID: ${searchResult.fdcId} for "${item.name}"`);
-              
-              // Fetch full details for this search result
-              const foodDetails = await getFoodByFdcId(searchResult.fdcId);
-              
-              if (foodDetails && foodDetails.nutrition) {
-                console.log(`Found valid nutrition data using FDC ID: ${searchResult.fdcId} for "${item.name}"`);
-                usdaData = foodDetails;
-                nutrition = JSON.stringify(foodDetails.nutrition);
-                
-                // Update FDC ID if we found a better match
-                if (foodDetails.fdcId) {
-                  await storage.updateFoodItem(userId, id, {
-                    fcdId: foodDetails.fdcId.toString(),
-                  });
-                }
-                break; // Found valid nutrition, stop searching
-              } else {
-                console.log(`Skipping FDC ID: ${searchResult.fdcId} - nutrition data invalid or missing`);
-              }
-            } catch (err) {
-              console.error(`Error fetching details for FDC ID ${searchResult.fdcId}:`, err);
-              // Continue to next result
-            }
-          }
-        }
-      }
-
-      if (nutrition) {
-        // Recalculate weight based on new nutrition data
-        let weightInGrams: number | null = null;
-        try {
-          const nutritionData = JSON.parse(nutrition);
-          const quantity = parseFloat(item.quantity) || 1;
-          const servingSize = parseFloat(nutritionData.servingSize) || 100;
-          weightInGrams = quantity * servingSize;
-        } catch (e) {
-          console.error("Error calculating weight:", e);
-        }
-
-        // Update the item with new nutrition data
-        const updatedItem = await storage.updateFoodItem(userId, id, {
-          nutrition,
-          weightInGrams: weightInGrams || undefined,
-          usdaData: usdaData ? JSON.stringify(usdaData) : undefined,
-        });
-        
-        res.json({ success: true, item: updatedItem });
-      } else {
-        throw new ApiError("No nutrition data found for this item", 404);
-      }
-    } catch (error) {
-      console.error("Error refreshing nutrition data:", error);
-      throw new ApiError("Failed to refresh nutrition data", 500);
-    }
-  });
-
-  app.get("/api/food-categories", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const categories = await storage.getFoodCategories(userId);
-      res.json(categories);
-    } catch (error) {
-      console.error("Error fetching food categories:", error);
-      throw new ApiError("Failed to fetch food categories", 500);
-    }
-  });
-
-  // Appliances (user-scoped)
-  app.get("/api/appliances", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const appliances = await storage.getAppliances(userId);
+      const appliances = await storage.getAppliances();
       res.json(appliances);
     } catch (error) {
-      console.error("Error fetching appliances:", error);
-      throw new ApiError("Failed to fetch appliances", 500);
+      res.status(500).json({ error: "Failed to fetch appliances" });
     }
   });
 
-  app.post("/api/appliances", isAuthenticated, async (req: any, res) => {
+  app.post("/api/appliances", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const validated = insertApplianceSchema.parse(req.body);
-      const appliance = await storage.createAppliance(userId, validated);
+      const appliance = await storage.createAppliance(validated);
       res.json(appliance);
     } catch (error) {
-      console.error("Error creating appliance:", error);
-      throw new ApiError("Invalid appliance data", 400);
+      res.status(400).json({ error: "Invalid appliance data" });
     }
   });
 
-  app.get("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/appliances/:id", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { id } = req.params;
-      const appliance = await storage.getAppliance(userId, id);
-      if (!appliance) {
-        throw new ApiError("Appliance not found", 404);
-      }
-      res.json(appliance);
-    } catch (error) {
-      console.error("Error fetching appliance:", error);
-      throw new ApiError("Failed to fetch appliance", 500);
-    }
-  });
-
-  app.put("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      const validated = insertApplianceSchema.partial().parse(req.body);
-      const appliance = await storage.updateAppliance(userId, id, validated);
-      res.json(appliance);
-    } catch (error) {
-      console.error("Error updating appliance:", error);
-      throw new ApiError("Invalid appliance data", 400);
-    }
-  });
-
-  app.delete("/api/appliances/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      await storage.deleteAppliance(userId, id);
+      await storage.deleteAppliance(id);
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting appliance:", error);
-      throw new ApiError("Failed to delete appliance", 500);
+      res.status(500).json({ error: "Failed to delete appliance" });
     }
   });
 
-  // Appliance Categories
-  app.get("/api/appliance-categories", async (req, res) => {
+  // USDA Food Search
+  app.get("/api/usda/search", async (req, res) => {
     try {
-      const categories = await storage.getApplianceCategories();
-      res.json(categories);
-    } catch (error) {
-      console.error("Error fetching appliance categories:", error);
-      throw new ApiError("Failed to fetch appliance categories", 500);
-    }
-  });
-
-  app.post("/api/appliance-categories", isAuthenticated, async (req: any, res) => {
-    try {
-      const category = await storage.createApplianceCategory(req.body);
-      res.json(category);
-    } catch (error) {
-      console.error("Error creating appliance category:", error);
-      throw new ApiError("Invalid category data", 400);
-    }
-  });
-
-  // Get appliances by category
-  app.get("/api/appliances/category/:categoryId", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { categoryId } = req.params;
-      const appliances = await storage.getAppliancesByCategory(userId, categoryId);
-      res.json(appliances);
-    } catch (error) {
-      console.error("Error fetching appliances by category:", error);
-      throw new ApiError("Failed to fetch appliances", 500);
-    }
-  });
-
-  // Get appliances by capability
-  app.get("/api/appliances/capability/:capability", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { capability } = req.params;
-      const appliances = await storage.getAppliancesByCapability(userId, capability);
-      res.json(appliances);
-    } catch (error) {
-      console.error("Error fetching appliances by capability:", error);
-      throw new ApiError("Failed to fetch appliances", 500);
-    }
-  });
-
-  // Create appliance from barcode
-  app.post("/api/appliances/from-barcode", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
-    const { barcode, nickname, notes } = req.body;
-    
-    try {
-      if (!barcode) {
-        throw new ApiError("Barcode is required", 400);
-      }
-
-      // Check if barcode product exists in our database
-      let barcodeProduct = await storage.getBarcodeProduct(barcode);
-      
-      // If not in database, fetch from API
-      if (!barcodeProduct) {
-        // Check rate limits before making API call
-        await checkRateLimitBeforeCall();
-        
-        const apiProduct = await getBarcodeLookupProduct(barcode);
-        
-        if (!apiProduct) {
-          throw new ApiError("Product not found for this barcode", 404);
-        }
-
-        // Extract capabilities from description
-        const capabilities = extractApplianceCapabilities(apiProduct);
-        const { capacity, servingSize } = extractApplianceCapacity(apiProduct);
-        
-        // Save to barcode products table
-        barcodeProduct = await storage.createBarcodeProduct({
-          barcodeNumber: apiProduct.barcode_number || barcode,
-          title: apiProduct.title || 'Unknown Product',
-          brand: apiProduct.brand,
-          manufacturer: apiProduct.manufacturer,
-          model: apiProduct.model,
-          description: apiProduct.description,
-          category: apiProduct.category,
-          images: apiProduct.images,
-          capabilities,
-          capacity,
-          servingSize,
-          rawData: apiProduct
-        });
-      }
-
-      // Create appliance for user
-      const appliance = await storage.createAppliance(userId, {
-        name: barcodeProduct.title,
-        type: determineApplianceType(barcodeProduct),
-        barcodeProductId: barcodeProduct.id,
-        nickname: nickname || barcodeProduct.title,
-        notes,
-        imageUrl: barcodeProduct.images?.[0],
-        customCapabilities: barcodeProduct.capabilities,
-        customCapacity: barcodeProduct.capacity,
-        customServingSize: barcodeProduct.servingSize
-      });
-
-      res.json(appliance);
-    } catch (error: any) {
-      console.error("Error creating appliance from barcode:", error);
-      if (error instanceof ApiError) {
-        throw error; // Re-throw ApiError as is
-      }
-      throw new ApiError("Failed to create appliance from barcode", 500);
-    }
-  });
-
-  // FDC Food Search with Cache (public)
-  app.get("/api/fdc/search", async (req, res, next) => {
-    try {
-      const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
-      
-      // Validate and sanitize query parameter
+      const { query, pageSize, pageNumber, dataType } = req.query;
       if (!query || typeof query !== "string") {
-        throw new ApiError("Query parameter is required", 400);
-      }
-      
-      // Sanitize search query - limit length and remove potentially harmful characters
-      const sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
-      if (!sanitizedQuery) {
-        throw new ApiError("Invalid search query", 400);
-      }
-
-      const size = pageSize ? parseInt(pageSize as string) : 25;
-      const page = pageNumber ? parseInt(pageNumber as string) : 1;
-      
-      // Parse dataType - can be comma-separated string or array
-      let dataTypes: string[] = [];
-      if (dataType) {
-        if (Array.isArray(dataType)) {
-          dataTypes = dataType as string[];
-        } else if (typeof dataType === 'string') {
-          dataTypes = dataType.split(',').map(t => t.trim()).filter(Boolean);
-        }
-      }
-      
-      // Parse brandOwner - Express automatically handles multiple params as array
-      let brandOwners: string[] = [];
-      if (brandOwner) {
-        if (Array.isArray(brandOwner)) {
-          brandOwners = brandOwner as string[];
-        } else if (typeof brandOwner === 'string') {
-          brandOwners = [brandOwner];
-        }
-      }
-      
-      const sort = sortBy as string | undefined;
-      const order = sortOrder as string | undefined;
-
-      // Only cache the simplest searches (query + page) to avoid stale results with filters
-      // Advanced filters (dataType, sort, brand) bypass cache completely
-      const hasAnyFilters = !!(sort || brandOwners.length > 0 || dataTypes.length > 0 || size !== 25);
-      
-      // Use shorter TTL for complex searches, longer TTL for simple searches
-      const cachedResults = await storage.getCachedSearchResults(sanitizedQuery, undefined, page, hasAnyFilters);
-      if (cachedResults && 
-          cachedResults.results &&
-          cachedResults.pageSize === size) {
-        console.log(`FDC search cache hit for query: ${sanitizedQuery} (complex: ${hasAnyFilters})`);
-        return res.json({
-            foods: cachedResults.results,
-            totalHits: cachedResults.totalHits,
-            currentPage: page,
-            totalPages: Math.ceil((cachedResults.totalHits || 0) / size),
-            fromCache: true
-          });
-      }
-
-      // If not in cache, call FDC API
-      console.log(`FDC search calling API for query: ${sanitizedQuery}`);
-      
-      // Build API URL
-      const apiKey = process.env.FDC_API_KEY;
-      if (!apiKey) {
-        throw new ApiError("FDC API key not configured", 500);
-      }
-
-      const searchUrl = new URL('https://api.nal.usda.gov/fdc/v1/foods/search');
-      searchUrl.searchParams.append('api_key', apiKey);
-      searchUrl.searchParams.append('query', sanitizedQuery);
-      searchUrl.searchParams.append('pageSize', size.toString());
-      searchUrl.searchParams.append('pageNumber', page.toString());
-      
-      // Add each dataType as a separate parameter for FDC API array handling
-      if (dataTypes.length > 0) {
-        dataTypes.forEach(type => {
-          searchUrl.searchParams.append('dataType', type);
-        });
-      }
-      
-      if (sort) {
-        searchUrl.searchParams.append('sortBy', sort);
-      }
-      
-      if (order) {
-        searchUrl.searchParams.append('sortOrder', order);
-      }
-      
-      // Add each brandOwner as a separate parameter for FDC API array handling
-      if (brandOwners.length > 0) {
-        brandOwners.forEach(brand => {
-          searchUrl.searchParams.append('brandOwner', brand);
-        });
-      }
-
-      const response = await fetch(searchUrl);
-      if (!response.ok) {
-        throw new Error(`FDC API error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      // Cache the search results (only for simple searches)
-      const resultsToCache = data.foods?.map((food: any) => ({
-        fdcId: food.fdcId.toString(),
-        description: food.description || food.lowercaseDescription,
-        dataType: food.dataType,
-        brandOwner: food.brandOwner,
-        brandName: food.brandName,
-        score: food.score
-      })) || [];
-
-      // Cache all searches, but complex searches will have shorter TTL (2 hours vs 24 hours)
-      // This is handled by the getCachedSearchResults method which checks isComplexSearch
-      await storage.cacheSearchResults({
-        query: sanitizedQuery,
-        dataType: null,
-        pageNumber: page,
-        pageSize: size,
-        totalHits: data.totalHits || 0,
-        results: resultsToCache
-      });
-
-      // Cache individual food items for faster detail lookups
-      for (const food of (data.foods || [])) {
-        const nutrients = food.foodNutrients?.map((n: any) => ({
-          nutrientId: n.nutrientId,
-          nutrientName: n.nutrientName,
-          nutrientNumber: n.nutrientNumber,
-          unitName: n.unitName,
-          value: n.value
-        })) || [];
-
-        await storage.cacheFood({
-          fdcId: food.fdcId.toString(),
-          description: food.description || food.lowercaseDescription,
-          dataType: food.dataType,
-          brandOwner: food.brandOwner,
-          brandName: food.brandName,
-          ingredients: food.ingredients,
-          servingSize: food.servingSize,
-          servingSizeUnit: food.servingSizeUnit,
-          nutrients,
-          fullData: food
-        });
-      }
-
-      res.json({
-        foods: resultsToCache,
-        totalHits: data.totalHits || 0,
-        currentPage: page,
-        totalPages: Math.ceil((data.totalHits || 0) / size),
-        fromCache: false
-      });
-    } catch (error: any) {
-      console.error("FDC search error:", error);
-      if (error instanceof ApiError) {
-        return next(error); // Pass ApiError to error handler middleware
-      }
-      return next(new ApiError("Failed to search FDC database", 500));
-    }
-  });
-
-  // FDC Food Details with Cache (public)
-  app.get("/api/fdc/food/:fdcId", async (req, res, next) => {
-    try {
-      const { fdcId } = req.params;
-      
-      // Check cache first
-      const cachedFood = await storage.getCachedFood(fdcId);
-      if (cachedFood) {
-        console.log(`FDC food cache hit for fdcId: ${fdcId}`);
-        await storage.updateFoodLastAccessed(fdcId);
-        return res.json({
-          ...(cachedFood.fullData || {}),
-          fromCache: true
-        });
-      }
-
-      // If not in cache, call FDC API
-      console.log(`FDC food cache miss for fdcId: ${fdcId}, calling API`);
-      
-      const apiKey = process.env.FDC_API_KEY;
-      if (!apiKey) {
-        throw new ApiError("FDC API key not configured", 500);
-      }
-
-      const foodUrl = `https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${apiKey}`;
-      const response = await fetch(foodUrl);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new ApiError("Food not found", 404);
-        }
-        throw new Error(`FDC API error: ${response.statusText}`);
-      }
-
-      const food = await response.json();
-      
-      // Cache the food item
-      const nutrients = food.foodNutrients?.map((n: any) => ({
-        nutrientId: n.nutrient?.id || n.nutrientId,
-        nutrientName: n.nutrient?.name || n.nutrientName,
-        nutrientNumber: n.nutrient?.number || n.nutrientNumber,
-        unitName: n.nutrient?.unitName || n.unitName,
-        value: n.amount || n.value || 0
-      })) || [];
-
-      await storage.cacheFood({
-        fdcId: fdcId,
-        description: food.description || food.lowercaseDescription,
-        dataType: food.dataType,
-        brandOwner: food.brandOwner,
-        brandName: food.brandName,
-        ingredients: food.ingredients,
-        servingSize: food.servingSize,
-        servingSizeUnit: food.servingSizeUnit,
-        nutrients,
-        fullData: food
-      });
-
-      res.json({
-        ...food,
-        fromCache: false
-      });
-    } catch (error: any) {
-      console.error("FDC food details error:", error);
-      if (error instanceof ApiError) {
-        return next(error); // Pass ApiError to error handler middleware
-      }
-      return next(new ApiError("Failed to fetch food details", 500));
-    }
-  });
-
-  // Clear old cache entries (admin endpoint - could be scheduled)
-  app.post("/api/fdc/cache/clear", async (req, res) => {
-    try {
-      const { daysOld = 30 } = req.body;
-      await storage.clearOldCache(daysOld);
-      res.json({ success: true, message: `Cleared cache entries older than ${daysOld} days` });
-    } catch (error) {
-      console.error("Error clearing cache:", error);
-      throw new ApiError("Failed to clear cache", 500);
-    }
-  });
-
-  // USDA Food Search (public) - Enhanced with all FDC search parameters  
-  app.get("/api/usda/search", async (req, res, next) => {
-    try {
-      const { query, pageSize, pageNumber, dataType, sortBy, sortOrder, brandOwner } = req.query;
-      if (!query || typeof query !== "string") {
-        throw new ApiError("Query parameter is required", 400);
-      }
-      
-      // Sanitize search query - limit length and remove potentially harmful characters
-      const sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
-      if (!sanitizedQuery) {
-        throw new ApiError("Invalid search query", 400);
+        return res.status(400).json({ error: "Query parameter is required" });
       }
 
       const size = pageSize ? parseInt(pageSize as string) : 20;
       const page = pageNumber ? parseInt(pageNumber as string) : 1;
-      
-      // Parse dataType - can be comma-separated string or array
-      let dataTypes: string[] = [];
-      if (dataType) {
-        if (Array.isArray(dataType)) {
-          dataTypes = dataType as string[];
-        } else if (typeof dataType === 'string') {
-          dataTypes = dataType.split(',').map(t => t.trim()).filter(Boolean);
-        }
-      }
-      
-      // Parse brandOwner - can be comma-separated string or array
-      let brandOwners: string[] = [];
-      if (brandOwner) {
-        if (Array.isArray(brandOwner)) {
-          brandOwners = brandOwner as string[];
-        } else if (typeof brandOwner === 'string') {
-          brandOwners = brandOwner.split(',').map(b => b.trim()).filter(Boolean);
-        }
-      }
+      const types = dataType ? (Array.isArray(dataType) ? dataType : [dataType]) as string[] : undefined;
 
-      const results = await searchUSDAFoods({
-        query: sanitizedQuery,
-        pageSize: size,
-        pageNumber: page,
-        dataType: dataTypes.length > 0 ? dataTypes : undefined,
-        sortBy: sortBy as any,
-        sortOrder: sortOrder as any,
-        brandOwner: brandOwners.length > 0 ? brandOwners : undefined
-      });
+      const results = await searchUSDAFoods(query, size, page, types);
       res.json(results);
-    } catch (error: any) {
+    } catch (error) {
       console.error("USDA search error:", error);
-      if (error instanceof ApiError) {
-        return next(error); // Pass ApiError to error handler middleware
-      }
-      return next(new ApiError("Failed to search USDA database", 500));
+      res.status(500).json({ error: "Failed to search USDA database" });
     }
   });
 
-  app.get("/api/usda/food/:fdcId", async (req, res, next) => {
+  app.get("/api/usda/food/:fdcId", async (req, res) => {
     try {
       const { fdcId } = req.params;
       const food = await getFoodByFdcId(Number(fdcId));
       if (!food) {
-        throw new ApiError("Food not found", 404);
+        return res.status(404).json({ error: "Food not found" });
       }
       res.json(food);
-    } catch (error: any) {
-      console.error("USDA food details error:", error);
-      if (error instanceof ApiError) {
-        return next(error); // Pass ApiError to error handler middleware
-      }
-      return next(new ApiError("Failed to fetch food details", 500));
-    }
-  });
-
-  // Onboarding - Get enriched USDA data for common items (public - used during onboarding)
-  app.get("/api/onboarding/enriched-item/:itemName", async (req: any, res) => {
-    try {
-      const { itemName } = req.params;
-      const enrichedItem = await getEnrichedOnboardingItem(decodeURIComponent(itemName));
-      
-      if (!enrichedItem) {
-        throw new ApiError("Item not found in onboarding list", 404);
-      }
-      
-      res.json(enrichedItem);
-    } catch (error: any) {
-      console.error("Error fetching enriched onboarding item:", error);
-      throw new ApiError("Failed to fetch enriched item data", 500);
-    }
-  });
-
-  // Barcode Lookup - Product Images (public)
-  app.get("/api/barcodelookup/search", barcodeRateLimiter, async (req: any, res) => {
-    const userId = req.user?.claims?.sub;
-    const { query } = req.query;
-    let apiCallMade = false;
-    let statusCode = 200;
-    let success = true;
-    let sanitizedQuery = ''; // Declare at outer scope for access in finally block
-    
-    try {
-      if (!query || typeof query !== "string") {
-        throw new ApiError("Query parameter is required", 400);
-      }
-      
-      // Sanitize search query - limit length and remove potentially harmful characters
-      sanitizedQuery = query.trim().slice(0, 200).replace(/[<>]/g, '');
-      if (!sanitizedQuery) {
-        throw new ApiError("Invalid search query", 400);
-      }
-
-      // Check rate limits before making API call
-      await checkRateLimitBeforeCall();
-
-      apiCallMade = true;
-      const results = await searchBarcodeLookup(sanitizedQuery);
-      
-      const products = results.products.map(product => ({
-        code: product.barcode_number || '',
-        name: product.title || 'Unknown Product',
-        brand: product.brand || '',
-        imageUrl: extractImageUrl(product),
-        description: product.description
-      }));
-
-      res.json({ products, count: products.length });
-    } catch (error: any) {
-      console.error("Barcode Lookup search error:", error);
-      if (error instanceof ApiError) {
-        statusCode = error.statusCode;
-        success = false;
-        throw error; // Re-throw ApiError as is
-      }
-      statusCode = 500;
-      success = false;
-      throw new ApiError("Failed to search Barcode Lookup", 500);
-    } finally {
-      // Use batched logging for better performance
-      if (userId && apiCallMade && sanitizedQuery) {
-        try {
-          await batchedApiLogger.logApiUsage(userId, {
-            apiName: 'barcode_lookup',
-            endpoint: 'search',
-            queryParams: `query=${sanitizedQuery}`,
-            statusCode,
-            success
-          });
-        } catch (logError) {
-          console.error("Failed to log API usage:", logError);
-        }
-      }
-    }
-  });
-
-  app.get("/api/barcodelookup/product/:barcode", barcodeRateLimiter, async (req: any, res) => {
-    const userId = req.user?.claims?.sub;
-    const { barcode } = req.params;
-    let apiCallMade = false;
-    let statusCode = 200;
-    let success = true;
-    
-    try {
-      // Check rate limits before making API call
-      await checkRateLimitBeforeCall();
-      
-      apiCallMade = true;
-      const product = await getBarcodeLookupProduct(barcode);
-      
-      if (!product) {
-        statusCode = 404;
-        success = false;
-        throw new ApiError("Product not found", 404);
-      }
-
-      res.json({
-        code: product.barcode_number || '',
-        name: product.title || 'Unknown Product',
-        brand: product.brand || '',
-        imageUrl: extractImageUrl(product),
-        description: product.description
-      });
-    } catch (error: any) {
-      console.error("Barcode Lookup product error:", error);
-      if (error instanceof ApiError) {
-        statusCode = error.statusCode;
-        success = false;
-        throw error; // Re-throw ApiError as is
-      }
-      statusCode = 500;
-      success = false;
-      throw new ApiError("Failed to fetch product details", 500);
-    } finally {
-      // Use batched logging for better performance
-      if (userId && apiCallMade) {
-        try {
-          await batchedApiLogger.logApiUsage(userId, {
-            apiName: 'barcode_lookup',
-            endpoint: 'product',
-            queryParams: `barcode=${barcode}`,
-            statusCode,
-            success
-          });
-        } catch (logError) {
-          console.error("Failed to log API usage:", logError);
-        }
-      }
-    }
-  });
-
-  app.get("/api/barcodelookup/rate-limits", isAuthenticated, async (req, res) => {
-    try {
-      const limits = await getBarcodeLookupRateLimits();
-      res.json(limits);
-    } catch (error: any) {
-      console.error("Barcode Lookup rate limits error:", error);
-      if (error instanceof ApiError) {
-        throw error; // Re-throw ApiError as is
-      }
-      throw new ApiError("Failed to fetch rate limits", 500);
-    }
-  });
-
-  app.get("/api/barcodelookup/usage/stats", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { days } = req.query;
-      const daysParam = days ? parseInt(days as string) : 30;
-      
-      const stats = await storage.getApiUsageStats(userId, 'barcode_lookup', daysParam);
-      res.json(stats);
     } catch (error) {
-      console.error("Error fetching API usage stats:", error);
-      throw new ApiError("Failed to fetch usage stats", 500);
+      res.status(500).json({ error: "Failed to fetch food details" });
     }
   });
 
-  app.get("/api/barcodelookup/usage/logs", isAuthenticated, async (req: any, res) => {
+  // Chat Messages
+  app.get("/api/chat/messages", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const { limit } = req.query;
-      const limitParam = limit ? parseInt(limit as string) : 50;
+      const messages = await storage.getChatMessages();
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch chat messages" });
+    }
+  });
+
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { message } = req.body;
       
-      const logs = await storage.getApiUsageLogs(userId, 'barcode_lookup', limitParam);
-      res.json(logs);
-    } catch (error) {
-      console.error("Error fetching API usage logs:", error);
-      throw new ApiError("Failed to fetch usage logs", 500);
-    }
-  });
-
-  // Object Storage - Image Uploads (referenced from blueprint:javascript_object_storage)
-  app.get("/objects/:objectPath(*)", async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
-    try {
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      objectStorageService.downloadObject(objectFile, res);
-    } catch (error) {
-      console.error("Error serving object:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.sendStatus(404);
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "Message is required" });
       }
-      return res.sendStatus(500);
-    }
-  });
-
-  app.post("/api/objects/upload", isAuthenticated, async (_req, res) => {
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
-    } catch (error) {
-      console.error("Error getting upload URL:", error);
-      throw new ApiError("Failed to get upload URL", 500);
-    }
-  });
-
-  app.put("/api/food-images", isAuthenticated, async (req, res) => {
-    if (!req.body.imageURL) {
-      throw new ApiError("imageURL is required", 400);
-    }
-
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const objectPath = objectStorageService.normalizeObjectEntityPath(req.body.imageURL);
-      res.status(200).json({ objectPath });
-    } catch (error) {
-      console.error("Error setting food image:", error);
-      throw new ApiError("Internal server error", 500);
-    }
-  });
-
-  // Chat Messages (user-scoped) - Now with pagination support
-  app.get("/api/chat/messages", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      
-      // Trigger automatic cleanup of old messages (runs in background)
-      cleanupOldMessagesForUser(userId).catch(err => 
-        console.error('Background cleanup error:', err)
-      );
-      
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100); // Max 100 per page
-      
-      // If pagination params are provided, use paginated method
-      if (req.query.page || req.query.limit) {
-        const result = await storage.getChatMessagesPaginated(userId, page, limit);
-        res.json(result);
-      } else {
-        // Fallback to non-paginated for backward compatibility
-        const messages = await storage.getChatMessages(userId);
-        res.json(messages);
-      }
-    } catch (error) {
-      console.error("Error fetching chat messages:", error);
-      throw new ApiError("Failed to fetch chat messages", 500);
-    }
-  });
-
-  // Create a single chat message
-  app.post("/api/chat/messages", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const messageData = {
-        role: req.body.role,
-        content: req.body.content,
-        metadata: req.body.metadata || null
-      };
-      const message = await storage.createChatMessage(userId, messageData);
-      res.json(message);
-    } catch (error) {
-      console.error("Error creating chat message:", error);
-      throw new ApiError("Invalid chat message data", 400);
-    }
-  });
-
-  // Clear all chat messages for a user
-  app.delete("/api/chat/messages", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      await storage.clearChatMessages(userId);
-      res.json({ success: true, message: "Chat history cleared" });
-    } catch (error) {
-      console.error("Error clearing chat messages:", error);
-      throw new ApiError("Failed to clear chat history", 500);
-    }
-  });
-
-  // Delete old chat messages (older than specified hours)
-  app.post("/api/chat/messages/cleanup", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { hoursOld = 24 } = req.body;
-      const deleted = await storage.deleteOldChatMessages(userId, hoursOld);
-      res.json({ success: true, deletedCount: deleted, message: `Deleted messages older than ${hoursOld} hours` });
-    } catch (error) {
-      console.error("Error cleaning up chat messages:", error);
-      throw new ApiError("Failed to cleanup chat messages", 500);
-    }
-  });
-
-  // Define schema for chat message validation
-  const chatMessageRequestSchema = z.object({
-    message: z.string()
-      .min(1, "Message cannot be empty")
-      .max(10000, "Message is too long (max 10,000 characters)")
-      .trim()
-  });
-
-  app.post("/api/chat", isAuthenticated, chatRateLimiter, async (req: any, res) => {
-    const abortController = new AbortController();
-    
-    req.on('close', () => {
-      abortController.abort();
-    });
-
-    try {
-      const userId = req.user.claims.sub;
-      
-      // Validate request body using Zod
-      const validation = chatMessageRequestSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ 
-          error: "Invalid message format",
-          details: validation.error.issues 
-        });
-      }
-      
-      const { message } = validation.data;
 
       // Save user message
-      await storage.createChatMessage(userId, {
+      await storage.createChatMessage({
         role: "user",
         content: message,
         metadata: null,
       });
 
       // Get current inventory and appliances for context
-      const foodItems = await storage.getFoodItems(userId);
-      const appliances = await storage.getAppliances(userId);
-      const storageLocations = await storage.getStorageLocations(userId);
+      const foodItems = await storage.getFoodItems();
+      const appliances = await storage.getAppliances();
+      const storageLocations = await storage.getStorageLocations();
 
-      // Optimize inventory context for large inventories
-      // Prioritize: 1) expiring items, 2) recently added items
-      const now = new Date();
-      const prioritizedItems = foodItems
-        .map(item => {
-          const daysToExpiry = item.expirationDate 
-            ? Math.ceil((new Date(item.expirationDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-            : Infinity;
-          return { ...item, daysToExpiry };
-        })
-        .sort((a, b) => {
-          // Sort by expiring soon first, then by most recently created
-          if (a.daysToExpiry !== b.daysToExpiry) {
-            return a.daysToExpiry - b.daysToExpiry;
-          }
-          return 0;
-        })
-        .slice(0, 100); // Limit to top 100 items to prevent excessive context size
-
-      const inventoryContext = prioritizedItems.map(item => {
+      const inventoryContext = foodItems.map(item => {
         const location = storageLocations.find(loc => loc.id === item.storageLocationId);
-        const expiryNote = item.expirationDate && item.daysToExpiry < 7 
-          ? ` (expires in ${item.daysToExpiry} days)` 
-          : '';
-        return `${item.name} (${item.quantity} ${item.unit || ''}) in ${location?.name || 'unknown'}${expiryNote}`;
+        return `${item.name} (${item.quantity} ${item.unit || ''}) in ${location?.name || 'unknown'}`;
       }).join(', ');
-
-      const totalItemCount = foodItems.length;
-      const contextNote = totalItemCount > 100 
-        ? ` [Showing ${prioritizedItems.length} of ${totalItemCount} items - prioritizing expiring and recent items]` 
-        : '';
 
       const appliancesContext = appliances.map(a => a.name).join(', ');
 
-      const systemPrompt = `You are an ChefSpAIce assistant. You help users manage their food inventory and suggest recipes.
+      const systemPrompt = `You are an AI Chef assistant. You help users manage their food inventory and suggest recipes.
 
-Current inventory: ${inventoryContext || 'No items in inventory'}${contextNote}
+Current inventory: ${inventoryContext || 'No items in inventory'}
 Available appliances: ${appliancesContext || 'No appliances registered'}
 
 Your tasks:
@@ -1325,298 +178,86 @@ When the user asks to add items, respond with the details and suggest saving the
 When asked for recipes, consider the available inventory and appliances.`;
 
       // Stream response from OpenAI
-      let stream;
-      try {
-        stream = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: message }
-          ],
-          stream: true,
-          max_completion_tokens: 8192,
-        });
-      } catch (openaiError: any) {
-        console.error("OpenAI API error:", {
-          message: openaiError.message,
-          status: openaiError.status,
-          code: openaiError.code,
-          type: openaiError.type,
-          requestId: openaiError.headers?.['x-request-id'],
-        });
-        
-        const errorMessage = openaiError.status === 429 
-          ? "Rate limit exceeded. Please try again in a moment."
-          : openaiError.status === 401 || openaiError.status === 403
-          ? "Authentication failed with OpenAI API."
-          : openaiError.message || "Failed to connect to AI service.";
-        
-        return res.status(openaiError.status || 500).json({ 
-          error: errorMessage,
-          details: openaiError.code,
-        });
-      }
+      const stream = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        stream: true,
+        max_completion_tokens: 8192,
+      });
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
       let fullResponse = '';
-      let streamCompleted = false;
 
-      try {
-        for await (const chunk of stream) {
-          if (abortController.signal.aborted) {
-            console.log("Stream aborted by client disconnect");
-            break;
-          }
-          
-          const content = chunk.choices[0]?.delta?.content || '';
-          if (content) {
-            fullResponse += content;
-            try {
-              res.write(`data: ${JSON.stringify({ content })}\n\n`);
-            } catch (writeError) {
-              console.error("Error writing to stream:", writeError);
-              break;
-            }
-          }
-        }
-
-        streamCompleted = true;
-
-        // Save AI response only if stream completed successfully and client is still connected
-        if (fullResponse && !abortController.signal.aborted) {
-          await storage.createChatMessage(userId, {
-            role: "assistant",
-            content: fullResponse,
-            metadata: null,
-          });
-        }
-
-        // Only write and end response if client is still connected and response is writable
-        if (!abortController.signal.aborted && !res.writableEnded) {
-          try {
-            res.write('data: [DONE]\n\n');
-            res.end();
-          } catch (finalWriteError) {
-            console.error("Error in final write to stream:", finalWriteError);
-          }
-        } else if (!res.writableEnded) {
-          res.end();
-        }
-      } catch (streamError: any) {
-        console.error("Streaming error:", {
-          message: streamError.message,
-          code: streamError.code,
-          aborted: abortController.signal.aborted,
-        });
-        
-        if (!res.writableEnded) {
-          const errorData = {
-            error: abortController.signal.aborted 
-              ? "Stream cancelled" 
-              : "Stream interrupted unexpectedly. Please try again.",
-            type: streamError.code || 'stream_error',
-          };
-          res.write(`data: ${JSON.stringify(errorData)}\n\n`);
-          res.end();
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          fullResponse += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
         }
       }
-    } catch (error: any) {
-      console.error("Chat error:", {
-        message: error.message,
-        stack: error.stack,
-        userId: req.user?.claims?.sub,
+
+      // Save AI response
+      await storage.createChatMessage({
+        role: "assistant",
+        content: fullResponse,
+        metadata: null,
       });
-      
-      if (!res.headersSent) {
-        res.status(500).json({ 
-          error: "Failed to process chat message",
-          details: error.message,
-        });
-      } else {
-        res.end();
-      }
+
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } catch (error) {
+      console.error("Chat error:", error);
+      res.status(500).json({ error: "Failed to process chat message" });
     }
   });
 
-  // Recipe Generation (user-scoped)
-  app.post("/api/recipes/generate", isAuthenticated, async (req: any, res) => {
+  // Recipe Generation
+  app.post("/api/recipes/generate", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const foodItems = await storage.getFoodItems(userId);
-      const appliances = await storage.getAppliances(userId);
+      const foodItems = await storage.getFoodItems();
+      const appliances = await storage.getAppliances();
 
-      // Extract customization preferences if provided
-      const {
-        timeConstraint = "moderate",
-        servings = 4,
-        difficulty = "intermediate",
-        mealType = "dinner",
-        creativity = 5,
-        onlyUseOnHand = true
-      } = req.body;
-
-      // Only require inventory if onlyUseOnHand is true
-      if (onlyUseOnHand && foodItems.length === 0) {
-        throw new ApiError("No ingredients in inventory. Turn off 'Only use ingredients on hand' to generate recipes without inventory.", 400);
+      if (foodItems.length === 0) {
+        return res.status(400).json({ error: "No ingredients in inventory" });
       }
 
-      // Sort items by expiration date to prioritize expiring items
-      const now = new Date();
-      const sortedItems = foodItems.sort((a, b) => {
-        // Items without expiration dates go to the end
-        if (!a.expirationDate && !b.expirationDate) return 0;
-        if (!a.expirationDate) return 1;
-        if (!b.expirationDate) return -1;
-        
-        // Sort by expiration date (earliest first)
-        return new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime();
-      });
-
-      // Categorize ingredients by urgency
-      const expiringIngredients: any[] = [];
-      const freshIngredients: any[] = [];
-      const stableIngredients: any[] = [];
-
-      sortedItems.forEach(item => {
-        const daysUntilExpiration = item.expirationDate 
-          ? Math.floor((new Date(item.expirationDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-          : null;
-
-        const ingredientInfo = {
-          name: item.name,
-          quantity: item.quantity,
-          unit: item.unit || '',
-          expiresIn: daysUntilExpiration
-        };
-
-        if (daysUntilExpiration !== null && daysUntilExpiration <= 3) {
-          expiringIngredients.push(ingredientInfo);
-        } else if (daysUntilExpiration !== null && daysUntilExpiration <= 7) {
-          freshIngredients.push(ingredientInfo);
-        } else {
-          stableIngredients.push(ingredientInfo);
-        }
-      });
-
-      // Create detailed ingredient lists for the prompt
-      const formatIngredientList = (items: any[]) => items.map(item => {
-        const expiryNote = item.expiresIn !== null 
-          ? item.expiresIn <= 0 
-            ? " [EXPIRES TODAY]" 
-            : item.expiresIn === 1 
-              ? " [EXPIRES TOMORROW]"
-              : ` [expires in ${item.expiresIn} days]`
-          : "";
-        return `${item.name} (${item.quantity} ${item.unit})${expiryNote}`;
-      }).join(', ');
-
-      const urgentIngredientsList = formatIngredientList(expiringIngredients);
-      const freshIngredientsList = formatIngredientList(freshIngredients);
-      const stableIngredientsList = formatIngredientList(stableIngredients);
+      const ingredientsList = foodItems.map(item => 
+        `${item.name} (${item.quantity} ${item.unit || ''})`
+      ).join(', ');
 
       const appliancesList = appliances.map(a => a.name).join(', ');
 
-      // Map time constraint to actual time ranges
-      const timeMap = {
-        "quick": "under 30 minutes total",
-        "moderate": "30-60 minutes total",
-        "elaborate": "over 60 minutes total"
-      };
-
-      // Map creativity to style guidance
-      const creativityGuidance = creativity <= 3 ? "traditional and familiar" :
-        creativity <= 7 ? "balanced mix of familiar with some creative elements" :
-        "experimental and innovative with unique flavor combinations";
-
-      const onlyUseOnHandInstructions = onlyUseOnHand
-        ? `4. ONLY use ingredients from the available list above. Do NOT suggest any ingredients that are not listed.
-5. If you need basic seasonings (salt, pepper, oil), you may include them ONLY if absolutely necessary.`
-        : `4. You MAY suggest additional ingredients that would enhance the recipe, even if they're not in the available list.
-5. Clearly distinguish between ingredients that are available vs. those that need to be purchased.`;
-
-      const prompt = foodItems.length > 0 
-        ? `You are an intelligent kitchen assistant that creates recipes based on available ingredients, prioritizing items that are expiring soon to minimize food waste.
-
-AVAILABLE INGREDIENTS:
-${expiringIngredients.length > 0 ? `
-⚠️ URGENT - USE FIRST (expiring within 3 days):
-${urgentIngredientsList}` : ''}
-${freshIngredients.length > 0 ? `
-Fresh ingredients (expiring within 7 days):
-${freshIngredientsList}` : ''}
-${stableIngredients.length > 0 ? `
-Stable ingredients:
-${stableIngredientsList}` : ''}
-
-Available cooking appliances: ${appliancesList}`
-        : `You are an intelligent kitchen assistant that creates recipes. The user has no ingredients in their inventory, so you'll need to suggest a complete recipe with all necessary ingredients.
-
-Available cooking appliances: ${appliancesList}`;
-
-      const recipeInstructions = foodItems.length > 0 
-        ? `CRITICAL INSTRUCTIONS:
-1. PRIORITIZE using ingredients marked as "URGENT" or expiring soon
-2. Try to use AS MANY expiring ingredients as possible while still creating a delicious meal
-3. You don't need to use ALL ingredients, but focus on those expiring first
-${onlyUseOnHandInstructions}
-6. Adjust quantities to match the requested number of servings (${servings})
-7. Ensure total time fits within ${timeMap[timeConstraint as keyof typeof timeMap]}`
-        : `INSTRUCTIONS:
-1. Create a complete recipe with all necessary ingredients
-2. All ingredients will be listed as "missing" since the user has no inventory
-${onlyUseOnHandInstructions}
-4. Adjust quantities to match the requested number of servings (${servings})
-5. Ensure total time fits within ${timeMap[timeConstraint as keyof typeof timeMap]}`;
-
-      const fullPrompt = `${prompt}
-
-Recipe Requirements:
-- Meal Type: ${mealType}
-- Servings: ${servings} servings
-- Time Constraint: ${timeMap[timeConstraint as keyof typeof timeMap]}
-- Difficulty Level: ${difficulty}
-- Style: ${creativityGuidance}
-- Ingredient Restriction: ${onlyUseOnHand ? 'ONLY use ingredients on hand' : 'Can suggest additional ingredients'}
-
-${recipeInstructions}
+      const prompt = `Generate a detailed recipe using these available ingredients: ${ingredientsList}.
+Available cooking appliances: ${appliancesList}.
 
 Respond ONLY with a valid JSON object in this exact format:
 {
   "title": "Recipe name",
   "prepTime": "X minutes",
   "cookTime": "X minutes", 
-  "servings": ${servings},
+  "servings": number,
   "ingredients": ["ingredient 1 with quantity", "ingredient 2 with quantity"],
   "instructions": ["step 1", "step 2"],
   "usedIngredients": ["ingredient from inventory"],
   "missingIngredients": ["ingredient not in inventory"]
 }`;
 
-      let completion;
-      try {
-        completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [{ role: "user", content: fullPrompt }],
-          response_format: { type: "json_object" },
-          max_completion_tokens: 1500,
-        });
-      } catch (openAIError: any) {
-        console.error("OpenAI API error:", openAIError);
-        if (openAIError.status === 429) {
-          throw new ApiError("Rate limit exceeded. Please try again later.", 429);
-        }
-        if (openAIError.status === 401 || openAIError.status === 403) {
-          throw new ApiError("AI service configuration error. Please contact support.", 503);
-        }
-        throw new ApiError("AI service temporarily unavailable", 500);
-      }
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 8192,
+      });
 
-      const recipeData = JSON.parse(completion.choices[0]?.message?.content || "{}");
+      const recipeData = JSON.parse(completion.choices[0].message.content || "{}");
       
-      const recipe = await storage.createRecipe(userId, {
+      const recipe = await storage.createRecipe({
         title: recipeData.title,
         prepTime: recipeData.prepTime,
         cookTime: recipeData.cookTime,
@@ -1630,242 +271,36 @@ Respond ONLY with a valid JSON object in this exact format:
       res.json(recipe);
     } catch (error) {
       console.error("Recipe generation error:", error);
-      throw new ApiError("Failed to generate recipe", 500);
+      res.status(500).json({ error: "Failed to generate recipe" });
     }
   });
 
-  app.get("/api/recipes", isAuthenticated, async (req: any, res) => {
+  app.get("/api/recipes", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
-      
-      // Always include inventory matching by default for better caching
-      if (req.query.page || req.query.limit) {
-        // If pagination params are provided, use paginated method
-        const result = await storage.getRecipesPaginated(userId, page, limit);
-        res.json(result);
-      } else {
-        // Default: always include inventory matching data
-        const recipesWithMatching = await storage.getRecipesWithInventoryMatching(userId);
-        res.json(recipesWithMatching);
-      }
+      const recipes = await storage.getRecipes();
+      res.json(recipes);
     } catch (error) {
-      console.error("Error fetching recipes:", error);
-      throw new ApiError("Failed to fetch recipes", 500);
+      res.status(500).json({ error: "Failed to fetch recipes" });
     }
   });
 
-  app.patch("/api/recipes/:id", isAuthenticated, async (req: any, res) => {
+  // Update recipe (favorite, rating)
+  app.patch("/api/recipes/:id", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { id } = req.params;
-      const recipe = await storage.updateRecipe(userId, id, req.body);
+      const recipe = await storage.updateRecipe(id, req.body);
       res.json(recipe);
     } catch (error) {
-      console.error("Error updating recipe:", error);
-      throw new ApiError("Failed to update recipe", 400);
+      res.status(400).json({ error: "Failed to update recipe" });
     }
   });
 
-  // Process recipe from image upload
-  app.post("/api/recipes/from-image", isAuthenticated, async (req: any, res) => {
+  // Expiration Notifications
+  app.get("/api/notifications/expiration", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const { image } = req.body; // Base64 encoded image or image URL
+      const notifications = await storage.getExpirationNotifications();
       
-      if (!image) {
-        throw new ApiError("No image provided", 400);
-      }
-
-      // Create the prompt for recipe extraction
-      const extractionPrompt = `You are a recipe extraction expert. Analyze this image of a recipe and extract all the information.
-      
-Return ONLY a valid JSON object with the following structure:
-{
-  "title": "Recipe name",
-  "prepTime": "X minutes",
-  "cookTime": "X minutes",
-  "servings": number,
-  "ingredients": ["ingredient 1 with quantity", "ingredient 2 with quantity"],
-  "instructions": ["step 1", "step 2", "step 3"],
-  "usedIngredients": [],
-  "missingIngredients": []
-}
-
-Important:
-- Extract ALL ingredients with their exact quantities
-- Break down instructions into clear, numbered steps
-- If prep time or cook time is not visible, estimate based on recipe complexity
-- If servings is not specified, estimate based on ingredient quantities
-- Leave usedIngredients and missingIngredients as empty arrays
-- Ensure the JSON is properly formatted and parseable`;
-
-      // Prepare the message with image
-      const imageContent = image.startsWith('http') 
-        ? { type: "image_url" as const, image_url: { url: image } }
-        : { type: "image_url" as const, image_url: { url: `data:image/jpeg;base64,${image}` } };
-
-      // Call OpenAI with vision capabilities
-      let completion;
-      try {
-        completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: extractionPrompt },
-                imageContent
-              ]
-            }
-          ],
-          response_format: { type: "json_object" },
-          max_completion_tokens: 8192,
-        });
-      } catch (openAIError: any) {
-        console.error("OpenAI Vision API error:", openAIError);
-        if (openAIError.status === 429) {
-          throw new ApiError("Rate limit exceeded. Please try again later.", 429);
-        }
-        if (openAIError.status === 401 || openAIError.status === 403) {
-          throw new ApiError("AI service configuration error. Please contact support.", 503);
-        }
-        throw new ApiError("Failed to process image with AI service", 500);
-      }
-
-      const extractedData = JSON.parse(completion.choices[0]?.message?.content || "{}");
-      
-      // Validate the extracted data
-      if (!extractedData.title || !extractedData.ingredients || !extractedData.instructions) {
-        throw new Error("Could not extract complete recipe information from the image");
-      }
-
-      // Create the recipe in the database
-      const recipe = await storage.createRecipe(userId, {
-        title: extractedData.title,
-        prepTime: extractedData.prepTime || "Unknown",
-        cookTime: extractedData.cookTime || "Unknown",
-        servings: extractedData.servings || 4,
-        ingredients: extractedData.ingredients || [],
-        instructions: extractedData.instructions || [],
-        usedIngredients: extractedData.usedIngredients || [],
-        missingIngredients: extractedData.missingIngredients || [],
-      });
-
-      res.json(recipe);
-    } catch (error: any) {
-      console.error("Recipe image processing error:", error);
-      res.status(500).json({ 
-        error: "Failed to extract recipe from image",
-        details: error.message || "Unknown error occurred"
-      });
-    }
-  });
-
-  // Analyze food item from image (for leftovers)
-  app.post("/api/food/analyze-image", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { image } = req.body; // Base64 encoded image or image URL
-      
-      if (!image) {
-        throw new ApiError("No image provided", 400);
-      }
-
-      // Create the prompt for food analysis
-      const analysisPrompt = `You are a food analysis expert. Analyze this image of a leftover meal or food item and extract nutritional information.
-      
-Return ONLY a valid JSON object with the following structure:
-{
-  "name": "Name of the dish or food item",
-  "quantity": "Estimated portion size (e.g., '1 cup', '200g', '1 serving', '1 plate')",
-  "unit": "The unit from quantity (e.g., 'cup', 'g', 'serving', 'plate')",
-  "category": "Category (produce, dairy, meat, grains, leftovers, prepared_meal, etc.)",
-  "ingredients": [
-    {
-      "name": "Ingredient name",
-      "quantity": "Estimated amount",
-      "unit": "Unit (g, oz, cup, tbsp, etc.)"
-    }
-  ],
-  "calories": number (estimated total calories),
-  "protein": number (estimated grams of protein),
-  "carbs": number (estimated grams of carbohydrates),
-  "fat": number (estimated grams of fat),
-  "confidence": number (0-100, how confident you are in the analysis)
-}
-
-Important:
-- Identify the main dish/food item and give it a descriptive name
-- Estimate realistic portion sizes based on visual cues (plates, utensils, containers)
-- Break down visible ingredients with approximate quantities
-- Provide nutritional estimates based on typical recipes and portion sizes
-- Use confidence score to indicate certainty (100 = very clear image and common dish, 50 = unclear or unusual)
-- For complex dishes, list main visible ingredients
-- Consider cooking methods (fried, grilled, steamed) when estimating nutrition
-- If it's clearly a leftover meal, categorize as "leftovers" or "prepared_meal"`;
-
-      // Prepare the message with image
-      const imageContent = image.startsWith('http') 
-        ? { type: "image_url" as const, image_url: { url: image } }
-        : { type: "image_url" as const, image_url: { url: `data:image/jpeg;base64,${image}` } };
-
-      // Call OpenAI with vision capabilities
-      let completion;
-      try {
-        completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: analysisPrompt },
-                imageContent
-              ]
-            }
-          ],
-          response_format: { type: "json_object" },
-          max_completion_tokens: 8192,
-        });
-      } catch (openAIError: any) {
-        console.error("OpenAI Vision API error:", openAIError);
-        if (openAIError.status === 429) {
-          throw new ApiError("Rate limit exceeded. Please try again later.", 429);
-        }
-        if (openAIError.status === 401 || openAIError.status === 403) {
-          throw new ApiError("AI service configuration error. Please contact support.", 503);
-        }
-        throw new ApiError("Failed to process image with AI service", 500);
-      }
-
-      const analysisData = JSON.parse(completion.choices[0]?.message?.content || "{}");
-      
-      // Validate the analyzed data
-      if (!analysisData.name || analysisData.confidence === undefined) {
-        throw new Error("Could not analyze food item from the image");
-      }
-
-      // Return the analysis (don't save to database yet, let frontend handle that)
-      res.json({
-        success: true,
-        analysis: analysisData
-      });
-    } catch (error: any) {
-      console.error("Food image analysis error:", error);
-      res.status(500).json({ 
-        error: "Failed to analyze food from image",
-        details: error.message || "Unknown error occurred"
-      });
-    }
-  });
-
-  // Expiration Notifications (user-scoped)
-  app.get("/api/notifications/expiration", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const notifications = await storage.getExpirationNotifications(userId);
-      
+      // Recalculate daysUntilExpiry dynamically and filter out expired/invalid items
       const now = new Date();
       const validNotifications = notifications
         .map(notification => {
@@ -1873,23 +308,24 @@ Important:
           const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           return { ...notification, daysUntilExpiry: daysUntil };
         })
-        .filter(notification => notification.daysUntilExpiry >= 0);
+        .filter(notification => notification.daysUntilExpiry >= 0); // Remove expired items
       
       res.json(validNotifications);
     } catch (error) {
-      console.error("Error fetching expiration notifications:", error);
-      throw new ApiError("Failed to fetch notifications", 500);
+      res.status(500).json({ error: "Failed to fetch notifications" });
     }
   });
 
-  app.post("/api/notifications/expiration/check", isAuthenticated, async (req: any, res) => {
+  app.post("/api/notifications/expiration/check", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const expiringItems = await storage.getExpiringItems(userId, 3);
+      // Check for items expiring in the next 3 days
+      const expiringItems = await storage.getExpiringItems(3);
       const now = new Date();
       
-      const existingNotifications = await storage.getExpirationNotifications(userId);
+      // Get existing notifications
+      const existingNotifications = await storage.getExpirationNotifications();
       
+      // Clean up notifications for items that no longer exist or are expired
       const existingItemIds = new Set(expiringItems.map(item => item.id));
       for (const notification of existingNotifications) {
         const expiry = new Date(notification.expirationDate);
@@ -1897,10 +333,11 @@ Important:
         const itemNoLongerExists = !existingItemIds.has(notification.foodItemId);
         
         if (isExpired || itemNoLongerExists) {
-          await storage.dismissNotification(userId, notification.id);
+          await storage.dismissNotification(notification.id);
         }
       }
       
+      // Create notifications for new expiring items
       const existingNotificationItemIds = new Set(existingNotifications.map(n => n.foodItemId));
       
       for (const item of expiringItems) {
@@ -1908,8 +345,8 @@ Important:
           const expiry = new Date(item.expirationDate);
           const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           
-          if (daysUntil >= 0) {
-            await storage.createExpirationNotification(userId, {
+          if (daysUntil >= 0) { // Only create if not already expired
+            await storage.createExpirationNotification({
               foodItemId: item.id,
               foodItemName: item.name,
               expirationDate: item.expirationDate,
@@ -1920,7 +357,8 @@ Important:
         }
       }
       
-      const notifications = await storage.getExpirationNotifications(userId);
+      // Get updated notifications with dynamic day calculation
+      const notifications = await storage.getExpirationNotifications();
       const validNotifications = notifications
         .map(notification => {
           const expiry = new Date(notification.expirationDate);
@@ -1932,27 +370,24 @@ Important:
       res.json({ notifications: validNotifications, count: validNotifications.length });
     } catch (error) {
       console.error("Notification check error:", error);
-      throw new ApiError("Failed to check for expiring items", 500);
+      res.status(500).json({ error: "Failed to check for expiring items" });
     }
   });
 
-  app.post("/api/notifications/:id/dismiss", isAuthenticated, async (req: any, res) => {
+  app.post("/api/notifications/:id/dismiss", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { id } = req.params;
-      await storage.dismissNotification(userId, id);
+      await storage.dismissNotification(id);
       res.json({ success: true });
     } catch (error) {
-      console.error("Error dismissing notification:", error);
-      throw new ApiError("Failed to dismiss notification", 500);
+      res.status(500).json({ error: "Failed to dismiss notification" });
     }
   });
 
-  // Nutrition Statistics (user-scoped)
-  app.get("/api/nutrition/stats", isAuthenticated, async (req: any, res) => {
+  // Nutrition Statistics
+  app.get("/api/nutrition/stats", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const foodItems = await storage.getFoodItems(userId);
+      const foodItems = await storage.getFoodItems();
       
       let totalCalories = 0;
       let totalProtein = 0;
@@ -1963,12 +398,11 @@ Important:
       const categoryBreakdown: Record<string, { calories: number; count: number }> = {};
       
       foodItems.forEach(item => {
-        if (item.nutrition && item.weightInGrams) {
+        if (item.nutrition) {
           try {
             const nutrition = JSON.parse(item.nutrition);
-            const servingSize = parseFloat(nutrition.servingSize) || 100;
-            // Multiplier is weightInGrams / servingSize
-            const multiplier = item.weightInGrams / servingSize;
+            const qty = parseFloat(item.quantity) || 1;
+            const multiplier = qty / 100; // Nutrition is per 100g/ml
             
             totalCalories += nutrition.calories * multiplier;
             totalProtein += nutrition.protein * multiplier;
@@ -1976,6 +410,7 @@ Important:
             totalFat += nutrition.fat * multiplier;
             itemsWithNutrition++;
             
+            // Track by storage location for breakdown
             const locationId = item.storageLocationId;
             if (!categoryBreakdown[locationId]) {
               categoryBreakdown[locationId] = { calories: 0, count: 0 };
@@ -1998,19 +433,17 @@ Important:
         categoryBreakdown,
       });
     } catch (error) {
-      console.error("Error fetching nutrition stats:", error);
-      throw new ApiError("Failed to fetch nutrition stats", 500);
+      res.status(500).json({ error: "Failed to fetch nutrition stats" });
     }
   });
 
-  app.get("/api/nutrition/items", isAuthenticated, async (req: any, res) => {
+  app.get("/api/nutrition/items", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const foodItems = await storage.getFoodItems(userId);
-      const locations = await storage.getStorageLocations(userId);
+      const foodItems = await storage.getFoodItems();
+      const locations = await storage.getStorageLocations();
       
       const itemsWithNutrition = foodItems
-        .filter(item => item.nutrition && item.weightInGrams)
+        .filter(item => item.nutrition)
         .map(item => {
           const location = locations.find(loc => loc.id === item.storageLocationId);
           let nutrition = null;
@@ -2024,7 +457,6 @@ Important:
             name: item.name,
             quantity: item.quantity,
             unit: item.unit,
-            weightInGrams: item.weightInGrams,
             locationName: location?.name || "Unknown",
             nutrition,
           };
@@ -2033,43 +465,14 @@ Important:
       
       res.json(itemsWithNutrition);
     } catch (error) {
-      console.error("Error fetching nutrition items:", error);
-      throw new ApiError("Failed to fetch nutrition items", 500);
+      res.status(500).json({ error: "Failed to fetch nutrition items" });
     }
   });
 
-  app.get("/api/nutrition/items/missing", isAuthenticated, async (req: any, res) => {
+  // Waste reduction suggestions
+  app.get("/api/suggestions/waste-reduction", async (_req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const foodItems = await storage.getFoodItems(userId);
-      const locations = await storage.getStorageLocations(userId);
-      
-      const itemsWithoutNutrition = foodItems
-        .filter(item => !item.nutrition || !item.weightInGrams)
-        .map(item => {
-          const location = locations.find(loc => loc.id === item.storageLocationId);
-          return {
-            id: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            unit: item.unit,
-            fcdId: item.fcdId,
-            locationName: location?.name || "Unknown",
-          };
-        });
-      
-      res.json(itemsWithoutNutrition);
-    } catch (error) {
-      console.error("Error fetching items missing nutrition:", error);
-      throw new ApiError("Failed to fetch items missing nutrition", 500);
-    }
-  });
-
-  // Waste reduction suggestions (user-scoped)
-  app.get("/api/suggestions/waste-reduction", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const expiringItems = await storage.getExpiringItems(userId, 5);
+      const expiringItems = await storage.getExpiringItems(5);
       
       if (expiringItems.length === 0) {
         return res.json({ suggestions: [] });
@@ -2081,7 +484,7 @@ Important:
         } days)`
       ).join(', ');
 
-      const appliances = await storage.getAppliances(userId);
+      const appliances = await storage.getAppliances();
       const appliancesList = appliances.map(a => a.name).join(', ');
 
       const prompt = `Generate waste reduction suggestions for these food items that are expiring soon: ${ingredientsList}.
@@ -2095,7 +498,7 @@ Respond ONLY with a valid JSON object:
 }`;
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-5",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         max_completion_tokens: 8192,
@@ -2105,872 +508,148 @@ Respond ONLY with a valid JSON object:
       res.json(data);
     } catch (error) {
       console.error("Waste reduction error:", error);
-      throw new ApiError("Failed to generate suggestions", 500);
+      res.status(500).json({ error: "Failed to generate suggestions" });
     }
   });
 
-  // Meal Plans (user-scoped)
-  app.get("/api/meal-plans", isAuthenticated, async (req: any, res) => {
+  // Meal Plans
+  app.get("/api/meal-plans", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { startDate, endDate } = req.query;
       const plans = await storage.getMealPlans(
-        userId,
         startDate as string | undefined,
         endDate as string | undefined
       );
       res.json(plans);
     } catch (error) {
-      console.error("Error fetching meal plans:", error);
-      throw new ApiError("Failed to fetch meal plans", 500);
+      res.status(500).json({ error: "Failed to fetch meal plans" });
     }
   });
 
-  app.post("/api/meal-plans", isAuthenticated, async (req: any, res) => {
+  app.post("/api/meal-plans", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const validated = insertMealPlanSchema.parse(req.body);
-      const plan = await storage.createMealPlan(userId, validated);
+      const plan = await storage.createMealPlan(validated);
       res.json(plan);
     } catch (error) {
-      console.error("Error creating meal plan:", error);
-      throw new ApiError("Invalid meal plan data", 400);
+      res.status(400).json({ error: "Invalid meal plan data" });
     }
   });
 
-  app.put("/api/meal-plans/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/meal-plans/:id", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { id } = req.params;
       const validated = insertMealPlanSchema.partial().parse(req.body);
-      const plan = await storage.updateMealPlan(userId, id, validated);
+      const plan = await storage.updateMealPlan(id, validated);
       res.json(plan);
     } catch (error) {
-      console.error("Error updating meal plan:", error);
-      throw new ApiError("Failed to update meal plan", 400);
+      if (error instanceof Error && error.message === "Meal plan not found") {
+        return res.status(404).json({ error: "Meal plan not found" });
+      }
+      res.status(400).json({ error: "Failed to update meal plan" });
     }
   });
 
-  app.delete("/api/meal-plans/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/meal-plans/:id", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { id } = req.params;
-      await storage.deleteMealPlan(userId, id);
+      await storage.deleteMealPlan(id);
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting meal plan:", error);
-      throw new ApiError("Failed to delete meal plan", 500);
+      res.status(500).json({ error: "Failed to delete meal plan" });
     }
   });
 
-  // Generate shopping list from meal plans
-  app.get("/api/meal-plans/shopping-list", isAuthenticated, async (req: any, res) => {
+  // Shopping List Generator
+  app.get("/api/meal-plans/shopping-list", async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { startDate, endDate } = req.query;
-
-      if (!startDate || !endDate) {
-        throw new ApiError("Start date and end date are required", 400);
-      }
-
-      // Get meal plans for the date range
-      const mealPlans = await storage.getMealPlans(userId, startDate as string, endDate as string);
       
-      // Extract unique recipe IDs from meal plans
-      const recipeIds = new Set<string>();
-      mealPlans.forEach(plan => {
-        if (plan.recipeId) {
-          recipeIds.add(plan.recipeId);
-        }
-      });
-
-      // If no recipes found in meal plans, return empty list
-      if (recipeIds.size === 0) {
+      if (!startDate || !endDate) {
+        return res.status(400).json({ error: "startDate and endDate are required" });
+      }
+      
+      // Get meal plans for the date range
+      const mealPlans = await storage.getMealPlans(startDate as string, endDate as string);
+      
+      if (mealPlans.length === 0) {
         return res.json({
           items: [],
           totalItems: 0,
-          plannedMeals: mealPlans.length,
+          plannedMeals: 0,
           dateRange: { startDate, endDate },
-          message: "No recipes planned for this date range"
+          message: "No meals planned for this period"
         });
       }
-
-      // Get recipes and their missing ingredients
-      const recipes = await Promise.all(
-        Array.from(recipeIds).map(id => storage.getRecipe(userId, id))
-      );
-
-      // Get current inventory to check what's already available
-      const inventory = await storage.getFoodItems(userId);
-      const inventoryMap = new Map(
-        inventory.map(item => [item.name.toLowerCase(), item])
-      );
-
-      // Create shopping list items from recipes
-      const shoppingItems = new Map<string, { ingredient: string; neededFor: string[]; servings: number }>();
       
-      for (const recipe of recipes) {
-        if (recipe && recipe.ingredients) {
-          for (const ingredient of recipe.ingredients) {
-            const ingredientLower = ingredient.toLowerCase();
-            // Check if item is already in inventory
-            if (!inventoryMap.has(ingredientLower)) {
-              if (shoppingItems.has(ingredientLower)) {
-                // Add to existing item
-                const existing = shoppingItems.get(ingredientLower)!;
-                existing.neededFor.push(recipe.title);
-                existing.servings += recipe.servings || 1;
-              } else {
-                // Create new shopping item
-                shoppingItems.set(ingredientLower, {
-                  ingredient,
-                  neededFor: [recipe.title],
-                  servings: recipe.servings || 1
-                });
-              }
+      // Get all unique recipe IDs
+      const recipeIds = Array.from(new Set(mealPlans.map(plan => plan.recipeId)));
+      
+      // Get all recipes
+      const recipes = await Promise.all(
+        recipeIds.map(id => storage.getRecipe(id))
+      );
+      
+      // Calculate ingredient requirements with quantities
+      const ingredientMap = new Map<string, { ingredient: string; count: number; recipes: string[] }>();
+      
+      mealPlans.forEach(plan => {
+        const recipe = recipes.find(r => r?.id === plan.recipeId);
+        if (!recipe) return;
+        
+        recipe.ingredients.forEach(ingredient => {
+          const key = ingredient.toLowerCase().trim();
+          const existing = ingredientMap.get(key);
+          
+          if (existing) {
+            existing.count += plan.servings;
+            if (!existing.recipes.includes(recipe.title)) {
+              existing.recipes.push(recipe.title);
             }
+          } else {
+            ingredientMap.set(key, {
+              ingredient,
+              count: plan.servings,
+              recipes: [recipe.title]
+            });
           }
-        }
-      }
-
-      // Convert map to array
-      const items = Array.from(shoppingItems.values()).map(item => ({
-        ingredient: item.ingredient,
-        neededFor: item.neededFor.join(", "),
-        servings: item.servings
-      }));
-
+        });
+      });
+      
+      // Get current inventory
+      const inventory = await storage.getFoodItems();
+      const inventoryNames = new Set(
+        inventory.map(item => item.name.toLowerCase().trim())
+      );
+      
+      // Filter items not in inventory
+      const shoppingList = Array.from(ingredientMap.values())
+        .filter(item => {
+          // Check if any inventory item name contains the ingredient or vice versa
+          const ingredientLower = item.ingredient.toLowerCase();
+          return !Array.from(inventoryNames).some(invName => 
+            invName.includes(ingredientLower) || ingredientLower.includes(invName)
+          );
+        })
+        .map(item => ({
+          ingredient: item.ingredient,
+          neededFor: item.recipes.join(", "),
+          servings: item.count
+        }));
+      
       res.json({
-        items,
-        totalItems: items.length,
+        items: shoppingList,
+        totalItems: shoppingList.length,
         plannedMeals: mealPlans.length,
         dateRange: { startDate, endDate }
       });
     } catch (error) {
-      console.error("Error generating shopping list from meal plans:", error);
-      throw new ApiError("Failed to generate shopping list", 500);
-    }
-  });
-
-  // Shopping list generation (user-scoped)
-  app.post("/api/shopping-list/generate", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { recipeIds } = req.body;
-
-      if (!recipeIds || !Array.isArray(recipeIds) || recipeIds.length === 0) {
-        throw new ApiError("Recipe IDs are required", 400);
-      }
-
-      const recipes = await Promise.all(
-        recipeIds.map((id: string) => storage.getRecipe(userId, id))
-      );
-
-      const validRecipes = recipes.filter(r => r !== undefined);
-      if (validRecipes.length === 0) {
-        throw new ApiError("No valid recipes found", 404);
-      }
-
-      const allMissingIngredients = validRecipes.flatMap(r => r!.missingIngredients || []);
-      const uniqueIngredients = Array.from(new Set(allMissingIngredients));
-
-      res.json({ items: uniqueIngredients });
-    } catch (error) {
       console.error("Shopping list error:", error);
-      throw new ApiError("Failed to generate shopping list", 500);
+      res.status(500).json({ error: "Failed to generate shopping list" });
     }
-  });
-
-  // Shopping List Item endpoints
-  app.get("/api/shopping-list/items", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const items = await storage.getShoppingListItems(userId);
-      res.json(items);
-    } catch (error) {
-      console.error("Error fetching shopping list items:", error);
-      throw new ApiError("Failed to fetch shopping list items", 500);
-    }
-  });
-
-  app.post("/api/shopping-list/items", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const newItem = await storage.createShoppingListItem(userId, req.body);
-      res.json(newItem);
-    } catch (error) {
-      console.error("Error creating shopping list item:", error);
-      throw new ApiError("Failed to create shopping list item", 500);
-    }
-  });
-
-  app.post("/api/shopping-list/add-missing", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { recipeId, ingredients } = req.body;
-
-      if (!recipeId || !ingredients || !Array.isArray(ingredients)) {
-        throw new ApiError("Recipe ID and ingredients array are required", 400);
-      }
-
-      const newItems = await storage.addMissingIngredientsToShoppingList(userId, recipeId, ingredients);
-      res.json(newItems);
-    } catch (error) {
-      console.error("Error adding missing ingredients:", error);
-      throw new ApiError("Failed to add missing ingredients to shopping list", 500);
-    }
-  });
-
-  app.patch("/api/shopping-list/items/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      const updated = await storage.updateShoppingListItem(userId, id, req.body);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating shopping list item:", error);
-      throw new ApiError("Failed to update shopping list item", 500);
-    }
-  });
-
-  app.delete("/api/shopping-list/items/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      await storage.deleteShoppingListItem(userId, id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting shopping list item:", error);
-      throw new ApiError("Failed to delete shopping list item", 500);
-    }
-  });
-
-  app.delete("/api/shopping-list/clear-checked", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      await storage.clearCheckedShoppingListItems(userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error clearing checked items:", error);
-      throw new ApiError("Failed to clear checked items", 500);
-    }
-  });
-
-  // Feedback System Routes
-  app.post("/api/feedback", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user?.claims?.sub;
-      
-      if (!userId) {
-        console.error("User ID not found in session:", req.user);
-        throw new ApiError("User not authenticated properly", 401);
-      }
-      
-      const validated = insertFeedbackSchema.parse(req.body);
-      
-      let enrichedFeedback = { ...validated };
-      
-      if (validated.content && validated.content.length > 10) {
-        try {
-          const existingFeedback = await storage.getUserFeedback(userId, 20);
-          const { moderateFeedback } = await import('./feedbackModerator');
-          
-          const moderation = await moderateFeedback(
-            validated.content,
-            validated.type,
-            existingFeedback
-          );
-          
-          enrichedFeedback = {
-            ...enrichedFeedback,
-            isFlagged: moderation.isFlagged,
-            flagReason: moderation.flagReason,
-            category: moderation.category || enrichedFeedback.category,
-            priority: (moderation.priority as 'low' | 'medium' | 'high' | 'critical') || enrichedFeedback.priority || 'medium',
-            sentiment: (moderation.sentiment as 'positive' | 'negative' | 'neutral' | undefined) || enrichedFeedback.sentiment,
-            tags: moderation.tags || enrichedFeedback.tags,
-            similarTo: moderation.similarTo,
-          };
-        } catch (aiError) {
-          console.error("Failed to moderate feedback:", aiError);
-        }
-      }
-      
-      const feedback = await storage.createFeedback(userId, enrichedFeedback);
-      res.json(feedback);
-    } catch (error) {
-      console.error("Error creating feedback:", error);
-      if (error instanceof z.ZodError) {
-        throw new ApiError("Invalid feedback data", 400, JSON.stringify({ details: error.errors }));
-      } else {
-        throw new ApiError("Failed to create feedback", 500);
-      }
-    }
-  });
-
-  app.get("/api/feedback", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const limit = parseInt(req.query.limit as string) || 50;
-      const feedback = await storage.getUserFeedback(userId, limit);
-      res.json(feedback);
-    } catch (error) {
-      console.error("Error fetching feedback:", error);
-      throw new ApiError("Failed to fetch feedback", 500);
-    }
-  });
-
-  // Community Feedback Routes - must come before /api/feedback/:id to avoid route collision
-  app.get("/api/feedback/community", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const type = req.query.type as string | undefined;
-      const sortBy = (req.query.sortBy as 'upvotes' | 'recent') || 'recent';
-      const limit = parseInt(req.query.limit as string) || 50;
-      
-      const feedback = await storage.getCommunityFeedbackForUser(userId, type, sortBy, limit);
-      res.json(feedback);
-    } catch (error) {
-      console.error("Error fetching community feedback:", error);
-      throw new ApiError("Failed to fetch community feedback", 500);
-    }
-  });
-
-  app.get("/api/feedback/:id", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      const feedback = await storage.getFeedback(userId, id);
-      
-      if (!feedback) {
-        throw new ApiError("Feedback not found", 404);
-      }
-      
-      res.json(feedback);
-    } catch (error) {
-      console.error("Error fetching feedback:", error);
-      throw new ApiError("Failed to fetch feedback", 500);
-    }
-  });
-
-  app.get("/api/feedback/context/:contextType/:contextId", isAuthenticated, async (req: any, res) => {
-    try {
-      const { contextType, contextId } = req.params;
-      const feedback = await storage.getFeedbackByContext(contextId, contextType);
-      res.json(feedback);
-    } catch (error) {
-      console.error("Error fetching feedback by context:", error);
-      throw new ApiError("Failed to fetch feedback by context", 500);
-    }
-  });
-
-  app.get("/api/feedback/analytics/summary", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const days = parseInt(req.query.days as string) || 30;
-      const analytics = await storage.getFeedbackAnalytics(userId, days);
-      res.json(analytics);
-    } catch (error) {
-      console.error("Error fetching feedback analytics:", error);
-      throw new ApiError("Failed to fetch feedback analytics", 500);
-    }
-  });
-
-  app.patch("/api/feedback/:id/status", isAuthenticated, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const { status, estimatedTurnaround } = req.body;
-      
-      if (!status || !['open', 'in_progress', 'completed', 'wont_fix'].includes(status)) {
-        throw new ApiError("Invalid status", 400);
-      }
-      
-      const resolvedAt = status === 'completed' ? new Date() : undefined;
-      const updated = await storage.updateFeedbackStatus(id, status, estimatedTurnaround, resolvedAt);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating feedback status:", error);
-      throw new ApiError("Failed to update feedback status", 500);
-    }
-  });
-
-  app.post("/api/feedback/:id/responses", isAuthenticated, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const { response, action } = req.body;
-      
-      if (!response) {
-        throw new ApiError("Response is required", 400);
-      }
-      
-      const feedbackResponse = await storage.addFeedbackResponse(id, {
-        response,
-        action,
-        responderId: req.user.claims.sub
-      });
-      
-      res.json(feedbackResponse);
-    } catch (error) {
-      console.error("Error adding feedback response:", error);
-      throw new ApiError("Failed to add feedback response", 500);
-    }
-  });
-
-  app.get("/api/feedback/:id/responses", isAuthenticated, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const responses = await storage.getFeedbackResponses(id);
-      res.json(responses);
-    } catch (error) {
-      console.error("Error fetching feedback responses:", error);
-      throw new ApiError("Failed to fetch feedback responses", 500);
-    }
-  });
-
-  // Admin feedback endpoints (for viewing all feedback)
-  app.get("/api/admin/feedback", isAuthenticated, async (req: any, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 50;
-      const offset = parseInt(req.query.offset as string) || 0;
-      const status = req.query.status as string;
-      
-      const result = await storage.getAllFeedback(limit, offset, status);
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching all feedback:", error);
-      throw new ApiError("Failed to fetch all feedback", 500);
-    }
-  });
-
-  app.get("/api/admin/feedback/analytics", isAuthenticated, async (req: any, res) => {
-    try {
-      const days = parseInt(req.query.days as string) || 30;
-      const analytics = await storage.getFeedbackAnalytics(undefined, days);
-      res.json(analytics);
-    } catch (error) {
-      console.error("Error fetching global feedback analytics:", error);
-      throw new ApiError("Failed to fetch global feedback analytics", 500);
-    }
-  });
-
-  // Upvote routes
-  app.post("/api/feedback/:id/upvote", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      
-      await storage.upvoteFeedback(userId, id);
-      const upvoteCount = await storage.getFeedbackUpvoteCount(id);
-      
-      res.json({ success: true, upvoteCount });
-    } catch (error) {
-      console.error("Error upvoting feedback:", error);
-      throw new ApiError("Failed to upvote feedback", 500);
-    }
-  });
-
-  app.delete("/api/feedback/:id/upvote", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      
-      await storage.removeUpvote(userId, id);
-      const upvoteCount = await storage.getFeedbackUpvoteCount(id);
-      
-      res.json({ success: true, upvoteCount });
-    } catch (error) {
-      console.error("Error removing upvote:", error);
-      throw new ApiError("Failed to remove upvote", 500);
-    }
-  });
-
-  // Donation routes (from blueprint:javascript_stripe)
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2024-10-28.acacia" as any,
-  });
-
-  // Create payment intent for donation
-  app.post("/api/donations/create-payment-intent", async (req: any, res) => {
-    try {
-      const { amount, donorEmail, donorName, message, anonymous } = req.body;
-      
-      // Validate amount (in cents)
-      if (!amount || typeof amount !== 'number') {
-        throw new ApiError("Invalid donation amount", 400);
-      }
-      
-      // Ensure amount is an integer (cents)
-      const amountInCents = Math.round(amount);
-      
-      // Validate amount range: $1.00 minimum, $10,000 maximum
-      if (amountInCents < 100) { // Minimum $1.00
-        throw new ApiError("Minimum donation amount is $1.00", 400);
-      }
-      
-      if (amountInCents > 1000000) { // Maximum $10,000.00
-        throw new ApiError("Maximum donation amount is $10,000.00", 400);
-      }
-      
-      // Validate email format if provided
-      if (donorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(donorEmail)) {
-        throw new ApiError("Invalid email format", 400);
-      }
-      
-      // Sanitize donor name and message to prevent XSS
-      const sanitizedDonorName = (donorName || 'Anonymous').slice(0, 100).replace(/[<>]/g, '');
-      const sanitizedMessage = (message || '').slice(0, 500).replace(/[<>]/g, '');
-      
-      // Create Stripe payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountInCents,
-        currency: "usd",
-        metadata: {
-          donorEmail: donorEmail || '',
-          donorName: sanitizedDonorName,
-          message: sanitizedMessage,
-          anonymous: String(anonymous || false)
-        }
-      });
-      
-      // Create donation record in database
-      const userId = req.user?.claims?.sub || null; // Allow anonymous donations
-      const donation = await storage.createDonation({
-        userId,
-        stripePaymentIntentId: paymentIntent.id,
-        amount: Math.round(amount),
-        currency: 'usd',
-        status: 'pending',
-        donorEmail,
-        donorName,
-        message,
-        anonymous: anonymous || false
-      });
-      
-      res.json({ 
-        clientSecret: paymentIntent.client_secret,
-        donationId: donation.id 
-      });
-    } catch (error: any) {
-      console.error("Error creating payment intent:", error);
-      
-      // Handle validation errors with proper status codes
-      if (error instanceof ApiError) {
-        return res.status(error.statusCode).json({
-          error: error.message,
-          details: error.details
-        });
-      }
-      
-      // Handle Stripe-specific errors
-      if (error.type === 'StripeCardError') {
-        return res.status(400).json({
-          error: "Card error",
-          message: error.message
-        });
-      } else if (error.type === 'StripeInvalidRequestError') {
-        return res.status(400).json({
-          error: "Invalid request",
-          message: error.message
-        });
-      }
-      
-      // Generic server error for unexpected issues
-      res.status(500).json({ 
-        error: "Failed to create payment intent",
-        message: "An unexpected error occurred. Please try again."
-      });
-    }
-  });
-
-  // Webhook to handle Stripe payment events
-  app.post("/api/donations/webhook", async (req: any, res) => {
-    const sig = req.headers['stripe-signature'];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    
-    let event;
-    
-    try {
-      if (webhookSecret) {
-        // Verify webhook signature if secret is configured
-        event = stripe.webhooks.constructEvent(
-          req.body,
-          sig,
-          webhookSecret
-        );
-      } else {
-        // For testing without webhook secret
-        event = req.body;
-      }
-    } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-    
-    // Handle the event
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
-        await storage.updateDonation(paymentIntent.id, {
-          status: 'succeeded'
-        });
-        break;
-        
-      case 'payment_intent.payment_failed':
-        const failedPaymentIntent = event.data.object;
-        await storage.updateDonation(failedPaymentIntent.id, {
-          status: 'failed'
-        });
-        break;
-        
-      case 'payment_intent.canceled':
-        const canceledPaymentIntent = event.data.object;
-        await storage.updateDonation(canceledPaymentIntent.id, {
-          status: 'canceled'
-        });
-        break;
-        
-      default:
-        console.log(`Unhandled event type ${event.type}`);
-    }
-    
-    res.json({ received: true });
-  });
-
-  // Get donation statistics
-  app.get("/api/donations/stats", async (req: any, res) => {
-    try {
-      const stats = await storage.getTotalDonations();
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching donation stats:", error);
-      throw new ApiError("Failed to fetch donation statistics", 500);
-    }
-  });
-
-  // Update donation with donor info (called before payment confirmation)
-  app.post("/api/donations/update-donor-info", async (req: any, res) => {
-    try {
-      // Validate request body
-      const updateDonorSchema = z.object({
-        paymentIntentId: z.string().min(1),
-        donorName: z.string().optional(),
-        donorEmail: z.string().email().optional(),
-        message: z.string().optional(),
-        anonymous: z.boolean().optional()
-      });
-
-      const validatedData = updateDonorSchema.parse(req.body);
-      
-      // Verify the payment intent exists in Stripe before updating
-      try {
-        await stripe.paymentIntents.retrieve(validatedData.paymentIntentId);
-      } catch (stripeError) {
-        throw new ApiError("Invalid payment intent", 404);
-      }
-      
-      // Update donation record with donor information
-      const updateData: any = {};
-      if (validatedData.donorName !== undefined) updateData.donorName = validatedData.donorName;
-      if (validatedData.donorEmail !== undefined) updateData.donorEmail = validatedData.donorEmail;
-      if (validatedData.message !== undefined) updateData.message = validatedData.message;
-      if (validatedData.anonymous !== undefined) updateData.anonymous = validatedData.anonymous;
-      
-      await storage.updateDonation(validatedData.paymentIntentId, updateData);
-      res.json({ success: true });
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        throw new ApiError("Invalid request data", 400, JSON.stringify({ details: error.errors }));
-      }
-      console.error("Error updating donor info:", error);
-      throw new ApiError("Failed to update donor information", 500);
-    }
-  });
-
-  // Confirm donation payment status (called from success page)
-  app.post("/api/donations/confirm", async (req: any, res) => {
-    try {
-      // Validate request body
-      const confirmSchema = z.object({
-        paymentIntentId: z.string().min(1)
-      });
-
-      const { paymentIntentId } = confirmSchema.parse(req.body);
-      
-      // Get payment intent from Stripe to check status
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      
-      // Verify the donation exists in our database
-      const existingDonation = await storage.getDonationByPaymentIntent(paymentIntentId);
-      if (!existingDonation) {
-        throw new ApiError("Donation not found", 404);
-      }
-      
-      // Update donation status based on Stripe payment status
-      if (paymentIntent.status === 'succeeded') {
-        const donation = await storage.updateDonation(paymentIntentId, {
-          status: 'succeeded'
-        });
-        res.json({ status: 'succeeded', donation });
-      } else if (paymentIntent.status === 'processing') {
-        res.json({ status: 'processing' });
-      } else {
-        res.json({ status: paymentIntent.status });
-      }
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        throw new ApiError("Invalid request data", 400, JSON.stringify({ details: error.errors }));
-      }
-      if (error.type === 'StripeInvalidRequestError') {
-        throw new ApiError("Payment intent not found", 404);
-      }
-      console.error("Error confirming donation:", error);
-      throw new ApiError("Failed to confirm donation", 500);
-    }
-  });
-
-  // Get recent donations (public, anonymous info only)
-  app.get("/api/donations/recent", async (req: any, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const { donations } = await storage.getDonations(limit, 0);
-      
-      // Filter out personal information for public display
-      const publicDonations = donations.map(d => ({
-        id: d.id,
-        amount: d.amount,
-        currency: d.currency,
-        donorName: d.anonymous ? 'Anonymous' : (d.donorName || 'Anonymous'),
-        message: d.anonymous ? null : d.message,
-        createdAt: d.createdAt
-      }));
-      
-      res.json(publicDonations);
-    } catch (error) {
-      console.error("Error fetching recent donations:", error);
-      throw new ApiError("Failed to fetch recent donations", 500);
-    }
-  });
-
-  // Get user's own donations (authenticated)
-  app.get("/api/donations/my-donations", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const donations = await storage.getUserDonations(userId);
-      res.json(donations);
-    } catch (error) {
-      console.error("Error fetching user donations:", error);
-      throw new ApiError("Failed to fetch your donations", 500);
-    }
-  });
-
-  // Push notification token endpoints
-  app.post("/api/push-token", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { token, platform, deviceInfo } = req.body;
-
-      if (!token || !platform) {
-        throw new ApiError("Token and platform are required", 400);
-      }
-
-      // Validate platform
-      const validPlatforms = ['ios', 'android', 'web'];
-      if (!validPlatforms.includes(platform)) {
-        throw new ApiError("Invalid platform. Must be ios, android, or web", 400);
-      }
-
-      const savedToken = await storage.upsertPushToken(userId, {
-        token,
-        platform,
-        deviceInfo: deviceInfo || null,
-      });
-
-      res.json(savedToken);
-    } catch (error) {
-      console.error("Error saving push token:", error);
-      throw new ApiError("Failed to save push token", 500);
-    }
-  });
-
-  app.delete("/api/push-token/:token", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { token } = req.params;
-
-      // This will only delete the token if it belongs to the authenticated user
-      await storage.deletePushToken(userId, token);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting push token:", error);
-      throw new ApiError("Failed to delete push token", 500);
-    }
-  });
-
-  // Web Vitals Analytics endpoint
-  app.post("/api/analytics", async (req: any, res) => {
-    try {
-      // Get user ID if authenticated, otherwise null for anonymous tracking
-      const userId = req.user?.claims?.sub || null;
-
-      // Capture request metadata
-      const userAgent = req.headers['user-agent'] || null;
-      const url = req.headers['referer'] || req.headers['origin'] || null;
-
-      // Validate using Zod schema
-      const validated = insertWebVitalSchema.parse({
-        ...req.body,
-        userId,
-        metricId: req.body.id, // Map 'id' from web-vitals to 'metricId'
-        navigationType: req.body.navigationType || null,
-        userAgent,
-        url,
-      });
-
-      await storage.recordWebVital(validated);
-
-      res.status(200).json({ success: true });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new ApiError("Invalid web vital data", 400, JSON.stringify({ details: error.errors }));
-      }
-      console.error("Error recording web vital:", error);
-      throw new ApiError("Failed to record web vital", 500);
-    }
-  });
-
-  // Get Web Vitals statistics (optional admin endpoint)
-  app.get("/api/analytics/stats", async (req: any, res) => {
-    try {
-      const { metric, days } = req.query;
-      
-      // Validate days parameter
-      let daysNum = 7; // default
-      if (days) {
-        const parsed = parseInt(days as string);
-        if (isNaN(parsed) || parsed < 1 || parsed > 365) {
-          throw new ApiError("Invalid 'days' parameter. Must be a number between 1 and 365", 400);
-        }
-        daysNum = parsed;
-      }
-
-      const stats = await storage.getWebVitalsStats(
-        metric as string | undefined,
-        daysNum
-      );
-      res.json(stats);
-    } catch (error) {
-      console.error("Error getting web vitals stats:", error);
-      throw new ApiError("Failed to get web vitals stats", 500);
-    }
-  });
-
-  // Handle 404s for API routes that weren't matched above
-  app.use("/api/*", (req: any, res, next) => {
-    // Create a standardized 404 error and pass it to the error handler
-    const error = new ApiError("API endpoint not found", 404);
-    next(error);
   });
 
   const httpServer = createServer(app);
+
   return httpServer;
 }

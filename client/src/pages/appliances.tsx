@@ -1,15 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -17,14 +10,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertApplianceSchema, type Appliance, type InsertAppliance } from "@shared/schema";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { UtensilsCrossed, Plus, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,57 +35,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  Microwave, 
-  ChefHat, 
-  Utensils, 
-  Package, 
-  Plus, 
-  Scan, 
-  Trash2,
-  Edit,
-  Search,
-  Filter,
-  Grid,
-  List,
-  Loader2,
-  UtensilsCrossed
-} from "lucide-react";
-import type { Appliance, ApplianceCategory } from "@shared/schema";
 
 export default function Appliances() {
-  const { toast } = useToast();
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
-  const [editingAppliance, setEditingAppliance] = useState<Appliance | null>(null);
-  const [barcodeInput, setBarcodeInput] = useState("");
   const [deleteApplianceId, setDeleteApplianceId] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Fetch appliances
-  const { data: appliances = [], isLoading } = useQuery<Appliance[]>({
+  const { data: appliances, isLoading } = useQuery<Appliance[]>({
     queryKey: ["/api/appliances"],
   });
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery<ApplianceCategory[]>({
-    queryKey: ['/api/appliance-categories'],
+  const form = useForm<InsertAppliance>({
+    resolver: zodResolver(insertApplianceSchema),
+    defaultValues: {
+      name: "",
+      type: "",
+    },
   });
 
-  // Add appliance mutation
   const addMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: InsertAppliance) => {
       return apiRequest("POST", "/api/appliances", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
-      setIsAddDialogOpen(false);
       toast({
         title: "Success",
         description: "Appliance added to your kitchen",
       });
+      setIsAddDialogOpen(false);
+      form.reset();
     },
     onError: () => {
       toast({
@@ -96,28 +75,6 @@ export default function Appliances() {
     },
   });
 
-  // Update appliance mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => 
-      apiRequest("PUT", `/api/appliances/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
-      setEditingAppliance(null);
-      toast({
-        title: "Success",
-        description: "Appliance updated successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update appliance",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       return apiRequest("DELETE", `/api/appliances/${id}`);
@@ -139,437 +96,165 @@ export default function Appliances() {
     },
   });
 
-  // Add from barcode mutation  
-  const fromBarcodeMutation = useMutation({
-    mutationFn: async (data: { barcode: string; nickname?: string; notes?: string }) => 
-      apiRequest("POST", '/api/appliances/from-barcode', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
-      setIsScanDialogOpen(false);
-      setBarcodeInput("");
-      toast({
-        title: "Success",
-        description: "Appliance added from barcode",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add appliance from barcode",
-        variant: "destructive",
-      });
-    },
-  });
+  const handleAddAppliance = (data: InsertAppliance) => {
+    addMutation.mutate(data);
+  };
 
-  // Filter appliances
-  const filteredAppliances = appliances.filter((appliance: Appliance) => {
-    const matchesCategory = selectedCategory === "all" || appliance.categoryId === selectedCategory;
-    const matchesSearch = appliance.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          appliance.nickname?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  // Render capabilities badges
-  const renderCapabilities = (capabilities?: string[] | null) => {
-    if (!capabilities || capabilities.length === 0) return null;
-    return (
-      <div className="flex flex-wrap gap-1 mt-2">
-        {capabilities.slice(0, 3).map(cap => (
-          <Badge key={cap} variant="secondary" className="text-xs">
-            {cap.replace(/_/g, ' ')}
-          </Badge>
-        ))}
-        {capabilities.length > 3 && (
-          <Badge variant="outline" className="text-xs">
-            +{capabilities.length - 3} more
-          </Badge>
-        )}
-      </div>
-    );
+  const handleDeleteAppliance = () => {
+    if (deleteApplianceId) {
+      deleteMutation.mutate(deleteApplianceId);
+    }
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Kitchen Appliances</h1>
-          <p className="text-muted-foreground">
-            Manage your kitchen appliances and tools
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setIsScanDialogOpen(true)} variant="outline" data-testid="button-scan-barcode">
-            <Scan className="w-4 h-4 mr-2" />
-            Scan Barcode
-          </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)} data-testid="button-add-appliance">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Manually
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters and Search */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search appliances..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search"
-                />
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <UtensilsCrossed className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">My Appliances</h1>
+                <p className="text-muted-foreground">
+                  {appliances?.length || 0} appliance{appliances?.length !== 1 ? "s" : ""} registered
+                </p>
               </div>
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[200px]" data-testid="select-category-filter">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-1">
-              <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="icon"
-                onClick={() => setViewMode("grid")}
-                data-testid="button-view-grid"
-              >
-                <Grid className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="icon"
-                onClick={() => setViewMode("list")}
-                data-testid="button-view-list"
-              >
-                <List className="w-4 h-4" />
+
+            <Button
+              onClick={() => setIsAddDialogOpen(true)}
+              data-testid="button-add-appliance"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Appliance
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading appliances...</p>
+          </div>
+        ) : !appliances || appliances.length === 0 ? (
+          <div className="py-12">
+            <div className="flex flex-col items-center justify-center p-8" data-testid="empty-appliances">
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                <UtensilsCrossed className="w-12 h-12 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">No appliances registered</h3>
+              <p className="text-muted-foreground text-center max-w-sm mb-6">
+                Register your kitchen appliances to get personalized recipe suggestions
+              </p>
+              <Button onClick={() => setIsAddDialogOpen(true)} data-testid="button-add-first-appliance">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Your First Appliance
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Appliances Display */}
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      ) : filteredAppliances.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Microwave className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No appliances found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || selectedCategory !== "all" 
-                ? "Try adjusting your filters" 
-                : "Add your first appliance to get started"}
-            </p>
-            <Button onClick={() => setIsScanDialogOpen(true)} data-testid="button-scan-first">
-              <Scan className="w-4 h-4 mr-2" />
-              Scan Barcode
-            </Button>
-          </CardContent>
-        </Card>
-      ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAppliances.map((appliance: Appliance) => (
-            <Card key={appliance.id} className="hover-elevate" data-testid={`card-appliance-${appliance.id}`}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">
-                      {appliance.nickname || appliance.name}
-                    </CardTitle>
-                    {appliance.nickname && appliance.nickname !== appliance.name && (
-                      <CardDescription>{appliance.name}</CardDescription>
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingAppliance(appliance)}
-                      data-testid={`button-edit-${appliance.id}`}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {appliances.map((appliance) => (
+              <Card key={appliance.id} className="hover-elevate" data-testid={`card-appliance-${appliance.id}`}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <span className="text-foreground">{appliance.name}</span>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeleteApplianceId(appliance.id)}
                       data-testid={`button-delete-${appliance.id}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {appliance.imageUrl && (
-                  <img 
-                    src={appliance.imageUrl} 
-                    alt={appliance.name}
-                    className="w-full h-32 object-contain mb-3 rounded"
-                  />
-                )}
-                <div className="space-y-2">
-                  {appliance.customBrand && (
-                    <div className="text-sm text-muted-foreground">
-                      Brand: {appliance.customBrand}
-                    </div>
-                  )}
-                  {appliance.customCapacity && (
-                    <div className="text-sm text-muted-foreground">
-                      Capacity: {appliance.customCapacity}
-                    </div>
-                  )}
-                  {renderCapabilities(appliance.customCapabilities)}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[600px]">
-              {filteredAppliances.map((appliance: Appliance, index: number) => (
-                <div key={appliance.id}>
-                  <div className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      {appliance.imageUrl && (
-                        <img 
-                          src={appliance.imageUrl} 
-                          alt={appliance.name}
-                          className="w-16 h-16 object-contain rounded"
-                        />
-                      )}
-                      <div>
-                        <div className="font-semibold">
-                          {appliance.nickname || appliance.name}
-                        </div>
-                        {appliance.nickname && appliance.nickname !== appliance.name && (
-                          <div className="text-sm text-muted-foreground">{appliance.name}</div>
-                        )}
-                      </div>
-                    </div>
-                    {renderCapabilities(appliance.customCapabilities)}
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingAppliance(appliance)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteApplianceId(appliance.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  {index < filteredAppliances.length - 1 && <Separator />}
-                </div>
-              ))}
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground capitalize">{appliance.type}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* Add Manual Dialog */}
+      {/* Add Appliance Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
+        <DialogContent data-testid="dialog-add-appliance">
           <DialogHeader>
-            <DialogTitle>Add Appliance Manually</DialogTitle>
+            <DialogTitle>Add Kitchen Appliance</DialogTitle>
             <DialogDescription>
-              Add a new appliance to your kitchen inventory
+              Register a new appliance to get tailored recipe suggestions
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            addMutation.mutate({
-              name: formData.get('name'),
-              type: formData.get('type') || 'cooking',
-              nickname: formData.get('nickname'),
-              notes: formData.get('notes'),
-              categoryId: formData.get('categoryId') === 'none' ? null : formData.get('categoryId'),
-            });
-          }}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" name="name" required placeholder="e.g., Ninja Foodi" />
-              </div>
-              <div>
-                <Label htmlFor="nickname">Nickname (optional)</Label>
-                <Input id="nickname" name="nickname" placeholder="e.g., My Air Fryer" />
-              </div>
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <Select name="type" defaultValue="cooking">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cooking">Cooking</SelectItem>
-                    <SelectItem value="baking">Baking</SelectItem>
-                    <SelectItem value="prep">Food Prep</SelectItem>
-                    <SelectItem value="bakeware">Bakeware</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="notes">Notes (optional)</Label>
-                <Textarea id="notes" name="notes" placeholder="Any special notes..." />
-              </div>
-            </div>
-            <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={addMutation.isPending}>
-                {addMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Add Appliance
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
-      {/* Barcode Scan Dialog */}
-      <Dialog open={isScanDialogOpen} onOpenChange={setIsScanDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Scan or Enter Barcode</DialogTitle>
-            <DialogDescription>
-              Scan a barcode or enter the number manually to add an appliance
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            fromBarcodeMutation.mutate({
-              barcode: formData.get('barcode') as string,
-              nickname: formData.get('nickname') as string,
-              notes: formData.get('notes') as string,
-            });
-          }}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="barcode">Barcode Number</Label>
-                <Input 
-                  id="barcode" 
-                  name="barcode" 
-                  required 
-                  placeholder="e.g., 787790842514"
-                  value={barcodeInput}
-                  onChange={(e) => setBarcodeInput(e.target.value)}
-                  data-testid="input-barcode"
-                />
-              </div>
-              <div>
-                <Label htmlFor="scan-nickname">Nickname (optional)</Label>
-                <Input 
-                  id="scan-nickname" 
-                  name="nickname" 
-                  placeholder="Give it a custom name" 
-                />
-              </div>
-              <div>
-                <Label htmlFor="scan-notes">Notes (optional)</Label>
-                <Textarea 
-                  id="scan-notes" 
-                  name="notes" 
-                  placeholder="Any special notes..." 
-                />
-              </div>
-            </div>
-            <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setIsScanDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={fromBarcodeMutation.isPending || !barcodeInput} 
-                data-testid="button-submit-scan"
-              >
-                {fromBarcodeMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Add from Barcode
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleAddAppliance)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Appliance Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Air Fryer, Slow Cooker"
+                        {...field}
+                        data-testid="input-appliance-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-      {/* Edit Appliance Dialog */}
-      {editingAppliance && (
-        <Dialog open={!!editingAppliance} onOpenChange={() => setEditingAppliance(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Appliance</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              updateMutation.mutate({
-                id: editingAppliance.id,
-                data: {
-                  nickname: formData.get('edit-nickname'),
-                  notes: formData.get('edit-notes'),
-                },
-              });
-            }}>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="edit-nickname">Nickname</Label>
-                  <Input 
-                    id="edit-nickname" 
-                    name="edit-nickname" 
-                    defaultValue={editingAppliance.nickname || editingAppliance.name}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-notes">Notes</Label>
-                  <Textarea 
-                    id="edit-notes" 
-                    name="edit-notes" 
-                    defaultValue={editingAppliance.notes || ""}
-                  />
-                </div>
-              </div>
-              <DialogFooter className="mt-4">
-                <Button type="button" variant="outline" onClick={() => setEditingAppliance(null)}>
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Cooking, Baking, Prep"
+                        {...field}
+                        data-testid="input-appliance-type"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddDialogOpen(false);
+                    form.reset();
+                  }}
+                  data-testid="button-cancel-add"
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Save Changes
+                <Button
+                  type="submit"
+                  disabled={addMutation.isPending}
+                  data-testid="button-confirm-add"
+                >
+                  {addMutation.isPending ? "Adding..." : "Add Appliance"}
                 </Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
-      )}
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteApplianceId} onOpenChange={() => setDeleteApplianceId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-testid="dialog-delete-confirm">
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Appliance?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -577,10 +262,11 @@ export default function Appliances() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteApplianceId && deleteMutation.mutate(deleteApplianceId)}
+              onClick={handleDeleteAppliance}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
             >
               Remove
             </AlertDialogAction>

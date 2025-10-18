@@ -6,16 +6,11 @@ interface NutritionFactsLabelProps {
 }
 
 export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabelProps) {
-  if (!nutrition) {
-    return null;
-  }
-  
   const servingSize = nutrition.servingSize || "100";
   const servingUnit = nutrition.servingUnit || "g";
 
   const calculateDV = (value: number | undefined, dv: number): number => {
-    if (value === undefined || value === null || !Number.isFinite(value)) return 0;
-    if (!dv || !Number.isFinite(dv) || dv === 0) return 0;
+    if (!value) return 0;
     return Math.round((value / dv) * 100);
   };
 
@@ -48,7 +43,7 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
         <div className="flex justify-between items-end">
           <span className="text-3xl font-black">Calories</span>
           <span className="text-4xl font-black" data-testid="calories-value">
-            {Math.round(nutrition.calories || 0)}
+            {Math.round(nutrition.calories)}
           </span>
         </div>
       </div>
