@@ -12,14 +12,21 @@ interface ChatMessageProps {
   userInitials?: string;
 }
 
-export function ChatMessage({ role, content, timestamp, children, userProfileImageUrl, userInitials }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  content,
+  timestamp,
+  children,
+  userProfileImageUrl,
+  userInitials,
+}: ChatMessageProps) {
   const isUser = role === "user";
   const isSystem = role === "system";
 
   if (isSystem) {
     return (
       <div className="flex justify-center my-6" data-testid="message-system">
-        <div 
+        <div
           className="glass-subtle border-2 border-border/50 rounded-xl px-4 py-2 text-sm text-muted-foreground max-w-md text-center shadow-glass transition-morph"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
         />
@@ -31,7 +38,7 @@ export function ChatMessage({ role, content, timestamp, children, userProfileIma
     <div
       className={cn(
         "flex gap-3 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300",
-        isUser ? "flex-row-reverse" : "flex-row"
+        isUser ? "flex-row-reverse" : "flex-row",
       )}
       data-testid={`message-${role}`}
     >
@@ -48,30 +55,35 @@ export function ChatMessage({ role, content, timestamp, children, userProfileIma
         </div>
       )}
 
-      <div className={cn("flex flex-col gap-2", isUser ? "items-end" : "items-start", "max-w-2xl")}>
+      <div
+        className={cn(
+          "flex flex-col gap-2",
+          isUser ? "items-end" : "items-start",
+          "max-w-2xl",
+        )}
+      >
         <div
           className={cn(
             "rounded-2xl px-4 py-3 glass-subtle shadow-glass transition-morph",
             isUser
               ? "bg-primary/90 text-primary-foreground backdrop-blur-sm"
-              : "bg-accent/90 text-foreground backdrop-blur-sm"
+              : "bg-accent/90 text-foreground backdrop-blur-sm",
           )}
           style={{ borderRadius: "var(--radius)" }}
         >
-          <p 
+          <p
             className="text-base leading-relaxed whitespace-pre-wrap"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
           />
         </div>
 
-        {children && (
-          <div className="w-full mt-1">
-            {children}
-          </div>
-        )}
+        {children && <div className="w-full mt-1">{children}</div>}
 
         {timestamp && (
-          <span className="text-xs text-muted-foreground mt-1" data-testid="text-timestamp">
+          <span
+            className="text-xs text-muted-foreground mt-1"
+            data-testid="text-timestamp"
+          >
             {timestamp}
           </span>
         )}
