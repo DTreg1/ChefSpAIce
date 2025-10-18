@@ -17,26 +17,9 @@ function showNotification(message: string, isError: boolean = false) {
   }, 5000);
 }
 
-// Track registration attempts to prevent infinite loops
-let registrationAttempts = 0;
-const MAX_REGISTRATION_ATTEMPTS = 3;
-
 // Register service worker for offline functionality with recovery mechanism
-export async function registerServiceWorker(isRetry = false): Promise<ServiceWorkerRegistration | undefined> {
+export async function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    // Check if we've exceeded max attempts
-    if (registrationAttempts >= MAX_REGISTRATION_ATTEMPTS) {
-      console.error('Max service worker registration attempts reached. Stopping.');
-      showNotification('Offline features could not be enabled after multiple attempts', true);
-      return undefined;
-    }
-    
-    // Increment attempt counter only for actual registration attempts
-    if (!isRetry) {
-      registrationAttempts = 0; // Reset on fresh call
-    }
-    registrationAttempts++;
-    
     // First, check for existing failed registrations and clean them up
     const registrations = await navigator.serviceWorker.getRegistrations();
     let hasFailedRegistration = false;
@@ -64,13 +47,9 @@ export async function registerServiceWorker(isRetry = false): Promise<ServiceWor
 
       console.log('Service Worker registered successfully:', registration.scope);
       
-      // Reset attempts on success
-      registrationAttempts = 0;
-      
       // Set up a recovery mechanism for persistent failures
       let updateCheckCount = 0;
       const maxUpdateChecks = 3;
-      let updateCheckInterval: NodeJS.Timeout | null = null;
       
       const checkForUpdates = async () => {
         try {
@@ -82,30 +61,16 @@ export async function registerServiceWorker(isRetry = false): Promise<ServiceWor
           
           if (updateCheckCount >= maxUpdateChecks) {
             console.log('Service Worker appears to be in a bad state, attempting recovery...');
-            
-            // Clear the interval to prevent further checks
-            if (updateCheckInterval) {
-              clearInterval(updateCheckInterval);
-              updateCheckInterval = null;
-            }
-            
-            // Unregister and re-register after a delay (with retry flag)
+            // Unregister and re-register after a delay
             await registration.unregister();
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Only retry if we haven't exceeded max attempts
-            if (registrationAttempts < MAX_REGISTRATION_ATTEMPTS) {
-              await registerServiceWorker(true); // Pass retry flag
-            } else {
-              console.error('Cannot recover service worker after max attempts');
-              showNotification('Offline features have been disabled due to errors', true);
-            }
+            await registerServiceWorker(); // Recursive call to re-register
           }
         }
       };
       
       // Check for updates periodically (every 30 minutes)
-      updateCheckInterval = setInterval(checkForUpdates, 30 * 60 * 1000);
+      setInterval(checkForUpdates, 30 * 60 * 1000);
       
       // Only show success notification if this is the first registration
       // (not on subsequent page loads when already registered)
@@ -137,7 +102,6 @@ export async function registerServiceWorker(isRetry = false): Promise<ServiceWor
       
       // Show notification to user
       showNotification(errorMessage, true);
-      return undefined;
     }
   } else {
     console.warn('Service Workers are not supported in this browser');
@@ -149,7 +113,6 @@ export async function registerServiceWorker(isRetry = false): Promise<ServiceWor
     } else {
       showNotification('Your browser does not support offline features', true);
     }
-    return undefined;
   }
 }
 

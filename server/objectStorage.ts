@@ -69,124 +69,76 @@ export class ObjectStorageService {
   }
 
   async downloadObject(file: File, res: Response, retryCount = 0): Promise<void> {
-    // Helper function to perform a single download attempt
-    const attemptDownload = async (): Promise<void> => {
-      return new Promise(async (resolve, reject) => {
-        try {
-          // Get metadata with timeout
-          const metadataPromise = file.getMetadata();
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Metadata fetch timeout")), 10000)
-          );
-          
-          const [metadata] = await Promise.race([
-            metadataPromise,
-            timeoutPromise
-          ]) as any;
-          
-          // Only set headers on first attempt or if not already sent
-          if (!res.headersSent) {
-            res.set({
-              "Content-Type": metadata.contentType || "application/octet-stream",
-              "Content-Length": metadata.size?.toString() || "0",
-              "Cache-Control": "public, max-age=3600",
-              "X-Content-Type-Options": "nosniff",
-            });
-          }
+    try {
+      const [metadata] = await file.getMetadata();
+      res.set({
+        "Content-Type": metadata.contentType || "application/octet-stream",
+        "Content-Length": metadata.size?.toString() || "0",
+        "Cache-Control": "public, max-age=3600",
+        "X-Content-Type-Options": "nosniff",
+      });
 
-          const stream = file.createReadStream({
-            validation: false, // Skip MD5 validation for better performance
-          });
+      const stream = file.createReadStream({
+        validation: false, // Skip MD5 validation for better performance
+      });
+      
+      let hasError = false;
+      
+      stream.on("error", async (err: any) => {
+        hasError = true;
+        console.error(`Stream error (attempt ${retryCount + 1}):`, err);
+        
+        // Check if we can retry
+        if (retryCount < MAX_RETRIES && this.isRetryableError(err)) {
+          // Clean up the failed stream
+          stream.destroy();
           
-          let hasError = false;
-          let errorOccurred: Error | null = null;
+          // Wait with exponential backoff
+          const delay = RETRY_DELAY * Math.pow(2, retryCount);
+          await new Promise(resolve => setTimeout(resolve, delay));
           
-          stream.on("error", (err: any) => {
-            hasError = true;
-            errorOccurred = err;
-            console.error(`Stream error (attempt ${retryCount + 1}):`, err);
-            
-            // Clean up the stream immediately
-            stream.destroy();
-            
-            // Reject the promise to trigger retry logic
-            reject(err);
-          });
-          
-          stream.on("end", () => {
-            if (!hasError) {
-              console.log(`Successfully streamed file after ${retryCount} attempt(s)`);
-              resolve();
-            }
-          });
-          
-          // Handle pipe errors separately
-          stream.pipe(res).on("error", (err: any) => {
-            console.error(`Pipe error (attempt ${retryCount + 1}):`, err);
-            stream.destroy();
-            reject(err);
-          });
-          
-        } catch (error) {
-          reject(error);
+          // Retry the download
+          return this.downloadObject(file, res, retryCount + 1);
+        }
+        
+        if (!res.headersSent) {
+          const errorMessage = this.getErrorMessage(err);
+          const statusCode = this.getErrorStatusCode(err);
+          throw new ObjectStorageError(
+            errorMessage,
+            statusCode,
+            { retries: retryCount }
+          );
         }
       });
-    };
-    
-    // Main retry logic with exponential backoff and jitter
-    let lastError: any = null;
-    
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      if (attempt > 0) {
-        // Calculate delay with exponential backoff and jitter
-        const baseDelay = RETRY_DELAY * Math.pow(2, attempt - 1);
-        const jitter = Math.random() * baseDelay * 0.1; // 10% jitter
-        const delay = baseDelay + jitter;
-        
-        console.log(`Retrying download after ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+      
+      stream.on("end", () => {
+        if (!hasError) {
+          console.log(`Successfully streamed file after ${retryCount} retries`);
+        }
+      });
+      
+      stream.pipe(res);
+    } catch (error: any) {
+      console.error(`Error downloading file (attempt ${retryCount + 1}):`, error);
+      
+      // Retry logic for metadata fetch
+      if (retryCount < MAX_RETRIES && this.isRetryableError(error)) {
+        const delay = RETRY_DELAY * Math.pow(2, retryCount);
         await new Promise(resolve => setTimeout(resolve, delay));
-        
-        // Check if response is still writable before retry
-        if (res.writableEnded || res.destroyed) {
-          console.error("Response stream is no longer writable, aborting retries");
-          break;
-        }
+        return this.downloadObject(file, res, retryCount + 1);
       }
       
-      try {
-        await attemptDownload();
-        return; // Success, exit the function
-      } catch (error: any) {
-        lastError = error;
-        console.error(`Download attempt ${attempt + 1} failed:`, error.message);
-        
-        // Check if error is retryable
-        if (!this.isRetryableError(error) || attempt === MAX_RETRIES) {
-          break; // Exit retry loop
-        }
+      if (!res.headersSent) {
+        const errorMessage = this.getErrorMessage(error);
+        const statusCode = this.getErrorStatusCode(error);
+        throw new ObjectStorageError(
+          errorMessage,
+          statusCode,
+          { retries: retryCount }
+        );
       }
     }
-    
-    // All retries exhausted or non-retryable error
-    if (!res.headersSent && !res.writableEnded) {
-      const errorMessage = this.getErrorMessage(lastError);
-      const statusCode = this.getErrorStatusCode(lastError);
-      
-      // Send error response
-      res.status(statusCode).json({
-        error: errorMessage,
-        details: {
-          attempts: retryCount + 1,
-          lastError: lastError?.message
-        }
-      });
-    }
-    
-    throw new ObjectStorageError(
-      this.getErrorMessage(lastError),
-      this.getErrorStatusCode(lastError),
-      { retries: retryCount, originalError: lastError?.message }
-    );
   }
   
   private isRetryableError(error: any): boolean {

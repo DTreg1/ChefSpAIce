@@ -114,50 +114,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/', rateLimiter);
 
   // Auth routes (from blueprint:javascript_log_in_with_replit)
-  // Authentication status check (doesn't require full authentication)
-  app.get('/api/auth/status', async (req: any, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.json({ 
-          authenticated: false,
-          reason: 'No active session'
-        });
-      }
-
-      const user = req.user as any;
-      if (!user?.expires_at) {
-        return res.json({ 
-          authenticated: false,
-          reason: 'Invalid session data'
-        });
-      }
-
-      const now = Math.floor(Date.now() / 1000);
-      const timeUntilExpiry = user.expires_at - now;
-      
-      return res.json({
-        authenticated: true,
-        expiresIn: timeUntilExpiry,
-        needsRefresh: timeUntilExpiry <= 30,
-        userId: user.claims?.sub
-      });
-    } catch (error) {
-      console.error("Error checking auth status:", error);
-      return res.json({ 
-        authenticated: false,
-        reason: 'Error checking authentication'
-      });
-    }
-  });
-
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res, next) => {
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
-      return next(new ApiError("Failed to fetch user", 500));
+      throw new ApiError("Failed to fetch user", 500);
     }
   });
 

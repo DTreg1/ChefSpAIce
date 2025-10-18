@@ -39,7 +39,7 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,  // Always true in Replit environment (behind HTTPS proxy)
+      secure: true,
       maxAge: sessionTtl,
     },
   });
@@ -134,28 +134,20 @@ export async function setupAuth(app: Express) {
 }
 
 // Map to track active token refreshes per user to prevent concurrent refreshes
-const activeRefreshes = new Map<string, {
-  promise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>;
-  timestamp: number;
-}>();
+const activeRefreshes = new Map<string, Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>>();
 
-// Clean up expired refresh promises (older than 2 seconds)
-const cleanupExpiredRefreshes = () => {
-  const now = Date.now();
-  const expiredKeys: string[] = [];
-  
-  activeRefreshes.forEach((value, key) => {
-    // Keep the promise for at least 2 seconds to handle burst requests
-    if (now - value.timestamp > 2000) {
-      expiredKeys.push(key);
-    }
-  });
-  
-  expiredKeys.forEach(key => activeRefreshes.delete(key));
+// Clean up completed promises consistently with longer delay to prevent race conditions
+const cleanupRefresh = (key: string, immediate: boolean = false) => {
+  if (immediate) {
+    activeRefreshes.delete(key);
+  } else {
+    // Longer delay (500ms) to ensure all concurrent requests can reuse the result
+    // This prevents race conditions under high load
+    setTimeout(() => {
+      activeRefreshes.delete(key);
+    }, 500);
+  }
 };
-
-// Run cleanup every 5 seconds
-setInterval(cleanupExpiredRefreshes, 5000);
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
@@ -172,170 +164,71 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
-    console.log(`User ${user.claims?.sub || 'unknown'} has no refresh token - requiring re-authentication`);
-    return res.status(401).json({ message: "Unauthorized", error: "Session expired - please log in again" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
-  // Use sessionID as key to prevent conflicts between multiple sessions for same user
-  // This allows each session to refresh independently while still deduplicating
-  // concurrent requests within the same session
+  // Use only userId as key since tokens should be same across sessions for same user
+  // This prevents multiple refresh attempts for same user across different sessions
   const userId = user.claims?.sub || 'unknown';
-  const sessionId = req.sessionID || 'unknown-session';
-  const refreshKey = `${sessionId}:${userId}`;
+  const refreshKey = userId;
   
   try {
     // Check if a refresh is already in progress for this user
-    let refreshEntry = activeRefreshes.get(refreshKey);
+    let tokenResponsePromise = activeRefreshes.get(refreshKey);
     
-    if (!refreshEntry) {
+    if (!tokenResponsePromise) {
       // Log the start of a new refresh operation
-      console.log(`Starting token refresh for user: ${userId}, session: ${sessionId}`);
+      console.log(`Starting token refresh for user: ${userId}`);
       
-      // Get the OIDC configuration (memoized for performance)
+      // Start a new refresh operation
       const config = await getOidcConfig();
+      tokenResponsePromise = client.refreshTokenGrant(config, refreshToken);
       
-      // Create the refresh token grant with retry logic
-      const tokenPromise = (async () => {
-        const maxRetries = 3;
-        let lastError: any = null;
-        
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            console.log(`Token refresh attempt ${attempt}/${maxRetries} for user: ${userId}`);
-            const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-            console.log(`Token refresh successful on attempt ${attempt} for user: ${userId}`);
-            return tokenResponse;
-          } catch (error: any) {
-            lastError = error;
-            
-            // Log detailed error information
-            console.error(`Token refresh attempt ${attempt}/${maxRetries} failed for user ${userId}:`, {
-              error: error.message,
-              statusCode: error.response?.statusCode,
-              body: error.response?.body,
-              cause: error.cause
-            });
-            
-            // If the refresh token is expired or invalid, don't retry
-            if (error.message?.includes('invalid_grant') || 
-                error.response?.statusCode === 400 ||
-                error.response?.body?.error === 'invalid_grant') {
-              console.log(`Refresh token is invalid/expired for user ${userId} - clearing session`);
-              
-              // Clear the session to force re-authentication
-              await new Promise<void>((resolve) => {
-                req.session.destroy(() => {
-                  resolve();
-                });
-              });
-              
-              throw new Error('REFRESH_TOKEN_EXPIRED');
-            }
-            
-            // If it's a network/temporary error and not the last attempt, retry with backoff
-            if (attempt < maxRetries && 
-                (error.response?.statusCode >= 500 || 
-                 error.message?.includes('ECONNREFUSED') ||
-                 error.message?.includes('ETIMEDOUT') ||
-                 error.message?.includes('network'))) {
-              const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-              console.log(`Retrying in ${backoffDelay}ms...`);
-              await new Promise(resolve => setTimeout(resolve, backoffDelay));
-            } else if (attempt === maxRetries) {
-              // Last attempt failed, throw the error
-              throw error;
-            } else {
-              // Non-retryable error, throw immediately
-              throw error;
-            }
-          }
-        }
-        
-        // If we get here, all retries failed
-        throw lastError || new Error('Token refresh failed after all retries');
-      })();
+      // Store the promise for concurrent requests to reuse
+      activeRefreshes.set(refreshKey, tokenResponsePromise);
       
-      // Store the promise with timestamp for concurrent requests to reuse
-      refreshEntry = {
-        promise: tokenPromise,
-        timestamp: Date.now()
-      };
-      activeRefreshes.set(refreshKey, refreshEntry);
-      
-      // Clean up on completion (let the interval handle cleanup)
-      tokenPromise
+      // Clean up after completion (success or failure)
+      tokenResponsePromise
         .then(() => {
           console.log(`Token refresh successful for user: ${userId}`);
+          cleanupRefresh(refreshKey, false); // Success: delay cleanup
         })
-        .catch((err: any) => {
-          console.error(`Token refresh failed for user: ${userId}:`, err.message);
-          // Remove failed refresh immediately so retries can occur
-          activeRefreshes.delete(refreshKey);
+        .catch((err) => {
+          console.error(`Token refresh failed for user: ${userId}`, err.message);
+          cleanupRefresh(refreshKey, true); // Error: immediate cleanup
         });
     } else {
       console.log(`Reusing existing refresh promise for user: ${userId}`);
     }
     
     // Wait for the refresh to complete
-    const tokenResponse = await refreshEntry.promise;
+    const tokenResponse = await tokenResponsePromise;
     updateUserSession(user, tokenResponse);
     
-    // Save the session to persist the new tokens with better error handling
-    try {
-      await new Promise<void>((resolve, reject) => {
-        req.session.save((err) => {
-          if (err) {
-            console.error(`Failed to save session after token refresh for user ${userId}:`, err);
-            reject(err);
-          } else {
-            console.log(`Session saved successfully for user: ${userId}`);
-            resolve();
-          }
-        });
+    // Save the session to persist the new tokens with error handling
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error(`Failed to save session after token refresh for user ${userId}:`, err);
+          reject(err);
+        } else {
+          resolve();
+        }
       });
-      
-      return next();
-    } catch (sessionError: any) {
-      // If session save fails, we need to return an error
-      // The tokens are refreshed but not persisted
-      console.error('Critical: Session save failed after token refresh:', {
-        userId,
-        error: sessionError.message,
-        stack: sessionError.stack
-      });
-      
-      // Remove the refresh entry to allow retry on next request
-      activeRefreshes.delete(refreshKey);
-      
-      res.status(500).json({ 
-        message: "Session update failed", 
-        error: "Please try logging in again"
-      });
-      return;
-    }
+    });
+    
+    return next();
   } catch (error: any) {
     console.error('Token refresh failed:', {
       userId,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
     
-    // Remove failed refresh to allow retry
-    activeRefreshes.delete(refreshKey);
-    
-    // If refresh token is expired, send specific error
-    if (error.message === 'REFRESH_TOKEN_EXPIRED') {
-      res.status(401).json({ 
-        message: "Unauthorized", 
-        error: "Session expired - please log in again",
-        requiresLogin: true
-      });
-      return;
-    }
+    // Don't delete here since it's already handled in the promise chain
     
     res.status(401).json({ 
       message: "Unauthorized", 
-      error: "Token refresh failed - please try again or log in"
+      error: "Token refresh failed"
     });
     return;
   }

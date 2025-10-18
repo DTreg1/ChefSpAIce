@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AlertTriangle, X, Lightbulb, RefreshCw } from "lucide-react";
+import { AlertTriangle, X, Lightbulb } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
 
 type ExpirationNotification = {
   id: string;
@@ -25,7 +24,6 @@ type WasteReductionSuggestion = {
 
 export function ExpirationAlert() {
   const { toast } = useToast();
-  const { isLoading, isAuthenticated } = useAuth();
 
   // Check for expiring items on mount
   const checkMutation = useMutation({
@@ -38,41 +36,9 @@ export function ExpirationAlert() {
     onError: (error: any) => {
       console.error("Failed to check for expiring items:", error);
       localStorage.removeItem("lastExpirationCheck");
-      // Only show error toast if it's not an auth error during initial load
-      if (error.status !== 401) {
-        toast({
-          title: "Error checking expiration dates",
-          description: "Unable to check for expiring items. Please try again later.",
-          variant: "destructive"
-        });
-      }
-    },
-  });
-
-  // Mutation to refresh waste reduction tips
-  const refreshTipsMutation = useMutation({
-    mutationFn: async () => {
-      // Force refetch with a timestamp to bypass cache
-      const timestamp = Date.now();
-      const response = await fetch(`/api/suggestions/waste-reduction?refresh=${timestamp}`);
-      if (!response.ok) throw new Error('Failed to fetch suggestions');
-      const data = await response.json();
-      
-      // Update the cache with new data
-      queryClient.setQueryData(["/api/suggestions/waste-reduction"], data);
-      return data;
-    },
-    onSuccess: () => {
       toast({
-        title: "Tips refreshed!",
-        description: "New waste reduction tips have been generated for your expiring items.",
-      });
-    },
-    onError: (error: any) => {
-      console.error("Failed to refresh tips:", error);
-      toast({
-        title: "Error refreshing tips",
-        description: "Unable to fetch new tips. Please try again.",
+        title: "Error checking expiration dates",
+        description: "Unable to check for expiring items. Please try again later.",
         variant: "destructive"
       });
     },
@@ -80,12 +46,10 @@ export function ExpirationAlert() {
 
   const { data: notifications } = useQuery<ExpirationNotification[]>({
     queryKey: ["/api/notifications/expiration"],
-    enabled: !isLoading && isAuthenticated,
   });
 
   const { data: suggestions } = useQuery<WasteReductionSuggestion>({
     queryKey: ["/api/suggestions/waste-reduction"],
-    enabled: !isLoading && isAuthenticated,
   });
 
   const dismissMutation = useMutation({
@@ -109,9 +73,6 @@ export function ExpirationAlert() {
   });
 
   useEffect(() => {
-    // Only check when auth is ready and user is authenticated
-    if (isLoading || !isAuthenticated) return;
-    
     const today = new Date().toISOString().split('T')[0];
     const lastCheck = localStorage.getItem("lastExpirationCheck");
     
@@ -119,7 +80,7 @@ export function ExpirationAlert() {
       localStorage.setItem("lastExpirationCheck", today);
       checkMutation.mutate();
     }
-  }, [isLoading, isAuthenticated]);
+  }, []);
 
   const hasNotifications = notifications && notifications.length > 0;
   const hasSuggestions = suggestions && suggestions.suggestions.length > 0;
@@ -166,23 +127,11 @@ export function ExpirationAlert() {
 
       {hasSuggestions && (
         <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-primary" />
               Waste Reduction Tips
             </CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => refreshTipsMutation.mutate()}
-              disabled={refreshTipsMutation.isPending}
-              data-testid="button-refresh-tips"
-            >
-              <RefreshCw 
-                className={`h-4 w-4 ${refreshTipsMutation.isPending ? 'animate-spin' : ''}`}
-              />
-            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
             {suggestions.suggestions.map((suggestion, index) => (

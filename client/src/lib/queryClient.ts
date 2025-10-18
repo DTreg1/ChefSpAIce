@@ -107,19 +107,10 @@ const RETRY_CONFIG = {
   jitterRange: 300, // ± 300ms random jitter
 };
 
-// Track if we're in the initial load period (first 5 seconds after page load)
-const pageLoadTime = Date.now();
-function isInitialLoadPeriod(): boolean {
-  return Date.now() - pageLoadTime < 5000;
-}
-
 // Determine if an error is retryable
 function isRetryableError(status: number, error?: any): boolean {
   // Network errors are retryable
   if (status === 0) return true;
-  
-  // 401 errors during initial load are retryable (session might not be restored yet)
-  if (status === 401 && isInitialLoadPeriod()) return true;
   
   // 5xx errors are retryable (server errors)
   if (status >= 500 && status < 600) return true;

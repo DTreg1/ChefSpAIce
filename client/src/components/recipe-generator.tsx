@@ -33,15 +33,11 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
   }).length || 0;
 
   const generateRecipeMutation = useMutation({
-    mutationKey: ["recipe-generation"], // Add mutation key to prevent concurrent mutations
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/recipes/generate", {});
       return await response.json();
     },
     onSuccess: async (recipe: Recipe) => {
-      // Store the generated recipe ID to ensure we find the right one
-      const generatedRecipeId = recipe.id;
-      
       // First invalidate to get fresh inventory data
       await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
@@ -52,32 +48,15 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
         staleTime: 0,
       });
       
-      // Find the specific recipe we just generated using its ID
-      const updatedRecipe = (recipesWithMatching as Recipe[])?.find(
-        (r: Recipe) => r.id === generatedRecipeId
-      );
-      
-      // If not found, try fetching individual recipe as fallback
-      let finalRecipe = updatedRecipe;
-      if (!finalRecipe && generatedRecipeId) {
-        try {
-          const singleRecipe = await queryClient.fetchQuery({
-            queryKey: [`/api/recipes/${generatedRecipeId}`],
-            staleTime: 0,
-          });
-          finalRecipe = singleRecipe as Recipe;
-        } catch {
-          // Fallback to original recipe if fetch fails
-          finalRecipe = recipe;
-        }
-      }
+      // Find the newly generated recipe with updated matching
+      const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
       
       toast({
         title: "Recipe Generated!",
         description: `${recipe.title} - Created using your available ingredients${expiringCount > 0 ? ', prioritizing expiring items' : ''}`,
       });
       
-      onRecipeGenerated?.(finalRecipe || recipe);
+      onRecipeGenerated?.(updatedRecipe || recipe);
       
       // Final invalidation to update UI
       await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });

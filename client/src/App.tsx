@@ -52,7 +52,6 @@ function AuthenticatedRouter() {
       <Route path="/shopping-list" component={ShoppingList} />
       <Route path="/appliances" component={Appliances} />
       <Route path="/storage/:location" component={Storage} />
-      <Route path="/storage" component={Storage} />
       <Route path="/food-groups" component={FoodGroups} />
       <Route path="/fdc-search" component={FdcSearch} />
       <Route path="/feedback-analytics" component={FeedbackAnalytics} />
@@ -135,8 +134,26 @@ function AppContent() {
   // Show app layout with sidebar for authenticated users who completed onboarding
   return (
     <>
+      <AnimatedBackground
+        variant="both"
+        gradientType="soft"
+        particleCount={30}
+      />
+      <CommandPalette
+        onAddFood={() => setAddFoodOpen(true)}
+        onGenerateRecipe={() => setRecipeDialogOpen(true)}
+        onScanBarcode={() => {
+          // Navigate to FDC search page with barcode scanner
+          window.location.href = "/fdc-search?scanBarcode=true";
+        }}
+      />
+      <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
+      <RecipeCustomizationDialog
+        open={recipeDialogOpen}
+        onOpenChange={setRecipeDialogOpen}
+      />
       {/* Only show floating FeedbackWidget on non-chat pages */}
-      {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
+      {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
           {/* Header is now at the top level, outside the flex container with sidebar */}
@@ -176,33 +193,11 @@ function AppContent() {
               />
             </div>
           </header>
-
-          <AnimatedBackground
-            variant="both"
-            gradientType="soft"
-            particleCount={30}
-          />
-          <CommandPalette
-            onAddFood={() => setAddFoodOpen(true)}
-            onGenerateRecipe={() => setRecipeDialogOpen(true)}
-            onScanBarcode={() => {
-              // Navigate to FDC search page with barcode scanner
-              window.location.href = "/fdc-search?scanBarcode=true";
-            }}
-          />
-          <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
-          <RecipeCustomizationDialog
-            open={recipeDialogOpen}
-            onOpenChange={setRecipeDialogOpen}
-          />
-
+          
           {/* Main content area with sidebar and main content */}
           <div className="flex flex-1 min-h-0 w-full">
             <AppSidebar />
-            <main
-              ref={mainRef}
-              className="flex-1 overflow-y-auto overflow-x-hidden"
-            >
+            <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
               <Router />
             </main>
           </div>

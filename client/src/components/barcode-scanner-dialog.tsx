@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useBarcodeScanner } from "@/hooks/useBarcodescanner";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { format, addDays } from "date-fns";
-import type { StorageLocationWithCount, USDAFoodItem } from "@shared/schema";
+import type { StorageLocation, USDAFoodItem } from "@shared/schema";
 
 interface BarcodeScannerDialogProps {
   open: boolean;
@@ -154,7 +154,7 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
         storageLocationId: selectedLocation,
         expirationDate: expirationDate ? new Date(expirationDate) : null,
         category: scannedFood.foodCategory || scannedFood.dataType || null,
-        imageUrl: null, // USDAFoodItem doesn't have imageUrl property
+        imageUrl: scannedFood.imageUrl || null,
         barcode: scannedBarcode || null,
         nutrition: scannedFood.nutrition || null,
       };

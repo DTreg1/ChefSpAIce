@@ -4,8 +4,7 @@ import {
   type UpsertUser,
   type UserPreferences,
   type InsertUserPreferences,
-  type StorageLocation,
-  type StorageLocationWithCount,
+  type StorageLocation, 
   type InsertStorageLocation,
   type Appliance,
   type InsertAppliance,
@@ -85,7 +84,7 @@ export interface IStorage {
   deletePushToken(userId: string, token: string): Promise<void>;
   
   // Storage Locations (user-scoped)
-  getStorageLocations(userId: string): Promise<StorageLocationWithCount[]>;
+  getStorageLocations(userId: string): Promise<StorageLocation[]>;
   getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined>;
   createStorageLocation(userId: string, location: Omit<InsertStorageLocation, 'userId'>): Promise<StorageLocation>;
 
@@ -326,7 +325,7 @@ export class DatabaseStorage implements IStorage {
           .set({
             firstName: userData.firstName,
             lastName: userData.lastName,
-            profileImageUrl: userData.profileImageUrl,
+            profileImage: userData.profileImage,
             updatedAt: new Date(),
           })
           .where(eq(users.id, existingUser.id))
@@ -344,7 +343,7 @@ export class DatabaseStorage implements IStorage {
             firstName: userData.firstName,
             lastName: userData.lastName,
             email: userData.email,
-            profileImageUrl: userData.profileImageUrl,
+            profileImage: userData.profileImage,
             updatedAt: new Date(),
           },
         })
@@ -398,24 +397,14 @@ export class DatabaseStorage implements IStorage {
 
   async upsertPushToken(userId: string, tokenData: Omit<InsertPushToken, 'userId'>): Promise<PushToken> {
     try {
-      // Ensure deviceInfo has properly typed properties
-      const sanitizedTokenData = {
-        ...tokenData,
-        deviceInfo: tokenData.deviceInfo ? {
-          deviceId: tokenData.deviceInfo.deviceId as string | undefined,
-          model: tokenData.deviceInfo.model as string | undefined,
-          osVersion: tokenData.deviceInfo.osVersion as string | undefined,
-        } : null
-      };
-      
       const [token] = await db
         .insert(pushTokens)
-        .values({ ...sanitizedTokenData, userId })
+        .values({ ...tokenData, userId })
         .onConflictDoUpdate({
           target: pushTokens.token,
           set: {
-            platform: sanitizedTokenData.platform,
-            deviceInfo: sanitizedTokenData.deviceInfo,
+            platform: tokenData.platform,
+            deviceInfo: tokenData.deviceInfo,
             updatedAt: new Date(),
           },
         })
@@ -437,7 +426,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Storage Locations
-  async getStorageLocations(userId: string): Promise<StorageLocationWithCount[]> {
+  async getStorageLocations(userId: string): Promise<StorageLocation[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
       
@@ -648,29 +637,9 @@ export class DatabaseStorage implements IStorage {
 
   async createBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct> {
     try {
-      // Ensure dimensions and stores have properly typed properties
-      const sanitizedProduct = {
-        ...product,
-        dimensions: product.dimensions ? {
-          length: product.dimensions.length as string | undefined,
-          width: product.dimensions.width as string | undefined,
-          height: product.dimensions.height as string | undefined,
-        } : product.dimensions,
-        stores: product.stores ? product.stores.map((store: any) => ({
-          name: store.name as string,
-          country: store.country as string,
-          currency: store.currency as string,
-          price: store.price as string,
-          salePrice: store.salePrice as string | undefined,
-          link: store.link as string | undefined,
-          availability: store.availability as string | undefined,
-          lastUpdate: store.lastUpdate as string,
-        })) : product.stores,
-      };
-      
       const [newProduct] = await db
         .insert(barcodeProducts)
-        .values(sanitizedProduct)
+        .values(product)
         .returning();
       return newProduct;
     } catch (error) {
@@ -681,28 +650,8 @@ export class DatabaseStorage implements IStorage {
 
   async updateBarcodeProduct(barcodeNumber: string, product: Partial<InsertBarcodeProduct>): Promise<BarcodeProduct> {
     try {
-      // Ensure dimensions and stores have properly typed properties if they exist
-      const sanitizedProduct = {
-        ...product,
-        dimensions: product.dimensions ? {
-          length: product.dimensions.length as string | undefined,
-          width: product.dimensions.width as string | undefined,
-          height: product.dimensions.height as string | undefined,
-        } : product.dimensions,
-        stores: product.stores ? product.stores.map((store: any) => ({
-          name: store.name as string,
-          country: store.country as string,
-          currency: store.currency as string,
-          price: store.price as string,
-          salePrice: store.salePrice as string | undefined,
-          link: store.link as string | undefined,
-          availability: store.availability as string | undefined,
-          lastUpdate: store.lastUpdate as string,
-        })) : product.stores,
-      };
-      
       const updateData = {
-        ...sanitizedProduct,
+        ...product,
         lastUpdate: new Date()
       };
       const [updatedProduct] = await db

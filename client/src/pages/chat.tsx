@@ -131,9 +131,6 @@ export default function Chat() {
     
     setIsStreaming(true);
     setStreamingContent("");
-    
-    // Track accumulated content separately to prevent loss on error
-    let accumulatedContent = "";
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -142,24 +139,9 @@ export default function Chat() {
     const timeoutId = setTimeout(() => {
       if (abortController && !abortController.signal.aborted) {
         abortController.abort();
-        
-        // Save any accumulated content before aborting
-        if (accumulatedContent) {
-          const partialMessage: ChatMessageType = {
-            id: (Date.now() + 1).toString(),
-            userId: user?.id || "",
-            role: "assistant",
-            content: accumulatedContent + "\n\n[Response interrupted due to timeout]",
-            timestamp: new Date(),
-            metadata: null,
-          };
-          setMessages((prev) => [...prev, partialMessage]);
-          setStreamingContent("");
-        }
-        
         toast({
           title: "Connection Timeout",
-          description: "The response took too long. Partial response has been saved.",
+          description: "The response is taking too long. Please try again.",
           variant: "destructive",
         });
       }
@@ -198,59 +180,24 @@ export default function Chat() {
         throw new Error("No response body received from server");
       }
 
-      // Use the accumulatedContent variable declared above
+      let accumulated = "";
       let buffer = ""; // Buffer for incomplete lines
       let lastActivityTime = Date.now();
-      let hasReceivedData = false; // Track if we've received any data
-      let stallWarningShown = false; // Track if we've shown the stall warning
       
-      // Monitor for stalled streams with improved detection
+      // Monitor for stalled streams
       const stallCheckInterval = setInterval(() => {
-        const timeSinceLastActivity = Date.now() - lastActivityTime;
-        
-        // Show warning after 10 seconds, abort after 15 seconds
-        if (timeSinceLastActivity > 10000 && !stallWarningShown && hasReceivedData) {
-          stallWarningShown = true;
-          toast({
-            title: "Slow Connection",
-            description: "Response is taking longer than usual...",
-            variant: "default",
-          });
-        }
-        
-        if (timeSinceLastActivity > 15000) { // 15 seconds of no activity (reduced from 30)
+        if (Date.now() - lastActivityTime > 30000) { // 30 seconds of no activity
           clearInterval(stallCheckInterval);
           if (!abortController.signal.aborted) {
             abortController.abort();
-            
-            // Save partial content if available
-            if (accumulatedContent) {
-              const partialMessage: ChatMessageType = {
-                id: (Date.now() + 1).toString(),
-                userId: user?.id || "",
-                role: "assistant",
-                content: accumulatedContent + "\n\n[Stream interrupted - partial response saved]",
-                timestamp: new Date(),
-                metadata: null,
-              };
-              setMessages((prev) => [...prev, partialMessage]);
-              setStreamingContent("");
-              
-              toast({
-                title: "Connection Timeout",
-                description: "Response saved. You can continue the conversation.",
-                variant: "default",
-              });
-            } else {
-              toast({
-                title: "Connection Timeout",
-                description: "Stream stopped responding. Please try again.",
-                variant: "destructive",
-              });
-            }
+            toast({
+              title: "Connection Stalled",
+              description: "The stream has stopped responding. Please try again.",
+              variant: "destructive",
+            });
           }
         }
-      }, 2000); // Check more frequently (every 2 seconds instead of 5)
+      }, 5000);
 
       try {
         while (true) {
@@ -262,12 +209,12 @@ export default function Chat() {
             clearInterval(stallCheckInterval);
             
             // If we have accumulated content, save it before erroring
-            if (accumulatedContent && !abortController.signal.aborted) {
+            if (accumulated && !abortController.signal.aborted) {
               const aiMessage: ChatMessageType = {
                 id: (Date.now() + 1).toString(),
                 userId: user?.id || "",
                 role: "assistant",
-                content: accumulatedContent,
+                content: accumulated,
                 timestamp: new Date(),
                 metadata: null,
               };
@@ -292,7 +239,7 @@ export default function Chat() {
                 try {
                   const parsed = JSON.parse(data);
                   if (parsed.content) {
-                    accumulatedContent += parsed.content;
+                    accumulated += parsed.content;
                   }
                 } catch (e) {
                   console.warn("Failed to parse final buffer data:", data);
@@ -301,12 +248,12 @@ export default function Chat() {
             }
             
             // Handle case where stream ended without [DONE] marker
-            if (accumulatedContent && !abortController.signal.aborted) {
+            if (accumulated && !abortController.signal.aborted) {
               const aiMessage: ChatMessageType = {
                 id: (Date.now() + 1).toString(),
                 userId: user?.id || "",
                 role: "assistant",
-                content: accumulatedContent,
+                content: accumulated,
                 timestamp: new Date(),
                 metadata: null,
               };
@@ -326,7 +273,6 @@ export default function Chat() {
           }
 
           lastActivityTime = Date.now();
-          hasReceivedData = true;
           
           let chunk;
           try {
@@ -356,7 +302,7 @@ export default function Chat() {
                   id: (Date.now() + 1).toString(),
                   userId: user?.id || "",
                   role: "assistant",
-                  content: accumulatedContent || "I apologize, but I couldn't generate a response. Please try again.",
+                  content: accumulated || "I apologize, but I couldn't generate a response. Please try again.",
                   timestamp: new Date(),
                   metadata: null,
                 };
@@ -374,8 +320,8 @@ export default function Chat() {
                 try {
                   const parsed = JSON.parse(data);
                   if (parsed.content !== undefined && parsed.content !== null) {
-                    accumulatedContent += parsed.content;
-                    setStreamingContent(accumulatedContent);
+                    accumulated += parsed.content;
+                    setStreamingContent(accumulated);
                   } else if (parsed.error) {
                     // Handle error messages in stream
                     console.error("Stream error:", parsed.error);

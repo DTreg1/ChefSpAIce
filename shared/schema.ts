@@ -101,11 +101,6 @@ export const insertStorageLocationSchema = createInsertSchema(storageLocations).
 export type InsertStorageLocation = z.infer<typeof insertStorageLocationSchema>;
 export type StorageLocation = typeof storageLocations.$inferSelect;
 
-// Extended type that includes the dynamically calculated itemCount
-export interface StorageLocationWithCount extends StorageLocation {
-  itemCount: number;
-}
-
 // Appliance Categories - Define the types of appliances
 export const applianceCategories = pgTable("appliance_categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

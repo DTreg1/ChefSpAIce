@@ -1,7 +1,6 @@
 modules = ["nodejs-20", "web", "postgresql-16"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
-packages = ["glib", "nspr", "nss", "dbus", "atk", "at-spi2-atk", "cups", "xorg.libxcb", "at-spi2-core", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "mesa", "cairo", "pango", "alsa-lib", "libdrm", "expat", "gtk3", "libxkbcommon"]
 
 [nix]
 channel = "stable-24_05"
@@ -14,9 +13,6 @@ run = ["npm", "run", "start"]
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 33349
 
 [env]
 PORT = "5000"
