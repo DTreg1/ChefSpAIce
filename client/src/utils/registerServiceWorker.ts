@@ -20,65 +20,44 @@ function showNotification(message: string, isError: boolean = false) {
 // Track registration attempts to prevent infinite loops
 let registrationAttempts = 0;
 const MAX_REGISTRATION_ATTEMPTS = 3;
-let isRegistering = false; // Prevent concurrent registration attempts
-let hasShownError = false; // Prevent duplicate error notifications
 
 // Register service worker for offline functionality with recovery mechanism
 export async function registerServiceWorker(isRetry = false): Promise<ServiceWorkerRegistration | undefined> {
-  // Prevent concurrent registration attempts
-  if (isRegistering) {
-    console.log('Service worker registration already in progress, skipping...');
-    return undefined;
-  }
-  
   if ('serviceWorker' in navigator) {
     // Check if we've exceeded max attempts
     if (registrationAttempts >= MAX_REGISTRATION_ATTEMPTS) {
       console.error('Max service worker registration attempts reached. Stopping.');
-      if (!hasShownError) {
-        hasShownError = true;
-        showNotification('Offline features could not be enabled after multiple attempts', true);
-      }
+      showNotification('Offline features could not be enabled after multiple attempts', true);
       return undefined;
     }
-    
-    isRegistering = true;
     
     // Increment attempt counter only for actual registration attempts
     if (!isRetry) {
       registrationAttempts = 0; // Reset on fresh call
-      hasShownError = false; // Reset error flag on fresh attempt
     }
     registrationAttempts++;
     
-    // Add exponential backoff for retries
-    if (isRetry && registrationAttempts > 1) {
-      const backoffDelay = Math.min(1000 * Math.pow(2, registrationAttempts - 1), 10000);
-      console.log(`Waiting ${backoffDelay}ms before retry attempt ${registrationAttempts}...`);
-      await new Promise(resolve => setTimeout(resolve, backoffDelay));
+    // First, check for existing failed registrations and clean them up
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    let hasFailedRegistration = false;
+    
+    for (const registration of registrations) {
+      // Check if the service worker is in a bad state
+      if (registration.installing === null && 
+          registration.waiting === null && 
+          registration.active === null) {
+        hasFailedRegistration = true;
+        await registration.unregister();
+        console.log('Cleaned up failed service worker registration');
+      }
+    }
+    
+    // If we cleaned up failed registrations, wait a bit before re-registering
+    if (hasFailedRegistration) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
     try {
-      // First, check for existing failed registrations and clean them up
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      let hasFailedRegistration = false;
-      
-      for (const registration of registrations) {
-        // Check if the service worker is in a bad state
-        if (registration.installing === null && 
-            registration.waiting === null && 
-            registration.active === null) {
-          hasFailedRegistration = true;
-          await registration.unregister();
-          console.log('Cleaned up failed service worker registration');
-        }
-      }
-      
-      // If we cleaned up failed registrations, wait a bit before re-registering
-      if (hasFailedRegistration) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
       });
@@ -139,7 +118,6 @@ export async function registerServiceWorker(isRetry = false): Promise<ServiceWor
         window.location.reload();
       });
 
-      isRegistering = false; // Reset flag on success
       return registration;
     } catch (error: any) {
       console.error('Service Worker registration failed:', error);
@@ -158,13 +136,8 @@ export async function registerServiceWorker(isRetry = false): Promise<ServiceWor
       }
       
       // Show notification to user
-      if (!hasShownError) {
-        hasShownError = true;
-        showNotification(errorMessage, true);
-      }
+      showNotification(errorMessage, true);
       return undefined;
-    } finally {
-      isRegistering = false; // Always reset flag
     }
   } else {
     console.warn('Service Workers are not supported in this browser');

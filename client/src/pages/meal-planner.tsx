@@ -5,22 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
   Calendar1,
   ChevronLeft,
   ChevronRight,
@@ -28,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { MealPlan, Recipe, InsertMealPlan } from "@shared/schema";
+import type { MealPlan, Recipe } from "@shared/schema";
 
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
@@ -66,15 +50,6 @@ export default function MealPlanner() {
     weekStart.setHours(0, 0, 0, 0);
     return weekStart;
   });
-  
-  // Modal state for adding meals
-  const [isAddMealOpen, setIsAddMealOpen] = useState(false);
-  const [selectedMealSlot, setSelectedMealSlot] = useState<{
-    date: string;
-    mealType: MealType;
-  } | null>(null);
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string>("");
-  const [servings, setServings] = useState<number>(1);
 
   // Calculate week dates
   const weekDates = useMemo(() => {
@@ -129,49 +104,6 @@ export default function MealPlanner() {
       });
     },
   });
-  
-  // Create meal plan mutation
-  const createMealPlanMutation = useMutation({
-    mutationFn: async (mealPlan: Omit<InsertMealPlan, "userId">) => {
-      return await apiRequest("POST", "/api/meal-plans", mealPlan);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/meal-plans"] });
-      setIsAddMealOpen(false);
-      setSelectedRecipeId("");
-      setServings(1);
-      toast({
-        title: "Meal added",
-        description: "Meal has been added to your plan",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to add meal. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Handler for opening the add meal modal
-  const openAddMealModal = (date: Date, mealType: MealType) => {
-    const dateStr = date.toLocaleDateString("en-CA");
-    setSelectedMealSlot({ date: dateStr, mealType });
-    setIsAddMealOpen(true);
-  };
-  
-  // Handler for adding a meal
-  const handleAddMeal = () => {
-    if (!selectedMealSlot || !selectedRecipeId) return;
-    
-    createMealPlanMutation.mutate({
-      date: selectedMealSlot.date,
-      mealType: selectedMealSlot.mealType,
-      recipeId: selectedRecipeId,
-      servings,
-    });
-  };
 
   // Navigation
   const goToPreviousWeek = () => {
@@ -436,7 +368,13 @@ export default function MealPlanner() {
                         ) : (
                           <button
                             className="w-full p-6 flex items-center justify-center hover-elevate rounded-md border-2 border-dashed border-border/50 hover:border-primary/50 transition-colors"
-                            onClick={() => openAddMealModal(currentDate, mealType)}
+                            onClick={() => {
+                              toast({
+                                title: "Recipe scheduling",
+                                description:
+                                  "Schedule recipes from the cookbook page. This feature will be enhanced soon!",
+                              });
+                            }}
                             data-testid={`button-add-meal-${mealType}`}
                           >
                             <span className="text-sm text-muted-foreground">
@@ -542,7 +480,13 @@ export default function MealPlanner() {
                                 ) : (
                                   <button
                                     className="h-full w-full flex items-center justify-center hover-elevate rounded-md border-2 border-dashed border-border/50 hover:border-primary/50 transition-colors"
-                                    onClick={() => openAddMealModal(date, mealType)}
+                                    onClick={() => {
+                                      toast({
+                                        title: "Recipe scheduling",
+                                        description:
+                                          "Schedule recipes from the cookbook page. This feature will be enhanced soon!",
+                                      });
+                                    }}
                                     data-testid={`button-add-meal-${mealType}-${i}`}
                                   >
                                     <span className="text-xs text-muted-foreground">
@@ -584,81 +528,6 @@ export default function MealPlanner() {
           </div>
         </div>
       </div>
-      
-      {/* Add Meal Modal */}
-      <Dialog open={isAddMealOpen} onOpenChange={setIsAddMealOpen}>
-        <DialogContent className="max-w-md" data-testid="modal-add-meal">
-          <DialogHeader>
-            <DialogTitle>Add Meal</DialogTitle>
-            <DialogDescription>
-              Choose a recipe from your cookbook to schedule for{" "}
-              {selectedMealSlot && (
-                <>
-                  {MEAL_TYPE_LABELS[selectedMealSlot.mealType]} on{" "}
-                  {new Date(selectedMealSlot.date + "T12:00:00").toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="recipe">Recipe</Label>
-              <Select
-                value={selectedRecipeId}
-                onValueChange={setSelectedRecipeId}
-              >
-                <SelectTrigger id="recipe" data-testid="select-recipe">
-                  <SelectValue placeholder="Select a recipe" />
-                </SelectTrigger>
-                <SelectContent>
-                  {recipes.length === 0 ? (
-                    <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                      No recipes available. Create recipes in the cookbook first.
-                    </div>
-                  ) : (
-                    recipes.map((recipe) => (
-                      <SelectItem key={recipe.id} value={recipe.id}>
-                        {recipe.title}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="servings">Servings</Label>
-              <Input
-                id="servings"
-                type="number"
-                min="1"
-                value={servings}
-                onChange={(e) => setServings(Math.max(1, parseInt(e.target.value) || 1))}
-                data-testid="input-servings"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsAddMealOpen(false)}
-              data-testid="button-cancel"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddMeal}
-              disabled={!selectedRecipeId || createMealPlanMutation.isPending}
-              data-testid="button-confirm-add"
-            >
-              {createMealPlanMutation.isPending ? "Adding..." : "Add Meal"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

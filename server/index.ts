@@ -2,15 +2,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { errorHandler } from "./middleware/errorHandler";
-import { validateEnvironmentVariables } from "./utils/validateEnv";
-
-// Validate environment variables before starting the server
-try {
-  validateEnvironmentVariables();
-} catch (error) {
-  console.error('❌ Server startup failed:', error);
-  process.exit(1);
-}
 
 const app = express();
 // Add payload size limits for security - prevents denial-of-service attacks

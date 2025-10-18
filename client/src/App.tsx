@@ -1,10 +1,10 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added authentication routing
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { ChefHat, Loader2 } from "lucide-react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ChefHat } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -18,93 +18,67 @@ import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
-import { useInitialData } from "@/hooks/useInitialData";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
-
-// Eagerly loaded core pages
 import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
 import Chat from "@/pages/chat";
-
-// Lazy load all secondary pages to improve initial load performance
-const Storage = lazy(() => import("@/pages/storage"));
-const Cookbook = lazy(() => import("@/pages/cookbook"));
-const Nutrition = lazy(() => import("@/pages/nutrition"));
-const MealPlanner = lazy(() => import("@/pages/meal-planner"));
-const ShoppingList = lazy(() => import("@/pages/shopping-list"));
-const Appliances = lazy(() => import("@/pages/appliances"));
-const Settings = lazy(() => import("@/pages/settings"));
-const FdcSearch = lazy(() => import("@/pages/FdcSearch"));
-const FoodGroups = lazy(() => import("@/pages/food-groups"));
-const FeedbackAnalytics = lazy(() => import("@/pages/feedback-analytics"));
-const FeedbackBoard = lazy(() => import("@/pages/feedback-board"));
-const Donate = lazy(() => import("@/pages/donate"));
-const DonateSuccess = lazy(() => import("@/pages/donate-success"));
-const About = lazy(() => import("@/pages/about"));
-const Privacy = lazy(() => import("@/pages/privacy"));
-const Terms = lazy(() => import("@/pages/terms"));
-const CameraTest = lazy(() => import("@/pages/camera-test"));
-const NotFound = lazy(() => import("@/pages/not-found"));
-
-// Loading fallback component for lazy loaded routes
-function PageLoader() {
-  return (
-    <div className="flex items-center justify-center h-full min-h-[400px]">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    </div>
-  );
-}
+import Storage from "@/pages/storage";
+import Cookbook from "@/pages/cookbook";
+import Nutrition from "@/pages/nutrition";
+import MealPlanner from "@/pages/meal-planner";
+import ShoppingList from "@/pages/shopping-list";
+import Appliances from "@/pages/appliances";
+import Settings from "@/pages/settings";
+import FdcSearch from "@/pages/FdcSearch";
+import FoodGroups from "@/pages/food-groups";
+import FeedbackAnalytics from "@/pages/feedback-analytics";
+import FeedbackBoard from "@/pages/feedback-board";
+import Donate from "@/pages/donate";
+import DonateSuccess from "@/pages/donate-success";
+import About from "@/pages/about";
+import Privacy from "@/pages/privacy";
+import Terms from "@/pages/terms";
+import CameraTest from "@/pages/camera-test";
+import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Switch>
-        <Route path="/" component={Chat} />
-        <Route path="/chat" component={Chat} />
-        <Route path="/cookbook" component={Cookbook} />
-        <Route path="/nutrition" component={Nutrition} />
-        <Route path="/meal-planner" component={MealPlanner} />
-        <Route path="/shopping-list" component={ShoppingList} />
-        <Route path="/appliances" component={Appliances} />
-        <Route path="/storage/:location" component={Storage} />
-        <Route path="/food-groups" component={FoodGroups} />
-        <Route path="/fdc-search" component={FdcSearch} />
-        <Route path="/feedback-analytics" component={FeedbackAnalytics} />
-        <Route path="/feedback" component={FeedbackBoard} />
-        <Route path="/donate" component={Donate} />
-        <Route path="/donate/success" component={DonateSuccess} />
-        <Route path="/settings" component={Settings} />
-        <Route path="/about" component={About} />
-        <Route path="/privacy" component={Privacy} />
-        <Route path="/terms" component={Terms} />
-        <Route path="/camera-test" component={CameraTest} />
-        <Route component={NotFound} />
-      </Switch>
-    </Suspense>
+    <Switch>
+      <Route path="/" component={Chat} />
+      <Route path="/chat" component={Chat} />
+      <Route path="/cookbook" component={Cookbook} />
+      <Route path="/nutrition" component={Nutrition} />
+      <Route path="/meal-planner" component={MealPlanner} />
+      <Route path="/shopping-list" component={ShoppingList} />
+      <Route path="/appliances" component={Appliances} />
+      <Route path="/storage" component={Storage} />
+      <Route path="/food-groups" component={FoodGroups} />
+      <Route path="/fdc-search" component={FdcSearch} />
+      <Route path="/feedback-analytics" component={FeedbackAnalytics} />
+      <Route path="/feedback" component={FeedbackBoard} />
+      <Route path="/donate" component={Donate} />
+      <Route path="/donate/success" component={DonateSuccess} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/about" component={About} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/camera-test" component={CameraTest} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
 function Router() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { data: initialData, isLoading: initLoading } = useInitialData(isAuthenticated);
+  const { isAuthenticated, isLoading } = useAuth();
 
   // Show landing page for non-authenticated users
-  if (authLoading || !isAuthenticated) {
+  if (isLoading || !isAuthenticated) {
     return (
       <Switch>
         <Route path="/" component={Landing} />
         <Route component={Landing} />
       </Switch>
     );
-  }
-
-  // Wait for initial data to be loaded
-  if (initLoading) {
-    return <PageLoader />;
   }
 
   // Show authenticated app with sidebar
@@ -119,12 +93,13 @@ function AppContent() {
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
 
-  // Use batch initialization for better performance
-  // This will fetch all initial data in one request and populate individual query caches
-  const { data: initialData, isLoading: initialDataLoading } = useInitialData(isAuthenticated);
-
-  const preferences = initialData?.preferences;
-  const prefLoading = initialDataLoading;
+  const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
+    hasCompletedOnboarding?: boolean;
+  }>({
+    queryKey: ["/api/user/preferences"],
+    cacheKey: "cache:user:preferences",
+    enabled: isAuthenticated,
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -159,26 +134,8 @@ function AppContent() {
   // Show app layout with sidebar for authenticated users who completed onboarding
   return (
     <>
-      <AnimatedBackground
-        variant="both"
-        gradientType="soft"
-        particleCount={30}
-      />
-      <CommandPalette
-        onAddFood={() => setAddFoodOpen(true)}
-        onGenerateRecipe={() => setRecipeDialogOpen(true)}
-        onScanBarcode={() => {
-          // Navigate to FDC search page with barcode scanner
-          window.location.href = "/fdc-search?scanBarcode=true";
-        }}
-      />
-      <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
-      <RecipeCustomizationDialog
-        open={recipeDialogOpen}
-        onOpenChange={setRecipeDialogOpen}
-      />
       {/* Only show floating FeedbackWidget on non-chat pages */}
-      {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
+      {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
           {/* Header is now at the top level, outside the flex container with sidebar */}
@@ -218,11 +175,33 @@ function AppContent() {
               />
             </div>
           </header>
-          
+
+          <AnimatedBackground
+            variant="both"
+            gradientType="soft"
+            particleCount={30}
+          />
+          <CommandPalette
+            onAddFood={() => setAddFoodOpen(true)}
+            onGenerateRecipe={() => setRecipeDialogOpen(true)}
+            onScanBarcode={() => {
+              // Navigate to FDC search page with barcode scanner
+              window.location.href = "/fdc-search?scanBarcode=true";
+            }}
+          />
+          <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
+          <RecipeCustomizationDialog
+            open={recipeDialogOpen}
+            onOpenChange={setRecipeDialogOpen}
+          />
+
           {/* Main content area with sidebar and main content */}
           <div className="flex flex-1 min-h-0 w-full">
             <AppSidebar />
-            <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+            <main
+              ref={mainRef}
+              className="flex-1 overflow-y-auto overflow-x-hidden"
+            >
               <Router />
             </main>
           </div>
@@ -237,9 +216,7 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AuthErrorBoundary>
-            <AppContent />
-          </AuthErrorBoundary>
+          <AppContent />
           <Toaster />
           <OfflineIndicator />
         </TooltipProvider>

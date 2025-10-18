@@ -109,12 +109,6 @@ const RETRY_CONFIG = {
 
 // Determine if an error is retryable
 function isRetryableError(status: number, error?: any): boolean {
-  // Authentication errors are NOT retryable
-  if (status === 401 || status === 403) return false;
-  
-  // Client errors (except rate limit) are NOT retryable
-  if (status >= 400 && status < 500 && status !== 429) return false;
-  
   // Network errors are retryable
   if (status === 0) return true;
   
@@ -245,10 +239,8 @@ async function performRequestWithRetry(
     // Calculate retry delay
     const delay = calculateRetryDelay(retryCount + 1);
     
-    // Log retry attempt (exclude auth errors from logging)
-    if (status !== 401) {
-      console.log(`Retrying request to ${url} after ${delay}ms (attempt ${retryCount + 1}/${RETRY_CONFIG.maxRetries})`);
-    }
+    // Log retry attempt
+    console.log(`Retrying request to ${url} after ${delay}ms (attempt ${retryCount + 1}/${RETRY_CONFIG.maxRetries})`);
     
     // Wait before retrying
     await new Promise(resolve => setTimeout(resolve, delay));

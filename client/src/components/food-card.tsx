@@ -35,16 +35,9 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
 
   const getExpiryStatus = (date?: string | null) => {
     if (!date) return null;
-    
-    // Parse the expiry date and normalize to start of day
     const expiry = new Date(date);
-    expiry.setHours(0, 0, 0, 0);
-    
-    // Get today's date normalized to start of day
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    
-    // Calculate days until expiry (both dates are at midnight)
+    // Use floor to get accurate days - items expiring today should show 0 days
     const daysUntil = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     if (daysUntil < 0) return { color: "bg-red-500", text: "Expired" };
