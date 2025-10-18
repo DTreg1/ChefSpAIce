@@ -37,9 +37,11 @@ export function getSession() {
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    rolling: true,  // Reset expiry on activity
     cookie: {
       httpOnly: true,
       secure: true,  // Always true in Replit environment (behind HTTPS proxy)
+      sameSite: "lax",  // CSRF protection while allowing normal navigation
       maxAge: sessionTtl,
     },
   });
