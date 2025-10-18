@@ -9,6 +9,14 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true;
     
+    // Add a timeout to force loading to false after 3 seconds
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        console.log("[useAuth] Timeout reached, forcing loading to false");
+        setIsLoading(false);
+      }
+    }, 3000);
+    
     const checkAuth = async () => {
       console.log("[useAuth] Checking authentication...");
       try {
@@ -22,6 +30,7 @@ export function useAuth() {
         console.log(`[useAuth] Auth response status: ${response.status}`);
         
         if (mounted) {
+          clearTimeout(timeout); // Clear the timeout on success
           if (response.status === 401) {
             console.log("[useAuth] Not authenticated");
             setUser(null);
@@ -38,6 +47,7 @@ export function useAuth() {
       } catch (error) {
         console.error('[useAuth] Auth check failed:', error);
         if (mounted) {
+          clearTimeout(timeout); // Clear the timeout on error
           setUser(null);
           setIsLoading(false);
         }
@@ -48,6 +58,7 @@ export function useAuth() {
     
     return () => {
       mounted = false;
+      clearTimeout(timeout);
     };
   }, []);
 

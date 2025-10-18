@@ -234,6 +234,25 @@ function AppContent() {
 }
 
 export default function App() {
+  // Force immediate auth check on mount
+  useEffect(() => {
+    console.log("[App] Component mounted, forcing auth check...");
+    fetch('/api/auth/user', { 
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then(res => {
+        console.log(`[App] Direct auth check response: ${res.status}`);
+        return res.text();
+      })
+      .then(text => {
+        console.log("[App] Direct auth response body:", text);
+      })
+      .catch(err => {
+        console.error("[App] Direct auth check error:", err);
+      });
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
