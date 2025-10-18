@@ -51,7 +51,7 @@ function AuthenticatedRouter() {
       <Route path="/meal-planner" component={MealPlanner} />
       <Route path="/shopping-list" component={ShoppingList} />
       <Route path="/appliances" component={Appliances} />
-      <Route path="/storage" component={Storage} />
+      <Route path="/storage/:location" component={Storage} />
       <Route path="/food-groups" component={FoodGroups} />
       <Route path="/fdc-search" component={FdcSearch} />
       <Route path="/feedback-analytics" component={FeedbackAnalytics} />
