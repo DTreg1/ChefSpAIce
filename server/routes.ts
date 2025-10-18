@@ -2048,7 +2048,7 @@ Respond ONLY with a valid JSON object:
 }`;
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         max_completion_tokens: 8192,
@@ -2232,7 +2232,8 @@ Respond ONLY with a valid JSON object:
       
       const validated = insertFeedbackSchema.parse(req.body);
       
-      let enrichedFeedback = { ...validated };
+      // Prepare the feedback data for insertion
+      let feedbackToInsert = { ...validated };
       
       if (validated.content && validated.content.length > 10) {
         try {
@@ -2245,22 +2246,21 @@ Respond ONLY with a valid JSON object:
             existingFeedback
           );
           
-          enrichedFeedback = {
-            ...enrichedFeedback,
-            isFlagged: moderation.isFlagged,
-            flagReason: moderation.flagReason,
-            category: moderation.category || enrichedFeedback.category,
-            priority: (moderation.priority as 'low' | 'medium' | 'high' | 'critical') || enrichedFeedback.priority || 'medium',
-            sentiment: (moderation.sentiment as 'positive' | 'negative' | 'neutral' | undefined) || enrichedFeedback.sentiment,
-            tags: moderation.tags || enrichedFeedback.tags,
-            similarTo: moderation.similarTo,
+          // Update the feedback data with moderation results (only user-allowed fields)
+          feedbackToInsert = {
+            ...validated,
+            category: moderation.category || validated.category,
+            priority: (moderation.priority as 'low' | 'medium' | 'high' | 'critical') || validated.priority || 'medium',
+            sentiment: (moderation.sentiment as 'positive' | 'negative' | 'neutral' | undefined) || validated.sentiment,
+            tags: moderation.tags || validated.tags,
           };
         } catch (aiError) {
           console.error("Failed to moderate feedback:", aiError);
         }
       }
       
-      const feedback = await storage.createFeedback(userId, enrichedFeedback);
+      // Create feedback with the allowed fields
+      const feedback = await storage.createFeedback(userId, feedbackToInsert);
       res.json(feedback);
     } catch (error) {
       console.error("Error creating feedback:", error);
