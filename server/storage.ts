@@ -397,14 +397,24 @@ export class DatabaseStorage implements IStorage {
 
   async upsertPushToken(userId: string, tokenData: Omit<InsertPushToken, 'userId'>): Promise<PushToken> {
     try {
+      // Ensure deviceInfo has properly typed properties
+      const sanitizedTokenData = {
+        ...tokenData,
+        deviceInfo: tokenData.deviceInfo ? {
+          deviceId: tokenData.deviceInfo.deviceId as string | undefined,
+          model: tokenData.deviceInfo.model as string | undefined,
+          osVersion: tokenData.deviceInfo.osVersion as string | undefined,
+        } : null
+      };
+      
       const [token] = await db
         .insert(pushTokens)
-        .values({ ...tokenData, userId })
+        .values({ ...sanitizedTokenData, userId })
         .onConflictDoUpdate({
           target: pushTokens.token,
           set: {
-            platform: tokenData.platform,
-            deviceInfo: tokenData.deviceInfo,
+            platform: sanitizedTokenData.platform,
+            deviceInfo: sanitizedTokenData.deviceInfo,
             updatedAt: new Date(),
           },
         })
@@ -637,9 +647,29 @@ export class DatabaseStorage implements IStorage {
 
   async createBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct> {
     try {
+      // Ensure dimensions and stores have properly typed properties
+      const sanitizedProduct = {
+        ...product,
+        dimensions: product.dimensions ? {
+          length: product.dimensions.length as string | undefined,
+          width: product.dimensions.width as string | undefined,
+          height: product.dimensions.height as string | undefined,
+        } : product.dimensions,
+        stores: product.stores ? product.stores.map((store: any) => ({
+          name: store.name as string,
+          country: store.country as string,
+          currency: store.currency as string,
+          price: store.price as string,
+          salePrice: store.salePrice as string | undefined,
+          link: store.link as string | undefined,
+          availability: store.availability as string | undefined,
+          lastUpdate: store.lastUpdate as string,
+        })) : product.stores,
+      };
+      
       const [newProduct] = await db
         .insert(barcodeProducts)
-        .values(product)
+        .values(sanitizedProduct)
         .returning();
       return newProduct;
     } catch (error) {
@@ -650,8 +680,28 @@ export class DatabaseStorage implements IStorage {
 
   async updateBarcodeProduct(barcodeNumber: string, product: Partial<InsertBarcodeProduct>): Promise<BarcodeProduct> {
     try {
-      const updateData = {
+      // Ensure dimensions and stores have properly typed properties if they exist
+      const sanitizedProduct = {
         ...product,
+        dimensions: product.dimensions ? {
+          length: product.dimensions.length as string | undefined,
+          width: product.dimensions.width as string | undefined,
+          height: product.dimensions.height as string | undefined,
+        } : product.dimensions,
+        stores: product.stores ? product.stores.map((store: any) => ({
+          name: store.name as string,
+          country: store.country as string,
+          currency: store.currency as string,
+          price: store.price as string,
+          salePrice: store.salePrice as string | undefined,
+          link: store.link as string | undefined,
+          availability: store.availability as string | undefined,
+          lastUpdate: store.lastUpdate as string,
+        })) : product.stores,
+      };
+      
+      const updateData = {
+        ...sanitizedProduct,
         lastUpdate: new Date()
       };
       const [updatedProduct] = await db
