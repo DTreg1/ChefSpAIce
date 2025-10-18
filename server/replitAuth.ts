@@ -31,18 +31,15 @@ export function getSession() {
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
-    pruneSessionInterval: 60 * 60, // Prune expired sessions every hour
   });
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
-    rolling: true, // Reset session expiry on activity
     cookie: {
       httpOnly: true,
-      secure: true,
-      sameSite: 'lax', // Better CSRF protection
+      secure: true,  // Always true in Replit environment (behind HTTPS proxy)
       maxAge: sessionTtl,
     },
   });

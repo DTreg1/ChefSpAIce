@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 type ExpirationNotification = {
   id: string;
@@ -24,6 +25,7 @@ type WasteReductionSuggestion = {
 
 export function ExpirationAlert() {
   const { toast } = useToast();
+  const { isLoading, isAuthenticated } = useAuth();
 
   // Check for expiring items on mount
   const checkMutation = useMutation({
@@ -36,11 +38,14 @@ export function ExpirationAlert() {
     onError: (error: any) => {
       console.error("Failed to check for expiring items:", error);
       localStorage.removeItem("lastExpirationCheck");
-      toast({
-        title: "Error checking expiration dates",
-        description: "Unable to check for expiring items. Please try again later.",
-        variant: "destructive"
-      });
+      // Only show error toast if it's not an auth error during initial load
+      if (error.status !== 401) {
+        toast({
+          title: "Error checking expiration dates",
+          description: "Unable to check for expiring items. Please try again later.",
+          variant: "destructive"
+        });
+      }
     },
   });
 
@@ -75,10 +80,12 @@ export function ExpirationAlert() {
 
   const { data: notifications } = useQuery<ExpirationNotification[]>({
     queryKey: ["/api/notifications/expiration"],
+    enabled: !isLoading && isAuthenticated,
   });
 
   const { data: suggestions } = useQuery<WasteReductionSuggestion>({
     queryKey: ["/api/suggestions/waste-reduction"],
+    enabled: !isLoading && isAuthenticated,
   });
 
   const dismissMutation = useMutation({
@@ -102,6 +109,9 @@ export function ExpirationAlert() {
   });
 
   useEffect(() => {
+    // Only check when auth is ready and user is authenticated
+    if (isLoading || !isAuthenticated) return;
+    
     const today = new Date().toISOString().split('T')[0];
     const lastCheck = localStorage.getItem("lastExpirationCheck");
     
@@ -109,7 +119,7 @@ export function ExpirationAlert() {
       localStorage.setItem("lastExpirationCheck", today);
       checkMutation.mutate();
     }
-  }, []);
+  }, [isLoading, isAuthenticated]);
 
   const hasNotifications = notifications && notifications.length > 0;
   const hasSuggestions = suggestions && suggestions.suggestions.length > 0;
