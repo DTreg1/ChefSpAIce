@@ -1,6 +1,31 @@
 import { useState } from "react";
-import { Home, Refrigerator, Snowflake, Pizza, UtensilsCrossed, ChefHat, Plus, MessageSquare, BookOpen, Apple, CalendarDays, ShoppingCart } from "lucide-react";
+import {
+  Home,
+  Refrigerator,
+  Snowflake,
+  Pizza,
+  UtensilsCrossed,
+  ChefHat,
+  MessageSquare,
+  BookOpen,
+  Apple,
+  CalendarDays,
+  ShoppingCart,
+  Settings,
+  Database,
+  LayoutGrid,
+  ChevronRight,
+  BarChart3,
+  Heart,
+  Info,
+  Shield,
+  ScrollText,
+  LogOut,
+  BrainCircuit,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
+import { CacheStorage } from "@/lib/cacheStorage";
 import {
   Sidebar,
   SidebarContent,
@@ -10,12 +35,23 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
-import { AddFoodDialog } from "./add-food-dialog";
+import { cn } from "@/lib/utils";
+import { getCategoryIcon } from "@/lib/categoryIcons";
+import { Logo } from "@/components/Logo";
 import type { StorageLocation, FoodItem } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
@@ -25,13 +61,51 @@ const iconMap: Record<string, any> = {
   "utensils-crossed": UtensilsCrossed,
 };
 
+// Shorten long USDA category names for sidebar display
+function shortenCategoryName(category: string): string {
+  const mappings: Record<string, string> = {
+    "Cereal Grains and Pasta": "Grains & Pasta",
+    "Dairy and Egg Products": "Dairy & Eggs",
+    "Fats and Oils": "Fats & Oils",
+    "Fruits and Fruit Juices": "Fruits & Juices",
+    "Vegetables and Vegetable Products": "Vegetables",
+    "Sausages and Luncheon Meats": "Deli Meats",
+    "Spices and Herbs": "Spices & Herbs",
+    "Beef Products": "Beef",
+    "Pork Products": "Pork",
+    "Poultry Products": "Poultry",
+    "Finfish and Shellfish Products": "Seafood",
+    "Legumes and Legume Products": "Legumes",
+    "Nut and Seed Products": "Nuts & Seeds",
+    Sweets: "Sweets",
+    "Baby Foods": "Baby Foods",
+    "Baked Products": "Baked Goods",
+    Beverages: "Beverages",
+    "Breakfast Cereals": "Cereals",
+    "Fast Foods": "Fast Food",
+    "Meals, Entrees, and Side Dishes": "Meals & Sides",
+    Snacks: "Snacks",
+    "Soups, Sauces, and Gravies": "Soups & Sauces",
+    "American Indian/Alaska Native Foods": "Native Foods",
+    "Restaurant Foods": "Restaurant",
+  };
+
+  return mappings[category] || category;
+}
+
 export function AppSidebar() {
   const [location] = useLocation();
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [foodGroupsOpen, setFoodGroupsOpen] = useState(false);
+  const { isMobile, setOpenMobile } = useSidebar();
 
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
+  const { data: storageLocations } = useStorageLocations();
 
   const { data: foodItems } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],
@@ -41,40 +115,39 @@ export function AppSidebar() {
 
   const chatItem = {
     id: "chat",
-    name: "AI Chef Chat",
+    name: "Chef Chat",
     icon: MessageSquare,
     path: "/",
   };
 
-  const storageItems = [
-    { 
-      id: "all", 
-      name: "All Items", 
-      icon: Home, 
-      count: totalItems, 
-      path: "/storage/all" 
+  // Group food items by category for the sidebar
+  const groupedItems = (foodItems || []).reduce(
+    (acc, item) => {
+      const category = item.foodCategory || "Uncategorized";
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
     },
-    ...(storageLocations?.map((loc) => ({
-      id: loc.id,
-      name: loc.name,
-      icon: iconMap[loc.icon] || UtensilsCrossed,
-      count: loc.itemCount,
-      path: `/storage/${loc.name.toLowerCase()}`,
-    })) || []),
-  ];
+    {} as Record<string, FoodItem[]>,
+  );
+
+  const foodCategories = Object.keys(groupedItems).sort();
 
   return (
     <>
-      <Sidebar>
-        <SidebarHeader className="p-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <ChefHat className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-sidebar-foreground font-sans">AI Chef</h1>
-              <p className="text-xs text-muted-foreground">Your Kitchen Assistant</p>
-            </div>
+      <Sidebar className="shadow-2xl">
+        <SidebarHeader className="p-6 border-b border-sidebar-border/50 glass-vibrant">
+          <div>
+            <Logo 
+              size="lg" 
+              showText 
+              iconClassName="transition-morph hover:scale-110"
+            />
+            <p className="text-xs text-muted-foreground ml-[52px]">
+              Your Kitchen Assistant
+            </p>
           </div>
         </SidebarHeader>
 
@@ -83,9 +156,17 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === chatItem.path}>
-                    <Link href={chatItem.path} data-testid="link-chat">
-                      <chatItem.icon className="w-4 h-4" />
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === chatItem.path}
+                    className="transition-morph hover:pl-1"
+                  >
+                    <Link
+                      href={chatItem.path}
+                      data-testid="link-chat"
+                      onClick={handleLinkClick}
+                    >
+                      <chatItem.icon className="w-4 h-4 transition-morph" />
                       <span className="flex-1">{chatItem.name}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -101,16 +182,30 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === "/meal-planner"}>
-                    <Link href="/meal-planner" data-testid="link-meal-planner">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/meal-planner"}
+                  >
+                    <Link
+                      href="/meal-planner"
+                      data-testid="link-meal-planner"
+                      onClick={handleLinkClick}
+                    >
                       <CalendarDays className="w-4 h-4" />
                       <span className="flex-1">Meal Planner</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === "/shopping-list"}>
-                    <Link href="/shopping-list" data-testid="link-shopping-list">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/shopping-list"}
+                  >
+                    <Link
+                      href="/shopping-list"
+                      data-testid="link-shopping-list"
+                      onClick={handleLinkClick}
+                    >
                       <ShoppingCart className="w-4 h-4" />
                       <span className="flex-1">Shopping List</span>
                     </Link>
@@ -127,18 +222,47 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === "/cookbook"}>
-                    <Link href="/cookbook" data-testid="link-cookbook">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/cookbook"}
+                  >
+                    <Link
+                      href="/cookbook"
+                      data-testid="link-cookbook"
+                      onClick={handleLinkClick}
+                    >
                       <BookOpen className="w-4 h-4" />
                       <span className="flex-1">My Cookbook</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === "/nutrition"}>
-                    <Link href="/nutrition" data-testid="link-nutrition">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/nutrition"}
+                  >
+                    <Link
+                      href="/nutrition"
+                      data-testid="link-nutrition"
+                      onClick={handleLinkClick}
+                    >
                       <Apple className="w-4 h-4" />
                       <span className="flex-1">Nutrition</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/fdc-search"}
+                  >
+                    <Link
+                      href="/fdc-search"
+                      data-testid="link-fdc-search"
+                      onClick={handleLinkClick}
+                    >
+                      <Database className="w-4 h-4" />
+                      <span className="flex-1">Food Search</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -153,49 +277,294 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location === "/appliances"}>
-                    <Link href="/appliances" data-testid="link-appliances">
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/appliances"}
+                  >
+                    <Link
+                      href="/appliances"
+                      data-testid="link-appliances"
+                      onClick={handleLinkClick}
+                    >
                       <UtensilsCrossed className="w-4 h-4" />
                       <span className="flex-1">My Appliances</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {storageItems.map((item) => (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton asChild isActive={location === item.path}>
-                      <Link href={item.path} data-testid={`link-storage-${item.id}`}>
-                        <item.icon className="w-4 h-4" />
-                        <span className="flex-1">{item.name}</span>
-                        <Badge 
-                          variant="secondary" 
+                <Collapsible
+                  open={foodGroupsOpen}
+                  onOpenChange={setFoodGroupsOpen}
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton data-testid="button-toggle-food-groups">
+                        <ChevronRight
+                          className={cn(
+                            "w-4 h-4 transition-transform",
+                            foodGroupsOpen && "rotate-90",
+                          )}
+                        />
+                        <span className="flex-1">Food Groups</span>
+                        <Badge
+                          variant="secondary"
                           className="ml-auto text-xs rounded-full h-5 px-2"
-                          data-testid={`badge-count-${item.id}`}
+                          data-testid="badge-count-categories"
                         >
-                          {item.count}
+                          {foodCategories.length}
                         </Badge>
-                      </Link>
-                    </SidebarMenuButton>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={location === "/food-groups"}
+                          >
+                            <Link
+                              href="/food-groups"
+                              data-testid="link-food-groups-all"
+                              onClick={handleLinkClick}
+                            >
+                              <LayoutGrid className="w-4 h-4" />
+                              <span className="flex-1">
+                                View All Categories
+                              </span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        {foodCategories.map((category) => {
+                          const categoryItems = groupedItems[category];
+                          const categoryPath = `/food-groups?category=${encodeURIComponent(category)}`;
+                          const CategoryIcon = getCategoryIcon(category);
+                          const displayName = shortenCategoryName(category);
+                          return (
+                            <SidebarMenuSubItem key={category}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={location.includes(
+                                  `category=${encodeURIComponent(category)}`,
+                                )}
+                              >
+                                <Link
+                                  href={categoryPath}
+                                  data-testid={`link-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
+                                  onClick={handleLinkClick}
+                                >
+                                  <CategoryIcon className="w-4 h-4" />
+                                  <span className="flex-1">{displayName}</span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="ml-auto text-xs rounded-full h-5 px-2"
+                                    data-testid={`badge-category-count-${category.toLowerCase().replace(/\s+/g, "-")}`}
+                                  >
+                                    {categoryItems.length}
+                                  </Badge>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
                   </SidebarMenuItem>
-                ))}
+                </Collapsible>
+                <Collapsible
+                  open={inventoryOpen}
+                  onOpenChange={setInventoryOpen}
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton data-testid="button-toggle-storage">
+                        <ChevronRight
+                          className={cn(
+                            "w-4 h-4 transition-transform",
+                            inventoryOpen && "rotate-90",
+                          )}
+                        />
+                        <span className="flex-1">All Items</span>
+                        <Badge
+                          variant="secondary"
+                          className="ml-auto text-xs rounded-full h-5 px-2"
+                          data-testid="badge-count-all"
+                        >
+                          {totalItems}
+                        </Badge>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={location === "/storage/all"}
+                          >
+                            <Link
+                              href="/storage/all"
+                              data-testid="link-storage-all"
+                              onClick={handleLinkClick}
+                            >
+                              <Home className="w-4 h-4" />
+                              <span className="flex-1">View All</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        {storageLocations?.map((loc) => {
+                          const IconComponent =
+                            iconMap[loc.icon] || UtensilsCrossed;
+                          const locCount =
+                            foodItems?.filter(
+                              (item) => item.storageLocationId === loc.id,
+                            ).length || 0;
+                          return (
+                            <SidebarMenuSubItem key={loc.id}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={
+                                  location ===
+                                  `/storage/${loc.name.toLowerCase()}`
+                                }
+                              >
+                                <Link
+                                  href={`/storage/${loc.name.toLowerCase()}`}
+                                  data-testid={`link-storage-${loc.id}`}
+                                  onClick={handleLinkClick}
+                                >
+                                  <IconComponent className="w-4 h-4" />
+                                  <span className="flex-1">{loc.name}</span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="ml-auto text-xs rounded-full h-5 px-2"
+                                    data-testid={`badge-count-${loc.id}`}
+                                  >
+                                    {locCount}
+                                  </Badge>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <div className="mt-6">
-            <Button 
-              className="w-full" 
-              size="default"
-              onClick={() => setAddDialogOpen(true)}
-              data-testid="button-add-item"
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              Account
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/feedback"}
+                  >
+                    <Link
+                      href="/feedback"
+                      data-testid="link-feedback"
+                      onClick={handleLinkClick}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      <span className="flex-1">Feedback</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/donate"}>
+                    <Link
+                      href="/donate"
+                      data-testid="link-donate"
+                      onClick={handleLinkClick}
+                    >
+                      <Heart className="w-4 h-4" />
+                      <span className="flex-1">Support Us</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/settings"}
+                  >
+                    <Link
+                      href="/settings"
+                      data-testid="link-settings"
+                      onClick={handleLinkClick}
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span className="flex-1">Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              Legal
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/about"}>
+                    <Link
+                      href="/about"
+                      data-testid="link-about"
+                      onClick={handleLinkClick}
+                    >
+                      <Info className="w-4 h-4" />
+                      <span className="flex-1">About</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/privacy"}>
+                    <Link
+                      href="/privacy"
+                      data-testid="link-privacy"
+                      onClick={handleLinkClick}
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span className="flex-1">Privacy Policy</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/terms"}>
+                    <Link
+                      href="/terms"
+                      data-testid="link-terms"
+                      onClick={handleLinkClick}
+                    >
+                      <ScrollText className="w-4 h-4" />
+                      <span className="flex-1">Terms of Service</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                CacheStorage.clear();
+                window.location.href = "/api/logout";
+              }}
+              data-testid="button-logout"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Food Item
+              <LogOut className="w-4 h-4 mr-2" />
+              Log Out
             </Button>
           </div>
         </SidebarContent>
       </Sidebar>
-
-      <AddFoodDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </>
   );
 }

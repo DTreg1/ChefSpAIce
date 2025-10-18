@@ -1,9 +1,15 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ChefHat } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { ChefHat, AlertTriangle, Package } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Recipe, FoodItem } from "@shared/schema";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RecipeGeneratorProps {
   onRecipeGenerated?: (recipe: Recipe) => void;
@@ -16,16 +22,44 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
     queryKey: ["/api/food-items"],
   });
 
+  // Calculate expiring items count
+  const expiringCount = foodItems?.filter((item) => {
+    if (!item.expirationDate) return false;
+    const daysUntilExpiration = Math.floor(
+      (new Date(item.expirationDate).getTime() - new Date().getTime()) / 
+      (1000 * 60 * 60 * 24)
+    );
+    return daysUntilExpiration <= 3;
+  }).length || 0;
+
   const generateRecipeMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/recipes/generate", {});
+      const response = await apiRequest("POST", "/api/recipes/generate", {});
+      return await response.json();
     },
-    onSuccess: (recipe: Recipe) => {
+    onSuccess: async (recipe: Recipe) => {
+      // First invalidate to get fresh inventory data
+      await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
+      
+      // Fetch the recipe with fresh inventory matching
+      const recipesWithMatching = await queryClient.fetchQuery({
+        queryKey: ["/api/recipes?includeMatching=true"],
+        staleTime: 0,
+      });
+      
+      // Find the newly generated recipe with updated matching
+      const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
+      
       toast({
         title: "Recipe Generated!",
-        description: `Check out: ${recipe.title}`,
+        description: `${recipe.title} - Created using your available ingredients${expiringCount > 0 ? ', prioritizing expiring items' : ''}`,
       });
-      onRecipeGenerated?.(recipe);
+      
+      onRecipeGenerated?.(updatedRecipe || recipe);
+      
+      // Final invalidation to update UI
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
     },
     onError: (error: any) => {
       toast({
@@ -38,15 +72,48 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
 
   const hasItems = (foodItems?.length || 0) > 0;
 
-  return (
-    <Button
-      onClick={() => generateRecipeMutation.mutate()}
-      disabled={!hasItems || generateRecipeMutation.isPending}
-      data-testid="button-generate-recipe"
-      size="default"
-    >
+  const buttonContent = (
+    <>
       <ChefHat className="w-4 h-4 mr-2" />
-      {generateRecipeMutation.isPending ? "Generating..." : "Generate Recipe"}
-    </Button>
+      {generateRecipeMutation.isPending 
+        ? "Analyzing inventory..." 
+        : expiringCount > 0 
+          ? `Generate Recipe (${expiringCount} expiring)`
+          : "Generate Recipe"}
+    </>
+  );
+
+  const tooltipContent = hasItems
+    ? expiringCount > 0
+      ? `Generate a recipe prioritizing ${expiringCount} expiring item${expiringCount === 1 ? '' : 's'}`
+      : `Generate a recipe using your ${foodItems?.length} available ingredient${foodItems?.length === 1 ? '' : 's'}`
+    : "Add ingredients to your inventory first";
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={() => generateRecipeMutation.mutate()}
+            disabled={!hasItems || generateRecipeMutation.isPending}
+            data-testid="button-generate-recipe"
+            size="default"
+            variant={expiringCount > 0 ? "default" : "default"}
+            className={expiringCount > 0 ? "relative" : ""}
+          >
+            {expiringCount > 0 && (
+              <AlertTriangle className="absolute -top-1 -right-1 w-3 h-3 text-destructive animate-pulse" />
+            )}
+            {buttonContent}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="flex items-center gap-2">
+            <Package className="w-3 h-3" />
+            <span>{tooltipContent}</span>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

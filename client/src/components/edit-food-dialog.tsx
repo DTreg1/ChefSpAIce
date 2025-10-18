@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,9 +35,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
   const [expirationDate, setExpirationDate] = useState("");
   const { toast } = useToast();
 
-  const { data: storageLocations } = useQuery<StorageLocation[]>({
-    queryKey: ["/api/storage-locations"],
-  });
+  const { data: storageLocations } = useStorageLocations();
 
   useEffect(() => {
     if (item) {
@@ -71,7 +71,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
   });
 
   const handleSubmit = () => {
-    if (!quantity || !storageLocationId) {
+    if (!quantity || !unit || !storageLocationId || !expirationDate) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -84,7 +84,9 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
       quantity,
       unit,
       storageLocationId,
-      expirationDate: expirationDate || null,
+      expirationDate,
+      // Include nutrition to ensure weightInGrams is recalculated when quantity changes
+      nutrition: item?.nutrition || null,
     });
   };
 
@@ -92,9 +94,12 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-muted">
         <DialogHeader>
           <DialogTitle>Edit {item.name}</DialogTitle>
+          <DialogDescription>
+            Update quantity, storage location, or expiration date
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -110,7 +115,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-unit">Unit</Label>
+              <Label htmlFor="edit-unit">Unit *</Label>
               <Input
                 id="edit-unit"
                 value={unit}
@@ -137,7 +142,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-expiration">Expiration Date</Label>
+            <Label htmlFor="edit-expiration">Expiration Date *</Label>
             <Input
               id="edit-expiration"
               type="date"
