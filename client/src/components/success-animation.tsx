@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,44 +18,47 @@ export function SuccessAnimation({
 }: SuccessAnimationProps) {
   useEffect(() => {
     if (showConfetti) {
-      // Trigger confetti
-      const duration = 3000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+      // Dynamically import confetti only when needed
+      import("canvas-confetti").then(({ default: confetti }) => {
+        // Trigger confetti
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-      const randomInRange = (min: number, max: number) => {
-        return Math.random() * (max - min) + min;
-      };
+        const randomInRange = (min: number, max: number) => {
+          return Math.random() * (max - min) + min;
+        };
 
-      const interval = setInterval(function () {
-        const timeLeft = animationEnd - Date.now();
+        const interval = setInterval(function () {
+          const timeLeft = animationEnd - Date.now();
 
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          onComplete?.();
-          return;
-        }
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            onComplete?.();
+            return;
+          }
 
-        const particleCount = 50 * (timeLeft / duration);
-        
-        // Shoot confetti from left
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-          colors: ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
-        });
-        
-        // Shoot confetti from right
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-          colors: ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
-        });
-      }, 250);
+          const particleCount = 50 * (timeLeft / duration);
+          
+          // Shoot confetti from left
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+            colors: ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
+          });
+          
+          // Shoot confetti from right
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+            colors: ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
+          });
+        }, 250);
 
-      return () => clearInterval(interval);
+        return () => clearInterval(interval);
+      }).catch(console.error);
     } else {
       const timer = setTimeout(() => {
         onComplete?.();
@@ -124,7 +126,7 @@ export function SuccessAnimation({
 }
 
 // Utility function to trigger confetti independently
-export function triggerConfetti(options?: {
+export async function triggerConfetti(options?: {
   duration?: number;
   particleCount?: number;
   colors?: string[];
@@ -134,6 +136,9 @@ export function triggerConfetti(options?: {
     particleCount = 100,
     colors = ["#22c55e", "#fb923c", "#a855f7", "#fbbf24", "#ef4444"],
   } = options || {};
+
+  // Dynamically import confetti
+  const { default: confetti } = await import("canvas-confetti");
 
   const end = Date.now() + duration;
 

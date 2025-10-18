@@ -1,11 +1,8 @@
 // Referenced from blueprint:javascript_object_storage
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import Uppy from "@uppy/core";
-import { DashboardModal } from "@uppy/react";
-import AwsS3 from "@uppy/aws-s3";
-import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
@@ -15,7 +12,7 @@ interface ObjectUploaderProps {
     url: string;
   }>;
   onComplete?: (
-    result: UploadResult<Record<string, unknown>, Record<string, unknown>>
+    result: any // Type resolved at runtime
   ) => void;
   buttonClassName?: string;
   children: ReactNode;
@@ -30,24 +27,49 @@ export function ObjectUploader({
   children,
 }: ObjectUploaderProps) {
   const [showModal, setShowModal] = useState(false);
-  const [uppy] = useState(() =>
-    new Uppy({
-      restrictions: {
-        maxNumberOfFiles,
-        maxFileSize,
-        allowedFileTypes: ['image/*'],
-      },
-      autoProceed: false,
-    })
-      .use(AwsS3, {
-        shouldUseMultipart: false,
-        getUploadParameters: onGetUploadParameters,
-      })
-      .on("complete", (result) => {
-        onComplete?.(result);
-        setShowModal(false);
-      })
-  );
+  const [uppy, setUppy] = useState<any>(null);
+  const [DashboardModal, setDashboardModal] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (showModal && !uppy && !isLoading) {
+      setIsLoading(true);
+      // Dynamically import Uppy libraries only when modal is opened
+      Promise.all([
+        import("@uppy/core"),
+        import("@uppy/react"),
+        import("@uppy/aws-s3")
+      ]).then(([{ default: Uppy }, { DashboardModal: Modal }, { default: AwsS3 }]) => {
+        const uppyInstance = new Uppy({
+          restrictions: {
+            maxNumberOfFiles,
+            maxFileSize,
+            allowedFileTypes: ['image/*'],
+          },
+          autoProceed: false,
+        })
+          .use(AwsS3, {
+            shouldUseMultipart: false,
+            getUploadParameters: onGetUploadParameters,
+          })
+          .on("complete", (result) => {
+            onComplete?.(result);
+            setShowModal(false);
+          });
+        
+        setUppy(uppyInstance);
+        setDashboardModal(() => Modal);
+        setIsLoading(false);
+      });
+    }
+
+    return () => {
+      if (uppy) {
+        uppy.reset();
+        uppy.close();
+      }
+    };
+  }, [showModal]); // Only depend on showModal to avoid recreating uppy
 
   return (
     <div>
@@ -60,12 +82,27 @@ export function ObjectUploader({
         {children}
       </Button>
 
-      <DashboardModal
-        uppy={uppy}
-        open={showModal}
-        onRequestClose={() => setShowModal(false)}
-        proudlyDisplayPoweredByUppy={false}
-      />
+      {showModal && (
+        <>
+          {isLoading ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm text-white">Loading uploader...</p>
+              </div>
+            </div>
+          ) : (
+            DashboardModal && uppy && (
+              <DashboardModal
+                uppy={uppy}
+                open={showModal}
+                onRequestClose={() => setShowModal(false)}
+                proudlyDisplayPoweredByUppy={false}
+              />
+            )
+          )}
+        </>
+      )}
     </div>
   );
 }

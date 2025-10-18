@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Html5Qrcode } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,11 +17,13 @@ interface BarcodeScannerProps {
 export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRef = useRef<any | null>(null); // Type resolved at runtime
   const { toast } = useToast();
 
   const startScanning = async () => {
     try {
+      // Dynamically import Html5Qrcode when needed
+      const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode("barcode-reader");
       scannerRef.current = scanner;
 

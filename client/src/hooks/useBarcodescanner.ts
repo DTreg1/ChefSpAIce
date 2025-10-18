@@ -1,5 +1,4 @@
 import { useRef, useCallback, useEffect } from "react";
-import { Html5Qrcode } from "html5-qrcode";
 
 interface UseBarcodeScannerOptions {
   onScan: (barcode: string) => void;
@@ -7,7 +6,7 @@ interface UseBarcodeScannerOptions {
 }
 
 export function useBarcodeScanner({ onScan, onError }: UseBarcodeScannerOptions) {
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRef = useRef<any | null>(null); // Type resolved at runtime
   const isInitializedRef = useRef(false);
 
   const startScanning = useCallback(async (elementId: string) => {
@@ -16,6 +15,8 @@ export function useBarcodeScanner({ onScan, onError }: UseBarcodeScannerOptions)
     }
 
     try {
+      // Dynamically import Html5Qrcode when needed
+      const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode(elementId);
       scannerRef.current = scanner;
       isInitializedRef.current = true;
