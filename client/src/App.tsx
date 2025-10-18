@@ -1,5 +1,5 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added authentication routing
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { cn } from "@/lib/utils";
@@ -16,55 +16,62 @@ import { RecipeCustomizationDialog } from "@/components/recipe-customization-dia
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
+import { RouteLoading } from "@/components/route-loading";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import ErrorBoundary from "@/components/ErrorBoundary";
+
+// Eagerly loaded pages (critical path)
 import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
-import Chat from "@/pages/chat";
-import Storage from "@/pages/storage";
-import Cookbook from "@/pages/cookbook";
-import Nutrition from "@/pages/nutrition";
-import MealPlanner from "@/pages/meal-planner";
-import ShoppingList from "@/pages/shopping-list";
-import Appliances from "@/pages/appliances";
-import Settings from "@/pages/settings";
-import FdcSearch from "@/pages/FdcSearch";
-import FoodGroups from "@/pages/food-groups";
-import FeedbackAnalytics from "@/pages/feedback-analytics";
-import FeedbackBoard from "@/pages/feedback-board";
-import Donate from "@/pages/donate";
-import DonateSuccess from "@/pages/donate-success";
-import About from "@/pages/about";
-import Privacy from "@/pages/privacy";
-import Terms from "@/pages/terms";
-import CameraTest from "@/pages/camera-test";
-import NotFound from "@/pages/not-found";
+import Chat from "@/pages/chat"; // Keep Chat eager since it's the default route
+
+// Lazy loaded pages (code splitting)
+const Storage = lazy(() => import("@/pages/storage"));
+const Cookbook = lazy(() => import("@/pages/cookbook"));
+const Nutrition = lazy(() => import("@/pages/nutrition"));
+const MealPlanner = lazy(() => import("@/pages/meal-planner"));
+const ShoppingList = lazy(() => import("@/pages/shopping-list"));
+const Appliances = lazy(() => import("@/pages/appliances"));
+const Settings = lazy(() => import("@/pages/settings"));
+const FdcSearch = lazy(() => import("@/pages/FdcSearch"));
+const FoodGroups = lazy(() => import("@/pages/food-groups"));
+const FeedbackAnalytics = lazy(() => import("@/pages/feedback-analytics"));
+const FeedbackBoard = lazy(() => import("@/pages/feedback-board"));
+const Donate = lazy(() => import("@/pages/donate"));
+const DonateSuccess = lazy(() => import("@/pages/donate-success"));
+const About = lazy(() => import("@/pages/about"));
+const Privacy = lazy(() => import("@/pages/privacy"));
+const Terms = lazy(() => import("@/pages/terms"));
+const CameraTest = lazy(() => import("@/pages/camera-test"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
 function AuthenticatedRouter() {
   return (
-    <Switch>
-      <Route path="/" component={Chat} />
-      <Route path="/chat" component={Chat} />
-      <Route path="/cookbook" component={Cookbook} />
-      <Route path="/nutrition" component={Nutrition} />
-      <Route path="/meal-planner" component={MealPlanner} />
-      <Route path="/shopping-list" component={ShoppingList} />
-      <Route path="/appliances" component={Appliances} />
-      <Route path="/storage/:location" component={Storage} />
-      <Route path="/food-groups" component={FoodGroups} />
-      <Route path="/fdc-search" component={FdcSearch} />
-      <Route path="/feedback-analytics" component={FeedbackAnalytics} />
-      <Route path="/feedback" component={FeedbackBoard} />
-      <Route path="/donate" component={Donate} />
-      <Route path="/donate/success" component={DonateSuccess} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/about" component={About} />
-      <Route path="/privacy" component={Privacy} />
-      <Route path="/terms" component={Terms} />
-      <Route path="/camera-test" component={CameraTest} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<RouteLoading />}>
+      <Switch>
+        <Route path="/" component={Chat} />
+        <Route path="/chat" component={Chat} />
+        <Route path="/cookbook" component={Cookbook} />
+        <Route path="/nutrition" component={Nutrition} />
+        <Route path="/meal-planner" component={MealPlanner} />
+        <Route path="/shopping-list" component={ShoppingList} />
+        <Route path="/appliances" component={Appliances} />
+        <Route path="/storage/:location" component={Storage} />
+        <Route path="/food-groups" component={FoodGroups} />
+        <Route path="/fdc-search" component={FdcSearch} />
+        <Route path="/feedback-analytics" component={FeedbackAnalytics} />
+        <Route path="/feedback" component={FeedbackBoard} />
+        <Route path="/donate" component={Donate} />
+        <Route path="/donate/success" component={DonateSuccess} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/about" component={About} />
+        <Route path="/privacy" component={Privacy} />
+        <Route path="/terms" component={Terms} />
+        <Route path="/camera-test" component={CameraTest} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
