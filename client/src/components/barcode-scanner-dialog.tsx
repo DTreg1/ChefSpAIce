@@ -157,7 +157,6 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
         storageLocationId: selectedLocation,
         expirationDate: expirationDate ? new Date(expirationDate) : null,
         category: scannedFood.foodCategory || scannedFood.dataType || null,
-        imageUrl: scannedFood.imageUrl || null,
         barcode: scannedBarcode || null,
         nutrition: scannedFood.nutrition || null,
       };
@@ -323,7 +322,7 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
                   <SelectContent>
                     {storageLocations?.map((location) => (
                       <SelectItem key={location.id} value={location.id}>
-                        {location.name} ({location.itemCount || 0} items)
+                        {location.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
