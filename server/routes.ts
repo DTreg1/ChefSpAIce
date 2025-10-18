@@ -22,6 +22,7 @@ import {
   insertUserPreferencesSchema,
   insertStorageLocationSchema,
   insertFeedbackSchema,
+  insertWebVitalSchema,
   type BarcodeProduct
 } from "@shared/schema";
 
@@ -1588,20 +1589,16 @@ Respond ONLY with a valid JSON object in this exact format:
       const userId = req.user.claims.sub;
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
-      const includeMatching = req.query.includeMatching === 'true';
       
-      // If requesting inventory matching, use enriched method
-      if (includeMatching) {
-        const recipesWithMatching = await storage.getRecipesWithInventoryMatching(userId);
-        res.json(recipesWithMatching);
-      } else if (req.query.page || req.query.limit) {
+      // Always include inventory matching by default for better caching
+      if (req.query.page || req.query.limit) {
         // If pagination params are provided, use paginated method
         const result = await storage.getRecipesPaginated(userId, page, limit);
         res.json(result);
       } else {
-        // Fallback to non-paginated for backward compatibility
-        const recipes = await storage.getRecipes(userId);
-        res.json(recipes);
+        // Default: always include inventory matching data
+        const recipesWithMatching = await storage.getRecipesWithInventoryMatching(userId);
+        res.json(recipesWithMatching);
       }
     } catch (error) {
       console.error("Error fetching recipes:", error);
@@ -2232,8 +2229,7 @@ Respond ONLY with a valid JSON object:
       
       const validated = insertFeedbackSchema.parse(req.body);
       
-      // Prepare the feedback data for insertion
-      let feedbackToInsert = { ...validated };
+      let enrichedFeedback = { ...validated };
       
       if (validated.content && validated.content.length > 10) {
         try {
@@ -2246,21 +2242,22 @@ Respond ONLY with a valid JSON object:
             existingFeedback
           );
           
-          // Update the feedback data with moderation results (only user-allowed fields)
-          feedbackToInsert = {
-            ...validated,
-            category: moderation.category || validated.category,
-            priority: (moderation.priority as 'low' | 'medium' | 'high' | 'critical') || validated.priority || 'medium',
-            sentiment: (moderation.sentiment as 'positive' | 'negative' | 'neutral' | undefined) || validated.sentiment,
-            tags: moderation.tags || validated.tags,
+          enrichedFeedback = {
+            ...enrichedFeedback,
+            isFlagged: moderation.isFlagged,
+            flagReason: moderation.flagReason,
+            category: moderation.category || enrichedFeedback.category,
+            priority: (moderation.priority as 'low' | 'medium' | 'high' | 'critical') || enrichedFeedback.priority || 'medium',
+            sentiment: (moderation.sentiment as 'positive' | 'negative' | 'neutral' | undefined) || enrichedFeedback.sentiment,
+            tags: moderation.tags || enrichedFeedback.tags,
+            similarTo: moderation.similarTo,
           };
         } catch (aiError) {
           console.error("Failed to moderate feedback:", aiError);
         }
       }
       
-      // Create feedback with the allowed fields
-      const feedback = await storage.createFeedback(userId, feedbackToInsert);
+      const feedback = await storage.createFeedback(userId, enrichedFeedback);
       res.json(feedback);
     } catch (error) {
       console.error("Error creating feedback:", error);
@@ -2723,6 +2720,64 @@ Respond ONLY with a valid JSON object:
     } catch (error) {
       console.error("Error deleting push token:", error);
       res.status(500).json({ error: "Failed to delete push token" });
+    }
+  });
+
+  // Web Vitals Analytics endpoint
+  app.post("/api/analytics", async (req: any, res) => {
+    try {
+      // Get user ID if authenticated, otherwise null for anonymous tracking
+      const userId = req.user?.claims?.sub || null;
+
+      // Capture request metadata
+      const userAgent = req.headers['user-agent'] || null;
+      const url = req.headers['referer'] || req.headers['origin'] || null;
+
+      // Validate using Zod schema
+      const validated = insertWebVitalSchema.parse({
+        ...req.body,
+        userId,
+        metricId: req.body.id, // Map 'id' from web-vitals to 'metricId'
+        navigationType: req.body.navigationType || null,
+        userAgent,
+        url,
+      });
+
+      await storage.recordWebVital(validated);
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid web vital data", details: error.errors });
+      }
+      console.error("Error recording web vital:", error);
+      res.status(500).json({ error: "Failed to record web vital" });
+    }
+  });
+
+  // Get Web Vitals statistics (optional admin endpoint)
+  app.get("/api/analytics/stats", async (req: any, res) => {
+    try {
+      const { metric, days } = req.query;
+      
+      // Validate days parameter
+      let daysNum = 7; // default
+      if (days) {
+        const parsed = parseInt(days as string);
+        if (isNaN(parsed) || parsed < 1 || parsed > 365) {
+          return res.status(400).json({ error: "Invalid 'days' parameter. Must be a number between 1 and 365" });
+        }
+        daysNum = parsed;
+      }
+
+      const stats = await storage.getWebVitalsStats(
+        metric as string | undefined,
+        daysNum
+      );
+      res.json(stats);
+    } catch (error) {
+      console.error("Error getting web vitals stats:", error);
+      res.status(500).json({ error: "Failed to get web vitals stats" });
     }
   });
 

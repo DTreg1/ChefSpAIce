@@ -138,6 +138,19 @@ export function AppSidebar() {
   return (
     <>
       <Sidebar className="shadow-2xl">
+        <SidebarHeader className="p-6 border-b border-sidebar-border/50 glass-vibrant">
+          <div>
+            <Logo 
+              size="lg" 
+              showText 
+              iconClassName="transition-morph hover:scale-110"
+            />
+            <p className="text-xs text-muted-foreground ml-[52px]">
+              Your Kitchen Assistant
+            </p>
+          </div>
+        </SidebarHeader>
+
         <SidebarContent className="p-4">
           <SidebarGroup>
             <SidebarGroupContent>
