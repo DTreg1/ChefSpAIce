@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AlertTriangle, X, Lightbulb } from "lucide-react";
+import { AlertTriangle, X, Lightbulb, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type ExpirationNotification = {
   id: string;
@@ -24,6 +24,7 @@ type WasteReductionSuggestion = {
 
 export function ExpirationAlert() {
   const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Check for expiring items on mount
   const checkMutation = useMutation({
@@ -39,6 +40,33 @@ export function ExpirationAlert() {
       toast({
         title: "Error checking expiration dates",
         description: "Unable to check for expiring items. Please try again later.",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Mutation to refresh waste reduction tips
+  const refreshTipsMutation = useMutation({
+    mutationFn: async () => {
+      setIsRefreshing(true);
+      // Force a cache refresh by invalidating and refetching
+      await queryClient.invalidateQueries({ queryKey: ["/api/suggestions/waste-reduction"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/suggestions/waste-reduction"] });
+      return true;
+    },
+    onSuccess: () => {
+      setIsRefreshing(false);
+      toast({
+        title: "Tips refreshed",
+        description: "New waste reduction tips have been loaded based on your expiring items.",
+      });
+    },
+    onError: (error: any) => {
+      setIsRefreshing(false);
+      console.error("Failed to refresh tips:", error);
+      toast({
+        title: "Error refreshing tips",
+        description: "Unable to fetch new tips. Please try again.",
         variant: "destructive"
       });
     },
@@ -127,11 +155,23 @@ export function ExpirationAlert() {
 
       {hasSuggestions && (
         <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-primary" />
               Waste Reduction Tips
             </CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => refreshTipsMutation.mutate()}
+              disabled={isRefreshing || refreshTipsMutation.isPending}
+              data-testid="button-refresh-tips"
+            >
+              <RefreshCw 
+                className={`h-4 w-4 ${isRefreshing || refreshTipsMutation.isPending ? 'animate-spin' : ''}`}
+              />
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
             {suggestions.suggestions.map((suggestion, index) => (
