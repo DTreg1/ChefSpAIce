@@ -325,7 +325,7 @@ export class DatabaseStorage implements IStorage {
           .set({
             firstName: userData.firstName,
             lastName: userData.lastName,
-            profileImage: userData.profileImage,
+            profileImageUrl: userData.profileImageUrl,
             updatedAt: new Date(),
           })
           .where(eq(users.id, existingUser.id))
@@ -343,7 +343,7 @@ export class DatabaseStorage implements IStorage {
             firstName: userData.firstName,
             lastName: userData.lastName,
             email: userData.email,
-            profileImage: userData.profileImage,
+            profileImageUrl: userData.profileImageUrl,
             updatedAt: new Date(),
           },
         })
@@ -397,14 +397,24 @@ export class DatabaseStorage implements IStorage {
 
   async upsertPushToken(userId: string, tokenData: Omit<InsertPushToken, 'userId'>): Promise<PushToken> {
     try {
+      const insertData: any = { 
+        ...tokenData, 
+        userId 
+      };
+      
+      // Type cast JSONB field if present
+      if (tokenData.deviceInfo) {
+        insertData.deviceInfo = tokenData.deviceInfo as { deviceId?: string; model?: string; osVersion?: string };
+      }
+      
       const [token] = await db
         .insert(pushTokens)
-        .values({ ...tokenData, userId })
+        .values(insertData)
         .onConflictDoUpdate({
           target: pushTokens.token,
           set: {
             platform: tokenData.platform,
-            deviceInfo: tokenData.deviceInfo,
+            deviceInfo: tokenData.deviceInfo as { deviceId?: string; model?: string; osVersion?: string } | null | undefined,
             updatedAt: new Date(),
           },
         })
@@ -637,9 +647,28 @@ export class DatabaseStorage implements IStorage {
 
   async createBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct> {
     try {
+      const insertData: any = { ...product };
+      
+      // Type cast JSONB fields if present
+      if (product.dimensions) {
+        insertData.dimensions = product.dimensions as { length?: string; width?: string; height?: string };
+      }
+      if (product.stores) {
+        insertData.stores = product.stores as Array<{
+          name: string;
+          country: string;
+          currency: string;
+          price: string;
+          salePrice?: string;
+          link?: string;
+          availability?: string;
+          lastUpdate: string;
+        }>;
+      }
+      
       const [newProduct] = await db
         .insert(barcodeProducts)
-        .values(product)
+        .values(insertData)
         .returning();
       return newProduct;
     } catch (error) {
@@ -650,10 +679,28 @@ export class DatabaseStorage implements IStorage {
 
   async updateBarcodeProduct(barcodeNumber: string, product: Partial<InsertBarcodeProduct>): Promise<BarcodeProduct> {
     try {
-      const updateData = {
+      const updateData: any = {
         ...product,
         lastUpdate: new Date()
       };
+      
+      // Type cast JSONB fields if present
+      if (product.dimensions) {
+        updateData.dimensions = product.dimensions as { length?: string; width?: string; height?: string } | null;
+      }
+      if (product.stores) {
+        updateData.stores = product.stores as Array<{
+          name: string;
+          country: string;
+          currency: string;
+          price: string;
+          salePrice?: string;
+          link?: string;
+          availability?: string;
+          lastUpdate: string;
+        }> | null;
+      }
+      
       const [updatedProduct] = await db
         .update(barcodeProducts)
         .set(updateData)
