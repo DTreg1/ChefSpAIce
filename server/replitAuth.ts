@@ -31,15 +31,18 @@ export function getSession() {
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
+    pruneSessionInterval: 60 * 60, // Prune expired sessions every hour
   });
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    rolling: true, // Reset session expiry on activity
     cookie: {
       httpOnly: true,
       secure: true,
+      sameSite: 'lax', // Better CSRF protection
       maxAge: sessionTtl,
     },
   });
@@ -172,7 +175,8 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
-    return res.status(401).json({ message: "Unauthorized" });
+    console.log(`User ${user.claims?.sub || 'unknown'} has no refresh token - requiring re-authentication`);
+    return res.status(401).json({ message: "Unauthorized", error: "Session expired - please log in again" });
   }
 
   // Use only userId as key since tokens should be same across sessions for same user
@@ -188,9 +192,70 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       // Log the start of a new refresh operation
       console.log(`Starting token refresh for user: ${userId}`);
       
-      // Start a new refresh operation
+      // Clear the memoized config to ensure we get fresh configuration
+      getOidcConfig.clear();
       const config = await getOidcConfig();
-      const tokenPromise = client.refreshTokenGrant(config, refreshToken);
+      
+      // Create the refresh token grant with retry logic
+      const tokenPromise = (async () => {
+        const maxRetries = 3;
+        let lastError: any = null;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            console.log(`Token refresh attempt ${attempt}/${maxRetries} for user: ${userId}`);
+            const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
+            console.log(`Token refresh successful on attempt ${attempt} for user: ${userId}`);
+            return tokenResponse;
+          } catch (error: any) {
+            lastError = error;
+            
+            // Log detailed error information
+            console.error(`Token refresh attempt ${attempt}/${maxRetries} failed for user ${userId}:`, {
+              error: error.message,
+              statusCode: error.response?.statusCode,
+              body: error.response?.body,
+              cause: error.cause
+            });
+            
+            // If the refresh token is expired or invalid, don't retry
+            if (error.message?.includes('invalid_grant') || 
+                error.response?.statusCode === 400 ||
+                error.response?.body?.error === 'invalid_grant') {
+              console.log(`Refresh token is invalid/expired for user ${userId} - clearing session`);
+              
+              // Clear the session to force re-authentication
+              await new Promise<void>((resolve) => {
+                req.session.destroy(() => {
+                  resolve();
+                });
+              });
+              
+              throw new Error('REFRESH_TOKEN_EXPIRED');
+            }
+            
+            // If it's a network/temporary error and not the last attempt, retry with backoff
+            if (attempt < maxRetries && 
+                (error.response?.statusCode >= 500 || 
+                 error.message?.includes('ECONNREFUSED') ||
+                 error.message?.includes('ETIMEDOUT') ||
+                 error.message?.includes('network'))) {
+              const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+              console.log(`Retrying in ${backoffDelay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            } else if (attempt === maxRetries) {
+              // Last attempt failed, throw the error
+              throw error;
+            } else {
+              // Non-retryable error, throw immediately
+              throw error;
+            }
+          }
+        }
+        
+        // If we get here, all retries failed
+        throw lastError || new Error('Token refresh failed after all retries');
+      })();
       
       // Store the promise with timestamp for concurrent requests to reuse
       refreshEntry = {
@@ -205,7 +270,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
           console.log(`Token refresh successful for user: ${userId}`);
         })
         .catch((err: any) => {
-          console.error(`Token refresh failed for user: ${userId}`, err.message);
+          console.error(`Token refresh failed for user: ${userId}:`, err.message);
           // Remove failed refresh immediately so retries can occur
           activeRefreshes.delete(refreshKey);
         });
@@ -237,7 +302,8 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       // The tokens are refreshed but not persisted
       console.error('Critical: Session save failed after token refresh:', {
         userId,
-        error: sessionError.message
+        error: sessionError.message,
+        stack: sessionError.stack
       });
       
       // Remove the refresh entry to allow retry on next request
@@ -252,15 +318,26 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   } catch (error: any) {
     console.error('Token refresh failed:', {
       userId,
-      error: error.message
+      error: error.message,
+      stack: error.stack
     });
     
     // Remove failed refresh to allow retry
     activeRefreshes.delete(refreshKey);
     
+    // If refresh token is expired, send specific error
+    if (error.message === 'REFRESH_TOKEN_EXPIRED') {
+      res.status(401).json({ 
+        message: "Unauthorized", 
+        error: "Session expired - please log in again",
+        requiresLogin: true
+      });
+      return;
+    }
+    
     res.status(401).json({ 
       message: "Unauthorized", 
-      error: "Token refresh failed"
+      error: "Token refresh failed - please try again or log in"
     });
     return;
   }
