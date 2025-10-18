@@ -179,10 +179,12 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized", error: "Session expired - please log in again" });
   }
 
-  // Use only userId as key since tokens should be same across sessions for same user
-  // This prevents multiple refresh attempts for same user across different sessions
+  // Use sessionID as key to prevent conflicts between multiple sessions for same user
+  // This allows each session to refresh independently while still deduplicating
+  // concurrent requests within the same session
   const userId = user.claims?.sub || 'unknown';
-  const refreshKey = userId;
+  const sessionId = req.sessionID || 'unknown-session';
+  const refreshKey = `${sessionId}:${userId}`;
   
   try {
     // Check if a refresh is already in progress for this user
@@ -190,10 +192,9 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     
     if (!refreshEntry) {
       // Log the start of a new refresh operation
-      console.log(`Starting token refresh for user: ${userId}`);
+      console.log(`Starting token refresh for user: ${userId}, session: ${sessionId}`);
       
-      // Clear the memoized config to ensure we get fresh configuration
-      getOidcConfig.clear();
+      // Get the OIDC configuration (memoized for performance)
       const config = await getOidcConfig();
       
       // Create the refresh token grant with retry logic
