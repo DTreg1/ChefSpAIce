@@ -18,6 +18,7 @@ import { OfflineIndicator } from "@/components/offline-indicator";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { Logo } from "@/components/Logo";
 import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
 import Chat from "@/pages/chat";
@@ -169,6 +170,7 @@ function AppContent() {
                 data-testid="button-sidebar-toggle"
                 className="transition-morph hover:scale-105"
               />
+              <Logo size="md" showText={true} className="flex-shrink-0" />
               <div className="ml-auto">
                 <QuickActionsBar
                   onAddFood={() => setAddFoodOpen(true)}

@@ -139,7 +139,6 @@ export function AppSidebar() {
     <>
       <Sidebar className="shadow-2xl">
         <SidebarContent className="p-4">
-          <span className="p-10" />
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
