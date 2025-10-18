@@ -141,11 +141,14 @@ function AppContent() {
   // Show app layout with sidebar for authenticated users who completed onboarding
   return (
     <>
-      <AnimatedBackground
-        variant="both"
-        gradientType="primary"
-        particleCount={3000}
-      />
+      {/* Only show animated background on chat/home page */}
+      {(location === "/" || location === "/chat") && (
+        <AnimatedBackground
+          variant="both"
+          gradientType="primary"
+          particleCount={3000}
+        />
+      )}
       <CommandPalette
         onAddFood={() => setAddFoodOpen(true)}
         onGenerateRecipe={() => setRecipeDialogOpen(true)}
