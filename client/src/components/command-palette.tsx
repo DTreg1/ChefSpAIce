@@ -34,7 +34,7 @@ interface CommandPaletteProps {
 export function CommandPalette({ onAddFood, onGenerateRecipe, onScanBarcode }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const [, setLocation] = useLocation();
-
+  
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "k") {
       e.preventDefault();

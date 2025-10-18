@@ -348,7 +348,7 @@ export default function FeedbackAnalyticsPage() {
                                   key={star}
                                   className={cn(
                                     "w-3 h-3",
-                                    star <= item.rating
+                                    star <= (item.rating ?? 0)
                                       ? "fill-amber-500 text-amber-500"
                                       : "text-muted-foreground"
                                   )}
