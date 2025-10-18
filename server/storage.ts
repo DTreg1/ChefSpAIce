@@ -4,7 +4,8 @@ import {
   type UpsertUser,
   type UserPreferences,
   type InsertUserPreferences,
-  type StorageLocation, 
+  type StorageLocation,
+  type StorageLocationWithCount,
   type InsertStorageLocation,
   type Appliance,
   type InsertAppliance,
@@ -84,7 +85,7 @@ export interface IStorage {
   deletePushToken(userId: string, token: string): Promise<void>;
   
   // Storage Locations (user-scoped)
-  getStorageLocations(userId: string): Promise<StorageLocation[]>;
+  getStorageLocations(userId: string): Promise<StorageLocationWithCount[]>;
   getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined>;
   createStorageLocation(userId: string, location: Omit<InsertStorageLocation, 'userId'>): Promise<StorageLocation>;
 
@@ -436,7 +437,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Storage Locations
-  async getStorageLocations(userId: string): Promise<StorageLocation[]> {
+  async getStorageLocations(userId: string): Promise<StorageLocationWithCount[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
       
