@@ -40,7 +40,6 @@ import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import CameraTest from "@/pages/camera-test";
 import NotFound from "@/pages/not-found";
-import LoggedOut from "@/pages/logged-out";
 
 function AuthenticatedRouter() {
   return (
