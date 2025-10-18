@@ -151,7 +151,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res, next) => {
-    console.log('[Auth] User endpoint called');
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -160,12 +159,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching user:", error);
       return next(new ApiError("Failed to fetch user", 500));
     }
-  });
-
-  // Simple test endpoint - no auth required
-  app.get('/api/test', (req, res) => {
-    console.log('[Test] Test endpoint called');
-    res.json({ message: 'Test successful', timestamp: Date.now() });
   });
 
   // User Preferences

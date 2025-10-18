@@ -51,7 +51,7 @@ function AuthenticatedRouter() {
       <Route path="/meal-planner" component={MealPlanner} />
       <Route path="/shopping-list" component={ShoppingList} />
       <Route path="/appliances" component={Appliances} />
-      <Route path="/storage/:location" component={Storage} />
+      <Route path="/storage" component={Storage} />
       <Route path="/food-groups" component={FoodGroups} />
       <Route path="/fdc-search" component={FdcSearch} />
       <Route path="/feedback-analytics" component={FeedbackAnalytics} />
@@ -70,9 +70,6 @@ function AuthenticatedRouter() {
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
-
-  // Debug logging
-  console.log("[Router] Auth state:", { isAuthenticated, isLoading });
 
   // Show landing page for non-authenticated users
   if (isLoading || !isAuthenticated) {
@@ -95,25 +92,6 @@ function AppContent() {
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
-
-  // Manual auth test
-  useEffect(() => {
-    console.log("[AppContent] Testing manual auth check...");
-    fetch('/api/auth/user', { 
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
-    })
-      .then(res => {
-        console.log("[AppContent] Manual auth check response:", res.status);
-        return res.status === 401 ? null : res.json();
-      })
-      .then(data => {
-        console.log("[AppContent] Manual auth check data:", data);
-      })
-      .catch(err => {
-        console.error("[AppContent] Manual auth check error:", err);
-      });
-  }, []);
 
   const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
     hasCompletedOnboarding?: boolean;
@@ -234,25 +212,6 @@ function AppContent() {
 }
 
 export default function App() {
-  // Force immediate auth check on mount
-  useEffect(() => {
-    console.log("[App] Component mounted, forcing auth check...");
-    fetch('/api/auth/user', { 
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
-    })
-      .then(res => {
-        console.log(`[App] Direct auth check response: ${res.status}`);
-        return res.text();
-      })
-      .then(text => {
-        console.log("[App] Direct auth response body:", text);
-      })
-      .catch(err => {
-        console.error("[App] Direct auth check error:", err);
-      });
-  }, []);
-
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
