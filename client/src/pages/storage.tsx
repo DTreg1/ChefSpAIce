@@ -177,18 +177,24 @@ export default function Storage() {
             <div className="mb-6">
               <h3 className="text-sm font-semibold mb-2 text-muted-foreground">Filter by Category</h3>
               <div className="flex flex-wrap gap-2">
+                <Badge
+                  key="all"
+                  variant={!selectedCategory ? "default" : "outline"}
+                  className="cursor-pointer hover-elevate active-elevate-2"
+                  onClick={() => setSelectedCategory(null)}
+                  data-testid="badge-category-all"
+                >
+                  All
+                </Badge>
                 {categories.map((category) => (
                   <Badge
                     key={category}
                     variant={selectedCategory === category ? "default" : "outline"}
                     className="cursor-pointer hover-elevate active-elevate-2"
-                    onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                    onClick={() => setSelectedCategory(category)}
                     data-testid={`badge-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     {category}
-                    {selectedCategory === category && (
-                      <X className="w-3 h-3 ml-1" />
-                    )}
                   </Badge>
                 ))}
               </div>
