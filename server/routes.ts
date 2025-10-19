@@ -1132,6 +1132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let apiCallMade = false;
     let statusCode = 200;
     let success = true;
+    let cacheHits = 0;
+    let cacheMisses = 0;
     
     try {
       // Validate input
@@ -1147,50 +1149,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Maximum 10 barcodes allowed per batch" });
       }
 
-      // Check rate limits before making API call
-      await checkRateLimitBeforeCall();
+      // Import cache functions
+      const { checkMultipleCache, saveToCache, formatCachedProduct } = await import('./cache');
       
-      apiCallMade = true;
-      const products = await getBarcodeLookupBatch(barcodes);
+      // Check cache for all barcodes
+      const cacheResults = await checkMultipleCache(barcodes);
+      const formattedProducts: any[] = [];
+      const uncachedBarcodes: string[] = [];
       
-      // Track which barcodes were found
-      const foundBarcodes = new Set(products.map(p => p.barcode_number));
-      const notFoundBarcodes = barcodes.filter(bc => !foundBarcodes.has(bc));
-      
-      // Transform found products to our standard format
-      const formattedProducts = products.map(product => ({
-        code: product.barcode_number || '',
-        name: product.title || 'Unknown Product',
-        brand: product.brand || '',
-        imageUrl: extractImageUrl(product),
-        description: product.description,
-        source: 'barcode_lookup'
-      }));
-
-      // If some barcodes weren't found, try Open Food Facts
-      if (notFoundBarcodes.length > 0) {
-        console.log(`${notFoundBarcodes.length} products not in Barcode Lookup, trying Open Food Facts...`);
-        const offProducts = await getOpenFoodFactsBatch(notFoundBarcodes);
-        
-        for (const offProduct of offProducts) {
-          const productInfo = extractProductInfo(offProduct);
-          if (productInfo) {
+      // Process cached results
+      for (const [barcode, cacheResult] of Array.from(cacheResults.entries())) {
+        if (cacheResult.found && !cacheResult.expired && cacheResult.product) {
+          // Cache hit
+          cacheHits++;
+          if (!cacheResult.product.lookupFailed) {
+            const formattedProduct = formatCachedProduct(cacheResult.product);
             formattedProducts.push({
-              ...productInfo,
-              source: 'openfoodfacts'
+              ...formattedProduct,
+              cached: true
             });
+          }
+        } else {
+          // Cache miss or expired
+          cacheMisses++;
+          uncachedBarcodes.push(barcode);
+        }
+      }
+      
+      // Only query APIs for uncached items
+      if (uncachedBarcodes.length > 0) {
+        // Check rate limits before making API call
+        await checkRateLimitBeforeCall();
+        
+        apiCallMade = true;
+        const products = await getBarcodeLookupBatch(uncachedBarcodes);
+        
+        // Track which barcodes were found
+        const foundBarcodes = new Set(products.map(p => p.barcode_number));
+        const notFoundBarcodes = uncachedBarcodes.filter(bc => !foundBarcodes.has(bc));
+        
+        // Process and cache found products
+        for (const product of products) {
+          const productInfo = {
+            code: product.barcode_number || '',
+            name: product.title || 'Unknown Product',
+            brand: product.brand || '',
+            imageUrl: extractImageUrl(product),
+            description: product.description,
+            source: 'barcode_lookup' as const
+          };
+          
+          // Save to cache
+          await saveToCache(productInfo, false);
+          
+          formattedProducts.push({
+            ...productInfo,
+            cached: false
+          });
+        }
+
+        // If some barcodes weren't found, try Open Food Facts
+        if (notFoundBarcodes.length > 0) {
+          console.log(`${notFoundBarcodes.length} products not in Barcode Lookup, trying Open Food Facts...`);
+          const offProducts = await getOpenFoodFactsBatch(notFoundBarcodes);
+          
+          for (const offProduct of offProducts) {
+            const productInfo = extractProductInfo(offProduct);
+            if (productInfo) {
+              // Save to cache
+              await saveToCache({
+                ...productInfo,
+                source: 'openfoodfacts'
+              }, false);
+              
+              formattedProducts.push({
+                ...productInfo,
+                source: 'openfoodfacts',
+                cached: false
+              });
+            }
+          }
+          
+          // Cache failed lookups for products not found in either database
+          const finalFoundBarcodes = new Set(formattedProducts.map(p => p.code));
+          for (const barcode of notFoundBarcodes) {
+            if (!finalFoundBarcodes.has(barcode)) {
+              await saveToCache({
+                code: barcode,
+                name: 'Not found',
+                source: 'openfoodfacts'
+              }, true);
+            }
           }
         }
       }
 
+      // Count products by source
+      const barcodeLookupCount = formattedProducts.filter(p => p.source === 'barcode_lookup').length;
+      const openFoodFactsCount = formattedProducts.filter(p => p.source === 'openfoodfacts').length;
+      
       res.json({ 
         products: formattedProducts, 
         count: formattedProducts.length,
         requested: barcodes.length,
+        cacheInfo: {
+          hits: cacheHits,
+          misses: cacheMisses,
+          apiCallsSaved: cacheHits > 0 ? 1 : 0, // We save 1 batch API call for all cache hits
+        },
         apiCallsSaved: barcodes.length > 1 ? barcodes.length - 1 : 0,
         sources: {
-          barcode_lookup: products.length,
-          openfoodfacts: formattedProducts.length - products.length
+          barcode_lookup: barcodeLookupCount,
+          openfoodfacts: openFoodFactsCount
         }
       });
     } catch (error: any) {
