@@ -197,7 +197,7 @@ export default function FoodGroups() {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                           {items.map((item) => {
                             const location = storageLocations?.find(
                               (loc) => loc.id === item.storageLocationId
