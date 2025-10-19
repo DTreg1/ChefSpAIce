@@ -2,9 +2,35 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, CheckCircle, XCircle, AlertCircle, ScanLine } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Camera, CheckCircle, XCircle, AlertCircle, ScanLine, Package, Loader2, Image, ShoppingCart } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useToast } from "@/hooks/use-toast";
+
+// Common test barcodes for groceries and household items
+const COMMON_TEST_BARCODES = {
+  single: [
+    { code: '049000028904', name: 'Coca-Cola Classic 12oz' },
+    { code: '036000291452', name: 'Honey Nut Cheerios' },
+    { code: '041380000000', name: 'Lay\'s Classic Potato Chips' },
+    { code: '070470003078', name: 'Oreo Cookies' },
+    { code: '041000326165', name: 'Dove Beauty Bar Soap' },
+  ],
+  batch: [
+    { code: '049000028904', name: 'Coca-Cola Classic 12oz' },
+    { code: '036000291452', name: 'Honey Nut Cheerios' },
+    { code: '041380000000', name: 'Lay\'s Classic Potato Chips' },
+    { code: '070470003078', name: 'Oreo Cookies' },
+    { code: '041000326165', name: 'Dove Beauty Bar Soap' },
+    { code: '038100361006', name: 'Kellogg\'s Corn Flakes' },
+    { code: '014100072331', name: 'Pepsi Cola 12oz Can' },
+    { code: '030000064405', name: 'Quaker Instant Oatmeal' },
+    { code: '041318110029', name: 'Campbell\'s Tomato Soup' },
+    { code: '073561997004', name: 'Bounty Paper Towels' },
+  ]
+};
 
 export default function CameraTest() {
   const { toast } = useToast();
@@ -18,6 +44,14 @@ export default function CameraTest() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  
+  // API test state
+  const [singleBarcode, setSingleBarcode] = useState<string>('');
+  const [singleApiLoading, setSingleApiLoading] = useState(false);
+  const [singleApiResult, setSingleApiResult] = useState<any>(null);
+  const [batchBarcodes, setBatchBarcodes] = useState<string[]>([]);
+  const [batchApiLoading, setBatchApiLoading] = useState(false);
+  const [batchApiResult, setBatchApiResult] = useState<any>(null);
 
   useEffect(() => {
     // Check HTTPS
@@ -168,6 +202,78 @@ export default function CameraTest() {
     setErrors([]);
   };
 
+  // API Test Functions
+  const testSingleBarcode = async (barcode: string) => {
+    setSingleApiLoading(true);
+    setSingleApiResult(null);
+    addError(`Testing single barcode API call for: ${barcode}`);
+    
+    try {
+      const response = await fetch(`/api/barcodelookup/product/${barcode}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || `API Error: ${response.status}`);
+      }
+      
+      setSingleApiResult(data);
+      addError(`Single API call successful: ${data.name || 'Product found'}`);
+      toast({
+        title: "API Call Successful",
+        description: `Found: ${data.name || 'Unknown Product'}`,
+      });
+    } catch (error: any) {
+      const errorMsg = error.message || 'Unknown error';
+      addError(`Single API call failed: ${errorMsg}`);
+      toast({
+        title: "API Call Failed",
+        description: errorMsg,
+        variant: "destructive"
+      });
+      setSingleApiResult({ error: errorMsg });
+    } finally {
+      setSingleApiLoading(false);
+    }
+  };
+
+  const testBatchBarcodes = async () => {
+    setBatchApiLoading(true);
+    setBatchApiResult(null);
+    const barcodesToTest = COMMON_TEST_BARCODES.batch.slice(0, 10).map(b => b.code);
+    addError(`Testing batch API call with ${barcodesToTest.length} barcodes`);
+    
+    try {
+      const response = await fetch('/api/barcodelookup/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barcodes: barcodesToTest })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || `API Error: ${response.status}`);
+      }
+      
+      setBatchApiResult(data);
+      addError(`Batch API call successful: Found ${data.count} of ${data.requested} products`);
+      toast({
+        title: "Batch API Call Successful",
+        description: `Found ${data.count} products. Saved ${data.apiCallsSaved} API calls!`,
+      });
+    } catch (error: any) {
+      const errorMsg = error.message || 'Unknown error';
+      addError(`Batch API call failed: ${errorMsg}`);
+      toast({
+        title: "Batch API Call Failed",
+        description: errorMsg,
+        variant: "destructive"
+      });
+      setBatchApiResult({ error: errorMsg });
+    } finally {
+      setBatchApiLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 max-w-4xl space-y-6">
       <div>
@@ -297,6 +403,217 @@ export default function CameraTest() {
             <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-md">
               <p className="font-medium text-green-600 dark:text-green-400">Last Scan Result:</p>
               <p className="text-sm mt-1 break-all">{scanResult}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Single Barcode API Test */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Single Barcode API Test</CardTitle>
+          <CardDescription>Test individual barcode lookups using common product barcodes</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="single-barcode">Enter or select a barcode</Label>
+            <div className="flex gap-2">
+              <Input
+                id="single-barcode"
+                placeholder="e.g., 049000028904"
+                value={singleBarcode}
+                onChange={(e) => setSingleBarcode(e.target.value)}
+                data-testid="input-single-barcode"
+              />
+              <Button
+                onClick={() => testSingleBarcode(singleBarcode)}
+                disabled={!singleBarcode || singleApiLoading}
+                data-testid="button-test-single"
+              >
+                {singleApiLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-4 h-4 mr-2" />
+                    Test API
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Quick test products:</p>
+            <div className="flex flex-wrap gap-2">
+              {COMMON_TEST_BARCODES.single.map((item) => (
+                <Button
+                  key={item.code}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSingleBarcode(item.code);
+                    testSingleBarcode(item.code);
+                  }}
+                  disabled={singleApiLoading}
+                  data-testid={`button-quick-${item.code}`}
+                >
+                  {item.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {singleApiResult && (
+            <div className={`p-3 rounded-md border ${singleApiResult.error ? 'border-red-500/20 bg-red-500/10' : 'border-green-500/20 bg-green-500/10'}`}>
+              {singleApiResult.error ? (
+                <div>
+                  <p className="font-medium text-red-600 dark:text-red-400">Error:</p>
+                  <p className="text-sm mt-1">{singleApiResult.error}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="font-medium text-green-600 dark:text-green-400">Product Found!</p>
+                  <div className="text-sm space-y-1">
+                    <p><strong>Name:</strong> {singleApiResult.name}</p>
+                    <p><strong>Brand:</strong> {singleApiResult.brand || 'N/A'}</p>
+                    <p><strong>Code:</strong> {singleApiResult.code}</p>
+                    {singleApiResult.imageUrl && (
+                      <div>
+                        <p><strong>Image URL:</strong></p>
+                        <a href={singleApiResult.imageUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline break-all">
+                          {singleApiResult.imageUrl.substring(0, 100)}...
+                        </a>
+                        <div className="mt-2 p-2 bg-background rounded">
+                          <img 
+                            src={singleApiResult.imageUrl} 
+                            alt={singleApiResult.name}
+                            className="max-w-[200px] max-h-[200px] object-contain mx-auto"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {singleApiResult.description && (
+                      <p className="text-xs"><strong>Description:</strong> {singleApiResult.description}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Batch Barcode API Test */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Batch Barcode API Test (10 Items)</CardTitle>
+          <CardDescription>Test the efficiency of batch barcode lookups - get 10 products in 1 API call!</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+            <p className="text-sm">
+              <strong>Efficiency Gain:</strong> Querying 10 barcodes individually = 10 API calls. 
+              With batch API = 1 call. <strong>That's 90% fewer API calls!</strong>
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Products to test (10 common items):</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {COMMON_TEST_BARCODES.batch.map((item, idx) => (
+                <div key={item.code} className="flex items-center gap-2">
+                  <Badge variant="outline" className="font-mono">{idx + 1}</Badge>
+                  <span className="truncate">{item.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            onClick={testBatchBarcodes}
+            disabled={batchApiLoading}
+            className="w-full"
+            data-testid="button-test-batch"
+          >
+            {batchApiLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Testing Batch API...
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Test Batch API (10 Products)
+              </>
+            )}
+          </Button>
+
+          {batchApiResult && (
+            <div className={`p-3 rounded-md border ${batchApiResult.error ? 'border-red-500/20 bg-red-500/10' : 'border-green-500/20 bg-green-500/10'}`}>
+              {batchApiResult.error ? (
+                <div>
+                  <p className="font-medium text-red-600 dark:text-red-400">Error:</p>
+                  <p className="text-sm mt-1">{batchApiResult.error}</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-green-600 dark:text-green-400">Batch Result</p>
+                    <Badge className="gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      Saved {batchApiResult.apiCallsSaved} API calls!
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid gap-2 text-sm">
+                    <div className="flex justify-between p-2 bg-muted rounded">
+                      <span>Products Requested:</span>
+                      <strong>{batchApiResult.requested}</strong>
+                    </div>
+                    <div className="flex justify-between p-2 bg-muted rounded">
+                      <span>Products Found:</span>
+                      <strong>{batchApiResult.count}</strong>
+                    </div>
+                    <div className="flex justify-between p-2 bg-muted rounded">
+                      <span>API Calls Used:</span>
+                      <strong>1</strong>
+                    </div>
+                    <div className="flex justify-between p-2 bg-green-500/10 rounded">
+                      <span>API Calls Saved:</span>
+                      <strong className="text-green-600 dark:text-green-400">{batchApiResult.apiCallsSaved}</strong>
+                    </div>
+                  </div>
+
+                  {batchApiResult.products && batchApiResult.products.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Found Products:</p>
+                      <div className="max-h-64 overflow-y-auto space-y-2">
+                        {batchApiResult.products.map((product: any, idx: number) => (
+                          <div key={idx} className="p-2 bg-muted rounded text-xs space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="shrink-0">{idx + 1}</Badge>
+                              <strong className="truncate">{product.name}</strong>
+                            </div>
+                            <div className="pl-8 grid grid-cols-2 gap-x-4 text-muted-foreground">
+                              <span>Brand: {product.brand || 'N/A'}</span>
+                              <span>Code: {product.code}</span>
+                            </div>
+                            {product.imageUrl && (
+                              <div className="pl-8 flex items-center gap-1 text-green-600 dark:text-green-400">
+                                <Image className="w-3 h-3" />
+                                <span>Has image</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>

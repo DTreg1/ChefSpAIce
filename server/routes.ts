@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { openai } from "./openai";
 import Stripe from "stripe";
 import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "./usda";
-import { searchBarcodeLookup, getBarcodeLookupProduct, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
+import { searchBarcodeLookup, getBarcodeLookupProduct, getBarcodeLookupBatch, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
 import { getEnrichedOnboardingItem } from "./onboarding-usda";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -1023,6 +1023,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
             apiName: 'barcode_lookup',
             endpoint: 'product',
             queryParams: `barcode=${barcode}`,
+            statusCode,
+            success
+          });
+        } catch (logError) {
+          console.error("Failed to log API usage:", logError);
+        }
+      }
+    }
+  });
+
+  app.post("/api/barcodelookup/batch", async (req: any, res) => {
+    const userId = req.user?.claims?.sub;
+    const { barcodes } = req.body;
+    let apiCallMade = false;
+    let statusCode = 200;
+    let success = true;
+    
+    try {
+      // Validate input
+      if (!barcodes || !Array.isArray(barcodes)) {
+        return res.status(400).json({ error: "barcodes array is required" });
+      }
+      
+      if (barcodes.length === 0) {
+        return res.json({ products: [], count: 0 });
+      }
+      
+      if (barcodes.length > 10) {
+        return res.status(400).json({ error: "Maximum 10 barcodes allowed per batch" });
+      }
+
+      // Check rate limits before making API call
+      await checkRateLimitBeforeCall();
+      
+      apiCallMade = true;
+      const products = await getBarcodeLookupBatch(barcodes);
+      
+      // Transform products to our standard format
+      const formattedProducts = products.map(product => ({
+        code: product.barcode_number || '',
+        name: product.title || 'Unknown Product',
+        brand: product.brand || '',
+        imageUrl: extractImageUrl(product),
+        description: product.description,
+        raw: product // Include raw data for debugging
+      }));
+
+      res.json({ 
+        products: formattedProducts, 
+        count: formattedProducts.length,
+        requested: barcodes.length,
+        apiCallsSaved: barcodes.length > 1 ? barcodes.length - 1 : 0
+      });
+    } catch (error: any) {
+      console.error("Barcode Lookup batch error:", error);
+      if (error instanceof ApiError) {
+        statusCode = error.statusCode;
+        success = false;
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      statusCode = 500;
+      success = false;
+      res.status(500).json({ error: "Failed to fetch batch products" });
+    } finally {
+      // Use batched logging for better performance
+      if (userId && apiCallMade) {
+        try {
+          await batchedApiLogger.logApiUsage(userId, {
+            apiName: 'barcode_lookup',
+            endpoint: 'batch',
+            queryParams: `batch_size=${barcodes.length}`,
             statusCode,
             success
           });

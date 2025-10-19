@@ -140,6 +140,67 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
   }
 }
 
+export async function getBarcodeLookupBatch(barcodes: string[]): Promise<BarcodeLookupProduct[]> {
+  const apiKey = process.env.BARCODE_LOOKUP_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('BARCODE_LOOKUP_API_KEY is not configured');
+  }
+
+  if (barcodes.length === 0) {
+    return [];
+  }
+
+  if (barcodes.length > 10) {
+    throw new ApiError('Maximum 10 barcodes allowed per batch request', 400);
+  }
+
+  try {
+    // Join barcodes with comma for batch query
+    const barcodeString = barcodes.join(',');
+    
+    const response = await axios.get(`${BARCODE_LOOKUP_API_BASE}/products`, {
+      params: {
+        barcode: barcodeString,
+        key: apiKey,
+      },
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    return response.data.products || [];
+  } catch (error: any) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText;
+    
+    console.error('Barcode Lookup batch lookup error:', {
+      message: error.message,
+      status,
+      statusText,
+      code: error.code,
+      barcodes
+    });
+    
+    if (status === 401 || status === 403) {
+      throw new ApiError('Barcode Lookup API authentication failed. Please check your API key.', 401);
+    } else if (status === 429) {
+      throw new ApiError('Barcode Lookup API rate limit exceeded. Please try again later.', 429);
+    } else if (status === 400) {
+      throw new ApiError('Invalid batch request for Barcode Lookup API.', 400);
+    } else if (status >= 500) {
+      throw new ApiError('Barcode Lookup API service is temporarily unavailable.', 503);
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      throw new ApiError('Barcode Lookup API request timed out.', 504);
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      throw new ApiError('Cannot connect to Barcode Lookup API.', 503);
+    }
+    
+    console.error('Unexpected error in barcode batch lookup:', error);
+    throw new ApiError(`Failed to fetch barcode batch: ${error.message || 'Unknown error'}`, 500);
+  }
+}
+
 export function extractImageUrl(product: BarcodeLookupProduct): string | undefined {
   // Return the first available image
   if (product.images && product.images.length > 0) {
