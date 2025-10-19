@@ -24,7 +24,8 @@ import {
   insertStorageLocationSchema,
   insertFeedbackSchema,
   insertWebVitalSchema,
-  type BarcodeProduct
+  type BarcodeProduct,
+  type StorageLocation
 } from "@shared/schema";
 
 // Helper functions for appliance barcode processing
@@ -936,6 +937,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching enriched onboarding item:", error);
       res.status(500).json({ error: "Failed to fetch enriched item data" });
+    }
+  });
+
+  // Onboarding - Complete onboarding in a single request
+  app.post("/api/onboarding/complete", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { preferences, customStorageAreas, selectedCommonItems } = req.body;
+      
+      const failedItems: string[] = [];
+      let successCount = 0;
+      let createdStorageLocations: StorageLocation[] = [];
+      
+      // Step 1: Save user preferences
+      const savedPreferences = await storage.upsertUserPreferences({
+        ...preferences,
+        hasCompletedOnboarding: true,
+        userId
+      });
+
+      // Step 2: Create custom storage locations
+      for (const customArea of (customStorageAreas || [])) {
+        try {
+          const location = await storage.createStorageLocation(userId, {
+            name: customArea,
+            icon: "package",
+          });
+          createdStorageLocations.push(location);
+        } catch (error) {
+          console.error(`Failed to create storage location ${customArea}:`, error);
+        }
+      }
+
+      // Step 3: Get all storage locations to map names to IDs
+      const allLocations = await storage.getStorageLocations(userId);
+      const locationMap = new Map(
+        allLocations.map((loc: any) => [loc.name, loc.id])
+      );
+
+      // Step 4: Import common items and get enriched data
+      const { getItemsByCategory } = await import("./onboarding-items-expanded");
+      const itemsByCategory = getItemsByCategory();
+      
+      // Flatten all items to create a lookup map
+      const allItemsMap = new Map<string, any>();
+      Object.values(itemsByCategory).forEach(items => {
+        items.forEach(item => {
+          allItemsMap.set(item.displayName, item);
+        });
+      });
+
+      // Step 5: Create selected common food items with enriched USDA data
+      for (const itemName of (selectedCommonItems || [])) {
+        try {
+          // Get enriched data server-side
+          const enrichedData = await getEnrichedOnboardingItem(itemName);
+          
+          if (enrichedData) {
+            const storageLocationId = locationMap.get(enrichedData.storage);
+            if (!storageLocationId) {
+              console.error(`No storage location found for ${enrichedData.storage}`);
+              failedItems.push(itemName);
+              continue;
+            }
+
+            const expirationDate = new Date();
+            expirationDate.setDate(expirationDate.getDate() + enrichedData.expirationDays);
+
+            // Create the food item with full USDA data
+            await storage.createFoodItem(userId, {
+              name: enrichedData.name,
+              quantity: enrichedData.quantity,
+              unit: enrichedData.unit,
+              storageLocationId,
+              expirationDate: expirationDate.toISOString(),
+              fcdId: enrichedData.fcdId || null,
+              nutrition: enrichedData.nutrition || null,
+              usdaData: enrichedData.usdaData ? JSON.stringify(enrichedData.usdaData) : null,
+              foodCategory: enrichedData.usdaData?.foodCategory || null,
+            });
+            successCount++;
+          } else {
+            // Fall back to basic data from the items map
+            const itemData = allItemsMap.get(itemName);
+            if (!itemData) {
+              console.error(`No data found for ${itemName}`);
+              failedItems.push(itemName);
+              continue;
+            }
+
+            const storageLocationId = locationMap.get(itemData.storage);
+            if (!storageLocationId) {
+              console.error(`No storage location found for ${itemData.storage}`);
+              failedItems.push(itemName);
+              continue;
+            }
+
+            const expirationDate = new Date();
+            expirationDate.setDate(expirationDate.getDate() + itemData.expirationDays);
+
+            await storage.createFoodItem(userId, {
+              name: itemData.displayName,
+              quantity: itemData.quantity,
+              unit: itemData.unit,
+              storageLocationId,
+              expirationDate: expirationDate.toISOString(),
+              fcdId: itemData.fcdId || null,
+              foodCategory: itemData.category || null,
+            });
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to create food item ${itemName}:`, error);
+          failedItems.push(itemName);
+        }
+      }
+
+      res.json({
+        success: true,
+        preferences: savedPreferences,
+        createdStorageLocations: createdStorageLocations.length,
+        foodItemsCreated: successCount,
+        failedItems,
+      });
+    } catch (error: any) {
+      console.error("Error completing onboarding:", error);
+      res.status(500).json({ error: "Failed to complete onboarding" });
     }
   });
 
