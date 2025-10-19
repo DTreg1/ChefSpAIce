@@ -281,7 +281,9 @@ export const onboardingUsdaMapping: Record<string, {
 
 // Helper function to get all UPC codes for batch fetching
 export function getOnboardingUpcs(): string[] {
-  return Object.values(onboardingUsdaMapping).map(item => item.upc);
+  return Object.values(onboardingUsdaMapping)
+    .map(item => item.upc)
+    .filter((upc): upc is string => upc !== undefined);
 }
 
 // Helper function to get item data by name
