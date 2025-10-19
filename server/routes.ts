@@ -2329,28 +2329,26 @@ Important:
       const appliances = await storage.getAppliances(userId);
       const appliancesList = appliances.map(a => a.name).join(', ') || 'standard kitchen appliances';
 
-      const prompt = `You are a helpful kitchen assistant helping reduce food waste.
+      const prompt = `You are a helpful kitchen assistant providing quick waste reduction tips.
 
-ITEMS EXPIRING SOON (must use these):
+ITEMS EXPIRING SOON (focus on these):
 ${expiringList}
 
-OTHER AVAILABLE INGREDIENTS (can combine with expiring items):
+OTHER AVAILABLE INGREDIENTS:
 ${otherItems}
 
-AVAILABLE APPLIANCES:
-${appliancesList}
+Generate 3 QUICK TIPS for using the expiring items. Tips should be:
+- Short substitution suggestions ("Use your expiring milk instead of water in...")
+- Creative combinations ("Try mixing your feta with...")
+- Alternative uses ("Your bacon could add flavor to...")
+- Storage tips or preservation methods
+- Quick ideas, NOT full recipes
 
-Generate 3 specific, practical recipe suggestions or meal ideas that:
-1. MUST use at least one expiring item as a main ingredient
-2. Can incorporate other available ingredients for complete dishes
-3. Are realistic and can be made with the appliances available
-4. Include the specific expiring items used in each suggestion
-
-Be specific about which ingredients from the inventory are used. Focus on complete, appealing dishes.
+Focus on practical, actionable tips that help use expiring items in unexpected ways or as substitutes. Be specific about which expiring items you're referring to.
 
 Respond ONLY with a valid JSON object:
 {
-  "suggestions": ["detailed suggestion 1", "detailed suggestion 2", "detailed suggestion 3"]
+  "suggestions": ["tip 1", "tip 2", "tip 3"]
 }`;
 
       const completion = await openai.chat.completions.create({
