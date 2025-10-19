@@ -482,7 +482,7 @@ export default function Onboarding() {
                     placeholder="e.g., cilantro, mushrooms"
                     value={foodToAvoid}
                     onChange={(e) => setFoodToAvoid(e.target.value)}
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         addFoodToAvoid();
