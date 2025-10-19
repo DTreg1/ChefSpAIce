@@ -111,128 +111,19 @@ export default function Onboarding() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
-      const failedItems: string[] = [];
-      let successCount = 0;
-
-      // Step 1: Save user preferences
-      const preferences = await apiRequest("PUT", "/api/user/preferences", {
-        ...data,
-        hasCompletedOnboarding: true,
+      // Single POST request to complete onboarding
+      const response = await apiRequest("POST", "/api/onboarding/complete", {
+        preferences: data,
+        customStorageAreas: customStorageAreas,
+        selectedCommonItems: selectedCommonItems,
       });
-
-      // Step 2: Create custom storage locations
-      for (const customArea of customStorageAreas) {
-        await apiRequest("POST", "/api/storage-locations", {
-          name: customArea,
-          icon: "package",
-        });
-      }
-
-      // Step 3: Get all storage locations to map names to IDs
-      const response = await apiRequest("GET", "/api/storage-locations", null);
-      const locations = await response.json() as any[];
       
-      const locationMap = new Map(
-        locations.map((loc: any) => [loc.name, loc.id])
-      );
-
-      // Step 4: Create selected common food items with enriched USDA data
-      for (const itemName of selectedCommonItems) {
-        let enrichedData = null;
-        
-        // Try to fetch enriched USDA data first
-        try {
-          const enrichedResponse = await fetch(`/api/onboarding/enriched-item/${encodeURIComponent(itemName)}`, {
-            method: "GET",
-            credentials: "include",
-          });
-          
-          if (enrichedResponse.ok) {
-            enrichedData = await enrichedResponse.json();
-            console.log(`Successfully fetched enriched data for ${itemName}`);
-          } else {
-            console.warn(`Failed to fetch enriched data for ${itemName}: ${enrichedResponse.status}`);
-          }
-        } catch (error) {
-          console.warn(`Error fetching enriched data for ${itemName}:`, error);
-        }
-        
-        // Use enriched data if available, otherwise fall back to basic data
-        if (enrichedData) {
-          const storageLocationId = locationMap.get(enrichedData.storage);
-          if (!storageLocationId) {
-            console.error(`No storage location found for ${enrichedData.storage}`);
-            failedItems.push(itemName);
-            continue;
-          }
-
-          const expirationDate = new Date();
-          expirationDate.setDate(expirationDate.getDate() + enrichedData.expirationDays);
-
-          // Create the food item with full USDA data
-          try {
-            await apiRequest("POST", "/api/food-items", {
-              name: enrichedData.name,
-              quantity: enrichedData.quantity,
-              unit: enrichedData.unit,
-              storageLocationId,
-              expirationDate: expirationDate.toISOString(),
-              fcdId: enrichedData.fcdId,
-              nutrition: enrichedData.nutrition,
-              usdaData: enrichedData.usdaData,
-              foodCategory: enrichedData.usdaData?.foodCategory || null,
-            });
-            console.log(`Created enriched food item: ${enrichedData.name}`);
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to create enriched food item ${enrichedData.name}:`, error);
-            failedItems.push(itemName);
-          }
-        } else {
-          // Fall back to basic data from API
-          let itemData: CommonItem | undefined;
-          if (commonItemsData?.categories) {
-            Object.values(commonItemsData.categories).forEach(items => {
-              const found = items.find(item => item.displayName === itemName);
-              if (found) itemData = found;
-            });
-          }
-          
-          if (!itemData) {
-            console.error(`No basic data found for ${itemName}`);
-            failedItems.push(itemName);
-            continue;
-          }
-
-          const storageLocationId = locationMap.get(itemData.storage);
-          if (!storageLocationId) {
-            console.error(`No storage location found for ${itemData.storage}`);
-            failedItems.push(itemName);
-            continue;
-          }
-
-          const expirationDate = new Date();
-          expirationDate.setDate(expirationDate.getDate() + itemData.expirationDays);
-
-          try {
-            await apiRequest("POST", "/api/food-items", {
-              name: itemData.displayName,
-              quantity: itemData.quantity,
-              unit: itemData.unit,
-              storageLocationId,
-              expirationDate: expirationDate.toISOString(),
-              fcdId: itemData.fcdId,
-            });
-            console.log(`Created basic food item: ${itemData.displayName}`);
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to create basic food item ${itemData.displayName}:`, error);
-            failedItems.push(itemName);
-          }
-        }
-      }
-
-      return { successCount, failedItems };
+      const result = await response.json();
+      return {
+        successCount: result.foodItemsCreated,
+        failedItems: result.failedItems,
+        createdStorageLocations: result.createdStorageLocations,
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
