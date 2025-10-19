@@ -2854,10 +2854,11 @@ export class DatabaseStorage implements IStorage {
   async getCommonFoodItemsByNames(displayNames: string[]): Promise<CommonFoodItem[]> {
     try {
       if (displayNames.length === 0) return [];
+      // Use a parameterized query with ARRAY constructor
       return db
         .select()
         .from(commonFoodItems)
-        .where(sql`${commonFoodItems.displayName} = ANY(${displayNames})`);
+        .where(sql`${commonFoodItems.displayName} = ANY(ARRAY[${sql.join(displayNames.map(name => sql`${name}`), sql`, `)}])`);
     } catch (error) {
       console.error("Error getting common food items by names:", error);
       throw new Error("Failed to get common food items");

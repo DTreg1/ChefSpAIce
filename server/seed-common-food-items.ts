@@ -168,7 +168,9 @@ export async function seedCommonFoodItems(forceUpdate = false) {
 }
 
 // Run the seeding if this file is executed directly
-if (require.main === module) {
+// Check if running as main module using import.meta.url
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
   const forceUpdate = process.argv.includes("--force");
   
   seedCommonFoodItems(forceUpdate)
