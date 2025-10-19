@@ -180,10 +180,23 @@ export function RecipeCard({
           <CardTitle className="text-2xl font-serif font-semibold text-foreground" data-testid="text-recipe-title">
             {title}
           </CardTitle>
-          <Badge variant="secondary" className="flex-shrink-0 gap-1" data-testid="badge-ai-generated">
-            <ChefHat className="w-3 h-3" />
-            AI Generated
-          </Badge>
+          {(localIngredientMatches || ingredientMatches) && (() => {
+            const currentMatches = localIngredientMatches || ingredientMatches;
+            const missingCount = currentMatches ? currentMatches.filter(m => !m.hasEnough).length : missingIngredients.length;
+            return (
+              <>
+                <Badge 
+                  variant={missingCount === 0 ? "default" : "destructive"}
+                  className="gap-1"
+                  data-testid="badge-missing-ingredients"
+                >
+                  <ShoppingCart className="w-3 h-3" />
+                  {missingCount === 0 ? "All ingredients available" : `${missingCount} missing`}
+                </Badge>
+              </>
+            );
+          })()}
+
         </div>
 
         {showControls && id && (
@@ -253,14 +266,6 @@ export function RecipeCard({
             const missingCount = currentMatches ? currentMatches.filter(m => !m.hasEnough).length : missingIngredients.length;
             return (
               <>
-                <Badge 
-                  variant={missingCount === 0 ? "default" : "destructive"}
-                  className="gap-1"
-                  data-testid="badge-missing-ingredients"
-                >
-                  <ShoppingCart className="w-3 h-3" />
-                  {missingCount === 0 ? "All ingredients available" : `${missingCount} missing`}
-                </Badge>
                 {missingCount > 0 && showControls && id && (
                   <Button
                     variant="outline"
