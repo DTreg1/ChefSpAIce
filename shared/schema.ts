@@ -670,3 +670,52 @@ export const insertWebVitalSchema = createInsertSchema(webVitals).omit({
 
 export type InsertWebVital = z.infer<typeof insertWebVitalSchema>;
 export type WebVital = typeof webVitals.$inferSelect;
+
+// Common Food Items - Pre-populated onboarding items with USDA data
+export const commonFoodItems = pgTable("common_food_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Identifier fields
+  displayName: text("display_name").notNull().unique(), // Unique name for the item
+  upc: text("upc"), // UPC barcode if available
+  fcdId: varchar("fcd_id"), // FDC ID from USDA
+  
+  // Basic item data
+  description: text("description"), // Detailed description from USDA or predefined
+  quantity: text("quantity").notNull(), // Default quantity for onboarding
+  unit: text("unit").notNull(), // Default unit
+  storage: text("storage").notNull(), // Default storage location (Pantry, Fridge, Freezer, etc.)
+  expirationDays: integer("expiration_days").notNull(), // Default shelf life in days
+  category: text("category"), // Original category from our mapping
+  foodCategory: text("food_category"), // Normalized to 5 major groups
+  
+  // USDA enriched data
+  nutrition: jsonb("nutrition"), // Nutrition data from USDA
+  usdaData: jsonb("usda_data"), // Full USDA data object
+  brandOwner: text("brand_owner"),
+  ingredients: text("ingredients"),
+  servingSize: text("serving_size"),
+  servingSizeUnit: text("serving_size_unit"),
+  
+  // Image data
+  imageUrl: text("image_url"),
+  barcodeLookupData: jsonb("barcode_lookup_data"),
+  
+  // Metadata
+  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
+  dataSource: text("data_source"), // 'usda_upc', 'usda_fdc', 'usda_search', 'manual'
+}, (table) => [
+  index("common_food_items_display_name_idx").on(table.displayName),
+  index("common_food_items_upc_idx").on(table.upc),
+  index("common_food_items_fcd_id_idx").on(table.fcdId),
+  index("common_food_items_category_idx").on(table.category),
+  index("common_food_items_food_category_idx").on(table.foodCategory),
+]);
+
+export const insertCommonFoodItemSchema = createInsertSchema(commonFoodItems).omit({
+  id: true,
+  lastUpdated: true,
+});
+
+export type InsertCommonFoodItem = z.infer<typeof insertCommonFoodItemSchema>;
+export type CommonFoodItem = typeof commonFoodItems.$inferSelect;

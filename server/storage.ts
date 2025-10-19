@@ -36,6 +36,8 @@ import {
   type InsertPushToken,
   type WebVital,
   type InsertWebVital,
+  type CommonFoodItem,
+  type InsertCommonFoodItem,
   users,
   pushTokens,
   appliances,
@@ -52,6 +54,7 @@ import {
   feedback,
   donations,
   webVitals,
+  commonFoodItems,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -2822,6 +2825,73 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting web vitals stats:", error);
       throw new Error("Failed to get web vitals stats");
+    }
+  }
+
+  // Common Food Items Methods
+  async getCommonFoodItems(): Promise<CommonFoodItem[]> {
+    try {
+      return db.select().from(commonFoodItems);
+    } catch (error) {
+      console.error("Error getting common food items:", error);
+      throw new Error("Failed to get common food items");
+    }
+  }
+
+  async getCommonFoodItemByName(displayName: string): Promise<CommonFoodItem | undefined> {
+    try {
+      const [item] = await db
+        .select()
+        .from(commonFoodItems)
+        .where(eq(commonFoodItems.displayName, displayName));
+      return item;
+    } catch (error) {
+      console.error("Error getting common food item by name:", error);
+      throw new Error("Failed to get common food item");
+    }
+  }
+
+  async getCommonFoodItemsByNames(displayNames: string[]): Promise<CommonFoodItem[]> {
+    try {
+      if (displayNames.length === 0) return [];
+      return db
+        .select()
+        .from(commonFoodItems)
+        .where(sql`${commonFoodItems.displayName} = ANY(${displayNames})`);
+    } catch (error) {
+      console.error("Error getting common food items by names:", error);
+      throw new Error("Failed to get common food items");
+    }
+  }
+
+  async upsertCommonFoodItem(item: InsertCommonFoodItem): Promise<CommonFoodItem> {
+    try {
+      const [result] = await db
+        .insert(commonFoodItems)
+        .values(item)
+        .onConflictDoUpdate({
+          target: commonFoodItems.displayName,
+          set: {
+            ...item,
+            lastUpdated: new Date(),
+          },
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error upserting common food item:", error);
+      throw new Error("Failed to upsert common food item");
+    }
+  }
+
+  async deleteCommonFoodItem(displayName: string): Promise<void> {
+    try {
+      await db
+        .delete(commonFoodItems)
+        .where(eq(commonFoodItems.displayName, displayName));
+    } catch (error) {
+      console.error("Error deleting common food item:", error);
+      throw new Error("Failed to delete common food item");
     }
   }
 }
