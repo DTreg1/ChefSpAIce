@@ -284,7 +284,7 @@ export default function Onboarding() {
                     placeholder="Add custom storage (e.g., Wine Cellar, Garage Fridge)"
                     value={customStorageInput}
                     onChange={(e) => setCustomStorageInput(e.target.value)}
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         addCustomStorageArea();
