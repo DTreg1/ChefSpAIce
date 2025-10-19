@@ -166,6 +166,12 @@ export const barcodeProducts = pgTable("barcode_products", {
     lastUpdate: string;
   }>>(),
   
+  // Cache metadata
+  cachedAt: timestamp("cached_at"),
+  expiresAt: timestamp("expires_at"),
+  lookupFailed: boolean("lookup_failed").notNull().default(false),
+  source: text("source"), // 'barcode_lookup' or 'openfoodfacts'
+  
   // Metadata
   rawData: jsonb("raw_data"), // Complete API response
   lastUpdate: timestamp("last_update").notNull().defaultNow(),
