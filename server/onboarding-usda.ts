@@ -13,26 +13,42 @@ export async function fetchOnboardingItemUsdaData(itemName: string): Promise<USD
     return null;
   }
 
-  // Check cache first
-  const cacheKey = mapping.fcdId;
+  // Check cache first (use UPC as key if available, otherwise use displayName)
+  const cacheKey = mapping.upc || mapping.displayName;
   if (usdaDataCache.has(cacheKey)) {
     return usdaDataCache.get(cacheKey) || null;
   }
 
   try {
-    // Fetch USDA data by FDC ID
-    const usdaData = await getFoodByFdcId(parseInt(mapping.fcdId));
-    if (usdaData) {
-      // Cache the result
-      usdaDataCache.set(cacheKey, usdaData);
-      return usdaData;
+    // Try UPC search if available
+    if (mapping.upc) {
+      console.log(`Searching for ${itemName} by UPC: ${mapping.upc}`);
+      const searchResults = await searchUSDAFoods(mapping.upc);
+      if (searchResults && searchResults.foods && searchResults.foods.length > 0) {
+        const firstResult = searchResults.foods[0];
+        usdaDataCache.set(cacheKey, firstResult);
+        return firstResult;
+      }
+      console.log(`UPC search failed for ${itemName}`);
+    }
+    
+    // Try FDC ID if available (cast to any to access fcdId)
+    const mappingWithFdc = mapping as any;
+    if (mappingWithFdc.fcdId) {
+      console.log(`Searching for ${itemName} by FDC ID: ${mappingWithFdc.fcdId}`);
+      const fdcData = await getFoodByFdcId(parseInt(mappingWithFdc.fcdId));
+      if (fdcData) {
+        usdaDataCache.set(cacheKey, fdcData);
+        return fdcData;
+      }
+      console.log(`FDC ID search failed for ${itemName}`);
     }
 
-    // If direct FDC ID fetch fails, try searching by name as fallback
-    console.log(`Direct FDC ID fetch failed for ${itemName}, trying search...`);
-    const searchResults = await searchUSDAFoods(mapping.description || itemName);
-    if (searchResults && searchResults.foods && searchResults.foods.length > 0) {
-      const firstResult = searchResults.foods[0];
+    // Final fallback: search by name
+    console.log(`Searching for ${itemName} by name...`);
+    const nameSearchResults = await searchUSDAFoods(mapping.description || itemName);
+    if (nameSearchResults && nameSearchResults.foods && nameSearchResults.foods.length > 0) {
+      const firstResult = nameSearchResults.foods[0];
       usdaDataCache.set(cacheKey, firstResult);
       return firstResult;
     }
@@ -84,7 +100,7 @@ export async function getEnrichedOnboardingItem(itemName: string): Promise<{
     unit: mapping.unit,
     storage: mapping.storage,
     expirationDays: mapping.expirationDays,
-    fcdId: usdaData?.fdcId ? String(usdaData.fdcId) : mapping.fcdId,
+    fcdId: usdaData?.fdcId ? String(usdaData.fdcId) : undefined,
     nutrition: usdaData?.nutrition ? JSON.stringify(usdaData.nutrition) : undefined,
     usdaData: usdaData ? {
       fdcId: usdaData.fdcId,

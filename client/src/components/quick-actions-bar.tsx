@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Plus, ScanLine, ChefHat } from "lucide-react";
-import { 
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -13,10 +13,10 @@ interface QuickActionsBarProps {
   onScanBarcode?: () => void;
 }
 
-export function QuickActionsBar({ 
-  onAddFood, 
-  onGenerateRecipe, 
-  onScanBarcode 
+export function QuickActionsBar({
+  onAddFood,
+  onGenerateRecipe,
+  onScanBarcode,
 }: QuickActionsBarProps) {
   return (
     <div className="flex items-center gap-2">
@@ -24,7 +24,7 @@ export function QuickActionsBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant="ghost"
+              variant="default"
               onClick={onAddFood}
               data-testid="button-quick-add-food"
               className="transition-all-smooth h-9 w-9 p-0 lg:w-auto lg:px-3"

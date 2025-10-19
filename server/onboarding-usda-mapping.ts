@@ -1,8 +1,9 @@
-// USDA FDC IDs for common onboarding food items
+// Common onboarding food items with UPC barcodes and FDC IDs
 // These are carefully selected to be generic, common versions of each item
 
 export const onboardingUsdaMapping: Record<string, {
-  fcdId: string;
+  upc?: string;  // Optional UPC barcode for product lookup
+  fcdId?: string;  // Optional FDC ID for USDA database lookup  
   displayName: string;
   quantity: string;
   unit: string;
@@ -12,7 +13,8 @@ export const onboardingUsdaMapping: Record<string, {
 }> = {
   // Pantry Staples
   "Salt": {
-    fcdId: "173410", // Table salt
+    upc: "024600017008", // Morton Table Salt
+    fcdId: "173410",
     displayName: "Salt",
     quantity: "1",
     unit: "container",
@@ -21,7 +23,8 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Table salt"
   },
   "Black Pepper": {
-    fcdId: "170931", // Black pepper, ground
+    upc: "052100002989", // McCormick Black Pepper
+    fcdId: "170931",
     displayName: "Black Pepper",
     quantity: "1",
     unit: "container",
@@ -30,7 +33,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Ground black pepper"
   },
   "Olive Oil": {
-    fcdId: "748608", // Olive oil, extra virgin
+    upc: "041618000185", // Filippo Berio Olive Oil
     displayName: "Olive Oil",
     quantity: "1",
     unit: "bottle",
@@ -39,7 +42,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Extra virgin olive oil"
   },
   "All-Purpose Flour": {
-    fcdId: "789890", // Wheat flour, white, all purpose
+    upc: "016000502406", // Gold Medal All-Purpose Flour
     displayName: "All-Purpose Flour",
     quantity: "5",
     unit: "lbs",
@@ -48,7 +51,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "All-purpose white flour"
   },
   "Sugar": {
-    fcdId: "746773", // Granulated sugar
+    upc: "049200035412", // Domino Granulated Sugar
     displayName: "Sugar",
     quantity: "5",
     unit: "lbs",
@@ -57,7 +60,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Granulated white sugar"
   },
   "Rice": {
-    fcdId: "786651", // Rice, white, long-grain
+    upc: "054800029426", // Uncle Ben's Long Grain Rice
     displayName: "Rice",
     quantity: "2",
     unit: "lbs",
@@ -66,7 +69,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Long-grain white rice"
   },
   "Pasta": {
-    fcdId: "356420", // Pasta, spaghetti, dry
+    upc: "076808533316", // Barilla Spaghetti
     displayName: "Pasta",
     quantity: "1",
     unit: "lb",
@@ -75,7 +78,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Dry spaghetti pasta"
   },
   "Canned Tomatoes": {
-    fcdId: "343109", // Tomatoes, canned, diced
+    upc: "027000386460", // Hunt's Diced Tomatoes
     displayName: "Canned Tomatoes",
     quantity: "2",
     unit: "cans",
@@ -84,7 +87,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Canned diced tomatoes"
   },
   "Onions": {
-    fcdId: "170000", // Onions, raw
+    upc: "033383671000", // Yellow Onions (3 lb bag)
     displayName: "Onions",
     quantity: "3",
     unit: "whole",
@@ -93,7 +96,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Fresh yellow onions"
   },
   "Garlic": {
-    fcdId: "169230", // Garlic, raw
+    upc: "033383997018", // Fresh Garlic
     displayName: "Garlic",
     quantity: "1",
     unit: "bulb",
@@ -102,7 +105,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Fresh garlic bulb"
   },
   "Chicken Broth": {
-    fcdId: "174185", // Soup, chicken broth
+    upc: "051000127990", // Campbell's Chicken Broth
     displayName: "Chicken Broth",
     quantity: "2",
     unit: "cans",
@@ -111,7 +114,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Canned chicken broth"
   },
   "Soy Sauce": {
-    fcdId: "174277", // Soy sauce
+    upc: "041390000003", // Kikkoman Soy Sauce
     displayName: "Soy Sauce",
     quantity: "1",
     unit: "bottle",
@@ -121,7 +124,7 @@ export const onboardingUsdaMapping: Record<string, {
   },
   // Refrigerator Items
   "Milk": {
-    fcdId: "1097512", // Milk, whole
+    upc: "041383090141", // Great Value Whole Milk
     displayName: "Milk",
     quantity: "1",
     unit: "gallon",
@@ -130,7 +133,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Whole milk"
   },
   "Eggs": {
-    fcdId: "748967", // Egg, whole, raw
+    upc: "041415001121", // Large Grade A Eggs
     displayName: "Eggs",
     quantity: "12",
     unit: "count",
@@ -139,7 +142,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Large eggs"
   },
   "Butter": {
-    fcdId: "173430", // Butter, salted
+    upc: "034500151122", // Land O Lakes Butter
     displayName: "Butter",
     quantity: "1",
     unit: "lb",
@@ -148,7 +151,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Salted butter"
   },
   "Cheddar Cheese": {
-    fcdId: "328637", // Cheese, cheddar
+    upc: "021000615872", // Kraft Sharp Cheddar
     displayName: "Cheddar Cheese",
     quantity: "8",
     unit: "oz",
@@ -157,7 +160,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Sharp cheddar cheese"
   },
   "Carrots": {
-    fcdId: "787791", // Carrots, raw
+    upc: "033383659008", // Fresh Carrots 1lb bag
     displayName: "Carrots",
     quantity: "1",
     unit: "lb",
@@ -166,7 +169,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Fresh carrots"
   },
   "Bell Peppers": {
-    fcdId: "787813", // Pepper, bell, red, raw
+    upc: "000651330023", // Bell Peppers (Red)
     displayName: "Bell Peppers",
     quantity: "2",
     unit: "whole",
@@ -175,7 +178,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Fresh bell peppers"
   },
   "Lettuce": {
-    fcdId: "342616", // Lettuce, iceberg
+    upc: "000000004061", // Iceberg Lettuce
     displayName: "Lettuce",
     quantity: "1",
     unit: "head",
@@ -184,7 +187,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Iceberg lettuce"
   },
   "Yogurt": {
-    fcdId: "330138", // Yogurt, plain, whole milk
+    upc: "053600000222", // Yoplait Original Yogurt
     displayName: "Yogurt",
     quantity: "4",
     unit: "cups",
@@ -193,7 +196,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Plain yogurt"
   },
   "Mayonnaise": {
-    fcdId: "322965", // Mayonnaise
+    upc: "048001213487", // Hellmann's Real Mayonnaise
     displayName: "Mayonnaise",
     quantity: "1",
     unit: "jar",
@@ -202,7 +205,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Regular mayonnaise"
   },
   "Mustard": {
-    fcdId: "324863", // Mustard, yellow
+    upc: "054467005016", // French's Yellow Mustard
     displayName: "Mustard",
     quantity: "1",
     unit: "jar",
@@ -211,7 +214,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Yellow mustard"
   },
   "Ketchup": {
-    fcdId: "324862", // Ketchup
+    upc: "013000001243", // Heinz Tomato Ketchup
     displayName: "Ketchup",
     quantity: "1",
     unit: "bottle",
@@ -221,7 +224,7 @@ export const onboardingUsdaMapping: Record<string, {
   },
   // Freezer Items
   "Frozen Peas": {
-    fcdId: "747447", // Peas, green, frozen
+    upc: "014500013927", // Birds Eye Sweet Peas
     displayName: "Frozen Peas",
     quantity: "1",
     unit: "bag",
@@ -230,7 +233,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Frozen green peas"
   },
   "Frozen Corn": {
-    fcdId: "168917", // Corn, sweet, frozen
+    upc: "014500000946", // Birds Eye Whole Kernel Corn
     displayName: "Frozen Corn",
     quantity: "1",
     unit: "bag",
@@ -239,7 +242,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Frozen sweet corn"
   },
   "Chicken Breast": {
-    fcdId: "331960", // Chicken breast, raw
+    upc: "023700035851", // Tyson Boneless Skinless Chicken Breasts
     displayName: "Chicken Breast",
     quantity: "2",
     unit: "lbs",
@@ -248,7 +251,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Boneless skinless chicken breast"
   },
   "Ground Beef": {
-    fcdId: "333875", // Ground beef, 85% lean
+    upc: "037600286848", // Ground Beef 85% Lean
     displayName: "Ground Beef",
     quantity: "1",
     unit: "lb",
@@ -257,7 +260,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "85% lean ground beef"
   },
   "Frozen Pizza": {
-    fcdId: "339745", // Pizza, frozen, cheese
+    upc: "071921001230", // DiGiorno Rising Crust Cheese Pizza
     displayName: "Frozen Pizza",
     quantity: "1",
     unit: "whole",
@@ -266,7 +269,7 @@ export const onboardingUsdaMapping: Record<string, {
     description: "Frozen cheese pizza"
   },
   "Ice Cream": {
-    fcdId: "740156", // Ice cream, vanilla
+    upc: "077567254122", // Breyers Vanilla Ice Cream
     displayName: "Ice Cream",
     quantity: "1",
     unit: "pint",
@@ -276,9 +279,9 @@ export const onboardingUsdaMapping: Record<string, {
   }
 };
 
-// Helper function to get all FDC IDs for batch fetching
-export function getOnboardingFcdIds(): string[] {
-  return Object.values(onboardingUsdaMapping).map(item => item.fcdId);
+// Helper function to get all UPC codes for batch fetching
+export function getOnboardingUpcs(): string[] {
+  return Object.values(onboardingUsdaMapping).map(item => item.upc);
 }
 
 // Helper function to get item data by name

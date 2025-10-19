@@ -9,7 +9,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
@@ -146,17 +145,9 @@ function AppContent() {
         <AnimatedBackground
           variant="both"
           gradientType="primary"
-          particleCount={3000}
+          particleCount={2000}
         />
       )}
-      <CommandPalette
-        onAddFood={() => setAddFoodOpen(true)}
-        onGenerateRecipe={() => setRecipeDialogOpen(true)}
-        onScanBarcode={() => {
-          // Navigate to FDC search page with barcode scanner
-          window.location.href = "/fdc-search?scanBarcode=true";
-        }}
-      />
       <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <RecipeCustomizationDialog
         open={recipeDialogOpen}
