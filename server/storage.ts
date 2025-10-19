@@ -1,8 +1,8 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added user operations and user-scoped data
-import { 
+import {
   type User,
   type UpsertUser,
-  type StorageLocation, 
+  type StorageLocation,
   type InsertStorageLocation,
   type Appliance,
   type InsertAppliance,
@@ -51,123 +51,285 @@ import {
   shoppingListItems,
   feedback,
   donations,
-  webVitals
+  webVitals,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
-import { matchIngredientWithInventory, type IngredientMatch } from "./utils/unitConverter";
+import {
+  matchIngredientWithInventory,
+  type IngredientMatch,
+} from "./utils/unitConverter";
 
 export interface IStorage {
   // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  
+
   // User Preferences (merged into users table)
   getUserPreferences(userId: string): Promise<User | undefined>;
-  updateUserPreferences(userId: string, preferences: Partial<User>): Promise<User>;
-  
+  updateUserPreferences(
+    userId: string,
+    preferences: Partial<User>,
+  ): Promise<User>;
+
   // Push Tokens (user-scoped)
   getPushTokens(userId: string): Promise<PushToken[]>;
-  upsertPushToken(userId: string, token: Omit<InsertPushToken, 'userId'>): Promise<PushToken>;
+  upsertPushToken(
+    userId: string,
+    token: Omit<InsertPushToken, "userId">,
+  ): Promise<PushToken>;
   deletePushToken(userId: string, token: string): Promise<void>;
-  
+
   // Storage Locations (now in users.storageLocations JSONB)
   getStorageLocations(userId: string): Promise<StorageLocation[]>;
-  getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined>;
-  createStorageLocation(userId: string, location: InsertStorageLocation): Promise<StorageLocation>;
+  getStorageLocation(
+    userId: string,
+    id: string,
+  ): Promise<StorageLocation | undefined>;
+  createStorageLocation(
+    userId: string,
+    location: InsertStorageLocation,
+  ): Promise<StorageLocation>;
 
   // Appliances (user-scoped)
   getAppliances(userId: string): Promise<Appliance[]>;
   getAppliance(userId: string, id: string): Promise<Appliance | undefined>;
-  createAppliance(userId: string, appliance: Omit<InsertAppliance, 'userId'>): Promise<Appliance>;
-  updateAppliance(userId: string, id: string, appliance: Partial<Omit<InsertAppliance, 'userId'>>): Promise<Appliance>;
+  createAppliance(
+    userId: string,
+    appliance: Omit<InsertAppliance, "userId">,
+  ): Promise<Appliance>;
+  updateAppliance(
+    userId: string,
+    id: string,
+    appliance: Partial<Omit<InsertAppliance, "userId">>,
+  ): Promise<Appliance>;
   deleteAppliance(userId: string, id: string): Promise<void>;
-  getAppliancesByCategory(userId: string, categoryId: string): Promise<Appliance[]>;
-  getAppliancesByCapability(userId: string, capability: string): Promise<Appliance[]>;
-  
+  getAppliancesByCategory(
+    userId: string,
+    categoryId: string,
+  ): Promise<Appliance[]>;
+  getAppliancesByCapability(
+    userId: string,
+    capability: string,
+  ): Promise<Appliance[]>;
+
   // Appliance Categories
   getApplianceCategories(): Promise<ApplianceCategory[]>;
   getApplianceCategory(id: string): Promise<ApplianceCategory | undefined>;
-  createApplianceCategory(category: InsertApplianceCategory): Promise<ApplianceCategory>;
-  updateApplianceCategory(id: string, category: Partial<InsertApplianceCategory>): Promise<ApplianceCategory>;
+  createApplianceCategory(
+    category: InsertApplianceCategory,
+  ): Promise<ApplianceCategory>;
+  updateApplianceCategory(
+    id: string,
+    category: Partial<InsertApplianceCategory>,
+  ): Promise<ApplianceCategory>;
   deleteApplianceCategory(id: string): Promise<void>;
-  
+
   // Barcode Products
   getBarcodeProduct(barcodeNumber: string): Promise<BarcodeProduct | undefined>;
   createBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct>;
-  updateBarcodeProduct(barcodeNumber: string, product: Partial<InsertBarcodeProduct>): Promise<BarcodeProduct>;
+  updateBarcodeProduct(
+    barcodeNumber: string,
+    product: Partial<InsertBarcodeProduct>,
+  ): Promise<BarcodeProduct>;
   searchBarcodeProducts(query: string): Promise<BarcodeProduct[]>;
 
   // Food Items (user-scoped)
   getFoodItems(userId: string, storageLocationId?: string): Promise<FoodItem[]>;
-  getFoodItemsPaginated(userId: string, page?: number, limit?: number, storageLocationId?: string, sortBy?: 'name' | 'expirationDate' | 'addedAt'): Promise<{ items: FoodItem[], total: number, page: number, totalPages: number }>;
+  getFoodItemsPaginated(
+    userId: string,
+    page?: number,
+    limit?: number,
+    storageLocationId?: string,
+    sortBy?: "name" | "expirationDate" | "addedAt",
+  ): Promise<{
+    items: FoodItem[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   getFoodItem(userId: string, id: string): Promise<FoodItem | undefined>;
-  createFoodItem(userId: string, item: Omit<InsertFoodItem, 'userId'>): Promise<FoodItem>;
-  updateFoodItem(userId: string, id: string, item: Partial<Omit<InsertFoodItem, 'userId'>>): Promise<FoodItem>;
+  createFoodItem(
+    userId: string,
+    item: Omit<InsertFoodItem, "userId">,
+  ): Promise<FoodItem>;
+  updateFoodItem(
+    userId: string,
+    id: string,
+    item: Partial<Omit<InsertFoodItem, "userId">>,
+  ): Promise<FoodItem>;
   deleteFoodItem(userId: string, id: string): Promise<void>;
   getFoodCategories(userId: string): Promise<string[]>;
 
   // Chat Messages (user-scoped)
   getChatMessages(userId: string): Promise<ChatMessage[]>;
-  getChatMessagesPaginated(userId: string, page?: number, limit?: number): Promise<{ messages: ChatMessage[], total: number, page: number, totalPages: number }>;
-  createChatMessage(userId: string, message: Omit<InsertChatMessage, 'userId'>): Promise<ChatMessage>;
+  getChatMessagesPaginated(
+    userId: string,
+    page?: number,
+    limit?: number,
+  ): Promise<{
+    messages: ChatMessage[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
+  createChatMessage(
+    userId: string,
+    message: Omit<InsertChatMessage, "userId">,
+  ): Promise<ChatMessage>;
 
   // Recipes (user-scoped)
   getRecipes(userId: string): Promise<Recipe[]>;
-  getRecipesPaginated(userId: string, page?: number, limit?: number): Promise<{ recipes: Recipe[], total: number, page: number, totalPages: number }>;
+  getRecipesPaginated(
+    userId: string,
+    page?: number,
+    limit?: number,
+  ): Promise<{
+    recipes: Recipe[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
   getRecipe(userId: string, id: string): Promise<Recipe | undefined>;
-  createRecipe(userId: string, recipe: Omit<InsertRecipe, 'userId'>): Promise<Recipe>;
-  updateRecipe(userId: string, id: string, updates: Partial<Recipe>): Promise<Recipe>;
-  getRecipesWithInventoryMatching(userId: string): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
+  createRecipe(
+    userId: string,
+    recipe: Omit<InsertRecipe, "userId">,
+  ): Promise<Recipe>;
+  updateRecipe(
+    userId: string,
+    id: string,
+    updates: Partial<Recipe>,
+  ): Promise<Recipe>;
+  getRecipesWithInventoryMatching(
+    userId: string,
+  ): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
 
   // Expiration Handling (now in foodItems table)
   getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]>;
-  dismissFoodItemNotification(userId: string, foodItemId: string): Promise<void>;
+  dismissFoodItemNotification(
+    userId: string,
+    foodItemId: string,
+  ): Promise<void>;
 
   // Meal Plans (user-scoped)
-  getMealPlans(userId: string, startDate?: string, endDate?: string): Promise<MealPlan[]>;
+  getMealPlans(
+    userId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<MealPlan[]>;
   getMealPlan(userId: string, id: string): Promise<MealPlan | undefined>;
-  createMealPlan(userId: string, plan: Omit<InsertMealPlan, 'userId'>): Promise<MealPlan>;
-  updateMealPlan(userId: string, id: string, updates: Partial<Omit<InsertMealPlan, 'userId'>>): Promise<MealPlan>;
+  createMealPlan(
+    userId: string,
+    plan: Omit<InsertMealPlan, "userId">,
+  ): Promise<MealPlan>;
+  updateMealPlan(
+    userId: string,
+    id: string,
+    updates: Partial<Omit<InsertMealPlan, "userId">>,
+  ): Promise<MealPlan>;
   deleteMealPlan(userId: string, id: string): Promise<void>;
 
   // API Usage Logs (user-scoped)
-  logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>): Promise<ApiUsageLog>;
-  getApiUsageLogs(userId: string, apiName?: string, limit?: number): Promise<ApiUsageLog[]>;
-  getApiUsageStats(userId: string, apiName: string, days?: number): Promise<{ totalCalls: number; successfulCalls: number; failedCalls: number }>;
-  
+  logApiUsage(
+    userId: string,
+    log: Omit<InsertApiUsageLog, "userId">,
+  ): Promise<ApiUsageLog>;
+  getApiUsageLogs(
+    userId: string,
+    apiName?: string,
+    limit?: number,
+  ): Promise<ApiUsageLog[]>;
+  getApiUsageStats(
+    userId: string,
+    apiName: string,
+    days?: number,
+  ): Promise<{
+    totalCalls: number;
+    successfulCalls: number;
+    failedCalls: number;
+  }>;
+
   // FDC Cache Methods
   getCachedFood(fdcId: string): Promise<FdcCache | undefined>;
   cacheFood(food: InsertFdcCache): Promise<FdcCache>;
   updateFoodLastAccessed(fdcId: string): Promise<void>;
-  getCachedSearchResults(query: string, dataType?: string, pageNumber?: number): Promise<FdcSearchQuery | undefined>;
+  getCachedSearchResults(
+    query: string,
+    dataType?: string,
+    pageNumber?: number,
+  ): Promise<FdcSearchQuery | undefined>;
   cacheSearchResults(search: InsertFdcSearchQuery): Promise<FdcSearchQuery>;
   clearOldCache(daysOld: number): Promise<void>;
-  
+
   // Shopping List Items (user-scoped)
   getShoppingListItems(userId: string): Promise<ShoppingListItem[]>;
-  createShoppingListItem(userId: string, item: Omit<InsertShoppingListItem, 'userId'>): Promise<ShoppingListItem>;
-  updateShoppingListItem(userId: string, id: string, updates: Partial<Omit<InsertShoppingListItem, 'userId'>>): Promise<ShoppingListItem>;
+  createShoppingListItem(
+    userId: string,
+    item: Omit<InsertShoppingListItem, "userId">,
+  ): Promise<ShoppingListItem>;
+  updateShoppingListItem(
+    userId: string,
+    id: string,
+    updates: Partial<Omit<InsertShoppingListItem, "userId">>,
+  ): Promise<ShoppingListItem>;
   deleteShoppingListItem(userId: string, id: string): Promise<void>;
   clearCheckedShoppingListItems(userId: string): Promise<void>;
-  addMissingIngredientsToShoppingList(userId: string, recipeId: string, ingredients: string[]): Promise<ShoppingListItem[]>;
-  
+  addMissingIngredientsToShoppingList(
+    userId: string,
+    recipeId: string,
+    ingredients: string[],
+  ): Promise<ShoppingListItem[]>;
+
   // Account Management
   resetUserData(userId: string): Promise<void>;
 
   // Feedback System (consolidated with upvotes and responses in JSONB)
-  createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'> & { isFlagged?: boolean; flagReason?: string | null; similarTo?: string | null }): Promise<Feedback>;
+  createFeedback(
+    userId: string,
+    feedbackData: Omit<InsertFeedback, "userId"> & {
+      isFlagged?: boolean;
+      flagReason?: string | null;
+      similarTo?: string | null;
+    },
+  ): Promise<Feedback>;
   getFeedback(userId: string, id: string): Promise<Feedback | undefined>;
   getUserFeedback(userId: string, limit?: number): Promise<Feedback[]>;
-  getAllFeedback(limit?: number, offset?: number, status?: string): Promise<{ items: Feedback[], total: number }>;
-  getCommunityFeedback(type?: string, sortBy?: 'upvotes' | 'recent', limit?: number): Promise<Array<Feedback & { userUpvoted: boolean }>>;
-  getCommunityFeedbackForUser(userId: string, type?: string, sortBy?: 'upvotes' | 'recent', limit?: number): Promise<Array<Feedback & { userUpvoted: boolean }>>;
-  updateFeedbackStatus(id: string, status: string, estimatedTurnaround?: string, resolvedAt?: Date): Promise<Feedback>;
-  addFeedbackResponse(feedbackId: string, response: FeedbackResponse): Promise<Feedback>;
+  getAllFeedback(
+    limit?: number,
+    offset?: number,
+    status?: string,
+  ): Promise<{ items: Feedback[]; total: number }>;
+  getCommunityFeedback(
+    type?: string,
+    sortBy?: "upvotes" | "recent",
+    limit?: number,
+  ): Promise<Array<Feedback & { userUpvoted: boolean }>>;
+  getCommunityFeedbackForUser(
+    userId: string,
+    type?: string,
+    sortBy?: "upvotes" | "recent",
+    limit?: number,
+  ): Promise<Array<Feedback & { userUpvoted: boolean }>>;
+  updateFeedbackStatus(
+    id: string,
+    status: string,
+    estimatedTurnaround?: string,
+    resolvedAt?: Date,
+  ): Promise<Feedback>;
+  addFeedbackResponse(
+    feedbackId: string,
+    response: FeedbackResponse,
+  ): Promise<Feedback>;
   getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]>;
-  getFeedbackAnalytics(userId?: string, days?: number): Promise<FeedbackAnalytics>;
-  getFeedbackByContext(contextId: string, contextType: string): Promise<Feedback[]>;
-  
+  getFeedbackAnalytics(
+    userId?: string,
+    days?: number,
+  ): Promise<FeedbackAnalytics>;
+  getFeedbackByContext(
+    contextId: string,
+    contextType: string,
+  ): Promise<Feedback[]>;
+
   // Feedback Upvotes (now in feedback.upvotes JSONB)
   upvoteFeedback(userId: string, feedbackId: string): Promise<void>;
   removeUpvote(userId: string, feedbackId: string): Promise<void>;
@@ -175,19 +337,37 @@ export interface IStorage {
   getFeedbackUpvoteCount(feedbackId: string): Promise<number>;
 
   // Donation System (from blueprint:javascript_stripe)
-  createDonation(donation: Omit<InsertDonation, 'id' | 'createdAt' | 'completedAt'>): Promise<Donation>;
-  updateDonation(stripePaymentIntentId: string, updates: Partial<Donation>): Promise<Donation>;
+  createDonation(
+    donation: Omit<InsertDonation, "id" | "createdAt" | "completedAt">,
+  ): Promise<Donation>;
+  updateDonation(
+    stripePaymentIntentId: string,
+    updates: Partial<Donation>,
+  ): Promise<Donation>;
   getDonation(id: string): Promise<Donation | undefined>;
-  getDonationByPaymentIntent(stripePaymentIntentId: string): Promise<Donation | undefined>;
-  getDonations(limit?: number, offset?: number): Promise<{ donations: Donation[], total: number }>;
+  getDonationByPaymentIntent(
+    stripePaymentIntentId: string,
+  ): Promise<Donation | undefined>;
+  getDonations(
+    limit?: number,
+    offset?: number,
+  ): Promise<{ donations: Donation[]; total: number }>;
   getUserDonations(userId: string, limit?: number): Promise<Donation[]>;
-  getTotalDonations(): Promise<{ totalAmount: number, donationCount: number }>;
+  getTotalDonations(): Promise<{ totalAmount: number; donationCount: number }>;
 
   // Web Vitals Analytics
-  recordWebVital(vital: Omit<InsertWebVital, 'id' | 'createdAt'>): Promise<WebVital>;
-  getWebVitals(limit?: number, offset?: number): Promise<{ vitals: WebVital[], total: number }>;
+  recordWebVital(
+    vital: Omit<InsertWebVital, "id" | "createdAt">,
+  ): Promise<WebVital>;
+  getWebVitals(
+    limit?: number,
+    offset?: number,
+  ): Promise<{ vitals: WebVital[]; total: number }>;
   getWebVitalsByMetric(metricName: string, limit?: number): Promise<WebVital[]>;
-  getWebVitalsStats(metricName?: string, days?: number): Promise<{
+  getWebVitalsStats(
+    metricName?: string,
+    days?: number,
+  ): Promise<{
     average: number;
     p75: number;
     p95: number;
@@ -206,11 +386,11 @@ export class DatabaseStorage implements IStorage {
   private async ensureDefaultDataForUser(userId: string) {
     // Fast path: already initialized
     if (this.userInitialized.has(userId)) return;
-    
+
     // Atomic check-and-set operation
     let shouldInitialize = false;
     let existingPromise: Promise<void> | undefined;
-    
+
     // Synchronously check and claim initialization if needed
     if (this.initializationLock.get(userId)) {
       // Another initialization is in progress, wait for it
@@ -224,13 +404,13 @@ export class DatabaseStorage implements IStorage {
         shouldInitialize = true;
       }
     }
-    
+
     // Wait for existing initialization if present
     if (existingPromise) {
       await existingPromise;
       return;
     }
-    
+
     // Perform initialization if we claimed the lock
     if (shouldInitialize) {
       const initPromise = (async () => {
@@ -239,29 +419,42 @@ export class DatabaseStorage implements IStorage {
           if (this.userInitialized.has(userId)) {
             return;
           }
-          
+
           // Check if user has storage locations
-          const [user] = await db.select().from(users).where(eq(users.id, userId));
-          
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, userId));
+
           if (!user) {
             throw new Error(`User ${userId} not found`);
           }
-          
-          const existingLocations = (user.storageLocations as Array<{id: string; name: string; icon: string}>) || [];
-          
+
+          const existingLocations =
+            (user.storageLocations as Array<{
+              id: string;
+              name: string;
+              icon: string;
+            }>) || [];
+
           if (existingLocations.length === 0) {
             // Initialize default storage locations for this user
             const defaultLocations = [
               { id: crypto.randomUUID(), name: "Fridge", icon: "refrigerator" },
               { id: crypto.randomUUID(), name: "Freezer", icon: "snowflake" },
               { id: crypto.randomUUID(), name: "Pantry", icon: "pizza" },
-              { id: crypto.randomUUID(), name: "Counter", icon: "utensils-crossed" },
+              {
+                id: crypto.randomUUID(),
+                name: "Counter",
+                icon: "utensils-crossed",
+              },
             ];
 
-            await db.update(users)
+            await db
+              .update(users)
               .set({
                 storageLocations: defaultLocations,
-                updatedAt: new Date()
+                updatedAt: new Date(),
               })
               .where(eq(users.id, userId));
 
@@ -275,11 +468,14 @@ export class DatabaseStorage implements IStorage {
 
             await db.insert(appliances).values(defaultAppliances);
           }
-          
+
           // Mark as initialized only on success
           this.userInitialized.add(userId);
         } catch (error) {
-          console.error(`Failed to initialize default data for user ${userId}:`, error);
+          console.error(
+            `Failed to initialize default data for user ${userId}:`,
+            error,
+          );
           // Re-throw to inform callers of failure
           throw error;
         } finally {
@@ -288,10 +484,10 @@ export class DatabaseStorage implements IStorage {
           this.initializationLock.delete(userId);
         }
       })();
-      
+
       // Store the promise before starting async work
       this.initializationPromises.set(userId, initPromise);
-      
+
       await initPromise;
     }
   }
@@ -303,7 +499,7 @@ export class DatabaseStorage implements IStorage {
       return user;
     } catch (error) {
       console.error(`Error getting user ${id}:`, error);
-      throw new Error('Failed to retrieve user');
+      throw new Error("Failed to retrieve user");
     }
   }
 
@@ -347,8 +543,8 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return user;
     } catch (error: any) {
-      console.error('Error upserting user:', error);
-      throw new Error('Failed to save user');
+      console.error("Error upserting user:", error);
+      throw new Error("Failed to save user");
     }
   }
 
@@ -359,11 +555,14 @@ export class DatabaseStorage implements IStorage {
       return user;
     } catch (error) {
       console.error(`Error getting user preferences for ${userId}:`, error);
-      throw new Error('Failed to retrieve user preferences');
+      throw new Error("Failed to retrieve user preferences");
     }
   }
 
-  async updateUserPreferences(userId: string, preferences: Partial<User>): Promise<User> {
+  async updateUserPreferences(
+    userId: string,
+    preferences: Partial<User>,
+  ): Promise<User> {
     try {
       const [updatedUser] = await db
         .update(users)
@@ -373,39 +572,49 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(users.id, userId))
         .returning();
-      
+
       if (!updatedUser) {
         throw new Error("User not found");
       }
-      
+
       return updatedUser;
     } catch (error) {
-      console.error('Error updating user preferences:', error);
-      throw new Error('Failed to save user preferences');
+      console.error("Error updating user preferences:", error);
+      throw new Error("Failed to save user preferences");
     }
   }
 
   async getPushTokens(userId: string): Promise<PushToken[]> {
     try {
-      return await db.select().from(pushTokens).where(eq(pushTokens.userId, userId));
+      return await db
+        .select()
+        .from(pushTokens)
+        .where(eq(pushTokens.userId, userId));
     } catch (error) {
-      console.error('Error getting push tokens:', error);
-      throw new Error('Failed to get push tokens');
+      console.error("Error getting push tokens:", error);
+      throw new Error("Failed to get push tokens");
     }
   }
 
-  async upsertPushToken(userId: string, tokenData: Omit<InsertPushToken, 'userId'>): Promise<PushToken> {
+  async upsertPushToken(
+    userId: string,
+    tokenData: Omit<InsertPushToken, "userId">,
+  ): Promise<PushToken> {
     try {
-      const insertData: any = { 
-        ...tokenData, 
-        userId 
+      const insertData: any = {
+        ...tokenData,
+        userId,
       };
-      
+
       // Type cast JSONB field if present
       if (tokenData.deviceInfo) {
-        insertData.deviceInfo = tokenData.deviceInfo as { deviceId?: string; model?: string; osVersion?: string };
+        insertData.deviceInfo = tokenData.deviceInfo as {
+          deviceId?: string;
+          model?: string;
+          osVersion?: string;
+        };
       }
-      
+
       const [token] = await db
         .insert(pushTokens)
         .values(insertData)
@@ -413,24 +622,29 @@ export class DatabaseStorage implements IStorage {
           target: pushTokens.token,
           set: {
             platform: tokenData.platform,
-            deviceInfo: tokenData.deviceInfo as { deviceId?: string; model?: string; osVersion?: string } | null | undefined,
+            deviceInfo: tokenData.deviceInfo as
+              | { deviceId?: string; model?: string; osVersion?: string }
+              | null
+              | undefined,
             updatedAt: new Date(),
           },
         })
         .returning();
       return token;
     } catch (error) {
-      console.error('Error upserting push token:', error);
-      throw new Error('Failed to save push token');
+      console.error("Error upserting push token:", error);
+      throw new Error("Failed to save push token");
     }
   }
 
   async deletePushToken(userId: string, token: string): Promise<void> {
     try {
-      await db.delete(pushTokens).where(and(eq(pushTokens.userId, userId), eq(pushTokens.token, token)));
+      await db
+        .delete(pushTokens)
+        .where(and(eq(pushTokens.userId, userId), eq(pushTokens.token, token)));
     } catch (error) {
-      console.error('Error deleting push token:', error);
-      throw new Error('Failed to delete push token');
+      console.error("Error deleting push token:", error);
+      throw new Error("Failed to delete push token");
     }
   }
 
@@ -438,101 +652,126 @@ export class DatabaseStorage implements IStorage {
   async getStorageLocations(userId: string): Promise<StorageLocation[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      
+
       // Get user with storage locations
       const [user] = await db.select().from(users).where(eq(users.id, userId));
-      
+
       if (!user || !user.storageLocations) {
         return [];
       }
-      
+
       // Add userId to each location and count items for each location
-      const locations = (user.storageLocations as Array<{id: string; name: string; icon: string}>).map(loc => ({
+      const locations = (
+        user.storageLocations as Array<{
+          id: string;
+          name: string;
+          icon: string;
+        }>
+      ).map((loc) => ({
         ...loc,
-        userId
+        userId,
       }));
-      
+
       // Get item counts for each location
       const items = await db
         .select({
           storageLocationId: foodItems.storageLocationId,
-          count: sql<number>`COUNT(*)::int`
+          count: sql<number>`COUNT(*)::int`,
         })
         .from(foodItems)
         .where(eq(foodItems.userId, userId))
         .groupBy(foodItems.storageLocationId);
-      
-      const countMap = new Map(items.map(item => [item.storageLocationId, item.count]));
-      
-      return locations.map(loc => ({
+
+      const countMap = new Map(
+        items.map((item) => [item.storageLocationId, item.count]),
+      );
+
+      return locations.map((loc) => ({
         ...loc,
-        itemCount: countMap.get(loc.id) || 0
+        itemCount: countMap.get(loc.id) || 0,
       }));
     } catch (error) {
-      console.error(`Error getting storage locations for user ${userId}:`, error);
-      throw new Error('Failed to retrieve storage locations');
+      console.error(
+        `Error getting storage locations for user ${userId}:`,
+        error,
+      );
+      throw new Error("Failed to retrieve storage locations");
     }
   }
 
-  async getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined> {
+  async getStorageLocation(
+    userId: string,
+    id: string,
+  ): Promise<StorageLocation | undefined> {
     try {
       await this.ensureDefaultDataForUser(userId);
       const [user] = await db.select().from(users).where(eq(users.id, userId));
-      
+
       if (!user || !user.storageLocations) {
         return undefined;
       }
-      
-      const locations = user.storageLocations as Array<{id: string; name: string; icon: string}>;
-      const location = locations.find(loc => loc.id === id);
-      
+
+      const locations = user.storageLocations as Array<{
+        id: string;
+        name: string;
+        icon: string;
+      }>;
+      const location = locations.find((loc) => loc.id === id);
+
       return location ? { ...location, userId } : undefined;
     } catch (error) {
       console.error(`Error getting storage location ${id}:`, error);
-      throw new Error('Failed to retrieve storage location');
+      throw new Error("Failed to retrieve storage location");
     }
   }
 
-  async createStorageLocation(userId: string, location: InsertStorageLocation): Promise<StorageLocation> {
+  async createStorageLocation(
+    userId: string,
+    location: InsertStorageLocation,
+  ): Promise<StorageLocation> {
     try {
       // Get current user with storage locations
       const [user] = await db.select().from(users).where(eq(users.id, userId));
-      
+
       if (!user) {
         throw new Error("User not found");
       }
-      
+
       // Generate new ID for the storage location
       const newLocationId = crypto.randomUUID();
       const newLocation = {
         id: newLocationId,
         name: location.name,
-        icon: location.icon
+        icon: location.icon,
       };
-      
+
       // Add to existing storage locations array
-      const currentLocations = (user.storageLocations as Array<{id: string; name: string; icon: string}>) || [];
+      const currentLocations =
+        (user.storageLocations as Array<{
+          id: string;
+          name: string;
+          icon: string;
+        }>) || [];
       const updatedLocations = [...currentLocations, newLocation];
-      
+
       // Update user with new storage locations
       await db
         .update(users)
         .set({
           storageLocations: updatedLocations,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(users.id, userId));
-      
+
       return {
         ...newLocation,
-        userId
+        userId,
       };
     } catch (error) {
-      console.error('Error creating storage location:', error);
-      throw new Error('Failed to create storage location');
+      console.error("Error creating storage location:", error);
+      throw new Error("Failed to create storage location");
     }
   }
-
 
   // Appliances
   async getAppliances(userId: string): Promise<Appliance[]> {
@@ -541,11 +780,14 @@ export class DatabaseStorage implements IStorage {
       return db.select().from(appliances).where(eq(appliances.userId, userId));
     } catch (error) {
       console.error(`Error getting appliances for user ${userId}:`, error);
-      throw new Error('Failed to retrieve appliances');
+      throw new Error("Failed to retrieve appliances");
     }
   }
 
-  async createAppliance(userId: string, appliance: Omit<InsertAppliance, 'userId'>): Promise<Appliance> {
+  async createAppliance(
+    userId: string,
+    appliance: Omit<InsertAppliance, "userId">,
+  ): Promise<Appliance> {
     try {
       const [newAppliance] = await db
         .insert(appliances)
@@ -553,24 +795,32 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newAppliance;
     } catch (error) {
-      console.error('Error creating appliance:', error);
-      throw new Error('Failed to create appliance');
+      console.error("Error creating appliance:", error);
+      throw new Error("Failed to create appliance");
     }
   }
 
-  async getAppliance(userId: string, id: string): Promise<Appliance | undefined> {
+  async getAppliance(
+    userId: string,
+    id: string,
+  ): Promise<Appliance | undefined> {
     try {
-      const [appliance] = await db.select().from(appliances).where(
-        and(eq(appliances.id, id), eq(appliances.userId, userId))
-      );
+      const [appliance] = await db
+        .select()
+        .from(appliances)
+        .where(and(eq(appliances.id, id), eq(appliances.userId, userId)));
       return appliance || undefined;
     } catch (error) {
       console.error(`Error getting appliance ${id}:`, error);
-      throw new Error('Failed to retrieve appliance');
+      throw new Error("Failed to retrieve appliance");
     }
   }
 
-  async updateAppliance(userId: string, id: string, appliance: Partial<Omit<InsertAppliance, 'userId'>>): Promise<Appliance> {
+  async updateAppliance(
+    userId: string,
+    id: string,
+    appliance: Partial<Omit<InsertAppliance, "userId">>,
+  ): Promise<Appliance> {
     try {
       const [updatedAppliance] = await db
         .update(appliances)
@@ -580,78 +830,115 @@ export class DatabaseStorage implements IStorage {
       return updatedAppliance;
     } catch (error) {
       console.error(`Error updating appliance ${id}:`, error);
-      throw new Error('Failed to update appliance');
+      throw new Error("Failed to update appliance");
     }
   }
 
   async deleteAppliance(userId: string, id: string): Promise<void> {
     try {
-      await db.delete(appliances).where(and(eq(appliances.id, id), eq(appliances.userId, userId)));
+      await db
+        .delete(appliances)
+        .where(and(eq(appliances.id, id), eq(appliances.userId, userId)));
     } catch (error) {
       console.error(`Error deleting appliance ${id}:`, error);
-      throw new Error('Failed to delete appliance');
+      throw new Error("Failed to delete appliance");
     }
   }
 
-  async getAppliancesByCategory(userId: string, categoryId: string): Promise<Appliance[]> {
+  async getAppliancesByCategory(
+    userId: string,
+    categoryId: string,
+  ): Promise<Appliance[]> {
     try {
-      return db.select().from(appliances).where(
-        and(eq(appliances.userId, userId), eq(appliances.categoryId, categoryId))
-      );
+      return db
+        .select()
+        .from(appliances)
+        .where(
+          and(
+            eq(appliances.userId, userId),
+            eq(appliances.categoryId, categoryId),
+          ),
+        );
     } catch (error) {
-      console.error(`Error getting appliances by category for user ${userId}:`, error);
-      throw new Error('Failed to retrieve appliances by category');
+      console.error(
+        `Error getting appliances by category for user ${userId}:`,
+        error,
+      );
+      throw new Error("Failed to retrieve appliances by category");
     }
   }
 
-  async getAppliancesByCapability(userId: string, capability: string): Promise<Appliance[]> {
+  async getAppliancesByCapability(
+    userId: string,
+    capability: string,
+  ): Promise<Appliance[]> {
     try {
-      const results = await db.select().from(appliances).where(
-        and(eq(appliances.userId, userId))
-      );
-      
+      const results = await db
+        .select()
+        .from(appliances)
+        .where(and(eq(appliances.userId, userId)));
+
       // Filter appliances that have the specified capability
-      return results.filter(appliance => {
+      return results.filter((appliance) => {
         const capabilities = appliance.customCapabilities || [];
         return capabilities.includes(capability);
       });
     } catch (error) {
-      console.error(`Error getting appliances by capability for user ${userId}:`, error);
-      throw new Error('Failed to retrieve appliances by capability');
+      console.error(
+        `Error getting appliances by capability for user ${userId}:`,
+        error,
+      );
+      throw new Error("Failed to retrieve appliances by capability");
     }
   }
 
   // Appliance Categories
   async getApplianceCategories(): Promise<ApplianceCategory[]> {
     try {
-      return db.select().from(applianceCategories).orderBy(applianceCategories.sortOrder);
+      return db
+        .select()
+        .from(applianceCategories)
+        .orderBy(applianceCategories.sortOrder);
     } catch (error) {
-      console.error('Error getting appliance categories:', error);
-      throw new Error('Failed to retrieve appliance categories');
+      console.error("Error getting appliance categories:", error);
+      throw new Error("Failed to retrieve appliance categories");
     }
   }
 
-  async getApplianceCategory(id: string): Promise<ApplianceCategory | undefined> {
+  async getApplianceCategory(
+    id: string,
+  ): Promise<ApplianceCategory | undefined> {
     try {
-      const [category] = await db.select().from(applianceCategories).where(eq(applianceCategories.id, id));
+      const [category] = await db
+        .select()
+        .from(applianceCategories)
+        .where(eq(applianceCategories.id, id));
       return category || undefined;
     } catch (error) {
       console.error(`Error getting appliance category ${id}:`, error);
-      throw new Error('Failed to retrieve appliance category');
+      throw new Error("Failed to retrieve appliance category");
     }
   }
 
-  async createApplianceCategory(category: InsertApplianceCategory): Promise<ApplianceCategory> {
+  async createApplianceCategory(
+    category: InsertApplianceCategory,
+  ): Promise<ApplianceCategory> {
     try {
-      const [newCategory] = await db.insert(applianceCategories).values(category).returning();
+      const [newCategory] = await db
+        .insert(applianceCategories)
+        .values(category)
+        .returning();
       return newCategory;
     } catch (error) {
-      console.error('Error creating appliance category:', error);
-      throw new Error('Failed to create appliance category');
+      console.error("Error creating appliance category:", error);
+      throw new Error("Failed to create appliance category");
     }
   }
 
-  async updateApplianceCategory(id: string, category: Partial<InsertApplianceCategory>): Promise<ApplianceCategory> {
+  async updateApplianceCategory(
+    id: string,
+    category: Partial<InsertApplianceCategory>,
+  ): Promise<ApplianceCategory> {
     try {
       const [updatedCategory] = await db
         .update(applianceCategories)
@@ -661,40 +948,50 @@ export class DatabaseStorage implements IStorage {
       return updatedCategory;
     } catch (error) {
       console.error(`Error updating appliance category ${id}:`, error);
-      throw new Error('Failed to update appliance category');
+      throw new Error("Failed to update appliance category");
     }
   }
 
   async deleteApplianceCategory(id: string): Promise<void> {
     try {
-      await db.delete(applianceCategories).where(eq(applianceCategories.id, id));
+      await db
+        .delete(applianceCategories)
+        .where(eq(applianceCategories.id, id));
     } catch (error) {
       console.error(`Error deleting appliance category ${id}:`, error);
-      throw new Error('Failed to delete appliance category');
+      throw new Error("Failed to delete appliance category");
     }
   }
 
   // Barcode Products
-  async getBarcodeProduct(barcodeNumber: string): Promise<BarcodeProduct | undefined> {
+  async getBarcodeProduct(
+    barcodeNumber: string,
+  ): Promise<BarcodeProduct | undefined> {
     try {
-      const [product] = await db.select().from(barcodeProducts).where(eq(barcodeProducts.barcodeNumber, barcodeNumber));
+      const [product] = await db
+        .select()
+        .from(barcodeProducts)
+        .where(eq(barcodeProducts.barcodeNumber, barcodeNumber));
       return product || undefined;
     } catch (error) {
       console.error(`Error getting barcode product ${barcodeNumber}:`, error);
-      throw new Error('Failed to retrieve barcode product');
+      throw new Error("Failed to retrieve barcode product");
     }
   }
 
-  async createBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct> {
+  async createBarcodeProduct(
+    product: InsertBarcodeProduct,
+  ): Promise<BarcodeProduct> {
     try {
       const insertData: any = { ...product };
-      
+
       // Move dimensions into productAttributes if present
       if ((product as any).dimensions) {
         if (!insertData.productAttributes) {
           insertData.productAttributes = {};
         }
-        insertData.productAttributes.dimensions = (product as any).dimensions as { length?: string; width?: string; height?: string };
+        insertData.productAttributes.dimensions = (product as any)
+          .dimensions as { length?: string; width?: string; height?: string };
         delete insertData.dimensions;
       }
       if (product.stores) {
@@ -709,31 +1006,39 @@ export class DatabaseStorage implements IStorage {
           lastUpdate: string;
         }>;
       }
-      
+
       const [newProduct] = await db
         .insert(barcodeProducts)
         .values(insertData)
         .returning();
       return newProduct;
     } catch (error) {
-      console.error('Error creating barcode product:', error);
-      throw new Error('Failed to create barcode product');
+      console.error("Error creating barcode product:", error);
+      throw new Error("Failed to create barcode product");
     }
   }
 
-  async updateBarcodeProduct(barcodeNumber: string, product: Partial<InsertBarcodeProduct>): Promise<BarcodeProduct> {
+  async updateBarcodeProduct(
+    barcodeNumber: string,
+    product: Partial<InsertBarcodeProduct>,
+  ): Promise<BarcodeProduct> {
     try {
       const updateData: any = {
         ...product,
-        lastUpdate: new Date()
+        lastUpdate: new Date(),
       };
-      
+
       // Move dimensions into productAttributes if present
       if ((product as any).dimensions) {
         if (!updateData.productAttributes) {
           updateData.productAttributes = {};
         }
-        updateData.productAttributes.dimensions = (product as any).dimensions as { length?: string; width?: string; height?: string } | null;
+        updateData.productAttributes.dimensions = (product as any)
+          .dimensions as {
+          length?: string;
+          width?: string;
+          height?: string;
+        } | null;
         delete updateData.dimensions;
       }
       if (product.stores) {
@@ -748,7 +1053,7 @@ export class DatabaseStorage implements IStorage {
           lastUpdate: string;
         }> | null;
       }
-      
+
       const [updatedProduct] = await db
         .update(barcodeProducts)
         .set(updateData)
@@ -757,103 +1062,132 @@ export class DatabaseStorage implements IStorage {
       return updatedProduct;
     } catch (error) {
       console.error(`Error updating barcode product ${barcodeNumber}:`, error);
-      throw new Error('Failed to update barcode product');
+      throw new Error("Failed to update barcode product");
     }
   }
 
   async searchBarcodeProducts(query: string): Promise<BarcodeProduct[]> {
     try {
       const searchPattern = `%${query}%`;
-      return db.select().from(barcodeProducts)
-        .where(sql`
+      return db.select().from(barcodeProducts).where(sql`
           ${barcodeProducts.title} ILIKE ${searchPattern}
           OR ${barcodeProducts.brand} ILIKE ${searchPattern}
-          OR ${barcodeProducts.manufacturer} ILIKE ${searchPattern}
-          OR ${barcodeProducts.model} ILIKE ${searchPattern}
+          OR ${barcodeProducts.productAttributes}->>'manufacturer' ILIKE ${searchPattern}
+          OR ${barcodeProducts.productAttributes}->>'model' ILIKE ${searchPattern}
         `);
     } catch (error) {
-      console.error(`Error searching barcode products for query ${query}:`, error);
-      throw new Error('Failed to search barcode products');
+      console.error(
+        `Error searching barcode products for query ${query}:`,
+        error,
+      );
+      throw new Error("Failed to search barcode products");
     }
   }
 
   // Food Items
-  async getFoodItems(userId: string, storageLocationId?: string): Promise<FoodItem[]> {
+  async getFoodItems(
+    userId: string,
+    storageLocationId?: string,
+  ): Promise<FoodItem[]> {
     try {
       if (storageLocationId) {
-        return db.select().from(foodItems).where(
-          and(eq(foodItems.storageLocationId, storageLocationId), eq(foodItems.userId, userId))
-        );
+        return db
+          .select()
+          .from(foodItems)
+          .where(
+            and(
+              eq(foodItems.storageLocationId, storageLocationId),
+              eq(foodItems.userId, userId),
+            ),
+          );
       }
       return db.select().from(foodItems).where(eq(foodItems.userId, userId));
     } catch (error) {
       console.error(`Error getting food items for user ${userId}:`, error);
-      throw new Error('Failed to retrieve food items');
+      throw new Error("Failed to retrieve food items");
     }
   }
 
   async getFoodItemsPaginated(
-    userId: string, 
-    page: number = 1, 
-    limit: number = 30, 
+    userId: string,
+    page: number = 1,
+    limit: number = 30,
     storageLocationId?: string,
-    sortBy: 'name' | 'expirationDate' | 'addedAt' = 'expirationDate'
-  ): Promise<{ items: FoodItem[], total: number, page: number, totalPages: number }> {
+    sortBy: "name" | "expirationDate" | "addedAt" = "expirationDate",
+  ): Promise<{
+    items: FoodItem[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     try {
       const offset = (page - 1) * limit;
-      
+
       // Build where clause
       const whereConditions = [eq(foodItems.userId, userId)];
       if (storageLocationId && storageLocationId !== "all") {
-        whereConditions.push(eq(foodItems.storageLocationId, storageLocationId));
+        whereConditions.push(
+          eq(foodItems.storageLocationId, storageLocationId),
+        );
       }
-      
+
       // Get total count
-      const [countResult] = await db.select({ count: sql<number>`count(*)` })
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)` })
         .from(foodItems)
         .where(and(...whereConditions));
-      
+
       const total = Number(countResult?.count || 0);
-      
+
       // Determine sort order
-      const orderClause = sortBy === 'name' 
-        ? foodItems.name
-        : sortBy === 'addedAt'
-        ? sql`${foodItems.addedAt} DESC`
-        : foodItems.expirationDate;
-      
+      const orderClause =
+        sortBy === "name"
+          ? foodItems.name
+          : sortBy === "addedAt"
+            ? sql`${foodItems.addedAt} DESC`
+            : foodItems.expirationDate;
+
       // Get paginated items
-      const items = await db.select().from(foodItems)
+      const items = await db
+        .select()
+        .from(foodItems)
         .where(and(...whereConditions))
         .orderBy(orderClause)
         .limit(limit)
         .offset(offset);
-      
+
       return {
         items,
         total,
         page,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
-      console.error(`Error getting paginated food items for user ${userId}:`, error);
-      throw new Error('Failed to retrieve food items');
+      console.error(
+        `Error getting paginated food items for user ${userId}:`,
+        error,
+      );
+      throw new Error("Failed to retrieve food items");
     }
   }
 
   async getFoodItem(userId: string, id: string): Promise<FoodItem | undefined> {
     try {
-      const [item] = await db.select().from(foodItems).where(
-        and(eq(foodItems.id, id), eq(foodItems.userId, userId))
-      );
+      const [item] = await db
+        .select()
+        .from(foodItems)
+        .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)));
       return item || undefined;
     } catch (error) {
       console.error(`Error getting food item ${id}:`, error);
-      throw new Error('Failed to retrieve food item');
+      throw new Error("Failed to retrieve food item");
     }
   }
 
-  async createFoodItem(userId: string, item: Omit<InsertFoodItem, 'userId'>): Promise<FoodItem> {
+  async createFoodItem(
+    userId: string,
+    item: Omit<InsertFoodItem, "userId">,
+  ): Promise<FoodItem> {
     try {
       const [newItem] = await db
         .insert(foodItems)
@@ -861,36 +1195,42 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newItem;
     } catch (error) {
-      console.error('Error creating food item:', error);
-      throw new Error('Failed to create food item');
+      console.error("Error creating food item:", error);
+      throw new Error("Failed to create food item");
     }
   }
 
-  async updateFoodItem(userId: string, id: string, item: Partial<Omit<InsertFoodItem, 'userId'>>): Promise<FoodItem> {
+  async updateFoodItem(
+    userId: string,
+    id: string,
+    item: Partial<Omit<InsertFoodItem, "userId">>,
+  ): Promise<FoodItem> {
     try {
       const [updated] = await db
         .update(foodItems)
         .set(item)
         .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)))
         .returning();
-      
+
       if (!updated) {
         throw new Error("Food item not found");
       }
-      
+
       return updated;
     } catch (error) {
       console.error(`Error updating food item ${id}:`, error);
-      throw new Error('Failed to update food item');
+      throw new Error("Failed to update food item");
     }
   }
 
   async deleteFoodItem(userId: string, id: string): Promise<void> {
     try {
-      await db.delete(foodItems).where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)));
+      await db
+        .delete(foodItems)
+        .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)));
     } catch (error) {
       console.error(`Error deleting food item ${id}:`, error);
-      throw new Error('Failed to delete food item');
+      throw new Error("Failed to delete food item");
     }
   }
 
@@ -901,59 +1241,79 @@ export class DatabaseStorage implements IStorage {
             FROM food_items 
             WHERE user_id = ${userId} 
               AND food_category IS NOT NULL 
-            ORDER BY food_category`
+            ORDER BY food_category`,
       );
-      
-      return results.rows.map(r => r.food_category);
+
+      return results.rows.map((r) => r.food_category);
     } catch (error) {
       console.error(`Error getting food categories for user ${userId}:`, error);
-      throw new Error('Failed to retrieve food categories');
+      throw new Error("Failed to retrieve food categories");
     }
   }
 
   // Chat Messages
   async getChatMessages(userId: string): Promise<ChatMessage[]> {
     try {
-      return db.select().from(chatMessages)
+      return db
+        .select()
+        .from(chatMessages)
         .where(eq(chatMessages.userId, userId))
         .orderBy(chatMessages.timestamp);
     } catch (error) {
       console.error(`Error getting chat messages for user ${userId}:`, error);
-      throw new Error('Failed to retrieve chat messages');
+      throw new Error("Failed to retrieve chat messages");
     }
   }
 
-  async getChatMessagesPaginated(userId: string, page: number = 1, limit: number = 50): Promise<{ messages: ChatMessage[], total: number, page: number, totalPages: number }> {
+  async getChatMessagesPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<{
+    messages: ChatMessage[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     try {
       const offset = (page - 1) * limit;
-      
+
       // Get total count
-      const [countResult] = await db.select({ count: sql<number>`count(*)` })
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)` })
         .from(chatMessages)
         .where(eq(chatMessages.userId, userId));
-      
+
       const total = Number(countResult?.count || 0);
-      
+
       // Get paginated messages
-      const messages = await db.select().from(chatMessages)
+      const messages = await db
+        .select()
+        .from(chatMessages)
         .where(eq(chatMessages.userId, userId))
         .orderBy(sql`${chatMessages.timestamp} DESC`)
         .limit(limit)
         .offset(offset);
-      
+
       return {
         messages,
         total,
         page,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
-      console.error(`Error getting paginated chat messages for user ${userId}:`, error);
-      throw new Error('Failed to retrieve chat messages');
+      console.error(
+        `Error getting paginated chat messages for user ${userId}:`,
+        error,
+      );
+      throw new Error("Failed to retrieve chat messages");
     }
   }
 
-  async createChatMessage(userId: string, message: Omit<InsertChatMessage, 'userId'>): Promise<ChatMessage> {
+  async createChatMessage(
+    userId: string,
+    message: Omit<InsertChatMessage, "userId">,
+  ): Promise<ChatMessage> {
     try {
       const [newMessage] = await db
         .insert(chatMessages)
@@ -961,8 +1321,8 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newMessage;
     } catch (error) {
-      console.error('Error creating chat message:', error);
-      throw new Error('Failed to create chat message');
+      console.error("Error creating chat message:", error);
+      throw new Error("Failed to create chat message");
     }
   }
 
@@ -971,86 +1331,114 @@ export class DatabaseStorage implements IStorage {
       await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
     } catch (error) {
       console.error(`Error clearing chat messages for user ${userId}:`, error);
-      throw new Error('Failed to clear chat messages');
+      throw new Error("Failed to clear chat messages");
     }
   }
 
-  async deleteOldChatMessages(userId: string, hoursOld: number = 24): Promise<number> {
+  async deleteOldChatMessages(
+    userId: string,
+    hoursOld: number = 24,
+  ): Promise<number> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
-      
-      const result = await db.delete(chatMessages)
+
+      const result = await db
+        .delete(chatMessages)
         .where(
           and(
             eq(chatMessages.userId, userId),
-            sql`${chatMessages.timestamp} < ${cutoffDate}`
-          )
+            sql`${chatMessages.timestamp} < ${cutoffDate}`,
+          ),
         )
         .returning();
-      
+
       return result.length;
     } catch (error) {
-      console.error(`Error deleting old chat messages for user ${userId}:`, error);
-      throw new Error('Failed to delete old chat messages');
+      console.error(
+        `Error deleting old chat messages for user ${userId}:`,
+        error,
+      );
+      throw new Error("Failed to delete old chat messages");
     }
   }
 
   // Recipes
   async getRecipes(userId: string): Promise<Recipe[]> {
     try {
-      return db.select().from(recipes)
+      return db
+        .select()
+        .from(recipes)
         .where(eq(recipes.userId, userId))
         .orderBy(sql`${recipes.createdAt} DESC`);
     } catch (error) {
       console.error(`Error getting recipes for user ${userId}:`, error);
-      throw new Error('Failed to retrieve recipes');
+      throw new Error("Failed to retrieve recipes");
     }
   }
 
-  async getRecipesPaginated(userId: string, page: number = 1, limit: number = 20): Promise<{ recipes: Recipe[], total: number, page: number, totalPages: number }> {
+  async getRecipesPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{
+    recipes: Recipe[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     try {
       const offset = (page - 1) * limit;
-      
+
       // Get total count
-      const [countResult] = await db.select({ count: sql<number>`count(*)` })
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)` })
         .from(recipes)
         .where(eq(recipes.userId, userId));
-      
+
       const total = Number(countResult?.count || 0);
-      
+
       // Get paginated recipes
-      const paginatedRecipes = await db.select().from(recipes)
+      const paginatedRecipes = await db
+        .select()
+        .from(recipes)
         .where(eq(recipes.userId, userId))
         .orderBy(sql`${recipes.createdAt} DESC`)
         .limit(limit)
         .offset(offset);
-      
+
       return {
         recipes: paginatedRecipes,
         total,
         page,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
-      console.error(`Error getting paginated recipes for user ${userId}:`, error);
-      throw new Error('Failed to retrieve recipes');
+      console.error(
+        `Error getting paginated recipes for user ${userId}:`,
+        error,
+      );
+      throw new Error("Failed to retrieve recipes");
     }
   }
 
   async getRecipe(userId: string, id: string): Promise<Recipe | undefined> {
     try {
-      const [recipe] = await db.select().from(recipes).where(
-        and(eq(recipes.id, id), eq(recipes.userId, userId))
-      );
+      const [recipe] = await db
+        .select()
+        .from(recipes)
+        .where(and(eq(recipes.id, id), eq(recipes.userId, userId)));
       return recipe || undefined;
     } catch (error) {
       console.error(`Error getting recipe ${id}:`, error);
-      throw new Error('Failed to retrieve recipe');
+      throw new Error("Failed to retrieve recipe");
     }
   }
 
-  async createRecipe(userId: string, recipe: Omit<InsertRecipe, 'userId'>): Promise<Recipe> {
+  async createRecipe(
+    userId: string,
+    recipe: Omit<InsertRecipe, "userId">,
+  ): Promise<Recipe> {
     try {
       const [newRecipe] = await db
         .insert(recipes)
@@ -1058,52 +1446,60 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newRecipe;
     } catch (error) {
-      console.error('Error creating recipe:', error);
-      throw new Error('Failed to create recipe');
+      console.error("Error creating recipe:", error);
+      throw new Error("Failed to create recipe");
     }
   }
 
-  async updateRecipe(userId: string, id: string, updates: Partial<Recipe>): Promise<Recipe> {
+  async updateRecipe(
+    userId: string,
+    id: string,
+    updates: Partial<Recipe>,
+  ): Promise<Recipe> {
     try {
       const [updated] = await db
         .update(recipes)
         .set(updates)
         .where(and(eq(recipes.id, id), eq(recipes.userId, userId)))
         .returning();
-      
+
       if (!updated) {
         throw new Error("Recipe not found");
       }
-      
+
       return updated;
     } catch (error) {
       console.error(`Error updating recipe ${id}:`, error);
-      throw new Error('Failed to update recipe');
+      throw new Error("Failed to update recipe");
     }
   }
 
-  async getRecipesWithInventoryMatching(userId: string): Promise<Array<Recipe & { ingredientMatches: IngredientMatch[] }>> {
+  async getRecipesWithInventoryMatching(
+    userId: string,
+  ): Promise<Array<Recipe & { ingredientMatches: IngredientMatch[] }>> {
     try {
       // Fetch all recipes for the user
       const userRecipes = await this.getRecipes(userId);
-      
+
       // Fetch current inventory
       const inventory = await this.getFoodItems(userId);
-      
+
       // Enrich each recipe with real-time inventory matching
-      return userRecipes.map(recipe => {
-        const ingredientMatches: IngredientMatch[] = recipe.ingredients.map(ingredient => {
-          return matchIngredientWithInventory(ingredient, inventory);
-        });
+      return userRecipes.map((recipe) => {
+        const ingredientMatches: IngredientMatch[] = recipe.ingredients.map(
+          (ingredient) => {
+            return matchIngredientWithInventory(ingredient, inventory);
+          },
+        );
 
         // Update the usedIngredients and missingIngredients based on current inventory
         const usedIngredients = ingredientMatches
-          .filter(match => match.hasEnough)
-          .map(match => match.ingredientName);
-        
+          .filter((match) => match.hasEnough)
+          .map((match) => match.ingredientName);
+
         const missingIngredients = ingredientMatches
-          .filter(match => !match.hasEnough)
-          .map(match => match.ingredientName);
+          .filter((match) => !match.hasEnough)
+          .map((match) => match.ingredientName);
 
         return {
           ...recipe,
@@ -1113,33 +1509,47 @@ export class DatabaseStorage implements IStorage {
         };
       });
     } catch (error) {
-      console.error(`Error getting recipes with inventory matching for user ${userId}:`, error);
-      throw new Error('Failed to retrieve recipes with inventory matching');
+      console.error(
+        `Error getting recipes with inventory matching for user ${userId}:`,
+        error,
+      );
+      throw new Error("Failed to retrieve recipes with inventory matching");
     }
   }
 
   // Expiration Handling (now using foodItems table with notification fields)
-  async dismissFoodItemNotification(userId: string, foodItemId: string): Promise<void> {
+  async dismissFoodItemNotification(
+    userId: string,
+    foodItemId: string,
+  ): Promise<void> {
     try {
       await db
         .update(foodItems)
-        .set({ 
+        .set({
           notificationDismissed: true,
-          lastNotifiedAt: new Date()
+          lastNotifiedAt: new Date(),
         })
         .where(and(eq(foodItems.id, foodItemId), eq(foodItems.userId, userId)));
     } catch (error) {
-      console.error(`Error dismissing notification for food item ${foodItemId}:`, error);
-      throw new Error('Failed to dismiss notification');
+      console.error(
+        `Error dismissing notification for food item ${foodItemId}:`,
+        error,
+      );
+      throw new Error("Failed to dismiss notification");
     }
   }
 
-  async getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]> {
+  async getExpiringItems(
+    userId: string,
+    daysThreshold: number,
+  ): Promise<FoodItem[]> {
     try {
       // Optimized: use SQL to filter items expiring within threshold instead of fetching all items
       const now = new Date();
-      const maxExpiryDate = new Date(now.getTime() + daysThreshold * 24 * 60 * 60 * 1000);
-      
+      const maxExpiryDate = new Date(
+        now.getTime() + daysThreshold * 24 * 60 * 60 * 1000,
+      );
+
       const expiringItems = await db
         .select()
         .from(foodItems)
@@ -1148,27 +1558,34 @@ export class DatabaseStorage implements IStorage {
             eq(foodItems.userId, userId),
             sql`${foodItems.expirationDate} IS NOT NULL`,
             sql`${foodItems.expirationDate} >= ${now.toISOString()}`,
-            sql`${foodItems.expirationDate} <= ${maxExpiryDate.toISOString()}`
-          )
+            sql`${foodItems.expirationDate} <= ${maxExpiryDate.toISOString()}`,
+          ),
         );
-      
+
       return expiringItems;
     } catch (error) {
       console.error(`Error getting expiring items for user ${userId}:`, error);
-      throw new Error('Failed to retrieve expiring items');
+      throw new Error("Failed to retrieve expiring items");
     }
   }
 
   // Meal Plans
-  async getMealPlans(userId: string, startDate?: string, endDate?: string): Promise<MealPlan[]> {
+  async getMealPlans(
+    userId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<MealPlan[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      
-      const plans = await db.select().from(mealPlans).where(eq(mealPlans.userId, userId));
-      
+
+      const plans = await db
+        .select()
+        .from(mealPlans)
+        .where(eq(mealPlans.userId, userId));
+
       // Filter by date range if provided
       if (startDate || endDate) {
-        return plans.filter(plan => {
+        return plans.filter((plan) => {
           if (startDate && endDate) {
             return plan.date >= startDate && plan.date <= endDate;
           } else if (startDate) {
@@ -1179,126 +1596,169 @@ export class DatabaseStorage implements IStorage {
           return true;
         });
       }
-      
+
       return plans;
     } catch (error) {
       console.error(`Error getting meal plans for user ${userId}:`, error);
-      throw new Error('Failed to retrieve meal plans');
+      throw new Error("Failed to retrieve meal plans");
     }
   }
 
   async getMealPlan(userId: string, id: string): Promise<MealPlan | undefined> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      const [plan] = await db.select().from(mealPlans).where(
-        and(eq(mealPlans.id, id), eq(mealPlans.userId, userId))
-      );
+      const [plan] = await db
+        .select()
+        .from(mealPlans)
+        .where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)));
       return plan || undefined;
     } catch (error) {
       console.error(`Error getting meal plan ${id}:`, error);
-      throw new Error('Failed to retrieve meal plan');
+      throw new Error("Failed to retrieve meal plan");
     }
   }
 
-  async createMealPlan(userId: string, plan: Omit<InsertMealPlan, 'userId'>): Promise<MealPlan> {
+  async createMealPlan(
+    userId: string,
+    plan: Omit<InsertMealPlan, "userId">,
+  ): Promise<MealPlan> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      const [newPlan] = await db.insert(mealPlans).values({ ...plan, userId }).returning();
+      const [newPlan] = await db
+        .insert(mealPlans)
+        .values({ ...plan, userId })
+        .returning();
       return newPlan;
     } catch (error) {
-      console.error('Error creating meal plan:', error);
-      throw new Error('Failed to create meal plan');
+      console.error("Error creating meal plan:", error);
+      throw new Error("Failed to create meal plan");
     }
   }
 
-  async updateMealPlan(userId: string, id: string, updates: Partial<Omit<InsertMealPlan, 'userId'>>): Promise<MealPlan> {
+  async updateMealPlan(
+    userId: string,
+    id: string,
+    updates: Partial<Omit<InsertMealPlan, "userId">>,
+  ): Promise<MealPlan> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      const [updated] = await db.update(mealPlans)
+      const [updated] = await db
+        .update(mealPlans)
         .set(updates)
         .where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)))
         .returning();
-      
+
       if (!updated) {
         throw new Error("Meal plan not found");
       }
-      
+
       return updated;
     } catch (error) {
       console.error(`Error updating meal plan ${id}:`, error);
-      throw new Error('Failed to update meal plan');
+      throw new Error("Failed to update meal plan");
     }
   }
 
   async deleteMealPlan(userId: string, id: string): Promise<void> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      await db.delete(mealPlans).where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)));
+      await db
+        .delete(mealPlans)
+        .where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)));
     } catch (error) {
       console.error(`Error deleting meal plan ${id}:`, error);
-      throw new Error('Failed to delete meal plan');
+      throw new Error("Failed to delete meal plan");
     }
   }
 
-  async logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>): Promise<ApiUsageLog> {
+  async logApiUsage(
+    userId: string,
+    log: Omit<InsertApiUsageLog, "userId">,
+  ): Promise<ApiUsageLog> {
     try {
-      const [newLog] = await db.insert(apiUsageLogs).values({ ...log, userId }).returning();
+      const [newLog] = await db
+        .insert(apiUsageLogs)
+        .values({ ...log, userId })
+        .returning();
       return newLog;
     } catch (error) {
-      console.error('Error logging API usage:', error);
-      throw new Error('Failed to log API usage');
+      console.error("Error logging API usage:", error);
+      throw new Error("Failed to log API usage");
     }
   }
 
-  async getApiUsageLogs(userId: string, apiName?: string, limit: number = 100): Promise<ApiUsageLog[]> {
+  async getApiUsageLogs(
+    userId: string,
+    apiName?: string,
+    limit: number = 100,
+  ): Promise<ApiUsageLog[]> {
     try {
-      const conditions = apiName 
-        ? and(eq(apiUsageLogs.userId, userId), eq(apiUsageLogs.apiName, apiName))
+      const conditions = apiName
+        ? and(
+            eq(apiUsageLogs.userId, userId),
+            eq(apiUsageLogs.apiName, apiName),
+          )
         : eq(apiUsageLogs.userId, userId);
-      
-      const logs = await db.select().from(apiUsageLogs)
+
+      const logs = await db
+        .select()
+        .from(apiUsageLogs)
         .where(conditions)
         .orderBy(sql`${apiUsageLogs.timestamp} DESC`)
         .limit(limit);
       return logs;
     } catch (error) {
       console.error(`Error getting API usage logs for user ${userId}:`, error);
-      throw new Error('Failed to retrieve API usage logs');
+      throw new Error("Failed to retrieve API usage logs");
     }
   }
 
-  async getApiUsageStats(userId: string, apiName: string, days: number = 30): Promise<{ totalCalls: number; successfulCalls: number; failedCalls: number }> {
+  async getApiUsageStats(
+    userId: string,
+    apiName: string,
+    days: number = 30,
+  ): Promise<{
+    totalCalls: number;
+    successfulCalls: number;
+    failedCalls: number;
+  }> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
-      
-      const logs = await db.select().from(apiUsageLogs).where(
-        and(
-          eq(apiUsageLogs.userId, userId),
-          eq(apiUsageLogs.apiName, apiName),
-          sql`${apiUsageLogs.timestamp} >= ${cutoffDate.toISOString()}`
-        )
-      );
-      
+
+      const logs = await db
+        .select()
+        .from(apiUsageLogs)
+        .where(
+          and(
+            eq(apiUsageLogs.userId, userId),
+            eq(apiUsageLogs.apiName, apiName),
+            sql`${apiUsageLogs.timestamp} >= ${cutoffDate.toISOString()}`,
+          ),
+        );
+
       const totalCalls = logs.length;
-      const successfulCalls = logs.filter(log => log.success).length;
+      const successfulCalls = logs.filter((log) => log.success).length;
       const failedCalls = totalCalls - successfulCalls;
-      
+
       return { totalCalls, successfulCalls, failedCalls };
     } catch (error) {
       console.error(`Error getting API usage stats for user ${userId}:`, error);
-      throw new Error('Failed to retrieve API usage stats');
+      throw new Error("Failed to retrieve API usage stats");
     }
   }
 
   // FDC Cache Methods
   async getCachedFood(fdcId: string): Promise<FdcCache | undefined> {
     try {
-      const [cached] = await db.select().from(fdcCache).where(eq(fdcCache.fdcId, fdcId));
+      const [cached] = await db
+        .select()
+        .from(fdcCache)
+        .where(eq(fdcCache.fdcId, fdcId));
       return cached;
     } catch (error) {
       console.error(`Error getting cached food ${fdcId}:`, error);
-      throw new Error('Failed to retrieve cached food');
+      throw new Error("Failed to retrieve cached food");
     }
   }
 
@@ -1313,16 +1773,19 @@ export class DatabaseStorage implements IStorage {
         ingredients: food.ingredients,
         servingSize: food.servingSize,
         servingSizeUnit: food.servingSizeUnit,
-        nutrients: food.nutrients as Array<{
-          nutrientId: number;
-          nutrientName: string;
-          nutrientNumber: string;
-          unitName: string;
-          value: number;
-        }> | null | undefined,
-        fullData: food.fullData
+        nutrients: food.nutrients as
+          | Array<{
+              nutrientId: number;
+              nutrientName: string;
+              nutrientNumber: string;
+              unitName: string;
+              value: number;
+            }>
+          | null
+          | undefined,
+        fullData: food.fullData,
       };
-      
+
       const [cachedFood] = await db
         .insert(fdcCache)
         .values(foodToInsert)
@@ -1336,8 +1799,8 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return cachedFood;
     } catch (error) {
-      console.error('Error caching food:', error);
-      throw new Error('Failed to cache food');
+      console.error("Error caching food:", error);
+      throw new Error("Failed to cache food");
     }
   }
 
@@ -1353,45 +1816,49 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCachedSearchResults(query: string, dataType?: string, pageNumber?: number): Promise<FdcSearchQuery | undefined> {
+  async getCachedSearchResults(
+    query: string,
+    dataType?: string,
+    pageNumber?: number,
+  ): Promise<FdcSearchQuery | undefined> {
     try {
-      const conditions = [
-        eq(fdcSearchQueries.query, query.toLowerCase())
-      ];
-      
+      const conditions = [eq(fdcSearchQueries.query, query.toLowerCase())];
+
       if (dataType) {
         conditions.push(eq(fdcSearchQueries.dataType, dataType));
       }
-      
+
       if (pageNumber) {
         conditions.push(eq(fdcSearchQueries.pageNumber, pageNumber));
       }
-      
+
       const [cached] = await db
         .select()
         .from(fdcSearchQueries)
         .where(and(...conditions))
         .orderBy(sql`${fdcSearchQueries.cachedAt} DESC`)
         .limit(1);
-      
+
       // Check if cache is still valid (24 hours)
       if (cached) {
         const cacheAge = Date.now() - new Date(cached.cachedAt).getTime();
         const ttlMs = 24 * 60 * 60 * 1000; // 24 hours
-        
+
         if (cacheAge < ttlMs) {
           return cached;
         }
       }
-      
+
       return undefined;
     } catch (error) {
-      console.error('Error getting cached search results:', error);
+      console.error("Error getting cached search results:", error);
       return undefined;
     }
   }
 
-  async cacheSearchResults(search: InsertFdcSearchQuery): Promise<FdcSearchQuery> {
+  async cacheSearchResults(
+    search: InsertFdcSearchQuery,
+  ): Promise<FdcSearchQuery> {
     try {
       const searchToInsert = {
         query: search.query.toLowerCase(),
@@ -1399,17 +1866,17 @@ export class DatabaseStorage implements IStorage {
         pageNumber: search.pageNumber,
         pageSize: search.pageSize,
         totalHits: search.totalHits,
-        fdcIds: search.fdcIds // Array of FDC IDs instead of full results
+        fdcIds: search.fdcIds, // Array of FDC IDs instead of full results
       };
-      
+
       const [cachedSearch] = await db
         .insert(fdcSearchQueries)
         .values(searchToInsert)
         .returning();
       return cachedSearch;
     } catch (error) {
-      console.error('Error caching search results:', error);
-      throw new Error('Failed to cache search results');
+      console.error("Error caching search results:", error);
+      throw new Error("Failed to cache search results");
     }
   }
 
@@ -1417,18 +1884,18 @@ export class DatabaseStorage implements IStorage {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-      
+
       // Clear old search cache
       await db
         .delete(fdcSearchQueries)
         .where(sql`${fdcSearchQueries.cachedAt} < ${cutoffDate.toISOString()}`);
-      
+
       // Clear old food cache that hasn't been accessed recently
       await db
         .delete(fdcCache)
         .where(sql`${fdcCache.lastAccessed} < ${cutoffDate.toISOString()}`);
     } catch (error) {
-      console.error('Error clearing old cache:', error);
+      console.error("Error clearing old cache:", error);
       // Don't throw - cache cleanup is not critical
     }
   }
@@ -1444,7 +1911,10 @@ export class DatabaseStorage implements IStorage {
     return items;
   }
 
-  async createShoppingListItem(userId: string, item: Omit<InsertShoppingListItem, 'userId'>): Promise<ShoppingListItem> {
+  async createShoppingListItem(
+    userId: string,
+    item: Omit<InsertShoppingListItem, "userId">,
+  ): Promise<ShoppingListItem> {
     await this.ensureDefaultDataForUser(userId);
     const [newItem] = await db
       .insert(shoppingListItems)
@@ -1453,18 +1923,21 @@ export class DatabaseStorage implements IStorage {
     return newItem;
   }
 
-  async updateShoppingListItem(userId: string, id: string, updates: Partial<Omit<InsertShoppingListItem, 'userId'>>): Promise<ShoppingListItem> {
+  async updateShoppingListItem(
+    userId: string,
+    id: string,
+    updates: Partial<Omit<InsertShoppingListItem, "userId">>,
+  ): Promise<ShoppingListItem> {
     const [updated] = await db
       .update(shoppingListItems)
       .set(updates)
-      .where(and(
-        eq(shoppingListItems.id, id),
-        eq(shoppingListItems.userId, userId)
-      ))
+      .where(
+        and(eq(shoppingListItems.id, id), eq(shoppingListItems.userId, userId)),
+      )
       .returning();
-    
+
     if (!updated) {
-      throw new Error('Shopping list item not found');
+      throw new Error("Shopping list item not found");
     }
     return updated;
   }
@@ -1472,36 +1945,41 @@ export class DatabaseStorage implements IStorage {
   async deleteShoppingListItem(userId: string, id: string): Promise<void> {
     await db
       .delete(shoppingListItems)
-      .where(and(
-        eq(shoppingListItems.id, id),
-        eq(shoppingListItems.userId, userId)
-      ));
+      .where(
+        and(eq(shoppingListItems.id, id), eq(shoppingListItems.userId, userId)),
+      );
   }
 
   async clearCheckedShoppingListItems(userId: string): Promise<void> {
     await db
       .delete(shoppingListItems)
-      .where(and(
-        eq(shoppingListItems.userId, userId),
-        eq(shoppingListItems.isChecked, true)
-      ));
+      .where(
+        and(
+          eq(shoppingListItems.userId, userId),
+          eq(shoppingListItems.isChecked, true),
+        ),
+      );
   }
 
-  async addMissingIngredientsToShoppingList(userId: string, recipeId: string, ingredients: string[]): Promise<ShoppingListItem[]> {
+  async addMissingIngredientsToShoppingList(
+    userId: string,
+    recipeId: string,
+    ingredients: string[],
+  ): Promise<ShoppingListItem[]> {
     await this.ensureDefaultDataForUser(userId);
-    
+
     // Parse each ingredient to extract quantity and unit if possible
-    const items = ingredients.map(ingredient => {
+    const items = ingredients.map((ingredient) => {
       // Simple parsing - could be enhanced
       const match = ingredient.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?\s+(.+)$/);
       if (match) {
         return {
           ingredient: match[3],
           quantity: match[1],
-          unit: match[2] || '',
+          unit: match[2] || "",
           recipeId,
           isChecked: false,
-          userId
+          userId,
         };
       }
       return {
@@ -1510,7 +1988,7 @@ export class DatabaseStorage implements IStorage {
         unit: null,
         recipeId,
         isChecked: false,
-        userId
+        userId,
       };
     });
 
@@ -1518,7 +1996,7 @@ export class DatabaseStorage implements IStorage {
       .insert(shoppingListItems)
       .values(items)
       .returning();
-    
+
     return newItems;
   }
 
@@ -1527,7 +2005,9 @@ export class DatabaseStorage implements IStorage {
       // Use a transaction to ensure all deletions complete or all rollback
       await db.transaction(async (tx) => {
         // Delete all user data in order (respecting foreign key constraints)
-        await tx.delete(shoppingListItems).where(eq(shoppingListItems.userId, userId));
+        await tx
+          .delete(shoppingListItems)
+          .where(eq(shoppingListItems.userId, userId));
         await tx.delete(mealPlans).where(eq(mealPlans.userId, userId));
         await tx.delete(foodItems).where(eq(foodItems.userId, userId));
         await tx.delete(chatMessages).where(eq(chatMessages.userId, userId));
@@ -1535,9 +2015,10 @@ export class DatabaseStorage implements IStorage {
         await tx.delete(appliances).where(eq(appliances.userId, userId));
         await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
         await tx.delete(feedback).where(eq(feedback.userId, userId));
-        
+
         // Reset user data including preferences and storage locations to defaults
-        await tx.update(users)
+        await tx
+          .update(users)
           .set({
             // Reset preferences to defaults
             dietaryRestrictions: [],
@@ -1546,39 +2027,83 @@ export class DatabaseStorage implements IStorage {
             expirationAlertDays: 3,
             storageAreasEnabled: [],
             householdSize: 2,
-            cookingSkillLevel: 'beginner',
-            preferredUnits: 'imperial',
+            cookingSkillLevel: "beginner",
+            preferredUnits: "imperial",
             foodsToAvoid: [],
             hasCompletedOnboarding: false,
             // Clear storage locations (they will be re-initialized)
             storageLocations: [],
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(users.id, userId));
       });
-      
+
       // Clear the initialization flag so default data will be recreated
       // This is done outside the transaction since it's an in-memory operation
       this.userInitialized.delete(userId);
-      
+
       console.log(`Successfully reset all data for user ${userId}`);
     } catch (error) {
       console.error(`Error resetting user data for ${userId}:`, error);
-      throw new Error('Failed to reset user data - transaction rolled back');
+      throw new Error("Failed to reset user data - transaction rolled back");
     }
   }
 
   // Feedback System Implementation
-  async createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'> & { isFlagged?: boolean; flagReason?: string | null; similarTo?: string | null }): Promise<Feedback> {
+  async createFeedback(
+    userId: string,
+    feedbackData: Omit<InsertFeedback, "userId"> & {
+      isFlagged?: boolean;
+      flagReason?: string | null;
+      similarTo?: string | null;
+    },
+  ): Promise<Feedback> {
     try {
+      // Extract the extra fields that aren't part of the feedback table
+      const { isFlagged, flagReason, similarTo, ...feedbackFields } = feedbackData;
+      
+      // Store flags in the metadata field if provided
+      let finalMetadata = feedbackFields.metadata;
+      if (isFlagged !== undefined || flagReason || similarTo) {
+        // Ensure metadata is an object before spreading
+        const baseMetadata = typeof feedbackFields.metadata === 'object' && feedbackFields.metadata !== null 
+          ? feedbackFields.metadata 
+          : {};
+        finalMetadata = {
+          ...baseMetadata,
+          isFlagged,
+          flagReason,
+          similarTo
+        };
+      }
+      
       const [newFeedback] = await db
         .insert(feedback)
-        .values({ ...feedbackData, userId })
+        .values({
+          // Required fields
+          userId,
+          type: feedbackFields.type as "chat_response" | "recipe" | "food_item" | "bug" | "feature" | "general",
+          
+          // Optional fields
+          sentiment: feedbackFields.sentiment as "positive" | "negative" | "neutral" | undefined,
+          rating: feedbackFields.rating,
+          content: feedbackFields.content,
+          metadata: finalMetadata,
+          contextId: feedbackFields.contextId,
+          contextType: feedbackFields.contextType,
+          category: feedbackFields.category,
+          priority: feedbackFields.priority as "low" | "medium" | "high" | "critical" | undefined,
+          status: feedbackFields.status || 'open',
+          estimatedTurnaround: feedbackFields.estimatedTurnaround,
+          tags: feedbackFields.tags,
+          upvotes: [],
+          responses: []
+        })
         .returning();
       return newFeedback;
     } catch (error) {
-      console.error('Error creating feedback:', error);
-      throw new Error('Failed to create feedback');
+      console.error("Error creating feedback:", error);
+      throw new Error("Failed to create feedback");
     }
   }
 
@@ -1590,12 +2115,15 @@ export class DatabaseStorage implements IStorage {
         .where(and(eq(feedback.id, id), eq(feedback.userId, userId)));
       return result;
     } catch (error) {
-      console.error('Error getting feedback:', error);
-      throw new Error('Failed to get feedback');
+      console.error("Error getting feedback:", error);
+      throw new Error("Failed to get feedback");
     }
   }
 
-  async getUserFeedback(userId: string, limit: number = 50): Promise<Feedback[]> {
+  async getUserFeedback(
+    userId: string,
+    limit: number = 50,
+  ): Promise<Feedback[]> {
     try {
       const results = await db
         .select()
@@ -1605,39 +2133,53 @@ export class DatabaseStorage implements IStorage {
         .limit(limit);
       return results;
     } catch (error) {
-      console.error('Error getting user feedback:', error);
-      throw new Error('Failed to get user feedback');
+      console.error("Error getting user feedback:", error);
+      throw new Error("Failed to get user feedback");
     }
   }
 
-  async getAllFeedback(limit: number = 50, offset: number = 0, status?: string): Promise<{ items: Feedback[], total: number }> {
+  async getAllFeedback(
+    limit: number = 50,
+    offset: number = 0,
+    status?: string,
+  ): Promise<{ items: Feedback[]; total: number }> {
     try {
       const whereCondition = status ? eq(feedback.status, status) : undefined;
-      
+
       const countQuery = db
         .select({ count: sql<number>`count(*)` })
         .from(feedback);
-      
-      const dataQuery = db
-        .select()
-        .from(feedback);
-      
-      const [{ count }] = whereCondition 
+
+      const dataQuery = db.select().from(feedback);
+
+      const [{ count }] = whereCondition
         ? await countQuery.where(whereCondition)
         : await countQuery;
-      
+
       const items = whereCondition
-        ? await dataQuery.where(whereCondition).orderBy(sql`${feedback.createdAt} DESC`).limit(limit).offset(offset)
-        : await dataQuery.orderBy(sql`${feedback.createdAt} DESC`).limit(limit).offset(offset);
-      
+        ? await dataQuery
+            .where(whereCondition)
+            .orderBy(sql`${feedback.createdAt} DESC`)
+            .limit(limit)
+            .offset(offset)
+        : await dataQuery
+            .orderBy(sql`${feedback.createdAt} DESC`)
+            .limit(limit)
+            .offset(offset);
+
       return { items, total: count };
     } catch (error) {
-      console.error('Error getting all feedback:', error);
-      throw new Error('Failed to get all feedback');
+      console.error("Error getting all feedback:", error);
+      throw new Error("Failed to get all feedback");
     }
   }
 
-  async updateFeedbackStatus(id: string, status: string, estimatedTurnaround?: string, resolvedAt?: Date): Promise<Feedback> {
+  async updateFeedbackStatus(
+    id: string,
+    status: string,
+    estimatedTurnaround?: string,
+    resolvedAt?: Date,
+  ): Promise<Feedback> {
     try {
       const updateData: any = { status };
       if (estimatedTurnaround !== undefined) {
@@ -1646,25 +2188,28 @@ export class DatabaseStorage implements IStorage {
       if (resolvedAt) {
         updateData.resolvedAt = resolvedAt;
       }
-      
+
       const [updated] = await db
         .update(feedback)
         .set(updateData)
         .where(eq(feedback.id, id))
         .returning();
-      
+
       if (!updated) {
-        throw new Error('Feedback not found');
+        throw new Error("Feedback not found");
       }
-      
+
       return updated;
     } catch (error) {
-      console.error('Error updating feedback status:', error);
-      throw new Error('Failed to update feedback status');
+      console.error("Error updating feedback status:", error);
+      throw new Error("Failed to update feedback status");
     }
   }
 
-  async addFeedbackResponse(feedbackId: string, response: FeedbackResponse): Promise<Feedback> {
+  async addFeedbackResponse(
+    feedbackId: string,
+    response: FeedbackResponse,
+  ): Promise<Feedback> {
     try {
       // Get current feedback
       const [currentFeedback] = await db
@@ -1673,30 +2218,31 @@ export class DatabaseStorage implements IStorage {
         .where(eq(feedback.id, feedbackId));
 
       if (!currentFeedback) {
-        throw new Error('Feedback not found');
+        throw new Error("Feedback not found");
       }
 
       // Add new response to responses array
-      const currentResponses = (currentFeedback.responses as FeedbackResponse[]) || [];
+      const currentResponses =
+        (currentFeedback.responses as FeedbackResponse[]) || [];
       const newResponse: FeedbackResponse = {
         ...response,
-        createdAt: response.createdAt || new Date().toISOString()
+        createdAt: response.createdAt || new Date().toISOString(),
       };
       const updatedResponses = [...currentResponses, newResponse];
 
       // Update feedback with new responses
       const [updated] = await db
         .update(feedback)
-        .set({ 
-          responses: updatedResponses
+        .set({
+          responses: updatedResponses,
         })
         .where(eq(feedback.id, feedbackId))
         .returning();
 
       return updated;
     } catch (error) {
-      console.error('Error adding feedback response:', error);
-      throw new Error('Failed to add feedback response');
+      console.error("Error adding feedback response:", error);
+      throw new Error("Failed to add feedback response");
     }
   }
 
@@ -1706,11 +2252,11 @@ export class DatabaseStorage implements IStorage {
         .select({ responses: feedback.responses })
         .from(feedback)
         .where(eq(feedback.id, feedbackId));
-      
+
       if (!currentFeedback) {
         return [];
       }
-      
+
       const responses = (currentFeedback.responses as FeedbackResponse[]) || [];
       // Sort by createdAt
       return responses.sort((a, b) => {
@@ -1719,77 +2265,102 @@ export class DatabaseStorage implements IStorage {
         return dateA - dateB;
       });
     } catch (error) {
-      console.error('Error getting feedback responses:', error);
-      throw new Error('Failed to get feedback responses');
+      console.error("Error getting feedback responses:", error);
+      throw new Error("Failed to get feedback responses");
     }
   }
 
-  async getFeedbackAnalytics(userId?: string, days: number = 30): Promise<FeedbackAnalytics> {
+  async getFeedbackAnalytics(
+    userId?: string,
+    days: number = 30,
+  ): Promise<FeedbackAnalytics> {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      
+
       const allFeedback = userId
         ? await db
             .select()
             .from(feedback)
-            .where(and(
-              eq(feedback.userId, userId),
-              sql`${feedback.createdAt} >= ${startDate}`
-            ))
+            .where(
+              and(
+                eq(feedback.userId, userId),
+                sql`${feedback.createdAt} >= ${startDate}`,
+              ),
+            )
         : await db
             .select()
             .from(feedback)
             .where(sql`${feedback.createdAt} >= ${startDate}`);
-      
+
       // Calculate analytics
       const totalFeedback = allFeedback.length;
-      const ratings = allFeedback.filter(f => f.rating !== null).map(f => f.rating!);
-      const averageRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
-      
+      const ratings = allFeedback
+        .filter((f) => f.rating !== null)
+        .map((f) => f.rating!);
+      const averageRating =
+        ratings.length > 0
+          ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+          : null;
+
       const sentimentDistribution = {
-        positive: allFeedback.filter(f => f.sentiment === 'positive').length,
-        negative: allFeedback.filter(f => f.sentiment === 'negative').length,
-        neutral: allFeedback.filter(f => f.sentiment === 'neutral').length,
+        positive: allFeedback.filter((f) => f.sentiment === "positive").length,
+        negative: allFeedback.filter((f) => f.sentiment === "negative").length,
+        neutral: allFeedback.filter((f) => f.sentiment === "neutral").length,
       };
-      
+
       const typeDistribution: Record<string, number> = {};
       const priorityDistribution: Record<string, number> = {};
-      
-      allFeedback.forEach(f => {
+
+      allFeedback.forEach((f) => {
         typeDistribution[f.type] = (typeDistribution[f.type] || 0) + 1;
         if (f.priority) {
-          priorityDistribution[f.priority] = (priorityDistribution[f.priority] || 0) + 1;
+          priorityDistribution[f.priority] =
+            (priorityDistribution[f.priority] || 0) + 1;
         }
       });
-      
+
       // Calculate daily trends
-      const dailyTrends = new Map<string, { count: number; sentiments: number[] }>();
-      allFeedback.forEach(f => {
-        const date = new Date(f.createdAt).toISOString().split('T')[0];
+      const dailyTrends = new Map<
+        string,
+        { count: number; sentiments: number[] }
+      >();
+      allFeedback.forEach((f) => {
+        const date = new Date(f.createdAt).toISOString().split("T")[0];
         if (!dailyTrends.has(date)) {
           dailyTrends.set(date, { count: 0, sentiments: [] });
         }
         const dayData = dailyTrends.get(date)!;
         dayData.count++;
         if (f.sentiment) {
-          dayData.sentiments.push(f.sentiment === 'positive' ? 1 : f.sentiment === 'negative' ? -1 : 0);
+          dayData.sentiments.push(
+            f.sentiment === "positive"
+              ? 1
+              : f.sentiment === "negative"
+                ? -1
+                : 0,
+          );
         }
       });
-      
+
       const recentTrends = Array.from(dailyTrends.entries())
         .map(([date, data]) => ({
           date,
           count: data.count,
-          averageSentiment: data.sentiments.length > 0 
-            ? data.sentiments.reduce((a, b) => a + b, 0) / data.sentiments.length 
-            : 0
+          averageSentiment:
+            data.sentiments.length > 0
+              ? data.sentiments.reduce((a, b) => a + b, 0) /
+                data.sentiments.length
+              : 0,
         }))
         .sort((a, b) => a.date.localeCompare(b.date));
-      
+
       // Calculate top issues
-      const categoryMap = new Map<string, { count: number; priority: string }>();
-      allFeedback.forEach(f => {
+      const categoryMap = new Map<
+        string,
+        { count: number; priority: string }
+      >();
+      allFeedback.forEach((f) => {
         if (f.category && f.priority) {
           const key = f.category;
           if (!categoryMap.has(key)) {
@@ -1798,22 +2369,24 @@ export class DatabaseStorage implements IStorage {
           const cat = categoryMap.get(key)!;
           cat.count++;
           // Update to highest priority
-          const priorities = ['low', 'medium', 'high', 'critical'];
-          if (priorities.indexOf(f.priority) > priorities.indexOf(cat.priority)) {
+          const priorities = ["low", "medium", "high", "critical"];
+          if (
+            priorities.indexOf(f.priority) > priorities.indexOf(cat.priority)
+          ) {
             cat.priority = f.priority;
           }
         }
       });
-      
+
       const topIssues = Array.from(categoryMap.entries())
         .map(([category, data]) => ({
           category,
           count: data.count,
-          priority: data.priority
+          priority: data.priority,
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
-      
+
       return {
         totalFeedback,
         averageRating,
@@ -1821,71 +2394,97 @@ export class DatabaseStorage implements IStorage {
         typeDistribution,
         priorityDistribution,
         recentTrends,
-        topIssues
+        topIssues,
       };
     } catch (error) {
-      console.error('Error getting feedback analytics:', error);
-      throw new Error('Failed to get feedback analytics');
+      console.error("Error getting feedback analytics:", error);
+      throw new Error("Failed to get feedback analytics");
     }
   }
 
-  async getFeedbackByContext(contextId: string, contextType: string): Promise<Feedback[]> {
+  async getFeedbackByContext(
+    contextId: string,
+    contextType: string,
+  ): Promise<Feedback[]> {
     try {
       const results = await db
         .select()
         .from(feedback)
-        .where(and(
-          eq(feedback.contextId, contextId),
-          eq(feedback.contextType, contextType)
-        ))
+        .where(
+          and(
+            eq(feedback.contextId, contextId),
+            eq(feedback.contextType, contextType),
+          ),
+        )
         .orderBy(sql`${feedback.createdAt} DESC`);
       return results;
     } catch (error) {
-      console.error('Error getting feedback by context:', error);
-      throw new Error('Failed to get feedback by context');
+      console.error("Error getting feedback by context:", error);
+      throw new Error("Failed to get feedback by context");
     }
   }
 
-  async getCommunityFeedback(type?: string, sortBy: 'upvotes' | 'recent' = 'recent', limit: number = 50): Promise<Array<Feedback & { userUpvoted: boolean }>> {
+  async getCommunityFeedback(
+    type?: string,
+    sortBy: "upvotes" | "recent" = "recent",
+    limit: number = 50,
+  ): Promise<Array<Feedback & { userUpvoted: boolean }>> {
     try {
       const whereCondition = type ? eq(feedback.type, type) : undefined;
-      const orderByClause = sortBy === 'upvotes' 
-        ? sql`${feedback.upvoteCount} DESC, ${feedback.createdAt} DESC`
-        : sql`${feedback.createdAt} DESC`;
+      const orderByClause =
+        sortBy === "upvotes"
+          ? sql`${feedback.upvoteCount} DESC, ${feedback.createdAt} DESC`
+          : sql`${feedback.createdAt} DESC`;
 
       const results = whereCondition
-        ? await db.select().from(feedback).where(whereCondition).orderBy(orderByClause).limit(limit)
+        ? await db
+            .select()
+            .from(feedback)
+            .where(whereCondition)
+            .orderBy(orderByClause)
+            .limit(limit)
         : await db.select().from(feedback).orderBy(orderByClause).limit(limit);
 
-      return results.map(item => ({ ...item, userUpvoted: false }));
+      return results.map((item) => ({ ...item, userUpvoted: false }));
     } catch (error) {
-      console.error('Error getting community feedback:', error);
-      throw new Error('Failed to get community feedback');
+      console.error("Error getting community feedback:", error);
+      throw new Error("Failed to get community feedback");
     }
   }
 
-  async getCommunityFeedbackForUser(userId: string, type?: string, sortBy: 'upvotes' | 'recent' = 'recent', limit: number = 50): Promise<Array<Feedback & { userUpvoted: boolean }>> {
+  async getCommunityFeedbackForUser(
+    userId: string,
+    type?: string,
+    sortBy: "upvotes" | "recent" = "recent",
+    limit: number = 50,
+  ): Promise<Array<Feedback & { userUpvoted: boolean }>> {
     try {
       const whereCondition = type ? eq(feedback.type, type) : undefined;
-      const orderByClause = sortBy === 'upvotes' 
-        ? sql`${feedback.upvoteCount} DESC, ${feedback.createdAt} DESC`
-        : sql`${feedback.createdAt} DESC`;
+      const orderByClause =
+        sortBy === "upvotes"
+          ? sql`${feedback.upvoteCount} DESC, ${feedback.createdAt} DESC`
+          : sql`${feedback.createdAt} DESC`;
 
       const results = whereCondition
-        ? await db.select().from(feedback).where(whereCondition).orderBy(orderByClause).limit(limit)
+        ? await db
+            .select()
+            .from(feedback)
+            .where(whereCondition)
+            .orderBy(orderByClause)
+            .limit(limit)
         : await db.select().from(feedback).orderBy(orderByClause).limit(limit);
 
       // Check if user has upvoted each feedback item
-      return results.map(item => {
-        const upvotes = (item.upvotes as string[]) || [];
+      return results.map((item) => {
+        const upvotes = (item.upvotes as Array<{userId: string, createdAt: string}>) || [];
         return {
           ...item,
-          userUpvoted: upvotes.includes(userId)
+          userUpvoted: upvotes.some(upvote => upvote.userId === userId),
         };
       });
     } catch (error) {
-      console.error('Error getting community feedback for user:', error);
-      throw new Error('Failed to get community feedback');
+      console.error("Error getting community feedback for user:", error);
+      throw new Error("Failed to get community feedback");
     }
   }
 
@@ -1898,28 +2497,31 @@ export class DatabaseStorage implements IStorage {
         .where(eq(feedback.id, feedbackId));
 
       if (!currentFeedback) {
-        throw new Error('Feedback not found');
+        throw new Error("Feedback not found");
       }
 
       // Check if user already upvoted
-      const upvotes = (currentFeedback.upvotes as string[]) || [];
-      if (upvotes.includes(userId)) {
+      const upvotes = (currentFeedback.upvotes as Array<{userId: string, createdAt: string}>) || [];
+      if (upvotes.some(upvote => upvote.userId === userId)) {
         return; // Already upvoted
       }
 
       // Add user to upvotes array and increment count
-      const updatedUpvotes = [...upvotes, userId];
-      
+      const updatedUpvotes = [...upvotes, { 
+        userId, 
+        createdAt: new Date().toISOString() 
+      }];
+
       await db
         .update(feedback)
-        .set({ 
+        .set({
           upvotes: updatedUpvotes,
-          upvoteCount: updatedUpvotes.length
+          upvoteCount: updatedUpvotes.length,
         })
         .where(eq(feedback.id, feedbackId));
     } catch (error) {
-      console.error('Error upvoting feedback:', error);
-      throw new Error('Failed to upvote feedback');
+      console.error("Error upvoting feedback:", error);
+      throw new Error("Failed to upvote feedback");
     }
   }
 
@@ -1932,26 +2534,26 @@ export class DatabaseStorage implements IStorage {
         .where(eq(feedback.id, feedbackId));
 
       if (!currentFeedback) {
-        throw new Error('Feedback not found');
+        throw new Error("Feedback not found");
       }
 
       // Remove user from upvotes array
-      const upvotes = (currentFeedback.upvotes as string[]) || [];
-      const updatedUpvotes = upvotes.filter(id => id !== userId);
+      const upvotes = (currentFeedback.upvotes as Array<{userId: string, createdAt: string}>) || [];
+      const updatedUpvotes = upvotes.filter((upvote) => upvote.userId !== userId);
 
       // Only update if the user was actually in the upvotes array
       if (upvotes.length !== updatedUpvotes.length) {
         await db
           .update(feedback)
-          .set({ 
+          .set({
             upvotes: updatedUpvotes,
-            upvoteCount: updatedUpvotes.length
+            upvoteCount: updatedUpvotes.length,
           })
           .where(eq(feedback.id, feedbackId));
       }
     } catch (error) {
-      console.error('Error removing upvote:', error);
-      throw new Error('Failed to remove upvote');
+      console.error("Error removing upvote:", error);
+      throw new Error("Failed to remove upvote");
     }
   }
 
@@ -1961,15 +2563,15 @@ export class DatabaseStorage implements IStorage {
         .select({ upvotes: feedback.upvotes })
         .from(feedback)
         .where(eq(feedback.id, feedbackId));
-      
+
       if (!currentFeedback) {
         return false;
       }
-      
-      const upvotes = (currentFeedback.upvotes as string[]) || [];
-      return upvotes.includes(userId);
+
+      const upvotes = (currentFeedback.upvotes as Array<{userId: string, createdAt: string}>) || [];
+      return upvotes.some(upvote => upvote.userId === userId);
     } catch (error) {
-      console.error('Error checking upvote status:', error);
+      console.error("Error checking upvote status:", error);
       return false;
     }
   }
@@ -1982,13 +2584,15 @@ export class DatabaseStorage implements IStorage {
         .where(eq(feedback.id, feedbackId));
       return result?.upvoteCount || 0;
     } catch (error) {
-      console.error('Error getting upvote count:', error);
+      console.error("Error getting upvote count:", error);
       return 0;
     }
   }
 
   // Donation System Implementation (from blueprint:javascript_stripe)
-  async createDonation(donation: Omit<InsertDonation, 'id' | 'createdAt' | 'completedAt'>): Promise<Donation> {
+  async createDonation(
+    donation: Omit<InsertDonation, "id" | "createdAt" | "completedAt">,
+  ): Promise<Donation> {
     try {
       const [newDonation] = await db
         .insert(donations)
@@ -1996,29 +2600,32 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newDonation;
     } catch (error) {
-      console.error('Error creating donation:', error);
-      throw new Error('Failed to create donation');
+      console.error("Error creating donation:", error);
+      throw new Error("Failed to create donation");
     }
   }
 
-  async updateDonation(stripePaymentIntentId: string, updates: Partial<Donation>): Promise<Donation> {
+  async updateDonation(
+    stripePaymentIntentId: string,
+    updates: Partial<Donation>,
+  ): Promise<Donation> {
     try {
       const [updated] = await db
         .update(donations)
         .set({
           ...updates,
-          completedAt: updates.status === 'succeeded' ? new Date() : undefined
+          completedAt: updates.status === "succeeded" ? new Date() : undefined,
         })
         .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
         .returning();
-      
+
       if (!updated) {
-        throw new Error('Donation not found');
+        throw new Error("Donation not found");
       }
       return updated;
     } catch (error) {
-      console.error('Error updating donation:', error);
-      throw new Error('Failed to update donation');
+      console.error("Error updating donation:", error);
+      throw new Error("Failed to update donation");
     }
   }
 
@@ -2030,12 +2637,14 @@ export class DatabaseStorage implements IStorage {
         .where(eq(donations.id, id));
       return donation;
     } catch (error) {
-      console.error('Error getting donation:', error);
-      throw new Error('Failed to get donation');
+      console.error("Error getting donation:", error);
+      throw new Error("Failed to get donation");
     }
   }
 
-  async getDonationByPaymentIntent(stripePaymentIntentId: string): Promise<Donation | undefined> {
+  async getDonationByPaymentIntent(
+    stripePaymentIntentId: string,
+  ): Promise<Donation | undefined> {
     try {
       const [donation] = await db
         .select()
@@ -2043,12 +2652,15 @@ export class DatabaseStorage implements IStorage {
         .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId));
       return donation;
     } catch (error) {
-      console.error('Error getting donation by payment intent:', error);
-      throw new Error('Failed to get donation');
+      console.error("Error getting donation by payment intent:", error);
+      throw new Error("Failed to get donation");
     }
   }
 
-  async getDonations(limit: number = 50, offset: number = 0): Promise<{ donations: Donation[], total: number }> {
+  async getDonations(
+    limit: number = 50,
+    offset: number = 0,
+  ): Promise<{ donations: Donation[]; total: number }> {
     try {
       const [donationResults, totalResult] = await Promise.all([
         db
@@ -2057,22 +2669,23 @@ export class DatabaseStorage implements IStorage {
           .orderBy(sql`${donations.createdAt} DESC`)
           .limit(limit)
           .offset(offset),
-        db
-          .select({ count: sql<number>`COUNT(*)::int` })
-          .from(donations)
+        db.select({ count: sql<number>`COUNT(*)::int` }).from(donations),
       ]);
 
       return {
         donations: donationResults,
-        total: totalResult[0]?.count || 0
+        total: totalResult[0]?.count || 0,
       };
     } catch (error) {
-      console.error('Error getting donations:', error);
-      throw new Error('Failed to get donations');
+      console.error("Error getting donations:", error);
+      throw new Error("Failed to get donations");
     }
   }
 
-  async getUserDonations(userId: string, limit: number = 10): Promise<Donation[]> {
+  async getUserDonations(
+    userId: string,
+    limit: number = 10,
+  ): Promise<Donation[]> {
     try {
       const results = await db
         .select()
@@ -2082,39 +2695,47 @@ export class DatabaseStorage implements IStorage {
         .limit(limit);
       return results;
     } catch (error) {
-      console.error('Error getting user donations:', error);
-      throw new Error('Failed to get user donations');
+      console.error("Error getting user donations:", error);
+      throw new Error("Failed to get user donations");
     }
   }
 
-  async getTotalDonations(): Promise<{ totalAmount: number, donationCount: number }> {
+  async getTotalDonations(): Promise<{
+    totalAmount: number;
+    donationCount: number;
+  }> {
     try {
       const result = await db
         .select({
           totalAmount: sql<number>`COALESCE(SUM(amount), 0)::int`,
-          donationCount: sql<number>`COUNT(*)::int`
+          donationCount: sql<number>`COUNT(*)::int`,
         })
         .from(donations)
-        .where(eq(donations.status, 'succeeded'));
-      
+        .where(eq(donations.status, "succeeded"));
+
       return result[0] || { totalAmount: 0, donationCount: 0 };
     } catch (error) {
-      console.error('Error getting total donations:', error);
-      throw new Error('Failed to get total donations');
+      console.error("Error getting total donations:", error);
+      throw new Error("Failed to get total donations");
     }
   }
 
-  async recordWebVital(vital: Omit<InsertWebVital, 'id' | 'createdAt'>): Promise<WebVital> {
+  async recordWebVital(
+    vital: Omit<InsertWebVital, "id" | "createdAt">,
+  ): Promise<WebVital> {
     try {
       const [newVital] = await db.insert(webVitals).values(vital).returning();
       return newVital;
     } catch (error) {
-      console.error('Error recording web vital:', error);
-      throw new Error('Failed to record web vital');
+      console.error("Error recording web vital:", error);
+      throw new Error("Failed to record web vital");
     }
   }
 
-  async getWebVitals(limit: number = 100, offset: number = 0): Promise<{ vitals: WebVital[], total: number }> {
+  async getWebVitals(
+    limit: number = 100,
+    offset: number = 0,
+  ): Promise<{ vitals: WebVital[]; total: number }> {
     try {
       const vitals = await db
         .select()
@@ -2129,12 +2750,15 @@ export class DatabaseStorage implements IStorage {
 
       return { vitals, total: count };
     } catch (error) {
-      console.error('Error getting web vitals:', error);
-      throw new Error('Failed to get web vitals');
+      console.error("Error getting web vitals:", error);
+      throw new Error("Failed to get web vitals");
     }
   }
 
-  async getWebVitalsByMetric(metricName: string, limit: number = 100): Promise<WebVital[]> {
+  async getWebVitalsByMetric(
+    metricName: string,
+    limit: number = 100,
+  ): Promise<WebVital[]> {
     try {
       return await db
         .select()
@@ -2143,12 +2767,15 @@ export class DatabaseStorage implements IStorage {
         .orderBy(sql`${webVitals.createdAt} DESC`)
         .limit(limit);
     } catch (error) {
-      console.error('Error getting web vitals by metric:', error);
-      throw new Error('Failed to get web vitals by metric');
+      console.error("Error getting web vitals by metric:", error);
+      throw new Error("Failed to get web vitals by metric");
     }
   }
 
-  async getWebVitalsStats(metricName?: string, days: number = 7): Promise<{
+  async getWebVitalsStats(
+    metricName?: string,
+    days: number = 7,
+  ): Promise<{
     average: number;
     p75: number;
     p95: number;
@@ -2164,7 +2791,7 @@ export class DatabaseStorage implements IStorage {
       const whereClause = metricName
         ? and(
             eq(webVitals.name, metricName),
-            sql`${webVitals.createdAt} >= ${dateThreshold.toISOString()}`
+            sql`${webVitals.createdAt} >= ${dateThreshold.toISOString()}`,
           )
         : sql`${webVitals.createdAt} >= ${dateThreshold.toISOString()}`;
 
@@ -2181,18 +2808,20 @@ export class DatabaseStorage implements IStorage {
         .from(webVitals)
         .where(whereClause);
 
-      return stats[0] || {
-        average: 0,
-        p75: 0,
-        p95: 0,
-        count: 0,
-        goodCount: 0,
-        needsImprovementCount: 0,
-        poorCount: 0,
-      };
+      return (
+        stats[0] || {
+          average: 0,
+          p75: 0,
+          p95: 0,
+          count: 0,
+          goodCount: 0,
+          needsImprovementCount: 0,
+          poorCount: 0,
+        }
+      );
     } catch (error) {
-      console.error('Error getting web vitals stats:', error);
-      throw new Error('Failed to get web vitals stats');
+      console.error("Error getting web vitals stats:", error);
+      throw new Error("Failed to get web vitals stats");
     }
   }
 }
