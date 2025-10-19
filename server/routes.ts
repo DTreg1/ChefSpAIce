@@ -1051,49 +1051,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
 
-      // Step 5: Create selected common food items with enriched USDA data
+      // Step 5: Create selected common food items from pre-populated database
+      // INSTANT ONBOARDING: Fetch all selected items from commonFoodItems table in one query
+      const commonItems = await storage.getCommonFoodItemsByNames(selectedCommonItems || []);
+      const commonItemsMap = new Map(
+        commonItems.map((item: any) => [item.displayName, item])
+      );
+      
       for (const itemName of (selectedCommonItems || [])) {
         try {
-          // Get enriched data server-side
-          const enrichedData = await getEnrichedOnboardingItem(itemName);
+          // Get pre-populated data from database (instant lookup, no API calls!)
+          const commonItem = commonItemsMap.get(itemName);
           
-          if (enrichedData) {
-            const storageLocationId = locationMap.get(enrichedData.storage);
+          if (commonItem) {
+            const storageLocationId = locationMap.get(commonItem.storage);
             if (!storageLocationId) {
-              console.error(`No storage location found for ${enrichedData.storage}`);
+              console.error(`No storage location found for ${commonItem.storage}`);
               failedItems.push(itemName);
               continue;
             }
 
             const expirationDate = new Date();
-            expirationDate.setDate(expirationDate.getDate() + enrichedData.expirationDays);
-
-            // Get the predefined category from our items map
-            const itemData = allItemsMap.get(itemName);
-            const predefinedCategory = itemData?.category || null;
+            expirationDate.setDate(expirationDate.getDate() + commonItem.expirationDays);
             
-            // Use USDA category if available, otherwise fall back to predefined, then normalize
-            const rawCategory = enrichedData.usdaData?.foodCategory || predefinedCategory;
-            const foodCategory = normalizeCategory(rawCategory);
-            
-            // Create the food item with full USDA data
+            // Create the food item with pre-populated USDA data
             await storage.createFoodItem(userId, {
-              name: enrichedData.name,
-              quantity: enrichedData.quantity,
-              unit: enrichedData.unit,
+              name: commonItem.displayName,
+              quantity: commonItem.quantity,
+              unit: commonItem.unit,
               storageLocationId,
               expirationDate: expirationDate.toISOString(),
-              fcdId: enrichedData.fcdId || null,
-              nutrition: enrichedData.nutrition || null,
-              usdaData: enrichedData.usdaData ? JSON.stringify(enrichedData.usdaData) : null,
-              foodCategory,
+              fcdId: commonItem.fcdId || null,
+              nutrition: commonItem.nutrition || null,
+              usdaData: commonItem.usdaData ? JSON.stringify(commonItem.usdaData) : null,
+              foodCategory: commonItem.foodCategory,
             });
             successCount++;
           } else {
-            // Fall back to basic data from the items map
+            // Fall back to basic data from the items map (shouldn't happen if DB is seeded)
             const itemData = allItemsMap.get(itemName);
             if (!itemData) {
-              console.error(`No data found for ${itemName}`);
+              console.error(`No data found for ${itemName} in commonFoodItems or local map`);
               failedItems.push(itemName);
               continue;
             }
