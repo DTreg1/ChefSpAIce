@@ -213,6 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/food-items", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const { normalizeCategory } = await import("./category-mapping");
       const validated = insertFoodItemSchema.parse(req.body);
       
       let nutrition = validated.nutrition;
@@ -279,8 +280,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Normalize the foodCategory if it exists
+      const foodCategory = validated.foodCategory ? normalizeCategory(validated.foodCategory) : normalizeCategory(null);
+      
       const item = await storage.createFoodItem(userId, {
         ...validated,
+        foodCategory,
         nutrition,
         usdaData,
         weightInGrams,
@@ -978,6 +983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Step 4: Import common items and get enriched data
       const { getItemsByCategory } = await import("./onboarding-items-expanded");
+      const { normalizeCategory } = await import("./category-mapping");
       const itemsByCategory = getItemsByCategory();
       
       // Flatten all items to create a lookup map
@@ -1005,6 +1011,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const expirationDate = new Date();
             expirationDate.setDate(expirationDate.getDate() + enrichedData.expirationDays);
 
+            // Get the predefined category from our items map
+            const itemData = allItemsMap.get(itemName);
+            const predefinedCategory = itemData?.category || null;
+            
+            // Use USDA category if available, otherwise fall back to predefined, then normalize
+            const rawCategory = enrichedData.usdaData?.foodCategory || predefinedCategory;
+            const foodCategory = normalizeCategory(rawCategory);
+            
             // Create the food item with full USDA data
             await storage.createFoodItem(userId, {
               name: enrichedData.name,
@@ -1015,7 +1029,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               fcdId: enrichedData.fcdId || null,
               nutrition: enrichedData.nutrition || null,
               usdaData: enrichedData.usdaData ? JSON.stringify(enrichedData.usdaData) : null,
-              foodCategory: enrichedData.usdaData?.foodCategory || null,
+              foodCategory,
             });
             successCount++;
           } else {
@@ -1037,6 +1051,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const expirationDate = new Date();
             expirationDate.setDate(expirationDate.getDate() + itemData.expirationDays);
 
+            // Normalize the category from our predefined list
+            const foodCategory = normalizeCategory(itemData.category);
+            
             await storage.createFoodItem(userId, {
               name: itemData.displayName,
               quantity: itemData.quantity,
@@ -1044,7 +1061,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               storageLocationId,
               expirationDate: expirationDate.toISOString(),
               fcdId: itemData.fcdId || null,
-              foodCategory: itemData.category || null,
+              foodCategory,
             });
             successCount++;
           }

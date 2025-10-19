@@ -1,225 +1,215 @@
-// Canonical category definitions
+// The 5 major food groups
 export const CANONICAL_CATEGORIES = {
-  'Dairy & Eggs': 'Dairy & Eggs',
-  'Grains & Carbs': 'Grains & Carbs',
-  'Oils & Vinegars': 'Oils & Vinegars',
-  'Baking Essentials': 'Baking Essentials',
-  'Spices & Seasonings': 'Spices & Seasonings',
-  'Canned Goods': 'Canned Goods',
-  'Condiments & Sauces': 'Condiments & Sauces',
-  'Proteins': 'Proteins',
-  'Vegetables': 'Vegetables',
   'Fruits': 'Fruits',
-  'Frozen Foods': 'Frozen Foods',
-  'Beverages': 'Beverages',
-  'Snacks & Sweets': 'Snacks & Sweets',
-  'Grains & Pasta': 'Grains & Pasta',
-  'Nuts & Seeds': 'Nuts & Seeds',
-  'International': 'International',
-  'Prepared Foods': 'Prepared Foods',
-  'Herbs & Aromatics': 'Herbs & Aromatics',
-  'Other': 'Other'
+  'Vegetables': 'Vegetables', 
+  'Grains': 'Grains',
+  'Protein': 'Protein',
+  'Dairy': 'Dairy'
 } as const;
 
-// Map various category names to canonical categories
+// Map various category names to the 5 major food groups
 export const CATEGORY_MAPPINGS: Record<string, string> = {
-  // Dairy & Eggs mappings
-  'dairy & eggs': 'Dairy & Eggs',
-  'dairy and eggs': 'Dairy & Eggs',
-  'dairy': 'Dairy & Eggs',
-  'dairy products': 'Dairy & Eggs',
-  'eggs': 'Dairy & Eggs',
-  'egg': 'Dairy & Eggs',
-  'milk': 'Dairy & Eggs',
-  'cheese': 'Dairy & Eggs',
-  'yogurt': 'Dairy & Eggs',
-  'butter': 'Dairy & Eggs',
-  'cream': 'Dairy & Eggs',
-  
-  // Grains & Carbs mappings
-  'grains & carbs': 'Grains & Carbs',
-  'grains and carbs': 'Grains & Carbs',
-  'grains': 'Grains & Carbs',
-  'carbs': 'Grains & Carbs',
-  'rice': 'Grains & Carbs',
-  'bread': 'Grains & Carbs',
-  'pasta': 'Grains & Carbs',
-  'flour': 'Grains & Carbs',
-  'cereals': 'Grains & Carbs',
-  
-  // Oils & Vinegars mappings
-  'oils & vinegars': 'Oils & Vinegars',
-  'oils and vinegars': 'Oils & Vinegars',
-  'oils': 'Oils & Vinegars',
-  'vinegars': 'Oils & Vinegars',
-  'oil': 'Oils & Vinegars',
-  'vinegar': 'Oils & Vinegars',
-  'fats and oils': 'Oils & Vinegars',
-  
-  // Baking Essentials mappings
-  'baking essentials': 'Baking Essentials',
-  'baking': 'Baking Essentials',
-  'baking ingredients': 'Baking Essentials',
-  'baking supplies': 'Baking Essentials',
-  
-  // Spices & Seasonings mappings
-  'spices & seasonings': 'Spices & Seasonings',
-  'spices and seasonings': 'Spices & Seasonings',
-  'spices': 'Spices & Seasonings',
-  'seasonings': 'Spices & Seasonings',
-  'herbs and spices': 'Spices & Seasonings',
-  
-  // Canned Goods mappings
-  'canned goods': 'Canned Goods',
-  'canned': 'Canned Goods',
-  'canned foods': 'Canned Goods',
-  'tinned goods': 'Canned Goods',
-  
-  // Condiments & Sauces mappings
-  'condiments & sauces': 'Condiments & Sauces',
-  'condiments and sauces': 'Condiments & Sauces',
-  'condiments': 'Condiments & Sauces',
-  'sauces': 'Condiments & Sauces',
-  'sauces and condiments': 'Condiments & Sauces',
-  
-  // Proteins mappings
-  'proteins': 'Proteins',
-  'protein': 'Proteins',
-  'meat': 'Proteins',
-  'meats': 'Proteins',
-  'poultry': 'Proteins',
-  'seafood': 'Proteins',
-  'fish': 'Proteins',
-  'beef': 'Proteins',
-  'pork': 'Proteins',
-  'chicken': 'Proteins',
-  'turkey': 'Proteins',
-  'tofu': 'Proteins',
-  'legumes': 'Proteins',
-  'beans': 'Proteins',
-  'pork products': 'Proteins',
-  'poultry products': 'Proteins',
-  'beef products': 'Proteins',
-  'finfish and shellfish products': 'Proteins',
-  'sausages and luncheon meats': 'Proteins',
-  
-  // Vegetables mappings
-  'vegetables': 'Vegetables',
-  'vegetable': 'Vegetables',
-  'veggies': 'Vegetables',
-  'fresh vegetables': 'Vegetables',
-  'vegetables and vegetable products': 'Vegetables',
-  
   // Fruits mappings
   'fruits': 'Fruits',
   'fruit': 'Fruits',
   'fresh fruits': 'Fruits',
   'fruits and fruit juices': 'Fruits',
+  'berries': 'Fruits',
+  'citrus': 'Fruits',
+  'melons': 'Fruits',
+  'stone fruits': 'Fruits',
+  'tropical fruits': 'Fruits',
+  'dried fruits': 'Fruits',
+  'frozen berries': 'Fruits',
   
-  // Frozen Foods mappings
-  'frozen foods': 'Frozen Foods',
-  'frozen': 'Frozen Foods',
-  'frozen items': 'Frozen Foods',
+  // Vegetables mappings  
+  'vegetables': 'Vegetables',
+  'vegetable': 'Vegetables',
+  'veggies': 'Vegetables',
+  'fresh vegetables': 'Vegetables',
+  'vegetables and vegetable products': 'Vegetables',
+  'frozen vegetables': 'Vegetables',
+  'canned vegetables': 'Vegetables',
+  'leafy greens': 'Vegetables',
+  'root vegetables': 'Vegetables',
+  'cruciferous': 'Vegetables',
+  'nightshades': 'Vegetables',
+  'legumes and legume products': 'Protein', // Beans go to Protein
+  'herbs': 'Vegetables',
+  'herbs & aromatics': 'Vegetables',
+  'herbs and aromatics': 'Vegetables',
+  'fresh herbs': 'Vegetables',
+  'fresh produce': 'Vegetables',
+  'onions': 'Vegetables',
+  'garlic': 'Vegetables',
+  'potatoes': 'Vegetables',
+  'tomatoes': 'Vegetables',
+  'mushrooms': 'Vegetables',
   
-  // Beverages mappings
-  'beverages': 'Beverages',
-  'beverage': 'Beverages',
-  'drinks': 'Beverages',
-  'juices': 'Beverages',
-  'sodas': 'Beverages',
-  'coffee': 'Beverages',
-  'tea': 'Beverages',
+  // Grains mappings
+  'grains': 'Grains',
+  'grain': 'Grains',
+  'grains & carbs': 'Grains',
+  'grains and carbs': 'Grains',
+  'carbs': 'Grains',
+  'cereals': 'Grains',
+  'cereal grains and pasta': 'Grains',
+  'grains & pasta': 'Grains',
+  'grains and pasta': 'Grains',
+  'pasta': 'Grains',
+  'rice': 'Grains',
+  'bread': 'Grains',
+  'flour': 'Grains',
+  'baked products': 'Grains',
+  'breakfast cereals': 'Grains',
+  'crackers': 'Grains',
+  'snacks': 'Grains',
+  'snacks & sweets': 'Grains',
+  'snacks and sweets': 'Grains',
+  'sweets': 'Grains',
+  'desserts': 'Grains',
+  'sweets and desserts': 'Grains',
+  'baking essentials': 'Grains',
+  'baking': 'Grains',
+  'baking ingredients': 'Grains',
+  'baking supplies': 'Grains',
+  'sugar': 'Grains',
+  'sweeteners': 'Grains',
   
-  // Snacks & Sweets mappings
-  'snacks & sweets': 'Snacks & Sweets',
-  'snacks and sweets': 'Snacks & Sweets',
-  'snacks': 'Snacks & Sweets',
-  'sweets': 'Snacks & Sweets',
-  'candy': 'Snacks & Sweets',
-  'chocolate': 'Snacks & Sweets',
-  'sweets and desserts': 'Snacks & Sweets',
+  // Protein mappings
+  'protein': 'Protein',
+  'proteins': 'Protein',
+  'meat': 'Protein',
+  'meats': 'Protein',
+  'meat & poultry': 'Protein',
+  'poultry': 'Protein',
+  'poultry products': 'Protein',
+  'beef': 'Protein',
+  'beef products': 'Protein',
+  'pork': 'Protein',
+  'pork products': 'Protein',
+  'lamb': 'Protein',
+  'chicken': 'Protein',
+  'turkey': 'Protein',
+  'seafood': 'Protein',
+  'fish': 'Protein',
+  'finfish and shellfish products': 'Protein',
+  'shellfish': 'Protein',
+  'sausages and luncheon meats': 'Protein',
+  'tofu': 'Protein',
+  'beans': 'Protein',
+  'legumes': 'Protein',
+  'nuts': 'Protein',
+  'seeds': 'Protein',
+  'nuts & seeds': 'Protein',
+  'nuts and seeds': 'Protein',
+  'nut and seed products': 'Protein',
+  'eggs': 'Dairy', // Eggs traditionally grouped with Dairy
+  'egg': 'Dairy',
+  'canned goods': 'Protein', // Canned beans, tuna, etc
+  'tuna': 'Protein',
   
-  // Grains & Pasta (alternative grouping)
-  'grains & pasta': 'Grains & Carbs',
-  'grains and pasta': 'Grains & Carbs',
-  'cereal grains and pasta': 'Grains & Carbs',
+  // Dairy mappings
+  'dairy': 'Dairy',
+  'dairy & eggs': 'Dairy',
+  'dairy and eggs': 'Dairy',
+  'dairy products': 'Dairy',
+  'milk': 'Dairy',
+  'cheese': 'Dairy',
+  'yogurt': 'Dairy',
+  'butter': 'Dairy',
+  'cream': 'Dairy',
+  'ice cream': 'Dairy',
+  'frozen desserts': 'Dairy',
   
-  // Nuts & Seeds mappings
-  'nuts & seeds': 'Nuts & Seeds',
-  'nuts and seeds': 'Nuts & Seeds',
-  'nuts': 'Nuts & Seeds',
-  'seeds': 'Nuts & Seeds',
-  'nut and seed products': 'Nuts & Seeds',
+  // Other foods mapped to closest group
+  'oils': 'Protein', // Healthy fats grouped with protein
+  'oils & vinegars': 'Protein',
+  'oils and vinegars': 'Protein',
+  'oil': 'Protein',
+  'vinegar': 'Vegetables', // Vinegar with vegetables
+  'vinegars': 'Vegetables',
+  'fats and oils': 'Protein',
   
-  // International mappings
-  'international': 'International',
-  'ethnic': 'International',
-  'ethnic foods': 'International',
-  'asian': 'International',
-  'mexican': 'International',
-  'italian': 'International',
-  'american indian/alaska native foods': 'International',
+  'spices': 'Vegetables', // Spices/herbs with vegetables
+  'spices & seasonings': 'Vegetables',
+  'spices and seasonings': 'Vegetables',
+  'seasonings': 'Vegetables',
+  'herbs and spices': 'Vegetables',
+  'salt': 'Vegetables',
+  'pepper': 'Vegetables',
   
-  // Prepared Foods mappings
-  'prepared foods': 'Prepared Foods',
-  'prepared': 'Prepared Foods',
-  'ready meals': 'Prepared Foods',
-  'meals, entrees, and side dishes': 'Prepared Foods',
-  'fast foods': 'Prepared Foods',
-  'restaurant foods': 'Prepared Foods',
-  'soups, sauces, and gravies': 'Prepared Foods',
+  'condiments': 'Vegetables', // Condiments varied, default to vegetables
+  'condiments & sauces': 'Vegetables',
+  'condiments and sauces': 'Vegetables',
+  'sauces': 'Vegetables',
+  'sauces and condiments': 'Vegetables',
+  'soups, sauces, and gravies': 'Vegetables',
   
-  // Herbs & Aromatics mappings
-  'herbs & aromatics': 'Herbs & Aromatics',
-  'herbs and aromatics': 'Herbs & Aromatics',
-  'herbs': 'Herbs & Aromatics',
-  'fresh herbs': 'Herbs & Aromatics',
+  'beverages': 'Fruits', // Most beverages are fruit-based
+  'beverage': 'Fruits',
+  'drinks': 'Fruits',
+  'juices': 'Fruits',
+  'sodas': 'Grains', // Sodas are sugar-based
+  'coffee': 'Grains',
+  'tea': 'Vegetables',
   
-  // Baby Foods
-  'baby foods': 'Other',
+  'prepared foods': 'Grains', // Most prepared foods are grain-based
+  'prepared': 'Grains',
+  'ready meals': 'Grains',
+  'meals, entrees, and side dishes': 'Grains',
+  'fast foods': 'Grains',
+  'restaurant foods': 'Grains',
+  'frozen foods': 'Grains',
+  'frozen meals': 'Grains',
+  'broths & soups': 'Vegetables',
   
-  // Breakfast
-  'breakfast cereals': 'Grains & Carbs',
+  'baby foods': 'Grains',
+  'international': 'Grains',
+  'ethnic': 'Grains',
+  'ethnic foods': 'Grains',
   
   // Default mapping for branded/generic types
-  'branded': 'Other',
-  'foundation': 'Other',
-  'survey (fndds)': 'Other',
-  'sr legacy': 'Other'
+  'branded': 'Grains',
+  'foundation': 'Grains',
+  'survey (fndds)': 'Grains',
+  'sr legacy': 'Grains',
+  'other': 'Grains',
+  'uncategorized': 'Grains'
 };
 
 /**
- * Normalizes a category name to its canonical form
+ * Normalizes a category name to one of the 5 major food groups
  * @param category - The raw category name from any source
- * @returns The canonical category name
+ * @returns One of the 5 major food groups
  */
 export function normalizeCategory(category: string | null | undefined): string {
   if (!category) {
-    return 'Other';
+    return 'Grains'; // Default for uncategorized items
   }
   
   const normalized = category.toLowerCase().trim();
   
-  // Check if it's already canonical
+  // Check if it's already one of the 5 groups
   const canonicalKeys = Object.keys(CANONICAL_CATEGORIES).map(k => k.toLowerCase());
   if (canonicalKeys.includes(normalized)) {
     // Return the proper case version
-    return Object.keys(CANONICAL_CATEGORIES).find(k => k.toLowerCase() === normalized) || 'Other';
+    return Object.keys(CANONICAL_CATEGORIES).find(k => k.toLowerCase() === normalized) || 'Grains';
   }
   
   // Look up in mappings
-  return CATEGORY_MAPPINGS[normalized] || 'Other';
+  return CATEGORY_MAPPINGS[normalized] || 'Grains';
 }
 
 /**
- * Gets all canonical categories sorted alphabetically
+ * Gets all canonical categories (the 5 major food groups)
  */
 export function getCanonicalCategories(): string[] {
-  return Object.keys(CANONICAL_CATEGORIES).sort();
+  return Object.keys(CANONICAL_CATEGORIES);
 }
 
 /**
- * Validates if a category is canonical
+ * Validates if a category is one of the 5 major food groups
  */
 export function isCanonicalCategory(category: string): boolean {
   return category in CANONICAL_CATEGORIES;
