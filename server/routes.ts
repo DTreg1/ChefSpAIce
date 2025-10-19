@@ -156,6 +156,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Onboarding - get common items grouped by category
+  app.get('/api/onboarding/common-items', async (req, res) => {
+    try {
+      const { getItemsByCategory } = await import("./onboarding-items-expanded");
+      const itemsByCategory = getItemsByCategory();
+      
+      res.json({
+        categories: itemsByCategory,
+        totalItems: Object.values(itemsByCategory).reduce((sum, items) => sum + items.length, 0)
+      });
+    } catch (error) {
+      console.error("Error fetching onboarding items:", error);
+      res.status(500).json({ error: "Failed to fetch onboarding items" });
+    }
+  });
+
   // Storage Locations (user-scoped)
   app.get("/api/storage-locations", isAuthenticated, async (req: any, res) => {
     try {
