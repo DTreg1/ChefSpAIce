@@ -50,18 +50,8 @@ export default function ShoppingList() {
     return date.toLocaleDateString("en-CA");
   }, [endDate]);
 
-  const { data: shoppingList, isLoading } = useQuery<ShoppingListResponse>({
-    queryKey: [
-      "/api/meal-plans/shopping-list",
-      { startDate: normalizedStartDate, endDate: normalizedEndDate },
-    ],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/meal-plans/shopping-list?startDate=${normalizedStartDate}&endDate=${normalizedEndDate}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch shopping list");
-      return response.json();
-    },
+  const { data: shoppingListItems, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/shopping-list/items"],
   });
 
   // Reset checked items when date range changes
@@ -94,11 +84,12 @@ export default function ShoppingList() {
     setEndDate(endOfWeek(nextWeek, { weekStartsOn: 0 }));
   };
 
+  const items = shoppingListItems || [];
   const uncheckedCount =
-    shoppingList?.items.filter((item) => !checkedItems.has(item.ingredient))
+    items.filter((item: any) => !checkedItems.has(item.ingredient || item.id))
       .length || 0;
   const checkedCount =
-    shoppingList?.items.filter((item) => checkedItems.has(item.ingredient))
+    items.filter((item: any) => checkedItems.has(item.ingredient || item.id))
       .length || 0;
 
   return (
@@ -177,10 +168,10 @@ export default function ShoppingList() {
 
           <div className="flex gap-3 flex-wrap">
             <Badge variant="secondary" data-testid="badge-total-items">
-              {shoppingList?.totalItems || 0} items to buy
+              {items.length || 0} items to buy
             </Badge>
             <Badge variant="secondary" data-testid="badge-planned-meals">
-              {shoppingList?.plannedMeals || 0} planned meals
+              {0} planned meals
             </Badge>
             {checkedCount > 0 && (
               <Badge variant="secondary" data-testid="badge-checked">
@@ -194,7 +185,7 @@ export default function ShoppingList() {
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading shopping list...</p>
           </div>
-        ) : !shoppingList?.items || shoppingList.items.length === 0 ? (
+        ) : !items || items.length === 0 ? (
           <Card>
             <CardContent className="py-12">
               <div
@@ -208,8 +199,7 @@ export default function ShoppingList() {
                   No items to buy
                 </h3>
                 <p className="text-muted-foreground text-center max-w-sm">
-                  {shoppingList?.message ||
-                    "Schedule some meals to generate a shopping list"}
+                  Schedule some meals to generate a shopping list
                 </p>
               </div>
             </CardContent>
@@ -226,18 +216,19 @@ export default function ShoppingList() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {shoppingList.items.map((item, idx) => {
-                  const isChecked = checkedItems.has(item.ingredient);
+                {items.map((item: any, idx: number) => {
+                  const itemId = item.ingredient || item.id;
+                  const isChecked = checkedItems.has(itemId);
                   return (
                     <div
-                      key={idx}
+                      key={item.id || idx}
                       className="flex items-start gap-3 p-3 rounded-md border hover-elevate transition-colors"
                       data-testid={`item-${idx}`}
                     >
                       <Checkbox
                         id={`item-${idx}`}
-                        checked={isChecked}
-                        onCheckedChange={() => handleCheckItem(item.ingredient)}
+                        checked={isChecked || item.isChecked}
+                        onCheckedChange={() => handleCheckItem(itemId)}
                         className="mt-0.5"
                         data-testid={`checkbox-${idx}`}
                       />
@@ -250,12 +241,14 @@ export default function ShoppingList() {
                         >
                           {item.ingredient}
                         </div>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          Needed for: {item.neededFor}
-                        </div>
-                        {item.servings > 1 && (
+                        {item.quantity && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Quantity: {item.quantity} {item.unit || ''}
+                          </div>
+                        )}
+                        {item.recipeId && (
                           <div className="text-xs text-muted-foreground mt-1">
-                            ({item.servings} servings total)
+                            From recipe
                           </div>
                         )}
                       </label>
