@@ -105,7 +105,7 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
       </Button>
 
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-muted">
           <DialogHeader>
             <DialogTitle>Scan Barcode</DialogTitle>
             <DialogDescription>

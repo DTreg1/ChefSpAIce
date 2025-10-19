@@ -940,7 +940,7 @@ export default function FdcSearch() {
       
       {/* Barcode Scanner Dialog */}
       <Dialog open={showBarcodeScanner} onOpenChange={setShowBarcodeScanner}>
-        <DialogContent>
+        <DialogContent className="bg-muted">
           <DialogHeader>
             <DialogTitle>Scan Barcode</DialogTitle>
             <DialogDescription>
