@@ -191,7 +191,7 @@ export function getItemsByCategory(): Record<string, OnboardingItem[]> {
 
 // Helper function to get all unique categories
 export function getCategories(): string[] {
-  return [...new Set(expandedOnboardingItems.map(item => item.category))];
+  return Array.from(new Set(expandedOnboardingItems.map(item => item.category)));
 }
 
 // Helper function to get an item by name
