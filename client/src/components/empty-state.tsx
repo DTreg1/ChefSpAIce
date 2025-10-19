@@ -16,7 +16,7 @@ interface EmptyStateProps {
 export function EmptyState({ type, onAction }: EmptyStateProps) {
   if (type === "chat") {
     return (
-      <Card className="border-primary/20 bg-primary/5">
+      <Card className="border-primary/20 bg-primary/2 backdrop-opacity-0" animate={false}>
         <div
           className="flex items-center justify-center h-full animate-fade-in"
           data-testid="empty-state-chat"

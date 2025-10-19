@@ -187,10 +187,7 @@ function AppContent() {
               <QuickActionsBar
                 onAddFood={() => setAddFoodOpen(true)}
                 onGenerateRecipe={() => setRecipeDialogOpen(true)}
-                onScanBarcode={() => {
-                  // Navigate to FDC search page with barcode scanner
-                  window.location.href = "/fdc-search?scanBarcode=true";
-                }}
+                onScanBarcode={() => {}}
               />
             </div>
           </header>
