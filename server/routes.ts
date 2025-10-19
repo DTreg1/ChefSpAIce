@@ -301,6 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const { id } = req.params;
+      const { normalizeCategory } = await import("./category-mapping");
       const updateSchema = insertFoodItemSchema.partial().required({
         quantity: true,
         unit: true,
@@ -308,6 +309,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expirationDate: true,
       });
       const validated = updateSchema.parse(req.body);
+      
+      // Normalize the foodCategory if it's being updated
+      let updateData: any = { ...validated };
+      if (validated.foodCategory !== undefined) {
+        updateData.foodCategory = normalizeCategory(validated.foodCategory);
+      }
       
       // Recalculate weightInGrams if quantity or nutrition changes
       let weightInGrams: number | null | undefined = undefined;
@@ -322,7 +329,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const updateData = weightInGrams !== undefined ? { ...validated, weightInGrams } : validated;
+      if (weightInGrams !== undefined) {
+        updateData.weightInGrams = weightInGrams;
+      }
+      
       const item = await storage.updateFoodItem(userId, id, updateData);
       res.json(item);
     } catch (error) {
