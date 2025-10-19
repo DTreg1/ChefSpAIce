@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ChefHat, X, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Plus, Package } from "lucide-react";
+import { ChefHat, X, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Plus, Package, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -36,37 +36,17 @@ const cookingSkillOptions = [
   { value: "advanced", label: "Advanced - I'm quite experienced" },
 ];
 
-const commonFoodItems = [
-  { name: "Salt", storage: "Pantry", quantity: "1", unit: "container", expiration: 730 },
-  { name: "Black Pepper", storage: "Pantry", quantity: "1", unit: "container", expiration: 730 },
-  { name: "Olive Oil", storage: "Pantry", quantity: "1", unit: "bottle", expiration: 365 },
-  { name: "All-Purpose Flour", storage: "Pantry", quantity: "5", unit: "lbs", expiration: 180 },
-  { name: "Sugar", storage: "Pantry", quantity: "5", unit: "lbs", expiration: 730 },
-  { name: "Rice", storage: "Pantry", quantity: "2", unit: "lbs", expiration: 365 },
-  { name: "Pasta", storage: "Pantry", quantity: "1", unit: "lb", expiration: 365 },
-  { name: "Canned Tomatoes", storage: "Pantry", quantity: "2", unit: "cans", expiration: 365 },
-  { name: "Onions", storage: "Pantry", quantity: "3", unit: "whole", expiration: 30 },
-  { name: "Garlic", storage: "Pantry", quantity: "1", unit: "bulb", expiration: 30 },
-  { name: "Chicken Broth", storage: "Pantry", quantity: "2", unit: "cans", expiration: 365 },
-  { name: "Soy Sauce", storage: "Pantry", quantity: "1", unit: "bottle", expiration: 730 },
-  { name: "Milk", storage: "Fridge", quantity: "1", unit: "gallon", expiration: 7 },
-  { name: "Eggs", storage: "Fridge", quantity: "12", unit: "count", expiration: 21 },
-  { name: "Butter", storage: "Fridge", quantity: "1", unit: "lb", expiration: 60 },
-  { name: "Cheddar Cheese", storage: "Fridge", quantity: "8", unit: "oz", expiration: 30 },
-  { name: "Carrots", storage: "Fridge", quantity: "1", unit: "lb", expiration: 21 },
-  { name: "Bell Peppers", storage: "Fridge", quantity: "2", unit: "whole", expiration: 7 },
-  { name: "Lettuce", storage: "Fridge", quantity: "1", unit: "head", expiration: 7 },
-  { name: "Yogurt", storage: "Fridge", quantity: "4", unit: "cups", expiration: 14 },
-  { name: "Mayonnaise", storage: "Fridge", quantity: "1", unit: "jar", expiration: 90 },
-  { name: "Mustard", storage: "Fridge", quantity: "1", unit: "jar", expiration: 180 },
-  { name: "Ketchup", storage: "Fridge", quantity: "1", unit: "bottle", expiration: 180 },
-  { name: "Frozen Peas", storage: "Freezer", quantity: "1", unit: "bag", expiration: 365 },
-  { name: "Frozen Corn", storage: "Freezer", quantity: "1", unit: "bag", expiration: 365 },
-  { name: "Chicken Breast", storage: "Freezer", quantity: "2", unit: "lbs", expiration: 180 },
-  { name: "Ground Beef", storage: "Freezer", quantity: "1", unit: "lb", expiration: 120 },
-  { name: "Frozen Pizza", storage: "Freezer", quantity: "1", unit: "whole", expiration: 180 },
-  { name: "Ice Cream", storage: "Freezer", quantity: "1", unit: "pint", expiration: 90 },
-];
+// Interface for common items from API
+interface CommonItem {
+  displayName: string;
+  fcdId: string;
+  description: string;
+  storage: string;
+  quantity: string;
+  unit: string;
+  expirationDays: number;
+  category: string;
+}
 
 const preferenceSchema = z.object({
   storageAreasEnabled: z.array(z.string()).min(1, "Please select at least one storage area"),
@@ -91,6 +71,24 @@ export default function Onboarding() {
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [foodToAvoid, setFoodToAvoid] = useState("");
   const [foodsToAvoidList, setFoodsToAvoidList] = useState<string[]>([]);
+
+  // Fetch common items from API
+  const { data: commonItemsData, isLoading: itemsLoading } = useQuery({
+    queryKey: ['/api/onboarding/common-items'],
+  });
+
+  // Set all items as selected by default when data loads
+  useEffect(() => {
+    if (commonItemsData?.categories) {
+      const allItems: string[] = [];
+      Object.values(commonItemsData.categories as Record<string, CommonItem[]>).forEach(items => {
+        items.forEach(item => {
+          allItems.push(item.displayName);
+        });
+      });
+      setSelectedCommonItems(allItems);
+    }
+  }, [commonItemsData]);
 
   const form = useForm<z.infer<typeof preferenceSchema>>({
     resolver: zodResolver(preferenceSchema),
@@ -186,8 +184,15 @@ export default function Onboarding() {
             failedItems.push(itemName);
           }
         } else {
-          // Fall back to basic data
-          const itemData = commonFoodItems.find(item => item.name === itemName);
+          // Fall back to basic data from API
+          let itemData: CommonItem | undefined;
+          if (commonItemsData?.categories) {
+            Object.values(commonItemsData.categories as Record<string, CommonItem[]>).forEach(items => {
+              const found = items.find(item => item.displayName === itemName);
+              if (found) itemData = found;
+            });
+          }
+          
           if (!itemData) {
             console.error(`No basic data found for ${itemName}`);
             failedItems.push(itemName);
@@ -202,20 +207,21 @@ export default function Onboarding() {
           }
 
           const expirationDate = new Date();
-          expirationDate.setDate(expirationDate.getDate() + itemData.expiration);
+          expirationDate.setDate(expirationDate.getDate() + itemData.expirationDays);
 
           try {
             await apiRequest("POST", "/api/food-items", {
-              name: itemData.name,
+              name: itemData.displayName,
               quantity: itemData.quantity,
               unit: itemData.unit,
               storageLocationId,
               expirationDate: expirationDate.toISOString(),
+              fcdId: itemData.fcdId,
             });
-            console.log(`Created basic food item: ${itemData.name}`);
+            console.log(`Created basic food item: ${itemData.displayName}`);
             successCount++;
           } catch (error) {
-            console.error(`Failed to create basic food item ${itemData.name}:`, error);
+            console.error(`Failed to create basic food item ${itemData.displayName}:`, error);
             failedItems.push(itemName);
           }
         }
