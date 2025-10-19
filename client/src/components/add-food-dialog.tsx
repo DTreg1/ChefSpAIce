@@ -161,6 +161,43 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
   const { data: storageLocations } = useStorageLocations();
 
+  // Set default storage location when dialog opens
+  useEffect(() => {
+    if (open && storageLocations && storageLocations.length > 0 && !storageLocationId) {
+      // Default to fridge if available, otherwise first location
+      const fridgeLocation = storageLocations.find(loc => loc.name.toLowerCase() === 'fridge');
+      setStorageLocationId(fridgeLocation?.id || storageLocations[0].id);
+    }
+  }, [open, storageLocations]);
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+      setDebouncedSearchQuery("");
+      setSelectedFood(null);
+      setSelectedUpc(null);
+      setQuantity("");
+      setUnit("");
+      setStorageLocationId("");
+      setExpirationDate("");
+      setImageUrl(null);
+      setImageSource("none");
+      setIsSearching(false);
+      setShowAdvancedSearch(false);
+      setSelectedDataTypes([]);
+      setSortBy("relevance");
+      setSortOrder("asc");
+      setPageSize(20);
+      setCurrentPage(1);
+      setBrandOwner("");
+      setDebouncedBrandOwner("");
+      setImageAnalysis(null);
+      setIsAnalyzing(false);
+      setAnalysisApplied(false);
+    }
+  }, [open]);
+
   // Debounced brand owner search
   const debouncedBrandSearch = useDebouncedCallback(
     (value: string) => {
@@ -751,6 +788,43 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                   </Button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Display nutrition information if selected food has nutrition data */}
+          {selectedFood?.nutrition && (
+            <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-2">
+              <h4 className="font-medium text-sm">Nutrition Information (per {selectedFood.servingSize || 100}{selectedFood.servingSizeUnit || 'g'})</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Calories:</span>
+                  <span className="font-medium">{Math.round(selectedFood.nutrition.calories || 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Protein:</span>
+                  <span className="font-medium">{(selectedFood.nutrition.protein || 0).toFixed(1)}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Carbs:</span>
+                  <span className="font-medium">{(selectedFood.nutrition.carbs || 0).toFixed(1)}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fat:</span>
+                  <span className="font-medium">{(selectedFood.nutrition.fat || 0).toFixed(1)}g</span>
+                </div>
+                {selectedFood.nutrition.fiber !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Fiber:</span>
+                    <span className="font-medium">{(selectedFood.nutrition.fiber || 0).toFixed(1)}g</span>
+                  </div>
+                )}
+                {selectedFood.nutrition.sugar !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sugar:</span>
+                    <span className="font-medium">{(selectedFood.nutrition.sugar || 0).toFixed(1)}g</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
