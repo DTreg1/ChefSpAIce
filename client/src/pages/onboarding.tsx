@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const defaultStorageAreaOptions = [
-  { name: "Fridge", icon: Refrigerator },
+  { name: "Refrigerator", icon: Refrigerator },
   { name: "Freezer", icon: Snowflake },
   { name: "Pantry", icon: Pizza },
   { name: "Counter", icon: UtensilsCrossed },
@@ -48,6 +48,11 @@ interface CommonItem {
   category: string;
 }
 
+// Interface for the API response
+interface CommonItemsResponse {
+  categories: Record<string, CommonItem[]>;
+}
+
 const preferenceSchema = z.object({
   storageAreasEnabled: z.array(z.string()).min(1, "Please select at least one storage area"),
   householdSize: z.number().int().min(1).max(20),
@@ -62,7 +67,7 @@ const preferenceSchema = z.object({
 export default function Onboarding() {
   const { toast } = useToast();
   const [selectedStorageAreas, setSelectedStorageAreas] = useState<string[]>([
-    "Fridge", "Freezer", "Pantry", "Counter"
+    "Refrigerator", "Freezer", "Pantry", "Counter"
   ]);
   const [customStorageAreas, setCustomStorageAreas] = useState<string[]>([]);
   const [customStorageInput, setCustomStorageInput] = useState("");
@@ -73,7 +78,7 @@ export default function Onboarding() {
   const [foodsToAvoidList, setFoodsToAvoidList] = useState<string[]>([]);
 
   // Fetch common items from API
-  const { data: commonItemsData, isLoading: itemsLoading } = useQuery({
+  const { data: commonItemsData, isLoading: itemsLoading } = useQuery<CommonItemsResponse>({
     queryKey: ['/api/onboarding/common-items'],
   });
 
@@ -81,7 +86,7 @@ export default function Onboarding() {
   useEffect(() => {
     if (commonItemsData?.categories) {
       const allItems: string[] = [];
-      Object.values(commonItemsData.categories as Record<string, CommonItem[]>).forEach(items => {
+      Object.values(commonItemsData.categories).forEach(items => {
         items.forEach(item => {
           allItems.push(item.displayName);
         });
@@ -93,7 +98,7 @@ export default function Onboarding() {
   const form = useForm<z.infer<typeof preferenceSchema>>({
     resolver: zodResolver(preferenceSchema),
     defaultValues: {
-      storageAreasEnabled: ["Fridge", "Freezer", "Pantry", "Counter"],
+      storageAreasEnabled: ["Refrigerator", "Freezer", "Pantry", "Counter"],
       householdSize: 2,
       cookingSkillLevel: "beginner",
       preferredUnits: "imperial",
@@ -187,7 +192,7 @@ export default function Onboarding() {
           // Fall back to basic data from API
           let itemData: CommonItem | undefined;
           if (commonItemsData?.categories) {
-            Object.values(commonItemsData.categories as Record<string, CommonItem[]>).forEach(items => {
+            Object.values(commonItemsData.categories).forEach(items => {
               const found = items.find(item => item.displayName === itemName);
               if (found) itemData = found;
             });
@@ -443,7 +448,7 @@ export default function Onboarding() {
                   </div>
                 ) : commonItemsData?.categories ? (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {Object.entries(commonItemsData.categories as Record<string, CommonItem[]>).map(([category, items]) => (
+                    {Object.entries(commonItemsData.categories).map(([category, items]) => (
                       <div key={category}>
                         <h4 className="text-sm font-medium mb-2">{category}</h4>
                         <div className="flex flex-wrap gap-2">
