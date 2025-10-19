@@ -478,11 +478,18 @@ export default function CameraTest() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-green-600 dark:text-green-400">Product Found!</p>
-                    {singleApiResult.source && (
-                      <Badge variant={singleApiResult.source === 'barcode_lookup' ? 'default' : 'secondary'}>
-                        {singleApiResult.source === 'barcode_lookup' ? 'Barcode Lookup' : 'Open Food Facts'}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {singleApiResult.cached && (
+                        <Badge variant="outline" className="text-blue-600">
+                          Cached
+                        </Badge>
+                      )}
+                      {singleApiResult.source && (
+                        <Badge variant={singleApiResult.source === 'barcode_lookup' ? 'default' : 'secondary'}>
+                          {singleApiResult.source === 'barcode_lookup' ? 'Barcode Lookup' : 'Open Food Facts'}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="text-sm space-y-1">
                     <p><strong>Name:</strong> {singleApiResult.name}</p>
@@ -603,6 +610,23 @@ export default function CameraTest() {
                     </div>
                   )}
 
+                  {batchApiResult.cacheInfo && (
+                    <div className="flex items-center gap-2 text-sm p-2 bg-blue-500/10 rounded">
+                      <span className="font-medium">Cache Performance:</span>
+                      <Badge variant="outline" className="text-blue-600">
+                        {batchApiResult.cacheInfo.hits} hits
+                      </Badge>
+                      <Badge variant="outline" className="text-orange-600">
+                        {batchApiResult.cacheInfo.misses} misses
+                      </Badge>
+                      {batchApiResult.cacheInfo.apiCallsSaved > 0 && (
+                        <Badge variant="outline" className="text-green-600">
+                          {batchApiResult.cacheInfo.apiCallsSaved} API call saved!
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
                   {batchApiResult.products && batchApiResult.products.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Found Products:</p>
@@ -623,6 +647,11 @@ export default function CameraTest() {
                                   <Image className="w-3 h-3" />
                                   <span>Has image</span>
                                 </div>
+                              )}
+                              {product.cached && (
+                                <Badge variant="outline" className="text-xs text-blue-600">
+                                  Cached
+                                </Badge>
                               )}
                               {product.source && (
                                 <Badge variant={product.source === 'barcode_lookup' ? 'outline' : 'secondary'} className="text-xs">
