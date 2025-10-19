@@ -243,6 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let nutrition = validated.nutrition;
       let usdaData = validated.usdaData;
+      let fcdId = validated.fcdId;
       
       // Always validate nutrition if provided
       let needsFreshNutrition = !nutrition;
@@ -252,43 +253,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const parsedNutrition = JSON.parse(nutrition);
           if (!isNutritionDataValid(parsedNutrition, validated.name)) {
             console.log(`Invalid nutrition detected for "${validated.name}"`);
-            // If we have an FDC ID, try to fetch fresh data
-            if (validated.fcdId) {
-              console.log(`Will fetch fresh data from USDA`);
-              needsFreshNutrition = true;
-            } else {
-              // No FDC ID, can't fetch fresh data - reject invalid nutrition
-              console.log(`No FDC ID available, clearing invalid nutrition`);
-              nutrition = null;
-              usdaData = null;
-            }
-          }
-        } catch (e) {
-          console.error("Error parsing/validating nutrition:", e);
-          // If we have an FDC ID, try to fetch fresh data
-          if (validated.fcdId) {
             needsFreshNutrition = true;
-          } else {
-            // No FDC ID, clear malformed nutrition
             nutrition = null;
             usdaData = null;
           }
+        } catch (e) {
+          console.error("Error parsing/validating nutrition:", e);
+          needsFreshNutrition = true;
+          nutrition = null;
+          usdaData = null;
         }
       }
       
-      // If we have an FDC ID and need fresh nutrition, fetch full details
-      if (validated.fcdId && needsFreshNutrition) {
-        console.log(`Fetching full USDA details for FDC ID ${validated.fcdId} during item creation`);
-        const foodDetails = await getFoodByFdcId(parseInt(validated.fcdId));
-        if (foodDetails && foodDetails.nutrition) {
-          console.log(`Found valid nutrition data for FDC ID ${validated.fcdId}`);
-          nutrition = JSON.stringify(foodDetails.nutrition);
-          usdaData = JSON.stringify(foodDetails);
-        } else {
-          // If we couldn't get valid nutrition, clear any invalid nutrition
-          console.log(`Could not fetch valid nutrition for FDC ID ${validated.fcdId}, storing without nutrition`);
-          nutrition = null;
-          usdaData = null;
+      // If we need nutrition data, try to fetch it
+      if (needsFreshNutrition) {
+        // First try with FDC ID if available
+        if (fcdId) {
+          console.log(`Fetching full USDA details for FDC ID ${fcdId} during item creation`);
+          const foodDetails = await getFoodByFdcId(parseInt(fcdId));
+          if (foodDetails && foodDetails.nutrition) {
+            console.log(`Found valid nutrition data for FDC ID ${fcdId}`);
+            nutrition = JSON.stringify(foodDetails.nutrition);
+            usdaData = JSON.stringify(foodDetails);
+          }
+        }
+        
+        // If still no nutrition, search by name
+        if (!nutrition) {
+          console.log(`Searching USDA for "${validated.name}" to get nutrition data`);
+          const searchResults = await searchUSDAFoods(validated.name);
+          
+          if (searchResults.foods && searchResults.foods.length > 0) {
+            // Try multiple search results until we find one with valid nutrition
+            for (const searchResult of searchResults.foods.slice(0, 5)) {
+              try {
+                console.log(`Trying FDC ID: ${searchResult.fdcId} for "${validated.name}"`);
+                
+                // Fetch full details for this search result
+                const foodDetails = await getFoodByFdcId(searchResult.fdcId);
+                
+                if (foodDetails && foodDetails.nutrition) {
+                  console.log(`Found valid nutrition data using FDC ID: ${searchResult.fdcId} for "${validated.name}"`);
+                  nutrition = JSON.stringify(foodDetails.nutrition);
+                  usdaData = JSON.stringify(foodDetails);
+                  fcdId = foodDetails.fdcId.toString();
+                  break; // Found valid nutrition, stop searching
+                } else {
+                  console.log(`Skipping FDC ID: ${searchResult.fdcId} - nutrition data invalid or missing`);
+                }
+              } catch (err) {
+                console.error(`Error fetching details for FDC ID ${searchResult.fdcId}:`, err);
+                // Continue to next result
+              }
+            }
+          }
+        }
+        
+        // If still no nutrition after searching, log warning
+        if (!nutrition) {
+          console.warn(`Could not find nutrition data for "${validated.name}" - storing without nutrition`);
         }
       }
       
@@ -310,6 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const item = await storage.createFoodItem(userId, {
         ...validated,
+        fcdId,
         foodCategory,
         nutrition,
         usdaData,
@@ -335,17 +359,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const validated = updateSchema.parse(req.body);
       
+      // Get the current item to preserve nutrition if not in update
+      const items = await storage.getFoodItems(userId);
+      const currentItem = items.find(i => i.id === id);
+      
+      if (!currentItem) {
+        return res.status(404).json({ error: "Food item not found" });
+      }
+      
       // Normalize the foodCategory if it's being updated
       let updateData: any = { ...validated };
       if (validated.foodCategory !== undefined) {
         updateData.foodCategory = normalizeCategory(validated.foodCategory);
       }
       
+      // Use existing nutrition if not provided in update
+      let nutrition = validated.nutrition || currentItem.nutrition;
+      let usdaData = validated.usdaData || currentItem.usdaData;
+      let fcdId = validated.fcdId || currentItem.fcdId;
+      
+      // If still no nutrition, try to fetch it
+      if (!nutrition) {
+        console.log(`No nutrition data for "${currentItem.name}" during update, fetching from USDA`);
+        const searchResults = await searchUSDAFoods(currentItem.name);
+        
+        if (searchResults.foods && searchResults.foods.length > 0) {
+          for (const searchResult of searchResults.foods.slice(0, 5)) {
+            try {
+              const foodDetails = await getFoodByFdcId(searchResult.fdcId);
+              
+              if (foodDetails && foodDetails.nutrition) {
+                console.log(`Found nutrition data for "${currentItem.name}" using FDC ID: ${searchResult.fdcId}`);
+                nutrition = JSON.stringify(foodDetails.nutrition);
+                usdaData = JSON.stringify(foodDetails);
+                fcdId = foodDetails.fdcId.toString();
+                updateData.nutrition = nutrition;
+                updateData.usdaData = usdaData;
+                updateData.fcdId = fcdId;
+                break;
+              }
+            } catch (err) {
+              console.error(`Error fetching details for FDC ID ${searchResult.fdcId}:`, err);
+            }
+          }
+        }
+      }
+      
       // Recalculate weightInGrams if quantity or nutrition changes
       let weightInGrams: number | null | undefined = undefined;
-      if (validated.quantity && validated.nutrition) {
+      if (validated.quantity && nutrition) {
         try {
-          const nutritionData = JSON.parse(validated.nutrition);
+          const nutritionData = JSON.parse(nutrition);
           const quantity = parseFloat(validated.quantity) || 1;
           const servingSize = parseFloat(nutritionData.servingSize) || 100;
           weightInGrams = quantity * servingSize;
