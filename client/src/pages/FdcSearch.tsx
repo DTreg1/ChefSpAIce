@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
@@ -39,6 +39,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  ScanLine,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
@@ -49,7 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { Html5Qrcode } from "html5-qrcode";
 import type { StorageLocation } from "@shared/schema";
 import { format, addDays } from "date-fns";
 import { SuccessAnimation } from "@/components/success-animation";
@@ -139,23 +140,87 @@ export default function FdcSearch() {
   const [selectedFood, setSelectedFood] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [showScannerDialog, setShowScannerDialog] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const { toast } = useToast();
   
+  // Barcode scanner functions (copied from camera-test)
+  const startBarcodeScanner = async () => {
+    try {
+      const scanner = new Html5Qrcode("barcode-scanner");
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        (decodedText) => {
+          // On successful scan
+          setSearchQuery(decodedText);
+          setCurrentQuery(decodedText);
+          setCurrentPage(1);
+          stopBarcodeScanner();
+          setShowScannerDialog(false);
+          toast({
+            title: "Barcode scanned",
+            description: `Searching for UPC: ${decodedText}`,
+          });
+        },
+        () => {
+          // Silent error for continuous scanning
+        }
+      );
+
+      setIsScanning(true);
+    } catch (err: any) {
+      console.error("Scanner start error:", err);
+      toast({
+        title: "Scanner Error",
+        description: err.message || "Failed to access camera",
+        variant: "destructive"
+      });
+      setShowScannerDialog(false);
+    }
+  };
+
+  const stopBarcodeScanner = async () => {
+    if (scannerRef.current && isScanning) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+        scannerRef.current = null;
+        setIsScanning(false);
+      } catch (err: any) {
+        console.error("Scanner stop error:", err);
+      }
+    }
+  };
+
   // Check URL params on mount to see if we should open barcode scanner
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('scanBarcode') === 'true') {
-      // We need to open the scanner after component mounts
-      setTimeout(() => {
-        const scanButton = document.querySelector('[data-testid="button-scan-barcode"]') as HTMLButtonElement;
-        if (scanButton) {
-          scanButton.click();
-        }
-      }, 100);
+      // Open scanner dialog on mount
+      setShowScannerDialog(true);
       // Clean up URL
       window.history.replaceState({}, '', '/fdc-search');
     }
   }, []);
+
+  // Start scanner when dialog opens
+  useEffect(() => {
+    if (showScannerDialog) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        startBarcodeScanner();
+      }, 100);
+    } else {
+      stopBarcodeScanner();
+    }
+  }, [showScannerDialog]);
   
   // Add to inventory state
   const [addToInventoryFood, setAddToInventoryFood] = useState<FoodItem | null>(null);
@@ -426,17 +491,15 @@ export default function FdcSearch() {
                 className="flex-1"
               data-testid="input-search"
             />
-            <BarcodeScanner
-              onScanSuccess={(barcode) => {
-                setSearchQuery(barcode);
-                setCurrentQuery(barcode);
-                setCurrentPage(1);
-                toast({
-                  title: "Barcode scanned",
-                  description: `Searching for UPC: ${barcode}`,
-                });
-              }}
-            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setShowScannerDialog(true)}
+              data-testid="button-scan-barcode"
+            >
+              <ScanLine className="w-4 h-4" />
+            </Button>
             <Button
               type="submit"
               disabled={isSearching}
@@ -954,6 +1017,44 @@ export default function FdcSearch() {
       {/* Success Animation Overlay */}
       {showSuccess && <SuccessAnimation />}
       
+      {/* Barcode Scanner Dialog */}
+      <Dialog open={showScannerDialog} onOpenChange={setShowScannerDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scan Barcode</DialogTitle>
+            <DialogDescription>
+              Position the barcode within the camera view to scan
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="relative">
+            <div id="barcode-scanner" className="w-full min-h-[300px]" data-testid="barcode-scanner" />
+            
+            {isScanning && (
+              <div className="absolute top-2 right-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    stopBarcodeScanner();
+                    setShowScannerDialog(false);
+                  }}
+                  data-testid="button-close-scanner"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Cancel
+                </Button>
+              </div>
+            )}
+            
+            {!isScanning && (
+              <div className="flex items-center justify-center h-[300px] bg-muted rounded-md">
+                <p className="text-sm text-muted-foreground">Initializing camera...</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
