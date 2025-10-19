@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AlertTriangle, X, Lightbulb } from "lucide-react";
+import { AlertTriangle, X, Lightbulb, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type ExpirationNotification = {
   id: string;
@@ -24,6 +24,7 @@ type WasteReductionSuggestion = {
 
 export function ExpirationAlert() {
   const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Check for expiring items on mount
   const checkMutation = useMutation({
@@ -71,6 +72,28 @@ export function ExpirationAlert() {
       });
     },
   });
+
+  const refreshSuggestions = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate and refetch the suggestions
+      await queryClient.invalidateQueries({ queryKey: ["/api/suggestions/waste-reduction"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/suggestions/waste-reduction"] });
+      toast({
+        title: "Tips refreshed!",
+        description: "Generated new waste reduction suggestions",
+      });
+    } catch (error) {
+      console.error("Failed to refresh suggestions:", error);
+      toast({
+        title: "Error refreshing tips",
+        description: "Unable to generate new suggestions. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -128,10 +151,22 @@ export function ExpirationAlert() {
       {hasSuggestions && (
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-primary" />
-              Waste Reduction Tips
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Lightbulb className="h-4 w-4 text-primary" />
+                Waste Reduction Tips
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={refreshSuggestions}
+                disabled={isRefreshing}
+                className="h-7 w-7"
+                data-testid="button-refresh-tips"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {suggestions.suggestions.map((suggestion, index) => (

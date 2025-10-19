@@ -2310,23 +2310,47 @@ Important:
         return res.json({ suggestions: [] });
       }
 
-      const ingredientsList = expiringItems.map(item => 
-        `${item.name} (${item.quantity} ${item.unit || ''}, expires in ${
-          Math.ceil((new Date(item.expirationDate!).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-        } days)`
-      ).join(', ');
+      // Get ALL food items for context
+      const allItems = await storage.getFoodItems(userId);
+      
+      // Categorize items
+      const expiringList = expiringItems.map(item => {
+        const daysLeft = Math.ceil((new Date(item.expirationDate!).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        return `${item.name} (${item.quantity} ${item.unit || ''}, expires in ${daysLeft} days)`;
+      }).join(', ');
+
+      // Get non-expiring items that could be used in recipes
+      const otherItems = allItems
+        .filter(item => !expiringItems.some(exp => exp.id === item.id))
+        .slice(0, 20) // Limit to avoid token limits
+        .map(item => `${item.name} (${item.quantity} ${item.unit || ''})`)
+        .join(', ');
 
       const appliances = await storage.getAppliances(userId);
-      const appliancesList = appliances.map(a => a.name).join(', ');
+      const appliancesList = appliances.map(a => a.name).join(', ') || 'standard kitchen appliances';
 
-      const prompt = `Generate waste reduction suggestions for these food items that are expiring soon: ${ingredientsList}.
-Available appliances: ${appliancesList}.
+      const prompt = `You are a helpful kitchen assistant helping reduce food waste.
 
-Provide 2-3 practical suggestions to use these ingredients before they expire. Be concise and actionable.
+ITEMS EXPIRING SOON (must use these):
+${expiringList}
+
+OTHER AVAILABLE INGREDIENTS (can combine with expiring items):
+${otherItems}
+
+AVAILABLE APPLIANCES:
+${appliancesList}
+
+Generate 3 specific, practical recipe suggestions or meal ideas that:
+1. MUST use at least one expiring item as a main ingredient
+2. Can incorporate other available ingredients for complete dishes
+3. Are realistic and can be made with the appliances available
+4. Include the specific expiring items used in each suggestion
+
+Be specific about which ingredients from the inventory are used. Focus on complete, appealing dishes.
 
 Respond ONLY with a valid JSON object:
 {
-  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"]
+  "suggestions": ["detailed suggestion 1", "detailed suggestion 2", "detailed suggestion 3"]
 }`;
 
       const completion = await openai.chat.completions.create({
