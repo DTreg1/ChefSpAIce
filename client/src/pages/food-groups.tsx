@@ -16,8 +16,8 @@ export default function FoodGroups() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [location] = useLocation();
   
-  // Parse category from URL query params
-  const urlParams = new URLSearchParams(window.location.search);
+  // Parse category from URL query params using React Router location
+  const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
   const selectedCategory = urlParams.get('category');
   
   // Auto-expand selected category when navigating from sidebar
