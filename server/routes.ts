@@ -2882,6 +2882,33 @@ Respond ONLY with a valid JSON object:
     }
   });
 
+  // Admin endpoint to seed/refresh common food items (for instant onboarding)
+  app.post("/api/admin/seed-common-food-items", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if user is admin (you may want to add proper admin check)
+      // For now, we'll allow any authenticated user to seed (change this in production)
+      const forceUpdate = req.body.forceUpdate || false;
+      
+      console.log("Starting to seed common food items via admin endpoint...");
+      
+      // Import and run the seeding function
+      const { seedCommonFoodItems } = await import("./seed-common-food-items");
+      const result = await seedCommonFoodItems(forceUpdate);
+      
+      res.json({
+        success: true,
+        message: "Common food items seeded successfully",
+        ...result
+      });
+    } catch (error: any) {
+      console.error("Error seeding common food items:", error);
+      res.status(500).json({ 
+        error: "Failed to seed common food items",
+        details: error.message 
+      });
+    }
+  });
+  
   // Admin feedback endpoints (for viewing all feedback)
   app.get("/api/admin/feedback", isAuthenticated, async (req: any, res) => {
     try {
