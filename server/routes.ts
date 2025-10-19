@@ -20,18 +20,23 @@ import {
   insertRecipeSchema,
   insertApplianceSchema,
   insertMealPlanSchema,
-  insertUserPreferencesSchema,
-  insertStorageLocationSchema,
   insertFeedbackSchema,
   insertWebVitalSchema,
   type BarcodeProduct,
-  type StorageLocation
+  type StorageLocation,
+  type InsertStorageLocation
 } from "@shared/schema";
+
+// Define inline schema for storage locations validation
+const insertStorageLocationSchema = z.object({
+  name: z.string(),
+  icon: z.string()
+});
 
 // Helper functions for appliance barcode processing
 function extractApplianceCapabilities(product: any): string[] {
   const capabilities: string[] = [];
-  const text = `${product.title || ''} ${product.description || ''}`.toLowerCase();
+  const text = `${product.title || ''} ${product.productAttributes?.description || product.description || ''}`.toLowerCase();
   
   const capabilityKeywords = {
     grill: ['grill', 'grilling'],
@@ -61,7 +66,7 @@ function extractApplianceCapabilities(product: any): string[] {
 }
 
 function extractApplianceCapacity(product: any): { capacity?: string; servingSize?: string } {
-  const text = `${product.title || ''} ${product.description || ''}`;
+  const text = `${product.title || ''} ${product.productAttributes?.description || product.description || ''}`;
   
   // Look for capacity patterns (e.g., "4-qt", "6 quart", "5L")
   const capacityMatch = text.match(/(\d+(?:\.\d+)?)\s*[-\s]?(qt|quart|l|liter|litre|gal|gallon|oz|cup)/i);
@@ -78,7 +83,7 @@ function extractApplianceCapacity(product: any): { capacity?: string; servingSiz
 function determineApplianceType(barcodeProduct: BarcodeProduct): string {
   const title = (barcodeProduct.title || '').toLowerCase();
   const category = (barcodeProduct.category || '').toLowerCase();
-  const description = (barcodeProduct.description || '').toLowerCase();
+  const description = (barcodeProduct.productAttributes?.description || '').toLowerCase();
   const combined = `${title} ${category} ${description}`;
   
   // Check for specific appliance types
@@ -94,11 +99,12 @@ function determineApplianceType(barcodeProduct: BarcodeProduct): string {
   if (combined.includes('sheet') || combined.includes('tin') || combined.includes('mold')) return 'bakeware';
   
   // Default based on capabilities if available
-  if (barcodeProduct.capabilities?.length) {
-    if (barcodeProduct.capabilities.some(c => ['grill', 'bake', 'air_fry', 'broil'].includes(c))) {
+  const capabilities = barcodeProduct.productAttributes?.capabilities;
+  if (capabilities?.length) {
+    if (capabilities.some(c => ['grill', 'bake', 'air_fry', 'broil'].includes(c))) {
       return 'cooking';
     }
-    if (barcodeProduct.capabilities.some(c => ['blend', 'food_process', 'chop'].includes(c))) {
+    if (capabilities.some(c => ['blend', 'food_process', 'chop'].includes(c))) {
       return 'prep';
     }
   }
@@ -137,12 +143,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/user/preferences', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const validated = insertUserPreferencesSchema.parse(req.body);
-      const preferences = await storage.upsertUserPreferences({ ...validated, userId });
+      
+      // Validate the preference updates using Zod
+      const userPreferencesUpdateSchema = z.object({
+        dietaryRestrictions: z.array(z.string()).optional(),
+        allergens: z.array(z.string()).optional(),
+        favoriteCategories: z.array(z.string()).optional(),
+        expirationAlertDays: z.number().int().min(1).max(30).optional(),
+        storageAreasEnabled: z.array(z.string()).optional(),
+        householdSize: z.number().int().min(1).max(50).optional(),
+        cookingSkillLevel: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+        preferredUnits: z.enum(["metric", "imperial"]).optional(),
+        foodsToAvoid: z.array(z.string()).optional(),
+        hasCompletedOnboarding: z.boolean().optional(),
+      });
+      
+      const validatedData = userPreferencesUpdateSchema.parse(req.body);
+      const preferences = await storage.updateUserPreferences(userId, validatedData);
       res.json(preferences);
     } catch (error) {
-      console.error("Error updating preferences:", error);
-      res.status(500).json({ error: "Failed to update preferences" });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid preferences data", details: error.errors });
+      } else {
+        console.error("Error updating preferences:", error);
+        res.status(500).json({ error: "Failed to update preferences" });
+      }
     }
   });
 
@@ -601,14 +626,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           barcodeNumber: apiProduct.barcode_number || barcode,
           title: apiProduct.title || 'Unknown Product',
           brand: apiProduct.brand,
-          manufacturer: apiProduct.manufacturer,
-          model: apiProduct.model,
-          description: apiProduct.description,
           category: apiProduct.category,
-          images: apiProduct.images,
-          capabilities,
-          capacity,
-          servingSize,
+          productAttributes: {
+            manufacturer: apiProduct.manufacturer,
+            model: apiProduct.model,
+            description: apiProduct.description,
+            images: apiProduct.images,
+            capabilities,
+            capacity,
+            servingSize
+          },
           rawData: apiProduct
         });
       }
@@ -620,10 +647,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         barcodeProductId: barcodeProduct.id,
         nickname: nickname || barcodeProduct.title,
         notes,
-        imageUrl: barcodeProduct.images?.[0],
-        customCapabilities: barcodeProduct.capabilities,
-        customCapacity: barcodeProduct.capacity,
-        customServingSize: barcodeProduct.servingSize
+        imageUrl: barcodeProduct.productAttributes?.images?.[0],
+        customCapabilities: barcodeProduct.productAttributes?.capabilities,
+        customCapacity: barcodeProduct.productAttributes?.capacity,
+        customServingSize: barcodeProduct.productAttributes?.servingSize
       });
 
       res.json(appliance);
@@ -675,13 +702,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasAnyFilters = !!(sort || brandOwners.length > 0 || dataTypes.length > 0 || size !== 25);
       
       // Use shorter TTL for complex searches, longer TTL for simple searches
-      const cachedResults = await storage.getCachedSearchResults(query, undefined, page, hasAnyFilters);
+      const cachedResults = await storage.getCachedSearchResults(query, undefined, page);
       if (cachedResults && 
-          cachedResults.results &&
+          cachedResults.fdcIds &&
           cachedResults.pageSize === size) {
         console.log(`FDC search cache hit for query: ${query} (complex: ${hasAnyFilters})`);
+        
+        // Fetch actual food details for the cached fdcIds
+        const foods = await Promise.all(
+          cachedResults.fdcIds.map(async (fdcId) => {
+            const cachedFood = await storage.getCachedFood(fdcId);
+            return cachedFood ? {
+              fdcId: cachedFood.fdcId,
+              description: cachedFood.description,
+              dataType: cachedFood.dataType,
+              brandOwner: cachedFood.brandOwner,
+              brandName: cachedFood.brandName,
+              score: 0
+            } : null;
+          })
+        );
+        
+        const validFoods = foods.filter(f => f !== null);
+        
         return res.json({
-            foods: cachedResults.results,
+            foods: validFoods,
             totalHits: cachedResults.totalHits,
             currentPage: page,
             totalPages: Math.ceil((cachedResults.totalHits || 0) / size),
@@ -733,15 +778,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = await response.json();
       
-      // Cache the search results (only for simple searches)
-      const resultsToCache = data.foods?.map((food: any) => ({
-        fdcId: food.fdcId.toString(),
-        description: food.description || food.lowercaseDescription,
-        dataType: food.dataType,
-        brandOwner: food.brandOwner,
-        brandName: food.brandName,
-        score: food.score
-      })) || [];
+      // Extract FDC IDs for caching
+      const fdcIdsToCache = data.foods?.map((food: any) => food.fdcId.toString()) || [];
 
       // Cache all searches, but complex searches will have shorter TTL (2 hours vs 24 hours)
       // This is handled by the getCachedSearchResults method which checks isComplexSearch
@@ -751,8 +789,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pageNumber: page,
         pageSize: size,
         totalHits: data.totalHits || 0,
-        results: resultsToCache
+        fdcIds: fdcIdsToCache
       });
+      
+      // Create results to return
+      const resultsToReturn = data.foods?.map((food: any) => ({
+        fdcId: food.fdcId.toString(),
+        description: food.description || food.lowercaseDescription,
+        dataType: food.dataType,
+        brandOwner: food.brandOwner,
+        brandName: food.brandName,
+        score: food.score
+      })) || [];
 
       // Cache individual food items for faster detail lookups
       for (const food of (data.foods || [])) {
@@ -779,7 +827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({
-        foods: resultsToCache,
+        foods: resultsToReturn,
         totalHits: data.totalHits || 0,
         currentPage: page,
         totalPages: Math.ceil((data.totalHits || 0) / size),
@@ -966,10 +1014,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let createdStorageLocations: StorageLocation[] = [];
       
       // Step 1: Save user preferences
-      const savedPreferences = await storage.upsertUserPreferences({
+      const savedPreferences = await storage.updateUserPreferences(userId, {
         ...preferences,
-        hasCompletedOnboarding: true,
-        userId
+        hasCompletedOnboarding: true
       });
 
       // Step 2: Create custom storage locations
@@ -2254,18 +2301,27 @@ Important:
   app.get("/api/notifications/expiration", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const notifications = await storage.getExpirationNotifications(userId);
+      const daysThreshold = 3; // Get items expiring within 3 days
+      const expiringItems = await storage.getExpiringItems(userId, daysThreshold);
       
       const now = new Date();
-      const validNotifications = notifications
-        .map(notification => {
-          const expiry = new Date(notification.expirationDate);
+      const notifications = expiringItems
+        .filter(item => !item.notificationDismissed && item.expirationDate)
+        .map(item => {
+          const expiry = new Date(item.expirationDate);
           const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return { ...notification, daysUntilExpiry: daysUntil };
+          return {
+            id: item.id,
+            foodItemId: item.id,
+            foodItemName: item.name,
+            expirationDate: item.expirationDate,
+            daysUntilExpiry: daysUntil,
+            dismissed: item.notificationDismissed || false
+          };
         })
         .filter(notification => notification.daysUntilExpiry >= 0);
       
-      res.json(validNotifications);
+      res.json(notifications);
     } catch (error) {
       console.error("Error fetching expiration notifications:", error);
       res.status(500).json({ error: "Failed to fetch notifications" });
@@ -2278,48 +2334,24 @@ Important:
       const expiringItems = await storage.getExpiringItems(userId, 3);
       const now = new Date();
       
-      const existingNotifications = await storage.getExpirationNotifications(userId);
-      
-      const existingItemIds = new Set(expiringItems.map(item => item.id));
-      for (const notification of existingNotifications) {
-        const expiry = new Date(notification.expirationDate);
-        const isExpired = expiry.getTime() < now.getTime();
-        const itemNoLongerExists = !existingItemIds.has(notification.foodItemId);
-        
-        if (isExpired || itemNoLongerExists) {
-          await storage.dismissNotification(userId, notification.id);
-        }
-      }
-      
-      const existingNotificationItemIds = new Set(existingNotifications.map(n => n.foodItemId));
-      
-      for (const item of expiringItems) {
-        if (!existingNotificationItemIds.has(item.id) && item.expirationDate) {
+      // Simply return expiring items that haven't been dismissed
+      const notifications = expiringItems
+        .filter(item => !item.notificationDismissed && item.expirationDate)
+        .map(item => {
           const expiry = new Date(item.expirationDate);
           const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          
-          if (daysUntil >= 0) {
-            await storage.createExpirationNotification(userId, {
-              foodItemId: item.id,
-              foodItemName: item.name,
-              expirationDate: item.expirationDate,
-              daysUntilExpiry: daysUntil,
-              dismissed: false,
-            });
-          }
-        }
-      }
-      
-      const notifications = await storage.getExpirationNotifications(userId);
-      const validNotifications = notifications
-        .map(notification => {
-          const expiry = new Date(notification.expirationDate);
-          const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return { ...notification, daysUntilExpiry: daysUntil };
+          return {
+            id: item.id,
+            foodItemId: item.id,
+            foodItemName: item.name,
+            expirationDate: item.expirationDate,
+            daysUntilExpiry: daysUntil,
+            dismissed: item.notificationDismissed || false
+          };
         })
         .filter(notification => notification.daysUntilExpiry >= 0);
       
-      res.json({ notifications: validNotifications, count: validNotifications.length });
+      res.json({ notifications, count: notifications.length });
     } catch (error) {
       console.error("Notification check error:", error);
       res.status(500).json({ error: "Failed to check for expiring items" });
@@ -2330,7 +2362,8 @@ Important:
     try {
       const userId = req.user.claims.sub;
       const { id } = req.params;
-      await storage.dismissNotification(userId, id);
+      // id is the foodItemId in the new schema
+      await storage.dismissFoodItemNotification(userId, id);
       res.json({ success: true });
     } catch (error) {
       console.error("Error dismissing notification:", error);
@@ -2829,7 +2862,8 @@ Respond ONLY with a valid JSON object:
       const feedbackResponse = await storage.addFeedbackResponse(id, {
         response,
         action,
-        responderId: req.user.claims.sub
+        responderId: req.user.claims.sub,
+        createdAt: new Date().toISOString()
       });
       
       res.json(feedbackResponse);

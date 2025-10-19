@@ -2,8 +2,6 @@
 import { 
   type User,
   type UpsertUser,
-  type UserPreferences,
-  type InsertUserPreferences,
   type StorageLocation, 
   type InsertStorageLocation,
   type Appliance,
@@ -18,24 +16,19 @@ import {
   type InsertChatMessage,
   type Recipe,
   type InsertRecipe,
-  type ExpirationNotification,
-  type InsertExpirationNotification,
   type MealPlan,
   type InsertMealPlan,
   type ApiUsageLog,
   type InsertApiUsageLog,
   type FdcCache,
   type InsertFdcCache,
-  type FdcSearchCache,
-  type InsertFdcSearchCache,
+  type FdcSearchQuery,
+  type InsertFdcSearchQuery,
   type ShoppingListItem,
   type InsertShoppingListItem,
   type Feedback,
   type InsertFeedback,
-  type FeedbackUpvote,
-  type InsertFeedbackUpvote,
   type FeedbackResponse,
-  type InsertFeedbackResponse,
   type FeedbackAnalytics,
   type Donation,
   type InsertDonation,
@@ -44,24 +37,19 @@ import {
   type WebVital,
   type InsertWebVital,
   users,
-  userPreferences,
   pushTokens,
-  storageLocations,
   appliances,
   applianceCategories,
   barcodeProducts,
   foodItems,
   chatMessages,
   recipes,
-  expirationNotifications,
   mealPlans,
   apiUsageLogs,
   fdcCache,
-  fdcSearchCache,
+  fdcSearchQueries,
   shoppingListItems,
   feedback,
-  feedbackUpvotes,
-  feedbackResponses,
   donations,
   webVitals
 } from "@shared/schema";
@@ -74,19 +62,19 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
-  // User Preferences
-  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
-  upsertUserPreferences(preferences: InsertUserPreferences & { userId: string }): Promise<UserPreferences>;
+  // User Preferences (merged into users table)
+  getUserPreferences(userId: string): Promise<User | undefined>;
+  updateUserPreferences(userId: string, preferences: Partial<User>): Promise<User>;
   
   // Push Tokens (user-scoped)
   getPushTokens(userId: string): Promise<PushToken[]>;
   upsertPushToken(userId: string, token: Omit<InsertPushToken, 'userId'>): Promise<PushToken>;
   deletePushToken(userId: string, token: string): Promise<void>;
   
-  // Storage Locations (user-scoped)
+  // Storage Locations (now in users.storageLocations JSONB)
   getStorageLocations(userId: string): Promise<StorageLocation[]>;
   getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined>;
-  createStorageLocation(userId: string, location: Omit<InsertStorageLocation, 'userId'>): Promise<StorageLocation>;
+  createStorageLocation(userId: string, location: InsertStorageLocation): Promise<StorageLocation>;
 
   // Appliances (user-scoped)
   getAppliances(userId: string): Promise<Appliance[]>;
@@ -132,11 +120,9 @@ export interface IStorage {
   updateRecipe(userId: string, id: string, updates: Partial<Recipe>): Promise<Recipe>;
   getRecipesWithInventoryMatching(userId: string): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
 
-  // Expiration Notifications (user-scoped)
-  getExpirationNotifications(userId: string): Promise<ExpirationNotification[]>;
-  createExpirationNotification(userId: string, notification: Omit<InsertExpirationNotification, 'userId'>): Promise<ExpirationNotification>;
-  dismissNotification(userId: string, id: string): Promise<void>;
+  // Expiration Handling (now in foodItems table)
   getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]>;
+  dismissFoodItemNotification(userId: string, foodItemId: string): Promise<void>;
 
   // Meal Plans (user-scoped)
   getMealPlans(userId: string, startDate?: string, endDate?: string): Promise<MealPlan[]>;
@@ -154,8 +140,8 @@ export interface IStorage {
   getCachedFood(fdcId: string): Promise<FdcCache | undefined>;
   cacheFood(food: InsertFdcCache): Promise<FdcCache>;
   updateFoodLastAccessed(fdcId: string): Promise<void>;
-  getCachedSearchResults(query: string, dataType?: string, pageNumber?: number): Promise<FdcSearchCache | undefined>;
-  cacheSearchResults(search: InsertFdcSearchCache): Promise<FdcSearchCache>;
+  getCachedSearchResults(query: string, dataType?: string, pageNumber?: number): Promise<FdcSearchQuery | undefined>;
+  cacheSearchResults(search: InsertFdcSearchQuery): Promise<FdcSearchQuery>;
   clearOldCache(daysOld: number): Promise<void>;
   
   // Shopping List Items (user-scoped)
@@ -169,7 +155,7 @@ export interface IStorage {
   // Account Management
   resetUserData(userId: string): Promise<void>;
 
-  // Feedback System
+  // Feedback System (consolidated with upvotes and responses in JSONB)
   createFeedback(userId: string, feedbackData: Omit<InsertFeedback, 'userId'> & { isFlagged?: boolean; flagReason?: string | null; similarTo?: string | null }): Promise<Feedback>;
   getFeedback(userId: string, id: string): Promise<Feedback | undefined>;
   getUserFeedback(userId: string, limit?: number): Promise<Feedback[]>;
@@ -177,12 +163,12 @@ export interface IStorage {
   getCommunityFeedback(type?: string, sortBy?: 'upvotes' | 'recent', limit?: number): Promise<Array<Feedback & { userUpvoted: boolean }>>;
   getCommunityFeedbackForUser(userId: string, type?: string, sortBy?: 'upvotes' | 'recent', limit?: number): Promise<Array<Feedback & { userUpvoted: boolean }>>;
   updateFeedbackStatus(id: string, status: string, estimatedTurnaround?: string, resolvedAt?: Date): Promise<Feedback>;
-  addFeedbackResponse(feedbackId: string, response: Omit<InsertFeedbackResponse, 'feedbackId'>): Promise<FeedbackResponse>;
+  addFeedbackResponse(feedbackId: string, response: FeedbackResponse): Promise<Feedback>;
   getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]>;
   getFeedbackAnalytics(userId?: string, days?: number): Promise<FeedbackAnalytics>;
   getFeedbackByContext(contextId: string, contextType: string): Promise<Feedback[]>;
   
-  // Feedback Upvotes
+  // Feedback Upvotes (now in feedback.upvotes JSONB)
   upvoteFeedback(userId: string, feedbackId: string): Promise<void>;
   removeUpvote(userId: string, feedbackId: string): Promise<void>;
   hasUserUpvoted(userId: string, feedbackId: string): Promise<boolean>;
@@ -255,18 +241,29 @@ export class DatabaseStorage implements IStorage {
           }
           
           // Check if user has storage locations
-          const existingLocations = await db.select().from(storageLocations).where(eq(storageLocations.userId, userId));
+          const [user] = await db.select().from(users).where(eq(users.id, userId));
+          
+          if (!user) {
+            throw new Error(`User ${userId} not found`);
+          }
+          
+          const existingLocations = (user.storageLocations as Array<{id: string; name: string; icon: string}>) || [];
           
           if (existingLocations.length === 0) {
             // Initialize default storage locations for this user
             const defaultLocations = [
-              { userId, name: "Fridge", icon: "refrigerator" },
-              { userId, name: "Freezer", icon: "snowflake" },
-              { userId, name: "Pantry", icon: "pizza" },
-              { userId, name: "Counter", icon: "utensils-crossed" },
+              { id: crypto.randomUUID(), name: "Fridge", icon: "refrigerator" },
+              { id: crypto.randomUUID(), name: "Freezer", icon: "snowflake" },
+              { id: crypto.randomUUID(), name: "Pantry", icon: "pizza" },
+              { id: crypto.randomUUID(), name: "Counter", icon: "utensils-crossed" },
             ];
 
-            await db.insert(storageLocations).values(defaultLocations);
+            await db.update(users)
+              .set({
+                storageLocations: defaultLocations,
+                updatedAt: new Date()
+              })
+              .where(eq(users.id, userId));
 
             // Initialize default appliances for this user
             const defaultAppliances = [
@@ -356,32 +353,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User Preferences
-  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+  async getUserPreferences(userId: string): Promise<User | undefined> {
     try {
-      const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
-      return preferences;
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      return user;
     } catch (error) {
       console.error(`Error getting user preferences for ${userId}:`, error);
       throw new Error('Failed to retrieve user preferences');
     }
   }
 
-  async upsertUserPreferences(preferencesData: InsertUserPreferences & { userId: string }): Promise<UserPreferences> {
+  async updateUserPreferences(userId: string, preferences: Partial<User>): Promise<User> {
     try {
-      const [preferences] = await db
-        .insert(userPreferences)
-        .values(preferencesData)
-        .onConflictDoUpdate({
-          target: userPreferences.userId,
-          set: {
-            ...preferencesData,
-            updatedAt: new Date(),
-          },
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          ...preferences,
+          updatedAt: new Date(),
         })
+        .where(eq(users.id, userId))
         .returning();
-      return preferences;
+      
+      if (!updatedUser) {
+        throw new Error("User not found");
+      }
+      
+      return updatedUser;
     } catch (error) {
-      console.error('Error upserting user preferences:', error);
+      console.error('Error updating user preferences:', error);
       throw new Error('Failed to save user preferences');
     }
   }
@@ -435,32 +434,40 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Storage Locations
+  // Storage Locations (now stored in users.storageLocations JSONB array)
   async getStorageLocations(userId: string): Promise<StorageLocation[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
       
-      // Optimized query: get locations with counts in a single query using LEFT JOIN and GROUP BY
-      const locationsWithCounts = await db
-        .select({
-          id: storageLocations.id,
-          userId: storageLocations.userId,
-          name: storageLocations.name,
-          icon: storageLocations.icon,
-          itemCount: sql<number>`COALESCE(COUNT(${foodItems.id})::int, 0)`.as('itemCount'),
-        })
-        .from(storageLocations)
-        .leftJoin(
-          foodItems,
-          and(
-            eq(foodItems.storageLocationId, storageLocations.id),
-            eq(foodItems.userId, userId)
-          )
-        )
-        .where(eq(storageLocations.userId, userId))
-        .groupBy(storageLocations.id, storageLocations.userId, storageLocations.name, storageLocations.icon);
+      // Get user with storage locations
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
       
-      return locationsWithCounts;
+      if (!user || !user.storageLocations) {
+        return [];
+      }
+      
+      // Add userId to each location and count items for each location
+      const locations = (user.storageLocations as Array<{id: string; name: string; icon: string}>).map(loc => ({
+        ...loc,
+        userId
+      }));
+      
+      // Get item counts for each location
+      const items = await db
+        .select({
+          storageLocationId: foodItems.storageLocationId,
+          count: sql<number>`COUNT(*)::int`
+        })
+        .from(foodItems)
+        .where(eq(foodItems.userId, userId))
+        .groupBy(foodItems.storageLocationId);
+      
+      const countMap = new Map(items.map(item => [item.storageLocationId, item.count]));
+      
+      return locations.map(loc => ({
+        ...loc,
+        itemCount: countMap.get(loc.id) || 0
+      }));
     } catch (error) {
       console.error(`Error getting storage locations for user ${userId}:`, error);
       throw new Error('Failed to retrieve storage locations');
@@ -470,23 +477,56 @@ export class DatabaseStorage implements IStorage {
   async getStorageLocation(userId: string, id: string): Promise<StorageLocation | undefined> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      const [location] = await db.select().from(storageLocations).where(
-        and(eq(storageLocations.id, id), eq(storageLocations.userId, userId))
-      );
-      return location || undefined;
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      
+      if (!user || !user.storageLocations) {
+        return undefined;
+      }
+      
+      const locations = user.storageLocations as Array<{id: string; name: string; icon: string}>;
+      const location = locations.find(loc => loc.id === id);
+      
+      return location ? { ...location, userId } : undefined;
     } catch (error) {
       console.error(`Error getting storage location ${id}:`, error);
       throw new Error('Failed to retrieve storage location');
     }
   }
 
-  async createStorageLocation(userId: string, location: Omit<InsertStorageLocation, 'userId'>): Promise<StorageLocation> {
+  async createStorageLocation(userId: string, location: InsertStorageLocation): Promise<StorageLocation> {
     try {
-      const [newLocation] = await db
-        .insert(storageLocations)
-        .values({ ...location, userId })
-        .returning();
-      return newLocation;
+      // Get current user with storage locations
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      // Generate new ID for the storage location
+      const newLocationId = crypto.randomUUID();
+      const newLocation = {
+        id: newLocationId,
+        name: location.name,
+        icon: location.icon
+      };
+      
+      // Add to existing storage locations array
+      const currentLocations = (user.storageLocations as Array<{id: string; name: string; icon: string}>) || [];
+      const updatedLocations = [...currentLocations, newLocation];
+      
+      // Update user with new storage locations
+      await db
+        .update(users)
+        .set({
+          storageLocations: updatedLocations,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+      
+      return {
+        ...newLocation,
+        userId
+      };
     } catch (error) {
       console.error('Error creating storage location:', error);
       throw new Error('Failed to create storage location');
@@ -649,9 +689,13 @@ export class DatabaseStorage implements IStorage {
     try {
       const insertData: any = { ...product };
       
-      // Type cast JSONB fields if present
-      if (product.dimensions) {
-        insertData.dimensions = product.dimensions as { length?: string; width?: string; height?: string };
+      // Move dimensions into productAttributes if present
+      if ((product as any).dimensions) {
+        if (!insertData.productAttributes) {
+          insertData.productAttributes = {};
+        }
+        insertData.productAttributes.dimensions = (product as any).dimensions as { length?: string; width?: string; height?: string };
+        delete insertData.dimensions;
       }
       if (product.stores) {
         insertData.stores = product.stores as Array<{
@@ -684,9 +728,13 @@ export class DatabaseStorage implements IStorage {
         lastUpdate: new Date()
       };
       
-      // Type cast JSONB fields if present
-      if (product.dimensions) {
-        updateData.dimensions = product.dimensions as { length?: string; width?: string; height?: string } | null;
+      // Move dimensions into productAttributes if present
+      if ((product as any).dimensions) {
+        if (!updateData.productAttributes) {
+          updateData.productAttributes = {};
+        }
+        updateData.productAttributes.dimensions = (product as any).dimensions as { length?: string; width?: string; height?: string } | null;
+        delete updateData.dimensions;
       }
       if (product.stores) {
         updateData.stores = product.stores as Array<{
@@ -1070,43 +1118,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Expiration Notifications
-  async getExpirationNotifications(userId: string): Promise<ExpirationNotification[]> {
-    try {
-      return db.select()
-        .from(expirationNotifications)
-        .where(and(
-          eq(expirationNotifications.userId, userId),
-          eq(expirationNotifications.dismissed, false)
-        ))
-        .orderBy(expirationNotifications.daysUntilExpiry);
-    } catch (error) {
-      console.error(`Error getting expiration notifications for user ${userId}:`, error);
-      throw new Error('Failed to retrieve expiration notifications');
-    }
-  }
-
-  async createExpirationNotification(userId: string, notification: Omit<InsertExpirationNotification, 'userId'>): Promise<ExpirationNotification> {
-    try {
-      const [newNotification] = await db
-        .insert(expirationNotifications)
-        .values({ ...notification, userId })
-        .returning();
-      return newNotification;
-    } catch (error) {
-      console.error('Error creating expiration notification:', error);
-      throw new Error('Failed to create expiration notification');
-    }
-  }
-
-  async dismissNotification(userId: string, id: string): Promise<void> {
+  // Expiration Handling (now using foodItems table with notification fields)
+  async dismissFoodItemNotification(userId: string, foodItemId: string): Promise<void> {
     try {
       await db
-        .update(expirationNotifications)
-        .set({ dismissed: true })
-        .where(and(eq(expirationNotifications.id, id), eq(expirationNotifications.userId, userId)));
+        .update(foodItems)
+        .set({ 
+          notificationDismissed: true,
+          lastNotifiedAt: new Date()
+        })
+        .where(and(eq(foodItems.id, foodItemId), eq(foodItems.userId, userId)));
     } catch (error) {
-      console.error(`Error dismissing notification ${id}:`, error);
+      console.error(`Error dismissing notification for food item ${foodItemId}:`, error);
       throw new Error('Failed to dismiss notification');
     }
   }
@@ -1330,30 +1353,31 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCachedSearchResults(query: string, dataType?: string, pageNumber: number = 1, isComplexSearch: boolean = false): Promise<FdcSearchCache | undefined> {
+  async getCachedSearchResults(query: string, dataType?: string, pageNumber?: number): Promise<FdcSearchQuery | undefined> {
     try {
       const conditions = [
-        eq(fdcSearchCache.query, query.toLowerCase()),
-        eq(fdcSearchCache.pageNumber, pageNumber)
+        eq(fdcSearchQueries.query, query.toLowerCase())
       ];
       
       if (dataType) {
-        conditions.push(eq(fdcSearchCache.dataType, dataType));
+        conditions.push(eq(fdcSearchQueries.dataType, dataType));
+      }
+      
+      if (pageNumber) {
+        conditions.push(eq(fdcSearchQueries.pageNumber, pageNumber));
       }
       
       const [cached] = await db
         .select()
-        .from(fdcSearchCache)
+        .from(fdcSearchQueries)
         .where(and(...conditions))
-        .orderBy(sql`${fdcSearchCache.cachedAt} DESC`)
+        .orderBy(sql`${fdcSearchQueries.cachedAt} DESC`)
         .limit(1);
       
-      // Use shorter TTL for complex searches (2 hours), longer for simple searches (24 hours)
+      // Check if cache is still valid (24 hours)
       if (cached) {
         const cacheAge = Date.now() - new Date(cached.cachedAt).getTime();
-        const ttlMs = isComplexSearch 
-          ? 2 * 60 * 60 * 1000  // 2 hours for complex searches with filters
-          : 24 * 60 * 60 * 1000; // 24 hours for simple searches
+        const ttlMs = 24 * 60 * 60 * 1000; // 24 hours
         
         if (cacheAge < ttlMs) {
           return cached;
@@ -1367,7 +1391,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async cacheSearchResults(search: InsertFdcSearchCache): Promise<FdcSearchCache> {
+  async cacheSearchResults(search: InsertFdcSearchQuery): Promise<FdcSearchQuery> {
     try {
       const searchToInsert = {
         query: search.query.toLowerCase(),
@@ -1375,18 +1399,11 @@ export class DatabaseStorage implements IStorage {
         pageNumber: search.pageNumber,
         pageSize: search.pageSize,
         totalHits: search.totalHits,
-        results: search.results as Array<{
-          fdcId: string;
-          description: string;
-          dataType: string;
-          brandOwner?: string;
-          brandName?: string;
-          score?: number;
-        }> | null | undefined
+        fdcIds: search.fdcIds // Array of FDC IDs instead of full results
       };
       
       const [cachedSearch] = await db
-        .insert(fdcSearchCache)
+        .insert(fdcSearchQueries)
         .values(searchToInsert)
         .returning();
       return cachedSearch;
@@ -1403,8 +1420,8 @@ export class DatabaseStorage implements IStorage {
       
       // Clear old search cache
       await db
-        .delete(fdcSearchCache)
-        .where(sql`${fdcSearchCache.cachedAt} < ${cutoffDate.toISOString()}`);
+        .delete(fdcSearchQueries)
+        .where(sql`${fdcSearchQueries.cachedAt} < ${cutoffDate.toISOString()}`);
       
       // Clear old food cache that hasn't been accessed recently
       await db
@@ -1512,7 +1529,6 @@ export class DatabaseStorage implements IStorage {
         // Delete all user data in order (respecting foreign key constraints)
         await tx.delete(shoppingListItems).where(eq(shoppingListItems.userId, userId));
         await tx.delete(mealPlans).where(eq(mealPlans.userId, userId));
-        await tx.delete(expirationNotifications).where(eq(expirationNotifications.userId, userId));
         await tx.delete(foodItems).where(eq(foodItems.userId, userId));
         await tx.delete(chatMessages).where(eq(chatMessages.userId, userId));
         await tx.delete(recipes).where(eq(recipes.userId, userId));
@@ -1520,11 +1536,25 @@ export class DatabaseStorage implements IStorage {
         await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
         await tx.delete(feedback).where(eq(feedback.userId, userId));
         
-        // Delete custom storage locations (keep default ones for re-initialization)
-        await tx.delete(storageLocations).where(eq(storageLocations.userId, userId));
-        
-        // Reset user preferences to defaults
-        await tx.delete(userPreferences).where(eq(userPreferences.userId, userId));
+        // Reset user data including preferences and storage locations to defaults
+        await tx.update(users)
+          .set({
+            // Reset preferences to defaults
+            dietaryRestrictions: [],
+            allergens: [],
+            favoriteCategories: [],
+            expirationAlertDays: 3,
+            storageAreasEnabled: [],
+            householdSize: 2,
+            cookingSkillLevel: 'beginner',
+            preferredUnits: 'imperial',
+            foodsToAvoid: [],
+            hasCompletedOnboarding: false,
+            // Clear storage locations (they will be re-initialized)
+            storageLocations: [],
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, userId));
       });
       
       // Clear the initialization flag so default data will be recreated
@@ -1634,13 +1664,36 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async addFeedbackResponse(feedbackId: string, response: Omit<InsertFeedbackResponse, 'feedbackId'>): Promise<FeedbackResponse> {
+  async addFeedbackResponse(feedbackId: string, response: FeedbackResponse): Promise<Feedback> {
     try {
-      const [newResponse] = await db
-        .insert(feedbackResponses)
-        .values({ ...response, feedbackId })
+      // Get current feedback
+      const [currentFeedback] = await db
+        .select()
+        .from(feedback)
+        .where(eq(feedback.id, feedbackId));
+
+      if (!currentFeedback) {
+        throw new Error('Feedback not found');
+      }
+
+      // Add new response to responses array
+      const currentResponses = (currentFeedback.responses as FeedbackResponse[]) || [];
+      const newResponse: FeedbackResponse = {
+        ...response,
+        createdAt: response.createdAt || new Date().toISOString()
+      };
+      const updatedResponses = [...currentResponses, newResponse];
+
+      // Update feedback with new responses
+      const [updated] = await db
+        .update(feedback)
+        .set({ 
+          responses: updatedResponses
+        })
+        .where(eq(feedback.id, feedbackId))
         .returning();
-      return newResponse;
+
+      return updated;
     } catch (error) {
       console.error('Error adding feedback response:', error);
       throw new Error('Failed to add feedback response');
@@ -1649,12 +1702,22 @@ export class DatabaseStorage implements IStorage {
 
   async getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]> {
     try {
-      const responses = await db
-        .select()
-        .from(feedbackResponses)
-        .where(eq(feedbackResponses.feedbackId, feedbackId))
-        .orderBy(sql`${feedbackResponses.createdAt} ASC`);
-      return responses;
+      const [currentFeedback] = await db
+        .select({ responses: feedback.responses })
+        .from(feedback)
+        .where(eq(feedback.id, feedbackId));
+      
+      if (!currentFeedback) {
+        return [];
+      }
+      
+      const responses = (currentFeedback.responses as FeedbackResponse[]) || [];
+      // Sort by createdAt
+      return responses.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateA - dateB;
+      });
     } catch (error) {
       console.error('Error getting feedback responses:', error);
       throw new Error('Failed to get feedback responses');
@@ -1812,22 +1875,14 @@ export class DatabaseStorage implements IStorage {
         ? await db.select().from(feedback).where(whereCondition).orderBy(orderByClause).limit(limit)
         : await db.select().from(feedback).orderBy(orderByClause).limit(limit);
 
-      const feedbackIds = results.map(f => f.id);
-      const userUpvotes = feedbackIds.length > 0 
-        ? await db.select().from(feedbackUpvotes).where(
-            and(
-              eq(feedbackUpvotes.userId, userId),
-              sql`${feedbackUpvotes.feedbackId} IN ${feedbackIds}`
-            )
-          )
-        : [];
-
-      const upvotedIds = new Set(userUpvotes.map(u => u.feedbackId));
-
-      return results.map(item => ({
-        ...item,
-        userUpvoted: upvotedIds.has(item.id)
-      }));
+      // Check if user has upvoted each feedback item
+      return results.map(item => {
+        const upvotes = (item.upvotes as string[]) || [];
+        return {
+          ...item,
+          userUpvoted: upvotes.includes(userId)
+        };
+      });
     } catch (error) {
       console.error('Error getting community feedback for user:', error);
       throw new Error('Failed to get community feedback');
@@ -1836,23 +1891,31 @@ export class DatabaseStorage implements IStorage {
 
   async upvoteFeedback(userId: string, feedbackId: string): Promise<void> {
     try {
-      const existing = await db
+      // Get the current feedback item
+      const [currentFeedback] = await db
         .select()
-        .from(feedbackUpvotes)
-        .where(and(
-          eq(feedbackUpvotes.userId, userId),
-          eq(feedbackUpvotes.feedbackId, feedbackId)
-        ));
+        .from(feedback)
+        .where(eq(feedback.id, feedbackId));
 
-      if (existing.length > 0) {
-        return;
+      if (!currentFeedback) {
+        throw new Error('Feedback not found');
       }
 
-      await db.insert(feedbackUpvotes).values({ userId, feedbackId });
+      // Check if user already upvoted
+      const upvotes = (currentFeedback.upvotes as string[]) || [];
+      if (upvotes.includes(userId)) {
+        return; // Already upvoted
+      }
+
+      // Add user to upvotes array and increment count
+      const updatedUpvotes = [...upvotes, userId];
       
       await db
         .update(feedback)
-        .set({ upvoteCount: sql`${feedback.upvoteCount} + 1` })
+        .set({ 
+          upvotes: updatedUpvotes,
+          upvoteCount: updatedUpvotes.length
+        })
         .where(eq(feedback.id, feedbackId));
     } catch (error) {
       console.error('Error upvoting feedback:', error);
@@ -1862,18 +1925,28 @@ export class DatabaseStorage implements IStorage {
 
   async removeUpvote(userId: string, feedbackId: string): Promise<void> {
     try {
-      const deleted = await db
-        .delete(feedbackUpvotes)
-        .where(and(
-          eq(feedbackUpvotes.userId, userId),
-          eq(feedbackUpvotes.feedbackId, feedbackId)
-        ))
-        .returning();
+      // Get the current feedback item
+      const [currentFeedback] = await db
+        .select()
+        .from(feedback)
+        .where(eq(feedback.id, feedbackId));
 
-      if (deleted.length > 0) {
+      if (!currentFeedback) {
+        throw new Error('Feedback not found');
+      }
+
+      // Remove user from upvotes array
+      const upvotes = (currentFeedback.upvotes as string[]) || [];
+      const updatedUpvotes = upvotes.filter(id => id !== userId);
+
+      // Only update if the user was actually in the upvotes array
+      if (upvotes.length !== updatedUpvotes.length) {
         await db
           .update(feedback)
-          .set({ upvoteCount: sql`GREATEST(${feedback.upvoteCount} - 1, 0)` })
+          .set({ 
+            upvotes: updatedUpvotes,
+            upvoteCount: updatedUpvotes.length
+          })
           .where(eq(feedback.id, feedbackId));
       }
     } catch (error) {
@@ -1884,14 +1957,17 @@ export class DatabaseStorage implements IStorage {
 
   async hasUserUpvoted(userId: string, feedbackId: string): Promise<boolean> {
     try {
-      const [result] = await db
-        .select()
-        .from(feedbackUpvotes)
-        .where(and(
-          eq(feedbackUpvotes.userId, userId),
-          eq(feedbackUpvotes.feedbackId, feedbackId)
-        ));
-      return !!result;
+      const [currentFeedback] = await db
+        .select({ upvotes: feedback.upvotes })
+        .from(feedback)
+        .where(eq(feedback.id, feedbackId));
+      
+      if (!currentFeedback) {
+        return false;
+      }
+      
+      const upvotes = (currentFeedback.upvotes as string[]) || [];
+      return upvotes.includes(userId);
     } catch (error) {
       console.error('Error checking upvote status:', error);
       return false;

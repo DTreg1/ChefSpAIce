@@ -15,12 +15,33 @@ export const sessions = pgTable(
 );
 
 // User storage table - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
+// Merged with user preferences and storage locations for better performance
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  
+  // Preferences (previously in userPreferences table)
+  dietaryRestrictions: text("dietary_restrictions").array(),
+  allergens: text("allergens").array(),
+  favoriteCategories: text("favorite_categories").array(),
+  expirationAlertDays: integer("expiration_alert_days").notNull().default(3),
+  storageAreasEnabled: text("storage_areas_enabled").array(),
+  householdSize: integer("household_size").notNull().default(2),
+  cookingSkillLevel: text("cooking_skill_level").notNull().default('beginner'),
+  preferredUnits: text("preferred_units").notNull().default('imperial'),
+  foodsToAvoid: text("foods_to_avoid").array(),
+  hasCompletedOnboarding: boolean("has_completed_onboarding").notNull().default(false),
+  
+  // Storage locations as JSONB array (previously in storageLocations table)
+  storageLocations: jsonb("storage_locations").$type<Array<{
+    id: string;
+    name: string;
+    icon: string;
+  }>>().default([]),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -55,51 +76,21 @@ export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
 export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 export type PushToken = typeof pushTokens.$inferSelect;
 
-// User Preferences
-export const userPreferences = pgTable("user_preferences", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
-  dietaryRestrictions: text("dietary_restrictions").array(),
-  allergens: text("allergens").array(),
-  favoriteCategories: text("favorite_categories").array(),
-  expirationAlertDays: integer("expiration_alert_days").notNull().default(3),
-  storageAreasEnabled: text("storage_areas_enabled").array(),
-  householdSize: integer("household_size").notNull().default(2),
-  cookingSkillLevel: text("cooking_skill_level").notNull().default('beginner'),
-  preferredUnits: text("preferred_units").notNull().default('imperial'),
-  foodsToAvoid: text("foods_to_avoid").array(),
-  hasCompletedOnboarding: boolean("has_completed_onboarding").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+// User Preferences - MERGED INTO users TABLE FOR BETTER PERFORMANCE
+// Types preserved for backward compatibility during migration
 
-export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
-export type UserPreferences = typeof userPreferences.$inferSelect;
-
-// Storage Locations (fridge, freezer, pantry, etc.) - now user-scoped
-export const storageLocations = pgTable("storage_locations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  icon: text("icon").notNull(),
-}, (table) => [
-  index("storage_locations_user_id_idx").on(table.userId),
-]);
-
-export const insertStorageLocationSchema = createInsertSchema(storageLocations).omit({
-  id: true,
-  userId: true,
-});
-
-export type InsertStorageLocation = z.infer<typeof insertStorageLocationSchema>;
-export type StorageLocation = typeof storageLocations.$inferSelect;
+// Storage Locations - MERGED INTO users TABLE AS JSONB ARRAY
+// Types preserved for backward compatibility during migration
+export type InsertStorageLocation = {
+  name: string;
+  icon: string;
+};
+export type StorageLocation = {
+  id: string;
+  userId: string;
+  name: string;
+  icon: string;
+};
 
 // Appliance Categories - Define the types of appliances
 export const applianceCategories = pgTable("appliance_categories", {
@@ -120,39 +111,46 @@ export const insertApplianceCategorySchema = createInsertSchema(applianceCategor
 export type InsertApplianceCategory = z.infer<typeof insertApplianceCategorySchema>;
 export type ApplianceCategory = typeof applianceCategories.$inferSelect;
 
-// Barcode Products - Store product data from barcode lookups
+// Barcode Products - Optimized with JSONB for sparse product attributes
 export const barcodeProducts = pgTable("barcode_products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Core fields (always present)
   barcodeNumber: text("barcode_number").notNull().unique(),
-  barcodeFormats: text("barcode_formats"),
-  mpn: text("mpn"), // Manufacturer Part Number
-  model: text("model"),
-  asin: text("asin"), // Amazon Standard Identification Number
   title: text("title").notNull(),
-  category: text("category"), // From barcode API
-  manufacturer: text("manufacturer"),
   brand: text("brand"),
+  category: text("category"), // From barcode API
   
-  // Physical attributes
-  color: text("color"),
-  material: text("material"),
-  size: text("size"),
-  weight: text("weight"),
-  dimensions: jsonb("dimensions").$type<{
-    length?: string;
-    width?: string;
-    height?: string;
-  }>(),
-  
-  // Product details
-  description: text("description"),
-  features: text("features").array(),
-  images: text("images").array(),
-  
-  // Capabilities for appliances (e.g., Ninja Foodi capabilities)
-  capabilities: text("capabilities").array(), // ["grill", "bake", "air_fry", "dehydrate", "broil"]
-  capacity: text("capacity"), // e.g., "4-qt", "6-qt"
-  servingSize: text("serving_size"), // e.g., "up to 4 servings"
+  // All variable/sparse product attributes in JSONB
+  productAttributes: jsonb("product_attributes").$type<{
+    // Identifiers
+    barcodeFormats?: string;
+    mpn?: string; // Manufacturer Part Number
+    model?: string;
+    asin?: string; // Amazon Standard Identification Number
+    manufacturer?: string;
+    
+    // Physical attributes
+    color?: string;
+    material?: string;
+    size?: string;
+    weight?: string;
+    dimensions?: {
+      length?: string;
+      width?: string;
+      height?: string;
+    };
+    
+    // Product details
+    description?: string;
+    features?: string[];
+    images?: string[];
+    
+    // Capabilities for appliances
+    capabilities?: string[]; // ["grill", "bake", "air_fry", "dehydrate", "broil"]
+    capacity?: string; // e.g., "4-qt", "6-qt"
+    servingSize?: string; // e.g., "up to 4 servings"
+  }>().default({}),
   
   // Store information
   stores: jsonb("stores").$type<Array<{
@@ -172,8 +170,8 @@ export const barcodeProducts = pgTable("barcode_products", {
   lookupFailed: boolean("lookup_failed").notNull().default(false),
   source: text("source"), // 'barcode_lookup' or 'openfoodfacts'
   
-  // Metadata
-  rawData: jsonb("raw_data"), // Complete API response
+  // Complete API response for reference
+  rawData: jsonb("raw_data"),
   lastUpdate: timestamp("last_update").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
@@ -244,8 +242,14 @@ export const foodItems = pgTable("food_items", {
   quantity: text("quantity").notNull(),
   unit: text("unit").notNull(),
   weightInGrams: real("weight_in_grams"), // Actual weight for nutrition calculations (quantity × serving size)
-  storageLocationId: varchar("storage_location_id").notNull(),
+  storageLocationId: varchar("storage_location_id").notNull(), // References id within user's storageLocations JSONB
   expirationDate: text("expiration_date").notNull(),
+  
+  // Notification state (merged from expirationNotifications table)
+  lastNotifiedAt: timestamp("last_notified_at"),
+  notificationDismissed: boolean("notification_dismissed").notNull().default(false),
+  daysUntilExpiryWhenNotified: integer("days_until_expiry_when_notified"),
+  
   imageUrl: text("image_url"),
   nutrition: text("nutrition"),
   usdaData: jsonb("usda_data"), // Complete USDA API response data
@@ -253,8 +257,8 @@ export const foodItems = pgTable("food_items", {
   addedAt: timestamp("added_at").notNull().defaultNow(),
 }, (table) => [
   index("food_items_user_id_idx").on(table.userId),
-  index("food_items_storage_location_id_idx").on(table.storageLocationId),
   index("food_items_expiration_date_idx").on(table.expirationDate),
+  index("food_items_notification_dismissed_idx").on(table.notificationDismissed),
 ]);
 
 export const insertFoodItemSchema = createInsertSchema(foodItems).omit({
@@ -317,29 +321,8 @@ export const insertRecipeSchema = createInsertSchema(recipes).omit({
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Recipe = typeof recipes.$inferSelect;
 
-// Expiration Notifications - now user-scoped
-export const expirationNotifications = pgTable("expiration_notifications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  foodItemId: varchar("food_item_id").notNull(),
-  foodItemName: text("food_item_name").notNull(),
-  expirationDate: text("expiration_date").notNull(),
-  daysUntilExpiry: integer("days_until_expiry").notNull(),
-  notifiedAt: timestamp("notified_at").notNull().defaultNow(),
-  dismissed: boolean("dismissed").notNull().default(false),
-}, (table) => [
-  index("expiration_notifications_user_id_idx").on(table.userId),
-  index("expiration_notifications_dismissed_idx").on(table.dismissed),
-]);
-
-export const insertExpirationNotificationSchema = createInsertSchema(expirationNotifications).omit({
-  id: true,
-  userId: true,
-  notifiedAt: true,
-});
-
-export type InsertExpirationNotification = z.infer<typeof insertExpirationNotificationSchema>;
-export type ExpirationNotification = typeof expirationNotifications.$inferSelect;
+// Expiration Notifications - MERGED INTO foodItems TABLE
+// Notification state is now tracked directly on each food item
 
 // Nutritional Information (embedded in food items)
 export type NutritionInfo = {
@@ -468,37 +451,31 @@ export const insertFdcCacheSchema = createInsertSchema(fdcCache).omit({
 export type InsertFdcCache = z.infer<typeof insertFdcCacheSchema>;
 export type FdcCache = typeof fdcCache.$inferSelect;
 
-// FDC Search Cache - Cache search results to avoid repeated API calls
-export const fdcSearchCache = pgTable("fdc_search_cache", {
+// FDC Search Queries - Lightweight table that references fdcCache items
+export const fdcSearchQueries = pgTable("fdc_search_queries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   query: text("query").notNull(),
   dataType: text("data_type"),
   pageNumber: integer("page_number").notNull().default(1),
   pageSize: integer("page_size").notNull().default(50),
   
-  // Store search results
+  // Store only references to FDC items, not duplicate data
   totalHits: integer("total_hits"),
-  results: jsonb("results").$type<Array<{
-    fdcId: string;
-    description: string;
-    dataType: string;
-    brandOwner?: string;
-    brandName?: string;
-    score?: number;
-  }>>(),
+  fdcIds: text("fdc_ids").array(), // Array of fdcId references to fdcCache table
+  scores: real("scores").array(), // Relevance scores for each result
   
   cachedAt: timestamp("cached_at").notNull().defaultNow(),
 }, (table) => [
-  index("fdc_search_cache_query_idx").on(table.query, table.dataType, table.pageNumber),
+  index("fdc_search_queries_idx").on(table.query, table.dataType, table.pageNumber),
 ]);
 
-export const insertFdcSearchCacheSchema = createInsertSchema(fdcSearchCache).omit({
+export const insertFdcSearchQuerySchema = createInsertSchema(fdcSearchQueries).omit({
   id: true,
   cachedAt: true,
 });
 
-export type InsertFdcSearchCache = z.infer<typeof insertFdcSearchCacheSchema>;
-export type FdcSearchCache = typeof fdcSearchCache.$inferSelect;
+export type InsertFdcSearchQuery = z.infer<typeof insertFdcSearchQuerySchema>;
+export type FdcSearchQuery = typeof fdcSearchQueries.$inferSelect;
 
 // Shopping List Items - for individual items not tied to meal plans
 export const shoppingListItems = pgTable("shopping_list_items", {
@@ -523,7 +500,7 @@ export const insertShoppingListItemSchema = createInsertSchema(shoppingListItems
 export type InsertShoppingListItem = z.infer<typeof insertShoppingListItemSchema>;
 export type ShoppingListItem = typeof shoppingListItems.$inferSelect;
 
-// Feedback System
+// Feedback System - Consolidated with upvotes and responses as JSONB
 export const feedback = pgTable("feedback", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -539,7 +516,22 @@ export const feedback = pgTable("feedback", {
   status: text("status").notNull().default('open'), // 'open', 'in_progress', 'completed', 'wont_fix'
   estimatedTurnaround: text("estimated_turnaround"), // e.g., "1-2 weeks", "Next release", "Q2 2025"
   tags: text("tags").array(), // AI-generated tags
+  
+  // Consolidated upvotes as JSONB array
+  upvotes: jsonb("upvotes").$type<Array<{
+    userId: string;
+    createdAt: string;
+  }>>().default([]),
   upvoteCount: integer("upvote_count").notNull().default(0), // Cached count for performance
+  
+  // Consolidated responses as JSONB array
+  responses: jsonb("responses").$type<Array<{
+    responderId: string;
+    response: string;
+    action?: string;
+    createdAt: string;
+  }>>().default([]),
+  
   isFlagged: boolean("is_flagged").notNull().default(false), // Flagged by AI moderator
   flagReason: text("flag_reason"), // Why it was flagged
   similarTo: varchar("similar_to"), // ID of similar/duplicate feedback
@@ -574,45 +566,19 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof feedback.$inferSelect;
 
-// Feedback Upvotes - Track who upvoted what
-export const feedbackUpvotes = pgTable("feedback_upvotes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  feedbackId: varchar("feedback_id").notNull().references(() => feedback.id, { onDelete: "cascade" }),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => [
-  index("feedback_upvotes_feedback_id_idx").on(table.feedbackId),
-  index("feedback_upvotes_user_id_idx").on(table.userId),
-  uniqueIndex("feedback_upvotes_unique_idx").on(table.feedbackId, table.userId),
-]);
+// Feedback Upvotes and Responses - MERGED INTO feedback TABLE AS JSONB ARRAYS
+// Types preserved for backward compatibility during migration
+export type FeedbackUpvote = {
+  userId: string;
+  createdAt: string;
+};
 
-export const insertFeedbackUpvoteSchema = createInsertSchema(feedbackUpvotes).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertFeedbackUpvote = z.infer<typeof insertFeedbackUpvoteSchema>;
-export type FeedbackUpvote = typeof feedbackUpvotes.$inferSelect;
-
-// Feedback Responses from admin/team
-export const feedbackResponses = pgTable("feedback_responses", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  feedbackId: varchar("feedback_id").notNull().references(() => feedback.id, { onDelete: "cascade" }),
-  responderId: varchar("responder_id"), // Admin/team member ID
-  response: text("response").notNull(),
-  action: text("action"), // What action was taken
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (table) => [
-  index("feedback_responses_feedback_id_idx").on(table.feedbackId),
-]);
-
-export const insertFeedbackResponseSchema = createInsertSchema(feedbackResponses).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertFeedbackResponse = z.infer<typeof insertFeedbackResponseSchema>;
-export type FeedbackResponse = typeof feedbackResponses.$inferSelect;
+export type FeedbackResponse = {
+  responderId: string;
+  response: string;
+  action?: string;
+  createdAt: string;
+};
 
 // Feedback Analytics Aggregations (for dashboard)
 export type FeedbackAnalytics = {

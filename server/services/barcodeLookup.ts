@@ -162,35 +162,39 @@ export class BarcodeLookupService {
       // Transform API response to our database format
       const barcodeProduct: InsertBarcodeProduct = {
         barcodeNumber: product.barcode_number,
-        barcodeFormats: product.barcode_formats,
-        mpn: product.mpn,
-        model: product.model,
-        asin: product.asin,
         title: product.title,
         category: product.category,
-        manufacturer: product.manufacturer,
         brand: product.brand,
         
-        // Physical attributes
-        color: product.color,
-        material: product.material,
-        size: product.size,
-        weight: product.weight,
-        dimensions: (product.length || product.width || product.height) ? {
-          length: product.length,
-          width: product.width,
-          height: product.height
-        } : undefined,
-        
-        // Product details
-        description: product.description,
-        features: product.features,
-        images: product.images,
-        
-        // Appliance-specific fields
-        capabilities: capabilities.length > 0 ? capabilities : undefined,
-        capacity,
-        servingSize,
+        // All other properties go into productAttributes
+        productAttributes: {
+          barcodeFormats: product.barcode_formats,
+          mpn: product.mpn,
+          model: product.model,
+          asin: product.asin,
+          manufacturer: product.manufacturer,
+          
+          // Physical attributes
+          color: product.color,
+          material: product.material,
+          size: product.size,
+          weight: product.weight,
+          dimensions: (product.length || product.width || product.height) ? {
+            length: product.length,
+            width: product.width,
+            height: product.height
+          } : undefined,
+          
+          // Product details
+          description: product.description,
+          features: product.features,
+          images: product.images,
+          
+          // Appliance-specific fields
+          capabilities: capabilities.length > 0 ? capabilities : undefined,
+          capacity,
+          servingSize,
+        },
         
         // Store information
         stores: product.stores?.map(store => ({
@@ -276,29 +280,33 @@ export class BarcodeLookupService {
         // Transform and save
         const barcodeProduct: InsertBarcodeProduct = {
           barcodeNumber: product.barcode_number,
-          barcodeFormats: product.barcode_formats,
-          mpn: product.mpn,
-          model: product.model,
-          asin: product.asin,
           title: product.title,
           category: product.category,
-          manufacturer: product.manufacturer,
           brand: product.brand,
-          color: product.color,
-          material: product.material,
-          size: product.size,
-          weight: product.weight,
-          dimensions: (product.length || product.width || product.height) ? {
-            length: product.length,
-            width: product.width,
-            height: product.height
-          } : undefined,
-          description: product.description,
-          features: product.features,
-          images: product.images,
-          capabilities: capabilities.length > 0 ? capabilities : undefined,
-          capacity,
-          servingSize,
+          
+          // All other properties go into productAttributes
+          productAttributes: {
+            barcodeFormats: product.barcode_formats,
+            mpn: product.mpn,
+            model: product.model,
+            asin: product.asin,
+            manufacturer: product.manufacturer,
+            color: product.color,
+            material: product.material,
+            size: product.size,
+            weight: product.weight,
+            dimensions: (product.length || product.width || product.height) ? {
+              length: product.length,
+              width: product.width,
+              height: product.height
+            } : undefined,
+            description: product.description,
+            features: product.features,
+            images: product.images,
+            capabilities: capabilities.length > 0 ? capabilities : undefined,
+            capacity,
+            servingSize,
+          },
           stores: product.stores?.map(store => ({
             name: store.name,
             country: store.country,

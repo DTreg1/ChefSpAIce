@@ -105,7 +105,7 @@ function AppContent() {
   const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
     hasCompletedOnboarding?: boolean;
   }>({
-    queryKey: ["/api/user/preferences"],
+    queryKey: ["/api/auth/user"],
     cacheKey: "cache:user:preferences",
     enabled: isAuthenticated,
   });

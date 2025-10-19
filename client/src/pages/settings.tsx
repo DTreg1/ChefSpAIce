@@ -20,7 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { User, UserPreferences, StorageLocation } from "@shared/schema";
+import type { User, StorageLocation } from "@shared/schema";
 
 const storageAreaOptions = [
   { name: "Fridge", icon: Refrigerator },
@@ -69,8 +69,8 @@ export default function Settings() {
   const [foodToAvoid, setFoodToAvoid] = useState("");
   const [foodsToAvoidList, setFoodsToAvoidList] = useState<string[]>([]);
 
-  const { data: preferences } = useCachedQuery<UserPreferences>({
-    queryKey: ["/api/user/preferences"],
+  const { data: preferences } = useCachedQuery<User>({
+    queryKey: ["/api/auth/user"],
     cacheKey: "cache:user:preferences",
   });
 
@@ -143,6 +143,7 @@ export default function Settings() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
       toast({
         title: "Success",

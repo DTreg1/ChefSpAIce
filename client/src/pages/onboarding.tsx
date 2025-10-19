@@ -126,6 +126,7 @@ export default function Onboarding() {
       };
     },
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });

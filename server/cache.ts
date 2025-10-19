@@ -84,8 +84,10 @@ export async function saveToCache(productInfo: ProductInfo, lookupFailed: boolea
       barcodeNumber: productInfo.code,
       title: lookupFailed ? 'Product not found' : productInfo.name,
       brand: productInfo.brand || null,
-      description: productInfo.description || null,
-      images: productInfo.imageUrl ? [productInfo.imageUrl] : null,
+      productAttributes: {
+        description: productInfo.description || undefined,
+        images: productInfo.imageUrl ? [productInfo.imageUrl] : undefined,
+      },
       cachedAt: now,
       expiresAt: expiresAt,
       lookupFailed: lookupFailed,
@@ -100,8 +102,7 @@ export async function saveToCache(productInfo: ProductInfo, lookupFailed: boolea
         set: {
           title: cacheData.title,
           brand: cacheData.brand,
-          description: cacheData.description,
-          images: cacheData.images,
+          productAttributes: cacheData.productAttributes,
           cachedAt: now,
           expiresAt: expiresAt,
           lookupFailed: lookupFailed,
@@ -158,8 +159,8 @@ export function formatCachedProduct(product: BarcodeProduct): ProductInfo {
     code: product.barcodeNumber,
     name: product.title,
     brand: product.brand || undefined,
-    imageUrl: product.images?.[0] || undefined,
-    description: product.description || undefined,
+    imageUrl: product.productAttributes?.images?.[0] || undefined,
+    description: product.productAttributes?.description || undefined,
     source: (product.source as 'barcode_lookup' | 'openfoodfacts') || undefined,
   };
 }
