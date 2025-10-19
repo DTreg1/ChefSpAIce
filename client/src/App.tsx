@@ -12,6 +12,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
+import { BarcodeScannerDialog } from "@/components/barcode-scanner-dialog";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
@@ -95,6 +96,7 @@ function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [addFoodOpen, setAddFoodOpen] = useState(false);
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
+  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
@@ -153,6 +155,10 @@ function AppContent() {
         open={recipeDialogOpen}
         onOpenChange={setRecipeDialogOpen}
       />
+      <BarcodeScannerDialog
+        open={barcodeScannerOpen}
+        onOpenChange={setBarcodeScannerOpen}
+      />
       {/* Only show floating FeedbackWidget on non-chat pages */}
       {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
       <SidebarProvider style={style}>
@@ -187,10 +193,7 @@ function AppContent() {
               <QuickActionsBar
                 onAddFood={() => setAddFoodOpen(true)}
                 onGenerateRecipe={() => setRecipeDialogOpen(true)}
-                onScanBarcode={() => {
-                  // Navigate to FDC search page with barcode scanner
-                  window.location.href = "/fdc-search?scanBarcode=true";
-                }}
+                onScanBarcode={() => setBarcodeScannerOpen(true)}
               />
             </div>
           </header>
