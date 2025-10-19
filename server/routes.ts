@@ -6,6 +6,7 @@ import { openai } from "./openai";
 import Stripe from "stripe";
 import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "./usda";
 import { searchBarcodeLookup, getBarcodeLookupProduct, getBarcodeLookupBatch, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
+import { getOpenFoodFactsProduct, getOpenFoodFactsBatch, extractProductInfo } from "./openfoodfacts";
 import { getEnrichedOnboardingItem } from "./onboarding-usda";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -984,6 +985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let apiCallMade = false;
     let statusCode = 200;
     let success = true;
+    let source = 'barcode_lookup';
     
     try {
       // Check rate limits before making API call
@@ -992,21 +994,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       apiCallMade = true;
       const product = await getBarcodeLookupProduct(barcode);
       
-      if (!product) {
-        statusCode = 404;
-        success = false;
-        return res.status(404).json({ error: "Product not found" });
+      if (product) {
+        // Found in Barcode Lookup
+        res.json({
+          code: product.barcode_number || '',
+          name: product.title || 'Unknown Product',
+          brand: product.brand || '',
+          imageUrl: extractImageUrl(product),
+          description: product.description,
+          source: 'barcode_lookup'
+        });
+      } else {
+        // Not found in Barcode Lookup, try Open Food Facts as fallback
+        console.log(`Product ${barcode} not in Barcode Lookup, trying Open Food Facts...`);
+        source = 'openfoodfacts';
+        
+        const offProduct = await getOpenFoodFactsProduct(barcode);
+        if (offProduct) {
+          const productInfo = extractProductInfo(offProduct);
+          if (productInfo) {
+            res.json({
+              code: productInfo.code,
+              name: productInfo.name,
+              brand: productInfo.brand,
+              imageUrl: productInfo.imageUrl,
+              description: productInfo.description,
+              source: 'openfoodfacts',
+              nutrition: productInfo.nutrition,
+              categories: productInfo.categories
+            });
+          } else {
+            statusCode = 404;
+            success = false;
+            return res.status(404).json({ error: "Product not found in any database" });
+          }
+        } else {
+          statusCode = 404;
+          success = false;
+          return res.status(404).json({ error: "Product not found in any database" });
+        }
       }
-
-      res.json({
-        code: product.barcode_number || '',
-        name: product.title || 'Unknown Product',
-        brand: product.brand || '',
-        imageUrl: extractImageUrl(product),
-        description: product.description
-      });
     } catch (error: any) {
-      console.error("Barcode Lookup product error:", error);
+      console.error("Barcode product lookup error:", error);
       if (error instanceof ApiError) {
         statusCode = error.statusCode;
         success = false;
@@ -1020,7 +1049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (userId && apiCallMade) {
         try {
           await batchedApiLogger.logApiUsage(userId, {
-            apiName: 'barcode_lookup',
+            apiName: source,
             endpoint: 'product',
             queryParams: `barcode=${barcode}`,
             statusCode,
@@ -1060,24 +1089,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       apiCallMade = true;
       const products = await getBarcodeLookupBatch(barcodes);
       
-      // Transform products to our standard format
+      // Track which barcodes were found
+      const foundBarcodes = new Set(products.map(p => p.barcode_number));
+      const notFoundBarcodes = barcodes.filter(bc => !foundBarcodes.has(bc));
+      
+      // Transform found products to our standard format
       const formattedProducts = products.map(product => ({
         code: product.barcode_number || '',
         name: product.title || 'Unknown Product',
         brand: product.brand || '',
         imageUrl: extractImageUrl(product),
         description: product.description,
-        raw: product // Include raw data for debugging
+        source: 'barcode_lookup'
       }));
+
+      // If some barcodes weren't found, try Open Food Facts
+      if (notFoundBarcodes.length > 0) {
+        console.log(`${notFoundBarcodes.length} products not in Barcode Lookup, trying Open Food Facts...`);
+        const offProducts = await getOpenFoodFactsBatch(notFoundBarcodes);
+        
+        for (const offProduct of offProducts) {
+          const productInfo = extractProductInfo(offProduct);
+          if (productInfo) {
+            formattedProducts.push({
+              ...productInfo,
+              source: 'openfoodfacts'
+            });
+          }
+        }
+      }
 
       res.json({ 
         products: formattedProducts, 
         count: formattedProducts.length,
         requested: barcodes.length,
-        apiCallsSaved: barcodes.length > 1 ? barcodes.length - 1 : 0
+        apiCallsSaved: barcodes.length > 1 ? barcodes.length - 1 : 0,
+        sources: {
+          barcode_lookup: products.length,
+          openfoodfacts: formattedProducts.length - products.length
+        }
       });
     } catch (error: any) {
-      console.error("Barcode Lookup batch error:", error);
+      console.error("Barcode batch lookup error:", error);
       if (error instanceof ApiError) {
         statusCode = error.statusCode;
         success = false;

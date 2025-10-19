@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 // Common test barcodes for groceries and household items
 const COMMON_TEST_BARCODES = {
   single: [
+    { code: '07827404', name: 'Sunkist Orange Soda (Your can!)' },
     { code: '049000028904', name: 'Coca-Cola Classic 12oz' },
     { code: '036000291452', name: 'Honey Nut Cheerios' },
     { code: '041380000000', name: 'Lay\'s Classic Potato Chips' },
@@ -19,6 +20,7 @@ const COMMON_TEST_BARCODES = {
     { code: '041000326165', name: 'Dove Beauty Bar Soap' },
   ],
   batch: [
+    { code: '07827404', name: 'Sunkist Orange Soda' },
     { code: '049000028904', name: 'Coca-Cola Classic 12oz' },
     { code: '036000291452', name: 'Honey Nut Cheerios' },
     { code: '041380000000', name: 'Lay\'s Classic Potato Chips' },
@@ -28,7 +30,6 @@ const COMMON_TEST_BARCODES = {
     { code: '014100072331', name: 'Pepsi Cola 12oz Can' },
     { code: '030000064405', name: 'Quaker Instant Oatmeal' },
     { code: '041318110029', name: 'Campbell\'s Tomato Soup' },
-    { code: '073561997004', name: 'Bounty Paper Towels' },
   ]
 };
 
@@ -475,7 +476,14 @@ export default function CameraTest() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <p className="font-medium text-green-600 dark:text-green-400">Product Found!</p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-green-600 dark:text-green-400">Product Found!</p>
+                    {singleApiResult.source && (
+                      <Badge variant={singleApiResult.source === 'barcode_lookup' ? 'default' : 'secondary'}>
+                        {singleApiResult.source === 'barcode_lookup' ? 'Barcode Lookup' : 'Open Food Facts'}
+                      </Badge>
+                    )}
+                  </div>
                   <div className="text-sm space-y-1">
                     <p><strong>Name:</strong> {singleApiResult.name}</p>
                     <p><strong>Brand:</strong> {singleApiResult.brand || 'N/A'}</p>
@@ -587,6 +595,14 @@ export default function CameraTest() {
                     </div>
                   </div>
 
+                  {batchApiResult.sources && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">Sources:</span>
+                      <Badge>{batchApiResult.sources.barcode_lookup} from Barcode Lookup</Badge>
+                      <Badge variant="secondary">{batchApiResult.sources.openfoodfacts} from Open Food Facts</Badge>
+                    </div>
+                  )}
+
                   {batchApiResult.products && batchApiResult.products.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Found Products:</p>
@@ -601,12 +617,19 @@ export default function CameraTest() {
                               <span>Brand: {product.brand || 'N/A'}</span>
                               <span>Code: {product.code}</span>
                             </div>
-                            {product.imageUrl && (
-                              <div className="pl-8 flex items-center gap-1 text-green-600 dark:text-green-400">
-                                <Image className="w-3 h-3" />
-                                <span>Has image</span>
-                              </div>
-                            )}
+                            <div className="pl-8 flex items-center gap-2">
+                              {product.imageUrl && (
+                                <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                  <Image className="w-3 h-3" />
+                                  <span>Has image</span>
+                                </div>
+                              )}
+                              {product.source && (
+                                <Badge variant={product.source === 'barcode_lookup' ? 'outline' : 'secondary'} className="text-xs">
+                                  {product.source === 'barcode_lookup' ? 'BL' : 'OFF'}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
