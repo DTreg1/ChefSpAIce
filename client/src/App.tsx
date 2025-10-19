@@ -57,6 +57,8 @@ function AuthenticatedRouter() {
         <Route path="/meal-planner" component={MealPlanner} />
         <Route path="/shopping-list" component={ShoppingList} />
         <Route path="/appliances" component={Appliances} />
+        <Route path="/inventory" component={Storage} />
+        <Route path="/storage/all" component={Storage} />
         <Route path="/storage/:location" component={Storage} />
         <Route path="/food-groups/:category" component={FoodGroups} />
         <Route path="/food-groups" component={FoodGroups} />
