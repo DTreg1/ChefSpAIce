@@ -985,9 +985,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     let apiCallMade = false;
     let statusCode = 200;
     let success = true;
-    let source = 'barcode_lookup';
+    let source = 'cache';
+    let cacheHit = false;
     
     try {
+      // First, check cache
+      const { checkCache, saveToCache, formatCachedProduct } = await import('./cache');
+      const cacheResult = await checkCache(barcode);
+      
+      if (cacheResult.found && !cacheResult.expired) {
+        // Cache hit - return cached product
+        cacheHit = true;
+        const cachedProduct = cacheResult.product!;
+        
+        if (cachedProduct.lookupFailed) {
+          // This was a failed lookup that we cached
+          statusCode = 404;
+          success = false;
+          return res.status(404).json({ 
+            error: "Product not found in any database",
+            cached: true 
+          });
+        }
+        
+        // Return cached successful product
+        const formattedProduct = formatCachedProduct(cachedProduct);
+        return res.json({
+          ...formattedProduct,
+          cached: true,
+          cacheInfo: {
+            cachedAt: cachedProduct.cachedAt,
+            expiresAt: cachedProduct.expiresAt
+          }
+        });
+      }
+      
+      // Cache miss or expired - proceed with API calls
       // Check rate limits before making API call
       await checkRateLimitBeforeCall();
       
@@ -996,13 +1029,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (product) {
         // Found in Barcode Lookup
-        res.json({
+        source = 'barcode_lookup';
+        const productInfo = {
           code: product.barcode_number || '',
           name: product.title || 'Unknown Product',
           brand: product.brand || '',
           imageUrl: extractImageUrl(product),
           description: product.description,
-          source: 'barcode_lookup'
+          source: 'barcode_lookup' as const
+        };
+        
+        // Save to cache
+        await saveToCache(productInfo, false);
+        
+        res.json({
+          ...productInfo,
+          cached: false
         });
       } else {
         // Not found in Barcode Lookup, try Open Food Facts as fallback
@@ -1013,25 +1055,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (offProduct) {
           const productInfo = extractProductInfo(offProduct);
           if (productInfo) {
+            // Save successful lookup to cache
+            await saveToCache({
+              ...productInfo,
+              source: 'openfoodfacts'
+            }, false);
+            
             res.json({
-              code: productInfo.code,
-              name: productInfo.name,
-              brand: productInfo.brand,
-              imageUrl: productInfo.imageUrl,
-              description: productInfo.description,
-              source: 'openfoodfacts',
+              ...productInfo,
+              cached: false,
               nutrition: productInfo.nutrition,
               categories: productInfo.categories
             });
           } else {
+            // Save failed lookup to cache
+            await saveToCache({ 
+              code: barcode, 
+              name: 'Not found',
+              source: 'openfoodfacts' 
+            }, true);
+            
             statusCode = 404;
             success = false;
-            return res.status(404).json({ error: "Product not found in any database" });
+            return res.status(404).json({ 
+              error: "Product not found in any database",
+              cached: false 
+            });
           }
         } else {
+          // Save failed lookup to cache
+          await saveToCache({ 
+            code: barcode, 
+            name: 'Not found',
+            source: 'openfoodfacts' 
+          }, true);
+          
           statusCode = 404;
           success = false;
-          return res.status(404).json({ error: "Product not found in any database" });
+          return res.status(404).json({ 
+            error: "Product not found in any database",
+            cached: false 
+          });
         }
       }
     } catch (error: any) {

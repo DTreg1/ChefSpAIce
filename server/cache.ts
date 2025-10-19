@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { barcodeProducts } from "@/schema";
+import { barcodeProducts } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import type { BarcodeProduct, InsertBarcodeProduct } from "@/schema";
+import type { BarcodeProduct, InsertBarcodeProduct } from "@shared/schema";
 
 // Cache durations in milliseconds
 const CACHE_SUCCESS_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days for successful lookups
@@ -80,21 +80,21 @@ export async function saveToCache(productInfo: ProductInfo, lookupFailed: boolea
     const now = new Date();
     const expiresAt = new Date(now.getTime() + (lookupFailed ? CACHE_FAILURE_DURATION : CACHE_SUCCESS_DURATION));
     
-    const cacheData: InsertBarcodeProduct = {
+    const cacheData = {
       barcodeNumber: productInfo.code,
       title: lookupFailed ? 'Product not found' : productInfo.name,
-      brand: productInfo.brand,
-      description: productInfo.description,
-      images: productInfo.imageUrl ? [productInfo.imageUrl] : undefined,
+      brand: productInfo.brand || null,
+      description: productInfo.description || null,
+      images: productInfo.imageUrl ? [productInfo.imageUrl] : null,
       cachedAt: now,
       expiresAt: expiresAt,
       lookupFailed: lookupFailed,
-      source: productInfo.source || undefined,
+      source: productInfo.source || null,
     };
     
     // Upsert the cache entry
     await db.insert(barcodeProducts)
-      .values(cacheData)
+      .values([cacheData])
       .onConflictDoUpdate({
         target: barcodeProducts.barcodeNumber,
         set: {
