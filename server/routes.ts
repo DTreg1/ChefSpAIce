@@ -1291,6 +1291,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/barcodelookup/cache-stats", isAuthenticated, async (req, res) => {
+    try {
+      const { getCacheStatistics } = await import('./cache');
+      const stats = await getCacheStatistics();
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Cache statistics error:", error);
+      res.status(500).json({ error: "Failed to fetch cache statistics" });
+    }
+  });
+
   app.get("/api/barcodelookup/rate-limits", isAuthenticated, async (req, res) => {
     try {
       const limits = await getBarcodeLookupRateLimits();
