@@ -323,16 +323,14 @@ export function AppSidebar() {
                         </SidebarMenuSubItem>
                         {foodCategories.map((category) => {
                           const categoryItems = groupedItems[category];
-                          const categoryPath = `/food-groups?category=${encodeURIComponent(category)}`;
+                          const categoryPath = `/food-groups/${category.toLowerCase()}`;
                           const CategoryIcon = getCategoryIcon(category);
                           const displayName = shortenCategoryName(category);
                           return (
                             <SidebarMenuSubItem key={category}>
                               <SidebarMenuSubButton
                                 asChild
-                                isActive={location.includes(
-                                  `category=${encodeURIComponent(category)}`,
-                                )}
+                                isActive={location === categoryPath}
                               >
                                 <Link
                                   href={categoryPath}

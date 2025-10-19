@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,17 +8,26 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { FoodCard } from "@/components/food-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, ChevronRight, Package } from "lucide-react";
+import { ChevronDown, ChevronRight, Package, Plus } from "lucide-react";
 import { getCategoryIcon } from "@/lib/categoryIcons";
-import type { FoodItem, StorageLocation } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { FoodCardSkeletonGrid } from "@/components/food-card-skeleton";
+import { AddFoodDialog } from "@/components/add-food-dialog";
+import { RecipeGenerator } from "@/components/recipe-generator";
+import type { FoodItem, StorageLocation, Recipe } from "@shared/schema";
 
 export default function FoodGroups() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
-  const [location] = useLocation();
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [location, setLocation] = useLocation();
+  const params = useParams<{ category?: string }>();
   
-  // Parse category from URL query params using React Router location
-  const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
-  const selectedCategory = urlParams.get('category');
+  // Parse category from URL path parameter - convert from url format (lowercase with dashes) to proper case
+  const selectedCategory = params.category ? 
+    params.category.split('-').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ') : null;
   
   // Auto-expand selected category when navigating from sidebar
   useEffect(() => {
@@ -62,20 +71,69 @@ export default function FoodGroups() {
   };
 
   const isLoading = itemsLoading || locationsLoading;
+  
+  const handleRecipeGenerated = (recipe: Recipe) => {
+    // Navigate to chat to see the recipe
+    setLocation("/");
+  };
 
   return (
-    <div className="h-full overflow-y-auto mobile-scroll">
-      <div className="max-w-6xl mx-auto p-4 md:p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            {selectedCategory ? `${selectedCategory} Items` : 'Food Groups Dashboard'}
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground">
-            {selectedCategory 
-              ? `Viewing items in ${selectedCategory} • ${groupedItems[selectedCategory]?.length || 0} items`
-              : `Your inventory organized by USDA food categories • ${totalItems} total items`}
-          </p>
-        </div>
+    <>
+      <AddFoodDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <div className="h-full overflow-y-auto bg-muted mobile-scroll">
+        <div className="max-w-6xl mx-auto p-4 md:p-6">
+          {/* If viewing a specific category, show category filters */}
+          {selectedCategory && (
+            <div className="mb-6">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/food-groups">
+                  <Badge
+                    variant="outline"
+                    className="cursor-pointer hover-elevate active-elevate-2"
+                    data-testid="badge-category-all"
+                  >
+                    All Categories
+                  </Badge>
+                </Link>
+                {['Fruits', 'Vegetables', 'Grains', 'Protein', 'Dairy'].map((category) => (
+                  <Link key={category} href={`/food-groups/${category.toLowerCase()}`}>
+                    <Badge
+                      variant={selectedCategory === category ? "default" : "outline"}
+                      className="cursor-pointer hover-elevate active-elevate-2"
+                      data-testid={`badge-category-${category.toLowerCase()}`}
+                    >
+                      {category}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground capitalize mb-2">
+                {selectedCategory ? `${selectedCategory}` : 'Food Groups'}
+              </h1>
+              <p className="text-sm md:text-base text-muted-foreground">
+                {selectedCategory 
+                  ? `${groupedItems[selectedCategory]?.length || 0} item${groupedItems[selectedCategory]?.length !== 1 ? 's' : ''} in this category`
+                  : `Your inventory organized by food categories • ${totalItems} total items`}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
+              <Button 
+                onClick={() => setAddDialogOpen(true)} 
+                className="touch-target"
+                data-testid="button-add-item-page"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Add Item</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+            </div>
+          </div>
 
         {isLoading ? (
           <div className="space-y-4">
@@ -161,7 +219,8 @@ export default function FoodGroups() {
             })}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
