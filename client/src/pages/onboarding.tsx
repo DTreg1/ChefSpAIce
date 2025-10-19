@@ -155,25 +155,6 @@ export default function Onboarding() {
     },
   });
 
-  const skipMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("PUT", "/api/user/preferences", {
-        hasCompletedOnboarding: true,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
-      window.location.href = "/";
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to skip onboarding. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const toggleStorageArea = (area: string) => {
     const newSelected = selectedStorageAreas.includes(area)
       ? selectedStorageAreas.filter(s => s !== area)
@@ -246,7 +227,7 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-black/80 p-4 py-8">
       <div className="max-w-3xl mx-auto">
-        <Card data-testid="card-onboarding">
+        <Card data-testid="card-onboarding" animate={false}>
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
               <ChefHat className="w-16 h-16 text-primary" />

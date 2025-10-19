@@ -54,6 +54,7 @@ import { Html5Qrcode } from "html5-qrcode";
 import type { StorageLocation } from "@shared/schema";
 import { format, addDays } from "date-fns";
 import { SuccessAnimation } from "@/components/success-animation";
+import { BarcodeScannerDialog } from "@/components/barcode-scanner-dialog";
 
 interface FoodNutrient {
   nutrientId: number;
@@ -140,6 +141,7 @@ export default function FdcSearch() {
   const [selectedFood, setSelectedFood] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [showScannerDialog, setShowScannerDialog] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -163,7 +165,7 @@ export default function FdcSearch() {
           setCurrentQuery(decodedText);
           setCurrentPage(1);
           stopBarcodeScanner();
-          setShowScannerDialog(false);
+          setBarcodeScannerOpen(false);
           toast({
             title: "Barcode scanned",
             description: `Searching for UPC: ${decodedText}`,
@@ -182,7 +184,7 @@ export default function FdcSearch() {
         description: err.message || "Failed to access camera",
         variant: "destructive"
       });
-      setShowScannerDialog(false);
+      setBarcodeScannerOpen(false);
     }
   };
 
@@ -463,7 +465,7 @@ export default function FdcSearch() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
-      <Card className="mb-6">
+      <Card className="mb-6" animate={false}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="w-6 h-6" />
@@ -495,7 +497,7 @@ export default function FdcSearch() {
               type="button"
               variant="outline"
               size="icon"
-              onClick={() => setShowScannerDialog(true)}
+              onClick={() => setBarcodeScannerOpen(true)}
               data-testid="button-scan-barcode"
             >
               <ScanLine className="w-4 h-4" />
@@ -1018,43 +1020,10 @@ export default function FdcSearch() {
       {showSuccess && <SuccessAnimation />}
       
       {/* Barcode Scanner Dialog */}
-      <Dialog open={showScannerDialog} onOpenChange={setShowScannerDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Scan Barcode</DialogTitle>
-            <DialogDescription>
-              Position the barcode within the camera view to scan
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="relative">
-            <div id="barcode-scanner" className="w-full min-h-[300px]" data-testid="barcode-scanner" />
-            
-            {isScanning && (
-              <div className="absolute top-2 right-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    stopBarcodeScanner();
-                    setShowScannerDialog(false);
-                  }}
-                  data-testid="button-close-scanner"
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            )}
-            
-            {!isScanning && (
-              <div className="flex items-center justify-center h-[300px] bg-muted rounded-md">
-                <p className="text-sm text-muted-foreground">Initializing camera...</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <BarcodeScannerDialog
+        open={barcodeScannerOpen}
+        onOpenChange={setBarcodeScannerOpen}
+      />
     </div>
   );
 }
