@@ -37,8 +37,8 @@ export async function seedCommonFoodItems(forceUpdate = false) {
     } else {
       // Add new item from mapping
       allItems.set(name, {
-        displayName: name,
         ...mappingData,
+        displayName: name,  // Override any displayName from mappingData
       });
     }
   });
@@ -99,7 +99,7 @@ export async function seedCommonFoodItems(forceUpdate = false) {
           } : null,
           brandOwner: usdaData?.brandOwner || null,
           ingredients: usdaData?.ingredients || null,
-          servingSize: usdaData?.servingSize || null,
+          servingSize: usdaData?.servingSize ? String(usdaData.servingSize) : null,
           servingSizeUnit: usdaData?.servingSizeUnit || null,
           dataSource: usdaData ? 
             (itemData.upc ? 'usda_upc' : 
