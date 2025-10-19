@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScanLine, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface BarcodeScannerProps {
   onScanSuccess: (barcode: string) => void;
@@ -22,8 +23,6 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
 
   const startScanning = async () => {
     try {
-      // Dynamically import Html5Qrcode when needed
-      const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode("barcode-reader");
       scannerRef.current = scanner;
 
@@ -50,8 +49,13 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
       setIsScanning(true);
     } catch (err: any) {
       console.error("Scanner start error:", err);
+      // Only try to clear if scanner was actually created
       if (scannerRef.current) {
-        scannerRef.current.clear();
+        try {
+          scannerRef.current.clear();
+        } catch (clearErr) {
+          console.error("Error clearing scanner:", clearErr);
+        }
         scannerRef.current = null;
       }
       toast({
@@ -116,7 +120,7 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
           <div className="relative">
             <div
               id="barcode-reader"
-              className="w-full rounded-md overflow-hidden"
+              className="w-full min-h-[300px] rounded-md overflow-hidden bg-black"
               data-testid="barcode-reader"
             />
             {isScanning && (
