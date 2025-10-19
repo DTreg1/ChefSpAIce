@@ -432,78 +432,50 @@ export default function Onboarding() {
               </div>
 
               <div className="space-y-4">
-                <FormLabel>Quick-Add Common Items (Optional)</FormLabel>
+                <FormLabel>Set Up Your Kitchen Inventory</FormLabel>
                 <FormDescription>
-                  Select items you already have to save time setting up your inventory. You can add more items later.
+                  We've pre-selected common items. Uncheck anything you don't have. You can always add more items later.
                 </FormDescription>
                 
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Pantry Staples</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {commonFoodItems.filter(item => item.storage === "Pantry").map((item) => (
-                        <Badge
-                          key={item.name}
-                          variant={selectedCommonItems.includes(item.name) ? "default" : "outline"}
-                          className="cursor-pointer hover-elevate active-elevate-2"
-                          onClick={() => toggleCommonItem(item.name)}
-                          data-testid={`badge-common-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-                        >
-                          {item.name}
-                          {selectedCommonItems.includes(item.name) && (
-                            <X className="w-3 h-3 ml-1" />
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
+                {itemsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
                   </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Refrigerator Items</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {commonFoodItems.filter(item => item.storage === "Fridge").map((item) => (
-                        <Badge
-                          key={item.name}
-                          variant={selectedCommonItems.includes(item.name) ? "default" : "outline"}
-                          className="cursor-pointer hover-elevate active-elevate-2"
-                          onClick={() => toggleCommonItem(item.name)}
-                          data-testid={`badge-common-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-                        >
-                          {item.name}
-                          {selectedCommonItems.includes(item.name) && (
-                            <X className="w-3 h-3 ml-1" />
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
+                ) : commonItemsData?.categories ? (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {Object.entries(commonItemsData.categories as Record<string, CommonItem[]>).map(([category, items]) => (
+                      <div key={category}>
+                        <h4 className="text-sm font-medium mb-2">{category}</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {items.map((item) => (
+                            <Badge
+                              key={item.displayName}
+                              variant={selectedCommonItems.includes(item.displayName) ? "default" : "outline"}
+                              className="cursor-pointer hover-elevate active-elevate-2"
+                              onClick={() => toggleCommonItem(item.displayName)}
+                              data-testid={`badge-common-${item.displayName.toLowerCase().replace(/\s+/g, '-')}`}
+                            >
+                              {item.displayName}
+                              {selectedCommonItems.includes(item.displayName) && (
+                                <X className="w-3 h-3 ml-1" />
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Freezer Items</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {commonFoodItems.filter(item => item.storage === "Freezer").map((item) => (
-                        <Badge
-                          key={item.name}
-                          variant={selectedCommonItems.includes(item.name) ? "default" : "outline"}
-                          className="cursor-pointer hover-elevate active-elevate-2"
-                          onClick={() => toggleCommonItem(item.name)}
-                          data-testid={`badge-common-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-                        >
-                          {item.name}
-                          {selectedCommonItems.includes(item.name) && (
-                            <X className="w-3 h-3 ml-1" />
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    No items available
                   </div>
+                )}
 
-                  {selectedCommonItems.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      {selectedCommonItems.length} item{selectedCommonItems.length !== 1 ? 's' : ''} selected
-                    </p>
-                  )}
-                </div>
+                {selectedCommonItems.length > 0 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {selectedCommonItems.length} item{selectedCommonItems.length !== 1 ? 's' : ''} selected
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
