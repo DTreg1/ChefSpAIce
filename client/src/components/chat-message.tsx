@@ -2,6 +2,7 @@ import { ChefHat, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DOMPurify from "isomorphic-dompurify";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { VoiceControls } from "@/components/voice-controls";
 
 interface ChatMessageProps {
   role: "user" | "assistant" | "system";
@@ -79,14 +80,19 @@ export function ChatMessage({
 
         {children && <div className="w-full mt-1">{children}</div>}
 
-        {timestamp && (
-          <span
-            className="text-xs text-muted-foreground mt-1"
-            data-testid="text-timestamp"
-          >
-            {timestamp}
-          </span>
-        )}
+        <div className="flex items-center gap-2 mt-1">
+          {!isUser && (
+            <VoiceControls text={content} className="h-6 w-6" />
+          )}
+          {timestamp && (
+            <span
+              className="text-xs text-muted-foreground"
+              data-testid="text-timestamp"
+            >
+              {timestamp}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

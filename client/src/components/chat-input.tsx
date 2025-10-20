@@ -135,6 +135,88 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Voice recognition state and functions
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const startVoiceRecognition = () => {
+    // Check if browser supports speech recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      toast({
+        title: "Not supported",
+        description: "Voice recognition is not supported in your browser. Please use Chrome or Edge.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!recognitionRef.current) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+        toast({
+          title: "Listening...",
+          description: "Speak now. Click the audio button again to stop.",
+        });
+      };
+
+      recognitionRef.current.onresult = (event: any) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          setMessage((prev) => prev + finalTranscript);
+        }
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        toast({
+          title: "Voice recognition error",
+          description: event.error === 'not-allowed' 
+            ? "Microphone access denied. Please allow microphone access and try again."
+            : `Error: ${event.error}`,
+          variant: "destructive",
+        });
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+    }
+  };
+
+  // Cleanup speech recognition on unmount
+  const stopVoiceRecognition = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
   return (
     <div className="border-t border-border bg-gradient-to-br p-4">
       {/* Hidden file inputs */}
@@ -232,9 +314,11 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
           {/* New button for audio input */}
           <Button
             size="icon"
-            variant="outline"
-            className="flex-shrink-0 rounded-full w-10 h-10"
-            data-testid="button-attach"
+            variant={isListening ? "default" : "outline"}
+            className={`flex-shrink-0 rounded-full w-10 h-10 ${isListening ? 'animate-pulse' : ''}`}
+            onClick={startVoiceRecognition}
+            disabled={disabled || isUploading}
+            data-testid="button-voice-input"
           >
             <AudioLines className="w-5 h-5" />
           </Button>
