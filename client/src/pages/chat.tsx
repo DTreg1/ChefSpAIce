@@ -23,7 +23,6 @@ export default function Chat() {
   const [streamingContent, setStreamingContent] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [wasVoiceInput, setWasVoiceInput] = useState(false);
-  const { voiceState } = useVoiceConversation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamingMessageRef = useRef<string>("");
@@ -247,14 +246,6 @@ export default function Chat() {
           <div>
             <h2 className="text-lg font-semibold text-foreground">Chat with Chef</h2>
             <p className="text-sm text-muted-foreground">Get recipe suggestions and manage your inventory</p>
-            {voiceState.isVoiceMode && (
-              <VoiceActivityIndicator
-                isListening={voiceState.isListening}
-                isSpeaking={voiceState.isSpeaking}
-                isProcessing={voiceState.isProcessing}
-                className="mt-2"
-              />
-            )}
           </div>
           <div className="flex gap-2">
             {messages.length > 0 && (
