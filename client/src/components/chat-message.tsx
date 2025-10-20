@@ -11,6 +11,7 @@ interface ChatMessageProps {
   children?: React.ReactNode;
   userProfileImageUrl?: string;
   userInitials?: string;
+  autoPlayVoice?: boolean;
 }
 
 export function ChatMessage({
@@ -20,6 +21,7 @@ export function ChatMessage({
   children,
   userProfileImageUrl,
   userInitials,
+  autoPlayVoice = false,
 }: ChatMessageProps) {
   const isUser = role === "user";
   const isSystem = role === "system";
@@ -82,7 +84,7 @@ export function ChatMessage({
 
         <div className="flex items-center gap-2 mt-1">
           {!isUser && (
-            <VoiceControls text={content} className="h-6 w-6" />
+            <VoiceControls text={content} autoPlay={autoPlayVoice} className="h-6 w-6" />
           )}
           {timestamp && (
             <span

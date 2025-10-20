@@ -1,8 +1,23 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Paperclip, AudioLines, Camera, X } from "lucide-react";
+import { Send, Paperclip, Camera, X, Mic, MicOff, Volume2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { VoiceState } from "@/hooks/useVoiceConversation";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 interface Attachment {
   type: 'image' | 'audio' | 'file';
@@ -16,15 +31,47 @@ interface ChatInputProps {
   onSend: (message: string, attachments?: Attachment[]) => void;
   disabled?: boolean;
   showFeedbackWidget?: boolean;
+  voiceState?: VoiceState;
+  voiceTranscript?: string;
+  onVoiceModeToggle?: () => void;
+  onStopSpeaking?: () => void;
+  voices?: SpeechSynthesisVoice[];
+  selectedVoice?: SpeechSynthesisVoice | null;
+  onVoiceChange?: (voice: SpeechSynthesisVoice) => void;
+  speechRate?: number;
+  onSpeechRateChange?: (rate: number) => void;
+  speechPitch?: number;
+  onSpeechPitchChange?: (pitch: number) => void;
 }
 
-export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
+export function ChatInput({ 
+  onSend, 
+  disabled = false,
+  voiceState,
+  voiceTranscript,
+  onVoiceModeToggle,
+  onStopSpeaking,
+  voices = [],
+  selectedVoice,
+  onVoiceChange,
+  speechRate = 1,
+  onSpeechRateChange,
+  speechPitch = 1,
+  onSpeechPitchChange
+}: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Update message with voice transcript when in voice mode
+  useEffect(() => {
+    if (voiceState?.isVoiceMode && voiceTranscript) {
+      setMessage(voiceTranscript);
+    }
+  }, [voiceTranscript, voiceState?.isVoiceMode]);
 
   const handleSend = () => {
     if ((message.trim() || attachments.length > 0) && !disabled && !isUploading) {
@@ -135,90 +182,53 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Voice recognition state and functions
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
-
-  const startVoiceRecognition = () => {
-    // Check if browser supports speech recognition
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      toast({
-        title: "Not supported",
-        description: "Voice recognition is not supported in your browser. Please use Chrome or Edge.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!recognitionRef.current) {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
-
-      recognitionRef.current.onstart = () => {
-        setIsListening(true);
-        toast({
-          title: "Listening...",
-          description: "Speak now. Click the audio button again to stop.",
-        });
-      };
-
-      recognitionRef.current.onresult = (event: any) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-
-        if (finalTranscript) {
-          setMessage((prev) => prev + finalTranscript);
-        }
-      };
-
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        toast({
-          title: "Voice recognition error",
-          description: event.error === 'not-allowed' 
-            ? "Microphone access denied. Please allow microphone access and try again."
-            : `Error: ${event.error}`,
-          variant: "destructive",
-        });
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      recognitionRef.current.start();
-    }
-  };
-
-  // Cleanup speech recognition on unmount
-  const stopVoiceRecognition = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-  };
+  // Get voice mode status
+  const isVoiceMode = voiceState?.isVoiceMode || false;
+  const isListening = voiceState?.isListening || false;
+  const isSpeaking = voiceState?.isSpeaking || false;
+  const isProcessing = voiceState?.isProcessing || false;
 
   return (
     <div className="border-t border-border bg-gradient-to-br p-4">
+      {/* Voice Mode Status Bar */}
+      {isVoiceMode && (
+        <div className="max-w-4xl mx-auto mb-3 flex items-center justify-between bg-accent/50 rounded-lg px-4 py-2">
+          <div className="flex items-center gap-2">
+            {isListening && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-sm font-medium">Listening...</span>
+              </div>
+            )}
+            {isSpeaking && (
+              <div className="flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-green-500 animate-pulse" />
+                <span className="text-sm font-medium">Speaking...</span>
+              </div>
+            )}
+            {isProcessing && !isSpeaking && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+                <span className="text-sm font-medium">Processing...</span>
+              </div>
+            )}
+            {!isListening && !isSpeaking && !isProcessing && (
+              <span className="text-sm text-muted-foreground">Voice mode active - Start speaking</span>
+            )}
+          </div>
+          {isSpeaking && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onStopSpeaking}
+              data-testid="button-stop-speaking"
+            >
+              Stop Speaking
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
@@ -268,7 +278,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
       
       <div className="max-w-4xl mx-auto flex gap-2">
         <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
-          {/* New button for attaching files */}
+          {/* Attachment button */}
           <Button
             size="icon"
             variant="outline"
@@ -279,7 +289,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
           >
             <Paperclip className="w-5 h-5" />
           </Button>
-          {/* New button for taking photos */}
+          {/* Camera button */}
           <Button
             size="icon"
             variant="outline"
@@ -291,37 +301,127 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
             <Camera className="w-5 h-5" />
           </Button>
         </div>
+        
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"
+          placeholder={isVoiceMode ? "Speak or type your message..." : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"}
           className="resize-y text-sm min-h-[100px] max-h-[300px]"
-          disabled={disabled}
+          disabled={disabled || isVoiceMode}
           data-testid="input-chat-message"
         />
+        
         <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
+          {/* Send button */}
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={(!message.trim() && attachments.length === 0) || disabled || isUploading}
+            disabled={(!message.trim() && attachments.length === 0) || disabled || isUploading || isVoiceMode}
             className="flex-shrink-0 rounded-full w-10 h-10"
             data-testid="button-send-message"
           >
             <Send className="w-5 h-5" />
           </Button>
 
-          {/* New button for audio input */}
+          {/* Voice Mode Toggle Button */}
           <Button
             size="icon"
-            variant={isListening ? "default" : "outline"}
+            variant={isVoiceMode ? "default" : "outline"}
             className={`flex-shrink-0 rounded-full w-10 h-10 ${isListening ? 'animate-pulse' : ''}`}
-            onClick={startVoiceRecognition}
+            onClick={onVoiceModeToggle}
             disabled={disabled || isUploading}
-            data-testid="button-voice-input"
+            data-testid="button-voice-mode"
           >
-            <AudioLines className="w-5 h-5" />
+            {isVoiceMode ? (
+              <MicOff className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
           </Button>
+
+          {/* Voice Settings Button */}
+          {voices.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="flex-shrink-0 rounded-full w-10 h-10"
+                  data-testid="button-voice-settings"
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Voice Settings</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Configure text-to-speech preferences
+                    </p>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    {/* Voice Selection */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="voice">Voice</Label>
+                      <Select
+                        value={selectedVoice?.name || ""}
+                        onValueChange={(value: string) => {
+                          const voice = voices.find((v: SpeechSynthesisVoice) => v.name === value);
+                          if (voice && onVoiceChange) {
+                            onVoiceChange(voice);
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="voice">
+                          <SelectValue placeholder="Select a voice" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {voices.map((voice: SpeechSynthesisVoice) => (
+                            <SelectItem key={voice.name} value={voice.name}>
+                              {voice.name} ({voice.lang})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Speech Rate */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="speech-rate">
+                        Speed: {speechRate.toFixed(1)}x
+                      </Label>
+                      <Slider
+                        id="speech-rate"
+                        min={0.5}
+                        max={2}
+                        step={0.1}
+                        value={[speechRate]}
+                        onValueChange={([value]: number[]) => onSpeechRateChange?.(value)}
+                      />
+                    </div>
+
+                    {/* Speech Pitch */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="speech-pitch">
+                        Pitch: {speechPitch.toFixed(1)}
+                      </Label>
+                      <Slider
+                        id="speech-pitch"
+                        min={0.5}
+                        max={2}
+                        step={0.1}
+                        value={[speechPitch]}
+                        onValueChange={([value]: number[]) => onSpeechPitchChange?.(value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </div>
     </div>

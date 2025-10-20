@@ -9,10 +9,12 @@ import { RecipeCustomizationDialog } from "@/components/recipe-customization-dia
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
 import { FeedbackButtons } from "@/components/feedback-buttons";
+import { VoiceActivityIndicator } from "@/components/voice-activity-indicator";
 import { Button } from "@/components/ui/button";
 import { ChefHat, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useVoiceConversation } from "@/hooks/useVoiceConversation";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
 
 export default function Chat() {
@@ -20,8 +22,10 @@ export default function Chat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
+  const [wasVoiceInput, setWasVoiceInput] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const streamingMessageRef = useRef<string>("");
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -121,7 +125,12 @@ export default function Chat() {
     name?: string;
     size?: number;
     mimeType?: string;
-  }>) => {
+  }>, wasVoice?: boolean) => {
+    // Set whether this was voice input for auto-playing response
+    if (wasVoice) {
+      setWasVoiceInput(true);
+    }
+
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
       userId: user?.id || "",
@@ -162,6 +171,7 @@ export default function Chat() {
       }
 
       let accumulated = "";
+      streamingMessageRef.current = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -188,6 +198,11 @@ export default function Chat() {
               setIsStreaming(false);
               abortControllerRef.current = null;
               
+              // Speak the response if in voice mode
+              if (voiceState.isVoiceMode && accumulated) {
+                speak(accumulated);
+              }
+              
               // Invalidate chat messages query to refetch with saved messages
               await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
               return;
@@ -197,6 +212,7 @@ export default function Chat() {
               const parsed = JSON.parse(data);
               if (parsed.content) {
                 accumulated += parsed.content;
+                streamingMessageRef.current = accumulated;
                 setStreamingContent(accumulated);
               }
             } catch (e) {
@@ -323,7 +339,11 @@ export default function Chat() {
       </div>
 
       <div  className="shadow-2xl">
-        <ChatInput onSend={handleSendMessage} disabled={isStreaming} showFeedbackWidget={true} />
+        <ChatInput 
+          onSend={handleSendMessage} 
+          disabled={isStreaming} 
+          showFeedbackWidget={true}
+        />
       </div>
     </div>
   );
