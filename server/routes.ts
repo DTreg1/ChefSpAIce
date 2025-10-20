@@ -2748,7 +2748,15 @@ Respond ONLY with a valid JSON object:
   app.post("/api/shopping-list/items", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const newItem = await storage.createShoppingListItem(userId, req.body);
+      // Map 'name' field to 'ingredient' to match database schema
+      const itemData = {
+        ...req.body,
+        ingredient: req.body.ingredient || req.body.name, // Support both field names
+      };
+      // Remove 'name' field if it exists to avoid confusion
+      delete itemData.name;
+      
+      const newItem = await storage.createShoppingListItem(userId, itemData);
       res.json(newItem);
     } catch (error) {
       console.error("Error creating shopping list item:", error);
