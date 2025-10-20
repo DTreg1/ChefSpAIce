@@ -1318,12 +1318,28 @@ export class DatabaseStorage implements IStorage {
     message: Omit<InsertChatMessage, "userId">,
   ): Promise<ChatMessage> {
     try {
+      // Ensure attachments are properly typed
+      const attachments: Array<{
+        type: 'image' | 'audio' | 'file';
+        url: string;
+        name?: string;
+        size?: number;
+        mimeType?: string;
+      }> = message.attachments ? 
+        (message.attachments as any[]).map((att: any) => ({
+          type: (att.type as 'image' | 'audio' | 'file') || 'file',
+          url: att.url || '',
+          name: att.name ? String(att.name) : undefined,
+          size: att.size ? Number(att.size) : undefined,
+          mimeType: att.mimeType ? String(att.mimeType) : undefined,
+        })) : [];
+      
       const messageData = {
         userId,
         role: message.role,
         content: message.content,
         metadata: message.metadata,
-        attachments: message.attachments || [],
+        attachments,
       };
       
       const [newMessage] = await db

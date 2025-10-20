@@ -23,6 +23,7 @@ export default function Chat() {
   const [streamingContent, setStreamingContent] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [wasVoiceInput, setWasVoiceInput] = useState(false);
+  const { voiceState } = useVoiceConversation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamingMessageRef = useRef<string>("");
