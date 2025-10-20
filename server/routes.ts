@@ -1739,7 +1739,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     message: z.string()
       .min(1, "Message cannot be empty")
       .max(10000, "Message is too long (max 10,000 characters)")
-      .trim()
+      .trim(),
+    attachments: z.array(z.object({
+      type: z.enum(['image', 'audio', 'file']),
+      url: z.string(),
+      name: z.string().optional(),
+      size: z.number().optional(),
+      mimeType: z.string().optional(),
+    })).optional()
   });
 
   app.post("/api/chat", isAuthenticated, async (req: any, res) => {
@@ -1761,13 +1768,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const { message } = validation.data;
+      const { message, attachments } = validation.data;
 
-      // Save user message
+      // Save user message with attachments
       await storage.createChatMessage(userId, {
         role: "user",
         content: message,
         metadata: null,
+        attachments: attachments || [],
       });
 
       // Get current inventory and appliances for context
@@ -1823,14 +1831,40 @@ Your tasks:
 When the user asks to add items, respond with the details and suggest saving them to inventory.
 When asked for recipes, consider the available inventory and appliances.`;
 
+      // Prepare messages with vision capabilities for images
+      const userMessage: any = { role: "user", content: [] };
+      
+      // Add text content
+      userMessage.content.push({ type: "text", text: message });
+      
+      // Add image attachments if present
+      if (attachments && attachments.length > 0) {
+        for (const attachment of attachments) {
+          if (attachment.type === 'image') {
+            userMessage.content.push({
+              type: "image_url",
+              image_url: {
+                url: attachment.url,
+                detail: "auto"
+              }
+            });
+          }
+        }
+      }
+      
       // Stream response from OpenAI
       let stream;
       try {
+        // Use vision-capable model if we have images
+        const model = attachments?.some(a => a.type === 'image') ? "gpt-4o" : "gpt-4o-mini";
+        
         stream = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+          model,
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: message }
+            userMessage.content.length === 1 && userMessage.content[0].type === "text"
+              ? { role: "user", content: message }
+              : userMessage
           ],
           stream: true,
           max_completion_tokens: 8192,

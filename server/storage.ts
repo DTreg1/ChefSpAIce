@@ -1318,9 +1318,17 @@ export class DatabaseStorage implements IStorage {
     message: Omit<InsertChatMessage, "userId">,
   ): Promise<ChatMessage> {
     try {
+      const messageData = {
+        userId,
+        role: message.role,
+        content: message.content,
+        metadata: message.metadata,
+        attachments: message.attachments || [],
+      };
+      
       const [newMessage] = await db
         .insert(chatMessages)
-        .values({ ...message, userId })
+        .values(messageData)
         .returning();
       return newMessage;
     } catch (error) {

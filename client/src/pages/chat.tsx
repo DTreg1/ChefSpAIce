@@ -109,12 +109,19 @@ export default function Chat() {
         content: `I've created a recipe for you: ${recipe.title}`,
         timestamp: new Date(),
         metadata: JSON.stringify({ recipeId: recipe.id }),
+        attachments: [],
       };
       setMessages((prev) => [...prev, recipeMessage]);
     }
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, attachments?: Array<{
+    type: 'image' | 'audio' | 'file';
+    url: string;
+    name?: string;
+    size?: number;
+    mimeType?: string;
+  }>) => {
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
       userId: user?.id || "",
@@ -122,6 +129,7 @@ export default function Chat() {
       content,
       timestamp: new Date(),
       metadata: null,
+      attachments: attachments || [],
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -135,7 +143,10 @@ export default function Chat() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: content }),
+        body: JSON.stringify({ 
+          message: content,
+          attachments: attachments 
+        }),
         signal: abortController.signal,
       });
 
@@ -170,6 +181,7 @@ export default function Chat() {
                 content: accumulated,
                 timestamp: new Date(),
                 metadata: null,
+                attachments: [],
               };
               setMessages((prev) => [...prev, aiMessage]);
               setStreamingContent("");

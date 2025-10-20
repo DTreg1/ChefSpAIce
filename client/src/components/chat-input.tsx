@@ -1,21 +1,36 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Paperclip, AudioLines, Camera } from "lucide-react";
+import { Send, Paperclip, AudioLines, Camera, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Attachment {
+  type: 'image' | 'audio' | 'file';
+  url: string;
+  name?: string;
+  size?: number;
+  mimeType?: string;
+}
 
 interface ChatInputProps {
-  onSend: (message: string) => void;
+  onSend: (message: string, attachments?: Attachment[]) => void;
   disabled?: boolean;
   showFeedbackWidget?: boolean;
 }
 
 export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
   const [message, setMessage] = useState("");
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const handleSend = () => {
-    if (message.trim() && !disabled) {
-      onSend(message.trim());
+    if ((message.trim() || attachments.length > 0) && !disabled && !isUploading) {
+      onSend(message.trim(), attachments.length > 0 ? attachments : undefined);
       setMessage("");
+      setAttachments([]);
     }
   };
 
@@ -26,8 +41,149 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
     }
   };
 
+  const uploadFile = async (file: File): Promise<Attachment | null> => {
+    try {
+      // Get upload URL from backend
+      const uploadUrlResponse = await fetch('/api/objects/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!uploadUrlResponse.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const { uploadURL } = await uploadUrlResponse.json();
+
+      // Upload file directly to object storage
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file');
+      }
+
+      // Create object path
+      const objectPath = `/objects/uploads/${uploadURL.split('/').pop()}`;
+
+      // Determine attachment type
+      let type: 'image' | 'audio' | 'file' = 'file';
+      if (file.type.startsWith('image/')) {
+        type = 'image';
+      } else if (file.type.startsWith('audio/')) {
+        type = 'audio';
+      }
+
+      return {
+        type,
+        url: objectPath,
+        name: file.name,
+        size: file.size,
+        mimeType: file.type,
+      };
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload file. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+
+    try {
+      const uploadPromises = files.map(uploadFile);
+      const uploadedAttachments = await Promise.all(uploadPromises);
+      const successfulAttachments = uploadedAttachments.filter((a): a is Attachment => a !== null);
+      
+      if (successfulAttachments.length > 0) {
+        setAttachments(prev => [...prev, ...successfulAttachments]);
+        toast({
+          title: "Files uploaded",
+          description: `Successfully uploaded ${successfulAttachments.length} file(s)`,
+        });
+      }
+    } catch (error) {
+      console.error('Error handling file selection:', error);
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="border-t border-border bg-gradient-to-br p-4">
+      {/* Hidden file inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,application/pdf,.doc,.docx,.txt"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
+      
+      {/* Show attachments preview if any */}
+      {attachments.length > 0 && (
+        <div className="max-w-4xl mx-auto mb-3 flex flex-wrap gap-2">
+          {attachments.map((attachment, index) => (
+            <div
+              key={index}
+              className="bg-card border border-border rounded-lg px-3 py-2 flex items-center gap-2"
+              data-testid={`attachment-preview-${index}`}
+            >
+              {attachment.type === 'image' ? (
+                <img src={attachment.url} alt={attachment.name} className="w-10 h-10 object-cover rounded" />
+              ) : (
+                <Paperclip className="w-4 h-4" />
+              )}
+              <span className="text-sm truncate max-w-[150px]">{attachment.name}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => removeAttachment(index)}
+                className="h-6 w-6"
+                data-testid={`button-remove-attachment-${index}`}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      
       <div className="max-w-4xl mx-auto flex gap-2">
         <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
           {/* New button for attaching files */}
@@ -35,6 +191,8 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
             size="icon"
             variant="outline"
             className="flex-shrink-0 rounded-full w-10 h-10"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || isUploading}
             data-testid="button-attach"
           >
             <Paperclip className="w-5 h-5" />
@@ -44,7 +202,9 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
             size="icon"
             variant="outline"
             className="flex-shrink-0 rounded-full w-10 h-10"
-            data-testid="button-attach"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={disabled || isUploading}
+            data-testid="button-camera"
           >
             <Camera className="w-5 h-5" />
           </Button>
@@ -62,7 +222,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={!message.trim() || disabled}
+            disabled={(!message.trim() && attachments.length === 0) || disabled || isUploading}
             className="flex-shrink-0 rounded-full w-10 h-10"
             data-testid="button-send-message"
           >

@@ -270,7 +270,7 @@ export const insertFoodItemSchema = createInsertSchema(foodItems).omit({
 export type InsertFoodItem = z.infer<typeof insertFoodItemSchema>;
 export type FoodItem = typeof foodItems.$inferSelect;
 
-// Chat Messages - now user-scoped
+// Chat Messages - now user-scoped with attachment support
 export const chatMessages = pgTable("chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -278,6 +278,14 @@ export const chatMessages = pgTable("chat_messages", {
   content: text("content").notNull(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
   metadata: text("metadata"),
+  // New field for storing attachments as JSON
+  attachments: jsonb("attachments").$type<Array<{
+    type: 'image' | 'audio' | 'file';
+    url: string;
+    name?: string;
+    size?: number;
+    mimeType?: string;
+  }>>().default([]),
 }, (table) => [
   index("chat_messages_user_id_idx").on(table.userId),
   index("chat_messages_timestamp_idx").on(table.timestamp),
