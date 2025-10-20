@@ -22,7 +22,7 @@ export default function Chat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
-  const [wasVoiceInput, setWasVoiceInput] = useState(false);
+  const [currentVoiceTranscript, setCurrentVoiceTranscript] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamingMessageRef = useRef<string>("");
@@ -35,6 +35,30 @@ export default function Chat() {
     const lastName = user.lastName || "";
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
+
+  // Voice conversation hook
+  const {
+    voiceState,
+    toggleVoiceMode,
+    speak,
+    stopSpeaking,
+    voices,
+    selectedVoice,
+    setSelectedVoice,
+    speechRate,
+    setSpeechRate,
+    speechPitch,
+    setSpeechPitch,
+  } = useVoiceConversation({
+    onTranscript: (text: string) => {
+      setCurrentVoiceTranscript(text);
+    },
+    onSendMessage: (text: string) => {
+      handleSendMessage(text);
+    },
+    autoSend: true,
+    silenceTimeout: 2000,
+  });
 
   const { data: chatHistory } = useQuery<ChatMessageType[]>({
     queryKey: ["/api/chat/messages"],
@@ -198,9 +222,10 @@ export default function Chat() {
               setIsStreaming(false);
               abortControllerRef.current = null;
               
-              // Speak the response if in voice mode
-              if (voiceState.isVoiceMode && accumulated) {
-                speak(accumulated);
+              // Auto-play voice response if the input was from voice
+              if (wasVoiceInput && accumulated) {
+                // The VoiceControls component will handle auto-playing
+                setWasVoiceInput(false); // Reset for next message
               }
               
               // Invalidate chat messages query to refetch with saved messages
@@ -245,6 +270,14 @@ export default function Chat() {
           <div>
             <h2 className="text-lg font-semibold text-foreground">Chat with Chef</h2>
             <p className="text-sm text-muted-foreground">Get recipe suggestions and manage your inventory</p>
+            {voiceState.isVoiceMode && (
+              <VoiceActivityIndicator
+                isListening={voiceState.isListening}
+                isSpeaking={voiceState.isSpeaking}
+                isProcessing={voiceState.isProcessing}
+                className="mt-2"
+              />
+            )}
           </div>
           <div className="flex gap-2">
             {messages.length > 0 && (
@@ -318,6 +351,7 @@ export default function Chat() {
                   content={streamingContent}
                   userProfileImageUrl={user?.profileImageUrl || undefined}
                   userInitials={getUserInitials()}
+                  autoPlayVoice={wasVoiceInput}
                 />
               )}
 
