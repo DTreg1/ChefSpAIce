@@ -3,6 +3,21 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    
+    // Handle session expiry specifically
+    if (res.status === 401) {
+      try {
+        const errorData = JSON.parse(text);
+        if (errorData.requiresReauth || errorData.error === 'session_expired') {
+          // Force page refresh to trigger re-authentication
+          window.location.href = '/';
+          return;
+        }
+      } catch (e) {
+        // If parsing fails, continue with normal error handling
+      }
+    }
+    
     throw new Error(`${res.status}: ${text}`);
   }
 }

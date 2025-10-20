@@ -205,8 +205,31 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     const tokenResponse = await tokenResponsePromise;
     updateUserSession(user, tokenResponse);
     return next();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Token refresh failed:', error);
+    
+    // If the refresh token is invalid, we need to clear the session
+    // and force the user to re-authenticate
+    if (error?.cause?.error === 'invalid_grant' || error?.error === 'invalid_grant') {
+      // Clear the session to force re-authentication
+      req.logout((err) => {
+        if (err) {
+          console.error('Error logging out user during token refresh failure:', err);
+        }
+      });
+      
+      // Clear the refresh key from active refreshes to allow retry
+      activeRefreshes.delete(refreshKey);
+      
+      res.status(401).json({ 
+        message: "Session expired. Please log in again.",
+        error: "session_expired",
+        requiresReauth: true 
+      });
+      return;
+    }
+    
+    // For other errors, just return unauthorized
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
