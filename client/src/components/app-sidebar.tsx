@@ -163,7 +163,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarGroup className="mt-4">
+          <SidebarGroup className="">
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               Planning
             </SidebarGroupLabel>

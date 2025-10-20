@@ -169,7 +169,7 @@ function AppContent() {
           {/* Header is now at the top level, outside the flex container with sidebar */}
           <header
             className={cn(
-              "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-[60] w-full",
+              "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-[20] w-full",
               scrolled
                 ? "glass-ultra navbar-scroll scrolled shadow-lg"
                 : "glass-vibrant border-border/30",
