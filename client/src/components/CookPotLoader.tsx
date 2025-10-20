@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { cn } from "@/lib/utils/utils";
+import { cn } from "@/lib/utils";
 
-export interface CookPotLoaderProps {
+export interface LoaderProps {
   /**
    * Size of the cook pot loader
    */
@@ -36,13 +36,13 @@ export interface CookPotLoaderProps {
  * A specialized cooking-themed loader animation featuring a cook pot with 
  * animated steam and bubbles, designed for recipe-related loading states.
  */
-export function CookPotLoader({
+export function CookLoader({
   size = 'md',
   color = 'primary',
   text,
   // Removed textPosition as it's not used (text is always below the animation)
   textClassName,
-  className}: CookPotLoaderProps) {
+  className}: LoaderProps) {
   // Size mappings - all sizes doubled
   const sizeMap: Record<string, {
     container: string,
