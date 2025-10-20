@@ -450,12 +450,22 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         searchMethod = `UPC ${selectedUpc}`;
         response = await apiRequest("GET", `/api/barcodelookup/product/${encodeURIComponent(selectedUpc)}`, null);
       } else {
-        // Otherwise fall back to text search with simplified query
-        const simplifiedQuery = selectedFood?.brandOwner 
-          ? `${selectedFood.brandOwner} ${searchQuery.split(',')[0].trim()}`.trim()
-          : searchQuery.split(',')[0].trim();
-        searchMethod = `search "${simplifiedQuery}"`;
-        response = await apiRequest("GET", `/api/barcodelookup/search?query=${encodeURIComponent(simplifiedQuery)}`, null);
+        // Check if the search query looks like a barcode (numeric string, 8-14 digits)
+        const simplifiedQuery = searchQuery.split(',')[0].trim();
+        const isBarcodeFormat = /^\d{8,14}$/.test(simplifiedQuery);
+        
+        if (isBarcodeFormat) {
+          // Treat as barcode lookup (will have fallback to OpenFoodFacts)
+          searchMethod = `barcode ${simplifiedQuery}`;
+          response = await apiRequest("GET", `/api/barcodelookup/product/${encodeURIComponent(simplifiedQuery)}`, null);
+        } else {
+          // Otherwise fall back to text search with simplified query
+          const queryWithBrand = selectedFood?.brandOwner 
+            ? `${selectedFood.brandOwner} ${simplifiedQuery}`.trim()
+            : simplifiedQuery;
+          searchMethod = `search "${queryWithBrand}"`;
+          response = await apiRequest("GET", `/api/barcodelookup/search?query=${encodeURIComponent(queryWithBrand)}`, null);
+        }
       }
       
       const data = await response.json();
