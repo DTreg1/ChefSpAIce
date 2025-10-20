@@ -202,10 +202,15 @@ test.describe('Settings & User Profile Management', () => {
     const themeToggle = page.getByTestId('button-theme-toggle');
     await themeToggle.click();
     
-    // Verify theme changed
-    await page.waitForTimeout(500); // Allow for theme transition
-    const newTheme = await htmlElement.getAttribute('class');
+    // Wait for theme class to change
+    if (isDarkMode) {
+      await page.waitForFunction(() => !document.documentElement.classList.contains('dark'));
+    } else {
+      await page.waitForFunction(() => document.documentElement.classList.contains('dark'));
+    }
     
+    // Verify theme changed
+    const newTheme = await htmlElement.getAttribute('class');
     if (isDarkMode) {
       expect(newTheme).not.toContain('dark');
     } else {
@@ -214,9 +219,16 @@ test.describe('Settings & User Profile Management', () => {
     
     // Toggle back
     await themeToggle.click();
-    await page.waitForTimeout(500);
-    const finalTheme = await htmlElement.getAttribute('class');
     
+    // Wait for theme to change back
+    if (isDarkMode) {
+      await page.waitForFunction(() => document.documentElement.classList.contains('dark'));
+    } else {
+      await page.waitForFunction(() => !document.documentElement.classList.contains('dark'));
+    }
+    
+    // Verify theme is back to original
+    const finalTheme = await htmlElement.getAttribute('class');
     if (isDarkMode) {
       expect(finalTheme).toContain('dark');
     } else {

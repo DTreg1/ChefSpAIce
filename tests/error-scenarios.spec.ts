@@ -70,7 +70,7 @@ test.describe('Error Scenarios and Edge Cases', () => {
     
     // Reload to trigger the error
     await page.reload();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
     
     // Should show error message
     const errorMessage = page.getByText(/error|failed|unable to load|try again/i);

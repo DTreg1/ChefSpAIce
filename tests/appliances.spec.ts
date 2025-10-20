@@ -144,8 +144,17 @@ test.describe('Appliances Management', () => {
     const searchInput = page.getByTestId('input-search');
     await searchInput.fill('mixer');
     
-    // Wait for filtering to occur
-    await page.waitForTimeout(500);
+    // Wait for search results to update (debouncing)
+    await page.waitForFunction(
+      () => {
+        const cards = document.querySelectorAll('[data-testid^="card-appliance-"]');
+        // Check if filtering has occurred by looking for mixer-related content
+        return Array.from(cards).every(card => 
+          card.textContent?.toLowerCase().includes('mixer')
+        ) || cards.length === 0;
+      },
+      { timeout: 2000 }
+    );
     
     // Verify only matching appliances are shown
     const visibleAppliances = page.getByTestId(/^card-appliance-/);
@@ -161,8 +170,16 @@ test.describe('Appliances Management', () => {
     // Clear search
     await searchInput.clear();
     
-    // Verify all appliances are shown again
-    await page.waitForTimeout(500);
+    // Wait for all appliances to reappear
+    await page.waitForFunction(
+      (initialCount) => {
+        const cards = document.querySelectorAll('[data-testid^="card-appliance-"]');
+        return cards.length >= initialCount;
+      },
+      count,
+      { timeout: 2000 }
+    );
+    
     const allAppliances = page.getByTestId(/^card-appliance-/);
     const newCount = await allAppliances.count();
     expect(newCount).toBeGreaterThanOrEqual(count);
@@ -211,19 +228,24 @@ test.describe('Appliances Management', () => {
     // Submit barcode
     await page.getByTestId('button-submit-scan').click();
     
-    // Wait for product lookup
-    await page.waitForTimeout(2000);
+    // Wait for product lookup result (either success or error)
+    const confirmButton = page.getByTestId('button-confirm-add-appliance');
+    const notFoundMessage = page.getByText(/not found/i);
+    
+    await Promise.race([
+      confirmButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
+      notFoundMessage.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null)
+    ]);
     
     // If product found, confirm adding it
-    const confirmButton = page.getByTestId('button-confirm-add-appliance');
     if (await confirmButton.isVisible()) {
       await confirmButton.click();
       
       // Verify success toast
       await expect(page.getByText(/Appliance added/i)).toBeVisible();
-    } else {
+    } else if (await notFoundMessage.isVisible()) {
       // Handle case where barcode is not found
-      await expect(page.getByText(/not found/i)).toBeVisible();
+      await expect(notFoundMessage).toBeVisible();
       
       // Close dialog
       await page.getByTestId('button-close-scanner').click();

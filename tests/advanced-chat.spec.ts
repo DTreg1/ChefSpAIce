@@ -102,16 +102,21 @@ test.describe('Advanced Chat Features', () => {
     await chatInput.fill('Generate a recipe using chicken and rice');
     await page.getByTestId('button-send-message').click();
     
-    // Wait for recipe generation
-    await page.waitForTimeout(5000);
+    // Wait for assistant response containing recipe
+    await expect(page.getByTestId('chat-message-assistant').last()).toBeVisible({ timeout: 30000 });
     
-    // Check for recipe notification message
+    // Check for recipe notification message or recipe card
+    const recipeCard = page.getByTestId('recipe-card');
     const recipeNotification = page.getByText(/I've created a recipe for you/i);
-    if (await recipeNotification.isVisible().catch(() => false)) {
-      await expect(recipeNotification).toBeVisible();
-      
-      // Check if recipe card is displayed
-      const recipeCard = page.getByTestId('recipe-card');
+    
+    // Wait for either recipe card or notification
+    await Promise.race([
+      recipeCard.waitFor({ state: 'visible', timeout: 10000 }).catch(() => null),
+      recipeNotification.waitFor({ state: 'visible', timeout: 10000 }).catch(() => null)
+    ]);
+    
+    // If recipe card is visible, verify it has required elements
+    if (await recipeCard.isVisible().catch(() => false)) {
       await expect(recipeCard).toBeVisible();
       
       // Verify recipe has title and ingredients
@@ -185,14 +190,16 @@ test.describe('Advanced Chat Features', () => {
       await page.getByTestId('button-send-message').click();
       
       // Wait for response
-      await expect(page.getByTestId('chat-message-assistant').last()).toBeVisible({ timeout: 30000 });
+      const assistantMessage = page.getByTestId('chat-message-assistant').last();
+      await expect(assistantMessage).toBeVisible({ timeout: 30000 });
       
       // Check if response contains recipe-related content
-      const response = await page.getByTestId('chat-message-assistant').last().textContent();
+      const response = await assistantMessage.textContent();
       expect(response?.toLowerCase()).toMatch(/recipe|ingredient|cook|prepare|meal/);
       
-      // Small delay between commands
-      await page.waitForTimeout(1000);
+      // Wait for input to be ready for next command (enabled and empty)
+      await chatInput.waitFor({ state: 'attached' });
+      await expect(chatInput).toBeEnabled();
     }
   });
 
@@ -202,11 +209,13 @@ test.describe('Advanced Chat Features', () => {
     await chatInput.fill('Create a simple pasta recipe');
     await page.getByTestId('button-send-message').click();
     
-    // Wait for recipe generation
-    await page.waitForTimeout(5000);
+    // Wait for assistant response with recipe
+    await expect(page.getByTestId('chat-message-assistant').last()).toBeVisible({ timeout: 30000 });
     
-    // Look for save recipe button
+    // Wait for save recipe button to appear
     const saveButton = page.getByTestId('button-save-recipe');
+    await saveButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => null);
+    
     if (await saveButton.isVisible().catch(() => false)) {
       await saveButton.click();
       
@@ -282,7 +291,12 @@ test.describe('Advanced Chat Features', () => {
     for (let i = 0; i < 5; i++) {
       await chatInput.fill(`Test message ${i + 1}`);
       await page.getByTestId('button-send-message').click();
-      await page.waitForTimeout(1000); // Brief delay between messages
+      
+      // Wait for message to appear before sending the next one
+      await expect(page.getByTestId('chat-message-user').last()).toContainText(`Test message ${i + 1}`);
+      
+      // Wait for input to be ready for next message
+      await expect(chatInput).toBeEnabled();
     }
     
     // Check if chat container is scrollable

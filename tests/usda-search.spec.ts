@@ -27,11 +27,9 @@ test.describe('USDA FoodData Advanced Search', () => {
     await searchInput.fill('apple');
     await page.getByTestId('button-search').click();
     
-    // Wait for results
-    await page.waitForTimeout(2000);
-    
-    // Check for search results
+    // Wait for search results to appear
     const results = page.getByTestId(/^fdc-result-/);
+    await results.first().waitFor({ state: 'visible', timeout: 5000 });
     const resultCount = await results.count();
     expect(resultCount).toBeGreaterThan(0);
     
@@ -50,11 +48,14 @@ test.describe('USDA FoodData Advanced Search', () => {
     await searchInput.fill('028400097970'); // Example: Lay's chips UPC
     await page.getByTestId('button-search').click();
     
-    // Wait for results
-    await page.waitForTimeout(2000);
-    
-    // Check for specific product result
+    // Wait for search results or no results message
     const results = page.getByTestId(/^fdc-result-/);
+    const noResults = page.getByText(/No results found/i);
+    
+    await Promise.race([
+      results.first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
+      noResults.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null)
+    ]);
     const resultCount = await results.count();
     
     if (resultCount > 0) {
@@ -78,8 +79,8 @@ test.describe('USDA FoodData Advanced Search', () => {
     await searchInput.fill('cereal');
     await page.getByTestId('button-search').click();
     
-    // Wait for results
-    await page.waitForTimeout(2000);
+    // Wait for results to appear
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Verify all results are branded products
     const results = page.getByTestId(/^fdc-result-/);
@@ -102,7 +103,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     await page.getByTestId('button-search').click();
     
     // Wait for initial results
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Sort by dataType
     const sortBySelect = page.getByTestId('select-sort-by');
@@ -114,7 +115,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     
     // Apply sort
     await page.getByTestId('button-search').click();
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Get data types from first few results
     const results = page.getByTestId(/^fdc-result-/);
@@ -146,7 +147,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     
     // Search
     await page.getByTestId('button-search').click();
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Count results
     const results = page.getByTestId(/^fdc-result-/);
@@ -159,7 +160,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     // Change to 50 results per page
     await pageSizeSelect.selectOption('50');
     await page.getByTestId('button-search').click();
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Count results again
     const newResultCount = await results.count();
@@ -178,7 +179,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     await page.getByTestId('button-search').click();
     
     // Wait for results
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Click on first result to view details
     const firstResult = page.getByTestId(/^fdc-result-/).first();
@@ -202,7 +203,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     await page.getByTestId('button-search').click();
     
     // Wait for results
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Find add to inventory button
     const firstResult = page.getByTestId(/^fdc-result-/).first();
@@ -248,7 +249,7 @@ test.describe('USDA FoodData Advanced Search', () => {
         await refreshButton.click();
         
         // Wait for refresh to complete
-        await page.waitForTimeout(3000);
+        await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
         
         // Verify success message or updated data
         const successToast = page.getByText(/nutrition.*updated/i);
@@ -270,7 +271,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     await page.getByTestId('button-search').click();
     
     // Wait for results
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Check for pagination controls
     const nextButton = page.getByTestId('button-next-page');
@@ -283,7 +284,7 @@ test.describe('USDA FoodData Advanced Search', () => {
       
       // Go to next page
       await nextButton.click();
-      await page.waitForTimeout(2000);
+      await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
       
       // Verify different results
       const secondPageResult = await page.getByTestId(/^fdc-result-/).first().textContent();
@@ -294,7 +295,7 @@ test.describe('USDA FoodData Advanced Search', () => {
       
       // Go back to first page
       await prevButton.click();
-      await page.waitForTimeout(2000);
+      await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
       
       // Should see first page results again
       const backToFirstResult = await page.getByTestId(/^fdc-result-/).first().textContent();
@@ -310,7 +311,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     await page.getByTestId('button-search').click();
     
     // Wait for search to complete
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Check for no results message
     const noResults = page.getByTestId('no-results');
@@ -327,7 +328,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     
     // Search
     await page.getByTestId('button-search').click();
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Clear button
     const clearButton = page.getByTestId('button-clear-search');
@@ -350,7 +351,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     await page.getByTestId('button-search').click();
     
     // Wait for results
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Check first result for portion info
     const firstResult = page.getByTestId(/^fdc-result-/).first();
@@ -370,7 +371,7 @@ test.describe('USDA FoodData Advanced Search', () => {
     await page.getByTestId('button-search').click();
     
     // Wait for results
-    await page.waitForTimeout(2000);
+    await page.waitForSelector('[data-testid^="fdc-result-"]', { state: 'visible', timeout: 5000 });
     
     // Look for export button
     const exportButton = page.getByTestId('button-export-results');

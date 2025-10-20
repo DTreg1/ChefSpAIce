@@ -84,8 +84,11 @@ test.describe('Food Groups Page', () => {
       // Click the category
       await categoryCard.click();
       
-      // Wait for navigation or filtering
-      await page.waitForTimeout(500);
+      // Wait for items to appear or empty state
+      await Promise.race([
+        page.waitForSelector('[data-testid^="food-item-"]', { state: 'visible', timeout: 2000 }).catch(() => null),
+        page.waitForSelector('[data-testid="empty-category"]', { state: 'visible', timeout: 2000 }).catch(() => null)
+      ]);
       
       // Check if items are filtered
       const filteredItems = page.getByTestId(/^food-item-/);
@@ -117,11 +120,11 @@ test.describe('Food Groups Page', () => {
       const firstName = await firstCategory.getByTestId('category-name').textContent();
       await firstCategory.click();
       
-      // Wait for items to load
-      await page.waitForTimeout(500);
+      // Wait for category selection to update
+      const selectedCategory = page.getByTestId('selected-category');
+      await selectedCategory.waitFor({ state: 'visible', timeout: 2000 }).catch(() => null);
       
       // Check breadcrumb or header shows selected category
-      const selectedCategory = page.getByTestId('selected-category');
       if (await selectedCategory.isVisible().catch(() => false)) {
         await expect(selectedCategory).toContainText(firstName!);
       }
@@ -140,8 +143,12 @@ test.describe('Food Groups Page', () => {
       const secondName = await secondCategory.getByTestId('category-name').textContent();
       await secondCategory.click();
       
-      // Wait for items to load
-      await page.waitForTimeout(500);
+      // Wait for category update
+      await page.waitForFunction(
+        (name) => document.querySelector('[data-testid="selected-category"]')?.textContent?.includes(name!),
+        secondName,
+        { timeout: 2000 }
+      ).catch(() => null);
       
       // Verify different category is selected
       if (await selectedCategory.isVisible().catch(() => false)) {
@@ -179,7 +186,7 @@ test.describe('Food Groups Page', () => {
     
     if (await categoryCard.isVisible().catch(() => false)) {
       await categoryCard.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Look for search input within category view
       const searchInput = page.getByTestId('input-search-category');
@@ -187,7 +194,7 @@ test.describe('Food Groups Page', () => {
       if (await searchInput.isVisible().catch(() => false)) {
         // Search for a specific term
         await searchInput.fill('chicken');
-        await page.waitForTimeout(500);
+        await page.waitForLoadState('networkidle');
         
         // Verify filtered results
         const searchResults = page.getByTestId(/^food-item-/);
@@ -208,7 +215,7 @@ test.describe('Food Groups Page', () => {
         
         // Clear search
         await searchInput.clear();
-        await page.waitForTimeout(500);
+        await page.waitForLoadState('networkidle');
         
         // Verify all items are shown again
         const allItems = page.getByTestId(/^food-item-/);
@@ -224,7 +231,7 @@ test.describe('Food Groups Page', () => {
     
     if (await categoryCard.isVisible().catch(() => false)) {
       await categoryCard.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Find an item
       const foodItem = page.getByTestId(/^food-item-/).first();
@@ -260,7 +267,7 @@ test.describe('Food Groups Page', () => {
     
     if (await categoryCard.isVisible().catch(() => false)) {
       await categoryCard.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Find an item
       const foodItem = page.getByTestId(/^food-item-/).first();
@@ -296,7 +303,7 @@ test.describe('Food Groups Page', () => {
       if (itemCount === '0 items') {
         // Click on empty category
         await card.click();
-        await page.waitForTimeout(500);
+        await page.waitForLoadState('networkidle');
         
         // Should show empty state
         const emptyState = page.getByTestId('empty-category');
@@ -319,7 +326,7 @@ test.describe('Food Groups Page', () => {
     if (await sortSelect.isVisible().catch(() => false)) {
       // Sort by item count
       await sortSelect.selectOption('item-count');
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Get item counts from first few categories
       const categoryCards = page.getByTestId(/^category-card-/);
@@ -341,7 +348,7 @@ test.describe('Food Groups Page', () => {
       
       // Sort alphabetically
       await sortSelect.selectOption('alphabetical');
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Get names from first few categories
       const names: string[] = [];

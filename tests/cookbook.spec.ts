@@ -93,7 +93,7 @@ test.describe('Cookbook Management', () => {
       await favoriteButton.click();
       
       // Wait for the state to update
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Verify favorite state changed
       const newFavorite = await favoriteButton.getAttribute('data-favorite') === 'true';
@@ -101,7 +101,7 @@ test.describe('Cookbook Management', () => {
       
       // Toggle back
       await favoriteButton.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Verify it's back to original state
       const finalFavorite = await favoriteButton.getAttribute('data-favorite') === 'true';
@@ -202,7 +202,7 @@ test.describe('Cookbook Management', () => {
         await refreshButton.click();
         
         // Wait for refresh
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState('networkidle');
         
         // Verify toast or update
         const toast = page.getByText(/availability.*updated/i);
@@ -354,7 +354,7 @@ test.describe('Cookbook Management', () => {
       await searchInput.fill('chicken');
       
       // Wait for filtering
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       
       // Verify only matching recipes are shown
       const visibleRecipes = page.getByTestId(/^recipe-card-/);
@@ -370,7 +370,7 @@ test.describe('Cookbook Management', () => {
       await searchInput.clear();
       
       // Verify all recipes are shown again
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
       const allRecipes = page.getByTestId(/^recipe-card-/);
       const newCount = await allRecipes.count();
       expect(newCount).toBeGreaterThanOrEqual(count);
