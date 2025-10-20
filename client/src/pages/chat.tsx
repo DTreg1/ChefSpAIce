@@ -22,7 +22,7 @@ export default function Chat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
-  const [currentVoiceTranscript, setCurrentVoiceTranscript] = useState("");
+  const [wasVoiceInput, setWasVoiceInput] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamingMessageRef = useRef<string>("");
@@ -35,30 +35,6 @@ export default function Chat() {
     const lastName = user.lastName || "";
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
-
-  // Voice conversation hook
-  const {
-    voiceState,
-    toggleVoiceMode,
-    speak,
-    stopSpeaking,
-    voices,
-    selectedVoice,
-    setSelectedVoice,
-    speechRate,
-    setSpeechRate,
-    speechPitch,
-    setSpeechPitch,
-  } = useVoiceConversation({
-    onTranscript: (text: string) => {
-      setCurrentVoiceTranscript(text);
-    },
-    onSendMessage: (text: string) => {
-      handleSendMessage(text);
-    },
-    autoSend: true,
-    silenceTimeout: 2000,
-  });
 
   const { data: chatHistory } = useQuery<ChatMessageType[]>({
     queryKey: ["/api/chat/messages"],
