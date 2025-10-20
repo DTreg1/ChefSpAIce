@@ -617,4 +617,38 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* Ticker animation for expiring items */
+  @keyframes ticker-scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .ticker-container {
+    @apply relative overflow-hidden;
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  }
+
+  .ticker-content {
+    @apply flex items-center gap-3 whitespace-nowrap;
+    animation: ticker-scroll 30s linear infinite;
+  }
+
+  .ticker-content:hover {
+    animation-play-state: paused;
+  }
+
+  /* Adjust speed based on content length */
+  .ticker-content[data-speed="slow"] {
+    animation-duration: 40s;
+  }
+
+  .ticker-content[data-speed="fast"] {
+    animation-duration: 20s;
+  }
 }

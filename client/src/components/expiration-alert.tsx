@@ -115,19 +115,25 @@ export function ExpirationAlert() {
   return (
     <div className="space-y-3">
       {hasNotifications && (
-        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
-          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <AlertDescription className="ml-2">
-            <div className="flex flex-col gap-2">
-              <span className="font-medium text-amber-900 dark:text-amber-100">
-                Items expiring soon:
+        <div className="border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 rounded-lg p-3 ticker-container">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="font-medium text-amber-900 dark:text-amber-100 text-sm">
+                Expiring:
               </span>
-              <div className="flex flex-wrap gap-2">
-                {notifications.slice(0, 5).map((notification) => (
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <div 
+                className="ticker-content"
+                data-speed={notifications.length > 5 ? "normal" : "slow"}
+              >
+                {/* First set of items */}
+                {notifications.map((notification) => (
                   <Badge
-                    key={notification.id}
+                    key={`first-${notification.id}`}
                     variant="outline"
-                    className="bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-700"
+                    className="bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-700 inline-flex items-center shrink-0"
                     data-testid={`notification-${notification.id}`}
                   >
                     <span className="mr-2">
@@ -142,10 +148,28 @@ export function ExpirationAlert() {
                     </button>
                   </Badge>
                 ))}
+                {/* Duplicate set for seamless loop */}
+                {notifications.map((notification) => (
+                  <Badge
+                    key={`second-${notification.id}`}
+                    variant="outline"
+                    className="bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-700 inline-flex items-center shrink-0"
+                  >
+                    <span className="mr-2">
+                      {notification.foodItemName} ({notification.daysUntilExpiry}d)
+                    </span>
+                    <button
+                      onClick={() => dismissMutation.mutate(notification.id)}
+                      className="hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
               </div>
             </div>
-          </AlertDescription>
-        </Alert>
+          </div>
+        </div>
       )}
 
       {hasSuggestions && (
