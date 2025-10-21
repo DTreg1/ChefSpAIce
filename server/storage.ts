@@ -1584,8 +1584,9 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(foodItems.userId, userId),
             sql`${foodItems.expirationDate} IS NOT NULL`,
-            sql`${foodItems.expirationDate} >= ${now.toISOString()}`,
-            sql`${foodItems.expirationDate} <= ${maxExpiryDate.toISOString()}`,
+            sql`${foodItems.expirationDate} != ''`,
+            sql`CAST(NULLIF(${foodItems.expirationDate}, '') AS TIMESTAMP) >= ${now.toISOString()}::TIMESTAMP`,
+            sql`CAST(NULLIF(${foodItems.expirationDate}, '') AS TIMESTAMP) <= ${maxExpiryDate.toISOString()}::TIMESTAMP`,
           ),
         );
 
