@@ -363,10 +363,20 @@ export function matchIngredientWithInventory(
 ): IngredientMatch {
   const parsed = parseIngredient(recipeIngredient);
   
+  console.log(`[DEBUG] Matching "${recipeIngredient}" -> parsed name: "${parsed.name}", unit: "${parsed.unit}", qty: ${parsed.quantity}`);
+  
   // Find matching inventory item
-  const matchingItem = inventoryItems.find(item => 
-    ingredientNamesMatch(parsed.name, item.name)
-  );
+  const matchingItem = inventoryItems.find(item => {
+    const matches = ingredientNamesMatch(parsed.name, item.name);
+    if (matches) {
+      console.log(`  ✓ MATCHED with inventory: "${item.name}"`);
+    }
+    return matches;
+  });
+  
+  if (!matchingItem) {
+    console.log(`  ✗ NO MATCH FOUND for "${parsed.name}"`);
+  }
 
   if (!matchingItem) {
     return {
