@@ -12,9 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
+import { UnifiedFoodSearch } from "@/components/unified-food-search";
 import type {
   StorageLocation,
   USDASearchResponse,
@@ -595,6 +597,133 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     }
   };
 
+  // Handlers for unified search selections
+  const handleSelectUSDA = (food: any) => {
+    setSelectedFood(food);
+    setSelectedUpc(food.gtinUpc || null);
+    setSearchQuery(food.description);
+    
+    if (food.servingSize && food.servingSizeUnit) {
+      setQuantity(food.servingSize.toString());
+      setUnit(food.servingSizeUnit);
+    } else {
+      setQuantity("1");
+      setUnit("piece");
+    }
+    
+    const suggestedDays = getSuggestedShelfLife(food.foodCategory, food.dataType);
+    const suggestedDate = new Date();
+    suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
+    setExpirationDate(suggestedDate.toISOString().split("T")[0]);
+    
+    const suggestedLocationId = getSuggestedStorageLocation(
+      food.foodCategory,
+      food.description,
+      storageLocations,
+    );
+    if (suggestedLocationId) {
+      setStorageLocationId(suggestedLocationId);
+    }
+  };
+
+  const handleSelectBarcodeLookup = (product: any) => {
+    setSelectedFood({
+      description: product.title || "Unknown Product",
+      brandOwner: product.brand || product.manufacturer,
+      foodCategory: product.category,
+      dataType: "Branded"
+    });
+    setSearchQuery(product.title || "Unknown Product");
+    setSelectedUpc(product.barcode_number || null);
+    
+    if (product.images && product.images[0]) {
+      setImageUrl(product.images[0]);
+    }
+    
+    setQuantity("1");
+    setUnit("piece");
+    
+    const suggestedDays = getSuggestedShelfLife(product.category);
+    const suggestedDate = new Date();
+    suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
+    setExpirationDate(suggestedDate.toISOString().split("T")[0]);
+    
+    const suggestedLocationId = getSuggestedStorageLocation(
+      product.category,
+      product.title,
+      storageLocations,
+    );
+    if (suggestedLocationId) {
+      setStorageLocationId(suggestedLocationId);
+    }
+  };
+
+  const handleSelectOpenFoodFacts = (product: any) => {
+    setSelectedFood({
+      description: product.product_name || "Unknown Product",
+      brandOwner: product.brands,
+      foodCategory: product.categories,
+      dataType: "Open Food Facts"
+    });
+    setSearchQuery(product.product_name || "Unknown Product");
+    setSelectedUpc(product.code || null);
+    
+    if (product.image_url) {
+      setImageUrl(product.image_url);
+    }
+    
+    // Parse quantity and unit from the quantity string (e.g., "500g", "1L", "12 oz", "6 x 250 g", "6x250g", "6x 250 g")
+    if (product.quantity) {
+      let quantityStr = product.quantity;
+      
+      // Detect multi-pack patterns (e.g., "6x250g", "6 x 250g", "6x 250 g")
+      if (/\d\s*[x×]\s*\d/i.test(quantityStr)) {
+        const parts = quantityStr.split(/\s*[x×]\s*/i);
+        quantityStr = parts[parts.length - 1]; // Take the last part (the per-unit size)
+      }
+      
+      // Extract number and unit (e.g., "250 g", "500ml", "12oz")
+      const quantityMatch = quantityStr.match(/(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?/);
+      if (quantityMatch) {
+        setQuantity(quantityMatch[1]);
+        
+        // Normalize unit abbreviations to match common units in the dialog
+        const rawUnit = quantityMatch[2]?.toLowerCase() || "piece";
+        const unitMap: Record<string, string> = {
+          'g': 'gram',
+          'kg': 'kilogram',
+          'ml': 'milliliter',
+          'l': 'liter',
+          'oz': 'ounce',
+          'lb': 'pound',
+          'mg': 'milligram',
+          'fl': 'fluid ounce',
+        };
+        setUnit(unitMap[rawUnit] || rawUnit);
+      } else {
+        setQuantity("1");
+        setUnit("piece");
+      }
+    } else {
+      setQuantity("1");
+      setUnit("piece");
+    }
+    
+    const suggestedDays = getSuggestedShelfLife(product.categories);
+    const suggestedDate = new Date();
+    suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
+    setExpirationDate(suggestedDate.toISOString().split("T")[0]);
+    
+    const suggestedLocationId = getSuggestedStorageLocation(
+      product.categories,
+      product.product_name,
+      storageLocations,
+    );
+    if (suggestedLocationId) {
+      setStorageLocationId(suggestedLocationId);
+    }
+  };
+
   const handleSubmit = () => {
     console.log("handleSubmit called with:", {
       selectedFood,
@@ -659,31 +788,45 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         <DialogHeader>
           <DialogTitle>Add Food Item</DialogTitle>
           <DialogDescription>
-            We utilize the USDA database to provide accurate nutritional
-            information.
+            Search across USDA, Barcode Lookup, and Open Food Facts databases for comprehensive food information.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label>Search USDA Database</Label>
-            <div className="space-y-2">
-              <Input
-                placeholder="Search for food items... (searches automatically as you type)"
-                value={searchQuery}
-                onChange={(e) => handleSearchInputChange(e.target.value)}
-                data-testid="input-usda-search"
+          <Tabs defaultValue="unified" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="unified" data-testid="tab-unified-search">Unified Search</TabsTrigger>
+              <TabsTrigger value="advanced" data-testid="tab-advanced-search">Advanced USDA</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="unified" className="space-y-4">
+              <UnifiedFoodSearch
+                onSelectUSDA={handleSelectUSDA}
+                onSelectBarcodeLookup={handleSelectBarcodeLookup}
+                onSelectOpenFoodFacts={handleSelectOpenFoodFacts}
               />
+            </TabsContent>
 
-              {(isSearching || searchLoading) && (
-                <div className="text-sm text-muted-foreground">
-                  Searching USDA database...
+            <TabsContent value="advanced" className="space-y-4">
+              <div className="space-y-2">
+                <Label>Search USDA Database</Label>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Search for food items... (searches automatically as you type)"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    data-testid="input-usda-search"
+                  />
+
+                  {(isSearching || searchLoading) && (
+                    <div className="text-sm text-muted-foreground">
+                      Searching USDA database...
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {searchResults && searchResults.foods.length > 0 && (
+              {searchResults && searchResults.foods.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Search Results</Label>
@@ -906,6 +1049,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
               label.
             </p>
           </div>
+          </TabsContent>
+          </Tabs>
         </div>
 
         <div className="flex gap-2 justify-end">

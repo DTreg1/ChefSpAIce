@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openai } from "./openai";
 import Stripe from "stripe";
+import axios from "axios";
 import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "./usda";
 import { searchBarcodeLookup, getBarcodeLookupProduct, getBarcodeLookupBatch, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
 import { getOpenFoodFactsProduct, getOpenFoodFactsBatch, extractProductInfo } from "./openfoodfacts";
@@ -32,6 +33,9 @@ const insertStorageLocationSchema = z.object({
   name: z.string(),
   icon: z.string()
 });
+
+// Constants for API endpoints
+const OPEN_FOOD_FACTS_API_BASE = 'https://world.openfoodfacts.org/api/v2';
 
 // Helper functions for appliance barcode processing
 function extractApplianceCapabilities(product: any): string[] {
@@ -1047,6 +1051,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(error.statusCode).json({ error: error.message });
       }
       res.status(500).json({ error: "Failed to fetch food details" });
+    }
+  });
+
+  // Unified Search - Search all food databases in parallel
+  app.get("/api/food/unified-search", async (req, res) => {
+    try {
+      const { query } = req.query;
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+
+      // Search all three APIs in parallel
+      const [usdaResults, barcodeLookupResults, openFoodFactsResults] = await Promise.allSettled([
+        // USDA search
+        searchUSDAFoods({ query, pageSize: 10, pageNumber: 1 })
+          .catch(error => {
+            console.error("USDA search error in unified search:", error);
+            return { foods: [], totalHits: 0, currentPage: 1, totalPages: 0 };
+          }),
+        
+        // Barcode Lookup search
+        searchBarcodeLookup(query)
+          .catch(error => {
+            console.error("Barcode Lookup search error in unified search:", error);
+            return { products: [] };
+          }),
+        
+        // Open Food Facts search (using their search API)
+        axios.get(`${OPEN_FOOD_FACTS_API_BASE}/search`, {
+          params: {
+            search_terms: query,
+            page_size: 10,
+            page: 1,
+            fields: 'code,product_name,brands,image_url,nutriments,quantity,categories'
+          },
+          headers: {
+            'User-Agent': 'ChefSpAIce/1.0 (https://chefspice.app)',
+            'Accept': 'application/json'
+          },
+          timeout: 5000
+        })
+        .then(response => response.data)
+        .catch(error => {
+          console.error("Open Food Facts search error in unified search:", error);
+          return { products: [] };
+        })
+      ]);
+
+      res.json({
+        usda: usdaResults.status === 'fulfilled' ? usdaResults.value : { foods: [], totalHits: 0, currentPage: 1, totalPages: 0 },
+        barcodeLookup: barcodeLookupResults.status === 'fulfilled' ? barcodeLookupResults.value : { products: [] },
+        openFoodFacts: openFoodFactsResults.status === 'fulfilled' ? openFoodFactsResults.value : { products: [] }
+      });
+    } catch (error: any) {
+      console.error("Unified search error:", error);
+      res.status(500).json({ error: "Failed to perform unified search" });
     }
   });
 
