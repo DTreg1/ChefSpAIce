@@ -19,7 +19,7 @@ export default function FeedbackBoard() {
   const [generalSortBy, setGeneralSortBy] = useState<'upvotes' | 'recent'>('recent');
 
   const { data: personalFeedback = [], isLoading: personalLoading } = useQuery<Feedback[]>({
-    queryKey: ['/api/feedback', personalSortBy],
+    queryKey: ['/api/feedback/recent', personalSortBy],
   });
 
   const { data: featureRequests = [], isLoading: featuresLoading } = useQuery<FeedbackWithUpvote[]>({
