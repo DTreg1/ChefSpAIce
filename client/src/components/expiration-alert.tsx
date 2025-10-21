@@ -115,7 +115,7 @@ export function ExpirationAlert() {
   return (
     <div className="space-y-3">
       {hasNotifications && (
-        <div className="border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 rounded-lg p-3 ticker-container">
+        <div className="rounded-lg p-3 ticker-container">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 shrink-0">
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
