@@ -802,8 +802,6 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
             <TabsContent value="unified" className="space-y-4">
               <UnifiedFoodSearch
                 onSelectUSDA={handleSelectUSDA}
-                onSelectBarcodeLookup={handleSelectBarcodeLookup}
-                onSelectOpenFoodFacts={handleSelectOpenFoodFacts}
               />
               
               {/* Form fields for unified search */}
