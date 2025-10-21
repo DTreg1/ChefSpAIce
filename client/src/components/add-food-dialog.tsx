@@ -598,10 +598,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   };
 
   // Handlers for unified search selections
-  const handleSelectUSDA = (food: any) => {
+  const handleSelectUSDA = async (food: any) => {
     setSelectedFood(food);
     setSelectedUpc(food.gtinUpc || null);
     setSearchQuery(food.description);
+    setImageUrl(null);
     
     if (food.servingSize && food.servingSizeUnit) {
       setQuantity(food.servingSize.toString());
@@ -623,6 +624,30 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     );
     if (suggestedLocationId) {
       setStorageLocationId(suggestedLocationId);
+    }
+
+    try {
+      const response = await fetch("/api/food/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(food),
+      });
+
+      if (response.ok) {
+        const enriched = await response.json();
+        
+        if (enriched.imageUrl) {
+          setImageUrl(enriched.imageUrl);
+        }
+        
+        if (enriched.servingSize && enriched.servingSizeUnit && !food.servingSize) {
+          setQuantity(enriched.servingSize.toString());
+          setUnit(enriched.servingSizeUnit);
+        }
+      }
+    } catch (error) {
+      console.error("Enrichment failed:", error);
     }
   };
 
