@@ -410,6 +410,9 @@ export function matchIngredientWithInventory(
     const hasEnough = convertedQuantity >= parsed.quantity;
     const percentageAvailable = Math.min(100, (convertedQuantity / parsed.quantity) * 100);
     
+    console.log(`  → Converted: ${inventoryQuantity} ${matchingItem.unit} = ${convertedQuantity} ${parsed.unit}`);
+    console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${convertedQuantity})`);
+    
     return {
       ingredientName: parsed.name,
       neededQuantity: parsed.quantity,
