@@ -805,6 +805,95 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                 onSelectBarcodeLookup={handleSelectBarcodeLookup}
                 onSelectOpenFoodFacts={handleSelectOpenFoodFacts}
               />
+              
+              {/* Form fields for unified search */}
+              {selectedFood && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="description-unified">Food Description *</Label>
+                    <Input
+                      id="description-unified"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Food description"
+                      data-testid="input-description-unified"
+                    />
+                  </div>
+
+                  {imageUrl && (
+                    <div className="space-y-2">
+                      <Label>Product Image</Label>
+                      <img 
+                        src={imageUrl} 
+                        alt={searchQuery}
+                        className="w-full max-w-xs rounded-lg border border-border"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="quantity-unified">Quantity *</Label>
+                      <Input
+                        id="quantity-unified"
+                        type="text"
+                        placeholder="e.g., 2, 1.5"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        data-testid="input-quantity"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="unit-unified">Unit *</Label>
+                      <Input
+                        id="unit-unified"
+                        placeholder="e.g., lbs, kg, cups"
+                        value={unit}
+                        onChange={(e) => setUnit(e.target.value)}
+                        data-testid="input-unit"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label id="storage-location-label-unified">Storage Location *</Label>
+                    <ToggleGroup
+                      type="single"
+                      value={storageLocationId}
+                      onValueChange={setStorageLocationId}
+                      aria-labelledby="storage-location-label-unified"
+                      className="flex flex-wrap gap-2 justify-start"
+                    >
+                      {storageLocations?.map((location) => (
+                        <ToggleGroupItem
+                          key={location.id}
+                          value={location.id}
+                          aria-label={`Select ${location.name}`}
+                          className="rounded-full"
+                          data-testid={`button-storage-${location.name.toLowerCase()}`}
+                        >
+                          {location.name}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="expiration-unified">Expiration Date *</Label>
+                    <Input
+                      id="expiration-unified"
+                      type="date"
+                      value={expirationDate}
+                      onChange={(e) => setExpirationDate(e.target.value)}
+                      data-testid="input-expiration"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Auto-suggested based on food type. Always verify with the package label.
+                    </p>
+                  </div>
+                </>
+              )}
             </TabsContent>
 
             <TabsContent value="advanced" className="space-y-4">

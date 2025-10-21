@@ -65,8 +65,18 @@ export function UnifiedFoodSearch({
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const { data, isLoading, error } = useQuery<UnifiedSearchResults>({
-    queryKey: ["/api/food/unified-search", { query: debouncedSearch }],
+    queryKey: ["/api/food/unified-search", debouncedSearch],
     enabled: debouncedSearch.length >= 2,
+    queryFn: async () => {
+      const params = new URLSearchParams({ query: debouncedSearch });
+      const response = await fetch(`/api/food/unified-search?${params}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    },
   });
 
   const hasResults = data && (
