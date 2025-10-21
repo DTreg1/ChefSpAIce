@@ -55,6 +55,8 @@ const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {
     item: 1,
     items: 1,
     whole: 1,
+    
+    // Packaging types
     can: 1,
     cans: 1,
     package: 1,
@@ -63,22 +65,152 @@ const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {
     bags: 1,
     box: 1,
     boxes: 1,
+    container: 1,
+    containers: 1,
+    jar: 1,
+    jars: 1,
+    bottle: 1,
+    bottles: 1,
+    carton: 1,
+    cartons: 1,
+    packet: 1,
+    packets: 1,
+    pouch: 1,
+    pouches: 1,
+    tube: 1,
+    tubes: 1,
+    
+    // Groupings
     bunch: 1,
     bunches: 1,
+    bundle: 1,
+    bundles: 1,
+    
+    // Food-specific portions
     clove: 1,
     cloves: 1,
     head: 1,
     heads: 1,
+    bulb: 1,
+    bulbs: 1,
+    rib: 1,
+    ribs: 1,
+    stalk: 1,
+    stalks: 1,
+    ear: 1,
+    ears: 1,
+    leaf: 1,
+    leaves: 1,
+    sprig: 1,
+    sprigs: 1,
+    stem: 1,
+    stems: 1,
+    
+    // Meat cuts & portions
+    fillet: 1,
+    fillets: 1,
+    breast: 1,
+    breasts: 1,
+    thigh: 1,
+    thighs: 1,
+    leg: 1,
+    legs: 1,
+    wing: 1,
+    wings: 1,
+    link: 1,
+    links: 1,
+    patty: 1,
+    patties: 1,
+    strip: 1,
+    strips: 1,
+    
+    // Baked goods & sliced items
     stick: 1,
     sticks: 1,
     slice: 1,
     slices: 1,
+    loaf: 1,
+    loaves: 1,
+    roll: 1,
+    rolls: 1,
+    
+    // Small measures
+    dash: 1,
+    dashes: 1,
+    pinch: 1,
+    pinches: 1,
+    handful: 1,
+    handfuls: 1,
   },
 };
 
+// Unit aliases - map common abbreviations to canonical forms
+const UNIT_ALIASES: { [key: string]: string } = {
+  // Volume abbreviations
+  'tsp.': 'tsp',
+  't': 'tsp',
+  'tbsp.': 'tbsp',
+  'T': 'tbsp',
+  'fl. oz': 'fl oz',
+  'fl. oz.': 'fl oz',
+  'floz': 'fl oz',
+  'c': 'cup',
+  'c.': 'cup',
+  'pt': 'pint',
+  'pt.': 'pint',
+  'qt': 'quart',
+  'qt.': 'quart',
+  'gal': 'gallon',
+  'gal.': 'gallon',
+  
+  // Weight abbreviations
+  'oz.': 'oz',
+  'lb.': 'lb',
+  'g.': 'g',
+  'kg.': 'kg',
+  'mg.': 'mg',
+  
+  // Count abbreviations
+  'cnt': 'count',
+  'ea': 'piece',
+  'ea.': 'piece',
+  'each': 'piece',
+  'pc': 'piece',
+  'pc.': 'piece',
+  'pcs': 'pieces',
+  'pkg': 'package',
+  'pkg.': 'package',
+  'pkgs': 'packages',
+  'btl': 'bottle',
+  'btl.': 'bottle',
+  'btls': 'bottles',
+  'ctn': 'carton',
+  'ctn.': 'carton',
+  'ctns': 'cartons',
+  'pkt': 'packet',
+  'pkt.': 'packet',
+  'pkts': 'packets',
+  'ct': 'count',
+  'ct.': 'count',
+};
+
+// Normalize unit by applying aliases
+function normalizeUnit(unit: string): string {
+  const trimmed = unit.trim();
+  
+  // Check for case-sensitive aliases first (e.g., "T" for tablespoon)
+  if (UNIT_ALIASES[trimmed]) {
+    return UNIT_ALIASES[trimmed];
+  }
+  
+  // Then check lowercase version
+  const lowercased = trimmed.toLowerCase();
+  return UNIT_ALIASES[lowercased] || lowercased;
+}
+
 // Identify unit type
 function getUnitType(unit: string): string | null {
-  const normalizedUnit = unit.toLowerCase().trim();
+  const normalizedUnit = normalizeUnit(unit);
   for (const [type, units] of Object.entries(UNIT_CONVERSIONS)) {
     if (units[normalizedUnit]) {
       return type;
@@ -98,8 +230,12 @@ export function convertUnit(
   fromUnit: string,
   toUnit: string
 ): number | null {
-  const fromType = getUnitType(fromUnit);
-  const toType = getUnitType(toUnit);
+  // Normalize units through aliases first
+  const normalizedFrom = normalizeUnit(fromUnit);
+  const normalizedTo = normalizeUnit(toUnit);
+  
+  const fromType = getUnitType(normalizedFrom);
+  const toType = getUnitType(normalizedTo);
 
   // Can't convert between different types or unknown units
   if (!fromType || !toType || fromType !== toType) {
@@ -112,8 +248,8 @@ export function convertUnit(
   }
 
   const conversions = UNIT_CONVERSIONS[fromType];
-  const fromFactor = conversions[fromUnit.toLowerCase()];
-  const toFactor = conversions[toUnit.toLowerCase()];
+  const fromFactor = conversions[normalizedFrom];
+  const toFactor = conversions[normalizedTo];
 
   if (!fromFactor || !toFactor) {
     return null;
@@ -143,6 +279,74 @@ export function parseIngredient(ingredientStr: string): {
   let cleanStr = ingredientStr.replace(/,\s*/g, ' ');
   // Remove parenthetical notes
   cleanStr = cleanStr.replace(/\([^)]*\)/g, '').trim();
+  
+  // SPECIAL CASE: Non-quantifiable recipe terminology
+  // Phrases like "to taste", "as needed", "for serving" don't have meaningful quantities
+  const nonQuantifiablePatterns = [
+    /^(to taste|as needed|for serving|optional)\s*(.*)$/i,
+    /^(salt and pepper)\s*(to taste)?$/i,
+  ];
+  
+  for (const pattern of nonQuantifiablePatterns) {
+    const match = cleanStr.match(pattern);
+    if (match) {
+      // Extract ingredient name, treating the phrase as the full name if no specific ingredient follows
+      const ingredientName = match[2] ? match[2].trim() : match[1].trim();
+      return {
+        quantity: 0,  // Zero quantity since it's "to taste"
+        unit: 'piece',
+        name: ingredientName || cleanStr,
+      };
+    }
+  }
+  
+  // COMPOUND UNIT HANDLING: Detect patterns like "5-oz can tomatoes" or "1 14.5-oz can tomatoes"
+  // These have a hyphenated quantity-unit that should be extracted as the primary measurement
+  const compoundPatterns = [
+    // Pattern: "1 5-oz can tomatoes" (count + hyphenated weight/volume + container + name)
+    /^(\d+)\s+(\d+\.?\d*)-([a-z]+)\s+([a-z]+)\s+(.+)$/i,
+    // Pattern: "5-oz can tomatoes" (hyphenated weight/volume + container + name)
+    /^(\d+\.?\d*)-([a-z]+)\s+([a-z]+)\s+(.+)$/i,
+  ];
+  
+  for (const pattern of compoundPatterns) {
+    const match = cleanStr.match(pattern);
+    if (match) {
+      if (match.length === 6) {
+        // Format: "1 5-oz can tomatoes"
+        const count = parseFloat(match[1]);
+        const weight = parseFloat(match[2]);
+        const weightUnit = match[3];
+        const container = match[4];
+        const ingredientName = match[5];
+        
+        // Check if the weight unit is valid and container is valid
+        if (isValidUnit(weightUnit) && isValidUnit(container)) {
+          // Use the weight unit as primary, multiply by count if needed
+          return {
+            quantity: weight * count,
+            unit: weightUnit,
+            name: ingredientName,
+          };
+        }
+      } else if (match.length === 5) {
+        // Format: "5-oz can tomatoes"
+        const weight = parseFloat(match[1]);
+        const weightUnit = match[2];
+        const container = match[3];
+        const ingredientName = match[4];
+        
+        // Check if the weight unit is valid
+        if (isValidUnit(weightUnit)) {
+          return {
+            quantity: weight,
+            unit: weightUnit,
+            name: ingredientName,
+          };
+        }
+      }
+    }
+  }
   
   // Match patterns like "2 cups flour" or "1/2 cup sugar" or "3.5 oz cheese"
   const patterns = [
