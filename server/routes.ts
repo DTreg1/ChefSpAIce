@@ -2173,7 +2173,10 @@ Respond ONLY with a valid JSON object in this exact format:
       const page = parseInt(req.query.page as string) || 1;
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
       
-      // Always include inventory matching by default for better caching
+      // Disable caching for inventory matching to ensure fresh results
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      
+      // Always include inventory matching by default
       if (req.query.page || req.query.limit) {
         // If pagination params are provided, use paginated method
         const result = await storage.getRecipesPaginated(userId, page, limit);
