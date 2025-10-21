@@ -12,13 +12,15 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
-import { BarcodeScannerDialog } from "@/components/barcode-scanner-dialog";
+import { BarcodeScanQueue } from "@/components/barcode-scan-queue";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { RouteLoading } from "@/components/route-loading";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Eagerly loaded pages (critical path)
@@ -99,10 +101,11 @@ function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [addFoodOpen, setAddFoodOpen] = useState(false);
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
-  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
+  const [barcodeScanQueueOpen, setBarcodeScanQueueOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
+  const { toast } = useToast();
 
   const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
     hasCompletedOnboarding?: boolean;
@@ -132,6 +135,44 @@ function AppContent() {
     "--sidebar-width-icon": "4rem",
   } as React.CSSProperties;
 
+  const handleBatchSubmit = async (items: any[]) => {
+    try {
+      const results = await Promise.allSettled(
+        items.map(async (item) => {
+          const foodItemData = {
+            description: item.title || item.barcode,
+            brandOwner: item.brand,
+            storageLocationId: "",
+            quantity: 1,
+            unit: "item",
+            expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            imageUrl: item.imageUrl,
+            upc: item.barcode,
+          };
+
+          return apiRequest("POST", "/api/food-items", foodItemData);
+        })
+      );
+
+      const successful = results.filter(r => r.status === "fulfilled").length;
+      const failed = results.filter(r => r.status === "rejected").length;
+
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+
+      toast({
+        title: "Batch submission complete",
+        description: `Added ${successful} items to inventory${failed > 0 ? `. ${failed} failed.` : ""}`,
+      });
+    } catch (error) {
+      console.error("Batch submission error:", error);
+      toast({
+        title: "Batch submission failed",
+        description: "Could not add items to inventory",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Show landing page layout for non-authenticated users
   if (isLoading || !isAuthenticated) {
     return <Router />;
@@ -158,9 +199,10 @@ function AppContent() {
         open={recipeDialogOpen}
         onOpenChange={setRecipeDialogOpen}
       />
-      <BarcodeScannerDialog
-        open={barcodeScannerOpen}
-        onOpenChange={setBarcodeScannerOpen}
+      <BarcodeScanQueue
+        open={barcodeScanQueueOpen}
+        onOpenChange={setBarcodeScanQueueOpen}
+        onSubmitQueue={handleBatchSubmit}
       />
       {/* Only show floating FeedbackWidget on non-chat pages */}
       {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
@@ -196,7 +238,7 @@ function AppContent() {
               <QuickActionsBar
                 onAddFood={() => setAddFoodOpen(true)}
                 onGenerateRecipe={() => setRecipeDialogOpen(true)}
-                onScanBarcode={() => setBarcodeScannerOpen(true)}
+                onScanBarcode={() => setBarcodeScanQueueOpen(true)}
               />
             </div>
           </header>
