@@ -360,7 +360,7 @@ export interface IngredientMatch {
 
 export function matchIngredientWithInventory(
   recipeIngredient: string,
-  inventoryItems: Array<{ name: string; quantity: string; unit: string }>
+  inventoryItems: Array<{ name: string; quantity: string; unit: string; weightInGrams?: number | null }>
 ): IngredientMatch {
   const parsed = parseIngredient(recipeIngredient);
   
@@ -395,8 +395,46 @@ export function matchIngredientWithInventory(
     };
   }
 
-  // Parse inventory quantity
-  const inventoryQuantity = parseFloat(matchingItem.quantity) || 0;
+  // Parse inventory quantity - handle both simple numbers and fractional strings
+  let inventoryQuantity = parseFloat(matchingItem.quantity);
+  if (isNaN(inventoryQuantity) || inventoryQuantity <= 0) {
+    console.log(`  ⚠ Invalid quantity: "${matchingItem.quantity}" - treating as 0`);
+    inventoryQuantity = 0;
+  }
+  
+  // NEW: Smart weight-based conversion
+  // If the recipe needs a weight unit and we have weight data, use it!
+  const neededUnitType = getUnitType(parsed.unit);
+  const hasValidWeight = matchingItem.weightInGrams && matchingItem.weightInGrams > 0;
+  
+  if (neededUnitType === 'weight' && hasValidWeight && inventoryQuantity > 0) {
+    // We have weight data! Convert it to the needed unit
+    const totalGrams = matchingItem.weightInGrams! * inventoryQuantity;
+    const convertedQuantity = convertUnit(totalGrams, 'g', parsed.unit);
+    
+    if (convertedQuantity !== null) {
+      const hasEnough = convertedQuantity >= parsed.quantity;
+      const percentageAvailable = Math.min(100, (convertedQuantity / parsed.quantity) * 100);
+      
+      console.log(`  → Using weight data: ${inventoryQuantity} ${matchingItem.unit} × ${matchingItem.weightInGrams}g = ${totalGrams}g`);
+      console.log(`  → Converted: ${totalGrams}g = ${convertedQuantity} ${parsed.unit}`);
+      console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${convertedQuantity})`);
+      
+      return {
+        ingredientName: parsed.name,
+        neededQuantity: parsed.quantity,
+        neededUnit: parsed.unit,
+        availableQuantity: convertedQuantity,
+        availableUnit: parsed.unit,
+        hasEnough,
+        percentageAvailable,
+        shortage: hasEnough ? undefined : {
+          quantity: parsed.quantity - convertedQuantity,
+          unit: parsed.unit,
+        },
+      };
+    }
+  }
   
   // Try to convert inventory quantity to recipe unit
   const convertedQuantity = convertUnit(
