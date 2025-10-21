@@ -6,6 +6,7 @@ import { openai } from "./openai";
 import Stripe from "stripe";
 import axios from "axios";
 import { searchUSDAFoods, getFoodByFdcId, isNutritionDataValid } from "./usda";
+import type { USDAFoodItem } from "@shared/schema";
 import { searchBarcodeLookup, getBarcodeLookupProduct, getBarcodeLookupBatch, extractImageUrl, getBarcodeLookupRateLimits, checkRateLimitBeforeCall } from "./barcodelookup";
 import { getOpenFoodFactsProduct, getOpenFoodFactsBatch, extractProductInfo } from "./openfoodfacts";
 import { getEnrichedOnboardingItem } from "./onboarding-usda";
@@ -1107,6 +1108,225 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Unified search error:", error);
       res.status(500).json({ error: "Failed to perform unified search" });
+    }
+  });
+
+  // Food Enrichment - Waterfall enrichment for USDA items using Open Food Facts and Barcode Lookup
+  app.post("/api/food/enrich", async (req, res) => {
+    try {
+      const usdaItem = req.body as USDAFoodItem;
+      
+      if (!usdaItem || !usdaItem.fdcId) {
+        return res.status(400).json({ error: "Valid USDA food item is required" });
+      }
+
+      // Helper function to check if fields are missing
+      const checkMissingFields = (item: any) => {
+        const hasUpc = !!item.gtinUpc;
+        const missingFields = {
+          image: hasUpc && !item.imageUrl, // Image only required if has UPC
+          nutrition: !item.nutrition || !item.nutrition.calories,
+          ingredients: !item.ingredients,
+          servingSize: !item.servingSize || !item.servingSizeUnit
+        };
+        return { hasUpc, missingFields, needsEnrichment: Object.values(missingFields).some(v => v) };
+      };
+
+      let enrichedItem = { ...usdaItem };
+      const { hasUpc, missingFields, needsEnrichment } = checkMissingFields(enrichedItem);
+
+      console.log(`Enriching item: ${usdaItem.description}`, { hasUpc, missingFields, needsEnrichment });
+
+      if (!needsEnrichment) {
+        // No enrichment needed
+        return res.json(enrichedItem);
+      }
+
+      // Waterfall enrichment
+      let imageUrl: string | null = null;
+
+      // Step 1: Try Open Food Facts if has UPC
+      if (hasUpc && usdaItem.gtinUpc) {
+        try {
+          console.log(`Querying Open Food Facts for UPC: ${usdaItem.gtinUpc}`);
+          const offProduct = await getOpenFoodFactsProduct(usdaItem.gtinUpc);
+          
+          if (offProduct && offProduct.product) {
+            const product = offProduct.product;
+            
+            // Merge nutrition data if missing - only if we have meaningful values
+            if (missingFields.nutrition && product.nutriments) {
+              const calories = product.nutriments['energy-kcal'] || product.nutriments.energy_100g;
+              const protein = product.nutriments.proteins || product.nutriments.proteins_100g;
+              const carbs = product.nutriments.carbohydrates || product.nutriments.carbohydrates_100g;
+              const fat = product.nutriments.fat || product.nutriments.fat_100g;
+              
+              // Only merge if we have at least calories or a macro
+              if (calories || protein || carbs || fat) {
+                enrichedItem.nutrition = {
+                  calories: calories || 0,
+                  protein: protein || 0,
+                  carbs: carbs || 0,
+                  fat: fat || 0,
+                  fiber: product.nutriments.fiber || product.nutriments.fiber_100g,
+                  sugar: product.nutriments.sugars || product.nutriments.sugars_100g,
+                  sodium: product.nutriments.sodium || product.nutriments.sodium_100g,
+                  servingSize: product.serving_size || "100",
+                  servingUnit: "g"
+                };
+                console.log("Enriched nutrition from Open Food Facts");
+              }
+            }
+
+            // Merge ingredients if missing
+            if (missingFields.ingredients && product.ingredients_text_en) {
+              enrichedItem.ingredients = product.ingredients_text_en;
+              console.log("Enriched ingredients from Open Food Facts");
+            }
+
+            // Merge serving size if missing
+            if (missingFields.servingSize && product.serving_size) {
+              // Parse serving size (e.g., "250g" -> 250, "g")
+              const servingMatch = product.serving_size.match(/(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?/);
+              if (servingMatch) {
+                enrichedItem.servingSize = parseFloat(servingMatch[1]);
+                enrichedItem.servingSizeUnit = servingMatch[2] || 'g';
+                console.log("Enriched serving size from Open Food Facts");
+              }
+            }
+
+            // Get image
+            if (missingFields.image) {
+              imageUrl = product.image_front_url || product.image_url || null;
+              if (imageUrl) {
+                console.log("Got image from Open Food Facts");
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error querying Open Food Facts:", error);
+        }
+      }
+
+      // Step 2: Recheck missing fields after Open Food Facts enrichment
+      const afterOFFCheck = checkMissingFields({ ...enrichedItem, imageUrl });
+      
+      // Try Barcode Lookup if still missing fields and has UPC
+      if (afterOFFCheck.needsEnrichment && hasUpc && usdaItem.gtinUpc) {
+        try {
+          console.log(`Querying Barcode Lookup for UPC: ${usdaItem.gtinUpc}`);
+          const barcodeResult = await searchBarcodeLookup(usdaItem.gtinUpc);
+          
+          if (barcodeResult.products && barcodeResult.products.length > 0) {
+            const product = barcodeResult.products[0];
+            
+            // Get image if still missing
+            if (!imageUrl && product.images && product.images.length > 0) {
+              imageUrl = product.images[0];
+              console.log("Got image from Barcode Lookup");
+            }
+
+            // Ingredients from description/features
+            if (afterOFFCheck.missingFields.ingredients) {
+              if (product.description) {
+                enrichedItem.ingredients = product.description;
+                console.log("Enriched ingredients from Barcode Lookup");
+              } else if (product.features && product.features.length > 0) {
+                enrichedItem.ingredients = product.features.join(', ');
+                console.log("Enriched ingredients from Barcode Lookup features");
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error querying Barcode Lookup:", error);
+        }
+      }
+
+      // Step 3: Recheck missing fields after Barcode Lookup enrichment
+      const afterBarcodeLookupCheck = checkMissingFields({ ...enrichedItem, imageUrl });
+      
+      // Fuzzy matching fallback if still missing fields (works for both UPC and non-UPC items)
+      if (afterBarcodeLookupCheck.needsEnrichment && usdaItem.description) {
+        try {
+          // Try fuzzy search with product name (and brand if available)
+          const searchQuery = usdaItem.brandOwner 
+            ? `${usdaItem.brandOwner} ${usdaItem.description}`
+            : usdaItem.description;
+          
+          console.log(`Trying fuzzy match with query: ${searchQuery}`);
+
+          // Try Open Food Facts search if we still need any fields
+          if (afterBarcodeLookupCheck.needsEnrichment) {
+            try {
+              const offSearchResponse = await axios.get(`${OPEN_FOOD_FACTS_API_BASE}/search`, {
+                params: {
+                  search_terms: searchQuery,
+                  page_size: 1,
+                  page: 1,
+                  fields: 'code,product_name,brands,image_url,nutriments,ingredients_text_en,serving_size'
+                },
+                headers: {
+                  'User-Agent': 'ChefSpAIce/1.0 (https://chefspice.app)',
+                  'Accept': 'application/json'
+                },
+                timeout: 5000
+              });
+
+              if (offSearchResponse.data.products && offSearchResponse.data.products.length > 0) {
+                const product = offSearchResponse.data.products[0];
+                
+                // Merge missing data from fuzzy match
+                if (!imageUrl && product.image_url) {
+                  imageUrl = product.image_url;
+                  console.log("Got image from Open Food Facts fuzzy search");
+                }
+
+                if (afterBarcodeLookupCheck.missingFields.nutrition && product.nutriments) {
+                  const calories = product.nutriments['energy-kcal'] || product.nutriments.energy_100g;
+                  const protein = product.nutriments.proteins || product.nutriments.proteins_100g;
+                  const carbs = product.nutriments.carbohydrates || product.nutriments.carbohydrates_100g;
+                  const fat = product.nutriments.fat || product.nutriments.fat_100g;
+                  
+                  // Only merge if we have meaningful values
+                  if (calories || protein || carbs || fat) {
+                    enrichedItem.nutrition = {
+                      calories: calories || 0,
+                      protein: protein || 0,
+                      carbs: carbs || 0,
+                      fat: fat || 0,
+                      fiber: product.nutriments.fiber || product.nutriments.fiber_100g,
+                      sugar: product.nutriments.sugars || product.nutriments.sugars_100g,
+                      sodium: product.nutriments.sodium || product.nutriments.sodium_100g,
+                      servingSize: product.serving_size || "100",
+                      servingUnit: "g"
+                    };
+                    console.log("Enriched nutrition from Open Food Facts fuzzy search");
+                  }
+                }
+
+                if (afterBarcodeLookupCheck.missingFields.ingredients && product.ingredients_text_en) {
+                  enrichedItem.ingredients = product.ingredients_text_en;
+                  console.log("Enriched ingredients from Open Food Facts fuzzy search");
+                }
+              }
+            } catch (error) {
+              console.error("Error in Open Food Facts fuzzy search:", error);
+            }
+          }
+        } catch (error) {
+          console.error("Error in fuzzy matching:", error);
+        }
+      }
+
+      // Return enriched item with image URL
+      res.json({
+        ...enrichedItem,
+        imageUrl: imageUrl
+      });
+
+    } catch (error: any) {
+      console.error("Food enrichment error:", error);
+      res.status(500).json({ error: "Failed to enrich food item" });
     }
   });
 
