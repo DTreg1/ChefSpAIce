@@ -366,17 +366,35 @@ export function matchIngredientWithInventory(
   
   console.log(`[DEBUG] Matching "${recipeIngredient}" -> parsed name: "${parsed.name}", unit: "${parsed.unit}", qty: ${parsed.quantity}`);
   
-  // Find matching inventory item
-  const matchingItem = inventoryItems.find(item => {
+  // Find ALL matching inventory items
+  const allMatches = inventoryItems.filter(item => {
     const matches = ingredientNamesMatch(parsed.name, item.name);
     if (matches) {
-      console.log(`  ✓ MATCHED with inventory: "${item.name}"`);
+      console.log(`  ✓ MATCHED with inventory: "${item.name}" (qty: ${item.quantity} ${item.unit}, weight: ${item.weightInGrams || 'N/A'}g)`);
     }
     return matches;
   });
   
-  if (!matchingItem) {
+  if (allMatches.length === 0) {
     console.log(`  ✗ NO MATCH FOUND for "${parsed.name}"`);
+  }
+  
+  // Smart item selection: If recipe needs weight unit, prioritize items WITH weight data
+  const neededUnitType = getUnitType(parsed.unit);
+  let matchingItem: typeof allMatches[0] | undefined;
+  
+  if (neededUnitType === 'weight' && allMatches.length > 0) {
+    // Prioritize items with valid weight data
+    matchingItem = allMatches.find(item => item.weightInGrams && item.weightInGrams > 0);
+    if (matchingItem) {
+      console.log(`  → Selected item WITH weight data: ${matchingItem.quantity} ${matchingItem.unit} (${matchingItem.weightInGrams}g)`);
+    } else {
+      matchingItem = allMatches[0];
+      console.log(`  → No weight data available, using first match`);
+    }
+  } else {
+    // For non-weight units, just use the first match
+    matchingItem = allMatches[0];
   }
 
   if (!matchingItem) {
@@ -404,7 +422,7 @@ export function matchIngredientWithInventory(
   
   // NEW: Smart weight-based conversion
   // If the recipe needs a weight unit and we have weight data, use it!
-  const neededUnitType = getUnitType(parsed.unit);
+  // Note: neededUnitType was already declared above when selecting the matching item
   const hasValidWeight = matchingItem.weightInGrams && matchingItem.weightInGrams > 0;
   
   if (neededUnitType === 'weight' && hasValidWeight && inventoryQuantity > 0) {
