@@ -321,9 +321,12 @@ export function RecipeCard({
                     return null;
                   }
                   if (match.shortage) {
+                    const formattedQuantity = Number.isInteger(match.shortage.quantity) 
+                      ? match.shortage.quantity.toString() 
+                      : match.shortage.quantity.toFixed(1);
                     return (
                       <span className="text-xs text-red-600 ml-2">
-                        (need {match.shortage.quantity.toFixed(1)} {match.shortage.unit})
+                        (need {formattedQuantity} {match.shortage.unit})
                       </span>
                     );
                   }
