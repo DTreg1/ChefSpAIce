@@ -208,10 +208,11 @@ export function parseIngredient(ingredientStr: string): {
       // Check if unit alone is a descriptor (e.g., "large eggs")
       if (SIZE_DESCRIPTORS.includes(trimmedUnit)) {
         // It's a size descriptor, not a unit - treat as countable item
+        // Keep the descriptor as part of the ingredient name
         return { 
           quantity, 
           unit: 'piece', 
-          name: trimmedName 
+          name: `${unit.trim()} ${trimmedName}`
         };
       }
       
@@ -229,40 +230,19 @@ export function parseIngredient(ingredientStr: string): {
         }
         if (SIZE_DESCRIPTORS.includes(potentialDescriptor)) {
           // It's a multi-word size descriptor - treat as countable item
+          // Keep the descriptor as part of the ingredient name
           const actualName = nameWords.slice(1).join(' ');
           return { 
             quantity, 
             unit: 'piece', 
-            name: actualName 
+            name: `${unit.trim()} ${nameWords[0]} ${actualName}` 
           };
         }
       }
       
-      // If unit is 'piece', check if name starts with a size descriptor (handles hyphenated cases like "extra-large")
-      if (unit === 'piece' && nameWords.length > 0) {
-        const firstWord = nameWords[0].toLowerCase().replace(/-/g, ' ');
-        
-        // Check for single-word descriptor at start of name
-        if (SIZE_DESCRIPTORS.includes(firstWord)) {
-          return {
-            quantity,
-            unit: 'piece',
-            name: nameWords.slice(1).join(' ')
-          };
-        }
-        
-        // Check for multi-word descriptor at start of name
-        if (nameWords.length > 1) {
-          const twoWords = `${firstWord} ${nameWords[1].toLowerCase()}`;
-          if (SIZE_DESCRIPTORS.includes(twoWords)) {
-            return{
-              quantity,
-              unit: 'piece',
-              name: nameWords.slice(2).join(' ')
-            };
-          }
-        }
-      }
+      // If unit is 'piece', keep the name as-is, including any size descriptors
+      // Size descriptors like "large", "medium", "small" should remain part of the ingredient name
+      // This allows "2 large eggs" to match with "eggs" in inventory
 
       return { quantity, unit: unit.trim(), name: trimmedName };
     }
