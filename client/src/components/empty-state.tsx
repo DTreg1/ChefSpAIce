@@ -33,7 +33,7 @@ export function EmptyState({ type, onAction }: EmptyStateProps) {
                 Your personal kitchen assistant is here to help you manage your
                 food inventory and discover amazing recipes.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+              <div className="grid grid-cols-2 gap-4 w-full">
                 <div className="p-4 border border-border rounded-xl hover-elevate card-hover shadow-sm">
                   <MessageSquare className="w-5 h-5 text-primary mb-2" />
                   <p className="text-sm text-foreground font-medium mb-1">

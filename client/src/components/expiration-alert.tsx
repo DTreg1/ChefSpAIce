@@ -113,7 +113,7 @@ export function ExpirationAlert() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="">
       {hasNotifications && (
         <div className="rounded-lg p-3 ticker-container">
           <div className="flex items-center gap-3">
