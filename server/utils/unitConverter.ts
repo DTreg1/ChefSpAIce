@@ -49,6 +49,7 @@ const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {
   },
   // Count units (no conversion)
   count: {
+    count: 1,
     piece: 1,
     pieces: 1,
     item: 1,
