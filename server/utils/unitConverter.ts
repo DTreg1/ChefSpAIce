@@ -254,12 +254,37 @@ export function parseIngredient(ingredientStr: string): {
 
 // Match ingredient names (fuzzy matching)
 export function ingredientNamesMatch(name1: string, name2: string): boolean {
-  const normalize = (str: string) => 
-    str.toLowerCase()
+  const normalize = (str: string) => {
+    let normalized = str.toLowerCase()
       .replace(/,\s*/g, ' ') // Remove commas
       .replace(/[^a-z0-9]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
+    
+    // Strip size descriptors from the start of the name for matching
+    // This allows "large eggs" to match "eggs"
+    const words = normalized.split(' ');
+    
+    // Check for single-word descriptor at the start
+    if (words.length > 1) {
+      const firstWord = words[0];
+      const normalizedDescriptors = SIZE_DESCRIPTORS.map(d => d.toLowerCase().replace(/-/g, ' '));
+      
+      if (normalizedDescriptors.includes(firstWord)) {
+        // Strip single-word descriptor
+        normalized = words.slice(1).join(' ');
+      } else if (words.length > 2) {
+        // Check for multi-word descriptor (e.g., "extra large")
+        const firstTwoWords = `${words[0]} ${words[1]}`;
+        if (normalizedDescriptors.includes(firstTwoWords)) {
+          // Strip multi-word descriptor
+          normalized = words.slice(2).join(' ');
+        }
+      }
+    }
+    
+    return normalized;
+  };
 
   const n1 = normalize(name1);
   const n2 = normalize(name2);
