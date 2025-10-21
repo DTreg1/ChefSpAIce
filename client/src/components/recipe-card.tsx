@@ -324,9 +324,11 @@ export function RecipeCard({
                     const formattedQuantity = Number.isInteger(match.shortage.quantity) 
                       ? match.shortage.quantity.toString() 
                       : match.shortage.quantity.toFixed(1);
+                    // When unit is "piece", show the ingredient name instead for better UX
+                    const displayUnit = match.shortage.unit === 'piece' ? match.ingredientName : match.shortage.unit;
                     return (
                       <span className="text-xs text-red-600 ml-2">
-                        (need {formattedQuantity} {match.shortage.unit})
+                        (need {formattedQuantity} {displayUnit})
                       </span>
                     );
                   }

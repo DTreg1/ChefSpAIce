@@ -105,9 +105,9 @@ export function convertUnit(
     return null;
   }
 
-  // Count units don't convert
+  // Count units all convert 1:1 (piece, count, slice, etc. are all equivalent)
   if (fromType === 'count') {
-    return fromUnit.toLowerCase() === toUnit.toLowerCase() ? quantity : null;
+    return quantity;
   }
 
   const conversions = UNIT_CONVERSIONS[fromType];
