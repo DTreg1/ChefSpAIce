@@ -12,28 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Upload, ImageOff, ChevronDown, ChevronUp, Filter, Loader2, ScanEye } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
-import { ObjectUploader } from "./ObjectUploader";
-import { BarcodeRateLimitInfo } from "./barcode-rate-limit-info";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { StorageLocation, USDASearchResponse, InsertFoodItem } from "@shared/schema";
+import type {
+  StorageLocation,
+  USDASearchResponse,
+  InsertFoodItem,
+} from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 
 interface AddFoodDialogProps {
@@ -44,89 +30,163 @@ interface AddFoodDialogProps {
 // Helper function to suggest shelf life based on food category
 function getSuggestedShelfLife(category?: string, dataType?: string): number {
   if (!category) return 7; // Default 7 days for unknown items
-  
+
   const cat = category.toLowerCase();
-  
+
   // Fresh produce
-  if (cat.includes('fruit') || cat.includes('vegetable') || cat.includes('produce')) {
+  if (
+    cat.includes("fruit") ||
+    cat.includes("vegetable") ||
+    cat.includes("produce")
+  ) {
     return 7;
   }
-  
+
   // Dairy products
-  if (cat.includes('dairy') || cat.includes('milk') || cat.includes('cheese') || cat.includes('yogurt')) {
+  if (
+    cat.includes("dairy") ||
+    cat.includes("milk") ||
+    cat.includes("cheese") ||
+    cat.includes("yogurt")
+  ) {
     return 10;
   }
-  
+
   // Meat and poultry
-  if (cat.includes('meat') || cat.includes('poultry') || cat.includes('beef') || 
-      cat.includes('pork') || cat.includes('chicken') || cat.includes('fish') || cat.includes('seafood')) {
+  if (
+    cat.includes("meat") ||
+    cat.includes("poultry") ||
+    cat.includes("beef") ||
+    cat.includes("pork") ||
+    cat.includes("chicken") ||
+    cat.includes("fish") ||
+    cat.includes("seafood")
+  ) {
     return 3;
   }
-  
+
   // Bread and bakery
-  if (cat.includes('bread') || cat.includes('bakery') || cat.includes('baked')) {
+  if (
+    cat.includes("bread") ||
+    cat.includes("bakery") ||
+    cat.includes("baked")
+  ) {
     return 5;
   }
-  
+
   // Eggs
-  if (cat.includes('egg')) {
+  if (cat.includes("egg")) {
     return 21;
   }
-  
+
   // Frozen foods
-  if (cat.includes('frozen')) {
+  if (cat.includes("frozen")) {
     return 90; // 3 months
   }
-  
+
   // Canned/packaged goods
-  if (cat.includes('canned') || cat.includes('packaged') || cat.includes('snack') || 
-      cat.includes('cereal') || cat.includes('grain') || cat.includes('pasta')) {
+  if (
+    cat.includes("canned") ||
+    cat.includes("packaged") ||
+    cat.includes("snack") ||
+    cat.includes("cereal") ||
+    cat.includes("grain") ||
+    cat.includes("pasta")
+  ) {
     return 180; // 6 months
   }
-  
+
   // Condiments and sauces
-  if (cat.includes('sauce') || cat.includes('condiment') || cat.includes('dressing')) {
+  if (
+    cat.includes("sauce") ||
+    cat.includes("condiment") ||
+    cat.includes("dressing")
+  ) {
     return 60; // 2 months
   }
-  
+
   // Default for unknown categories
   return 14;
 }
 
 // Helper function to suggest storage location based on food category and description
-function getSuggestedStorageLocation(category?: string, description?: string, storageLocations?: StorageLocation[]): string | null {
+function getSuggestedStorageLocation(
+  category?: string,
+  description?: string,
+  storageLocations?: StorageLocation[],
+): string | null {
   if (!storageLocations || storageLocations.length === 0) return null;
-  
+
   // Combine category and description for more accurate detection
-  const searchText = `${category || ''} ${description || ''}`.toLowerCase();
-  
+  const searchText = `${category || ""} ${description || ""}`.toLowerCase();
+
   // Frozen foods → Freezer (check both category and description)
-  if (searchText.includes('frozen')) {
-    return storageLocations.find(loc => loc.name.toLowerCase() === 'freezer')?.id || null;
+  if (searchText.includes("frozen")) {
+    return (
+      storageLocations.find((loc) => loc.name.toLowerCase() === "freezer")
+        ?.id || null
+    );
   }
-  
+
   // Fresh items that need refrigeration → Fridge
-  if (searchText.includes('dairy') || searchText.includes('milk') || searchText.includes('cheese') || searchText.includes('yogurt') ||
-      searchText.includes('meat') || searchText.includes('poultry') || searchText.includes('beef') || searchText.includes('pork') || 
-      searchText.includes('chicken') || searchText.includes('fish') || searchText.includes('seafood') ||
-      searchText.includes('egg') || searchText.includes('fruit') || searchText.includes('vegetable') || searchText.includes('produce')) {
-    return storageLocations.find(loc => loc.name.toLowerCase() === 'fridge')?.id || null;
+  if (
+    searchText.includes("dairy") ||
+    searchText.includes("milk") ||
+    searchText.includes("cheese") ||
+    searchText.includes("yogurt") ||
+    searchText.includes("meat") ||
+    searchText.includes("poultry") ||
+    searchText.includes("beef") ||
+    searchText.includes("pork") ||
+    searchText.includes("chicken") ||
+    searchText.includes("fish") ||
+    searchText.includes("seafood") ||
+    searchText.includes("egg") ||
+    searchText.includes("fruit") ||
+    searchText.includes("vegetable") ||
+    searchText.includes("produce")
+  ) {
+    return (
+      storageLocations.find((loc) => loc.name.toLowerCase() === "refridgerator")
+        ?.id || null
+    );
   }
-  
+
   // Shelf-stable items → Pantry
-  if (searchText.includes('canned') || searchText.includes('packaged') || searchText.includes('snack') || 
-      searchText.includes('cereal') || searchText.includes('grain') || searchText.includes('pasta') ||
-      searchText.includes('sauce') || searchText.includes('condiment') || searchText.includes('dressing')) {
-    return storageLocations.find(loc => loc.name.toLowerCase() === 'pantry')?.id || null;
+  if (
+    searchText.includes("canned") ||
+    searchText.includes("packaged") ||
+    searchText.includes("snack") ||
+    searchText.includes("cereal") ||
+    searchText.includes("grain") ||
+    searchText.includes("pasta") ||
+    searchText.includes("sauce") ||
+    searchText.includes("condiment") ||
+    searchText.includes("dressing")
+  ) {
+    return (
+      storageLocations.find((loc) => loc.name.toLowerCase() === "pantry")?.id ||
+      null
+    );
   }
-  
+
   // Bread and bakery → Counter
-  if (searchText.includes('bread') || searchText.includes('bakery') || searchText.includes('baked')) {
-    return storageLocations.find(loc => loc.name.toLowerCase() === 'counter')?.id || null;
+  if (
+    searchText.includes("bread") ||
+    searchText.includes("bakery") ||
+    searchText.includes("baked")
+  ) {
+    return (
+      storageLocations.find((loc) => loc.name.toLowerCase() === "counter")
+        ?.id || null
+    );
   }
-  
+
   // Default to Fridge for unknown categories (safer for food safety)
-  return storageLocations.find(loc => loc.name.toLowerCase() === 'fridge')?.id || null;
+  return (
+    storageLocations.find((loc) => loc.name.toLowerCase() === "refridgerator")
+      ?.id || null
+  );
 }
 
 export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
@@ -139,9 +199,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [storageLocationId, setStorageLocationId] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageSource, setImageSource] = useState<"branded" | "upload" | "none">("none");
   const [isSearching, setIsSearching] = useState(false);
-  
+
   // Advanced search parameters
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
@@ -151,21 +210,28 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [brandOwner, setBrandOwner] = useState("");
   const [debouncedBrandOwner, setDebouncedBrandOwner] = useState("");
-  
+
   // Image analysis state
   const [imageAnalysis, setImageAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisApplied, setAnalysisApplied] = useState(false);
-  
+
   const { toast } = useToast();
 
   const { data: storageLocations } = useStorageLocations();
 
   // Set default storage location when dialog opens
   useEffect(() => {
-    if (open && storageLocations && storageLocations.length > 0 && !storageLocationId) {
+    if (
+      open &&
+      storageLocations &&
+      storageLocations.length > 0 &&
+      !storageLocationId
+    ) {
       // Default to fridge if available, otherwise first location
-      const fridgeLocation = storageLocations.find(loc => loc.name.toLowerCase() === 'fridge');
+      const fridgeLocation = storageLocations.find(
+        (loc) => loc.name.toLowerCase() === "refridgerator",
+      );
       setStorageLocationId(fridgeLocation?.id || storageLocations[0].id);
     }
   }, [open, storageLocations]);
@@ -182,7 +248,6 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       setStorageLocationId("");
       setExpirationDate("");
       setImageUrl(null);
-      setImageSource("none");
       setIsSearching(false);
       setShowAdvancedSearch(false);
       setSelectedDataTypes([]);
@@ -204,44 +269,48 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       setDebouncedBrandOwner(value);
     },
     300,
-    []
+    [],
   );
-  
+
   // Build query string with all parameters
   const buildQueryString = () => {
     const params = new URLSearchParams();
-    params.append('query', debouncedSearchQuery);
-    
+    params.append("query", debouncedSearchQuery);
+
     if (selectedDataTypes.length > 0) {
-      params.append('dataType', selectedDataTypes.join(','));
+      params.append("dataType", selectedDataTypes.join(","));
     }
-    
+
     // Don't send sortBy if it's "relevance" (default)
     if (sortBy && sortBy !== "relevance") {
-      params.append('sortBy', sortBy);
+      params.append("sortBy", sortBy);
     }
-    
+
     if (sortOrder) {
-      params.append('sortOrder', sortOrder);
+      params.append("sortOrder", sortOrder);
     }
-    
+
     if (pageSize !== 20) {
-      params.append('pageSize', pageSize.toString());
+      params.append("pageSize", pageSize.toString());
     }
-    
+
     if (currentPage !== 1) {
-      params.append('pageNumber', currentPage.toString());
+      params.append("pageNumber", currentPage.toString());
     }
-    
+
     if (debouncedBrandOwner) {
-      params.append('brandOwner', debouncedBrandOwner);
+      params.append("brandOwner", debouncedBrandOwner);
     }
-    
+
     return params.toString();
   };
-  
+
   // Use debounced query for automatic search
-  const { data: searchResults, isFetching: searchLoading, refetch: refetchSearch } = useQuery<USDASearchResponse>({
+  const {
+    data: searchResults,
+    isFetching: searchLoading,
+    refetch: refetchSearch,
+  } = useQuery<USDASearchResponse>({
     queryKey: [`/api/usda/search?${buildQueryString()}`],
     enabled: debouncedSearchQuery.length > 0,
   });
@@ -253,7 +322,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       setIsSearching(false);
     },
     300,
-    []
+    [],
   );
 
   // Handle input changes with debouncing
@@ -268,7 +337,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       setDebouncedSearchQuery("");
     }
   };
-  
+
   // Handle brand owner change with debouncing
   const handleBrandOwnerChange = (value: string) => {
     setBrandOwner(value);
@@ -305,7 +374,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const analyzeImageMutation = useMutation({
     mutationFn: async (imageBase64: string) => {
       const response = await apiRequest("POST", "/api/food/analyze-image", {
-        image: imageBase64
+        image: imageBase64,
       });
       return await response.json();
     },
@@ -313,30 +382,34 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       if (data.success && data.analysis) {
         const analysis = data.analysis;
         setImageAnalysis(analysis);
-        
+
         // Auto-populate form fields with analysis results
         setSearchQuery(analysis.name || "");
-        setQuantity(analysis.quantity?.replace(/[^0-9.]/g, '') || "1");
+        setQuantity(analysis.quantity?.replace(/[^0-9.]/g, "") || "1");
         setUnit(analysis.unit || "serving");
-        
+
         // Suggest storage location based on category
         if (storageLocations && analysis.category) {
-          const suggestedLocation = getSuggestedStorageLocation(analysis.category, analysis.name, storageLocations);
+          const suggestedLocation = getSuggestedStorageLocation(
+            analysis.category,
+            analysis.name,
+            storageLocations,
+          );
           if (suggestedLocation) {
             setStorageLocationId(suggestedLocation);
           }
         }
-        
+
         // Suggest expiration date based on category or use default
         if (!expirationDate && analysis.category) {
           const shelfLife = getSuggestedShelfLife(analysis.category);
           const futureDate = new Date();
           futureDate.setDate(futureDate.getDate() + shelfLife);
-          setExpirationDate(futureDate.toISOString().split('T')[0]);
+          setExpirationDate(futureDate.toISOString().split("T")[0]);
         }
-        
+
         setAnalysisApplied(true);
-        
+
         toast({
           title: "Image Analyzed",
           description: `Detected: ${analysis.name} (${analysis.confidence}% confidence)`,
@@ -344,7 +417,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       } else {
         toast({
           title: "Analysis Failed",
-          description: "Could not analyze the image. Please enter details manually.",
+          description:
+            "Could not analyze the image. Please enter details manually.",
           variant: "destructive",
         });
       }
@@ -371,7 +445,6 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     setStorageLocationId("");
     setExpirationDate("");
     setImageUrl(null);
-    setImageSource("none");
     setIsSearching(false);
     // Reset advanced search parameters
     setShowAdvancedSearch(false);
@@ -398,19 +471,23 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     };
   };
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleUploadComplete = async (
+    result: UploadResult<Record<string, unknown>, Record<string, unknown>>,
+  ) => {
     if (result.successful && result.successful.length > 0) {
       const uploadedUrl = result.successful[0].uploadURL;
-      const response = await apiRequest("PUT", "/api/food-images", { imageURL: uploadedUrl });
+      const response = await apiRequest("PUT", "/api/food-images", {
+        imageURL: uploadedUrl,
+      });
       const data = await response.json();
       setImageUrl(data.objectPath);
-      setImageSource("upload");
       // Reset analysis when new image is uploaded
       setImageAnalysis(null);
       setAnalysisApplied(false);
       toast({
         title: "Image uploaded",
-        description: "Photo uploaded successfully. You can now analyze it to detect ingredients.",
+        description:
+          "Photo uploaded successfully. You can now analyze it to detect ingredients.",
       });
     }
   };
@@ -426,7 +503,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     }
 
     setIsAnalyzing(true);
-    
+
     // Convert URL to base64 if needed, or send URL directly
     analyzeImageMutation.mutate(imageUrl);
   };
@@ -440,49 +517,63 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       });
       return;
     }
-    
+
     try {
       let response;
       let searchMethod = "";
-      
+
       // If we have a UPC barcode, use it for direct lookup
       if (selectedUpc) {
         searchMethod = `UPC ${selectedUpc}`;
-        response = await apiRequest("GET", `/api/barcodelookup/product/${encodeURIComponent(selectedUpc)}`, null);
+        response = await apiRequest(
+          "GET",
+          `/api/barcodelookup/product/${encodeURIComponent(selectedUpc)}`,
+          null,
+        );
       } else {
         // Check if the search query looks like a barcode (numeric string, 8-14 digits)
-        const simplifiedQuery = searchQuery.split(',')[0].trim();
+        const simplifiedQuery = searchQuery.split(",")[0].trim();
         const isBarcodeFormat = /^\d{8,14}$/.test(simplifiedQuery);
-        
+
         if (isBarcodeFormat) {
           // Treat as barcode lookup (will have fallback to OpenFoodFacts)
           searchMethod = `barcode ${simplifiedQuery}`;
-          response = await apiRequest("GET", `/api/barcodelookup/product/${encodeURIComponent(simplifiedQuery)}`, null);
+          response = await apiRequest(
+            "GET",
+            `/api/barcodelookup/product/${encodeURIComponent(simplifiedQuery)}`,
+            null,
+          );
         } else {
           // Otherwise fall back to text search with simplified query
-          const queryWithBrand = selectedFood?.brandOwner 
+          const queryWithBrand = selectedFood?.brandOwner
             ? `${selectedFood.brandOwner} ${simplifiedQuery}`.trim()
             : simplifiedQuery;
           searchMethod = `search "${queryWithBrand}"`;
-          response = await apiRequest("GET", `/api/barcodelookup/search?query=${encodeURIComponent(queryWithBrand)}`, null);
+          response = await apiRequest(
+            "GET",
+            `/api/barcodelookup/search?query=${encodeURIComponent(queryWithBrand)}`,
+            null,
+          );
         }
       }
-      
+
       const data = await response.json();
-      
+
       // Handle direct product lookup response
       if (data.imageUrl) {
         setImageUrl(data.imageUrl);
-        setImageSource("branded");
         toast({
           title: "Product image found",
           description: `Found image using ${searchMethod}`,
         });
-      } 
+      }
       // Handle search results response
-      else if (data.products && data.products.length > 0 && data.products[0].imageUrl) {
+      else if (
+        data.products &&
+        data.products.length > 0 &&
+        data.products[0].imageUrl
+      ) {
         setImageUrl(data.products[0].imageUrl);
-        setImageSource("branded");
         toast({
           title: "Product image found",
           description: `Found image for ${data.products[0].name}`,
@@ -511,7 +602,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       quantity,
       unit,
       storageLocationId,
-      expirationDate
+      expirationDate,
     });
 
     // Validate that we have either a selected food or a search query
@@ -550,13 +641,15 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       storageLocationId,
       expirationDate,
       imageUrl: imageUrl,
-      nutrition: selectedFood?.nutrition ? JSON.stringify(selectedFood.nutrition) : null,
+      nutrition: selectedFood?.nutrition
+        ? JSON.stringify(selectedFood.nutrition)
+        : null,
       usdaData: selectedFood || null,
       foodCategory: selectedFood?.foodCategory || null,
     };
-    
+
     console.log("Submitting mutation with data:", mutationData);
-    
+
     addItemMutation.mutate(mutationData);
   };
 
@@ -566,7 +659,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         <DialogHeader>
           <DialogTitle>Add Food Item</DialogTitle>
           <DialogDescription>
-            We utilize the USDA database to provide accurate nutritional information.
+            We utilize the USDA database to provide accurate nutritional
+            information.
           </DialogDescription>
         </DialogHeader>
 
@@ -580,126 +674,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                 onChange={(e) => handleSearchInputChange(e.target.value)}
                 data-testid="input-usda-search"
               />
-              
-              {/* Advanced Search Options */}
-              <Collapsible open={showAdvancedSearch} onOpenChange={setShowAdvancedSearch}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full justify-between">
-                    <span className="flex items-center gap-2">
-                      <Filter className="w-4 h-4" />
-                      Advanced Search Options
-                    </span>
-                    {showAdvancedSearch ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4 pt-4 px-1">
-                  {/* Data Type Filter */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Data Types</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {['Branded', 'Foundation', 'Survey (FNDDS)', 'SR Legacy'].map((type) => (
-                        <Badge
-                          key={type}
-                          variant={selectedDataTypes.includes(type) ? "default" : "outline"}
-                          className="cursor-pointer hover-elevate"
-                          onClick={() => {
-                            setSelectedDataTypes(prev => 
-                              prev.includes(type)
-                                ? prev.filter(t => t !== type)
-                                : [...prev, type]
-                            );
-                            setCurrentPage(1);
-                          }}
-                        >
-                          {type}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Brand Owner Filter */}
-                  <div className="space-y-2">
-                    <Label htmlFor="brand-owner" className="text-sm">Brand Owner</Label>
-                    <Input
-                      id="brand-owner"
-                      placeholder="Filter by brand (e.g., Nestle, Kellogg's)"
-                      value={brandOwner}
-                      onChange={(e) => handleBrandOwnerChange(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Sort By */}
-                    <div className="space-y-2">
-                      <Label className="text-sm">Sort By</Label>
-                      <Select value={sortBy || "relevance"} onValueChange={(value) => { setSortBy(value === "relevance" ? "" : value); setCurrentPage(1); }}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="relevance">Relevance</SelectItem>
-                          <SelectItem value="lowercaseDescription.keyword">Description</SelectItem>
-                          <SelectItem value="dataType.keyword">Data Type</SelectItem>
-                          <SelectItem value="fdcId">FDC ID</SelectItem>
-                          <SelectItem value="publishedDate">Published Date</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* Sort Order */}
-                    <div className="space-y-2">
-                      <Label className="text-sm">Order</Label>
-                      <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => { setSortOrder(value); setCurrentPage(1); }}>
-                        <SelectTrigger className="text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="asc">Ascending</SelectItem>
-                          <SelectItem value="desc">Descending</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  {/* Results per page */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Results per page</Label>
-                    <Select value={pageSize.toString()} onValueChange={(value) => { setPageSize(Number(value)); setCurrentPage(1); }}>
-                      <SelectTrigger className="text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                        <SelectItem value="100">100</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Clear Filters Button */}
-                  {(selectedDataTypes.length > 0 || brandOwner || (sortBy && sortBy !== "relevance")) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedDataTypes([]);
-                        setSortBy("relevance");
-                        setSortOrder("asc");
-                        setBrandOwner("");
-                        setDebouncedBrandOwner("");
-                        setPageSize(20);
-                        setCurrentPage(1);
-                      }}
-                      className="w-full"
-                    >
-                      Clear All Filters
-                    </Button>
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
-              
+
               {(isSearching || searchLoading) && (
                 <div className="text-sm text-muted-foreground">
                   Searching USDA database...
@@ -734,12 +709,23 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                         setUnit("piece");
                       }
                       // Auto-suggest expiration date based on food category
-                      const suggestedDays = getSuggestedShelfLife(food.foodCategory, food.dataType);
+                      const suggestedDays = getSuggestedShelfLife(
+                        food.foodCategory,
+                        food.dataType,
+                      );
                       const suggestedDate = new Date();
-                      suggestedDate.setDate(suggestedDate.getDate() + suggestedDays);
-                      setExpirationDate(suggestedDate.toISOString().split('T')[0]);
+                      suggestedDate.setDate(
+                        suggestedDate.getDate() + suggestedDays,
+                      );
+                      setExpirationDate(
+                        suggestedDate.toISOString().split("T")[0],
+                      );
                       // Auto-select storage location based on food category and description
-                      const suggestedLocationId = getSuggestedStorageLocation(food.foodCategory, food.description, storageLocations);
+                      const suggestedLocationId = getSuggestedStorageLocation(
+                        food.foodCategory,
+                        food.description,
+                        storageLocations,
+                      );
                       if (suggestedLocationId) {
                         setStorageLocationId(suggestedLocationId);
                       }
@@ -773,14 +759,16 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                   </button>
                 ))}
               </div>
-              
+
               {/* Pagination Controls */}
               {searchResults.totalPages > 1 && (
                 <div className="flex items-center justify-between pt-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={currentPage === 1}
                   >
                     Previous
@@ -791,7 +779,11 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(searchResults.totalPages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(searchResults.totalPages, prev + 1),
+                      )
+                    }
                     disabled={currentPage === searchResults.totalPages}
                   >
                     Next
@@ -804,34 +796,48 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
           {/* Display nutrition information if selected food has nutrition data */}
           {selectedFood?.nutrition && (
             <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-2">
-              <h4 className="font-medium text-sm">Nutrition Information (per {selectedFood.servingSize || 100}{selectedFood.servingSizeUnit || 'g'})</h4>
+              <h4 className="font-medium text-sm">
+                Nutrition Information (per {selectedFood.servingSize} {selectedFood.servingSizeUnit})
+              </h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Calories:</span>
-                  <span className="font-medium">{Math.round(selectedFood.nutrition.calories || 0)}</span>
+                  <span className="font-medium">
+                    {Math.round(selectedFood.nutrition.calories)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Protein:</span>
-                  <span className="font-medium">{(selectedFood.nutrition.protein || 0).toFixed(1)}g</span>
+                  <span className="font-medium">
+                    {selectedFood.nutrition.protein}{selectedFood.servingSizeUnit}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Carbs:</span>
-                  <span className="font-medium">{(selectedFood.nutrition.carbs || 0).toFixed(1)}g</span>
+                  <span className="font-medium">
+                    {selectedFood.nutrition.carbs}{selectedFood.servingSizeUnit}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Fat:</span>
-                  <span className="font-medium">{(selectedFood.nutrition.fat || 0).toFixed(1)}g</span>
+                  <span className="font-medium">
+                    {selectedFood.nutrition.fat}{selectedFood.servingSizeUnit}
+                  </span>
                 </div>
                 {selectedFood.nutrition.fiber !== undefined && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Fiber:</span>
-                    <span className="font-medium">{(selectedFood.nutrition.fiber || 0).toFixed(1)}g</span>
+                    <span className="font-medium">
+                      {selectedFood.nutrition.fiber}{selectedFood.servingSizeUnit}
+                    </span>
                   </div>
                 )}
                 {selectedFood.nutrition.sugar !== undefined && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Sugar:</span>
-                    <span className="font-medium">{(selectedFood.nutrition.sugar || 0).toFixed(1)}g</span>
+                    <span className="font-medium">
+                      {selectedFood.nutrition.sugar}{selectedFood.servingSizeUnit}
+                    </span>
                   </div>
                 )}
               </div>
@@ -896,152 +902,19 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
               data-testid="input-expiration"
             />
             <p className="text-xs text-muted-foreground">
-              Auto-suggested based on food type. Always verify with the package label.
+              Auto-suggested based on food type. Always verify with the package
+              label.
             </p>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Food Image (Optional)</Label>
-            <Tabs value={imageSource} onValueChange={(value) => setImageSource(value as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="none" data-testid="tab-no-image">
-                  <ImageOff className="w-4 h-4 mr-2" />
-                  No Image
-                </TabsTrigger>
-                <TabsTrigger value="branded" data-testid="tab-search-image">
-                  <Search className="w-4 h-4 mr-2" />
-                  Find Product
-                </TabsTrigger>
-                <TabsTrigger value="upload" data-testid="tab-upload-image">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Photo
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="none" className="text-sm text-muted-foreground">
-                No image will be added to this item
-              </TabsContent>
-
-              <TabsContent value="branded" className="space-y-3">
-                <BarcodeRateLimitInfo />
-                <p className="text-sm text-muted-foreground">
-                  {selectedUpc 
-                    ? `Will search using UPC barcode: ${selectedUpc}` 
-                    : "Search for branded product images from Barcode Lookup database"}
-                </p>
-                <Button
-                  type="button"
-                  onClick={handleSearchBarcodeLookup}
-                  variant="outline"
-                  className="w-full"
-                  data-testid="button-search-product-image"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  {selectedUpc ? "Find Product by UPC" : "Search for Product Image"}
-                </Button>
-                {imageUrl && imageSource === "branded" && (
-                  <div className="mt-2 p-2 border border-border rounded-lg">
-                    <img src={imageUrl} alt="Product" className="w-full h-32 object-contain" />
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="upload" className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Take or upload a photo of your leftover meal to automatically detect ingredients
-                </p>
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={10485760}
-                  onGetUploadParameters={handleGetUploadURL}
-                  onComplete={handleUploadComplete}
-                  buttonClassName="w-full"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Photo
-                </ObjectUploader>
-                {imageUrl && imageSource === "upload" && (
-                  <div className="space-y-3">
-                    <div className="mt-2 p-2 border border-border rounded-lg">
-                      <img src={imageUrl} alt="Uploaded" className="w-full h-32 object-contain" />
-                    </div>
-                    
-                    {!analysisApplied && (
-                      <Button
-                        type="button"
-                        onClick={handleAnalyzeImage}
-                        disabled={isAnalyzing}
-                        variant="outline"
-                        className="w-full"
-                        data-testid="button-analyze-image"
-                      >
-                        {isAnalyzing ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Analyzing Image...
-                          </>
-                        ) : (
-                          <>
-                            <ScanEye className="w-4 h-4 mr-2" />
-                            Analyze for Ingredients
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    
-                    {imageAnalysis && (
-                      <Alert className="bg-muted/50">
-                        <ScanEye className="h-4 w-4" />
-                        <AlertDescription>
-                          <div className="space-y-2">
-                            <div className="font-medium">
-                              Detected: {imageAnalysis.name} 
-                              {imageAnalysis.confidence && (
-                                <span className="text-muted-foreground ml-2">
-                                  ({imageAnalysis.confidence}% confidence)
-                                </span>
-                              )}
-                            </div>
-                            
-                            {imageAnalysis.ingredients && imageAnalysis.ingredients.length > 0 && (
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium">Visible ingredients:</p>
-                                <ul className="text-xs text-muted-foreground list-disc list-inside">
-                                  {imageAnalysis.ingredients.map((ing: any, idx: number) => (
-                                    <li key={idx}>{ing.name} - {ing.quantity} {ing.unit}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            
-                            {imageAnalysis.calories !== undefined && (
-                              <div className="text-xs space-y-1">
-                                <p className="font-medium">Estimated nutrition:</p>
-                                <div className="grid grid-cols-2 gap-x-4 text-muted-foreground">
-                                  <span>Calories: {imageAnalysis.calories}</span>
-                                  <span>Protein: {imageAnalysis.protein}g</span>
-                                  <span>Carbs: {imageAnalysis.carbs}g</span>
-                                  <span>Fat: {imageAnalysis.fat}g</span>
-                                </div>
-                              </div>
-                            )}
-                            
-                            <p className="text-xs text-muted-foreground italic">
-                              Form fields have been pre-filled. Please review and adjust as needed.
-                            </p>
-                          </div>
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
           </div>
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" className="touch-target" onClick={handleClose} data-testid="button-cancel">
+          <Button
+            variant="outline"
+            className="touch-target"
+            onClick={handleClose}
+            data-testid="button-cancel"
+          >
             Cancel
           </Button>
           <Button
