@@ -173,7 +173,7 @@ export function ExpirationAlert() {
       )}
 
       {hasSuggestions && (
-        <Card className="border-primary/20 bg-primary/2 backdrop-opacity-0" animate={false}>
+        <Card className="border-primary/20 bg-primary/20 backdrop-opacity-0" animate={false}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
