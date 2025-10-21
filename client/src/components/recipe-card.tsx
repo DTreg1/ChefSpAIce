@@ -72,7 +72,6 @@ export function RecipeCard({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
     },
     onError: () => {
       toast({
@@ -99,10 +98,12 @@ export function RecipeCard({
     
     setIsRefreshing(true);
     try {
-      // Invalidate and refetch recipes with inventory matching
+      // Invalidate and refetch both food items and recipes
       await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      
       const updatedRecipes = await queryClient.fetchQuery({
-        queryKey: ["/api/recipes?includeMatching=true"],
+        queryKey: ["/api/recipes"],
         staleTime: 0,
       });
       

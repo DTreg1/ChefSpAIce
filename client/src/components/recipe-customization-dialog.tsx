@@ -67,11 +67,11 @@ export function RecipeCustomizationDialog({
     onSuccess: async (recipe: Recipe) => {
       // First invalidate to get fresh inventory data
       await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/recipes?includeMatching=true"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
       
       // Fetch the recipe with fresh inventory matching
       const recipesWithMatching = await queryClient.fetchQuery({
-        queryKey: ["/api/recipes?includeMatching=true"],
+        queryKey: ["/api/recipes"],
         staleTime: 0,
       });
       
@@ -84,9 +84,6 @@ export function RecipeCustomizationDialog({
       });
       
       onRecipeGenerated?.(updatedRecipe || recipe);
-      
-      // Final invalidation to update UI
-      await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
       setOpen(false);
     },
     onError: (error: any) => {
