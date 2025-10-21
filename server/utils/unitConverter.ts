@@ -70,6 +70,8 @@ const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {
     heads: 1,
     stick: 1,
     sticks: 1,
+    slice: 1,
+    slices: 1,
   },
 };
 
@@ -82,6 +84,11 @@ function getUnitType(unit: string): string | null {
     }
   }
   return null;
+}
+
+// Check if a word is a valid unit (volume, weight, or count)
+function isValidUnit(word: string): boolean {
+  return getUnitType(word) !== null;
 }
 
 // Convert quantity between units
@@ -114,6 +121,16 @@ export function convertUnit(
   // Convert to base unit, then to target unit
   return (quantity * fromFactor) / toFactor;
 }
+
+// Common size descriptors that are adjectives, not units
+// These describe the SIZE of a countable item (eggs, tomatoes, etc.)
+// NOT actual units like "slices", "pieces", "cups", etc.
+const SIZE_DESCRIPTORS = [
+  'large', 'medium', 'small', 
+  'extra large', 'extra-large', 'x-large', 
+  'jumbo', 'mini', 'tiny', 
+  'extra small', 'extra-small'
+];
 
 // Parse ingredient string to extract quantity and unit
 export function parseIngredient(ingredientStr: string): {
@@ -171,7 +188,83 @@ export function parseIngredient(ingredientStr: string): {
         name = match[3];
       }
 
-      return { quantity, unit: unit.trim(), name: name.trim() };
+      // Check if the unit is actually a size descriptor
+      // Need to handle both single-word ("large") and multi-word ("extra large") descriptors
+      // Also normalize hyphens to spaces for comparison (e.g., "extra-large" → "extra large")
+      const trimmedUnit = unit.trim().toLowerCase().replace(/-/g, ' ');
+      let trimmedName = name.trim();
+      let nameWords = trimmedName.split(/\s+/);
+      
+      // Check if unit is a descriptor AND first word of name is a valid unit (e.g., "large cloves garlic")
+      if (SIZE_DESCRIPTORS.includes(trimmedUnit) && nameWords.length > 0 && isValidUnit(nameWords[0])) {
+        // The descriptor modifies a real unit - use the real unit and skip the descriptor
+        return {
+          quantity,
+          unit: nameWords[0],
+          name: nameWords.slice(1).join(' ')
+        };
+      }
+      
+      // Check if unit alone is a descriptor (e.g., "large eggs")
+      if (SIZE_DESCRIPTORS.includes(trimmedUnit)) {
+        // It's a size descriptor, not a unit - treat as countable item
+        return { 
+          quantity, 
+          unit: 'piece', 
+          name: trimmedName 
+        };
+      }
+      
+      // Check if unit + first word of name forms a multi-word descriptor (e.g., "extra large eggs")
+      if (nameWords.length > 1) {
+        const potentialDescriptor = `${trimmedUnit} ${nameWords[0].toLowerCase()}`;
+        // But first check if the NEXT word after that is a valid unit (e.g., "extra large slices bacon")
+        if (SIZE_DESCRIPTORS.includes(potentialDescriptor) && nameWords.length > 1 && isValidUnit(nameWords[1])) {
+          // Multi-word descriptor modifies a real unit
+          return {
+            quantity,
+            unit: nameWords[1],
+            name: nameWords.slice(2).join(' ')
+          };
+        }
+        if (SIZE_DESCRIPTORS.includes(potentialDescriptor)) {
+          // It's a multi-word size descriptor - treat as countable item
+          const actualName = nameWords.slice(1).join(' ');
+          return { 
+            quantity, 
+            unit: 'piece', 
+            name: actualName 
+          };
+        }
+      }
+      
+      // If unit is 'piece', check if name starts with a size descriptor (handles hyphenated cases like "extra-large")
+      if (unit === 'piece' && nameWords.length > 0) {
+        const firstWord = nameWords[0].toLowerCase().replace(/-/g, ' ');
+        
+        // Check for single-word descriptor at start of name
+        if (SIZE_DESCRIPTORS.includes(firstWord)) {
+          return {
+            quantity,
+            unit: 'piece',
+            name: nameWords.slice(1).join(' ')
+          };
+        }
+        
+        // Check for multi-word descriptor at start of name
+        if (nameWords.length > 1) {
+          const twoWords = `${firstWord} ${nameWords[1].toLowerCase()}`;
+          if (SIZE_DESCRIPTORS.includes(twoWords)) {
+            return{
+              quantity,
+              unit: 'piece',
+              name: nameWords.slice(2).join(' ')
+            };
+          }
+        }
+      }
+
+      return { quantity, unit: unit.trim(), name: trimmedName };
     }
   }
 
