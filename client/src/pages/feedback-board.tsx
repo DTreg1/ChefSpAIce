@@ -13,13 +13,12 @@ import type { Feedback } from "@shared/schema";
 type FeedbackWithUpvote = Feedback & { userUpvoted: boolean };
 
 export default function FeedbackBoard() {
-  const [personalSortBy, setPersonalSortBy] = useState<'recent' | 'upvotes'>('recent');
   const [featureSortBy, setFeatureSortBy] = useState<'upvotes' | 'recent'>('upvotes');
   const [bugSortBy, setBugSortBy] = useState<'upvotes' | 'recent'>('upvotes');
   const [generalSortBy, setGeneralSortBy] = useState<'upvotes' | 'recent'>('recent');
 
   const { data: personalFeedback = [], isLoading: personalLoading } = useQuery<Feedback[]>({
-    queryKey: ['/api/feedback/recent', personalSortBy],
+    queryKey: ['/api/feedback'],
   });
 
   const { data: featureRequests = [], isLoading: featuresLoading } = useQuery<FeedbackWithUpvote[]>({
@@ -210,13 +209,8 @@ export default function FeedbackBoard() {
         {/* Personal Feedback */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle data-testid="text-personal-title">My Feedback</CardTitle>
-                <CardDescription>Track your submissions and their status</CardDescription>
-              </div>
-              <SortControl value={personalSortBy} onChange={setPersonalSortBy} label="Sort" />
-            </div>
+            <CardTitle data-testid="text-personal-title">My Feedback</CardTitle>
+            <CardDescription>Track your submissions and their status</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">
             {personalLoading ? (
