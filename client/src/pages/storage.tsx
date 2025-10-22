@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { EmptyState } from "@/components/empty-state";
@@ -11,18 +11,31 @@ import { RecipeGenerator } from "@/components/recipe-generator";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Trash2, Package, Calendar, CheckSquare, Square, Check } from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { format, addDays } from "date-fns";
 import type { FoodItem, StorageLocation, Recipe } from "@shared/schema";
 
-// Virtual scrolling component for large food grids
+// Virtual scrolling component for large food grids with multi-select support
 interface VirtualizedFoodGridProps {
   items: FoodItem[];
   storageLocations: StorageLocation[];
   scrollContainerRef: React.RefObject<HTMLDivElement>;
+  isSelectionMode: boolean;
+  selectedItems: Set<string>;
+  onItemSelect: (id: string) => void;
 }
 
-function VirtualizedFoodGrid({ items, storageLocations, scrollContainerRef }: VirtualizedFoodGridProps) {
+function VirtualizedFoodGrid({ 
+  items, 
+  storageLocations, 
+  scrollContainerRef,
+  isSelectionMode,
+  selectedItems,
+  onItemSelect 
+}: VirtualizedFoodGridProps) {
   // Calculate grid columns based on screen size (responsive)
   const getColumns = () => {
     if (typeof window === 'undefined') return 3;
@@ -91,11 +104,25 @@ function VirtualizedFoodGrid({ items, storageLocations, scrollContainerRef }: Vi
                     (loc) => loc.id === item.storageLocationId
                   );
                   return (
-                    <FoodCard
-                      key={item.id}
-                      item={item}
-                      storageLocationName={itemLocation?.name || "Unknown"}
-                    />
+                    <div key={item.id} className="relative">
+                      {isSelectionMode && (
+                        <div className="absolute top-2 left-2 z-10">
+                          <button
+                            onClick={() => onItemSelect(item.id)}
+                            className="w-6 h-6 rounded border-2 border-primary bg-background hover:bg-primary/10 flex items-center justify-center transition-colors"
+                            data-testid={`checkbox-select-${item.id}`}
+                          >
+                            {selectedItems.has(item.id) && (
+                              <Check className="w-4 h-4 text-primary" />
+                            )}
+                          </button>
+                        </div>
+                      )}
+                      <FoodCard
+                        item={item}
+                        storageLocationName={itemLocation?.name || "Unknown"}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -112,6 +139,10 @@ export default function Storage() {
   const [, setLocation] = useLocation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [bulkStorageLocation, setBulkStorageLocation] = useState<string>("");
+  const [bulkExpirationDays, setBulkExpirationDays] = useState<number>(7);
   const { toast } = useToast();
   const location = params?.location || "all";
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -165,6 +196,135 @@ export default function Storage() {
     setLocation("/");
   };
 
+  const handleItemSelect = (id: string) => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (!items) return;
+    if (selectedItems.size === items.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(items.map(item => item.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedItems(new Set());
+    setIsSelectionMode(false);
+  };
+
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const promises = ids.map(id => 
+        apiRequest("DELETE", `/api/food-items/${id}`, null)
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
+      toast({
+        title: "Items deleted",
+        description: `Successfully deleted ${selectedItems.size} items`,
+      });
+      clearSelection();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete some items",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk move mutation
+  const bulkMoveMutation = useMutation({
+    mutationFn: async ({ ids, locationId }: { ids: string[], locationId: string }) => {
+      const promises = ids.map(id => 
+        apiRequest("PATCH", `/api/food-items/${id}`, { storageLocationId: locationId })
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      toast({
+        title: "Items moved",
+        description: `Successfully moved ${selectedItems.size} items`,
+      });
+      clearSelection();
+      setBulkStorageLocation("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to move some items",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk update expiration mutation
+  const bulkUpdateExpirationMutation = useMutation({
+    mutationFn: async ({ ids, date }: { ids: string[], date: string }) => {
+      const promises = ids.map(id => 
+        apiRequest("PATCH", `/api/food-items/${id}`, { expirationDate: date })
+      );
+      return await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      toast({
+        title: "Expiration dates updated",
+        description: `Successfully updated ${selectedItems.size} items`,
+      });
+      clearSelection();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update some items",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleBulkDelete = () => {
+    if (selectedItems.size === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedItems.size} item(s)?`)) {
+      bulkDeleteMutation.mutate(Array.from(selectedItems));
+    }
+  };
+
+  const handleBulkMove = () => {
+    if (!bulkStorageLocation || selectedItems.size === 0) return;
+    bulkMoveMutation.mutate({ 
+      ids: Array.from(selectedItems), 
+      locationId: bulkStorageLocation 
+    });
+  };
+
+  const handleBulkUpdateExpiration = () => {
+    if (selectedItems.size === 0) return;
+    const newDate = format(addDays(new Date(), bulkExpirationDays), 'yyyy-MM-dd');
+    bulkUpdateExpirationMutation.mutate({ 
+      ids: Array.from(selectedItems), 
+      date: newDate 
+    });
+  };
+
   return (
     <>
       <div className="h-full overflow-y-auto bg-muted mobile-scroll">
@@ -172,6 +332,97 @@ export default function Storage() {
           <div className="mb-6">
             <ExpirationAlert />
           </div>
+
+          {/* Bulk actions toolbar */}
+          {isSelectionMode && selectedItems.size > 0 && (
+            <div className="mb-6 p-4 bg-card rounded-lg border border-border">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    data-testid="button-select-all"
+                  >
+                    {selectedItems.size === items?.length ? <Square className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
+                    {selectedItems.size === items?.length ? "Deselect All" : "Select All"}
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {selectedItems.size} selected
+                  </span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 flex-1">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    disabled={bulkDeleteMutation.isPending}
+                    data-testid="button-bulk-delete"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                  
+                  <div className="flex gap-2 items-center">
+                    <Select value={bulkStorageLocation} onValueChange={setBulkStorageLocation}>
+                      <SelectTrigger className="w-[140px] h-8" data-testid="select-bulk-storage">
+                        <SelectValue placeholder="Move to..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {storageLocations?.map((loc) => (
+                          <SelectItem key={loc.id} value={loc.id}>
+                            {loc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkMove}
+                      disabled={!bulkStorageLocation || bulkMoveMutation.isPending}
+                      data-testid="button-bulk-move"
+                    >
+                      <Package className="w-4 h-4 mr-2" />
+                      Move
+                    </Button>
+                  </div>
+                  
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="number"
+                      value={bulkExpirationDays}
+                      onChange={(e) => setBulkExpirationDays(parseInt(e.target.value) || 7)}
+                      className="w-16 h-8 px-2 border rounded text-sm"
+                      min="1"
+                      data-testid="input-bulk-expiry-days"
+                    />
+                    <span className="text-sm text-muted-foreground">days</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkUpdateExpiration}
+                      disabled={bulkUpdateExpirationMutation.isPending}
+                      data-testid="button-bulk-expiry"
+                    >
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Set Expiry
+                    </Button>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                  data-testid="button-cancel-selection"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
 
           {categories && categories.length > 0 && (
             <div className="mb-6">
@@ -211,6 +462,30 @@ export default function Storage() {
               </p>
             </div>
             <div className="flex gap-2">
+              {items && items.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsSelectionMode(!isSelectionMode);
+                    if (isSelectionMode) {
+                      clearSelection();
+                    }
+                  }}
+                  data-testid="button-toggle-selection-mode"
+                >
+                  {isSelectionMode ? (
+                    <>
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <CheckSquare className="w-4 h-4 mr-2" />
+                      Select
+                    </>
+                  )}
+                </Button>
+              )}
               <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
               <Button 
                 onClick={() => setAddDialogOpen(true)} 
@@ -224,33 +499,56 @@ export default function Storage() {
             </div>
           </div>
 
-          {itemsLoading || locationsLoading ? (
-            <FoodCardSkeletonGrid count={6} />
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Badge
+              key="all"
+              variant={location === "all" ? "default" : "outline"}
+              className="cursor-pointer hover-elevate active-elevate-2"
+              onClick={() => setLocation("/storage/all")}
+              data-testid="badge-location-all"
+            >
+              All
+            </Badge>
+            {storageLocations?.map((loc) => (
+              <Badge
+                key={loc.id}
+                variant={location.toLowerCase() === loc.name.toLowerCase() ? "default" : "outline"}
+                className="cursor-pointer hover-elevate active-elevate-2"
+                onClick={() => setLocation(`/storage/${loc.name.toLowerCase()}`)}
+                data-testid={`badge-location-${loc.name.toLowerCase()}`}
+              >
+                {loc.name}
+              </Badge>
+            ))}
+          </div>
+
+          {locationsLoading || itemsLoading ? (
+            <FoodCardSkeletonGrid />
           ) : !items || items.length === 0 ? (
-            <EmptyState type="inventory" onAction={() => setAddDialogOpen(true)} />
-          ) : items.length > 50 ? (
-            // Use virtual scrolling for large lists (>50 items)
-            <VirtualizedFoodGrid 
-              items={items} 
-              storageLocations={storageLocations || []}
-              scrollContainerRef={scrollContainerRef}
+            <EmptyState
+              icon="food"
+              title={selectedCategory ? `No ${selectedCategory} items` : `No items in ${location === "all" ? "inventory" : location}`}
+              description={selectedCategory 
+                ? "Try selecting a different category or adding items to this category."
+                : location === "all"
+                ? "Your inventory is empty. Add some items to get started."
+                : "This storage location is empty. Add items or move them from other locations."
+              }
+              action={{
+                label: "Add Item",
+                onClick: () => setAddDialogOpen(true),
+                testId: "button-add-first-item"
+              }}
             />
           ) : (
-            // Regular rendering for smaller lists
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {items.map((item) => {
-                const itemLocation = storageLocations?.find(
-                  (loc) => loc.id === item.storageLocationId
-                );
-                return (
-                  <FoodCard
-                    key={item.id}
-                    item={item}
-                    storageLocationName={itemLocation?.name || "Unknown"}
-                  />
-                );
-              })}
-            </div>
+            <VirtualizedFoodGrid 
+              items={items} 
+              storageLocations={storageLocations || []} 
+              scrollContainerRef={scrollContainerRef}
+              isSelectionMode={isSelectionMode}
+              selectedItems={selectedItems}
+              onItemSelect={handleItemSelect}
+            />
           )}
         </div>
       </div>
