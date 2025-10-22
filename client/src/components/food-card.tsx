@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Trash2, UtensilsCrossed, Info, Plus, Minus, Calendar, Check, X, MapPin } from "lucide-react";
+import { Edit, Trash2, UtensilsCrossed, Info, Plus, Minus, Calendar, Check, X, MapPin, ChevronDown, ChevronUp, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditFoodDialog } from "./edit-food-dialog";
 import { NutritionFactsDialog } from "./nutrition-facts-dialog";
@@ -14,7 +14,8 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSwipe } from "@/hooks/use-swipe";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
-import type { FoodItem } from "@shared/schema";
+import { useProgressiveDisclosure } from "@/hooks/useProgressiveDisclosure";
+import type { FoodItem, NutritionInfo } from "@shared/schema";
 import { format } from "date-fns";
 
 interface FoodCardProps {
@@ -31,6 +32,28 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   const [localExpiry, setLocalExpiry] = useState(item.expirationDate || "");
   const { toast } = useToast();
   const { data: storageLocations } = useStorageLocations();
+  const { isExpanded: isNutritionExpanded, toggle: toggleNutrition } = useProgressiveDisclosure(
+    `food-card-nutrition-${item.id}`,
+    false
+  );
+
+  // Parse nutrition data
+  const nutritionData = useMemo<NutritionInfo | null>(() => {
+    try {
+      // First check for USDA data
+      if ((item as any).usdaData?.nutrition) {
+        return (item as any).usdaData.nutrition;
+      }
+      // Fall back to basic nutrition field
+      if (item.nutrition && item.nutrition !== "null") {
+        return JSON.parse(item.nutrition);
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to parse nutrition data:", error);
+      return null;
+    }
+  }, [item]);
 
   const getStorageBadgeColor = (location: string) => {
     const colors: Record<string, string> = {
@@ -436,6 +459,77 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                 </div>
               )}
 
+              {/* Progressive Nutrition Display */}
+              {nutritionData && (
+                <div className="mb-3 bg-muted/30 rounded-lg p-2">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={toggleNutrition}
+                    data-testid={`button-toggle-nutrition-${item.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <Flame className="w-4 h-4 text-orange-500" />
+                        <span className="font-medium text-sm" data-testid={`text-calories-${item.id}`}>
+                          {nutritionData.calories} cal
+                        </span>
+                      </div>
+                      {nutritionData.servingSize && (
+                        <span className="text-xs text-muted-foreground">
+                          per {nutritionData.servingSize} {nutritionData.servingUnit || ''}
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleNutrition();
+                      }}
+                    >
+                      {isNutritionExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </Button>
+                  </div>
+
+                  {isNutritionExpanded && (
+                    <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-3 gap-2 text-xs">
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground">Protein</span>
+                        <span className="font-medium" data-testid={`text-protein-${item.id}`}>{nutritionData.protein}g</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground">Carbs</span>
+                        <span className="font-medium" data-testid={`text-carbs-${item.id}`}>{nutritionData.carbs}g</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground">Fat</span>
+                        <span className="font-medium" data-testid={`text-fat-${item.id}`}>{nutritionData.fat}g</span>
+                      </div>
+                      {nutritionData.fiber !== undefined && (
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground">Fiber</span>
+                          <span className="font-medium" data-testid={`text-fiber-${item.id}`}>{nutritionData.fiber}g</span>
+                        </div>
+                      )}
+                      {nutritionData.sugar !== undefined && (
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground">Sugar</span>
+                          <span className="font-medium" data-testid={`text-sugar-${item.id}`}>{nutritionData.sugar}g</span>
+                        </div>
+                      )}
+                      {nutritionData.sodium !== undefined && (
+                        <div className="flex flex-col">
+                          <span className="text-muted-foreground">Sodium</span>
+                          <span className="font-medium" data-testid={`text-sodium-${item.id}`}>{nutritionData.sodium}mg</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center gap-1">
                 {hasNutrition && (
                   <Tooltip>
@@ -451,7 +545,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>View nutrition facts</p>
+                      <p>Full nutrition facts</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
