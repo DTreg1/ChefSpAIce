@@ -18,6 +18,7 @@ import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedFoodSearch } from "@/components/unified-food-search";
 import { SmartUnitSelector } from "@/components/smart-unit-selector";
+import { recordUnitPreference } from "@/lib/unit-preferences";
 import type {
   StorageLocation,
   USDASearchResponse,
@@ -354,6 +355,13 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       return await response.json();
     },
     onSuccess: () => {
+      // Record user's unit preference for learning
+      const foodName = selectedFood?.description || searchQuery;
+      const foodCategory = selectedFood?.foodCategory || null;
+      if (foodName && unit) {
+        recordUnitPreference(foodName, unit, foodCategory || undefined);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });

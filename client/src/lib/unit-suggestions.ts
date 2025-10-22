@@ -1,9 +1,12 @@
 // Smart unit suggestion system based on USDA food categories and common patterns
 
+import { getUserUnitPreference } from './unit-preferences';
+
 interface UnitSuggestion {
   primary: string;
   alternatives: string[];
   confidence: 'high' | 'medium' | 'low';
+  isUserPreference?: boolean;
 }
 
 // USDA food category mappings to common units
@@ -127,14 +130,51 @@ export function getSmartUnitSuggestion(
 ): UnitSuggestion {
   const lowercaseName = foodName.toLowerCase();
   
-  // First, check for keyword matches (most specific)
+  // First priority: Check user preferences (learned from past selections)
+  const userPreference = getUserUnitPreference(foodName, foodCategory || undefined);
+  if (userPreference && userPreference.confidence === 'high') {
+    // Get alternatives from keyword or category mappings
+    let alternatives: string[] = [];
+    for (const keywordMapping of KEYWORD_UNITS) {
+      const hasMatch = keywordMapping.keywords.some(keyword => 
+        lowercaseName.includes(keyword.toLowerCase())
+      );
+      if (hasMatch) {
+        alternatives = keywordMapping.unit.alternatives;
+        break;
+      }
+    }
+    if (alternatives.length === 0 && foodCategory && CATEGORY_UNITS[foodCategory]) {
+      alternatives = CATEGORY_UNITS[foodCategory].alternatives;
+    }
+    if (alternatives.length === 0) {
+      alternatives = ['oz', 'lb', 'count', 'package'];
+    }
+    
+    return {
+      primary: userPreference.unit,
+      alternatives,
+      confidence: userPreference.confidence,
+      isUserPreference: true
+    };
+  }
+  
+  // Second priority: Check for keyword matches (most specific)
   for (const keywordMapping of KEYWORD_UNITS) {
     const hasMatch = keywordMapping.keywords.some(keyword => 
       lowercaseName.includes(keyword.toLowerCase())
     );
     if (hasMatch) {
+      // If we have a medium confidence user preference, include it in alternatives
+      const alternatives = [...keywordMapping.unit.alternatives];
+      if (userPreference && userPreference.confidence === 'medium' && 
+          !alternatives.includes(userPreference.unit)) {
+        alternatives.unshift(userPreference.unit);
+      }
+      
       return {
         ...keywordMapping.unit,
+        alternatives,
         confidence: 'high'
       };
     }

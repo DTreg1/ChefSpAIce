@@ -45,6 +45,7 @@ export function SmartUnitSelector({
     primary: string;
     alternatives: string[];
     confidence: "high" | "medium" | "low";
+    isUserPreference?: boolean;
   } | null>(null);
 
   const allUnits = getAllAvailableUnits();
@@ -90,12 +91,23 @@ export function SmartUnitSelector({
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center gap-2">
         <Label htmlFor="unit">Unit *</Label>
-        {suggestion && suggestion.confidence === "high" && (
+        {suggestion && (
           <div className="flex items-center gap-1">
-            <Sparkles className="h-3 w-3 text-primary" />
-            <span className="text-xs text-muted-foreground">
-              Smart suggestion
-            </span>
+            {suggestion.isUserPreference ? (
+              <>
+                <Check className="h-3 w-3 text-green-600" />
+                <span className="text-xs text-muted-foreground">
+                  Your preference
+                </span>
+              </>
+            ) : suggestion.confidence === "high" ? (
+              <>
+                <Sparkles className="h-3 w-3 text-primary" />
+                <span className="text-xs text-muted-foreground">
+                  Smart suggestion
+                </span>
+              </>
+            ) : null}
           </div>
         )}
       </div>
