@@ -1,0 +1,337 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, ChefHat, AlertTriangle, Loader2 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import type { Recipe, FoodItem } from "@shared/schema";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+interface SmartRecipeGeneratorProps {
+  onRecipeGenerated?: (recipe: Recipe) => void;
+  variant?: "default" | "quick" | "sidebar";
+}
+
+// Store user preferences for smart recipe generation
+const PREFERENCE_KEY = 'smart-recipe-preferences';
+
+interface SmartRecipePreferences {
+  lastCuisineType?: string;
+  lastDietaryRestrictions?: string[];
+  lastServingSize?: number;
+  lastCookingTime?: string;
+  preferExpiringItems?: boolean;
+  autoGenerateOnExpiring?: boolean;
+}
+
+function getPreferences(): SmartRecipePreferences {
+  try {
+    const stored = localStorage.getItem(PREFERENCE_KEY);
+    return stored ? JSON.parse(stored) : {
+      preferExpiringItems: true,
+      autoGenerateOnExpiring: false,
+      lastServingSize: 4,
+      lastCookingTime: "30",
+    };
+  } catch {
+    return {
+      preferExpiringItems: true,
+      autoGenerateOnExpiring: false,
+      lastServingSize: 4,
+      lastCookingTime: "30",
+    };
+  }
+}
+
+function savePreferences(prefs: SmartRecipePreferences) {
+  localStorage.setItem(PREFERENCE_KEY, JSON.stringify(prefs));
+}
+
+export function SmartRecipeGenerator({ 
+  onRecipeGenerated,
+  variant = "default" 
+}: SmartRecipeGeneratorProps) {
+  const { toast } = useToast();
+  const preferences = getPreferences();
+
+  const { data: foodItems } = useQuery<FoodItem[]>({
+    queryKey: ["/api/food-items"],
+  });
+
+  // Calculate expiring items and analyze inventory
+  const inventoryAnalysis = foodItems?.reduce((acc, item) => {
+    if (item.expirationDate) {
+      const daysUntilExpiration = Math.floor(
+        (new Date(item.expirationDate).getTime() - new Date().getTime()) / 
+        (1000 * 60 * 60 * 24)
+      );
+      if (daysUntilExpiration <= 3) {
+        acc.expiring.push(item);
+        acc.expiringCount++;
+      }
+    }
+    
+    // Categorize by type for smart recipe suggestions
+    if (item.foodCategory) {
+      if (!acc.categories[item.foodCategory]) {
+        acc.categories[item.foodCategory] = [];
+      }
+      acc.categories[item.foodCategory].push(item);
+    }
+    
+    // Track high-quantity items (quantity is stored as text)
+    if (parseFloat(item.quantity) > 5) {
+      acc.highQuantity.push(item);
+    }
+    
+    return acc;
+  }, {
+    expiring: [] as FoodItem[],
+    expiringCount: 0,
+    categories: {} as Record<string, FoodItem[]>,
+    highQuantity: [] as FoodItem[]
+  });
+
+  const smartGenerateRecipeMutation = useMutation({
+    mutationFn: async () => {
+      // Build intelligent request based on inventory analysis
+      const smartRequest: any = {
+        prioritizeExpiring: preferences.preferExpiringItems && (inventoryAnalysis?.expiringCount ?? 0) > 0,
+        servings: preferences.lastServingSize || 4,
+        maxCookingTime: preferences.lastCookingTime || "30",
+      };
+
+      // Add expiring items to prioritize
+      if ((inventoryAnalysis?.expiringCount ?? 0) > 0) {
+        smartRequest.expiringItems = inventoryAnalysis!.expiring.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          daysUntilExpiration: Math.floor(
+            (new Date(item.expirationDate!).getTime() - new Date().getTime()) / 
+            (1000 * 60 * 60 * 24)
+          )
+        }));
+      }
+
+      // Add high quantity items to use up
+      if ((inventoryAnalysis?.highQuantity?.length ?? 0) > 0) {
+        smartRequest.abundantItems = inventoryAnalysis!.highQuantity.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit
+        }));
+      }
+
+      // Add cuisine preference if remembered
+      if (preferences.lastCuisineType) {
+        smartRequest.cuisineType = preferences.lastCuisineType;
+      }
+
+      // Add dietary restrictions if remembered
+      if (preferences.lastDietaryRestrictions?.length) {
+        smartRequest.dietaryRestrictions = preferences.lastDietaryRestrictions;
+      }
+
+      const response = await apiRequest("POST", "/api/recipes/generate", smartRequest);
+      return await response.json();
+    },
+    onSuccess: async (recipe: Recipe) => {
+      // Update preferences with any new settings from this generation
+      const newPrefs = { ...preferences };
+      savePreferences(newPrefs);
+
+      // Invalidate queries for fresh data
+      await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      
+      // Fetch the recipe with fresh inventory matching
+      const recipesWithMatching = await queryClient.fetchQuery({
+        queryKey: ["/api/recipes"],
+        staleTime: 0,
+      });
+      
+      // Find the newly generated recipe with updated matching
+      const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
+      
+      const smartMessage = (inventoryAnalysis?.expiringCount ?? 0) > 0
+        ? `Smart recipe created using ${inventoryAnalysis!.expiringCount} expiring items!`
+        : (inventoryAnalysis?.highQuantity?.length ?? 0) > 0
+        ? `Smart recipe created to use up abundant ingredients!`
+        : `Smart recipe created based on your inventory!`;
+
+      toast({
+        title: "🪄 " + recipe.title,
+        description: smartMessage,
+      });
+      
+      onRecipeGenerated?.(updatedRecipe || recipe);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Could not generate smart recipe",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const hasItems = (foodItems?.length || 0) > 0;
+  const expiringCount = inventoryAnalysis?.expiringCount || 0;
+  const isGenerating = smartGenerateRecipeMutation.isPending;
+
+  // Auto-generate if preference is set and items are expiring
+  useEffect(() => {
+    if (
+      preferences.autoGenerateOnExpiring &&
+      expiringCount > 2 &&
+      !isGenerating &&
+      hasItems
+    ) {
+      // Auto-generate once per session when multiple items are expiring
+      const sessionKey = `auto-generated-${new Date().toDateString()}`;
+      if (!sessionStorage.getItem(sessionKey)) {
+        sessionStorage.setItem(sessionKey, "true");
+        smartGenerateRecipeMutation.mutate();
+      }
+    }
+  }, [expiringCount, preferences.autoGenerateOnExpiring, hasItems]);
+
+  // Render based on variant
+  if (variant === "quick") {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => smartGenerateRecipeMutation.mutate()}
+              disabled={!hasItems || isGenerating}
+              data-testid="button-smart-recipe-quick"
+              size="sm"
+              variant="outline"
+              className="relative"
+            >
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  {expiringCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                  )}
+                </>
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-semibold">Smart Recipe (1-click)</p>
+            {expiringCount > 0 ? (
+              <p className="text-xs">Prioritize {expiringCount} expiring items</p>
+            ) : (
+              <p className="text-xs">Generate optimal recipe instantly</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  if (variant === "sidebar") {
+    return (
+      <Button
+        onClick={() => smartGenerateRecipeMutation.mutate()}
+        disabled={!hasItems || isGenerating}
+        data-testid="button-smart-recipe-sidebar"
+        size="sm"
+        variant="ghost"
+        className="w-full justify-start relative"
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            <span>Generating...</span>
+          </>
+        ) : (
+          <>
+            <Sparkles className="w-4 h-4 mr-2" />
+            <span>Smart Recipe</span>
+            {expiringCount > 0 && (
+              <Badge variant="destructive" className="ml-auto">
+                {expiringCount}
+              </Badge>
+            )}
+          </>
+        )}
+      </Button>
+    );
+  }
+
+  // Default variant
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={() => smartGenerateRecipeMutation.mutate()}
+            disabled={!hasItems || isGenerating}
+            data-testid="button-smart-recipe"
+            size="default"
+            variant={expiringCount > 0 ? "default" : "outline"}
+            className="relative group"
+          >
+            {expiringCount > 0 && (
+              <AlertTriangle className="absolute -top-1 -right-1 w-3 h-3 text-destructive animate-pulse" />
+            )}
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <span>Creating Smart Recipe...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2 group-hover:animate-pulse" />
+                <span className="hidden sm:inline">Smart Recipe</span>
+                <span className="sm:hidden">Smart</span>
+                {expiringCount > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {expiringCount} expiring
+                  </Badge>
+                )}
+              </>
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="space-y-1">
+            <p className="font-semibold flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              One-Click Smart Recipe
+            </p>
+            {inventoryAnalysis && (
+              <div className="text-xs space-y-0.5">
+                {expiringCount > 0 && (
+                  <p>• Uses {expiringCount} expiring items</p>
+                )}
+                {inventoryAnalysis.highQuantity.length > 0 && (
+                  <p>• Uses abundant ingredients</p>
+                )}
+                {preferences.lastCuisineType && (
+                  <p>• Prefers {preferences.lastCuisineType}</p>
+                )}
+                <p className="text-muted-foreground mt-1">
+                  Generates instantly with your preferences
+                </p>
+              </div>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}

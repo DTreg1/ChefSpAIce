@@ -526,19 +526,8 @@ export default function Storage() {
             <FoodCardSkeletonGrid />
           ) : !items || items.length === 0 ? (
             <EmptyState
-              icon="food"
-              title={selectedCategory ? `No ${selectedCategory} items` : `No items in ${location === "all" ? "inventory" : location}`}
-              description={selectedCategory 
-                ? "Try selecting a different category or adding items to this category."
-                : location === "all"
-                ? "Your inventory is empty. Add some items to get started."
-                : "This storage location is empty. Add items or move them from other locations."
-              }
-              action={{
-                label: "Add Item",
-                onClick: () => setAddDialogOpen(true),
-                testId: "button-add-first-item"
-              }}
+              type="inventory"
+              onAction={() => setAddDialogOpen(true)}
             />
           ) : (
             <VirtualizedFoodGrid 
