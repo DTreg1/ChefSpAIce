@@ -18,8 +18,6 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedFoodSearch } from "@/components/unified-food-search";
-import { SmartUnitSelector } from "@/components/smart-unit-selector";
-import { recordUnitPreference } from "@/lib/unit-preferences";
 import type {
   StorageLocation,
   USDASearchResponse,
@@ -630,7 +628,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         
         // Update selected food with enriched serving size data if available
         if (enriched.servingSize && enriched.servingSizeUnit && !food.servingSize) {
-          setSelectedFood(prev => ({
+          setSelectedFood((prev: any) => ({
             ...prev,
             servingSize: enriched.servingSize,
             servingSizeUnit: enriched.servingSizeUnit
@@ -911,7 +909,23 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                 </span>
               </div>
               <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
-                {searchResults.foods.map((food) => (
+                {/* Sort foods to prioritize those with complete data */}
+                {searchResults.foods
+                  .sort((a, b) => {
+                    // Calculate completeness score for each item
+                    const scoreA = (a.nutrition ? 3 : 0) + 
+                                   (a.servingSize ? 2 : 0) + 
+                                   (a.servingSizeUnit ? 2 : 0) +
+                                   (a.brandOwner ? 1 : 0) +
+                                   (a.ingredients ? 1 : 0);
+                    const scoreB = (b.nutrition ? 3 : 0) + 
+                                   (b.servingSize ? 2 : 0) + 
+                                   (b.servingSizeUnit ? 2 : 0) +
+                                   (b.brandOwner ? 1 : 0) +
+                                   (b.ingredients ? 1 : 0);
+                    return scoreB - scoreA; // Higher score first
+                  })
+                  .map((food) => (
                   <button
                     key={food.fdcId}
                     onClick={() => {
