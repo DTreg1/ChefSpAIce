@@ -727,3 +727,44 @@ export const insertCommonFoodItemSchema = createInsertSchema(commonFoodItems).om
 
 export type InsertCommonFoodItem = z.infer<typeof insertCommonFoodItemSchema>;
 export type CommonFoodItem = typeof commonFoodItems.$inferSelect;
+
+// Cooking Terms - Interactive cooking knowledge bank
+export const cookingTerms = pgTable("cooking_terms", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Term details
+  term: text("term").notNull().unique(), // e.g., "julienne", "sauté", "blanch"
+  category: text("category").notNull(), // "knife_skills", "cooking_methods", "prep_techniques"
+  
+  // Definitions
+  shortDefinition: text("short_definition").notNull(), // Brief tooltip definition (1-2 sentences)
+  longDefinition: text("long_definition").notNull(), // Detailed explanation with steps
+  
+  // Additional information
+  difficulty: text("difficulty"), // "beginner", "intermediate", "advanced"
+  timeEstimate: text("time_estimate"), // e.g., "2-3 minutes"
+  tools: text("tools").array(), // Tools needed for this technique
+  tips: text("tips").array(), // Pro tips and common mistakes
+  relatedTerms: text("related_terms").array(), // Related techniques to learn
+  
+  // Media
+  imageUrl: text("image_url"), // Optional illustration
+  videoUrl: text("video_url"), // Optional video tutorial link
+  
+  // Metadata
+  searchTerms: text("search_terms").array(), // Alternative names/spellings for matching
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("cooking_terms_term_idx").on(table.term),
+  index("cooking_terms_category_idx").on(table.category),
+]);
+
+export const insertCookingTermSchema = createInsertSchema(cookingTerms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCookingTerm = z.infer<typeof insertCookingTermSchema>;
+export type CookingTerm = typeof cookingTerms.$inferSelect;
