@@ -10,6 +10,7 @@ import { useState } from "react";
 import { MealPlanningDialog } from "@/components/meal-planning-dialog";
 import { ServingAdjuster } from "@/components/serving-adjuster";
 import { StarRating } from "@/components/star-rating";
+import { CookingTermHighlighter } from "@/components/cooking-term-highlighter";
 
 interface IngredientMatch {
   ingredientName: string;
@@ -412,7 +413,7 @@ export function RecipeCard({
                 data-testid={`text-instruction-${idx}`}
               >
                 <span className="font-semibold text-primary flex-shrink-0">{idx + 1}.</span>
-                <span>{instruction}</span>
+                <CookingTermHighlighter text={instruction} />
               </li>
             ))}
           </ol>
