@@ -269,38 +269,45 @@ const cleanupStaleRefreshes = () => {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  // TEMPORARY: Development bypass for custom domain issues
-  // This allows the app to work on the custom domain while authentication is being fixed
-  const hostname = req.hostname || req.get('host');
-  const isCustomDomain = hostname && (hostname.includes('chefspaice.com') || hostname.includes('chefspaice'));
+  // Check for development bypass - ONLY in development mode with explicit flag
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const bypassEnabled = process.env.AUTH_BYPASS_ENABLED === 'true';
+  const bypassSecret = process.env.AUTH_BYPASS_SECRET;
   
-  if (isCustomDomain && !req.isAuthenticated()) {
-    console.log("[Auth Debug] Custom domain detected without auth - using development bypass");
-    // Create a mock user for development on custom domain
-    (req as any).user = {
-      claims: {
-        sub: 'dev_user_custom_domain',
-        email: 'dev@chefspaice.com',
-        first_name: 'Development',
-        last_name: 'User'
-      },
-      expires_at: Math.floor(Date.now() / 1000) + 3600 // Valid for 1 hour
-    };
+  if (isDevelopment && bypassEnabled && bypassSecret) {
+    // Only allow bypass if a secret header matches
+    const providedSecret = req.headers['x-auth-bypass-secret'];
+    const hostname = req.hostname || req.get('host');
+    const isCustomDomain = hostname && (hostname.includes('chefspaice.com') || hostname.includes('chefspaice'));
     
-    // Ensure the mock user exists in the database
-    try {
-      await storage.upsertUser({
-        id: 'dev_user_custom_domain',
-        email: 'dev@chefspaice.com',
-        firstName: 'Development',
-        lastName: 'User',
-        profileImageUrl: null
-      });
-    } catch (error) {
-      console.error("[Auth Debug] Error creating mock user:", error);
+    if (isCustomDomain && providedSecret === bypassSecret && !req.isAuthenticated()) {
+      console.log("[Auth Debug] Development bypass activated with valid secret");
+      // Create a mock user for development on custom domain
+      (req as any).user = {
+        claims: {
+          sub: 'dev_user_custom_domain',
+          email: 'dev@chefspaice.com',
+          first_name: 'Development',
+          last_name: 'User'
+        },
+        expires_at: Math.floor(Date.now() / 1000) + 3600 // Valid for 1 hour
+      };
+      
+      // Ensure the mock user exists in the database
+      try {
+        await storage.upsertUser({
+          id: 'dev_user_custom_domain',
+          email: 'dev@chefspaice.com',
+          firstName: 'Development',
+          lastName: 'User',
+          profileImageUrl: null
+        });
+      } catch (error) {
+        console.error("[Auth Debug] Error creating mock user:", error);
+      }
+      
+      return next();
     }
-    
-    return next();
   }
 
   if (!req.isAuthenticated() || !user.expires_at) {
