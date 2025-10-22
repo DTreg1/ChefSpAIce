@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Apple, Flame, Beef, Wheat, Droplet, RefreshCw, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ProgressiveSection } from "@/components/progressive-section";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { NutritionInfo } from "@shared/schema";
@@ -169,11 +170,14 @@ export default function Nutrition() {
               ))}
             </div>
 
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Macronutrient Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <ProgressiveSection
+              id="nutrition-macro-distribution"
+              title="Macronutrient Distribution"
+              summary="Detailed breakdown of protein, carbs, and fat"
+              defaultExpanded={false}
+              className="mb-6"
+              testId="progressive-macro-distribution"
+            >
                 <div className="space-y-4">
                   <div className="flex items-center w-full h-8 rounded-lg overflow-hidden" data-testid="macro-stacked-bar">
                     {macroData.map((macro, index) => {
@@ -210,17 +214,16 @@ export default function Nutrition() {
                     })}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+            </ProgressiveSection>
 
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Items with Nutrition Data</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {stats?.itemsWithNutrition || 0} of {stats?.totalItems || 0} items have nutritional information
-                </p>
-              </CardHeader>
-              <CardContent>
+            <ProgressiveSection
+              id="nutrition-items-detailed"
+              title="Items with Nutrition Data"
+              summary={`${stats?.itemsWithNutrition || 0} of ${stats?.totalItems || 0} items have nutritional information`}
+              defaultExpanded={false}
+              className="mb-6"
+              testId="progressive-nutrition-items"
+            >
                 {itemsLoading ? (
                   <p className="text-muted-foreground text-center py-4">Loading items...</p>
                 ) : !items || items.length === 0 ? (
@@ -307,21 +310,17 @@ export default function Nutrition() {
                     })}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+            </ProgressiveSection>
 
             {missingItems && missingItems.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-orange-500" />
-                    Items Missing Nutrition Data
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {missingItems.length} item{missingItems.length !== 1 ? 's' : ''} need nutrition information
-                  </p>
-                </CardHeader>
-                <CardContent>
+              <ProgressiveSection
+                id="nutrition-missing-items"
+                title="⚠️ Items Missing Nutrition Data"
+                summary={`${missingItems.length} item${missingItems.length !== 1 ? 's' : ''} need nutrition information`}
+                defaultExpanded={false}
+                className="mb-6"
+                testId="progressive-missing-items"
+              >
                   {missingLoading ? (
                     <p className="text-muted-foreground text-center py-4">Loading...</p>
                   ) : (
@@ -360,8 +359,7 @@ export default function Nutrition() {
                       </div>
                     </>
                   )}
-                </CardContent>
-              </Card>
+              </ProgressiveSection>
             )}
           </>
         )}
