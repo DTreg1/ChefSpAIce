@@ -22,9 +22,16 @@ async function throwIfResNotOk(res: Response) {
             // Redirect to login page
             window.location.href = '/api/login';
           }, 1500);
-          return;
+          
+          // Still throw the error so callers handle it properly
+          throw new Error("Session expired - redirecting to login");
         }
       } catch (e) {
+        // Check if this is our thrown error
+        if (e instanceof Error && e.message === "Session expired - redirecting to login") {
+          throw e;
+        }
+        
         // If parsing fails, it might be a general 401 - still redirect to login
         toast({
           title: "Authentication Required",
@@ -35,7 +42,9 @@ async function throwIfResNotOk(res: Response) {
         setTimeout(() => {
           window.location.href = '/api/login';
         }, 1500);
-        return;
+        
+        // Still throw the error so callers handle it properly
+        throw new Error("Authentication required - redirecting to login");
       }
     }
     
