@@ -3691,6 +3691,115 @@ Respond ONLY with a valid JSON object:
     }
   });
 
+  // Cooking Terms Routes
+  
+  // Get all cooking terms or search
+  app.get("/api/cooking-terms", async (req: any, res) => {
+    try {
+      const { search, category } = req.query;
+      
+      let terms;
+      if (search) {
+        terms = await storage.searchCookingTerms(search as string);
+      } else if (category) {
+        terms = await storage.getCookingTermsByCategory(category as string);
+      } else {
+        terms = await storage.getCookingTerms();
+      }
+      
+      res.json(terms);
+    } catch (error) {
+      console.error("Error getting cooking terms:", error);
+      res.status(500).json({ error: "Failed to get cooking terms" });
+    }
+  });
+
+  // Get a specific cooking term by ID
+  app.get("/api/cooking-terms/:id", async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const term = await storage.getCookingTerm(id);
+      
+      if (!term) {
+        return res.status(404).json({ error: "Cooking term not found" });
+      }
+      
+      res.json(term);
+    } catch (error) {
+      console.error("Error getting cooking term:", error);
+      res.status(500).json({ error: "Failed to get cooking term" });
+    }
+  });
+
+  // Get cooking term by term name
+  app.get("/api/cooking-terms/by-name/:term", async (req: any, res) => {
+    try {
+      const { term } = req.params;
+      const cookingTerm = await storage.getCookingTermByTerm(term);
+      
+      if (!cookingTerm) {
+        return res.status(404).json({ error: "Cooking term not found" });
+      }
+      
+      res.json(cookingTerm);
+    } catch (error) {
+      console.error("Error getting cooking term by name:", error);
+      res.status(500).json({ error: "Failed to get cooking term" });
+    }
+  });
+
+  // Create a new cooking term (admin only - for now open to all authenticated users)
+  app.post("/api/cooking-terms", isAuthenticated, async (req: any, res) => {
+    try {
+      const termData = req.body;
+      
+      // Basic validation
+      if (!termData.term || !termData.category || !termData.shortDefinition || !termData.longDefinition) {
+        return res.status(400).json({ 
+          error: "Missing required fields: term, category, shortDefinition, longDefinition" 
+        });
+      }
+      
+      const newTerm = await storage.createCookingTerm(termData);
+      res.json(newTerm);
+    } catch (error: any) {
+      if (error.message?.includes("unique constraint")) {
+        return res.status(409).json({ error: "A cooking term with this name already exists" });
+      }
+      console.error("Error creating cooking term:", error);
+      res.status(500).json({ error: "Failed to create cooking term" });
+    }
+  });
+
+  // Update a cooking term (admin only - for now open to all authenticated users)
+  app.put("/api/cooking-terms/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const updatedTerm = await storage.updateCookingTerm(id, updates);
+      res.json(updatedTerm);
+    } catch (error: any) {
+      if (error.message === "Cooking term not found") {
+        return res.status(404).json({ error: "Cooking term not found" });
+      }
+      console.error("Error updating cooking term:", error);
+      res.status(500).json({ error: "Failed to update cooking term" });
+    }
+  });
+
+  // Delete a cooking term (admin only - for now open to all authenticated users) 
+  app.delete("/api/cooking-terms/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCookingTerm(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting cooking term:", error);
+      res.status(500).json({ error: "Failed to delete cooking term" });
+    }
+  });
+
   // Handle 404s for API routes that weren't matched above
   app.use("/api/*", (_req: any, res) => {
     res.status(404).json({ message: "API endpoint not found" });
