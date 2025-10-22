@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart, RefreshCw, Plus, ShoppingBasket } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -287,7 +288,7 @@ export function RecipeCard({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {servings && (
           <ServingAdjuster
             originalServings={servings}
@@ -296,11 +297,25 @@ export function RecipeCard({
           />
         )}
 
-        <Separator />
-
-        <div>
-          <h3 className="font-semibold text-base mb-3 text-foreground">Ingredients</h3>
-          <ul className="space-y-2">
+        <Accordion type="multiple" defaultValue={["ingredients", "instructions"]} className="w-full">
+          <AccordionItem value="ingredients" data-testid="accordion-ingredients">
+            <AccordionTrigger className="text-base font-semibold hover:no-underline">
+              <div className="flex items-center justify-between w-full mr-2">
+                <span>Ingredients</span>
+                {(localIngredientMatches || ingredientMatches) && (() => {
+                  const currentMatches = localIngredientMatches || ingredientMatches;
+                  const availableCount = currentMatches ? currentMatches.filter(m => m.hasEnough).length : 0;
+                  const totalCount = currentMatches ? currentMatches.length : adjustedIngredients.length;
+                  return (
+                    <Badge variant="outline" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                      {availableCount}/{totalCount} available
+                    </Badge>
+                  );
+                })()}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <ul className="space-y-2 pt-2">
             {adjustedIngredients.map((ingredient, idx) => {
               // Use enhanced matching data if available
               const currentMatches = localIngredientMatches || ingredientMatches;
@@ -398,26 +413,35 @@ export function RecipeCard({
                 </li>
               );
             })}
-          </ul>
-        </div>
+              </ul>
+            </AccordionContent>
+          </AccordionItem>
 
-        <Separator />
-
-        <div>
-          <h3 className="font-semibold text-base mb-3 text-foreground">Instructions</h3>
-          <ol className="space-y-3">
-            {instructions.map((instruction, idx) => (
-              <li
-                key={idx}
-                className="flex gap-3 text-base leading-relaxed"
-                data-testid={`text-instruction-${idx}`}
-              >
-                <span className="font-semibold text-primary flex-shrink-0">{idx + 1}.</span>
-                <CookingTermHighlighter text={instruction} />
-              </li>
-            ))}
-          </ol>
-        </div>
+          <AccordionItem value="instructions" data-testid="accordion-instructions">
+            <AccordionTrigger className="text-base font-semibold hover:no-underline">
+              <div className="flex items-center justify-between w-full mr-2">
+                <span>Instructions</span>
+                <Badge variant="outline" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                  {instructions.length} steps
+                </Badge>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <ol className="space-y-3 pt-2">
+                {instructions.map((instruction, idx) => (
+                  <li
+                    key={idx}
+                    className="flex gap-3 text-base leading-relaxed"
+                    data-testid={`text-instruction-${idx}`}
+                  >
+                    <span className="font-semibold text-primary flex-shrink-0">{idx + 1}.</span>
+                    <CookingTermHighlighter text={instruction} />
+                  </li>
+                ))}
+              </ol>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </CardContent>
     </Card>
   );

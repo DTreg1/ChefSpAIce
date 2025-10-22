@@ -32,10 +32,10 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   const [localExpiry, setLocalExpiry] = useState(item.expirationDate || "");
   const { toast } = useToast();
   const { data: storageLocations } = useStorageLocations();
-  const { isExpanded: isNutritionExpanded, toggle: toggleNutrition } = useProgressiveDisclosure(
-    `food-card-nutrition-${item.id}`,
-    false
-  );
+  const progressiveDisclosure = useProgressiveDisclosure();
+  const nutritionId = `food-card-nutrition-${item.id}`;
+  const isNutritionExpanded = progressiveDisclosure.isExpanded(nutritionId);
+  const toggleNutrition = () => progressiveDisclosure.toggleExpanded(nutritionId);
 
   // Parse nutrition data
   const nutritionData = useMemo<NutritionInfo | null>(() => {
@@ -464,7 +464,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                 <div className="mb-3 bg-muted/30 rounded-lg p-2">
                   <div 
                     className="flex items-center justify-between cursor-pointer"
-                    onClick={toggleNutrition}
+                    onClick={() => toggleNutrition()}
                     data-testid={`button-toggle-nutrition-${item.id}`}
                   >
                     <div className="flex items-center gap-3">
