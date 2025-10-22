@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings, Shield, Database } from "lucide-react";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { User, StorageLocation } from "@shared/schema";
@@ -410,7 +410,7 @@ export default function Settings() {
           <AccordionItem value="preferences" className="border rounded-lg" data-testid="section-preferences">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
-                <Settings className="w-5 h-5 text-muted-foreground" />
+                <Settings2 className="w-5 h-5 text-muted-foreground" />
                 <span className="font-semibold">General Preferences</span>
                 {(preferences?.householdSize || preferences?.cookingSkillLevel) && (
                   <span className="text-sm text-muted-foreground ml-2">

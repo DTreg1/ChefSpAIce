@@ -9,6 +9,7 @@ import { FoodCardSkeletonGrid } from "@/components/food-card-skeleton";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipe-generator";
 import { ExpirationAlert } from "@/components/expiration-alert";
+import { ProgressiveSection } from "@/components/progressive-section";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -426,29 +427,41 @@ export default function Storage() {
 
           {categories && categories.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold mb-2 text-muted-foreground">Filter by Category</h3>
-              <div className="flex flex-wrap gap-2">
-                <Badge
-                  key="all"
-                  variant={!selectedCategory ? "default" : "outline"}
-                  className="cursor-pointer hover-elevate active-elevate-2"
-                  onClick={() => setSelectedCategory(null)}
-                  data-testid="badge-category-all"
-                >
-                  All
-                </Badge>
-                {categories.map((category) => (
-                  <Badge
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    className="cursor-pointer hover-elevate active-elevate-2"
-                    onClick={() => setSelectedCategory(category)}
-                    data-testid={`badge-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {category}
-                  </Badge>
-                ))}
-              </div>
+              <ProgressiveSection
+                id="storage-filters"
+                title="Advanced Filters"
+                summary={selectedCategory ? `Filtered by: ${selectedCategory}` : "USDA categories and more"}
+                defaultExpanded={false}
+                size="sm"
+                className="mb-0"
+                testId="progressive-storage-filters"
+              >
+                <div className="pt-2">
+                  <h3 className="text-sm font-semibold mb-2 text-muted-foreground">Filter by Category</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge
+                      key="all"
+                      variant={!selectedCategory ? "default" : "outline"}
+                      className="cursor-pointer hover-elevate active-elevate-2"
+                      onClick={() => setSelectedCategory(null)}
+                      data-testid="badge-category-all"
+                    >
+                      All
+                    </Badge>
+                    {categories.map((category) => (
+                      <Badge
+                        key={category}
+                        variant={selectedCategory === category ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate active-elevate-2"
+                        onClick={() => setSelectedCategory(category)}
+                        data-testid={`badge-category-${category.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </ProgressiveSection>
             </div>
           )}
 
