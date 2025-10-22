@@ -194,6 +194,52 @@ const UNIT_ALIASES: { [key: string]: string } = {
   'ct.': 'count',
 };
 
+// Food-specific unit conversions
+// Maps food names to their specific unit conversions (e.g., "1 lb bacon = 16 slices")
+// Structure: { foodName: { fromUnit: { toUnit: conversionFactor } } }
+const FOOD_CONVERSIONS: { [foodName: string]: { [fromUnit: string]: { [toUnit: string]: number } } } = {
+  'bacon': {
+    'lb': { 'slice': 16, 'slices': 16 },
+    'lbs': { 'slice': 16, 'slices': 16 },
+    'pound': { 'slice': 16, 'slices': 16 },
+    'pounds': { 'slice': 16, 'slices': 16 },
+  },
+  'butter': {
+    'lb': { 'stick': 4, 'sticks': 4, 'tbsp': 32, 'tablespoon': 32, 'tablespoons': 32 },
+    'lbs': { 'stick': 4, 'sticks': 4, 'tbsp': 32, 'tablespoon': 32, 'tablespoons': 32 },
+    'pound': { 'stick': 4, 'sticks': 4, 'tbsp': 32, 'tablespoon': 32, 'tablespoons': 32 },
+    'pounds': { 'stick': 4, 'sticks': 4, 'tbsp': 32, 'tablespoon': 32, 'tablespoons': 32 },
+    'stick': { 'tbsp': 8, 'tablespoon': 8, 'tablespoons': 8 },
+    'sticks': { 'tbsp': 8, 'tablespoon': 8, 'tablespoons': 8 },
+  },
+  'cheese': {
+    // Shredded cheese conversions
+    'lb': { 'cup': 4, 'cups': 4 },
+    'lbs': { 'cup': 4, 'cups': 4 },
+    'pound': { 'cup': 4, 'cups': 4 },
+    'pounds': { 'cup': 4, 'cups': 4 },
+  },
+  'cheddar cheese': {
+    'lb': { 'cup': 4, 'cups': 4 },
+    'lbs': { 'cup': 4, 'cups': 4 },
+    'pound': { 'cup': 4, 'cups': 4 },
+    'pounds': { 'cup': 4, 'cups': 4 },
+  },
+  'mozzarella cheese': {
+    'lb': { 'cup': 4, 'cups': 4 },
+    'lbs': { 'cup': 4, 'cups': 4 },
+    'pound': { 'cup': 4, 'cups': 4 },
+    'pounds': { 'cup': 4, 'cups': 4 },
+  },
+  // Use singular forms as primary keys (extractFoodName normalizes plurals)
+  'egg': {
+    'dozen': { 'count': 12, 'piece': 12, 'pieces': 12 },
+  },
+  'eggs': {  // Keep for backwards compatibility
+    'dozen': { 'count': 12, 'piece': 12, 'pieces': 12 },
+  },
+};
+
 // Normalize unit by applying aliases
 function normalizeUnit(unit: string): string {
   const trimmed = unit.trim();
@@ -257,6 +303,88 @@ export function convertUnit(
 
   // Convert to base unit, then to target unit
   return (quantity * fromFactor) / toFactor;
+}
+
+// Convert quantity between units using food-specific conversions
+// e.g., "1 lb bacon" to "slices" -> 16 slices
+export function convertFoodSpecificUnits(
+  foodName: string,
+  quantity: number,
+  fromUnit: string,
+  toUnit: string
+): number | null {
+  // Normalize food name (lowercase, trim)
+  const normalizedFood = foodName.toLowerCase().trim();
+  
+  // Normalize units through aliases
+  const normalizedFrom = normalizeUnit(fromUnit);
+  const normalizedTo = normalizeUnit(toUnit);
+  
+  // Check if we have conversions for this food
+  if (!FOOD_CONVERSIONS[normalizedFood]) {
+    return null;
+  }
+  
+  const foodConversions = FOOD_CONVERSIONS[normalizedFood];
+  
+  // Direct conversion: fromUnit -> toUnit
+  if (foodConversions[normalizedFrom]?.[normalizedTo]) {
+    const conversionFactor = foodConversions[normalizedFrom][normalizedTo];
+    return quantity * conversionFactor;
+  }
+  
+  // Reverse conversion: toUnit -> fromUnit (invert the factor)
+  if (foodConversions[normalizedTo]?.[normalizedFrom]) {
+    const conversionFactor = foodConversions[normalizedTo][normalizedFrom];
+    return quantity / conversionFactor;
+  }
+  
+  return null;
+}
+
+// Helper function to extract the core food name from an ingredient string
+// e.g., "bacon, cooked" -> "bacon", "large eggs" -> "egg", "unsalted butter" -> "butter"
+export function extractFoodName(ingredientName: string): string {
+  // Remove everything after comma (cooking instructions, states, etc.)
+  const baseName = ingredientName.split(',')[0].trim().toLowerCase();
+  
+  // Remove common preparation, size, and flavor descriptors
+  const descriptorTerms = [
+    // Preparation terms
+    'raw', 'cooked', 'fresh', 'frozen', 'canned', 'dried',
+    'shredded', 'sliced', 'diced', 'chopped', 'minced',
+    
+    // Fat content descriptors
+    'whole', 'reduced fat', 'low fat', 'nonfat', 'skim', '2%', 'fat-free',
+    
+    // Size descriptors  
+    'large', 'medium', 'small', 'extra large', 'extra-large', 'x-large',
+    'jumbo', 'mini', 'tiny', 'extra small', 'extra-small',
+    
+    // Flavor/variety descriptors
+    'unsalted', 'salted', 'sweetened', 'unsweetened', 'plain',
+    'organic', 'free-range', 'grass-fed', 'wild-caught',
+  ];
+  
+  let cleanName = baseName;
+  for (const term of descriptorTerms) {
+    cleanName = cleanName.replace(new RegExp(`\\b${term}\\b`, 'gi'), '').trim();
+  }
+  
+  // Handle plurals -> singular for better matching
+  // egg/eggs -> egg, butter/butters -> butter
+  const pluralMappings: { [key: string]: string } = {
+    'eggs': 'egg',
+    'cheeses': 'cheese',
+    'butters': 'butter',
+  };
+  
+  if (pluralMappings[cleanName]) {
+    cleanName = pluralMappings[cleanName];
+  }
+  
+  // Clean up extra whitespace
+  return cleanName.replace(/\s+/g, ' ').trim();
 }
 
 // Common size descriptors that are adjectives, not units
@@ -683,6 +811,40 @@ export function matchIngredientWithInventory(
       percentageAvailable,
       shortage: hasEnough ? undefined : {
         quantity: parsed.quantity - convertedQuantity,
+        unit: parsed.unit,
+      },
+    };
+  }
+
+  // Try food-specific conversion as fallback
+  // e.g., "1 lb bacon" in inventory, recipe needs "2 slices bacon"
+  const recipeFood = extractFoodName(parsed.name);
+  const inventoryFood = extractFoodName(matchingItem.name);
+  
+  const foodConvertedQuantity = convertFoodSpecificUnits(
+    recipeFood,
+    inventoryQuantity,
+    matchingItem.unit,
+    parsed.unit
+  );
+  
+  if (foodConvertedQuantity !== null) {
+    const hasEnough = foodConvertedQuantity >= parsed.quantity;
+    const percentageAvailable = Math.min(100, (foodConvertedQuantity / parsed.quantity) * 100);
+    
+    console.log(`  → Food-specific conversion: ${inventoryQuantity} ${matchingItem.unit} ${inventoryFood} = ${foodConvertedQuantity} ${parsed.unit}`);
+    console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${foodConvertedQuantity})`);
+    
+    return {
+      ingredientName: parsed.name,
+      neededQuantity: parsed.quantity,
+      neededUnit: parsed.unit,
+      availableQuantity: foodConvertedQuantity,
+      availableUnit: parsed.unit,
+      hasEnough,
+      percentageAvailable,
+      shortage: hasEnough ? undefined : {
+        quantity: parsed.quantity - foodConvertedQuantity,
         unit: parsed.unit,
       },
     };
