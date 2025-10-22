@@ -8,6 +8,7 @@ import { ChefHat } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { ProgressiveDisclosureProvider } from "@/contexts/ProgressiveDisclosureContext";
 import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { UnifiedAddFood } from "@/components/unified-add-food";
@@ -254,9 +255,11 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AppContent />
-          <Toaster />
-          <OfflineIndicator />
+          <ProgressiveDisclosureProvider>
+            <AppContent />
+            <Toaster />
+            <OfflineIndicator />
+          </ProgressiveDisclosureProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
