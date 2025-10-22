@@ -10,8 +10,12 @@ import {
   ChevronRight,
   Calendar as CalendarIcon,
   X,
+  Settings2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ProgressiveSection } from "@/components/progressive-section";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { MealPlan, Recipe } from "@shared/schema";
 
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
@@ -359,10 +363,51 @@ export default function MealPlanner() {
                               </div>
                             </CardHeader>
                             <CardContent className="pt-0">
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-sm text-muted-foreground mb-2">
                                 {mealPlan.servings}{" "}
                                 {mealPlan.servings === 1 ? "serving" : "servings"}
                               </div>
+                              <ProgressiveSection
+                                id={`meal-serving-${mealPlan.id}`}
+                                title="Customize Servings"
+                                defaultExpanded={false}
+                                className="mt-2"
+                                size="sm"
+                                showLabel={false}
+                                icon="settings"
+                                testId={`progressive-servings-${mealPlan.id}`}
+                              >
+                                <div className="space-y-2 mt-2">
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor={`servings-${mealPlan.id}`} className="text-xs">
+                                      Servings:
+                                    </Label>
+                                    <Input
+                                      id={`servings-${mealPlan.id}`}
+                                      type="number"
+                                      min="1"
+                                      max="10"
+                                      defaultValue={mealPlan.servings}
+                                      className="w-20 h-8 text-sm"
+                                      data-testid={`input-servings-${mealPlan.id}`}
+                                    />
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toast({
+                                          title: "Coming soon",
+                                          description: "Serving adjustment will be implemented soon",
+                                        });
+                                      }}
+                                      data-testid={`button-update-servings-${mealPlan.id}`}
+                                    >
+                                      Update
+                                    </Button>
+                                  </div>
+                                </div>
+                              </ProgressiveSection>
                             </CardContent>
                           </Card>
                         ) : (
@@ -507,24 +552,94 @@ export default function MealPlanner() {
           </Card>
 
           {/* Summary */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div data-testid="text-meals-planned">
-              {mealPlans.length} {mealPlans.length === 1 ? "meal" : "meals"}{" "}
-              planned this week
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div data-testid="text-meals-planned">
+                {mealPlans.length} {mealPlans.length === 1 ? "meal" : "meals"}{" "}
+                planned this week
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // TODO: Navigate to shopping list
+                  toast({
+                    title: "Coming soon",
+                    description: "Shopping list feature will be implemented next",
+                  });
+                }}
+                data-testid="button-view-shopping-list"
+              >
+                View Shopping List
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                // TODO: Navigate to shopping list
-                toast({
-                  title: "Coming soon",
-                  description: "Shopping list feature will be implemented next",
-                });
-              }}
-              data-testid="button-view-shopping-list"
+            
+            <ProgressiveSection
+              id="meal-planner-bulk-actions"
+              title="Bulk Actions"
+              summary="Advanced planning options and batch operations"
+              defaultExpanded={false}
+              icon="settings"
+              testId="progressive-bulk-actions"
             >
-              View Shopping List
-            </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    toast({
+                      title: "Coming soon",
+                      description: "Batch meal duplication feature will be added",
+                    });
+                  }}
+                  data-testid="button-duplicate-week"
+                  className="justify-start"
+                >
+                  <Calendar1 className="w-4 h-4 mr-2" />
+                  Duplicate This Week
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    toast({
+                      title: "Coming soon",
+                      description: "Clear all meals for the week",
+                    });
+                  }}
+                  data-testid="button-clear-week"
+                  className="justify-start"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Clear Week
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    toast({
+                      title: "Coming soon",
+                      description: "Export meal plan as PDF or calendar file",
+                    });
+                  }}
+                  data-testid="button-export-plan"
+                  className="justify-start"
+                >
+                  <Settings2 className="w-4 h-4 mr-2" />
+                  Export Plan
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    toast({
+                      title: "Coming soon",
+                      description: "Auto-generate meal plan based on preferences",
+                    });
+                  }}
+                  data-testid="button-auto-plan"
+                  className="justify-start"
+                >
+                  <Settings2 className="w-4 h-4 mr-2" />
+                  Auto-Plan Meals
+                </Button>
+              </div>
+            </ProgressiveSection>
           </div>
         </div>
       </div>
