@@ -3,8 +3,9 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, UtensilsCrossed, Info } from "lucide-react";
+import { Edit, Trash2, UtensilsCrossed, Info, Plus, Minus, Calendar, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditFoodDialog } from "./edit-food-dialog";
 import { NutritionFactsDialog } from "./nutrition-facts-dialog";
@@ -12,6 +13,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSwipe } from "@/hooks/use-swipe";
 import type { FoodItem } from "@shared/schema";
+import { format } from "date-fns";
 
 interface FoodCardProps {
   item: FoodItem;
@@ -21,6 +23,10 @@ interface FoodCardProps {
 export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [nutritionDialogOpen, setNutritionDialogOpen] = useState(false);
+  const [localQuantity, setLocalQuantity] = useState<number>(item.quantity);
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false);
+  const [isEditingExpiry, setIsEditingExpiry] = useState(false);
+  const [localExpiry, setLocalExpiry] = useState(item.expirationDate || "");
   const { toast } = useToast();
 
   const getStorageBadgeColor = (location: string) => {
@@ -43,6 +49,71 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
     if (daysUntil <= 3) return { color: "bg-amber-500", text: `${daysUntil}d left` };
     return { color: "bg-green-500", text: `${daysUntil}d left` };
   };
+
+  // Mutation for quick quantity update
+  const updateQuantityMutation = useMutation({
+    mutationFn: async (newQuantity: number) => {
+      return await apiRequest("PATCH", `/api/food-items/${item.id}`, {
+        quantity: newQuantity
+      });
+    },
+    onMutate: async (newQuantity: number) => {
+      // Optimistic update
+      await queryClient.cancelQueries({ queryKey: ["/api/food-items"] });
+      const previousItems = queryClient.getQueryData(["/api/food-items"]);
+      
+      queryClient.setQueryData(["/api/food-items"], (old: any) => {
+        if (!old) return old;
+        return old.map((i: FoodItem) => 
+          i.id === item.id ? { ...i, quantity: newQuantity } : i
+        );
+      });
+      
+      return { previousItems };
+    },
+    onError: (err, newQuantity, context) => {
+      // Rollback on error
+      if (context?.previousItems) {
+        queryClient.setQueryData(["/api/food-items"], context.previousItems);
+      }
+      setLocalQuantity(item.quantity);
+      toast({
+        title: "Error",
+        description: "Failed to update quantity",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
+    },
+  });
+
+  // Mutation for quick expiry update
+  const updateExpiryMutation = useMutation({
+    mutationFn: async (newExpiry: string) => {
+      return await apiRequest("PATCH", `/api/food-items/${item.id}`, {
+        expirationDate: newExpiry
+      });
+    },
+    onSuccess: () => {
+      setIsEditingExpiry(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      toast({
+        title: "Expiration date updated",
+        description: "The expiration date has been successfully updated",
+      });
+    },
+    onError: () => {
+      setLocalExpiry(item.expirationDate || "");
+      toast({
+        title: "Error",
+        description: "Failed to update expiration date",
+        variant: "destructive",
+      });
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -67,7 +138,31 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
     },
   });
 
-  const expiryStatus = getExpiryStatus(item.expirationDate);
+  const handleQuantityChange = (delta: number) => {
+    const newQuantity = Math.max(0.1, localQuantity + delta);
+    setLocalQuantity(newQuantity);
+    updateQuantityMutation.mutate(newQuantity);
+  };
+
+  const handleQuantityInputChange = (value: string) => {
+    const parsed = parseFloat(value);
+    if (!isNaN(parsed) && parsed > 0) {
+      setLocalQuantity(parsed);
+    }
+  };
+
+  const handleQuantitySubmit = () => {
+    updateQuantityMutation.mutate(localQuantity);
+    setIsEditingQuantity(false);
+  };
+
+  const handleExpirySubmit = () => {
+    if (localExpiry) {
+      updateExpiryMutation.mutate(localExpiry);
+    }
+  };
+
+  const expiryStatus = getExpiryStatus(localExpiry || item.expirationDate);
   const hasNutrition = item.nutrition && item.nutrition !== "null";
 
   return (
@@ -107,27 +202,139 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                 </Badge>
               </div>
 
-              <div className="flex items-center gap-3 mb-3">
+              {/* Enhanced quantity section with inline editing */}
+              <div className="flex items-center gap-2 mb-3">
                 {item.fcdId && (
                   <span className="text-xs text-muted-foreground font-mono" data-testid={`text-fcd-${item.id}`}>
                     FCD: {item.fcdId}
                   </span>
                 )}
-                <span className="text-sm font-medium text-foreground" data-testid={`text-quantity-${item.id}`}>
-                  {item.quantity} {item.unit}
-                </span>
+                
+                {/* Inline quantity editing */}
+                <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 hover:bg-primary/10"
+                    onClick={() => handleQuantityChange(-1)}
+                    disabled={updateQuantityMutation.isPending}
+                    data-testid={`button-decrease-${item.id}`}
+                  >
+                    <Minus className="w-3 h-3" />
+                  </Button>
+                  
+                  {isEditingQuantity ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        value={localQuantity}
+                        onChange={(e) => handleQuantityInputChange(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleQuantitySubmit();
+                          if (e.key === 'Escape') {
+                            setLocalQuantity(item.quantity);
+                            setIsEditingQuantity(false);
+                          }
+                        }}
+                        className="w-16 h-7 text-sm text-center"
+                        autoFocus
+                        data-testid={`input-quantity-${item.id}`}
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={handleQuantitySubmit}
+                      >
+                        <Check className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          setLocalQuantity(item.quantity);
+                          setIsEditingQuantity(false);
+                        }}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditingQuantity(true)}
+                      className="text-sm font-medium text-foreground hover:bg-muted rounded px-2 py-0.5 transition-colors cursor-pointer"
+                      data-testid={`text-quantity-${item.id}`}
+                    >
+                      {localQuantity} {item.unit}
+                    </button>
+                  )}
+                  
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 hover:bg-primary/10"
+                    onClick={() => handleQuantityChange(1)}
+                    disabled={updateQuantityMutation.isPending}
+                    data-testid={`button-increase-${item.id}`}
+                  >
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
 
+              {/* Enhanced expiry section with inline editing */}
               {expiryStatus && (
                 <div className="mb-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground" data-testid={`text-expiry-${item.id}`}>
                       {expiryStatus.text}
                     </span>
-                    {item.expirationDate && (
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(item.expirationDate).toLocaleDateString()}
-                      </span>
+                    {isEditingExpiry ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="date"
+                          value={localExpiry}
+                          onChange={(e) => setLocalExpiry(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleExpirySubmit();
+                            if (e.key === 'Escape') {
+                              setLocalExpiry(item.expirationDate || "");
+                              setIsEditingExpiry(false);
+                            }
+                          }}
+                          className="h-6 text-xs"
+                          data-testid={`input-expiry-${item.id}`}
+                        />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5"
+                          onClick={handleExpirySubmit}
+                        >
+                          <Check className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5"
+                          onClick={() => {
+                            setLocalExpiry(item.expirationDate || "");
+                            setIsEditingExpiry(false);
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setIsEditingExpiry(true)}
+                        className="text-xs text-muted-foreground hover:bg-muted rounded px-2 py-0.5 transition-colors cursor-pointer flex items-center gap-1"
+                        data-testid={`button-edit-expiry-${item.id}`}
+                      >
+                        <Calendar className="w-3 h-3" />
+                        {localExpiry ? new Date(localExpiry).toLocaleDateString() : 'Set date'}
+                      </button>
                     )}
                   </div>
                   <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
@@ -136,7 +343,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                       style={{
                         width: (() => {
                           const now = new Date().getTime();
-                          const expiry = new Date(item.expirationDate!).getTime();
+                          const expiry = new Date(localExpiry || item.expirationDate!).getTime();
                           const daysUntil = (expiry - now) / (24 * 60 * 60 * 1000);
                           
                           // For expired items, show 10% width as a minimum visual indicator
