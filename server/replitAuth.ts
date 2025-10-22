@@ -153,6 +153,8 @@ export async function setupAuth(app: Express) {
   app.get("/api/login", ensureStrategyExists, (req, res, next) => {
     const strategyName = `replitauth:${req.hostname}`;
     console.log(`[Auth] Login attempt using strategy: ${strategyName}`);
+    console.log(`[Auth] Request headers: Host=${req.headers.host}, Origin=${req.headers.origin}, Referer=${req.headers.referer}`);
+    console.log(`[Auth] Available strategies: ${Array.from(registeredDomains).join(", ")}`);
     
     passport.authenticate(strategyName, {
       prompt: "login consent",
@@ -160,6 +162,12 @@ export async function setupAuth(app: Express) {
     }, (err: any, user: any, info: any) => {
       if (err) {
         console.error(`[Auth] Authentication error for ${strategyName}:`, err);
+        console.error(`[Auth] Error details:`, { 
+          message: err.message, 
+          stack: err.stack,
+          cause: err.cause 
+        });
+        
         // Fallback to first available strategy if current one fails
         const fallbackDomain = Array.from(registeredDomains)[0];
         if (fallbackDomain && fallbackDomain !== req.hostname) {
@@ -169,6 +177,14 @@ export async function setupAuth(app: Express) {
             scope: ["openid", "email", "profile", "offline_access"],
           })(req, res, next);
         }
+        
+        // If no fallback available, return error to user
+        return res.status(500).json({ 
+          error: "Authentication failed", 
+          message: "Unable to authenticate with the custom domain. Please try accessing the application from the original Replit domain.",
+          hostname: req.hostname,
+          availableDomains: Array.from(registeredDomains)
+        });
       }
       return passport.authenticate(strategyName, {
         prompt: "login consent",
@@ -180,10 +196,44 @@ export async function setupAuth(app: Express) {
   app.get("/api/callback", ensureStrategyExists, (req, res, next) => {
     const strategyName = `replitauth:${req.hostname}`;
     console.log(`[Auth] Callback attempt using strategy: ${strategyName}`);
+    console.log(`[Auth] Callback URL: ${req.protocol}://${req.hostname}${req.originalUrl}`);
+    console.log(`[Auth] Callback query params:`, req.query);
     
     passport.authenticate(strategyName, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
+    }, (err: any, user: any, info: any) => {
+      if (err) {
+        console.error(`[Auth] Callback error for ${strategyName}:`, err);
+        console.error(`[Auth] Callback error details:`, { 
+          message: err.message, 
+          stack: err.stack,
+          cause: err.cause,
+          info: info
+        });
+        
+        // Try to provide a helpful error message
+        return res.status(500).json({ 
+          error: "Authentication callback failed", 
+          message: "The authentication callback failed. This may be due to domain configuration issues.",
+          hostname: req.hostname,
+          suggestion: "Please try accessing the application from the original Replit domain."
+        });
+      }
+      
+      if (!user) {
+        console.error(`[Auth] No user returned from authentication`);
+        return res.redirect("/api/login");
+      }
+      
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error(`[Auth] Login error:`, loginErr);
+          return next(loginErr);
+        }
+        console.log(`[Auth] User successfully authenticated and logged in`);
+        return res.redirect("/");
+      });
     })(req, res, next);
   });
 
