@@ -3664,6 +3664,24 @@ Respond ONLY with a valid JSON object:
   // Web Vitals Analytics endpoint
   app.post("/api/analytics", async (req: any, res) => {
     try {
+      // Handle cases where body might be a string (from sendBeacon without Content-Type)
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+        } catch (parseError) {
+          console.error("Failed to parse analytics body:", parseError);
+          // Return success anyway to avoid breaking the frontend
+          return res.status(200).json({ success: true });
+        }
+      }
+
+      // Ensure we have the required fields
+      if (!body || !body.name || body.value === undefined) {
+        // Silently succeed for incomplete data
+        return res.status(200).json({ success: true });
+      }
+
       // Get user ID if authenticated, otherwise null for anonymous tracking
       const userId = req.user?.claims?.sub || null;
 
@@ -3673,10 +3691,10 @@ Respond ONLY with a valid JSON object:
 
       // Validate using Zod schema
       const validated = insertWebVitalSchema.parse({
-        ...req.body,
+        ...body,
         userId,
-        metricId: req.body.id, // Map 'id' from web-vitals to 'metricId'
-        navigationType: req.body.navigationType || null,
+        metricId: body.id || `${body.name}_${Date.now()}`, // Map 'id' from web-vitals to 'metricId', fallback if missing
+        navigationType: body.navigationType || null,
         userAgent,
         url,
       });
@@ -3686,10 +3704,13 @@ Respond ONLY with a valid JSON object:
       res.status(200).json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid web vital data", details: error.errors });
+        // Log the error but return success to avoid breaking the frontend
+        console.warn("Web vital validation error:", error.errors);
+        return res.status(200).json({ success: true });
       }
       console.error("Error recording web vital:", error);
-      res.status(500).json({ error: "Failed to record web vital" });
+      // Still return success to avoid breaking the frontend
+      res.status(200).json({ success: true });
     }
   });
 

@@ -6,6 +6,7 @@ import { setupVite, serveStatic, log } from "./vite";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.text({ type: 'text/plain' })); // Handle sendBeacon text bodies
 app.use(cookieParser());
 
 app.use((req, res, next) => {
