@@ -17,7 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings, Shield, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { User, StorageLocation } from "@shared/schema";
@@ -305,126 +306,364 @@ export default function Settings() {
       <div className="container max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8" data-testid="text-settings-title">Settings</h1>
 
-        <Card className="mb-6 overflow-hidden" data-testid="card-profile">
-          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b border-border">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CreditCard className="w-4 h-4" />
-              <span className="font-medium">Member Profile</span>
-            </div>
-          </div>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-shrink-0">
-                <Avatar className="w-32 h-32 border-4 border-border rounded-md">
-                  <AvatarImage src={(user as User)?.profileImageUrl || undefined} />
-                  <AvatarFallback className="text-3xl rounded-md">{getUserInitials()}</AvatarFallback>
-                </Avatar>
+        <Accordion type="single" collapsible className="space-y-4" defaultValue="profile">
+          {/* Profile Section */}
+          <AccordionItem value="profile" className="border rounded-lg" data-testid="section-profile">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <User2 className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">Profile</span>
+                <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                  {(user as User)?.email || "Guest"}
+                </Badge>
               </div>
-              
-              <div className="flex-1 space-y-4">
-                <div>
-                  <h2 className="text-2xl font-bold mb-1" data-testid="text-profile-name">
-                    {(user as User)?.firstName && (user as User)?.lastName 
-                      ? `${(user as User).firstName} ${(user as User).lastName}`
-                      : (user as User)?.email || "User"}
-                  </h2>
-                  <p className="text-sm text-muted-foreground" data-testid="text-profile-email">
-                    {(user as User)?.email}
-                  </p>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="flex flex-col md:flex-row gap-6 pt-4">
+                <div className="flex-shrink-0">
+                  <Avatar className="w-32 h-32 border-4 border-border rounded-md">
+                    <AvatarImage src={(user as User)?.profileImageUrl || undefined} />
+                    <AvatarFallback className="text-3xl rounded-md">{getUserInitials()}</AvatarFallback>
+                  </Avatar>
                 </div>
+                
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-1" data-testid="text-profile-name">
+                      {(user as User)?.firstName && (user as User)?.lastName 
+                        ? `${(user as User).firstName} ${(user as User).lastName}`
+                        : (user as User)?.email || "User"}
+                    </h2>
+                    <p className="text-sm text-muted-foreground" data-testid="text-profile-email">
+                      {(user as User)?.email}
+                    </p>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-start gap-2">
-                    <CreditCard className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground">Member ID</div>
-                      <div className="font-mono text-xs" data-testid="text-member-id">
-                        {(user as User)?.id?.slice(0, 8).toUpperCase() || "N/A"}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-start gap-2">
+                      <CreditCard className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                      <div>
+                        <div className="text-muted-foreground">Member ID</div>
+                        <div className="font-mono text-xs" data-testid="text-member-id">
+                          {(user as User)?.id?.slice(0, 8).toUpperCase() || "N/A"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                      <div>
+                        <div className="text-muted-foreground">Member Since</div>
+                        <div className="font-medium" data-testid="text-member-since">
+                          {(user as User)?.createdAt 
+                            ? new Date((user as User).createdAt!).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })
+                            : "N/A"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <Users className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                      <div>
+                        <div className="text-muted-foreground">Household Size</div>
+                        <div className="font-medium" data-testid="text-household-size">
+                          {preferences?.householdSize || 2} {(preferences?.householdSize || 2) === 1 ? 'person' : 'people'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <ChefHat className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                      <div>
+                        <div className="text-muted-foreground">Cooking Level</div>
+                        <div className="font-medium capitalize" data-testid="text-cooking-level">
+                          {preferences?.cookingSkillLevel || "Beginner"}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-2">
-                    <Calendar className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground">Member Since</div>
-                      <div className="font-medium" data-testid="text-member-since">
-                        {(user as User)?.createdAt 
-                          ? new Date((user as User).createdAt!).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              year: 'numeric' 
-                            })
-                          : "N/A"}
-                      </div>
-                    </div>
-                  </div>
+                  <Separator />
 
-                  <div className="flex items-start gap-2">
-                    <Users className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground">Household Size</div>
-                      <div className="font-medium" data-testid="text-household-size">
-                        {preferences?.householdSize || 2} {(preferences?.householdSize || 2) === 1 ? 'person' : 'people'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2">
-                    <ChefHat className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                    <div>
-                      <div className="text-muted-foreground">Cooking Level</div>
-                      <div className="font-medium capitalize" data-testid="text-cooking-level">
-                        {preferences?.cookingSkillLevel || "Beginner"}
-                      </div>
-                    </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        CacheStorage.clear();
+                        window.location.href = "/api/logout";
+                      }}
+                      data-testid="button-logout"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Log Out
+                    </Button>
                   </div>
                 </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-                <Separator />
+          {/* Preferences Section */}
+          <AccordionItem value="preferences" className="border rounded-lg" data-testid="section-preferences">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Settings className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">General Preferences</span>
+                {(preferences?.householdSize || preferences?.cookingSkillLevel) && (
+                  <span className="text-sm text-muted-foreground ml-2">
+                    {preferences?.householdSize} people • {preferences?.cookingSkillLevel}
+                  </span>
+                )}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="householdSize"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Household Size</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={20}
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              data-testid="input-household-size"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Number of people you typically cook for
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Appearance</span>
+                    <FormField
+                      control={form.control}
+                      name="cookingSkillLevel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cooking Skill Level</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-cooking-skill">
+                                <SelectValue placeholder="Select your skill level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {cookingSkillOptions.map((skill) => (
+                                <SelectItem key={skill.value} value={skill.value} data-testid={`option-skill-${skill.value}`}>
+                                  {skill.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Recipe complexity will be tailored to your level
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="text-sm text-muted-foreground">
-                      Toggle between light and dark theme
-                    </div>
-                    <ThemeToggle />
-                  </div>
-                </div>
 
-                <Separator />
+                  <FormField
+                    control={form.control}
+                    name="preferredUnits"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preferred Measurement Units</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-units">
+                              <SelectValue placeholder="Select unit system" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="imperial" data-testid="option-units-imperial">Imperial (cups, oz, °F)</SelectItem>
+                            <SelectItem value="metric" data-testid="option-units-metric">Metric (ml, g, °C)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Your preferred units for recipes and measurements
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="expirationAlertDays"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Expiration Alert Days</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={14}
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            data-testid="input-expiration-days"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Get notified when food items will expire within this many days
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+
                   <Button
-                    variant="outline"
-                    onClick={() => {
-                      CacheStorage.clear();
-                      window.location.href = "/api/logout";
-                    }}
-                    data-testid="button-logout"
+                    type="submit"
+                    disabled={saveMutation.isPending}
+                    data-testid="button-save-preferences"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Log Out
+                    {saveMutation.isPending ? "Saving..." : "Save Preferences"}
                   </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                </form>
+              </Form>
+            </AccordionContent>
+          </AccordionItem>
 
-        <Card data-testid="card-preferences">
-          <CardHeader>
-            <CardTitle>Preferences</CardTitle>
-            <CardDescription>Customize your ChefSpAIce experience</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="space-y-4">
-                  <FormLabel>Storage Areas</FormLabel>
+          {/* Dietary & Allergens Section */}
+          <AccordionItem value="dietary" className="border rounded-lg" data-testid="section-dietary">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Shield className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">Dietary Restrictions & Allergens</span>
+                {(selectedDietary.length > 0 || selectedAllergens.length > 0) && (
+                  <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                    {selectedDietary.length + selectedAllergens.length} active
+                  </Badge>
+                )}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <Form {...form}>
+                <form className="space-y-6 pt-4">
+                  <div className="space-y-4">
+                    <FormLabel>Dietary Preferences</FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {dietaryOptions.map((option) => (
+                        <Badge
+                          key={option}
+                          variant={selectedDietary.includes(option) ? "default" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => toggleDietary(option)}
+                          data-testid={`badge-dietary-${option.toLowerCase()}`}
+                        >
+                          {option}
+                          {selectedDietary.includes(option) && (
+                            <X className="w-3 h-3 ml-1" />
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <FormLabel>Allergens to Avoid</FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {allergenOptions.map((option) => (
+                        <Badge
+                          key={option}
+                          variant={selectedAllergens.includes(option) ? "destructive" : "outline"}
+                          className="cursor-pointer hover-elevate active-elevate-2"
+                          onClick={() => toggleAllergen(option)}
+                          data-testid={`badge-allergen-${option.toLowerCase()}`}
+                        >
+                          {option}
+                          {selectedAllergens.includes(option) && (
+                            <X className="w-3 h-3 ml-1" />
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <FormLabel>Foods to Always Avoid</FormLabel>
+                    <FormDescription>
+                      Add specific foods or ingredients you want to avoid in recipes
+                    </FormDescription>
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="e.g., cilantro, mushrooms"
+                        value={foodToAvoid}
+                        onChange={(e) => setFoodToAvoid(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addFoodToAvoid();
+                          }
+                        }}
+                        data-testid="input-food-to-avoid"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addFoodToAvoid}
+                        data-testid="button-add-food-to-avoid"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    {foodsToAvoidList.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {foodsToAvoidList.map((food) => (
+                          <Badge
+                            key={food}
+                            variant="secondary"
+                            className="cursor-pointer hover-elevate active-elevate-2"
+                            onClick={() => removeFoodToAvoid(food)}
+                            data-testid={`badge-avoid-${food.toLowerCase().replace(/\s+/g, '-')}`}
+                          >
+                            {food}
+                            <X className="w-3 h-3 ml-1" />
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={form.handleSubmit(onSubmit)}
+                    disabled={saveMutation.isPending}
+                    data-testid="button-save-dietary"
+                  >
+                    {saveMutation.isPending ? "Saving..." : "Save Dietary Preferences"}
+                  </Button>
+                </form>
+              </Form>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Storage Areas Section */}
+          <AccordionItem value="storage" className="border rounded-lg" data-testid="section-storage">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Database className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">Storage Areas</span>
+                {selectedStorageAreas.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                    {selectedStorageAreas.length} active
+                  </Badge>
+                )}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <Form {...form}>
+                <form className="space-y-4 pt-4">
                   <FormDescription>
                     Select the storage areas you have available
                   </FormDescription>
@@ -496,278 +735,120 @@ export default function Settings() {
                       {form.formState.errors.storageAreasEnabled.message}
                     </p>
                   )}
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="householdSize"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Household Size</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min={1}
-                            max={20}
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                            data-testid="input-household-size"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Number of people you typically cook for
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="cookingSkillLevel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cooking Skill Level</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-cooking-skill">
-                              <SelectValue placeholder="Select your skill level" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {cookingSkillOptions.map((skill) => (
-                              <SelectItem key={skill.value} value={skill.value} data-testid={`option-skill-${skill.value}`}>
-                                {skill.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Recipe complexity will be tailored to your level
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="preferredUnits"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preferred Measurement Units</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-units">
-                            <SelectValue placeholder="Select unit system" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="imperial" data-testid="option-units-imperial">Imperial (cups, oz, °F)</SelectItem>
-                          <SelectItem value="metric" data-testid="option-units-metric">Metric (ml, g, °C)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Your preferred units for recipes and measurements
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-4">
-                  <FormLabel>Dietary Preferences</FormLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {dietaryOptions.map((option) => (
-                      <Badge
-                        key={option}
-                        variant={selectedDietary.includes(option) ? "default" : "outline"}
-                        className="cursor-pointer hover-elevate active-elevate-2"
-                        onClick={() => toggleDietary(option)}
-                        data-testid={`badge-dietary-${option.toLowerCase()}`}
-                      >
-                        {option}
-                        {selectedDietary.includes(option) && (
-                          <X className="w-3 h-3 ml-1" />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <FormLabel>Allergens to Avoid</FormLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {allergenOptions.map((option) => (
-                      <Badge
-                        key={option}
-                        variant={selectedAllergens.includes(option) ? "destructive" : "outline"}
-                        className="cursor-pointer hover-elevate active-elevate-2"
-                        onClick={() => toggleAllergen(option)}
-                        data-testid={`badge-allergen-${option.toLowerCase()}`}
-                      >
-                        {option}
-                        {selectedAllergens.includes(option) && (
-                          <X className="w-3 h-3 ml-1" />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <FormLabel>Foods to Always Avoid</FormLabel>
-                  <FormDescription>
-                    Add specific foods or ingredients you want to avoid in recipes
-                  </FormDescription>
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      placeholder="e.g., cilantro, mushrooms"
-                      value={foodToAvoid}
-                      onChange={(e) => setFoodToAvoid(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addFoodToAvoid();
-                        }
-                      }}
-                      data-testid="input-food-to-avoid"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addFoodToAvoid}
-                      data-testid="button-add-food-to-avoid"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  {foodsToAvoidList.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {foodsToAvoidList.map((food) => (
-                        <Badge
-                          key={food}
-                          variant="secondary"
-                          className="cursor-pointer hover-elevate active-elevate-2"
-                          onClick={() => removeFoodToAvoid(food)}
-                          data-testid={`badge-avoid-${food.toLowerCase().replace(/\s+/g, '-')}`}
-                        >
-                          {food}
-                          <X className="w-3 h-3 ml-1" />
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="expirationAlertDays"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Expiration Alert Days</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={14}
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          data-testid="input-expiration-days"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Get notified when food items will expire within this many days
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  disabled={saveMutation.isPending}
-                  data-testid="button-save-preferences"
-                >
-                  {saveMutation.isPending ? "Saving..." : "Save Preferences"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              API Usage Monitoring
-            </CardTitle>
-            <CardDescription>
-              Track your Barcode Lookup API usage and quota
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ApiUsageSection />
-          </CardContent>
-        </Card>
-
-        <Card className="border-destructive/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" />
-              Danger Zone
-            </CardTitle>
-            <CardDescription>
-              Irreversible actions that will permanently delete your data
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
-              <h4 className="font-medium mb-2">Reset Account Data</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                This will permanently delete all your data including food items, recipes, chat history, meal plans, and preferences. You'll be able to start fresh with the onboarding process.
-              </p>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    disabled={resetMutation.isPending}
-                    data-testid="button-reset-account"
+                  <Button
+                    type="button"
+                    onClick={form.handleSubmit(onSubmit)}
+                    disabled={saveMutation.isPending}
+                    data-testid="button-save-storage"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    {resetMutation.isPending ? "Resetting..." : "Reset Account"}
+                    {saveMutation.isPending ? "Saving..." : "Save Storage Areas"}
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete:
-                      <ul className="list-disc list-inside mt-2 space-y-1">
-                        <li>All your food inventory items</li>
-                        <li>All saved recipes</li>
-                        <li>All chat conversations</li>
-                        <li>All meal plans</li>
-                        <li>All custom storage locations</li>
-                        <li>All preferences and settings</li>
-                      </ul>
-                      <p className="mt-3 font-medium">You will be redirected to onboarding to set up your account again.</p>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel data-testid="button-cancel-reset">Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => resetMutation.mutate()}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      data-testid="button-confirm-reset"
-                    >
-                      Yes, Reset My Account
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </CardContent>
-        </Card>
+                </form>
+              </Form>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Appearance Section */}
+          <AccordionItem value="appearance" className="border rounded-lg" data-testid="section-appearance">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Palette className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">Appearance</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="space-y-3 pt-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-medium">Theme</div>
+                    <div className="text-sm text-muted-foreground">
+                      Toggle between light and dark theme
+                    </div>
+                  </div>
+                  <ThemeToggle />
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* API Usage Section */}
+          <AccordionItem value="api-usage" className="border rounded-lg" data-testid="section-api-usage">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Activity className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">API Usage Monitoring</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="pt-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Track your Barcode Lookup API usage and quota
+                </p>
+                <ApiUsageSection />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Danger Zone Section */}
+          <AccordionItem value="danger-zone" className="border border-destructive/50 rounded-lg" data-testid="section-danger">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline text-destructive">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-semibold">Danger Zone</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="space-y-4 pt-4">
+                <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                  <h4 className="font-medium mb-2">Reset Account Data</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    This will permanently delete all your data including food items, recipes, chat history, meal plans, and preferences. You'll be able to start fresh with the onboarding process.
+                  </p>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive" 
+                        disabled={resetMutation.isPending}
+                        data-testid="button-reset-account"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {resetMutation.isPending ? "Resetting..." : "Reset Account"}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete:
+                          <ul className="list-disc list-inside mt-2 space-y-1">
+                            <li>All your food inventory items</li>
+                            <li>All saved recipes</li>
+                            <li>All chat conversations</li>
+                            <li>All meal plans</li>
+                            <li>All custom storage locations</li>
+                            <li>All preferences and settings</li>
+                          </ul>
+                          <p className="mt-3 font-medium">You will be redirected to onboarding to set up your account again.</p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel data-testid="button-cancel-reset">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => resetMutation.mutate()}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          data-testid="button-confirm-reset"
+                        >
+                          Yes, Reset My Account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </div>
   );
