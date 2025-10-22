@@ -102,6 +102,7 @@ export function SmartRecipeGenerator({
     mutationFn: async () => {
       // Build intelligent request based on inventory analysis
       const smartRequest: any = {
+        onlyUseOnHand: true, // ALWAYS only use ingredients we have!
         prioritizeExpiring: preferences.preferExpiringItems && (inventoryAnalysis?.expiringCount ?? 0) > 0,
         servings: preferences.lastServingSize || 4,
         maxCookingTime: preferences.lastCookingTime || "30",
@@ -161,10 +162,10 @@ export function SmartRecipeGenerator({
       const updatedRecipe = (recipesWithMatching as Recipe[])?.find((r: Recipe) => r.id === recipe.id);
       
       const smartMessage = (inventoryAnalysis?.expiringCount ?? 0) > 0
-        ? `Smart recipe created using ${inventoryAnalysis!.expiringCount} expiring items!`
+        ? `Recipe ready to cook now using ${inventoryAnalysis!.expiringCount} expiring items - no shopping needed!`
         : (inventoryAnalysis?.highQuantity?.length ?? 0) > 0
-        ? `Smart recipe created to use up abundant ingredients!`
-        : `Smart recipe created based on your inventory!`;
+        ? `Recipe ready using your abundant ingredients - start cooking immediately!`
+        : `Recipe ready using only what you have - no shopping required!`;
 
       toast({
         title: "🪄 " + recipe.title,
@@ -235,9 +236,9 @@ export function SmartRecipeGenerator({
           <TooltipContent>
             <p className="font-semibold">Smart Recipe (1-click)</p>
             {expiringCount > 0 ? (
-              <p className="text-xs">Prioritize {expiringCount} expiring items</p>
+              <p className="text-xs">Create recipe using {expiringCount} expiring items - no shopping needed!</p>
             ) : (
-              <p className="text-xs">Generate optimal recipe instantly</p>
+              <p className="text-xs">Instant recipe using only what's in your kitchen</p>
             )}
           </TooltipContent>
         </Tooltip>
