@@ -315,9 +315,16 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
+  const tokenExpiresAt = user.expires_at;
+  const refreshThreshold = 5 * 60; // 5 minutes before expiry
+  
+  // If token is still valid and not expiring soon, continue
+  if (now <= tokenExpiresAt - refreshThreshold) {
     return next();
   }
+  
+  // Token is expired or expiring soon - attempt refresh
+  console.log(`[Auth] Token expiring soon for user ${user.claims?.sub || 'unknown'}, refreshing proactively`);
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
