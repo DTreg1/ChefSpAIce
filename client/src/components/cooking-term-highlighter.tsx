@@ -67,9 +67,8 @@ export function CookingTermHighlighter({ text, className = "" }: CookingTermHigh
     let match;
 
     const textCopy = text;
-    const regex = new RegExp(pattern);
     
-    while ((match = regex.exec(textCopy)) !== null) {
+    while ((match = pattern.exec(textCopy)) !== null) {
       // Add text before the match
       if (match.index > lastIndex) {
         parts.push(
