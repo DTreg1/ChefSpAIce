@@ -370,15 +370,15 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     updateUserSession(user, tokenResponse);
     return next();
   } catch (error: any) {
-    console.error('Token refresh failed:', error);
-    
-    // If the refresh token is invalid, we need to clear the session
-    // and force the user to re-authenticate
+    // Handle invalid_grant error gracefully
     if (error?.cause?.error === 'invalid_grant' || error?.error === 'invalid_grant') {
+      // This is expected when refresh tokens expire - log a simple message
+      console.log(`[Auth] Session expired for user ${userId} - refresh token invalid`);
+      
       // Clear the session to force re-authentication
       req.logout((err) => {
         if (err) {
-          console.error('Error logging out user during token refresh failure:', err);
+          console.error('[Auth] Error clearing session during token expiry:', err);
         }
       });
       
@@ -393,7 +393,18 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       return;
     }
     
-    // For other errors, just return unauthorized
+    // For unexpected errors, log more details but still be concise
+    console.error('[Auth] Token refresh failed:', {
+      userId,
+      errorType: error?.constructor?.name,
+      message: error?.message,
+      cause: error?.cause?.error || error?.error
+    });
+    
+    // Clear the refresh key to allow retry
+    activeRefreshes.delete(refreshKey);
+    
+    // Return unauthorized
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
