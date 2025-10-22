@@ -17,6 +17,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedFoodSearch } from "@/components/unified-food-search";
+import { SmartUnitSelector } from "@/components/smart-unit-selector";
 import type {
   StorageLocation,
   USDASearchResponse,
@@ -957,11 +958,13 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                       // Auto-fill serving size if available
                       if (food.servingSize && food.servingSizeUnit) {
                         setQuantity(food.servingSize.toString());
-                        setUnit(food.servingSizeUnit);
+                        // Let SmartUnitSelector handle unit suggestion based on full food data
+                        setUnit(""); // Clear to trigger new suggestion
                       } else {
-                        // Default to 1 piece/item if no serving info
+                        // Default quantity
                         setQuantity("1");
-                        setUnit("piece");
+                        // Let SmartUnitSelector handle unit suggestion
+                        setUnit(""); // Clear to trigger new suggestion
                       }
                       // Auto-suggest expiration date based on food category
                       const suggestedDays = getSuggestedShelfLife(
@@ -1112,13 +1115,14 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="unit">Unit *</Label>
-              <Input
-                id="unit"
-                placeholder="e.g., lbs, kg, cups"
+            <div className="flex-1">
+              <SmartUnitSelector
                 value={unit}
-                onChange={(e) => setUnit(e.target.value)}
+                onChange={setUnit}
+                foodName={selectedFood?.description || searchQuery}
+                foodCategory={selectedFood?.foodCategory}
+                servingSizeUnit={selectedFood?.servingSizeUnit}
+                usdaData={selectedFood?.usdaData}
                 data-testid="input-unit"
               />
             </div>
