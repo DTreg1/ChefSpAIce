@@ -167,7 +167,7 @@ function AppContent() {
           {/* Header is now at the top level, outside the flex container with sidebar */}
           <header
             className={cn(
-              "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-[20] w-full",
+              "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-[60] w-full",
               scrolled
                 ? "glass-ultra navbar-scroll scrolled shadow-lg"
                 : "glass-vibrant border-border/30",
@@ -178,7 +178,7 @@ function AppContent() {
               className="transition-morph hover:scale-105"
             />
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center transition-morph hover:scale-110 shadow-lg glow-primary">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/5 flex items-center justify-center shadow-lg glow-primary">
                 <ChefHat className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>

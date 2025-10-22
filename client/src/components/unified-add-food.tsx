@@ -378,7 +378,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-muted">
         <DialogHeader>
           <DialogTitle>Add Food to Inventory</DialogTitle>
           <DialogDescription>
@@ -426,44 +426,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
               </CardContent>
             </Card>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  data-testid="input-quantity"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unit</Label>
-                <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger id="unit" data-testid="select-unit">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="item">Item</SelectItem>
-                    <SelectItem value="package">Package</SelectItem>
-                    <SelectItem value="box">Box</SelectItem>
-                    <SelectItem value="bag">Bag</SelectItem>
-                    <SelectItem value="can">Can</SelectItem>
-                    <SelectItem value="bottle">Bottle</SelectItem>
-                    <SelectItem value="jar">Jar</SelectItem>
-                    <SelectItem value="lb">Pound (lb)</SelectItem>
-                    <SelectItem value="oz">Ounce (oz)</SelectItem>
-                    <SelectItem value="kg">Kilogram (kg)</SelectItem>
-                    <SelectItem value="g">Gram (g)</SelectItem>
-                    <SelectItem value="l">Liter (l)</SelectItem>
-                    <SelectItem value="ml">Milliliter (ml)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            
             
             <div className="space-y-2">
               <Label htmlFor="location">Storage Location</Label>
@@ -535,7 +498,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
           // Search interface
           <div className="flex-1 overflow-hidden flex flex-col">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="search">
                   <Search className="h-4 w-4 mr-2" />
                   Search
@@ -543,10 +506,6 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                 <TabsTrigger value="scan">
                   <ScanLine className="h-4 w-4 mr-2" />
                   Scan
-                </TabsTrigger>
-                <TabsTrigger value="browse">
-                  <Package className="h-4 w-4 mr-2" />
-                  Browse
                 </TabsTrigger>
               </TabsList>
               

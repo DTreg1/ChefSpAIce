@@ -8,11 +8,17 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 
-type WasteReductionSuggestion = {
-  suggestions: string[];
+type ExpirationNotification = {
+  id: string;
+  foodItemId: string;
+  foodItemName: string;
+  expirationDate: string;
+  daysUntilExpiry: number;
+  notifiedAt: Date;
+  dismissed: boolean;
 };
 
-export function ExpirationAlert() {
+export function ExpirationTicker() {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -42,8 +48,8 @@ export function ExpirationAlert() {
     },
   });
 
-  const { data: suggestions } = useQuery<WasteReductionSuggestion>({
-    queryKey: ["/api/suggestions/waste-reduction"],
+  const { data: notifications } = useQuery<ExpirationNotification[]>({
+    queryKey: ["/api/notifications/expiration"],
   });
 
   const dismissMutation = useMutation({
@@ -104,52 +110,65 @@ export function ExpirationAlert() {
     }
   }, []);
 
-  const hasSuggestions = suggestions && suggestions.suggestions.length > 0;
+  const hasNotifications = notifications && notifications.length > 0;
 
-  if (!hasSuggestions) {
+  if (!hasNotifications) {
     return null;
   }
 
   return (
     <div className="">
-      {hasSuggestions && (
-        <Card
-          className="border-primary/20 bg-primary/20 backdrop-opacity-0"
-          animate={false}
-        >
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                Waste Reduction Tips
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={refreshSuggestions}
-                disabled={isRefreshing}
-                className="h-7 w-7"
-                data-testid="button-refresh-tips"
-              >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                />
-              </Button>
+      {hasNotifications && (
+        <div className="rounded-lg pt-3 ticker-container">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="font-medium text-amber-900 dark:text-amber-100 text-sm">
+                Expiring:
+              </span>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {suggestions.suggestions.map((suggestion, index) => (
+            <div className="flex-1 overflow-hidden">
               <div
-                key={index}
-                className="text-sm text-muted-foreground flex gap-2"
-                data-testid={`suggestion-${index}`}
+                className="ticker-content"
+                data-speed={notifications.length > 5 ? "normal" : "slow"}
               >
-                <span className="text-primary">•</span>
-                <span>{suggestion}</span>
+                {/* First set of items */}
+                {notifications.map((notification) => (
+                  <Badge
+                    key={`first-${notification.id}`}
+                    variant="outline"
+                    className="bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-700 inline-flex items-center shrink-0"
+                    data-testid={`notification-${notification.id}`}
+                  >
+                    <span>
+                      {notification.foodItemName} (
+                      {notification.daysUntilExpiry}d)
+                    </span>
+                  </Badge>
+                ))}
+                {/* Duplicate set for seamless loop */}
+                {notifications.map((notification) => (
+                  <Badge
+                    key={`second-${notification.id}`}
+                    variant="outline"
+                    className="bg-white dark:bg-slate-900 border-amber-300 dark:border-amber-700 inline-flex items-center shrink-0"
+                  >
+                    <span className="mr-2">
+                      {notification.foodItemName} (
+                      {notification.daysUntilExpiry}d)
+                    </span>
+                    <button
+                      onClick={() => dismissMutation.mutate(notification.id)}
+                      className="hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -46,7 +46,7 @@ export function Logo({
       <div
         className={cn(
           sizes.container,
-          "rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg glow-primary",
+          "rounded-xl bg-gradient-to-br from-primary to-primary/5 flex items-center justify-center shadow-lg glow-primary",
           iconClassName
         )}
       >

@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceConversation } from "@/hooks/useVoiceConversation";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
+import { ExpirationTicker } from "@/components/expiration-ticker";
 
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -86,7 +87,7 @@ export default function Chat() {
 
   const handleRecipeGenerated = async (recipe: Recipe) => {
     setGeneratedRecipe(recipe);
-    
+
     // Save the recipe notification message to the database
     try {
       const response = await fetch("/api/chat/messages", {
@@ -98,10 +99,12 @@ export default function Chat() {
           metadata: JSON.stringify({ recipeId: recipe.id }),
         }),
       });
-      
+
       if (response.ok) {
         // Refresh chat messages to get the saved message with proper ID
-        await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+        await queryClient.invalidateQueries({
+          queryKey: ["/api/chat/messages"],
+        });
       }
     } catch (error) {
       console.error("Failed to save recipe message:", error);
@@ -119,13 +122,17 @@ export default function Chat() {
     }
   };
 
-  const handleSendMessage = async (content: string, attachments?: Array<{
-    type: 'image' | 'audio' | 'file';
-    url: string;
-    name?: string;
-    size?: number;
-    mimeType?: string;
-  }>, wasVoice?: boolean) => {
+  const handleSendMessage = async (
+    content: string,
+    attachments?: Array<{
+      type: "image" | "audio" | "file";
+      url: string;
+      name?: string;
+      size?: number;
+      mimeType?: string;
+    }>,
+    wasVoice?: boolean,
+  ) => {
     // Set whether this was voice input for auto-playing response
     if (wasVoice) {
       setWasVoiceInput(true);
@@ -152,9 +159,9 @@ export default function Chat() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: content,
-          attachments: attachments 
+          attachments: attachments,
         }),
         signal: abortController.signal,
       });
@@ -197,15 +204,17 @@ export default function Chat() {
               setStreamingContent("");
               setIsStreaming(false);
               abortControllerRef.current = null;
-              
+
               // Auto-play voice response if the input was from voice
               if (wasVoiceInput && accumulated) {
                 // The VoiceControls component will handle auto-playing
                 setWasVoiceInput(false); // Reset for next message
               }
-              
+
               // Invalidate chat messages query to refetch with saved messages
-              await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+              await queryClient.invalidateQueries({
+                queryKey: ["/api/chat/messages"],
+              });
               return;
             }
 
@@ -223,8 +232,8 @@ export default function Chat() {
         }
       }
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Chat stream aborted');
+      if (error.name === "AbortError") {
+        console.log("Chat stream aborted");
         abortControllerRef.current = null;
         return;
       }
@@ -241,11 +250,15 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b border-border p-4 bg-gradient-to-r from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20 shadow-2xl">
+      <div className="border-b border-border p-4 pb-1 bg-gradient-to-r from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20 shadow-2xl">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Chat with Chef</h2>
-            <p className="text-sm text-muted-foreground">Get recipe suggestions and manage your inventory</p>
+            <h2 className="text-lg font-semibold text-foreground">
+              Chat with Chef
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Get recipe suggestions and manage your inventory
+            </p>
           </div>
           <div className="flex gap-2">
             {messages.length > 0 && (
@@ -260,14 +273,19 @@ export default function Chat() {
                 Start New Chat
               </Button>
             )}
-            <RecipeCustomizationDialog onRecipeGenerated={handleRecipeGenerated} />
+            <RecipeCustomizationDialog
+              onRecipeGenerated={handleRecipeGenerated}
+            />
           </div>
+        </div>
+        <div>
+          <ExpirationTicker />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-gradient-to-br from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
         <div className="max-w-4xl mx-auto p-6 pt-0">
-          <div className="mb-6">
+          <div className="mt-6 mb-6">
             <ExpirationAlert />
           </div>
 
@@ -282,26 +300,33 @@ export default function Chat() {
                   content={message.content}
                   userProfileImageUrl={user?.profileImageUrl || undefined}
                   userInitials={getUserInitials()}
-                  timestamp={new Date(message.timestamp).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  timestamp={new Date(message.timestamp).toLocaleTimeString(
+                    [],
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  )}
                 >
                   <>
-                    {message.metadata && message.metadata.includes("recipeId") && generatedRecipe && (
-                      <RecipeCard
-                        id={generatedRecipe.id}
-                        title={generatedRecipe.title}
-                        prepTime={generatedRecipe.prepTime || undefined}
-                        cookTime={generatedRecipe.cookTime || undefined}
-                        servings={generatedRecipe.servings || undefined}
-                        ingredients={generatedRecipe.ingredients}
-                        instructions={generatedRecipe.instructions}
-                        usedIngredients={generatedRecipe.usedIngredients}
-                        missingIngredients={generatedRecipe.missingIngredients || []}
-                        showControls={true}
-                      />
-                    )}
+                    {message.metadata &&
+                      message.metadata.includes("recipeId") &&
+                      generatedRecipe && (
+                        <RecipeCard
+                          id={generatedRecipe.id}
+                          title={generatedRecipe.title}
+                          prepTime={generatedRecipe.prepTime || undefined}
+                          cookTime={generatedRecipe.cookTime || undefined}
+                          servings={generatedRecipe.servings || undefined}
+                          ingredients={generatedRecipe.ingredients}
+                          instructions={generatedRecipe.instructions}
+                          usedIngredients={generatedRecipe.usedIngredients}
+                          missingIngredients={
+                            generatedRecipe.missingIngredients || []
+                          }
+                          showControls={true}
+                        />
+                      )}
                     {message.role === "assistant" && (
                       <FeedbackButtons
                         contextId={message.id}
@@ -340,10 +365,10 @@ export default function Chat() {
         </div>
       </div>
 
-      <div  className="shadow-2xl">
-        <ChatInput 
-          onSend={handleSendMessage} 
-          disabled={isStreaming} 
+      <div className="shadow-2xl">
+        <ChatInput
+          onSend={handleSendMessage}
+          disabled={isStreaming}
           showFeedbackWidget={true}
         />
       </div>
