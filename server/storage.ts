@@ -456,7 +456,7 @@ export class DatabaseStorage implements IStorage {
           if (existingLocations.length === 0) {
             // Initialize default storage locations for this user
             const defaultLocations = [
-              { id: crypto.randomUUID(), name: "Fridge", icon: "refrigerator" },
+              { id: crypto.randomUUID(), name: "Refrigerator", icon: "refrigerator" },
               { id: crypto.randomUUID(), name: "Freezer", icon: "snowflake" },
               { id: crypto.randomUUID(), name: "Pantry", icon: "pizza" },
               {

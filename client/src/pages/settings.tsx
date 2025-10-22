@@ -23,7 +23,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import type { User, StorageLocation } from "@shared/schema";
 
 const storageAreaOptions = [
-  { name: "Fridge", icon: Refrigerator },
+  { name: "Refrigerator", icon: Refrigerator },
   { name: "Freezer", icon: Snowflake },
   { name: "Pantry", icon: Pizza },
   { name: "Counter", icon: UtensilsCrossed },
