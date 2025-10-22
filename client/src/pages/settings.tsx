@@ -132,15 +132,10 @@ export default function Settings() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
-      const response = await fetch("/api/user/preferences", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          hasCompletedOnboarding: true,
-        }),
+      const response = await apiRequest("PUT", "/api/user/preferences", {
+        ...data,
+        hasCompletedOnboarding: true,
       });
-      if (!response.ok) throw new Error("Failed to save preferences");
       return response.json();
     },
     onSuccess: () => {
