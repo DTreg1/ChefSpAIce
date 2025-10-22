@@ -46,6 +46,7 @@ const About = lazy(() => import("@/pages/about"));
 const Privacy = lazy(() => import("@/pages/privacy"));
 const Terms = lazy(() => import("@/pages/terms"));
 const CameraTest = lazy(() => import("@/pages/camera-test"));
+const CookingTermsAdmin = lazy(() => import("@/pages/cooking-terms-admin"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function AuthenticatedRouter() {
@@ -74,6 +75,7 @@ function AuthenticatedRouter() {
         <Route path="/privacy" component={Privacy} />
         <Route path="/terms" component={Terms} />
         <Route path="/camera-test" component={CameraTest} />
+        <Route path="/cooking-terms-admin" component={CookingTermsAdmin} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
