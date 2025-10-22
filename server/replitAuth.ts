@@ -41,6 +41,8 @@ export function getSession() {
       httpOnly: true,
       secure: true,
       maxAge: sessionTtl,
+      sameSite: 'lax', // Allow cookies to work with OAuth redirects
+      domain: undefined, // Allow cookies to work across subdomains
     },
   });
 }

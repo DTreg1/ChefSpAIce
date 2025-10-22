@@ -123,6 +123,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes (from blueprint:javascript_log_in_with_replit)
+  
+  // Debug endpoint for auth status (no auth required)
+  app.get('/api/auth/status', (req: any, res) => {
+    const isAuth = req.isAuthenticated();
+    const hasUser = !!req.user;
+    const hasClaims = !!req.user?.claims;
+    const hasSession = !!req.session;
+    const sessionId = req.session?.id;
+    const hostname = req.hostname;
+    const cookies = req.cookies;
+    
+    console.log(`[Auth Status] hostname: ${hostname}, isAuth: ${isAuth}, hasUser: ${hasUser}, hasClaims: ${hasClaims}, hasSession: ${hasSession}`);
+    
+    res.json({
+      authenticated: isAuth,
+      hasUser,
+      hasClaims,
+      hasSession,
+      sessionId: hasSession ? sessionId : null,
+      hostname,
+      userAgent: req.headers['user-agent'],
+      // Don't log sensitive cookie data, just check if session cookie exists
+      hasSessionCookie: !!cookies?.['connect.sid'],
+      timestamp: new Date().toISOString()
+    });
+  });
+  
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
