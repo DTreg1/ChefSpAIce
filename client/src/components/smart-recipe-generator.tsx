@@ -213,15 +213,18 @@ export function SmartRecipeGenerator({
               onClick={() => smartGenerateRecipeMutation.mutate()}
               disabled={!hasItems || isGenerating}
               data-testid="button-smart-recipe-quick"
-              size="sm"
-              variant="outline"
-              className="relative"
+              variant="default"
+              className="relative transition-all-smooth h-9 w-9 p-0 lg:w-auto lg:px-3"
             >
               {isGenerating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 lg:mr-2 animate-spin" />
+                  <span className="hidden lg:inline">Generating...</span>
+                </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="h-4 w-4 lg:mr-2" />
+                  <span className="hidden lg:inline">Smart Recipe</span>
                   {expiringCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full animate-pulse" />
                   )}

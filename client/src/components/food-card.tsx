@@ -23,7 +23,7 @@ interface FoodCardProps {
 export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [nutritionDialogOpen, setNutritionDialogOpen] = useState(false);
-  const [localQuantity, setLocalQuantity] = useState<number>(item.quantity);
+  const [localQuantity, setLocalQuantity] = useState<number>(parseFloat(item.quantity) || 0);
   const [isEditingQuantity, setIsEditingQuantity] = useState(false);
   const [isEditingExpiry, setIsEditingExpiry] = useState(false);
   const [localExpiry, setLocalExpiry] = useState(item.expirationDate || "");
@@ -53,8 +53,11 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   // Mutation for quick quantity update
   const updateQuantityMutation = useMutation({
     mutationFn: async (newQuantity: number) => {
-      return await apiRequest("PATCH", `/api/food-items/${item.id}`, {
-        quantity: newQuantity
+      return await apiRequest("PUT", `/api/food-items/${item.id}`, {
+        quantity: newQuantity.toString(),
+        unit: item.unit,
+        storageLocationId: item.storageLocationId,
+        expirationDate: item.expirationDate
       });
     },
     onMutate: async (newQuantity: number) => {
@@ -65,7 +68,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
       queryClient.setQueryData(["/api/food-items"], (old: any) => {
         if (!old) return old;
         return old.map((i: FoodItem) => 
-          i.id === item.id ? { ...i, quantity: newQuantity } : i
+          i.id === item.id ? { ...i, quantity: newQuantity.toString() } : i
         );
       });
       
@@ -76,12 +79,16 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
       if (context?.previousItems) {
         queryClient.setQueryData(["/api/food-items"], context.previousItems);
       }
-      setLocalQuantity(item.quantity);
+      setLocalQuantity(parseFloat(item.quantity));
       toast({
         title: "Error",
         description: "Failed to update quantity",
         variant: "destructive",
       });
+    },
+    onSuccess: (data, newQuantity) => {
+      // Successfully updated
+      setLocalQuantity(newQuantity);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
@@ -93,7 +100,10 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   // Mutation for quick expiry update
   const updateExpiryMutation = useMutation({
     mutationFn: async (newExpiry: string) => {
-      return await apiRequest("PATCH", `/api/food-items/${item.id}`, {
+      return await apiRequest("PUT", `/api/food-items/${item.id}`, {
+        quantity: item.quantity,
+        unit: item.unit,
+        storageLocationId: item.storageLocationId,
         expirationDate: newExpiry
       });
     },
@@ -139,7 +149,8 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   });
 
   const handleQuantityChange = (delta: number) => {
-    const newQuantity = Math.max(0.1, localQuantity + delta);
+    const currentQuantity = parseFloat(localQuantity.toString()) || 0;
+    const newQuantity = Math.max(0.1, currentQuantity + delta);
     setLocalQuantity(newQuantity);
     updateQuantityMutation.mutate(newQuantity);
   };
@@ -232,7 +243,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleQuantitySubmit();
                           if (e.key === 'Escape') {
-                            setLocalQuantity(item.quantity);
+                            setLocalQuantity(parseFloat(item.quantity) || 0);
                             setIsEditingQuantity(false);
                           }
                         }}
@@ -253,7 +264,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                         variant="ghost"
                         className="h-6 w-6"
                         onClick={() => {
-                          setLocalQuantity(item.quantity);
+                          setLocalQuantity(parseFloat(item.quantity) || 0);
                           setIsEditingQuantity(false);
                         }}
                       >
