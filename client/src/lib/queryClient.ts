@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -9,12 +10,32 @@ async function throwIfResNotOk(res: Response) {
       try {
         const errorData = JSON.parse(text);
         if (errorData.requiresReauth || errorData.error === 'session_expired') {
-          // Force page refresh to trigger re-authentication
-          window.location.href = '/';
+          // Show user-friendly message
+          toast({
+            title: "Session Expired",
+            description: "Your session has expired. Please log in again.",
+            variant: "default",
+          });
+          
+          // Small delay so user can see the message
+          setTimeout(() => {
+            // Redirect to login page
+            window.location.href = '/api/login';
+          }, 1500);
           return;
         }
       } catch (e) {
-        // If parsing fails, continue with normal error handling
+        // If parsing fails, it might be a general 401 - still redirect to login
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to continue.",
+          variant: "default",
+        });
+        
+        setTimeout(() => {
+          window.location.href = '/api/login';
+        }, 1500);
+        return;
       }
     }
     
