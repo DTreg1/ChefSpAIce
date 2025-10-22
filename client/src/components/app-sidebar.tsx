@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Home,
   Refrigerator,
@@ -105,7 +105,12 @@ export function AppSidebar() {
     }
   };
 
-  const { data: storageLocations } = useStorageLocations();
+  // Clear stale cache on component mount to ensure fresh data
+  useEffect(() => {
+    CacheStorage.remove("cache:storage:locations");
+  }, []);
+
+  const { data: storageLocations, refetch: refetchStorageLocations } = useStorageLocations();
 
   const { data: foodItems } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],
