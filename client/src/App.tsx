@@ -19,6 +19,7 @@ import { RouteLoading } from "@/components/route-loading";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { apiRequest } from "@/lib/queryClient";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -105,6 +106,9 @@ function AppContent() {
   const [location] = useLocation();
   const { toast } = useToast();
 
+  // Initialize global keyboard shortcuts
+  useGlobalKeyboardShortcuts();
+
   const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
     hasCompletedOnboarding?: boolean;
   }>({
@@ -112,6 +116,40 @@ function AppContent() {
     cacheKey: "cache:user:preferences",
     enabled: isAuthenticated,
   });
+
+  // Listen for keyboard shortcut custom events
+  useEffect(() => {
+    const handleOpenAddFood = () => setAddFoodOpen(true);
+    const handleGenerateSmartRecipe = () => {
+      // This will trigger the smart recipe generation
+      const button = document.querySelector<HTMLButtonElement>(
+        '[data-testid="button-smart-recipe-quick"]'
+      );
+      if (button) {
+        button.click();
+      } else {
+        // Fallback to opening the recipe customization dialog
+        setRecipeDialogOpen(true);
+      }
+    };
+    const handleEscape = () => {
+      setAddFoodOpen(false);
+      setRecipeDialogOpen(false);
+      // Dispatch event to clear any selections
+      const clearEvent = new CustomEvent("clearSelections");
+      document.dispatchEvent(clearEvent);
+    };
+
+    document.addEventListener("openAddFoodDialog", handleOpenAddFood);
+    document.addEventListener("generateSmartRecipe", handleGenerateSmartRecipe);
+    document.addEventListener("escapePressed", handleEscape);
+
+    return () => {
+      document.removeEventListener("openAddFoodDialog", handleOpenAddFood);
+      document.removeEventListener("generateSmartRecipe", handleGenerateSmartRecipe);
+      document.removeEventListener("escapePressed", handleEscape);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
