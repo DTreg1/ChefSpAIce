@@ -38,6 +38,8 @@ import {
   type InsertWebVital,
   type CommonFoodItem,
   type InsertCommonFoodItem,
+  type CookingTerm,
+  type InsertCookingTerm,
   users,
   pushTokens,
   appliances,
@@ -55,6 +57,7 @@ import {
   donations,
   webVitals,
   commonFoodItems,
+  cookingTerms,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
@@ -379,6 +382,16 @@ export interface IStorage {
     needsImprovementCount: number;
     poorCount: number;
   }>;
+
+  // Cooking Terms
+  getCookingTerms(): Promise<CookingTerm[]>;
+  getCookingTerm(id: string): Promise<CookingTerm | undefined>;
+  getCookingTermByTerm(term: string): Promise<CookingTerm | undefined>;
+  getCookingTermsByCategory(category: string): Promise<CookingTerm[]>;
+  createCookingTerm(term: InsertCookingTerm): Promise<CookingTerm>;
+  updateCookingTerm(id: string, term: Partial<InsertCookingTerm>): Promise<CookingTerm>;
+  deleteCookingTerm(id: string): Promise<void>;
+  searchCookingTerms(searchText: string): Promise<CookingTerm[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2918,6 +2931,121 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting common food item:", error);
       throw new Error("Failed to delete common food item");
+    }
+  }
+
+  // Cooking Terms Methods
+  async getCookingTerms(): Promise<CookingTerm[]> {
+    try {
+      return db.select().from(cookingTerms);
+    } catch (error) {
+      console.error("Error getting cooking terms:", error);
+      throw new Error("Failed to get cooking terms");
+    }
+  }
+
+  async getCookingTerm(id: string): Promise<CookingTerm | undefined> {
+    try {
+      const [term] = await db
+        .select()
+        .from(cookingTerms)
+        .where(eq(cookingTerms.id, id));
+      return term;
+    } catch (error) {
+      console.error("Error getting cooking term:", error);
+      throw new Error("Failed to get cooking term");
+    }
+  }
+
+  async getCookingTermByTerm(term: string): Promise<CookingTerm | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(cookingTerms)
+        .where(eq(cookingTerms.term, term));
+      return result;
+    } catch (error) {
+      console.error("Error getting cooking term by term:", error);
+      throw new Error("Failed to get cooking term");
+    }
+  }
+
+  async getCookingTermsByCategory(category: string): Promise<CookingTerm[]> {
+    try {
+      return db
+        .select()
+        .from(cookingTerms)
+        .where(eq(cookingTerms.category, category));
+    } catch (error) {
+      console.error("Error getting cooking terms by category:", error);
+      throw new Error("Failed to get cooking terms by category");
+    }
+  }
+
+  async createCookingTerm(term: InsertCookingTerm): Promise<CookingTerm> {
+    try {
+      const [result] = await db
+        .insert(cookingTerms)
+        .values(term)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating cooking term:", error);
+      throw new Error("Failed to create cooking term");
+    }
+  }
+
+  async updateCookingTerm(id: string, term: Partial<InsertCookingTerm>): Promise<CookingTerm> {
+    try {
+      const [result] = await db
+        .update(cookingTerms)
+        .set({
+          ...term,
+          updatedAt: new Date(),
+        })
+        .where(eq(cookingTerms.id, id))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Cooking term not found");
+      }
+      return result;
+    } catch (error) {
+      console.error("Error updating cooking term:", error);
+      throw new Error("Failed to update cooking term");
+    }
+  }
+
+  async deleteCookingTerm(id: string): Promise<void> {
+    try {
+      await db
+        .delete(cookingTerms)
+        .where(eq(cookingTerms.id, id));
+    } catch (error) {
+      console.error("Error deleting cooking term:", error);
+      throw new Error("Failed to delete cooking term");
+    }
+  }
+
+  async searchCookingTerms(searchText: string): Promise<CookingTerm[]> {
+    try {
+      const lowerSearch = searchText.toLowerCase();
+      
+      // Search in term, short definition, and search terms array
+      return db
+        .select()
+        .from(cookingTerms)
+        .where(
+          sql`LOWER(${cookingTerms.term}) LIKE ${`%${lowerSearch}%`} 
+               OR LOWER(${cookingTerms.shortDefinition}) LIKE ${`%${lowerSearch}%`}
+               OR EXISTS (
+                 SELECT 1 FROM unnest(${cookingTerms.searchTerms}) AS search_term
+                 WHERE LOWER(search_term) LIKE ${`%${lowerSearch}%`}
+               )`
+        );
+    } catch (error) {
+      console.error("Error searching cooking terms:", error);
+      throw new Error("Failed to search cooking terms");
     }
   }
 }
