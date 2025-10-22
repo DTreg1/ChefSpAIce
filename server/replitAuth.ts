@@ -87,7 +87,19 @@ export async function setupAuth(app: Express) {
 
   // Register strategies for all known domains
   const registeredDomains = new Set<string>();
-  for (const domain of process.env.REPLIT_DOMAINS!.split(",")) {
+  
+  // Parse domains from environment variable
+  const domains = process.env.REPLIT_DOMAINS!.split(",");
+  
+  // Add common custom domains that might be used
+  const customDomains = ["chefspaice.com", "www.chefspaice.com"];
+  for (const customDomain of customDomains) {
+    if (!domains.includes(customDomain)) {
+      domains.push(customDomain);
+    }
+  }
+  
+  for (const domain of domains) {
     const trimmedDomain = domain.trim();
     if (trimmedDomain) {
       const strategy = new Strategy(
