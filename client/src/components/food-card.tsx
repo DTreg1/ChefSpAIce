@@ -5,13 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Edit, Trash2, UtensilsCrossed, Info, Plus, Minus, Calendar, Check, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Edit, Trash2, UtensilsCrossed, Info, Plus, Minus, Calendar, Check, X, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditFoodDialog } from "./edit-food-dialog";
 import { NutritionFactsDialog } from "./nutrition-facts-dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useSwipe } from "@/hooks/use-swipe";
+import { useStorageLocations } from "@/hooks/useStorageLocations";
 import type { FoodItem } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -28,10 +30,12 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
   const [isEditingExpiry, setIsEditingExpiry] = useState(false);
   const [localExpiry, setLocalExpiry] = useState(item.expirationDate || "");
   const { toast } = useToast();
+  const { data: storageLocations } = useStorageLocations();
 
   const getStorageBadgeColor = (location: string) => {
     const colors: Record<string, string> = {
-      fridge: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+      refrigerator: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+      fridge: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-800", // Keep for backwards compatibility
       freezer: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800",
       pantry: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-800",
       counter: "bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400 border-green-200 dark:border-green-800",
@@ -125,6 +129,34 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
     },
   });
 
+  // Mutation for quick storage location update
+  const updateStorageMutation = useMutation({
+    mutationFn: async (newStorageId: string) => {
+      return await apiRequest("PUT", `/api/food-items/${item.id}`, {
+        quantity: item.quantity,
+        unit: item.unit,
+        storageLocationId: newStorageId,
+        expirationDate: item.expirationDate
+      });
+    },
+    onSuccess: (data, newStorageId) => {
+      const newLocation = storageLocations?.find(loc => loc.id === newStorageId);
+      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      toast({
+        title: "Location updated",
+        description: `Moved to ${newLocation?.name || 'new location'}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update storage location",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("DELETE", `/api/food-items/${item.id}`, null);
@@ -204,13 +236,41 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
                 <h3 className="font-medium text-lg text-foreground truncate" data-testid={`text-food-name-${item.id}`}>
                   {item.name}
                 </h3>
-                <Badge
-                  variant="outline"
-                  className={cn("text-xs flex-shrink-0 border", getStorageBadgeColor(storageLocationName))}
-                  data-testid={`badge-storage-${item.id}`}
+                {/* Clickable storage location selector styled as a badge */}
+                <Select
+                  value={item.storageLocationId}
+                  onValueChange={(newStorageId) => updateStorageMutation.mutate(newStorageId)}
+                  disabled={updateStorageMutation.isPending || !storageLocations}
                 >
-                  {storageLocationName}
-                </Badge>
+                  <SelectTrigger 
+                    className={cn(
+                      "h-auto py-0.5 px-2 text-xs border rounded-full w-auto gap-1",
+                      getStorageBadgeColor(storageLocationName),
+                      "hover:bg-accent/10 transition-colors cursor-pointer"
+                    )}
+                    data-testid={`select-storage-${item.id}`}
+                  >
+                    <MapPin className="w-3 h-3" />
+                    <SelectValue>
+                      {storageLocationName}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {storageLocations?.map((location) => (
+                      <SelectItem key={location.id} value={location.id}>
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", 
+                            location.name.toLowerCase() === "refrigerator" && "bg-blue-500",
+                            location.name.toLowerCase() === "freezer" && "bg-cyan-500",
+                            location.name.toLowerCase() === "pantry" && "bg-amber-500",
+                            location.name.toLowerCase() === "counter" && "bg-green-500"
+                          )} />
+                          {location.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Enhanced quantity section with inline editing */}
