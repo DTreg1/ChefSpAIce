@@ -26,6 +26,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { CacheStorage } from "@/lib/cacheStorage";
+import { queryClient } from "@/lib/queryClient";
 import {
   Sidebar,
   SidebarContent,
@@ -105,9 +106,12 @@ export function AppSidebar() {
     }
   };
 
-  // Clear stale cache on component mount to ensure fresh data
+  // Clear stale cache and invalidate React Query cache on mount
   useEffect(() => {
+    // Clear localStorage cache
     CacheStorage.remove("cache:storage:locations");
+    // Force React Query to refetch fresh data from the API
+    queryClient.invalidateQueries({ queryKey: ['/api/storage-locations'] });
   }, []);
 
   const { data: storageLocations, refetch: refetchStorageLocations } = useStorageLocations();
