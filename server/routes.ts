@@ -15,6 +15,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ApiError } from "./apiError";
 import { batchedApiLogger } from "./batchedApiLogger";
 import { cleanupOldMessagesForUser } from "./chatCleanup";
+import { createSeedEndpoint } from "./seed-cooking-terms-endpoint";
 import { z } from "zod";
 import { 
   insertFoodItemSchema, 
@@ -3799,6 +3800,9 @@ Respond ONLY with a valid JSON object:
       res.status(500).json({ error: "Failed to delete cooking term" });
     }
   });
+
+  // Seed initial cooking terms data
+  app.post("/api/cooking-terms/seed", isAuthenticated, createSeedEndpoint(storage));
 
   // Handle 404s for API routes that weren't matched above
   app.use("/api/*", (_req: any, res) => {

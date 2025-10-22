@@ -103,6 +103,27 @@ export default function CookingTermsAdmin() {
     },
   });
 
+  // Seed mutation
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/cooking-terms/seed");
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cooking-terms"] });
+      toast({
+        title: "Success",
+        description: `Seeded ${data.count} cooking terms successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Info",
+        description: "Cooking terms already exist in the database",
+      });
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       term: "",
@@ -231,10 +252,36 @@ export default function CookingTermsAdmin() {
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading cooking terms...</div>
           ) : filteredTerms.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8">
               {searchQuery || selectedCategory !== "all" 
-                ? "No cooking terms found matching your criteria" 
-                : "No cooking terms yet. Add your first one!"}
+                ? <div className="text-muted-foreground">No cooking terms found matching your criteria</div>
+                : (
+                  <div className="space-y-4">
+                    <div className="text-muted-foreground">No cooking terms yet. Add your first one!</div>
+                    {cookingTerms.length === 0 && (
+                      <div className="p-4 bg-secondary/20 rounded-lg border border-secondary max-w-md mx-auto">
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Get started quickly by seeding the database with 22 common cooking terms
+                        </p>
+                        <Button
+                          onClick={() => seedMutation.mutate()}
+                          disabled={seedMutation.isPending}
+                          data-testid="button-seed-terms"
+                          className="gap-2"
+                        >
+                          {seedMutation.isPending ? (
+                            <>Loading...</>
+                          ) : (
+                            <>
+                              <Plus className="w-4 h-4" />
+                              Seed Initial Terms
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
