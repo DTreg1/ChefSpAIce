@@ -131,7 +131,7 @@ function getSuggestedStorageLocation(
     );
   }
 
-  // Fresh items that need refrigeration → Fridge
+  // Fresh items that need refrigeration → Refrigerator
   if (
     searchText.includes("dairy") ||
     searchText.includes("milk") ||
@@ -150,7 +150,7 @@ function getSuggestedStorageLocation(
     searchText.includes("produce")
   ) {
     return (
-      storageLocations.find((loc) => loc.name.toLowerCase() === "refridgerator")
+      storageLocations.find((loc) => loc.name.toLowerCase() === "refrigerator")
         ?.id || null
     );
   }
@@ -185,9 +185,9 @@ function getSuggestedStorageLocation(
     );
   }
 
-  // Default to Fridge for unknown categories (safer for food safety)
+  // Default to Refrigerator for unknown categories (safer for food safety)
   return (
-    storageLocations.find((loc) => loc.name.toLowerCase() === "refridgerator")
+    storageLocations.find((loc) => loc.name.toLowerCase() === "refrigerator")
       ?.id || null
   );
 }

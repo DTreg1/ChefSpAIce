@@ -102,48 +102,48 @@ export const expandedOnboardingItems: OnboardingItem[] = [
   { displayName: "Vegetable Broth", fdcId: "173876", description: "Soup, vegetable broth", storage: "Pantry", quantity: "2", unit: "cans", expirationDays: 365, category: "Vegetables" },
   { displayName: "Beef Broth", fdcId: "173859", description: "Soup, beef broth or bouillon", storage: "Pantry", quantity: "2", unit: "cans", expirationDays: 365, category: "Vegetables" },
 
-  // Fridge - Dairy Products
-  { displayName: "Whole Milk", upc: "746776", description: "Milk, whole, 3.25% milkfat", storage: "Fridge", quantity: "1", unit: "gallon", expirationDays: 7, category: "Dairy" },
-  { displayName: "2% Milk", upc: "746777", description: "Milk, reduced fat, fluid, 2% milkfat", storage: "Fridge", quantity: "1", unit: "gallon", expirationDays: 7, category: "Dairy" },
-  { displayName: "Heavy Cream", fdcId: "170859", description: "Cream, fluid, heavy whipping", storage: "Fridge", quantity: "1", unit: "pint", expirationDays: 7, category: "Dairy" },
-  { displayName: "Half and Half", fdcId: "172310", description: "Cream, fluid, half and half", storage: "Fridge", quantity: "1", unit: "pint", expirationDays: 7, category: "Dairy" },
-  { displayName: "Sour Cream", fdcId: "173419", description: "Sour cream, reduced fat", storage: "Fridge", quantity: "1", unit: "container", expirationDays: 21, category: "Dairy" },
-  { displayName: "Greek Yogurt", fdcId: "173433", description: "Yogurt, Greek, plain, nonfat", storage: "Fridge", quantity: "1", unit: "container", expirationDays: 14, category: "Dairy" },
-  { displayName: "Plain Yogurt", fdcId: "170903", description: "Yogurt, plain, whole milk", storage: "Fridge", quantity: "4", unit: "cups", expirationDays: 14, category: "Dairy" },
-  { displayName: "Cottage Cheese", fdcId: "173418", description: "Cheese, cottage, lowfat, 2% milkfat", storage: "Fridge", quantity: "1", unit: "container", expirationDays: 14, category: "Dairy" },
-  { displayName: "Cream Cheese", fdcId: "173431", description: "Cheese, cream", storage: "Fridge", quantity: "1", unit: "package", expirationDays: 30, category: "Dairy" },
-  { displayName: "Butter", fdcId: "173430", description: "Butter, with salt", storage: "Fridge", quantity: "1", unit: "lb", expirationDays: 60, category: "Dairy" },
+  // Refrigerator - Dairy Products
+  { displayName: "Whole Milk", upc: "746776", description: "Milk, whole, 3.25% milkfat", storage: "Refrigerator", quantity: "1", unit: "gallon", expirationDays: 7, category: "Dairy" },
+  { displayName: "2% Milk", upc: "746777", description: "Milk, reduced fat, fluid, 2% milkfat", storage: "Refrigerator", quantity: "1", unit: "gallon", expirationDays: 7, category: "Dairy" },
+  { displayName: "Heavy Cream", fdcId: "170859", description: "Cream, fluid, heavy whipping", storage: "Refrigerator", quantity: "1", unit: "pint", expirationDays: 7, category: "Dairy" },
+  { displayName: "Half and Half", fdcId: "172310", description: "Cream, fluid, half and half", storage: "Refrigerator", quantity: "1", unit: "pint", expirationDays: 7, category: "Dairy" },
+  { displayName: "Sour Cream", fdcId: "173419", description: "Sour cream, reduced fat", storage: "Refrigerator", quantity: "1", unit: "container", expirationDays: 21, category: "Dairy" },
+  { displayName: "Greek Yogurt", fdcId: "173433", description: "Yogurt, Greek, plain, nonfat", storage: "Refrigerator", quantity: "1", unit: "container", expirationDays: 14, category: "Dairy" },
+  { displayName: "Plain Yogurt", fdcId: "170903", description: "Yogurt, plain, whole milk", storage: "Refrigerator", quantity: "4", unit: "cups", expirationDays: 14, category: "Dairy" },
+  { displayName: "Cottage Cheese", fdcId: "173418", description: "Cheese, cottage, lowfat, 2% milkfat", storage: "Refrigerator", quantity: "1", unit: "container", expirationDays: 14, category: "Dairy" },
+  { displayName: "Cream Cheese", fdcId: "173431", description: "Cheese, cream", storage: "Refrigerator", quantity: "1", unit: "package", expirationDays: 30, category: "Dairy" },
+  { displayName: "Butter", fdcId: "173430", description: "Butter, with salt", storage: "Refrigerator", quantity: "1", unit: "lb", expirationDays: 60, category: "Dairy" },
 
-  // Fridge - Cheese
-  { displayName: "Cheddar Cheese", fdcId: "173414", description: "Cheese, cheddar", storage: "Fridge", quantity: "8", unit: "oz", expirationDays: 30, category: "Dairy" },
-  { displayName: "Mozzarella Cheese", fdcId: "170901", description: "Cheese, mozzarella, whole milk", storage: "Fridge", quantity: "8", unit: "oz", expirationDays: 21, category: "Dairy" },
-  { displayName: "Parmesan Cheese", fdcId: "171250", description: "Cheese, parmesan, grated", storage: "Fridge", quantity: "1", unit: "container", expirationDays: 60, category: "Dairy" },
-  { displayName: "Swiss Cheese", fdcId: "173423", description: "Cheese, swiss", storage: "Fridge", quantity: "8", unit: "oz", expirationDays: 30, category: "Dairy" },
-  { displayName: "Feta Cheese", fdcId: "173420", description: "Cheese, feta", storage: "Fridge", quantity: "1", unit: "container", expirationDays: 14, category: "Dairy" },
+  // Refrigerator - Cheese
+  { displayName: "Cheddar Cheese", fdcId: "173414", description: "Cheese, cheddar", storage: "Refrigerator", quantity: "8", unit: "oz", expirationDays: 30, category: "Dairy" },
+  { displayName: "Mozzarella Cheese", fdcId: "170901", description: "Cheese, mozzarella, whole milk", storage: "Refrigerator", quantity: "8", unit: "oz", expirationDays: 21, category: "Dairy" },
+  { displayName: "Parmesan Cheese", fdcId: "171250", description: "Cheese, parmesan, grated", storage: "Refrigerator", quantity: "1", unit: "container", expirationDays: 60, category: "Dairy" },
+  { displayName: "Swiss Cheese", fdcId: "173423", description: "Cheese, swiss", storage: "Refrigerator", quantity: "8", unit: "oz", expirationDays: 30, category: "Dairy" },
+  { displayName: "Feta Cheese", fdcId: "173420", description: "Cheese, feta", storage: "Refrigerator", quantity: "1", unit: "container", expirationDays: 14, category: "Dairy" },
 
-  // Fridge - Eggs
-  { displayName: "Large Eggs", fdcId: "173424", description: "Egg, whole, raw, fresh", storage: "Fridge", quantity: "12", unit: "count", expirationDays: 21, category: "Dairy" },
-  { displayName: "Egg Whites", fdcId: "172183", description: "Egg, white, raw, fresh", storage: "Fridge", quantity: "1", unit: "carton", expirationDays: 14, category: "Dairy" },
+  // Refrigerator - Eggs
+  { displayName: "Large Eggs", fdcId: "173424", description: "Egg, whole, raw, fresh", storage: "Refrigerator", quantity: "12", unit: "count", expirationDays: 21, category: "Dairy" },
+  { displayName: "Egg Whites", fdcId: "172183", description: "Egg, white, raw, fresh", storage: "Refrigerator", quantity: "1", unit: "carton", expirationDays: 14, category: "Dairy" },
 
-  // Fridge - Vegetables
-  { displayName: "Carrots", fdcId: "170393", description: "Carrots, raw", storage: "Fridge", quantity: "1", unit: "lb", expirationDays: 21, category: "Vegetables" },
-  { displayName: "Celery", fdcId: "169988", description: "Celery, raw", storage: "Fridge", quantity: "1", unit: "bunch", expirationDays: 14, category: "Vegetables" },
-  { displayName: "Bell Peppers", fdcId: "170108", description: "Peppers, sweet, red, raw", storage: "Fridge", quantity: "2", unit: "whole", expirationDays: 7, category: "Vegetables" },
-  { displayName: "Lettuce", fdcId: "169247", description: "Lettuce, cos or romaine, raw", storage: "Fridge", quantity: "1", unit: "head", expirationDays: 7, category: "Vegetables" },
-  { displayName: "Spinach", fdcId: "170469", description: "Spinach, raw", storage: "Fridge", quantity: "1", unit: "bag", expirationDays: 5, category: "Vegetables" },
-  { displayName: "Broccoli", fdcId: "170379", description: "Broccoli, raw", storage: "Fridge", quantity: "1", unit: "bunch", expirationDays: 7, category: "Vegetables" },
-  { displayName: "Cauliflower", fdcId: "169986", description: "Cauliflower, raw", storage: "Fridge", quantity: "1", unit: "head", expirationDays: 7, category: "Vegetables" },
-  { displayName: "Cucumbers", fdcId: "169225", description: "Cucumber, with peel, raw", storage: "Fridge", quantity: "2", unit: "whole", expirationDays: 7, category: "Vegetables" },
-  { displayName: "Mushrooms", fdcId: "169251", description: "Mushrooms, white, raw", storage: "Fridge", quantity: "8", unit: "oz", expirationDays: 5, category: "Vegetables" },
-  { displayName: "Green Onions", fdcId: "170000", description: "Onions, spring or scallions", storage: "Fridge", quantity: "1", unit: "bunch", expirationDays: 7, category: "Vegetables" },
+  // Refrigerator - Vegetables
+  { displayName: "Carrots", fdcId: "170393", description: "Carrots, raw", storage: "Refrigerator", quantity: "1", unit: "lb", expirationDays: 21, category: "Vegetables" },
+  { displayName: "Celery", fdcId: "169988", description: "Celery, raw", storage: "Refrigerator", quantity: "1", unit: "bunch", expirationDays: 14, category: "Vegetables" },
+  { displayName: "Bell Peppers", fdcId: "170108", description: "Peppers, sweet, red, raw", storage: "Refrigerator", quantity: "2", unit: "whole", expirationDays: 7, category: "Vegetables" },
+  { displayName: "Lettuce", fdcId: "169247", description: "Lettuce, cos or romaine, raw", storage: "Refrigerator", quantity: "1", unit: "head", expirationDays: 7, category: "Vegetables" },
+  { displayName: "Spinach", fdcId: "170469", description: "Spinach, raw", storage: "Refrigerator", quantity: "1", unit: "bag", expirationDays: 5, category: "Vegetables" },
+  { displayName: "Broccoli", fdcId: "170379", description: "Broccoli, raw", storage: "Refrigerator", quantity: "1", unit: "bunch", expirationDays: 7, category: "Vegetables" },
+  { displayName: "Cauliflower", fdcId: "169986", description: "Cauliflower, raw", storage: "Refrigerator", quantity: "1", unit: "head", expirationDays: 7, category: "Vegetables" },
+  { displayName: "Cucumbers", fdcId: "169225", description: "Cucumber, with peel, raw", storage: "Refrigerator", quantity: "2", unit: "whole", expirationDays: 7, category: "Vegetables" },
+  { displayName: "Mushrooms", fdcId: "169251", description: "Mushrooms, white, raw", storage: "Refrigerator", quantity: "8", unit: "oz", expirationDays: 5, category: "Vegetables" },
+  { displayName: "Green Onions", fdcId: "170000", description: "Onions, spring or scallions", storage: "Refrigerator", quantity: "1", unit: "bunch", expirationDays: 7, category: "Vegetables" },
 
-  // Fridge - Condiments
-  { displayName: "Mayonnaise", fdcId: "173482", description: "Mayonnaise, regular", storage: "Fridge", quantity: "1", unit: "jar", expirationDays: 90, category: "Vegetables" },
-  { displayName: "Mustard", fdcId: "170932", description: "Mustard, prepared, yellow", storage: "Fridge", quantity: "1", unit: "jar", expirationDays: 180, category: "Vegetables" },
-  { displayName: "Ketchup", fdcId: "173893", description: "Catsup", storage: "Fridge", quantity: "1", unit: "bottle", expirationDays: 180, category: "Vegetables" },
-  { displayName: "Salsa", fdcId: "171978", description: "Salsa, ready-to-serve", storage: "Fridge", quantity: "1", unit: "jar", expirationDays: 30, category: "Vegetables" },
-  { displayName: "Pickles", fdcId: "169266", description: "Pickles, cucumber, dill", storage: "Fridge", quantity: "1", unit: "jar", expirationDays: 365, category: "Vegetables" },
-  { displayName: "Olives", fdcId: "169095", description: "Olives, ripe, canned", storage: "Fridge", quantity: "1", unit: "jar", expirationDays: 365, category: "Vegetables" },
+  // Refrigerator - Condiments
+  { displayName: "Mayonnaise", fdcId: "173482", description: "Mayonnaise, regular", storage: "Refrigerator", quantity: "1", unit: "jar", expirationDays: 90, category: "Vegetables" },
+  { displayName: "Mustard", fdcId: "170932", description: "Mustard, prepared, yellow", storage: "Refrigerator", quantity: "1", unit: "jar", expirationDays: 180, category: "Vegetables" },
+  { displayName: "Ketchup", fdcId: "173893", description: "Catsup", storage: "Refrigerator", quantity: "1", unit: "bottle", expirationDays: 180, category: "Vegetables" },
+  { displayName: "Salsa", fdcId: "171978", description: "Salsa, ready-to-serve", storage: "Refrigerator", quantity: "1", unit: "jar", expirationDays: 30, category: "Vegetables" },
+  { displayName: "Pickles", fdcId: "169266", description: "Pickles, cucumber, dill", storage: "Refrigerator", quantity: "1", unit: "jar", expirationDays: 365, category: "Vegetables" },
+  { displayName: "Olives", fdcId: "169095", description: "Olives, ripe, canned", storage: "Refrigerator", quantity: "1", unit: "jar", expirationDays: 365, category: "Vegetables" },
 
   // Freezer - Frozen Vegetables
   { displayName: "Frozen Peas", fdcId: "170420", description: "Peas, green, frozen, cooked", storage: "Freezer", quantity: "1", unit: "bag", expirationDays: 365, category: "Vegetables" },
