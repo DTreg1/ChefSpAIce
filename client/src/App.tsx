@@ -10,9 +10,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
-import { AddFoodDialog } from "@/components/add-food-dialog";
+import { UnifiedAddFood } from "@/components/unified-add-food";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
-import { BarcodeScanQueue } from "@/components/barcode-scan-queue";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
@@ -36,7 +35,6 @@ const MealPlanner = lazy(() => import("@/pages/meal-planner"));
 const ShoppingList = lazy(() => import("@/pages/shopping-list"));
 const Appliances = lazy(() => import("@/pages/appliances"));
 const Settings = lazy(() => import("@/pages/settings"));
-const FdcSearch = lazy(() => import("@/pages/FdcSearch"));
 const FoodGroups = lazy(() => import("@/pages/food-groups"));
 const FeedbackAnalytics = lazy(() => import("@/pages/feedback-analytics"));
 const FeedbackBoard = lazy(() => import("@/pages/feedback-board"));
@@ -65,7 +63,6 @@ function AuthenticatedRouter() {
         <Route path="/storage/:location" component={Storage} />
         <Route path="/food-groups/:category" component={FoodGroups} />
         <Route path="/food-groups" component={FoodGroups} />
-        <Route path="/fdc-search" component={FdcSearch} />
         <Route path="/feedback-analytics" component={FeedbackAnalytics} />
         <Route path="/feedback" component={FeedbackBoard} />
         <Route path="/donate" component={Donate} />
@@ -103,7 +100,6 @@ function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [addFoodOpen, setAddFoodOpen] = useState(false);
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
-  const [barcodeScanQueueOpen, setBarcodeScanQueueOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
@@ -137,43 +133,6 @@ function AppContent() {
     "--sidebar-width-icon": "4rem",
   } as React.CSSProperties;
 
-  const handleBatchSubmit = async (items: any[]) => {
-    try {
-      const results = await Promise.allSettled(
-        items.map(async (item) => {
-          const foodItemData = {
-            description: item.title || item.barcode,
-            brandOwner: item.brand,
-            storageLocationId: "",
-            quantity: 1,
-            unit: "item",
-            expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-            imageUrl: item.imageUrl,
-            upc: item.barcode,
-          };
-
-          return apiRequest("POST", "/api/food-items", foodItemData);
-        })
-      );
-
-      const successful = results.filter(r => r.status === "fulfilled").length;
-      const failed = results.filter(r => r.status === "rejected").length;
-
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-
-      toast({
-        title: "Batch submission complete",
-        description: `Added ${successful} items to inventory${failed > 0 ? `. ${failed} failed.` : ""}`,
-      });
-    } catch (error) {
-      console.error("Batch submission error:", error);
-      toast({
-        title: "Batch submission failed",
-        description: "Could not add items to inventory",
-        variant: "destructive",
-      });
-    }
-  };
 
   // Show landing page layout for non-authenticated users
   if (isLoading || !isAuthenticated) {
@@ -196,15 +155,10 @@ function AppContent() {
           particleCount={2000}
         />
       )}
-      <AddFoodDialog open={addFoodOpen} onOpenChange={setAddFoodOpen} />
+      <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <RecipeCustomizationDialog
         open={recipeDialogOpen}
         onOpenChange={setRecipeDialogOpen}
-      />
-      <BarcodeScanQueue
-        open={barcodeScanQueueOpen}
-        onOpenChange={setBarcodeScanQueueOpen}
-        onSubmitQueue={handleBatchSubmit}
       />
       {/* Only show floating FeedbackWidget on non-chat pages */}
       {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
@@ -240,7 +194,6 @@ function AppContent() {
               <QuickActionsBar
                 onAddFood={() => setAddFoodOpen(true)}
                 onGenerateRecipe={() => setRecipeDialogOpen(true)}
-                onScanBarcode={() => setBarcodeScanQueueOpen(true)}
               />
             </div>
           </header>
