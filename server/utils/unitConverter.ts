@@ -476,13 +476,21 @@ export function parseIngredient(ingredientStr: string): {
     }
   }
   
+  // Common food descriptors that are not units
+  const FOOD_DESCRIPTORS = [
+    'boneless', 'skinless', 'fresh', 'frozen', 'dried', 'canned',
+    'chopped', 'diced', 'sliced', 'minced', 'shredded', 'grated',
+    'cooked', 'raw', 'ripe', 'organic', 'unsalted', 'salted',
+    'crumbled', 'crushed', 'whole', 'ground', 'powdered'
+  ];
+
   // Match patterns like "2 cups flour" or "1/2 cup sugar" or "3.5 oz cheese"
   const patterns = [
     // Fraction followed by unit and name
     /^(\d+\/\d+)\s+([a-zA-Z\s]+?)\s+(.+)$/,
     // Mixed number (e.g., "1 1/2")
     /^(\d+\s+\d+\/\d+)\s+([a-zA-Z\s]+?)\s+(.+)$/,
-    // Decimal number
+    // Decimal number with potential unit
     /^(\d+\.?\d*)\s+([a-zA-Z\s]+?)\s+(.+)$/,
     // Just a number (count)
     /^(\d+\.?\d*)\s+(.+)$/,
@@ -515,10 +523,30 @@ export function parseIngredient(ingredientStr: string): {
         unit = 'piece';
         name = match[2];
       } else {
-        // Standard decimal number
+        // Standard decimal number with potential unit
         quantity = parseFloat(match[1]);
         unit = match[2];
         name = match[3];
+        
+        // Special check: if "unit" starts with capital letter and is not a valid unit,
+        // it's probably the food name (e.g., "2 Tomatoes diced")
+        if (unit && /^[A-Z]/.test(unit.trim()) && !isValidUnit(unit.trim().toLowerCase())) {
+          // Treat the whole thing after the number as the name
+          name = `${unit} ${name}`.trim();
+          unit = 'piece';
+        }
+      }
+
+      // Check if the "unit" is actually a food descriptor (like "boneless", "skinless")
+      const unitLower = unit?.trim().toLowerCase();
+      if (unitLower && FOOD_DESCRIPTORS.includes(unitLower)) {
+        // It's a descriptor, not a unit - treat as countable item
+        // The whole rest becomes the name, including the descriptor
+        return {
+          quantity,
+          unit: 'piece',
+          name: `${unit.trim()} ${name}`.trim()
+        };
       }
 
       // Check if the unit is actually a size descriptor
@@ -653,12 +681,14 @@ export function ingredientNamesMatch(name1: string, name2: string): boolean {
     'oil': ['vegetable oil', 'cooking oil', 'canola oil', 'olive oil', 'extra virgin olive oil', 'olive oil extra virgin'],
     'milk': ['whole milk', '2% milk', 'skim milk', '2 milk', 'full fat milk'],
     'egg': ['eggs', 'large egg', 'medium egg', 'large eggs'],
-    'chicken': ['chicken breast', 'chicken thigh', 'chicken pieces'],
+    'chicken': ['chicken breast', 'chicken breasts', 'chicken thigh', 'chicken pieces', 'boneless chicken', 'skinless chicken', 'boneless skinless chicken', 'boneless skinless chicken breasts', 'skinless chicken breasts'],
+    'chicken breast': ['chicken breasts', 'boneless chicken breast', 'skinless chicken breast', 'boneless skinless chicken breast', 'boneless skinless chicken breasts', 'skinless chicken breasts'],
     'beef': ['ground beef', 'beef mince', 'minced beef', 'beef hot dog', 'beef hot dogs'],
-    'tomato': ['tomatoes', 'fresh tomato', 'ripe tomato'],
+    'tomato': ['tomatoes', 'fresh tomato', 'ripe tomato', 'diced tomato', 'tomatoes diced'],
     'onion': ['yellow onion', 'white onion', 'brown onion'],
     'garlic': ['garlic clove', 'fresh garlic'],
     'cheese': ['parmesan', 'parmesan cheese', 'grated parmesan', 'grated parmesan cheese', 'parmesan cheese kraft', 'kraft parmesan'],
+    'feta': ['feta cheese', 'crumbled feta', 'feta cheese crumbled'],
     'pepper': ['black pepper', 'white pepper', 'ground pepper'],
     'pear': ['pears', 'bartlett pear', 'bartlett pears', 'ripe pear', 'ripe pears'],
     'hot dog': ['hot dogs', 'beef hot dog', 'beef hot dogs', 'hot dog beef'],
