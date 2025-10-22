@@ -85,32 +85,91 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
-    const strategy = new Strategy(
-      {
-        name: `replitauth:${domain}`,
-        config,
-        scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/callback`,
-      },
-      verify,
-    );
-    passport.use(strategy);
+  // Register strategies for all known domains
+  const registeredDomains = new Set<string>();
+  for (const domain of process.env.REPLIT_DOMAINS!.split(",")) {
+    const trimmedDomain = domain.trim();
+    if (trimmedDomain) {
+      const strategy = new Strategy(
+        {
+          name: `replitauth:${trimmedDomain}`,
+          config,
+          scope: "openid email profile offline_access",
+          callbackURL: `https://${trimmedDomain}/api/callback`,
+        },
+        verify,
+      );
+      passport.use(strategy);
+      registeredDomains.add(trimmedDomain);
+      console.log(`[Auth] Registered strategy for domain: ${trimmedDomain}`);
+    }
   }
+
+  // Middleware to dynamically register strategy for unrecognized domains
+  const ensureStrategyExists = (req: any, res: any, next: any) => {
+    const hostname = req.hostname;
+    
+    // Check if strategy already exists for this hostname
+    if (!registeredDomains.has(hostname)) {
+      console.log(`[Auth] Dynamically registering strategy for new domain: ${hostname}`);
+      
+      // Register a new strategy for this domain
+      const strategy = new Strategy(
+        {
+          name: `replitauth:${hostname}`,
+          config,
+          scope: "openid email profile offline_access",
+          callbackURL: `https://${hostname}/api/callback`,
+        },
+        verify,
+      );
+      
+      try {
+        passport.use(strategy);
+        registeredDomains.add(hostname);
+        console.log(`[Auth] Successfully registered strategy for: ${hostname}`);
+      } catch (error) {
+        console.error(`[Auth] Failed to register strategy for ${hostname}:`, error);
+      }
+    }
+    next();
+  };
 
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  app.get("/api/login", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
+  app.get("/api/login", ensureStrategyExists, (req, res, next) => {
+    const strategyName = `replitauth:${req.hostname}`;
+    console.log(`[Auth] Login attempt using strategy: ${strategyName}`);
+    
+    passport.authenticate(strategyName, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
+    }, (err: any, user: any, info: any) => {
+      if (err) {
+        console.error(`[Auth] Authentication error for ${strategyName}:`, err);
+        // Fallback to first available strategy if current one fails
+        const fallbackDomain = Array.from(registeredDomains)[0];
+        if (fallbackDomain && fallbackDomain !== req.hostname) {
+          console.log(`[Auth] Attempting fallback to ${fallbackDomain}`);
+          return passport.authenticate(`replitauth:${fallbackDomain}`, {
+            prompt: "login consent",
+            scope: ["openid", "email", "profile", "offline_access"],
+          })(req, res, next);
+        }
+      }
+      return passport.authenticate(strategyName, {
+        prompt: "login consent",
+        scope: ["openid", "email", "profile", "offline_access"],
+      })(req, res, next);
     })(req, res, next);
   });
 
-  app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
+  app.get("/api/callback", ensureStrategyExists, (req, res, next) => {
+    const strategyName = `replitauth:${req.hostname}`;
+    console.log(`[Auth] Callback attempt using strategy: ${strategyName}`);
+    
+    passport.authenticate(strategyName, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
     })(req, res, next);
