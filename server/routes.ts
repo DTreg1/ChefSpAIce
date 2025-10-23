@@ -4636,11 +4636,13 @@ Respond ONLY with a valid JSON object:
   // Cleanup old entries periodically
   setInterval(() => {
     const now = Date.now();
-    for (const [key, value] of analyticsRateLimitMap.entries()) {
+    const keysToDelete: string[] = [];
+    analyticsRateLimitMap.forEach((value, key) => {
       if (value.resetTime < now) {
-        analyticsRateLimitMap.delete(key);
+        keysToDelete.push(key);
       }
-    }
+    });
+    keysToDelete.forEach(key => analyticsRateLimitMap.delete(key));
   }, ANALYTICS_WINDOW_MS);
 
   // Web Vitals Analytics endpoint
