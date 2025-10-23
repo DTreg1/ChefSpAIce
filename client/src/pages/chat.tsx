@@ -429,12 +429,11 @@ export default function Chat() {
           onSpeechPitchChange={setSpeechPitch}
         />
       </div>
+      {/* Model Loading Indicator */}
+      <ModelLoadingIndicator 
+        isLoading={voiceState.isModelLoading} 
+        progress={voiceState.modelLoadingProgress} 
+      />
     </div>
-    
-    {/* Model Loading Indicator */}
-    <ModelLoadingIndicator 
-      isLoading={voiceState.isModelLoading} 
-      progress={voiceState.modelLoadingProgress} 
-    />
   );
 }
