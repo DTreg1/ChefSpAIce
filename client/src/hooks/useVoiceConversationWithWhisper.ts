@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useWhisperRecognition } from '@/hooks/useWhisperRecognition';
+import { useVoiceSettings } from '@/contexts/VoiceSettingsContext';
 
 interface VoiceConversationOptions {
   onTranscript?: (text: string) => void;
@@ -30,6 +31,17 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
   } = options;
 
   const { toast } = useToast();
+  
+  // Get voice settings from context
+  const {
+    voiceSettings,
+    voices,
+    selectedVoice,
+    setSelectedVoice,
+    setSpeechRate,
+    setSpeechPitch,
+    setSpeechVolume
+  } = useVoiceSettings();
   
   // Use Whisper for speech recognition
   const whisper = useWhisperRecognition({
@@ -85,43 +97,10 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
     }));
   }, [whisper.isListening, whisper.isProcessing, whisper.isLoading, whisper.loadingProgress, whisper.currentTranscript]);
 
-  // Speech synthesis state
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [speechRate, setSpeechRate] = useState(1.0);
-  const [speechPitch, setSpeechPitch] = useState(1.0);
-  const [speechVolume, setSpeechVolume] = useState(1.0);
-
   // Refs
   const synthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const finalTranscriptRef = useRef<string>('');
-
-  // Load available voices for text-to-speech
-  useEffect(() => {
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-      
-      // Try to select a natural-sounding English voice
-      if (!selectedVoice && availableVoices.length > 0) {
-        const preferredVoice = availableVoices.find(voice => 
-          voice.lang.startsWith('en') && voice.name.includes('Natural')
-        ) || availableVoices.find(voice => 
-          voice.lang.startsWith('en')
-        ) || availableVoices[0];
-        
-        setSelectedVoice(preferredVoice);
-      }
-    };
-
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
-  }, [selectedVoice]);
 
   // Handle auto-send when silence detected
   const handleAutoSend = useCallback(() => {
@@ -200,6 +179,17 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
   const speak = useCallback((text: string) => {
     if (!text || !voiceState.isVoiceMode) return;
     
+    // Check if speech synthesis is available
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      console.warn('Speech synthesis not available');
+      toast({
+        title: "Speech synthesis not available",
+        description: "Your browser doesn't support text-to-speech",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Stop any ongoing speech
     window.speechSynthesis.cancel();
     
@@ -210,9 +200,9 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = selectedVoice;
-    utterance.rate = speechRate;
-    utterance.pitch = speechPitch;
-    utterance.volume = speechVolume;
+    utterance.rate = voiceSettings.speechRate;
+    utterance.pitch = voiceSettings.speechPitch;
+    utterance.volume = voiceSettings.speechVolume;
     
     utterance.onstart = () => {
       setVoiceState(prev => ({ ...prev, isSpeaking: true }));
@@ -241,11 +231,14 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
     
     synthesisRef.current = utterance;
     window.speechSynthesis.speak(utterance);
-  }, [voiceState.isVoiceMode, selectedVoice, speechRate, speechPitch, speechVolume, whisper]);
+  }, [voiceState.isVoiceMode, selectedVoice, voiceSettings, whisper, toast]);
 
   // Stop speaking
   const stopSpeaking = useCallback(() => {
-    window.speechSynthesis.cancel();
+    // Check if speech synthesis is available
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     setVoiceState(prev => ({ ...prev, isSpeaking: false }));
     
     // Resume listening if in voice mode
@@ -260,7 +253,10 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
   useEffect(() => {
     return () => {
       whisper.stopListening();
-      window.speechSynthesis.cancel();
+      // Check if speech synthesis is available before canceling
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
       if (silenceTimerRef.current) {
         clearTimeout(silenceTimerRef.current);
       }
@@ -287,11 +283,11 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
     setSelectedVoice,
     
     // Speech settings
-    speechRate,
+    speechRate: voiceSettings.speechRate,
     setSpeechRate,
-    speechPitch,
+    speechPitch: voiceSettings.speechPitch,
     setSpeechPitch,
-    speechVolume,
+    speechVolume: voiceSettings.speechVolume,
     setSpeechVolume,
     
     // Whisper model state

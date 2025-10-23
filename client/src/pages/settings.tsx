@@ -7,6 +7,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
+import { useVoiceSettings } from "@/contexts/VoiceSettingsContext";
 import { CacheStorage } from "@/lib/cacheStorage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +19,9 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Mic, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { User, StorageLocation } from "@shared/schema";
@@ -767,6 +770,19 @@ export default function Settings() {
             </AccordionContent>
           </AccordionItem>
 
+          {/* Voice Settings Section */}
+          <AccordionItem value="voice-settings" className="border rounded-lg" data-testid="section-voice-settings">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Mic className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">Voice Settings</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <VoiceSettingsSection />
+            </AccordionContent>
+          </AccordionItem>
+
           {/* API Usage Section */}
           <AccordionItem value="api-usage" className="border rounded-lg" data-testid="section-api-usage">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
@@ -965,6 +981,242 @@ function ApiUsageSection() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VoiceSettingsSection() {
+  const { 
+    voiceSettings,
+    voices,
+    selectedVoice,
+    setSelectedVoice,
+    setSpeechRate,
+    setSpeechPitch,
+    setSpeechVolume,
+    isSaving,
+    speechSynthesisAvailable
+  } = useVoiceSettings();
+  
+  const { toast } = useToast();
+  const [testText, setTestText] = useState("Hello! This is a test of your voice settings.");
+  
+  // Group voices by language for better organization
+  const groupedVoices = voices.reduce((acc, voice) => {
+    const lang = voice.lang || "Unknown";
+    if (!acc[lang]) acc[lang] = [];
+    acc[lang].push(voice);
+    return acc;
+  }, {} as Record<string, SpeechSynthesisVoice[]>);
+  
+  // Sort languages with English first
+  const sortedLanguages = Object.keys(groupedVoices).sort((a, b) => {
+    if (a.startsWith("en")) return -1;
+    if (b.startsWith("en")) return 1;
+    return a.localeCompare(b);
+  });
+  
+  const handleTestVoice = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      toast({
+        title: "Speech synthesis not available",
+        description: "Your browser doesn't support text-to-speech",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!selectedVoice) {
+      toast({
+        title: "No voice selected",
+        description: "Please select a voice first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(testText);
+    utterance.voice = selectedVoice;
+    utterance.rate = voiceSettings.speechRate;
+    utterance.pitch = voiceSettings.speechPitch;
+    utterance.volume = voiceSettings.speechVolume;
+    
+    window.speechSynthesis.speak(utterance);
+  };
+  
+  const handleStopTest = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  };
+  
+  return (
+    <div className="space-y-6 pt-4">
+      {/* Show message if speech synthesis is not available */}
+      {!speechSynthesisAvailable ? (
+        <div className="bg-muted p-4 rounded-md">
+          <p className="text-sm text-muted-foreground">
+            Speech synthesis is not available in your browser. Voice features require a modern browser with Web Speech API support.
+          </p>
+        </div>
+      ) : null}
+      
+      {/* Voice Selection */}
+      <div className="space-y-3">
+        <Label htmlFor="voice-select">Voice</Label>
+        <Select
+          value={selectedVoice?.name || ""}
+          onValueChange={(value) => {
+            const voice = voices.find(v => v.name === value);
+            if (voice) setSelectedVoice(voice);
+          }}
+          disabled={!speechSynthesisAvailable}
+        >
+          <SelectTrigger id="voice-select" data-testid="select-voice" disabled={!speechSynthesisAvailable}>
+            <SelectValue placeholder="Select a voice">
+              {selectedVoice ? selectedVoice.name : "Select a voice"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {sortedLanguages.map(lang => (
+              <div key={lang}>
+                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                  {lang}
+                </div>
+                {groupedVoices[lang].map(voice => (
+                  <SelectItem key={voice.name} value={voice.name}>
+                    {voice.name} {voice.name.includes("Natural") && "✨"}
+                  </SelectItem>
+                ))}
+              </div>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-sm text-muted-foreground">
+          Choose the voice for text-to-speech in chat conversations
+        </p>
+      </div>
+      
+      {/* Speech Rate */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="speech-rate">Speech Rate</Label>
+          <span className="text-sm text-muted-foreground">
+            {voiceSettings.speechRate.toFixed(1)}x
+          </span>
+        </div>
+        <Slider
+          id="speech-rate"
+          min={0.5}
+          max={2}
+          step={0.1}
+          value={[voiceSettings.speechRate]}
+          onValueChange={([value]) => setSpeechRate(value)}
+          className="w-full"
+          data-testid="slider-speech-rate"
+          disabled={!speechSynthesisAvailable}
+        />
+        <p className="text-sm text-muted-foreground">
+          Adjust how fast the voice speaks (1.0 is normal speed)
+        </p>
+      </div>
+      
+      {/* Speech Pitch */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="speech-pitch">Speech Pitch</Label>
+          <span className="text-sm text-muted-foreground">
+            {voiceSettings.speechPitch.toFixed(1)}
+          </span>
+        </div>
+        <Slider
+          id="speech-pitch"
+          min={0.5}
+          max={2}
+          step={0.1}
+          value={[voiceSettings.speechPitch]}
+          onValueChange={([value]) => setSpeechPitch(value)}
+          className="w-full"
+          data-testid="slider-speech-pitch"
+          disabled={!speechSynthesisAvailable}
+        />
+        <p className="text-sm text-muted-foreground">
+          Adjust the pitch of the voice (1.0 is normal pitch)
+        </p>
+      </div>
+      
+      {/* Speech Volume */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="speech-volume">Speech Volume</Label>
+          <span className="text-sm text-muted-foreground">
+            {Math.round(voiceSettings.speechVolume * 100)}%
+          </span>
+        </div>
+        <Slider
+          id="speech-volume"
+          min={0}
+          max={1}
+          step={0.05}
+          value={[voiceSettings.speechVolume]}
+          onValueChange={([value]) => setSpeechVolume(value)}
+          className="w-full"
+          data-testid="slider-speech-volume"
+          disabled={!speechSynthesisAvailable}
+        />
+        <p className="text-sm text-muted-foreground">
+          Adjust the volume of the voice output
+        </p>
+      </div>
+      
+      {/* Test Voice */}
+      <div className="space-y-3">
+        <Label htmlFor="test-text">Test Voice</Label>
+        <div className="flex gap-2">
+          <Input
+            id="test-text"
+            value={testText}
+            onChange={(e) => setTestText(e.target.value)}
+            placeholder="Enter text to test voice"
+            className="flex-1"
+            data-testid="input-test-text"
+            disabled={!speechSynthesisAvailable}
+          />
+          <Button
+            onClick={handleTestVoice}
+            variant="outline"
+            size="sm"
+            data-testid="button-test-voice"
+            disabled={!speechSynthesisAvailable}
+          >
+            <Volume2 className="w-4 h-4 mr-2" />
+            Test
+          </Button>
+          <Button
+            onClick={handleStopTest}
+            variant="ghost"
+            size="sm"
+            data-testid="button-stop-test"
+            disabled={!speechSynthesisAvailable}
+          >
+            Stop
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Test your voice settings with sample text
+        </p>
+      </div>
+      
+      {/* Save Status */}
+      {isSaving && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          Saving voice settings...
         </div>
       )}
     </div>
