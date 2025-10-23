@@ -43,7 +43,11 @@ import {
   Clock,
   RefreshCw,
   BarChart3,
-  Calendar
+  Calendar,
+  Server,
+  CheckCircle,
+  XCircle,
+  Wifi
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WebVital } from "@shared/schema";
@@ -150,6 +154,12 @@ export default function AnalyticsDashboard() {
   
   const { data: inpStats } = useQuery<any>({
     queryKey: ["/api/analytics/stats", { metric: "INP", days: timeRange }],
+  });
+
+  // Fetch API Health data
+  const { data: apiHealthData } = useQuery<any>({
+    queryKey: ["/api/analytics/api-health", { days: timeRange }],
+    refetchInterval: autoRefresh ? 30000 : false,
   });
 
   // Combine all metric stats
@@ -536,6 +546,171 @@ export default function AnalyticsDashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* API Health Monitoring */}
+          {apiHealthData && (
+            <>
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-4">API Health Monitoring</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card className="glass-morph hover-elevate">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium">Total API Calls</CardTitle>
+                        <Server className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {apiHealthData.summary?.totalApiCalls || 0}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Last {timeRange} days
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-morph hover-elevate">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">
+                        {apiHealthData.summary?.overallSuccessRate || 0}%
+                      </div>
+                      <Progress 
+                        value={apiHealthData.summary?.overallSuccessRate || 0} 
+                        className="mt-2 h-2"
+                      />
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-morph hover-elevate">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium">Successful Calls</CardTitle>
+                        <Wifi className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">
+                        {apiHealthData.summary?.totalSuccessful || 0}
+                      </div>
+                      <p className="text-xs text-green-600">
+                        ↑ Working properly
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-morph hover-elevate">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium">Failed Calls</CardTitle>
+                        <XCircle className="w-4 h-4 text-red-600" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-red-600">
+                        {apiHealthData.summary?.totalFailed || 0}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Requires attention
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Individual API Health */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                  <Card className="glass-morph">
+                    <CardHeader>
+                      <CardTitle>API Performance by Service</CardTitle>
+                      <CardDescription>Success and error rates per API</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={apiHealthData.apis || []}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="name" 
+                            tick={{ fontSize: 12 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={80}
+                          />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar 
+                            dataKey="successfulCalls" 
+                            name="Successful" 
+                            fill={COLORS.good}
+                            stackId="a"
+                          />
+                          <Bar 
+                            dataKey="failedCalls" 
+                            name="Failed" 
+                            fill={COLORS.poor}
+                            stackId="a"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-morph">
+                    <CardHeader>
+                      <CardTitle>API Health Status</CardTitle>
+                      <CardDescription>Current status of external APIs</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {(apiHealthData.apis || []).map((api: any) => {
+                          const isHealthy = api.successRate >= 95;
+                          const isWarning = api.successRate >= 80 && api.successRate < 95;
+                          const getApiDisplayName = (name: string) => {
+                            switch(name) {
+                              case 'barcode_lookup': return 'Barcode Lookup';
+                              case 'open_food_facts': return 'Open Food Facts';
+                              case 'usda_fdc': return 'USDA Food Database';
+                              case 'openai': return 'OpenAI (Chef AI)';
+                              default: return name;
+                            }
+                          };
+                          
+                          return (
+                            <div key={api.name} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "w-3 h-3 rounded-full",
+                                  isHealthy ? "bg-green-600" : isWarning ? "bg-amber-600" : "bg-red-600"
+                                )}>
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">{getApiDisplayName(api.name)}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {api.totalCalls} calls • {api.successRate}% success
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge 
+                                variant={isHealthy ? "default" : isWarning ? "secondary" : "destructive"}
+                              >
+                                {isHealthy ? "Healthy" : isWarning ? "Warning" : "Critical"}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Tips and Recommendations */}
           <Card className="glass-morph">

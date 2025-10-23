@@ -4755,6 +4755,67 @@ Respond ONLY with a valid JSON object:
     }
   });
 
+  // Get API Health Metrics
+  app.get("/api/analytics/api-health", async (req: any, res) => {
+    try {
+      const { days } = req.query;
+      const userId = req.user?.claims?.sub;
+
+      // Validate days parameter
+      let daysNum = 7; // default
+      if (days) {
+        const parsed = parseInt(days as string);
+        if (isNaN(parsed) || parsed < 1 || parsed > 365) {
+          return res.status(400).json({
+            error: "Invalid 'days' parameter. Must be a number between 1 and 365",
+          });
+        }
+        daysNum = parsed;
+      }
+
+      // Get API usage logs for all APIs
+      const apiNames = ['barcode_lookup', 'open_food_facts', 'usda_fdc', 'openai'];
+      const apiHealthPromises = apiNames.map(async (apiName) => {
+        const stats = await storage.getApiUsageStats(userId || 'system', apiName, daysNum);
+        return {
+          name: apiName,
+          ...stats,
+          errorRate: stats.totalCalls > 0 
+            ? Math.round((stats.failedCalls / stats.totalCalls) * 100) 
+            : 0,
+          successRate: stats.totalCalls > 0 
+            ? Math.round((stats.successfulCalls / stats.totalCalls) * 100) 
+            : 0,
+        };
+      });
+
+      const apiHealth = await Promise.all(apiHealthPromises);
+
+      // Calculate aggregated stats
+      const totalApiCalls = apiHealth.reduce((sum, api) => sum + api.totalCalls, 0);
+      const totalSuccessful = apiHealth.reduce((sum, api) => sum + api.successfulCalls, 0);
+      const totalFailed = apiHealth.reduce((sum, api) => sum + api.failedCalls, 0);
+      const overallSuccessRate = totalApiCalls > 0 
+        ? Math.round((totalSuccessful / totalApiCalls) * 100) 
+        : 0;
+
+      res.json({
+        summary: {
+          totalApiCalls,
+          totalSuccessful,
+          totalFailed,
+          overallSuccessRate,
+          period: `${daysNum} days`,
+        },
+        apis: apiHealth,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Error getting API health metrics:", error);
+      res.status(500).json({ error: "Failed to get API health metrics" });
+    }
+  });
+
   // Cooking Terms Routes
 
   // Get all cooking terms or search
