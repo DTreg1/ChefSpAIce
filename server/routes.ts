@@ -4628,9 +4628,51 @@ Respond ONLY with a valid JSON object:
     },
   );
 
+  // Rate limiting for analytics - simple in-memory implementation
+  const analyticsRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+  const ANALYTICS_RATE_LIMIT = 60; // Max 60 requests per minute per IP
+  const ANALYTICS_WINDOW_MS = 60000; // 1 minute window
+  
+  // Cleanup old entries periodically
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, value] of analyticsRateLimitMap.entries()) {
+      if (value.resetTime < now) {
+        analyticsRateLimitMap.delete(key);
+      }
+    }
+  }, ANALYTICS_WINDOW_MS);
+
   // Web Vitals Analytics endpoint
   app.post("/api/analytics", async (req: any, res) => {
     try {
+      // Rate limiting check
+      const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+      const now = Date.now();
+      const rateInfo = analyticsRateLimitMap.get(clientIp);
+      
+      if (rateInfo) {
+        if (rateInfo.resetTime > now) {
+          if (rateInfo.count >= ANALYTICS_RATE_LIMIT) {
+            return res.status(429).json({ 
+              error: 'Too many analytics requests. Please slow down.',
+              retryAfter: Math.ceil((rateInfo.resetTime - now) / 1000)
+            });
+          }
+          rateInfo.count++;
+        } else {
+          // Reset window
+          rateInfo.count = 1;
+          rateInfo.resetTime = now + ANALYTICS_WINDOW_MS;
+        }
+      } else {
+        // First request from this IP
+        analyticsRateLimitMap.set(clientIp, { 
+          count: 1, 
+          resetTime: now + ANALYTICS_WINDOW_MS 
+        });
+      }
+      
       // Get user ID if authenticated, otherwise null for anonymous tracking
       const userId = req.user?.claims?.sub || null;
 
