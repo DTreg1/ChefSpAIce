@@ -92,14 +92,33 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    recognition.continuous = false; // Change to false to avoid timeout issues
     recognition.interimResults = true;
     recognition.lang = locale;
     recognition.maxAlternatives = 1;
+    
+    // Add diagnostic logging
+    console.log('Initializing speech recognition...');
+    console.log('Browser:', navigator.userAgent);
+    console.log('Protocol:', window.location.protocol);
+    console.log('Hostname:', window.location.hostname);
 
     recognition.onstart = () => {
+      console.log('✓ Speech recognition started');
       setVoiceState(prev => ({ ...prev, isListening: true }));
       finalTranscriptRef.current = '';
+    };
+    
+    recognition.onaudiostart = () => {
+      console.log('✓ Audio capture started');
+    };
+    
+    recognition.onsoundstart = () => {
+      console.log('✓ Sound detected');
+    };
+    
+    recognition.onspeechstart = () => {
+      console.log('✓ Speech detected');
     };
 
     recognition.onresult = (event: any) => {
@@ -144,13 +163,36 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
     };
 
     recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+      console.error('❌ Speech recognition error:', event.error);
+      console.error('Error details:', event);
+      
+      // Check browser environment
+      const isChromium = navigator.userAgent.includes('Chromium');
+      const isReplit = window.location.hostname.includes('replit');
+      const isChrome = navigator.userAgent.includes('Chrome/');
+      
+      console.log('Environment:', {
+        isChromium,
+        isReplit,
+        isChrome,
+        userAgent: navigator.userAgent
+      });
       
       if (event.error === 'network') {
-        // Network error - common in Replit environment
+        // Network error - common in Chromium or Replit environment
+        let message = "Voice input isn't working. ";
+        
+        if (isChromium && !isChrome) {
+          message += "You're using Chromium which lacks Google API keys. Please use Google Chrome.";
+        } else if (isReplit) {
+          message += "Replit's browser environment may block voice recognition. Try downloading and using Chrome locally.";
+        } else {
+          message += "This might be a network issue. Try refreshing the page.";
+        }
+        
         toast({
           title: "Voice recognition unavailable",
-          description: "Voice input isn't available in this environment. Try opening your app in a new browser tab or using it locally.",
+          description: message,
           variant: "destructive",
         });
         setVoiceState(prev => ({ 

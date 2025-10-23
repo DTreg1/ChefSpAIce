@@ -72,6 +72,9 @@ export function ChatInput({
       setMessage(voiceTranscript);
     }
   }, [voiceTranscript, voiceState?.isVoiceMode]);
+  
+  // Check if voice input is broken (network error)
+  const isVoiceInputBroken = voiceState?.isVoiceMode && !voiceState?.isListening;
 
   const handleSend = () => {
     if ((message.trim() || attachments.length > 0) && !disabled && !isUploading) {
@@ -306,9 +309,15 @@ export function ChatInput({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isVoiceMode ? "Speak or type your message..." : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"}
+          placeholder={
+            isVoiceMode && isListening 
+              ? "Listening... speak now" 
+              : isVoiceMode
+              ? "Type your message (AI will speak response)..." 
+              : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"
+          }
           className="resize-y text-sm min-h-[100px] max-h-[300px]"
-          disabled={disabled || isVoiceMode}
+          disabled={disabled || (isVoiceMode && isListening)}
           data-testid="input-chat-message"
         />
         
@@ -317,7 +326,7 @@ export function ChatInput({
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={(!message.trim() && attachments.length === 0) || disabled || isUploading || isVoiceMode}
+            disabled={(!message.trim() && attachments.length === 0) || disabled || isUploading || (isVoiceMode && isListening)}
             className="flex-shrink-0 rounded-full w-10 h-10"
             data-testid="button-send-message"
           >
