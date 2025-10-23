@@ -47,7 +47,11 @@ import {
   Server,
   CheckCircle,
   XCircle,
-  Wifi
+  Wifi,
+  MessageSquare,
+  Star,
+  ThumbsUp,
+  PieChartIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WebVital } from "@shared/schema";
@@ -159,6 +163,12 @@ export default function AnalyticsDashboard() {
   // Fetch API Health data
   const { data: apiHealthData } = useQuery<any>({
     queryKey: ["/api/analytics/api-health", { days: timeRange }],
+    refetchInterval: autoRefresh ? 30000 : false,
+  });
+
+  // Fetch Feedback Analytics data
+  const { data: feedbackData } = useQuery<any>({
+    queryKey: ["/api/feedback/analytics/summary", { days: timeRange }],
     refetchInterval: autoRefresh ? 30000 : false,
   });
 
@@ -710,6 +720,251 @@ export default function AnalyticsDashboard() {
                 </div>
               </div>
             </>
+          )}
+
+          {/* Feedback Analytics */}
+          {feedbackData && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Feedback Analytics</h3>
+              
+              {/* Feedback Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="glass-morph hover-elevate">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium">Total Feedback</CardTitle>
+                      <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {feedbackData.totalFeedback || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Last {timeRange} days
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="glass-morph hover-elevate">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+                      <Star className="w-4 h-4 text-yellow-500" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-yellow-500">
+                      {feedbackData.averageRating ? feedbackData.averageRating.toFixed(1) : "N/A"}
+                    </div>
+                    <div className="flex gap-0.5 mt-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={cn(
+                            "w-3 h-3",
+                            feedbackData.averageRating && star <= Math.round(feedbackData.averageRating)
+                              ? "text-yellow-500 fill-yellow-500"
+                              : "text-muted-foreground"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="glass-morph hover-elevate">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium">Positive Feedback</CardTitle>
+                      <ThumbsUp className="w-4 h-4 text-green-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">
+                      {feedbackData.sentimentDistribution?.positive || 0}
+                    </div>
+                    <Progress 
+                      value={feedbackData.totalFeedback > 0 
+                        ? (feedbackData.sentimentDistribution?.positive || 0) / feedbackData.totalFeedback * 100
+                        : 0} 
+                      className="mt-2 h-2"
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card className="glass-morph hover-elevate">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium">Critical Issues</CardTitle>
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600">
+                      {feedbackData.topIssues?.filter((i: any) => i.priority === "critical").length || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Requires immediate attention
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Feedback Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Sentiment Distribution */}
+                <Card className="glass-morph">
+                  <CardHeader>
+                    <CardTitle>Sentiment Distribution</CardTitle>
+                    <CardDescription>User sentiment breakdown</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { 
+                              name: 'Positive', 
+                              value: feedbackData.sentimentDistribution?.positive || 0,
+                              color: COLORS.good
+                            },
+                            { 
+                              name: 'Neutral', 
+                              value: feedbackData.sentimentDistribution?.neutral || 0,
+                              color: COLORS.needsImprovement
+                            },
+                            { 
+                              name: 'Negative', 
+                              value: feedbackData.sentimentDistribution?.negative || 0,
+                              color: COLORS.poor
+                            }
+                          ].filter(item => item.value > 0)}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                        >
+                          {[
+                            { color: COLORS.good },
+                            { color: COLORS.needsImprovement },
+                            { color: COLORS.poor }
+                          ].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Feedback Types */}
+                <Card className="glass-morph">
+                  <CardHeader>
+                    <CardTitle>Feedback by Type</CardTitle>
+                    <CardDescription>Categories of user feedback</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart 
+                        data={Object.entries(feedbackData.typeDistribution || {}).map(([type, count]) => ({
+                          type: type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' '),
+                          count
+                        }))}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="type" 
+                          tick={{ fontSize: 12 }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                        />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#8884d8" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Recent Trends */}
+                {feedbackData.recentTrends && feedbackData.recentTrends.length > 0 && (
+                  <Card className="glass-morph">
+                    <CardHeader>
+                      <CardTitle>Feedback Trends</CardTitle>
+                      <CardDescription>Daily feedback volume</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={feedbackData.recentTrends}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ fontSize: 12 }}
+                            tickFormatter={(value) => new Date(value).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                          />
+                          <YAxis />
+                          <Tooltip />
+                          <Line 
+                            type="monotone" 
+                            dataKey="count" 
+                            stroke="#8884d8" 
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Top Issues */}
+                {feedbackData.topIssues && feedbackData.topIssues.length > 0 && (
+                  <Card className="glass-morph">
+                    <CardHeader>
+                      <CardTitle>Top Issues</CardTitle>
+                      <CardDescription>Most common feedback categories</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {feedbackData.topIssues.slice(0, 5).map((issue: any, index: number) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "w-2 h-2 rounded-full",
+                                issue.priority === "critical" ? "bg-red-600" :
+                                issue.priority === "high" ? "bg-orange-600" :
+                                issue.priority === "medium" ? "bg-yellow-600" :
+                                "bg-blue-600"
+                              )} />
+                              <div>
+                                <p className="text-sm font-medium capitalize">
+                                  {issue.category.replace(/_/g, ' ')}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {issue.count} reports
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant={
+                              issue.priority === "critical" ? "destructive" :
+                              issue.priority === "high" ? "secondary" :
+                              "default"
+                            }>
+                              {issue.priority}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Tips and Recommendations */}
