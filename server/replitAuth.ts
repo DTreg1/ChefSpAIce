@@ -41,8 +41,6 @@ export function getSession() {
       httpOnly: true,
       secure: true,
       maxAge: sessionTtl,
-      sameSite: 'lax', // Allow cookies to work with OAuth redirects
-      domain: undefined, // Allow cookies to work across subdomains
     },
   });
 }
@@ -89,19 +87,7 @@ export async function setupAuth(app: Express) {
 
   // Register strategies for all known domains
   const registeredDomains = new Set<string>();
-  
-  // Parse domains from environment variable
-  const domains = process.env.REPLIT_DOMAINS!.split(",");
-  
-  // Add common custom domains that might be used
-  const customDomains = ["chefspaice.com", "www.chefspaice.com"];
-  for (const customDomain of customDomains) {
-    if (!domains.includes(customDomain)) {
-      domains.push(customDomain);
-    }
-  }
-  
-  for (const domain of domains) {
+  for (const domain of process.env.REPLIT_DOMAINS!.split(",")) {
     const trimmedDomain = domain.trim();
     if (trimmedDomain) {
       const strategy = new Strategy(
@@ -155,8 +141,6 @@ export async function setupAuth(app: Express) {
   app.get("/api/login", ensureStrategyExists, (req, res, next) => {
     const strategyName = `replitauth:${req.hostname}`;
     console.log(`[Auth] Login attempt using strategy: ${strategyName}`);
-    console.log(`[Auth] Request headers: Host=${req.headers.host}, Origin=${req.headers.origin}, Referer=${req.headers.referer}`);
-    console.log(`[Auth] Available strategies: ${Array.from(registeredDomains).join(", ")}`);
     
     passport.authenticate(strategyName, {
       prompt: "login consent",
@@ -164,12 +148,6 @@ export async function setupAuth(app: Express) {
     }, (err: any, user: any, info: any) => {
       if (err) {
         console.error(`[Auth] Authentication error for ${strategyName}:`, err);
-        console.error(`[Auth] Error details:`, { 
-          message: err.message, 
-          stack: err.stack,
-          cause: err.cause 
-        });
-        
         // Fallback to first available strategy if current one fails
         const fallbackDomain = Array.from(registeredDomains)[0];
         if (fallbackDomain && fallbackDomain !== req.hostname) {
@@ -179,14 +157,6 @@ export async function setupAuth(app: Express) {
             scope: ["openid", "email", "profile", "offline_access"],
           })(req, res, next);
         }
-        
-        // If no fallback available, return error to user
-        return res.status(500).json({ 
-          error: "Authentication failed", 
-          message: "Unable to authenticate with the custom domain. Please try accessing the application from the original Replit domain.",
-          hostname: req.hostname,
-          availableDomains: Array.from(registeredDomains)
-        });
       }
       return passport.authenticate(strategyName, {
         prompt: "login consent",
@@ -198,44 +168,10 @@ export async function setupAuth(app: Express) {
   app.get("/api/callback", ensureStrategyExists, (req, res, next) => {
     const strategyName = `replitauth:${req.hostname}`;
     console.log(`[Auth] Callback attempt using strategy: ${strategyName}`);
-    console.log(`[Auth] Callback URL: ${req.protocol}://${req.hostname}${req.originalUrl}`);
-    console.log(`[Auth] Callback query params:`, req.query);
     
     passport.authenticate(strategyName, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
-    }, (err: any, user: any, info: any) => {
-      if (err) {
-        console.error(`[Auth] Callback error for ${strategyName}:`, err);
-        console.error(`[Auth] Callback error details:`, { 
-          message: err.message, 
-          stack: err.stack,
-          cause: err.cause,
-          info: info
-        });
-        
-        // Try to provide a helpful error message
-        return res.status(500).json({ 
-          error: "Authentication callback failed", 
-          message: "The authentication callback failed. This may be due to domain configuration issues.",
-          hostname: req.hostname,
-          suggestion: "Please try accessing the application from the original Replit domain."
-        });
-      }
-      
-      if (!user) {
-        console.error(`[Auth] No user returned from authentication`);
-        return res.redirect("/api/login");
-      }
-      
-      req.logIn(user, (loginErr) => {
-        if (loginErr) {
-          console.error(`[Auth] Login error:`, loginErr);
-          return next(loginErr);
-        }
-        console.log(`[Auth] User successfully authenticated and logged in`);
-        return res.redirect("/");
-      });
     })(req, res, next);
   });
 
@@ -269,62 +205,14 @@ const cleanupStaleRefreshes = () => {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  // Check for development bypass - ONLY in development mode with explicit flag
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const bypassEnabled = process.env.AUTH_BYPASS_ENABLED === 'true';
-  const bypassSecret = process.env.AUTH_BYPASS_SECRET;
-  
-  if (isDevelopment && bypassEnabled && bypassSecret) {
-    // Only allow bypass if a secret header matches
-    const providedSecret = req.headers['x-auth-bypass-secret'];
-    const hostname = req.hostname || req.get('host');
-    const isCustomDomain = hostname && (hostname.includes('chefspaice.com') || hostname.includes('chefspaice'));
-    
-    if (isCustomDomain && providedSecret === bypassSecret && !req.isAuthenticated()) {
-      console.log("[Auth Debug] Development bypass activated with valid secret");
-      // Create a mock user for development on custom domain
-      (req as any).user = {
-        claims: {
-          sub: 'dev_user_custom_domain',
-          email: 'dev@chefspaice.com',
-          first_name: 'Development',
-          last_name: 'User'
-        },
-        expires_at: Math.floor(Date.now() / 1000) + 3600 // Valid for 1 hour
-      };
-      
-      // Ensure the mock user exists in the database
-      try {
-        await storage.upsertUser({
-          id: 'dev_user_custom_domain',
-          email: 'dev@chefspaice.com',
-          firstName: 'Development',
-          lastName: 'User',
-          profileImageUrl: null
-        });
-      } catch (error) {
-        console.error("[Auth Debug] Error creating mock user:", error);
-      }
-      
-      return next();
-    }
-  }
-
   if (!req.isAuthenticated() || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const now = Math.floor(Date.now() / 1000);
-  const tokenExpiresAt = user.expires_at;
-  const refreshThreshold = 5 * 60; // 5 minutes before expiry
-  
-  // If token is still valid and not expiring soon, continue
-  if (now <= tokenExpiresAt - refreshThreshold) {
+  if (now <= user.expires_at) {
     return next();
   }
-  
-  // Token is expired or expiring soon - attempt refresh
-  console.log(`[Auth] Token expiring soon for user ${user.claims?.sub || 'unknown'}, refreshing proactively`);
 
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
@@ -377,15 +265,15 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     updateUserSession(user, tokenResponse);
     return next();
   } catch (error: any) {
-    // Handle invalid_grant error gracefully
+    console.error('Token refresh failed:', error);
+    
+    // If the refresh token is invalid, we need to clear the session
+    // and force the user to re-authenticate
     if (error?.cause?.error === 'invalid_grant' || error?.error === 'invalid_grant') {
-      // This is expected when refresh tokens expire - log a simple message
-      console.log(`[Auth] Session expired for user ${userId} - refresh token invalid`);
-      
       // Clear the session to force re-authentication
       req.logout((err) => {
         if (err) {
-          console.error('[Auth] Error clearing session during token expiry:', err);
+          console.error('Error logging out user during token refresh failure:', err);
         }
       });
       
@@ -400,18 +288,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
       return;
     }
     
-    // For unexpected errors, log more details but still be concise
-    console.error('[Auth] Token refresh failed:', {
-      userId,
-      errorType: error?.constructor?.name,
-      message: error?.message,
-      cause: error?.cause?.error || error?.error
-    });
-    
-    // Clear the refresh key to allow retry
-    activeRefreshes.delete(refreshKey);
-    
-    // Return unauthorized
+    // For other errors, just return unauthorized
     res.status(401).json({ message: "Unauthorized" });
     return;
   }

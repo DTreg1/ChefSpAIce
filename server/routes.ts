@@ -123,33 +123,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes (from blueprint:javascript_log_in_with_replit)
-  
-  // Debug endpoint for auth status (no auth required)
-  app.get('/api/auth/status', (req: any, res) => {
-    const isAuth = req.isAuthenticated();
-    const hasUser = !!req.user;
-    const hasClaims = !!req.user?.claims;
-    const hasSession = !!req.session;
-    const sessionId = req.session?.id;
-    const hostname = req.hostname;
-    const cookies = req.cookies;
-    
-    console.log(`[Auth Status] hostname: ${hostname}, isAuth: ${isAuth}, hasUser: ${hasUser}, hasClaims: ${hasClaims}, hasSession: ${hasSession}`);
-    
-    res.json({
-      authenticated: isAuth,
-      hasUser,
-      hasClaims,
-      hasSession,
-      sessionId: hasSession ? sessionId : null,
-      hostname,
-      userAgent: req.headers['user-agent'],
-      // Don't log sensitive cookie data, just check if session cookie exists
-      hasSessionCookie: !!cookies?.['connect.sid'],
-      timestamp: new Date().toISOString()
-    });
-  });
-  
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -3664,24 +3637,6 @@ Respond ONLY with a valid JSON object:
   // Web Vitals Analytics endpoint
   app.post("/api/analytics", async (req: any, res) => {
     try {
-      // Handle cases where body might be a string (from sendBeacon without Content-Type)
-      let body = req.body;
-      if (typeof body === 'string') {
-        try {
-          body = JSON.parse(body);
-        } catch (parseError) {
-          console.error("Failed to parse analytics body:", parseError);
-          // Return success anyway to avoid breaking the frontend
-          return res.status(200).json({ success: true });
-        }
-      }
-
-      // Ensure we have the required fields
-      if (!body || !body.name || body.value === undefined) {
-        // Silently succeed for incomplete data
-        return res.status(200).json({ success: true });
-      }
-
       // Get user ID if authenticated, otherwise null for anonymous tracking
       const userId = req.user?.claims?.sub || null;
 
@@ -3691,10 +3646,10 @@ Respond ONLY with a valid JSON object:
 
       // Validate using Zod schema
       const validated = insertWebVitalSchema.parse({
-        ...body,
+        ...req.body,
         userId,
-        metricId: body.id || `${body.name}_${Date.now()}`, // Map 'id' from web-vitals to 'metricId', fallback if missing
-        navigationType: body.navigationType || null,
+        metricId: req.body.id, // Map 'id' from web-vitals to 'metricId'
+        navigationType: req.body.navigationType || null,
         userAgent,
         url,
       });
@@ -3704,13 +3659,10 @@ Respond ONLY with a valid JSON object:
       res.status(200).json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // Log the error but return success to avoid breaking the frontend
-        console.warn("Web vital validation error:", error.errors);
-        return res.status(200).json({ success: true });
+        return res.status(400).json({ error: "Invalid web vital data", details: error.errors });
       }
       console.error("Error recording web vital:", error);
-      // Still return success to avoid breaking the frontend
-      res.status(200).json({ success: true });
+      res.status(500).json({ error: "Failed to record web vital" });
     }
   });
 
