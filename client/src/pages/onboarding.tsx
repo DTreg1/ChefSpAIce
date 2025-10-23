@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { CacheStorage } from "@/lib/cacheStorage";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -176,10 +175,6 @@ export default function Onboarding() {
       };
     },
     onSuccess: (data) => {
-      // Clear the localStorage cache BEFORE invalidating queries
-      // This ensures the stale cached data with hasCompletedOnboarding: false is removed
-      CacheStorage.remove("cache:user:preferences");
-      
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
