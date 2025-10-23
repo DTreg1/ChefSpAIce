@@ -10,12 +10,11 @@ import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
 import { FeedbackButtons } from "@/components/feedback-buttons";
 import { VoiceActivityIndicator } from "@/components/voice-activity-indicator";
-import { ModelLoadingIndicator } from "@/components/model-loading-indicator";
 import { Button } from "@/components/ui/button";
 import { ChefHat, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useVoiceConversation } from "@/hooks/useVoiceConversationWithWhisper";
+import { useVoiceConversation } from "@/hooks/useVoiceConversation";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
 import { ExpirationTicker } from "@/components/expiration-ticker";
 
@@ -37,27 +36,6 @@ export default function Chat() {
     const lastName = user.lastName || "";
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
-
-  // Voice conversation setup
-  const {
-    voiceState,
-    toggleVoiceMode,
-    stopSpeaking,
-    speak,
-    voices,
-    selectedVoice,
-    setSelectedVoice,
-    speechRate,
-    setSpeechRate,
-    speechPitch,
-    setSpeechPitch,
-  } = useVoiceConversation({
-    onSendMessage: (text: string) => {
-      handleSendMessage(text, undefined, true);
-    },
-    autoSend: true,
-    silenceTimeout: 2000,
-  });
 
   const { data: chatHistory } = useQuery<ChatMessageType[]>({
     queryKey: ["/api/chat/messages"],
@@ -229,8 +207,7 @@ export default function Chat() {
 
               // Auto-play voice response if the input was from voice
               if (wasVoiceInput && accumulated) {
-                // Use the speak function from voice conversation for consistent settings
-                speak(accumulated);
+                // The VoiceControls component will handle auto-playing
                 setWasVoiceInput(false); // Reset for next message
               }
 
@@ -388,52 +365,13 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Voice Activity Indicator */}
-      {voiceState.isVoiceMode && (
-        <div className="border-t border-border bg-background/90 backdrop-blur-sm p-3">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <VoiceActivityIndicator 
-              isListening={voiceState.isListening}
-              isSpeaking={voiceState.isSpeaking}
-              isProcessing={voiceState.isProcessing}
-            />
-            {voiceState.isSpeaking && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={stopSpeaking}
-                data-testid="button-stop-speaking"
-              >
-                Stop Speaking
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
       <div className="shadow-2xl">
         <ChatInput
           onSend={handleSendMessage}
           disabled={isStreaming}
           showFeedbackWidget={true}
-          voiceState={voiceState}
-          voiceTranscript={voiceState.currentTranscript}
-          onVoiceModeToggle={toggleVoiceMode}
-          onStopSpeaking={stopSpeaking}
-          voices={voices}
-          selectedVoice={selectedVoice}
-          onVoiceChange={setSelectedVoice}
-          speechRate={speechRate}
-          onSpeechRateChange={setSpeechRate}
-          speechPitch={speechPitch}
-          onSpeechPitchChange={setSpeechPitch}
         />
       </div>
-      {/* Model Loading Indicator */}
-      <ModelLoadingIndicator 
-        isLoading={voiceState.isModelLoading} 
-        progress={voiceState.modelLoadingProgress} 
-      />
     </div>
   );
 }

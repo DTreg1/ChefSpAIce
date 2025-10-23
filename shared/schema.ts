@@ -35,14 +35,6 @@ export const users = pgTable("users", {
   foodsToAvoid: text("foods_to_avoid").array(),
   hasCompletedOnboarding: boolean("has_completed_onboarding").notNull().default(false),
   
-  // Voice settings
-  voiceSettings: jsonb("voice_settings").$type<{
-    selectedVoice?: string; // Voice name
-    speechRate?: number; // 0.1 to 10
-    speechPitch?: number; // 0 to 2
-    speechVolume?: number; // 0 to 1
-  }>().default({}),
-  
   // Storage locations as JSONB array (previously in storageLocations table)
   storageLocations: jsonb("storage_locations").$type<Array<{
     id: string;

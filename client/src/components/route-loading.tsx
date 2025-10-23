@@ -9,7 +9,6 @@ import {
   GridSkeleton,
   CardSkeleton
 } from "./skeletons";
-import { CookLoader } from "./loading-cook";
 
 export function RouteLoading() {
   const [location] = useLocation();
@@ -43,7 +42,8 @@ export function RouteLoading() {
   return (
     <div className="flex items-center justify-center min-h-[400px] w-full">
       <div className="flex flex-col items-center gap-3">
-        <CookLoader size="lg" textClassName="text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     </div>
   );

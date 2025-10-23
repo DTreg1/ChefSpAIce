@@ -72,9 +72,6 @@ export function ChatInput({
       setMessage(voiceTranscript);
     }
   }, [voiceTranscript, voiceState?.isVoiceMode]);
-  
-  // Check if voice input is broken (network error)
-  const isVoiceInputBroken = voiceState?.isVoiceMode && !voiceState?.isListening;
 
   const handleSend = () => {
     if ((message.trim() || attachments.length > 0) && !disabled && !isUploading) {
@@ -309,15 +306,9 @@ export function ChatInput({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={
-            isVoiceMode && isListening 
-              ? "Listening... speak now" 
-              : isVoiceMode
-              ? "Type your message (AI will speak response)..." 
-              : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"
-          }
+          placeholder={isVoiceMode ? "Speak or type your message..." : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"}
           className="resize-y text-sm min-h-[100px] max-h-[300px]"
-          disabled={disabled || (isVoiceMode && isListening)}
+          disabled={disabled || isVoiceMode}
           data-testid="input-chat-message"
         />
         
@@ -326,7 +317,7 @@ export function ChatInput({
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={(!message.trim() && attachments.length === 0) || disabled || isUploading || (isVoiceMode && isListening)}
+            disabled={(!message.trim() && attachments.length === 0) || disabled || isUploading || isVoiceMode}
             className="flex-shrink-0 rounded-full w-10 h-10"
             data-testid="button-send-message"
           >
@@ -334,43 +325,103 @@ export function ChatInput({
           </Button>
 
           {/* Voice Mode Toggle Button */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                size="icon"
-                variant={isVoiceMode ? "default" : "outline"}
-                className={`flex-shrink-0 rounded-full w-10 h-10 ${isListening ? 'animate-pulse' : ''}`}
-                onClick={onVoiceModeToggle}
-                disabled={disabled || isUploading}
-                data-testid="button-voice-mode"
-              >
-                {isVoiceMode ? (
-                  <MicOff className="w-5 h-5" />
-                ) : (
-                  <Mic className="w-5 h-5" />
-                )}
-              </Button>
-            </PopoverTrigger>
-            {!isVoiceMode && (
-              <PopoverContent className="w-80" side="top">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Voice Mode Tips</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Voice recognition may not work in the Replit editor due to browser limitations. 
-                    For the best experience:
-                  </p>
-                  <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
-                    <li>Open your app in a new browser tab</li>
-                    <li>Or use the app locally on your computer</li>
-                    <li>Make sure you're using Chrome or Edge</li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground">
-                    Text-to-speech for AI responses will still work!
-                  </p>
+          <Button
+            size="icon"
+            variant={isVoiceMode ? "default" : "outline"}
+            className={`flex-shrink-0 rounded-full w-10 h-10 ${isListening ? 'animate-pulse' : ''}`}
+            onClick={onVoiceModeToggle}
+            disabled={disabled || isUploading}
+            data-testid="button-voice-mode"
+          >
+            {isVoiceMode ? (
+              <MicOff className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
+          </Button>
+
+          {/* Voice Settings Button */}
+          {voices.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="flex-shrink-0 rounded-full w-10 h-10"
+                  data-testid="button-voice-settings"
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Voice Settings</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Configure text-to-speech preferences
+                    </p>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    {/* Voice Selection */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="voice">Voice</Label>
+                      <Select
+                        value={selectedVoice?.name || ""}
+                        onValueChange={(value: string) => {
+                          const voice = voices.find((v: SpeechSynthesisVoice) => v.name === value);
+                          if (voice && onVoiceChange) {
+                            onVoiceChange(voice);
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="voice">
+                          <SelectValue placeholder="Select a voice" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {voices.map((voice: SpeechSynthesisVoice) => (
+                            <SelectItem key={voice.name} value={voice.name}>
+                              {voice.name} ({voice.lang})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Speech Rate */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="speech-rate">
+                        Speed: {speechRate.toFixed(1)}x
+                      </Label>
+                      <Slider
+                        id="speech-rate"
+                        min={0.5}
+                        max={2}
+                        step={0.1}
+                        value={[speechRate]}
+                        onValueChange={([value]: number[]) => onSpeechRateChange?.(value)}
+                      />
+                    </div>
+
+                    {/* Speech Pitch */}
+                    <div className="grid gap-2">
+                      <Label htmlFor="speech-pitch">
+                        Pitch: {speechPitch.toFixed(1)}
+                      </Label>
+                      <Slider
+                        id="speech-pitch"
+                        min={0.5}
+                        max={2}
+                        step={0.1}
+                        value={[speechPitch]}
+                        onValueChange={([value]: number[]) => onSpeechPitchChange?.(value)}
+                      />
+                    </div>
+                  </div>
                 </div>
               </PopoverContent>
-            )}
-          </Popover>
+            </Popover>
+          )}
         </div>
       </div>
     </div>

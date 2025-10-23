@@ -1,7 +1,6 @@
 modules = ["nodejs-20", "web", "postgresql-16"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
-audio = true
 
 [nix]
 channel = "stable-24_05"

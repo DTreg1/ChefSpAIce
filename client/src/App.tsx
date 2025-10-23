@@ -9,7 +9,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ProgressiveDisclosureProvider } from "@/contexts/ProgressiveDisclosureContext";
-import { VoiceSettingsProvider } from "@/contexts/VoiceSettingsContext";
 import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { UnifiedAddFood } from "@/components/unified-add-food";
@@ -257,11 +256,9 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <ProgressiveDisclosureProvider>
-            <VoiceSettingsProvider>
-              <AppContent />
-              <Toaster />
-              <OfflineIndicator />
-            </VoiceSettingsProvider>
+            <AppContent />
+            <Toaster />
+            <OfflineIndicator />
           </ProgressiveDisclosureProvider>
         </TooltipProvider>
       </QueryClientProvider>
