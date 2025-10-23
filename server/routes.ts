@@ -188,6 +188,192 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auth Health Check Endpoint
+  app.get('/api/auth/health', async (req: any, res) => {
+    try {
+      const health: any = {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        environment: {
+          hasSessionSecret: !!process.env.SESSION_SECRET,
+          hasReplitDomains: !!process.env.REPLIT_DOMAINS,
+          hasDatabaseUrl: !!process.env.DATABASE_URL,
+          hasIssuerUrl: !!process.env.ISSUER_URL,
+          defaultIssuerUrl: process.env.ISSUER_URL || 'https://replit.com/oidc',
+          replId: !!process.env.REPL_ID
+        }
+      };
+
+      // Check session store
+      try {
+        // Import db and sql for raw queries
+        const { db } = await import('./db');
+        const { sql } = await import('drizzle-orm');
+        
+        const result = await db.execute<{ total_sessions: string; active_sessions: string }>(
+          sql`SELECT COUNT(*) as total_sessions,
+                     COUNT(CASE WHEN expire > NOW() THEN 1 END) as active_sessions
+              FROM sessions`
+        );
+        health.sessions = {
+          total: parseInt(result.rows[0].total_sessions),
+          active: parseInt(result.rows[0].active_sessions)
+        };
+      } catch (error) {
+        health.sessions = { error: 'Failed to query sessions' };
+        health.status = 'degraded';
+      }
+
+      // Check authenticated user (if any)
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        const user = req.user as any;
+        health.currentUser = {
+          authenticated: true,
+          hasAccessToken: !!user?.access_token,
+          hasRefreshToken: !!user?.refresh_token,
+          tokenExpiry: user?.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
+          isTokenExpired: user?.expires_at ? Math.floor(Date.now() / 1000) > user.expires_at : null,
+          userId: user?.claims?.sub,
+          email: user?.claims?.email
+        };
+      } else {
+        health.currentUser = { authenticated: false };
+      }
+
+      // Check registered domains
+      const domainsArray = process.env.REPLIT_DOMAINS?.split(',').map(d => d.trim()).filter(d => d) || [];
+      health.oauth = {
+        currentDomain: req.hostname,
+        registeredDomains: domainsArray,
+        callbackUrl: `https://${req.hostname}/api/callback`
+      };
+
+      res.json(health);
+    } catch (error) {
+      console.error('Health check error:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Health check failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Auth Session Diagnostics (Protected)
+  app.get('/api/auth/diagnostics', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = req.user as any;
+      
+      const diagnostics: any = {
+        user: {
+          id: userId,
+          email: user.claims?.email,
+          firstName: user.claims?.first_name,
+          lastName: user.claims?.last_name,
+          profileImageUrl: user.claims?.profile_image_url
+        },
+        session: {
+          hasAccessToken: !!user.access_token,
+          hasRefreshToken: !!user.refresh_token,
+          tokenExpiry: user.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
+          isTokenExpired: user.expires_at ? Math.floor(Date.now() / 1000) > user.expires_at : null,
+          tokenExpiresIn: user.expires_at ? Math.max(0, user.expires_at - Math.floor(Date.now() / 1000)) : null,
+          sessionId: req.sessionID,
+          sessionData: {
+            cookie: {
+              expires: req.session?.cookie?.expires,
+              maxAge: req.session?.cookie?.maxAge,
+              httpOnly: req.session?.cookie?.httpOnly,
+              secure: req.session?.cookie?.secure
+            }
+          }
+        }
+      };
+
+      // Get session from database
+      if (req.sessionID) {
+        try {
+          const { db } = await import('./db');
+          const { sql } = await import('drizzle-orm');
+          
+          const dbSession = await db.execute<{ sid: string; expire: string; sess: any }>(
+            sql`SELECT sid, expire, sess FROM sessions WHERE sid = ${req.sessionID}`
+          );
+          if (dbSession.rows.length > 0) {
+            diagnostics.sessionDatabase = {
+              expires: dbSession.rows[0].expire,
+              hasPassportData: !!dbSession.rows[0].sess?.passport,
+              hasUserData: !!dbSession.rows[0].sess?.passport?.user
+            };
+          }
+        } catch (error) {
+          diagnostics.sessionDatabase = { error: 'Failed to query session' };
+        }
+      }
+
+      res.json(diagnostics);
+    } catch (error) {
+      console.error('Diagnostics error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate diagnostics',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Force Token Refresh (Protected) - for testing
+  app.post('/api/auth/refresh-token', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (!user.refresh_token) {
+        return res.status(400).json({ 
+          error: 'No refresh token available',
+          message: 'User session lacks refresh token' 
+        });
+      }
+
+      // Import necessary functions from replitAuth
+      const { discovery } = await import('openid-client');
+      const config = await discovery(
+        new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
+        process.env.REPL_ID!
+      );
+      
+      const { refreshTokenGrant } = await import('openid-client');
+      try {
+        const tokenResponse = await refreshTokenGrant(config, user.refresh_token);
+        
+        // Update session with new tokens
+        user.claims = tokenResponse.claims();
+        user.access_token = tokenResponse.access_token;
+        user.refresh_token = tokenResponse.refresh_token;
+        user.expires_at = user.claims?.exp;
+        
+        res.json({
+          success: true,
+          message: 'Token refreshed successfully',
+          newExpiry: user.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
+          expiresIn: user.expires_at ? user.expires_at - Math.floor(Date.now() / 1000) : null
+        });
+      } catch (refreshError: any) {
+        const errorMessage = refreshError?.cause?.error || refreshError?.error || 'Unknown error';
+        res.status(400).json({
+          error: 'Token refresh failed',
+          message: errorMessage,
+          requiresReauth: errorMessage === 'invalid_grant'
+        });
+      }
+    } catch (error) {
+      console.error('Refresh token error:', error);
+      res.status(500).json({ 
+        error: 'Failed to refresh token',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Onboarding - get common items grouped by category
   app.get('/api/onboarding/common-items', async (req, res) => {
     try {
