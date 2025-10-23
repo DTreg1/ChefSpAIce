@@ -22,6 +22,7 @@ import {
   ScrollText,
   LogOut,
   BrainCircuit,
+  Activity,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
@@ -477,6 +478,21 @@ export function AppSidebar() {
                     >
                       <Settings className="w-4 h-4" />
                       <span className="flex-1">Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/analytics"}
+                  >
+                    <Link
+                      href="/analytics"
+                      data-testid="link-analytics"
+                      onClick={handleLinkClick}
+                    >
+                      <Activity className="w-4 h-4" />
+                      <span className="flex-1">Analytics</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
