@@ -10,11 +10,12 @@ import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
 import { FeedbackButtons } from "@/components/feedback-buttons";
 import { VoiceActivityIndicator } from "@/components/voice-activity-indicator";
+import { ModelLoadingIndicator } from "@/components/model-loading-indicator";
 import { Button } from "@/components/ui/button";
 import { ChefHat, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useVoiceConversation } from "@/hooks/useVoiceConversation";
+import { useVoiceConversation } from "@/hooks/useVoiceConversationWithWhisper";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
 import { ExpirationTicker } from "@/components/expiration-ticker";
 
@@ -429,5 +430,11 @@ export default function Chat() {
         />
       </div>
     </div>
+    
+    {/* Model Loading Indicator */}
+    <ModelLoadingIndicator 
+      isLoading={voiceState.isModelLoading} 
+      progress={voiceState.modelLoadingProgress} 
+    />
   );
 }
