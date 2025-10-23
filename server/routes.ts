@@ -322,15 +322,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Force Token Refresh (Protected) - for testing
-  app.post('/api/auth/refresh-token', isAuthenticated, async (req: any, res) => {
+  // Token Refresh Test (Protected) - for testing refresh mechanism
+  // This endpoint checks if token needs refresh WITHOUT auto-refreshing
+  app.get('/api/auth/token-status', async (req: any, res) => {
     try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ 
+          authenticated: false,
+          message: 'Not authenticated'
+        });
+      }
+
       const user = req.user as any;
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = user.expires_at ? now > user.expires_at : false;
+      
+      res.json({
+        authenticated: true,
+        hasAccessToken: !!user.access_token,
+        hasRefreshToken: !!user.refresh_token,
+        tokenExpiry: user.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
+        isTokenExpired: isExpired,
+        tokenExpiresIn: user.expires_at ? Math.max(0, user.expires_at - now) : null,
+        needsRefresh: isExpired,
+        userId: user.claims?.sub,
+        email: user.claims?.email
+      });
+    } catch (error) {
+      console.error('Token status error:', error);
+      res.status(500).json({ 
+        error: 'Failed to check token status',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+  
+  // Force Token Refresh (Protected) - manually trigger refresh
+  app.post('/api/auth/force-refresh', async (req: any, res) => {
+    try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ 
+          error: 'Not authenticated',
+          message: 'Authentication required'
+        });
+      }
+
+      const user = req.user as any;
+      
+      // Check current token state before refresh
+      const preRefreshState = {
+        tokenExpiry: user.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
+        isExpired: user.expires_at ? Math.floor(Date.now() / 1000) > user.expires_at : null
+      };
       
       if (!user.refresh_token) {
         return res.status(400).json({ 
           error: 'No refresh token available',
-          message: 'User session lacks refresh token' 
+          message: 'User session lacks refresh token',
+          preRefreshState
         });
       }
 
@@ -346,6 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const tokenResponse = await refreshTokenGrant(config, user.refresh_token);
         
         // Update session with new tokens
+        const oldExpiry = user.expires_at;
         user.claims = tokenResponse.claims();
         user.access_token = tokenResponse.access_token;
         user.refresh_token = tokenResponse.refresh_token;
@@ -354,19 +404,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           success: true,
           message: 'Token refreshed successfully',
-          newExpiry: user.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
-          expiresIn: user.expires_at ? user.expires_at - Math.floor(Date.now() / 1000) : null
+          preRefreshState,
+          postRefreshState: {
+            oldExpiry: oldExpiry ? new Date(oldExpiry * 1000).toISOString() : null,
+            newExpiry: user.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
+            expiresIn: user.expires_at ? user.expires_at - Math.floor(Date.now() / 1000) : null
+          }
         });
       } catch (refreshError: any) {
         const errorMessage = refreshError?.cause?.error || refreshError?.error || 'Unknown error';
+        console.error('Token refresh failed:', refreshError);
+        
         res.status(400).json({
           error: 'Token refresh failed',
           message: errorMessage,
-          requiresReauth: errorMessage === 'invalid_grant'
+          requiresReauth: errorMessage === 'invalid_grant',
+          preRefreshState
         });
       }
     } catch (error) {
-      console.error('Refresh token error:', error);
+      console.error('Force refresh error:', error);
       res.status(500).json({ 
         error: 'Failed to refresh token',
         message: error instanceof Error ? error.message : 'Unknown error'

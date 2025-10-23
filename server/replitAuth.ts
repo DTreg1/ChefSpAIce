@@ -111,6 +111,24 @@ export async function setupAuth(app: Express) {
     
     // Check if strategy already exists for this hostname
     if (!registeredDomains.has(hostname)) {
+      // Validate hostname against known domains from environment
+      const allowedDomains = process.env.REPLIT_DOMAINS?.split(',').map(d => d.trim()).filter(d => d) || [];
+      
+      // Check if this hostname is in the allowed list or is localhost for dev
+      const isAllowedDomain = hostname === 'localhost' || 
+                             allowedDomains.includes(hostname) ||
+                             hostname.endsWith('.replit.dev') || 
+                             hostname.endsWith('.replit.app');
+      
+      if (!isAllowedDomain) {
+        console.error(`[Auth] Rejected strategy registration for untrusted domain: ${hostname}`);
+        return res.status(400).json({
+          error: 'Invalid domain',
+          message: 'Authentication is not available for this domain',
+          domain: hostname
+        });
+      }
+      
       console.log(`[Auth] Dynamically registering strategy for new domain: ${hostname}`);
       
       // Register a new strategy for this domain
@@ -130,6 +148,10 @@ export async function setupAuth(app: Express) {
         console.log(`[Auth] Successfully registered strategy for: ${hostname}`);
       } catch (error) {
         console.error(`[Auth] Failed to register strategy for ${hostname}:`, error);
+        return res.status(500).json({
+          error: 'Strategy registration failed',
+          message: 'Unable to configure authentication for this domain'
+        });
       }
     }
     next();
@@ -142,9 +164,17 @@ export async function setupAuth(app: Express) {
     const strategyName = `replitauth:${req.hostname}`;
     console.log(`[Auth] Login attempt using strategy: ${strategyName}`);
     
-    // Store original URL for redirect after auth
+    // Store original URL for redirect after auth - validate it's a safe relative path
     if (req.query.redirect_to) {
-      (req.session as any).returnTo = req.query.redirect_to as string;
+      const redirectTo = req.query.redirect_to as string;
+      // Only allow relative paths starting with / and not containing //
+      if (redirectTo.startsWith('/') && !redirectTo.startsWith('//') && !redirectTo.includes('://')) {
+        // Further validate it's a path within our app
+        const safePaths = ['/pantry', '/recipes', '/meal-plans', '/shopping', '/chat', '/appliances', '/settings'];
+        if (redirectTo === '/' || safePaths.some(path => redirectTo.startsWith(path))) {
+          (req.session as any).returnTo = redirectTo;
+        }
+      }
     }
     
     passport.authenticate(strategyName, {
