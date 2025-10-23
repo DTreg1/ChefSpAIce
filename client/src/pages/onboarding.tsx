@@ -179,9 +179,6 @@ export default function Onboarding() {
       queryClient.invalidateQueries({ queryKey: ["/api/user/preferences"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      
-      // Clear the cached user preferences to ensure fresh data on redirect
-      localStorage.removeItem("cache:user:preferences");
 
       // Show feedback about food item creation
       if (data.failedItems.length > 0) {
