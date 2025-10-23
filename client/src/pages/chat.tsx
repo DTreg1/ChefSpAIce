@@ -228,7 +228,8 @@ export default function Chat() {
 
               // Auto-play voice response if the input was from voice
               if (wasVoiceInput && accumulated) {
-                // The VoiceControls component will handle auto-playing
+                // Use the speak function from voice conversation for consistent settings
+                speak(accumulated);
                 setWasVoiceInput(false); // Reset for next message
               }
 
@@ -385,6 +386,29 @@ export default function Chat() {
           )}
         </div>
       </div>
+
+      {/* Voice Activity Indicator */}
+      {voiceState.isVoiceMode && (
+        <div className="border-t border-border bg-background/90 backdrop-blur-sm p-3">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <VoiceActivityIndicator 
+              isListening={voiceState.isListening}
+              isSpeaking={voiceState.isSpeaking}
+              isProcessing={voiceState.isProcessing}
+            />
+            {voiceState.isSpeaking && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={stopSpeaking}
+                data-testid="button-stop-speaking"
+              >
+                Stop Speaking
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="shadow-2xl">
         <ChatInput
