@@ -484,11 +484,11 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={location === "/analytics"}
+                    isActive={location === "/analytics-dashboard"}
                   >
                     <Link
-                      href="/analytics"
-                      data-testid="link-analytics"
+                      href="/analytics-dashboard"
+                      data-testid="link-analytics-dashboard"
                       onClick={handleLinkClick}
                     >
                       <Activity className="w-4 h-4" />

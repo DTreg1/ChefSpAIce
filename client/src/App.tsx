@@ -66,7 +66,7 @@ function AuthenticatedRouter() {
         <Route path="/storage/:location" component={Storage} />
         <Route path="/food-groups/:category" component={FoodGroups} />
         <Route path="/food-groups" component={FoodGroups} />
-        <Route path="/analytics" component={AnalyticsDashboard} />
+        <Route path="/analytics-dashboard" component={AnalyticsDashboard} />
         <Route path="/feedback-analytics" component={FeedbackAnalytics} />
         <Route path="/feedback" component={FeedbackBoard} />
         <Route path="/donate" component={Donate} />
