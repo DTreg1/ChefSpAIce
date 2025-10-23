@@ -325,20 +325,43 @@ export function ChatInput({
           </Button>
 
           {/* Voice Mode Toggle Button */}
-          <Button
-            size="icon"
-            variant={isVoiceMode ? "default" : "outline"}
-            className={`flex-shrink-0 rounded-full w-10 h-10 ${isListening ? 'animate-pulse' : ''}`}
-            onClick={onVoiceModeToggle}
-            disabled={disabled || isUploading}
-            data-testid="button-voice-mode"
-          >
-            {isVoiceMode ? (
-              <MicOff className="w-5 h-5" />
-            ) : (
-              <Mic className="w-5 h-5" />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="icon"
+                variant={isVoiceMode ? "default" : "outline"}
+                className={`flex-shrink-0 rounded-full w-10 h-10 ${isListening ? 'animate-pulse' : ''}`}
+                onClick={onVoiceModeToggle}
+                disabled={disabled || isUploading}
+                data-testid="button-voice-mode"
+              >
+                {isVoiceMode ? (
+                  <MicOff className="w-5 h-5" />
+                ) : (
+                  <Mic className="w-5 h-5" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            {!isVoiceMode && (
+              <PopoverContent className="w-80" side="top">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Voice Mode Tips</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Voice recognition may not work in the Replit editor due to browser limitations. 
+                    For the best experience:
+                  </p>
+                  <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                    <li>Open your app in a new browser tab</li>
+                    <li>Or use the app locally on your computer</li>
+                    <li>Make sure you're using Chrome or Edge</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground">
+                    Text-to-speech for AI responses will still work!
+                  </p>
+                </div>
+              </PopoverContent>
             )}
-          </Button>
+          </Popover>
 
           {/* Voice Settings Button */}
           {voices.length > 0 && (

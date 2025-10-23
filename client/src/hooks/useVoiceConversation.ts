@@ -146,6 +146,21 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       
+      if (event.error === 'network') {
+        // Network error - common in Replit environment
+        toast({
+          title: "Voice recognition unavailable",
+          description: "Voice input isn't available in this environment. Try opening your app in a new browser tab or using it locally.",
+          variant: "destructive",
+        });
+        setVoiceState(prev => ({ 
+          ...prev, 
+          isVoiceMode: false, 
+          isListening: false 
+        }));
+        return;
+      }
+      
       if (event.error === 'no-speech') {
         // This is normal, just restart if in voice mode
         if (voiceState.isVoiceMode && !isStoppingRef.current) {
