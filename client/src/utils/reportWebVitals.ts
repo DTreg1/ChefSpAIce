@@ -1,19 +1,21 @@
 import { onCLS, onFCP, onLCP, onTTFB, onINP, type Metric } from 'web-vitals';
 
 function sendToAnalytics(metric: Metric) {
-  const body = JSON.stringify({
+  const data = {
     name: metric.name,
     value: metric.value,
     rating: metric.rating,
     delta: metric.delta,
     id: metric.id,
-  });
+  };
 
+  // navigator.sendBeacon requires a Blob with proper content type
   if (navigator.sendBeacon) {
-    navigator.sendBeacon('/api/analytics', body);
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    navigator.sendBeacon('/api/analytics', blob);
   } else {
     fetch('/api/analytics', {
-      body,
+      body: JSON.stringify(data),
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

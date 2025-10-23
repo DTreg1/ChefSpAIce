@@ -4682,6 +4682,14 @@ Respond ONLY with a valid JSON object:
       const userAgent = req.headers["user-agent"] || null;
       const url = req.headers["referer"] || req.headers["origin"] || null;
 
+      // Log the incoming data for debugging
+      console.log("Analytics POST received:", {
+        body: req.body,
+        userId,
+        userAgent: userAgent?.substring(0, 50),
+        url
+      });
+
       // Validate using Zod schema
       const validated = insertWebVitalSchema.parse({
         ...req.body,
@@ -4697,6 +4705,18 @@ Respond ONLY with a valid JSON object:
       res.status(200).json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        // Re-capture variables for error logging
+        const errorUserId = req.user?.claims?.sub || null;
+        const errorUserAgent = req.headers["user-agent"] || null;
+        const errorUrl = req.headers["referer"] || req.headers["origin"] || null;
+        
+        console.error("Web Vitals validation error:", {
+          body: req.body,
+          errors: error.errors,
+          userId: errorUserId,
+          userAgent: errorUserAgent,
+          url: errorUrl
+        });
         return res
           .status(400)
           .json({ error: "Invalid web vital data", details: error.errors });
