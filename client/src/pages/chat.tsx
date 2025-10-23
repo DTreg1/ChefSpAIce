@@ -259,6 +259,9 @@ export default function Chat() {
             <p className="text-sm text-muted-foreground">
               Get recipe suggestions and manage your inventory
             </p>
+            <div>
+              <ExpirationTicker />
+            </div>
           </div>
           <div className="flex gap-2">
             {messages.length > 0 && (
@@ -277,9 +280,6 @@ export default function Chat() {
               onRecipeGenerated={handleRecipeGenerated}
             />
           </div>
-        </div>
-        <div>
-          <ExpirationTicker />
         </div>
       </div>
 
