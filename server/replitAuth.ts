@@ -142,12 +142,23 @@ export async function setupAuth(app: Express) {
     const strategyName = `replitauth:${req.hostname}`;
     console.log(`[Auth] Login attempt using strategy: ${strategyName}`);
     
+    // Store original URL for redirect after auth
+    if (req.query.redirect_to) {
+      (req.session as any).returnTo = req.query.redirect_to as string;
+    }
+    
     passport.authenticate(strategyName, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
     }, (err: any, user: any, info: any) => {
       if (err) {
         console.error(`[Auth] Authentication error for ${strategyName}:`, err);
+        console.error(`[Auth] Error details:`, {
+          message: err.message,
+          stack: err.stack,
+          info: info
+        });
+        
         // Fallback to first available strategy if current one fails
         const fallbackDomain = Array.from(registeredDomains)[0];
         if (fallbackDomain && fallbackDomain !== req.hostname) {
@@ -157,6 +168,14 @@ export async function setupAuth(app: Express) {
             scope: ["openid", "email", "profile", "offline_access"],
           })(req, res, next);
         }
+        
+        // If no fallback available, return error
+        return res.status(500).json({
+          error: "Authentication configuration error",
+          message: "Unable to authenticate with current domain configuration",
+          domain: req.hostname,
+          availableDomains: Array.from(registeredDomains)
+        });
       }
       return passport.authenticate(strategyName, {
         prompt: "login consent",
@@ -170,8 +189,38 @@ export async function setupAuth(app: Express) {
     console.log(`[Auth] Callback attempt using strategy: ${strategyName}`);
     
     passport.authenticate(strategyName, {
-      successReturnToOrRedirect: "/",
+      successReturnToOrRedirect: (req.session as any)?.returnTo || "/",
       failureRedirect: "/api/login",
+      failureMessage: true
+    }, (err: any, user: any, info: any) => {
+      if (err) {
+        console.error(`[Auth] Callback error for ${strategyName}:`, err);
+        console.error(`[Auth] Callback error details:`, {
+          message: err.message,
+          stack: err.stack,
+          info: info
+        });
+        return res.redirect('/api/login');
+      }
+      
+      if (!user) {
+        console.error(`[Auth] No user returned in callback for ${strategyName}`);
+        return res.redirect('/api/login');
+      }
+      
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error(`[Auth] Login error after callback:`, loginErr);
+          return res.redirect('/api/login');
+        }
+        
+        // Clear the returnTo from session after successful login
+        const returnTo = (req.session as any)?.returnTo || '/';
+        delete (req.session as any).returnTo;
+        
+        console.log(`[Auth] Successful authentication for user ${user.claims?.sub}, redirecting to ${returnTo}`);
+        return res.redirect(returnTo);
+      });
     })(req, res, next);
   });
 
