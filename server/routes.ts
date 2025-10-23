@@ -357,7 +357,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Force Token Refresh (Protected) - manually trigger refresh
+  // Map to track active token refreshes per user (shared with replitAuth.ts)
+  const activeManualRefreshes = new Map<string, { promise: Promise<any>, timestamp: number }>();
+  
+  // Clean up stale refresh promises (older than 30 seconds)
+  const cleanupStaleManualRefreshes = () => {
+    const now = Date.now();
+    const staleTimeout = 30000; // 30 seconds
+    
+    Array.from(activeManualRefreshes.entries()).forEach(([key, value]) => {
+      if (now - value.timestamp > staleTimeout) {
+        activeManualRefreshes.delete(key);
+      }
+    });
+  };
+
+  // Force Token Refresh (Protected) - manually trigger refresh with concurrent protection
   app.post('/api/auth/force-refresh', async (req: any, res) => {
     try {
       if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -383,15 +398,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Import necessary functions from replitAuth
-      const { discovery } = await import('openid-client');
-      const config = await discovery(
-        new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-        process.env.REPL_ID!
-      );
+      // Create a unique key for this user's refresh operation
+      const userId = user.claims?.sub || 'unknown';
+      const refreshKey = `${userId}-${user.refresh_token.substring(0, 10)}`;
       
-      const { refreshTokenGrant } = await import('openid-client');
-      try {
+      // Clean up stale refreshes periodically
+      cleanupStaleManualRefreshes();
+      
+      // Check if a refresh is already in progress for this user
+      const existingRefresh = activeManualRefreshes.get(refreshKey);
+      
+      if (existingRefresh) {
+        // A refresh is already in progress, wait for it
+        console.log(`[Auth] Concurrent refresh detected for user ${userId}, waiting for existing refresh...`);
+        
+        try {
+          await existingRefresh.promise;
+          // The existing refresh updated the session, so return current state
+          return res.json({
+            success: true,
+            message: 'Token already being refreshed (used existing refresh)',
+            preRefreshState,
+            postRefreshState: {
+              newExpiry: user.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
+              expiresIn: user.expires_at ? user.expires_at - Math.floor(Date.now() / 1000) : null
+            },
+            wasQueued: true
+          });
+        } catch (error) {
+          // The existing refresh failed, try our own
+          console.log(`[Auth] Existing refresh failed for user ${userId}, attempting new refresh`);
+        }
+      }
+
+      // Start a new refresh operation
+      const refreshPromise = (async () => {
+        // Import necessary functions from replitAuth
+        const { discovery } = await import('openid-client');
+        const config = await discovery(
+          new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
+          process.env.REPL_ID!
+        );
+        
+        const { refreshTokenGrant } = await import('openid-client');
         const tokenResponse = await refreshTokenGrant(config, user.refresh_token);
         
         // Update session with new tokens
@@ -401,15 +450,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user.refresh_token = tokenResponse.refresh_token;
         user.expires_at = user.claims?.exp;
         
+        return {
+          oldExpiry,
+          newExpiry: user.expires_at
+        };
+      })();
+
+      // Store the promise so concurrent requests can wait for it
+      activeManualRefreshes.set(refreshKey, { 
+        promise: refreshPromise, 
+        timestamp: Date.now() 
+      });
+      
+      // Clean up after completion
+      refreshPromise
+        .then(() => {
+          activeManualRefreshes.delete(refreshKey);
+        })
+        .catch(() => {
+          // Keep failed refreshes briefly to prevent retry storms
+          setTimeout(() => {
+            activeManualRefreshes.delete(refreshKey);
+          }, 5000);
+        });
+
+      try {
+        const result = await refreshPromise;
+        
         res.json({
           success: true,
           message: 'Token refreshed successfully',
           preRefreshState,
           postRefreshState: {
-            oldExpiry: oldExpiry ? new Date(oldExpiry * 1000).toISOString() : null,
-            newExpiry: user.expires_at ? new Date(user.expires_at * 1000).toISOString() : null,
-            expiresIn: user.expires_at ? user.expires_at - Math.floor(Date.now() / 1000) : null
-          }
+            oldExpiry: result.oldExpiry ? new Date(result.oldExpiry * 1000).toISOString() : null,
+            newExpiry: result.newExpiry ? new Date(result.newExpiry * 1000).toISOString() : null,
+            expiresIn: result.newExpiry ? result.newExpiry - Math.floor(Date.now() / 1000) : null
+          },
+          wasQueued: false
         });
       } catch (refreshError: any) {
         const errorMessage = refreshError?.cause?.error || refreshError?.error || 'Unknown error';
