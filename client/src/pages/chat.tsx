@@ -391,6 +391,17 @@ export default function Chat() {
           onSend={handleSendMessage}
           disabled={isStreaming}
           showFeedbackWidget={true}
+          voiceState={voiceState}
+          voiceTranscript={voiceState.currentTranscript}
+          onVoiceModeToggle={toggleVoiceMode}
+          onStopSpeaking={stopSpeaking}
+          voices={voices}
+          selectedVoice={selectedVoice}
+          onVoiceChange={setSelectedVoice}
+          speechRate={speechRate}
+          onSpeechRateChange={setSpeechRate}
+          speechPitch={speechPitch}
+          onSpeechPitchChange={setSpeechPitch}
         />
       </div>
     </div>
