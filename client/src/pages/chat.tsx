@@ -37,6 +37,27 @@ export default function Chat() {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
+  // Voice conversation setup
+  const {
+    voiceState,
+    toggleVoiceMode,
+    stopSpeaking,
+    speak,
+    voices,
+    selectedVoice,
+    setSelectedVoice,
+    speechRate,
+    setSpeechRate,
+    speechPitch,
+    setSpeechPitch,
+  } = useVoiceConversation({
+    onSendMessage: (text: string) => {
+      handleSendMessage(text, undefined, true);
+    },
+    autoSend: true,
+    silenceTimeout: 2000,
+  });
+
   const { data: chatHistory } = useQuery<ChatMessageType[]>({
     queryKey: ["/api/chat/messages"],
   });
