@@ -130,9 +130,13 @@ export function InlineProgressive({
   triggerContent,
   testId
 }: InlineProgressiveProps) {
-  const { expanded, toggle } = persist 
+  const { expanded, setExpanded } = persist 
     ? useProgressiveSection(id, defaultExpanded)
-    : { expanded: defaultExpanded, toggle: () => {} };
+    : { expanded: defaultExpanded, setExpanded: () => {} };
+
+  const toggle = () => {
+    setExpanded(!expanded);
+  };
 
   return (
     <Collapsible
