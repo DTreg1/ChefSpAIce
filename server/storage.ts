@@ -40,6 +40,10 @@ import {
   type InsertCommonFoodItem,
   type CookingTerm,
   type InsertCookingTerm,
+  type InsertAnalyticsEvent,
+  type AnalyticsEvent,
+  type InsertUserSession,
+  type UserSession,
   users,
   pushTokens,
   appliances,
@@ -58,9 +62,11 @@ import {
   webVitals,
   commonFoodItems,
   cookingTerms,
+  analyticsEvents,
+  userSessions,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, desc, gte, lte } from "drizzle-orm";
 import {
   matchIngredientWithInventory,
   type IngredientMatch,
@@ -3159,6 +3165,227 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error searching cooking terms:", error);
       throw new Error("Failed to search cooking terms");
+    }
+  }
+
+  // Analytics Events Methods
+  async recordAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+    try {
+      const [result] = await db
+        .insert(analyticsEvents)
+        .values(event)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error recording analytics event:", error);
+      throw new Error("Failed to record analytics event");
+    }
+  }
+
+  async recordAnalyticsEventsBatch(events: InsertAnalyticsEvent[]): Promise<AnalyticsEvent[]> {
+    try {
+      if (events.length === 0) return [];
+      return db
+        .insert(analyticsEvents)
+        .values(events)
+        .returning();
+    } catch (error) {
+      console.error("Error recording analytics events batch:", error);
+      throw new Error("Failed to record analytics events batch");
+    }
+  }
+
+  async getAnalyticsEvents(
+    userId?: string,
+    filters?: {
+      eventType?: string;
+      eventCategory?: string;
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    }
+  ): Promise<AnalyticsEvent[]> {
+    try {
+      let query = db.select().from(analyticsEvents);
+      
+      const conditions = [];
+      if (userId) conditions.push(eq(analyticsEvents.userId, userId));
+      if (filters?.eventType) conditions.push(eq(analyticsEvents.eventType, filters.eventType));
+      if (filters?.eventCategory) conditions.push(eq(analyticsEvents.eventCategory, filters.eventCategory));
+      if (filters?.startDate) conditions.push(gte(analyticsEvents.timestamp, filters.startDate));
+      if (filters?.endDate) conditions.push(lte(analyticsEvents.timestamp, filters.endDate));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+      
+      return query.orderBy(desc(analyticsEvents.timestamp));
+    } catch (error) {
+      console.error("Error getting analytics events:", error);
+      throw new Error("Failed to get analytics events");
+    }
+  }
+
+  // User Sessions Methods
+  async createUserSession(session: InsertUserSession): Promise<UserSession> {
+    try {
+      const [result] = await db
+        .insert(userSessions)
+        .values(session)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating user session:", error);
+      throw new Error("Failed to create user session");
+    }
+  }
+
+  async updateUserSession(sessionId: string, update: Partial<InsertUserSession>): Promise<UserSession> {
+    try {
+      const [result] = await db
+        .update(userSessions)
+        .set(update)
+        .where(eq(userSessions.sessionId, sessionId))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Session not found");
+      }
+      return result;
+    } catch (error) {
+      console.error("Error updating user session:", error);
+      throw new Error("Failed to update user session");
+    }
+  }
+
+  async getUserSessions(
+    userId?: string,
+    filters?: {
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    }
+  ): Promise<UserSession[]> {
+    try {
+      let query = db.select().from(userSessions);
+      
+      const conditions = [];
+      if (userId) conditions.push(eq(userSessions.userId, userId));
+      if (filters?.startDate) conditions.push(gte(userSessions.startTime, filters.startDate));
+      if (filters?.endDate) conditions.push(lte(userSessions.startTime, filters.endDate));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+      
+      return query.orderBy(desc(userSessions.startTime));
+    } catch (error) {
+      console.error("Error getting user sessions:", error);
+      throw new Error("Failed to get user sessions");
+    }
+  }
+
+  async getAnalyticsStats(
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    totalEvents: number;
+    uniqueUsers: number;
+    totalSessions: number;
+    avgSessionDuration: number;
+    topEvents: Array<{ eventType: string; count: number }>;
+    topCategories: Array<{ eventCategory: string; count: number }>;
+    conversionRate: number;
+  }> {
+    try {
+      const conditions = [];
+      if (startDate) conditions.push(gte(analyticsEvents.timestamp, startDate));
+      if (endDate) conditions.push(lte(analyticsEvents.timestamp, endDate));
+      
+      // Get total events
+      const [totalEventsResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(analyticsEvents)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+      
+      // Get unique users
+      const [uniqueUsersResult] = await db
+        .select({ count: sql<number>`count(distinct ${analyticsEvents.userId})` })
+        .from(analyticsEvents)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+      
+      // Get total sessions and avg duration
+      const sessionConditions = [];
+      if (startDate) sessionConditions.push(gte(userSessions.startTime, startDate));
+      if (endDate) sessionConditions.push(lte(userSessions.startTime, endDate));
+      
+      const [sessionStats] = await db
+        .select({
+          totalSessions: sql<number>`count(*)`,
+          avgDuration: sql<number>`avg(${userSessions.duration})`,
+        })
+        .from(userSessions)
+        .where(sessionConditions.length > 0 ? and(...sessionConditions) : undefined);
+      
+      // Get top events
+      const topEvents = await db
+        .select({
+          eventType: analyticsEvents.eventType,
+          count: sql<number>`count(*)`,
+        })
+        .from(analyticsEvents)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .groupBy(analyticsEvents.eventType)
+        .orderBy(desc(sql`count(*)`))
+        .limit(10);
+      
+      // Get top categories
+      const topCategories = await db
+        .select({
+          eventCategory: analyticsEvents.eventCategory,
+          count: sql<number>`count(*)`,
+        })
+        .from(analyticsEvents)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .groupBy(analyticsEvents.eventCategory)
+        .orderBy(desc(sql`count(*)`))
+        .limit(10);
+      
+      // Calculate conversion rate (completed goals / total sessions)
+      const [goalsResult] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(analyticsEvents)
+        .where(
+          and(
+            eq(analyticsEvents.eventType, 'goal_completion'),
+            ...(conditions.length > 0 ? conditions : [])
+          )
+        );
+      
+      const conversionRate = sessionStats.totalSessions > 0
+        ? (goalsResult.count / sessionStats.totalSessions) * 100
+        : 0;
+      
+      return {
+        totalEvents: totalEventsResult.count || 0,
+        uniqueUsers: uniqueUsersResult.count || 0,
+        totalSessions: sessionStats.totalSessions || 0,
+        avgSessionDuration: sessionStats.avgDuration || 0,
+        topEvents: topEvents || [],
+        topCategories: topCategories || [],
+        conversionRate,
+      };
+    } catch (error) {
+      console.error("Error getting analytics stats:", error);
+      throw new Error("Failed to get analytics stats");
     }
   }
 }

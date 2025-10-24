@@ -3,7 +3,7 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { validateQuery, analyticsRateLimit } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { insertWebVitalSchema } from "@shared/schema";
+import { insertWebVitalSchema, insertAnalyticsEventSchema, insertUserSessionSchema } from "@shared/schema";
 
 const router = Router();
 
@@ -67,6 +67,97 @@ router.post("/", analyticsRateLimit, asyncHandler(async (req: any, res) => {
 
   // Always return success to not break client analytics
   res.status(200).json({ success: true });
+}));
+
+// Analytics Events endpoint - batch processing
+router.post("/events", analyticsRateLimit, asyncHandler(async (req: any, res) => {
+  const userId = req.user?.claims?.sub || null;
+  const { events } = req.body;
+  
+  if (!events || !Array.isArray(events)) {
+    return res.status(400).json({ error: "Invalid events format" });
+  }
+  
+  try {
+    // Add userId to each event
+    const eventsWithUser = events.map(event => ({
+      ...event,
+      userId,
+    }));
+    
+    // Batch insert events
+    await storage.recordAnalyticsEventsBatch(eventsWithUser);
+    
+    res.status(200).json({ success: true, count: events.length });
+  } catch (error) {
+    console.error("Failed to record analytics events:", error);
+    res.status(500).json({ error: "Failed to record events" });
+  }
+}));
+
+// Session start endpoint
+router.post("/sessions/start", asyncHandler(async (req: any, res) => {
+  const userId = req.user?.claims?.sub || null;
+  const sessionData = {
+    ...req.body,
+    userId,
+  };
+  
+  try {
+    const session = await storage.createUserSession(sessionData);
+    res.json({ success: true, sessionId: session.sessionId });
+  } catch (error) {
+    console.error("Failed to create session:", error);
+    res.status(500).json({ error: "Failed to create session" });
+  }
+}));
+
+// Session end endpoint
+router.post("/sessions/end", asyncHandler(async (req: any, res) => {
+  const { sessionId, exitPage } = req.body;
+  
+  if (!sessionId) {
+    return res.status(400).json({ error: "Missing sessionId" });
+  }
+  
+  try {
+    const endTime = new Date();
+    
+    // Get session to calculate duration
+    const sessions = await storage.getUserSessions(undefined, { limit: 1 });
+    const session = sessions.find(s => s.sessionId === sessionId);
+    
+    if (session && session.startTime) {
+      const duration = Math.floor((endTime.getTime() - new Date(session.startTime).getTime()) / 1000);
+      
+      await storage.updateUserSession(sessionId, {
+        endTime,
+        exitPage,
+        duration,
+      });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to end session:", error);
+    res.status(500).json({ error: "Failed to end session" });
+  }
+}));
+
+// Get Analytics Dashboard Stats
+router.get("/dashboard", asyncHandler(async (req: any, res) => {
+  const { startDate, endDate } = req.query;
+  
+  const start = startDate ? new Date(startDate as string) : undefined;
+  const end = endDate ? new Date(endDate as string) : undefined;
+  
+  try {
+    const stats = await storage.getAnalyticsStats(start, end);
+    res.json(stats);
+  } catch (error) {
+    console.error("Failed to get analytics stats:", error);
+    res.status(500).json({ error: "Failed to get analytics stats" });
+  }
 }));
 
 // Get Web Vitals statistics
