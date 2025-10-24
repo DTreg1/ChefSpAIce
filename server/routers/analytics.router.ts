@@ -8,7 +8,7 @@ import { insertWebVitalSchema } from "@shared/schema";
 const router = Router();
 
 // Web Vitals Analytics endpoint
-router.post("/analytics", analyticsRateLimit, asyncHandler(async (req: any, res) => {
+router.post("/", analyticsRateLimit, asyncHandler(async (req: any, res) => {
   // Get user ID if authenticated, otherwise null for anonymous tracking
   const userId = req.user?.claims?.sub || null;
 
@@ -41,7 +41,7 @@ router.post("/analytics", analyticsRateLimit, asyncHandler(async (req: any, res)
 
 // Get Web Vitals statistics
 router.get(
-  "/analytics/stats",
+  "/stats",
   asyncHandler(async (req: any, res) => {
     const { metric, days } = req.query;
     
@@ -64,7 +64,7 @@ router.get(
 
 // Get API Health Metrics
 router.get(
-  "/analytics/api-health",
+  "/api-health",
   asyncHandler(async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     const { days } = req.query;
