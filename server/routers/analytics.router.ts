@@ -79,16 +79,36 @@ router.post("/events", analyticsRateLimit, asyncHandler(async (req: any, res) =>
   }
   
   try {
-    // Add userId to each event
-    const eventsWithUser = events.map(event => ({
-      ...event,
-      userId,
-    }));
+    // Validate and prepare each event with server-side data
+    const validatedEvents = [];
     
-    // Batch insert events
-    await storage.recordAnalyticsEventsBatch(eventsWithUser);
+    for (const event of events) {
+      try {
+        // Validate each event using the schema
+        const validated = insertAnalyticsEventSchema.parse({
+          ...event,
+          userId,
+          // Server-side timestamp will be set by the database default
+        });
+        validatedEvents.push(validated);
+      } catch (validationError) {
+        // Log validation errors but continue processing valid events
+        console.warn("Event validation error:", validationError);
+      }
+    }
     
-    res.status(200).json({ success: true, count: events.length });
+    if (validatedEvents.length === 0) {
+      return res.status(400).json({ error: "No valid events to process" });
+    }
+    
+    // Batch insert validated events
+    await storage.recordAnalyticsEventsBatch(validatedEvents);
+    
+    res.status(200).json({ 
+      success: true, 
+      processed: validatedEvents.length, 
+      skipped: events.length - validatedEvents.length 
+    });
   } catch (error) {
     console.error("Failed to record analytics events:", error);
     res.status(500).json({ error: "Failed to record events" });
@@ -114,6 +134,7 @@ router.post("/sessions/start", asyncHandler(async (req: any, res) => {
 
 // Session end endpoint
 router.post("/sessions/end", asyncHandler(async (req: any, res) => {
+  const userId = req.user?.claims?.sub || null;
   const { sessionId, exitPage } = req.body;
   
   if (!sessionId) {
@@ -123,13 +144,19 @@ router.post("/sessions/end", asyncHandler(async (req: any, res) => {
   try {
     const endTime = new Date();
     
-    // Get session to calculate duration
-    const sessions = await storage.getUserSessions(undefined, { limit: 1 });
+    // Get session to calculate duration - scoped to current user for security
+    const sessions = await storage.getUserSessions(userId, { limit: 100 });
     const session = sessions.find(s => s.sessionId === sessionId);
     
-    if (session && session.startTime) {
+    if (!session) {
+      // Session not found or doesn't belong to this user
+      return res.status(403).json({ error: "Session not found or access denied" });
+    }
+    
+    if (session.startTime) {
       const duration = Math.floor((endTime.getTime() - new Date(session.startTime).getTime()) / 1000);
       
+      // Only update sessions that belong to the current user
       await storage.updateUserSession(sessionId, {
         endTime,
         exitPage,

@@ -45,6 +45,7 @@ import {
   type AnalyticsEvent,
   type InsertUserSession,
   type UserSession,
+  insertAnalyticsEventSchema,
   users,
   pushTokens,
   appliances,
@@ -407,6 +408,44 @@ export interface IStorage {
   updateCookingTerm(id: string, term: Partial<InsertCookingTerm>): Promise<CookingTerm>;
   deleteCookingTerm(id: string): Promise<void>;
   searchCookingTerms(searchText: string): Promise<CookingTerm[]>;
+
+  // Analytics Events
+  recordAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+  recordAnalyticsEventsBatch(events: InsertAnalyticsEvent[]): Promise<AnalyticsEvent[]>;
+  getAnalyticsEvents(
+    userId?: string,
+    filters?: {
+      eventType?: string;
+      eventCategory?: string;
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    }
+  ): Promise<AnalyticsEvent[]>;
+
+  // User Sessions
+  createUserSession(session: InsertUserSession): Promise<UserSession>;
+  updateUserSession(sessionId: string, update: Partial<InsertUserSession>): Promise<UserSession>;
+  getUserSessions(
+    userId?: string,
+    filters?: {
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    }
+  ): Promise<UserSession[]>;
+  getAnalyticsStats(
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    totalEvents: number;
+    uniqueUsers: number;
+    totalSessions: number;
+    avgSessionDuration: number;
+    topEvents: Array<{ eventType: string; count: number }>;
+    topCategories: Array<{ eventCategory: string; count: number }>;
+    conversionRate: number;
+  }>;
 }
 
 // Simple cache interface
@@ -3186,9 +3225,36 @@ export class DatabaseStorage implements IStorage {
   async recordAnalyticsEventsBatch(events: InsertAnalyticsEvent[]): Promise<AnalyticsEvent[]> {
     try {
       if (events.length === 0) return [];
-      return db
+      
+      // Validate each event and set server-side timestamps
+      const validatedEvents = [];
+      const currentTimestamp = new Date();
+      
+      for (const event of events) {
+        try {
+          // Validate event using the schema
+          const validated = insertAnalyticsEventSchema.parse(event);
+          
+          // Add server-side timestamp (will override any client timestamp)
+          validatedEvents.push({
+            ...validated,
+            timestamp: currentTimestamp
+          });
+        } catch (validationError) {
+          // Log validation errors but continue with valid events
+          console.warn("Event validation error in batch:", validationError);
+        }
+      }
+      
+      if (validatedEvents.length === 0) {
+        console.warn("No valid events to insert after validation");
+        return [];
+      }
+      
+      // Batch insert validated events
+      return await db
         .insert(analyticsEvents)
-        .values(events)
+        .values(validatedEvents)
         .returning();
     } catch (error) {
       console.error("Error recording analytics events batch:", error);
