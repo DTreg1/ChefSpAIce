@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { isAuthenticated } from "../replitAuth";
 import { validateQuery, daysQuerySchema } from "../middleware";
-import { getFoodNutritionData } from "../utils/nutritionCalculator";
+import { extractNutrition, aggregateNutrition, calculateCategoryStats } from "../utils/nutritionCalculator";
 
 const router = Router();
 
@@ -35,11 +35,11 @@ router.get(
       const itemsWithNutrition = items.filter((item: any) => item.usdaData);
       if (itemsWithNutrition.length > 0) {
         const totals = itemsWithNutrition.reduce((acc: any, item: any) => {
-          const nutrition = getFoodNutritionData(item.usdaData);
+          const nutrition = extractNutrition(item.usdaData);
           return {
             calories: acc.calories + (nutrition.calories || 0),
             protein: acc.protein + (nutrition.protein || 0),
-            carbs: acc.carbs + (nutrition.carbohydrates || 0),
+            carbs: acc.carbs + (nutrition.carbs || 0),
             fat: acc.fat + (nutrition.fat || 0),
           };
         }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
@@ -78,7 +78,7 @@ router.get(
       
       if (minCalories || maxCalories) {
         items = items.filter((item: any) => {
-          const nutrition = getFoodNutritionData(item.usdaData);
+          const nutrition = extractNutrition(item.usdaData);
           const calories = nutrition.calories || 0;
           
           if (minCalories && calories < Number(minCalories)) return false;
@@ -90,14 +90,14 @@ router.get(
       // Sort items
       if (sortBy === "calories") {
         items.sort((a: any, b: any) => {
-          const aNutrition = getFoodNutritionData(a.usdaData);
-          const bNutrition = getFoodNutritionData(b.usdaData);
+          const aNutrition = extractNutrition(a.usdaData);
+          const bNutrition = extractNutrition(b.usdaData);
           return (bNutrition.calories || 0) - (aNutrition.calories || 0);
         });
       } else if (sortBy === "protein") {
         items.sort((a: any, b: any) => {
-          const aNutrition = getFoodNutritionData(a.usdaData);
-          const bNutrition = getFoodNutritionData(b.usdaData);
+          const aNutrition = extractNutrition(a.usdaData);
+          const bNutrition = extractNutrition(b.usdaData);
           return (bNutrition.protein || 0) - (aNutrition.protein || 0);
         });
       } else {
@@ -106,7 +106,7 @@ router.get(
       
       // Add nutrition summary to each item
       const itemsWithNutrition = items.map((item: any) => {
-        const nutrition = getFoodNutritionData(item.usdaData);
+        const nutrition = extractNutrition(item.usdaData);
         return {
           ...item,
           nutritionSummary: {
