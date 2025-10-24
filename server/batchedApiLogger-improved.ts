@@ -30,6 +30,7 @@ class BatchedApiLogger {
   private isFlushInProgress = false;
   private droppedLogCount = 0;
   private lastDropWarningTime = 0;
+  private queuedLogKeys = new Set<string>(); // Track unique logs
 
   constructor(config?: Partial<LoggerConfig>) {
     this.config = { ...this.config, ...config };
@@ -43,13 +44,13 @@ class BatchedApiLogger {
   }
 
   async logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>) {
-    // Create unique key for each API call to prevent duplicate drops
-    // Include timestamp or a unique ID to ensure each call is tracked
-    const callId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const logKey = `${userId}-${log.apiName}-${log.endpoint}-${callId}`;
+    // Create deterministic key to prevent duplicates
+    const logKey = `${userId}-${log.apiName}-${log.endpoint}`;
     
-    // Note: We're not checking queuedLogKeys here anymore since each call should be unique
-    // The deduplication was too aggressive and was dropping legitimate logs
+    // Skip if already queued
+    if (this.queuedLogKeys.has(logKey)) {
+      return;
+    }
 
     // Apply back-pressure: reject if queue is full
     if (this.queue.length >= this.config.maxQueueSize) {
@@ -77,6 +78,7 @@ class BatchedApiLogger {
       timestamp: Date.now(),
       retryCount: 0,
     });
+    this.queuedLogKeys.add(logKey);
 
     // Check if we should flush immediately
     if (this.queue.length >= this.config.batchSize) {
@@ -100,9 +102,9 @@ class BatchedApiLogger {
       this.queue = this.queue.filter(item => {
         const age = now - item.timestamp;
         if (age > this.config.maxLogAge) {
-          console.warn(
-            `[BatchedApiLogger] Dropping expired log: ${item.userId}-${item.log.apiName}-${item.log.endpoint}`
-          );
+          const logKey = `${item.userId}-${item.log.apiName}-${item.log.endpoint}`;
+          this.queuedLogKeys.delete(logKey);
+          console.warn(`[BatchedApiLogger] Dropping expired log: ${logKey}`);
           return false;
         }
         return true;
@@ -149,17 +151,22 @@ class BatchedApiLogger {
 
       // Separate successful and failed logs
       const toRetry: QueuedLog[] = [];
+      const successKeys: string[] = [];
       
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           const { success, item, retry } = result.value as any;
+          const logKey = `${item.userId}-${item.log.apiName}-${item.log.endpoint}`;
           
-          if (!success && retry) {
+          if (success) {
+            successKeys.push(logKey);
+          } else if (retry) {
             // Increment retry count and add back to queue
             toRetry.push({ ...item, retryCount: item.retryCount + 1 });
+          } else {
+            // Drop the log
+            successKeys.push(logKey); // Remove from tracking
           }
-          // If successful or no retry, the log is done - no tracking cleanup needed
-          // since we're no longer using queuedLogKeys for deduplication
         }
       });
 
@@ -167,11 +174,13 @@ class BatchedApiLogger {
       const remaining = this.queue.slice(batchSize);
       this.queue = [...toRetry, ...remaining];
       
+      // Clean up tracking for processed logs
+      successKeys.forEach(key => this.queuedLogKeys.delete(key));
+      
       // Log stats if there were issues
       if (toRetry.length > 0) {
-        const successCount = batch.length - toRetry.length;
         console.log(
-          `[BatchedApiLogger] Flush completed: ${successCount} succeeded, ` +
+          `[BatchedApiLogger] Flush completed: ${successKeys.length} succeeded, ` +
           `${toRetry.length} will retry, ${remaining.length} remaining`
         );
       }

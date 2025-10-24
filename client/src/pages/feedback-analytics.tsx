@@ -57,8 +57,32 @@ export default function FeedbackAnalyticsPage() {
 
   if (analyticsLoading || feedbackLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex flex-col h-full">
+        {/* Header skeleton */}
+        <div className="border-b border-border p-4 bg-gradient-to-r from-lime-950/50 to-green-50/30 dark:from-lime-50/20 dark:to-green-950/20">
+          <div className="max-w-7xl mx-auto animate-pulse">
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-2"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64"></div>
+          </div>
+        </div>
+        
+        {/* Content skeleton */}
+        <div className="flex-1 p-6">
+          <div className="max-w-7xl mx-auto space-y-6 animate-pulse">
+            {/* Metrics cards skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              ))}
+            </div>
+            
+            {/* Charts skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="h-80 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div className="h-80 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

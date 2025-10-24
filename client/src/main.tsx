@@ -9,12 +9,11 @@ createRoot(document.getElementById("root")!).render(<App />);
 // Register service worker for offline functionality
 if (import.meta.env.PROD) {
   registerServiceWorker();
+  // Report Web Vitals only in production
+  reportWebVitals();
 }
 
-// Report Web Vitals - enable in both dev and prod for testing
-reportWebVitals();
-
-// Also log Web Vitals to console in development
+// Log Web Vitals to console in development (without sending to server)
 if (import.meta.env.DEV) {
   logWebVitalsToConsole();
 }
