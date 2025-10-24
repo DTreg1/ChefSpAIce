@@ -149,7 +149,7 @@ export interface IStorage {
   searchBarcodeProducts(query: string): Promise<BarcodeProduct[]>;
 
   // Food Items (user-scoped)
-  getFoodItems(userId: string, storageLocationId?: string): Promise<FoodItem[]>;
+  getFoodItems(userId: string, storageLocationId?: string, limit?: number): Promise<FoodItem[]>;
   getFoodItemsPaginated(
     userId: string,
     page?: number,
@@ -176,7 +176,7 @@ export interface IStorage {
   getFoodCategories(userId: string): Promise<string[]>;
 
   // Chat Messages (user-scoped)
-  getChatMessages(userId: string): Promise<ChatMessage[]>;
+  getChatMessages(userId: string, limit?: number): Promise<ChatMessage[]>;
   getChatMessagesPaginated(
     userId: string,
     page?: number,
@@ -193,7 +193,7 @@ export interface IStorage {
   ): Promise<ChatMessage>;
 
   // Recipes (user-scoped)
-  getRecipes(userId: string): Promise<Recipe[]>;
+  getRecipes(userId: string, limit?: number): Promise<Recipe[]>;
   getRecipesPaginated(
     userId: string,
     page?: number,
@@ -278,7 +278,7 @@ export interface IStorage {
   clearOldCache(daysOld: number): Promise<void>;
 
   // Shopping List Items (user-scoped)
-  getShoppingListItems(userId: string): Promise<ShoppingListItem[]>;
+  getShoppingListItems(userId: string, limit?: number): Promise<ShoppingListItem[]>;
   getGroupedShoppingListItems(userId: string): Promise<{
     items: ShoppingListItem[];
     grouped: Record<string, ShoppingListItem[]>;
@@ -1226,10 +1226,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Food Items
+  // Food Items - Optimized with default limit to prevent memory issues
   async getFoodItems(
     userId: string,
     storageLocationId?: string,
+    limit: number = 500, // Default limit to prevent loading thousands of items
   ): Promise<FoodItem[]> {
     try {
       if (storageLocationId) {
@@ -1241,9 +1242,16 @@ export class DatabaseStorage implements IStorage {
               eq(foodItems.storageLocationId, storageLocationId),
               eq(foodItems.userId, userId),
             ),
-          );
+          )
+          .orderBy(foodItems.expirationDate) // Prioritize expiring items
+          .limit(limit);
       }
-      return db.select().from(foodItems).where(eq(foodItems.userId, userId));
+      return db
+        .select()
+        .from(foodItems)
+        .where(eq(foodItems.userId, userId))
+        .orderBy(foodItems.expirationDate) // Prioritize expiring items
+        .limit(limit);
     } catch (error) {
       console.error(`Error getting food items for user ${userId}:`, error);
       throw new Error("Failed to retrieve food items");
@@ -1393,14 +1401,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Chat Messages
-  async getChatMessages(userId: string): Promise<ChatMessage[]> {
+  // Chat Messages - Optimized with default limit to prevent memory issues
+  async getChatMessages(userId: string, limit: number = 100): Promise<ChatMessage[]> {
     try {
       return db
         .select()
         .from(chatMessages)
         .where(eq(chatMessages.userId, userId))
-        .orderBy(chatMessages.timestamp);
+        .orderBy(sql`${chatMessages.timestamp} DESC`) // Most recent first
+        .limit(limit);
     } catch (error) {
       console.error(`Error getting chat messages for user ${userId}:`, error);
       throw new Error("Failed to retrieve chat messages");
@@ -1529,14 +1538,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Recipes
-  async getRecipes(userId: string): Promise<Recipe[]> {
+  // Recipes - Optimized with default limit to prevent memory issues
+  async getRecipes(userId: string, limit: number = 200): Promise<Recipe[]> {
     try {
       return db
         .select()
         .from(recipes)
         .where(eq(recipes.userId, userId))
-        .orderBy(sql`${recipes.createdAt} DESC`);
+        .orderBy(sql`${recipes.createdAt} DESC`)
+        .limit(limit);
     } catch (error) {
       console.error(`Error getting recipes for user ${userId}:`, error);
       throw new Error("Failed to retrieve recipes");
@@ -2074,14 +2084,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Shopping List Methods
-  async getShoppingListItems(userId: string): Promise<ShoppingListItem[]> {
+  // Shopping List Methods - Optimized with default limit
+  async getShoppingListItems(userId: string, limit: number = 200): Promise<ShoppingListItem[]> {
     await this.ensureDefaultDataForUser(userId);
     const items = await db
       .select()
       .from(shoppingListItems)
       .where(eq(shoppingListItems.userId, userId))
-      .orderBy(shoppingListItems.createdAt);
+      .orderBy(shoppingListItems.createdAt)
+      .limit(limit);
     return items;
   }
 
