@@ -55,7 +55,7 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
     }
   }, [item]);
 
-  const getStorageBadgeColor = (location: string) => {
+  const getStorageBadgeColor = useMemo(() => {
     const colors: Record<string, string> = {
       refrigerator: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-800",
       fridge: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-800", // Keep for backwards compatibility
@@ -63,19 +63,23 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
       pantry: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-800",
       counter: "bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400 border-green-200 dark:border-green-800",
     };
-    return colors[location.toLowerCase()] || "bg-gray-500/10 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border-gray-200 dark:border-gray-800";
-  };
+    return (location: string) => {
+      return colors[location.toLowerCase()] || "bg-gray-500/10 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400 border-gray-200 dark:border-gray-800";
+    };
+  }, []);
 
-  const getExpiryStatus = (date?: string | null) => {
-    if (!date) return null;
-    const expiry = new Date(date);
-    const now = new Date();
-    const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const getExpiryStatus = useMemo(() => {
+    return (date?: string | null) => {
+      if (!date) return null;
+      const expiry = new Date(date);
+      const now = new Date();
+      const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (daysUntil < 0) return { color: "bg-red-500", text: "Expired" };
-    if (daysUntil <= 3) return { color: "bg-amber-500", text: `${daysUntil}d left` };
-    return { color: "bg-green-500", text: `${daysUntil}d left` };
-  };
+      if (daysUntil < 0) return { color: "bg-red-500", text: "Expired" };
+      if (daysUntil <= 3) return { color: "bg-amber-500", text: `${daysUntil}d left` };
+      return { color: "bg-green-500", text: `${daysUntil}d left` };
+    };
+  }, []);
 
   // Mutation for quick quantity update
   const updateQuantityMutation = useMutation({
@@ -298,11 +302,6 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
 
               {/* Enhanced quantity section with inline editing */}
               <div className="flex items-center gap-2 mb-3">
-                {item.fcdId && (
-                  <span className="text-xs text-muted-foreground font-mono" data-testid={`text-fcd-${item.id}`}>
-                    FCD: {item.fcdId}
-                  </span>
-                )}
                 
                 {/* Inline quantity editing */}
                 <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1">
