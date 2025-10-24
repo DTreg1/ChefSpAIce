@@ -100,7 +100,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
       50 // Check up to 50 recipes
     );
     
-    if (!recipesData.recipes || recipesData.recipes.length === 0) {
+    if (!recipesData.items || recipesData.items.length === 0) {
       return [];
     }
     
@@ -110,7 +110,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
     );
     
     // Filter recipes that can be made with available ingredients
-    const suggestedRecipes = recipesData.recipes
+    const suggestedRecipes = recipesData.items
       .filter(recipe => {
         // Check if we have all required ingredients
         if (!recipe.ingredients || !Array.isArray(recipe.ingredients)) {
