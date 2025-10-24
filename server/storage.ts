@@ -1,4 +1,5 @@
 // Referenced from blueprint:javascript_log_in_with_replit - Added user operations and user-scoped data
+import { parallelQueries, batchInsert, QueryCache } from "./utils/batchQueries";
 import {
   type User,
   type UpsertUser,
@@ -1604,11 +1605,11 @@ export class DatabaseStorage implements IStorage {
     userId: string,
   ): Promise<Array<Recipe & { ingredientMatches: IngredientMatch[] }>> {
     try {
-      // Fetch all recipes for the user
-      const userRecipes = await this.getRecipes(userId);
-
-      // Fetch current inventory
-      const inventory = await this.getFoodItems(userId);
+      // Fetch recipes and inventory in parallel for better performance
+      const [userRecipes, inventory] = await parallelQueries([
+        this.getRecipes(userId),
+        this.getFoodItems(userId)
+      ]);
 
       // Enrich each recipe with real-time inventory matching
       return userRecipes.map((recipe) => {
@@ -3310,65 +3311,76 @@ export class DatabaseStorage implements IStorage {
       if (startDate) conditions.push(gte(analyticsEvents.timestamp, startDate));
       if (endDate) conditions.push(lte(analyticsEvents.timestamp, endDate));
       
-      // Get total events
-      const [totalEventsResult] = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(analyticsEvents)
-        .where(conditions.length > 0 ? and(...conditions) : undefined);
-      
-      // Get unique users
-      const [uniqueUsersResult] = await db
-        .select({ count: sql<number>`count(distinct ${analyticsEvents.userId})` })
-        .from(analyticsEvents)
-        .where(conditions.length > 0 ? and(...conditions) : undefined);
-      
-      // Get total sessions and avg duration
       const sessionConditions = [];
       if (startDate) sessionConditions.push(gte(userSessions.startTime, startDate));
       if (endDate) sessionConditions.push(lte(userSessions.startTime, endDate));
       
-      const [sessionStats] = await db
-        .select({
+      // Execute all queries in parallel for better performance
+      const [
+        totalEventsResults,
+        uniqueUsersResults,
+        sessionStatsResults,
+        topEventsResults,
+        topCategoriesResults,
+        goalsResults
+      ] = await parallelQueries([
+        // Total events query
+        db.select({ count: sql<number>`count(*)` })
+          .from(analyticsEvents)
+          .where(conditions.length > 0 ? and(...conditions) : undefined),
+        
+        // Unique users query
+        db.select({ count: sql<number>`count(distinct ${analyticsEvents.userId})` })
+          .from(analyticsEvents)
+          .where(conditions.length > 0 ? and(...conditions) : undefined),
+        
+        // Session stats query
+        db.select({
           totalSessions: sql<number>`count(*)`,
           avgDuration: sql<number>`avg(${userSessions.duration})`,
         })
-        .from(userSessions)
-        .where(sessionConditions.length > 0 ? and(...sessionConditions) : undefined);
-      
-      // Get top events
-      const topEvents = await db
-        .select({
+          .from(userSessions)
+          .where(sessionConditions.length > 0 ? and(...sessionConditions) : undefined),
+        
+        // Top events query
+        db.select({
           eventType: analyticsEvents.eventType,
           count: sql<number>`count(*)`,
         })
-        .from(analyticsEvents)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .groupBy(analyticsEvents.eventType)
-        .orderBy(desc(sql`count(*)`))
-        .limit(10);
-      
-      // Get top categories
-      const topCategories = await db
-        .select({
+          .from(analyticsEvents)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .groupBy(analyticsEvents.eventType)
+          .orderBy(desc(sql`count(*)`))
+          .limit(10),
+        
+        // Top categories query
+        db.select({
           eventCategory: analyticsEvents.eventCategory,
           count: sql<number>`count(*)`,
         })
-        .from(analyticsEvents)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .groupBy(analyticsEvents.eventCategory)
-        .orderBy(desc(sql`count(*)`))
-        .limit(10);
-      
-      // Calculate conversion rate (completed goals / total sessions)
-      const [goalsResult] = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(analyticsEvents)
-        .where(
-          and(
-            eq(analyticsEvents.eventType, 'goal_completion'),
-            ...(conditions.length > 0 ? conditions : [])
+          .from(analyticsEvents)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .groupBy(analyticsEvents.eventCategory)
+          .orderBy(desc(sql`count(*)`))
+          .limit(10),
+        
+        // Goals query for conversion rate
+        db.select({ count: sql<number>`count(*)` })
+          .from(analyticsEvents)
+          .where(
+            and(
+              eq(analyticsEvents.eventType, 'goal_completion'),
+              ...(conditions.length > 0 ? conditions : [])
+            )
           )
-        );
+      ]);
+      
+      const [totalEventsResult] = totalEventsResults;
+      const [uniqueUsersResult] = uniqueUsersResults;
+      const [sessionStats] = sessionStatsResults;
+      const topEvents = topEventsResults;
+      const topCategories = topCategoriesResults;
+      const [goalsResult] = goalsResults;
       
       const conversionRate = sessionStats.totalSessions > 0
         ? (goalsResult.count / sessionStats.totalSessions) * 100
