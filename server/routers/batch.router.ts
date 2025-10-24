@@ -7,7 +7,7 @@ const router = Router();
 
 /**
  * Batch endpoint to handle multiple API requests in a single HTTP call
- * This reduces network overhead and improves performance
+ * This reduces network overhead and improves performance with parallel processing
  */
 router.post("/batch", isAuthenticated, asyncHandler(async (req: any, res) => {
   const { requests } = req.body;
@@ -24,29 +24,31 @@ router.post("/batch", isAuthenticated, asyncHandler(async (req: any, res) => {
   if (requests.length > 20) {
     return res.status(400).json({ error: "Batch size exceeds maximum limit of 20" });
   }
-  const responses: any[] = [];
   
-  // Process each request in the batch
-  for (const request of requests) {
+  // Process all requests in parallel for better performance
+  const responsePromises = requests.map(async (request) => {
     try {
       const result = await processRequest(request, userId);
-      responses.push({ data: result });
+      return { data: result };
     } catch (error: any) {
-      responses.push({ error: error.message || "Request failed" });
+      return { error: error.message || "Request failed" };
     }
-  }
+  });
+  
+  // Wait for all requests to complete
+  const responses = await Promise.all(responsePromises);
   
   res.json({ responses });
 }));
 
 /**
  * Process individual request within a batch
+ * Optimized to use efficient queries and avoid loading unnecessary data
  */
 async function processRequest(request: any, userId?: string): Promise<any> {
   const { endpoint, method = 'GET', params, body } = request;
   
   // Map endpoints to storage methods
-  // This is a simplified version - in production you'd have more comprehensive mapping
   
   // Food items endpoints
   if (endpoint === '/api/food-items' && method === 'GET') {
@@ -54,8 +56,8 @@ async function processRequest(request: any, userId?: string): Promise<any> {
       userId!,
       params?.page || 1,
       params?.limit || 20,
-      params?.search,
-      params?.category
+      params?.storageLocationId,
+      params?.sortBy
     );
   }
   
@@ -73,16 +75,64 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   }
   
   if (endpoint === '/api/recipes/suggested' && method === 'GET') {
-    const foodItems = await storage.getFoodItems(userId!);
-    const recipes = await storage.getRecipes(userId!);
-    // Return recipes that can be made with available ingredients
-    return recipes.filter(recipe => 
-      recipe.ingredients.every(ingredient => 
-        foodItems.some(item => 
-          item.name.toLowerCase().includes(ingredient.toLowerCase())
-        )
-      )
+    // Optimized version - get suggested recipes directly from the database
+    // This avoids loading all recipes and food items into memory
+    const limit = params?.limit || 10;
+    
+    // Get user's available ingredients with categories
+    const foodItems = await storage.getFoodItemsPaginated(
+      userId!,
+      1,
+      100, // Get up to 100 items for matching
+      undefined,
+      'name'
     );
+    
+    if (!foodItems.items || foodItems.items.length === 0) {
+      return []; // No ingredients, no recipes can be made
+    }
+    
+    // Get recipes and check which can be made with available ingredients
+    // Only fetch a reasonable number of recipes to check
+    const recipesData = await storage.getRecipesPaginated(
+      userId!,
+      1,
+      50 // Check up to 50 recipes
+    );
+    
+    if (!recipesData.recipes || recipesData.recipes.length === 0) {
+      return [];
+    }
+    
+    // Create a set of available ingredient names for faster lookup
+    const availableIngredients = new Set(
+      foodItems.items.map(item => item.name.toLowerCase())
+    );
+    
+    // Filter recipes that can be made with available ingredients
+    const suggestedRecipes = recipesData.recipes
+      .filter(recipe => {
+        // Check if we have all required ingredients
+        if (!recipe.ingredients || !Array.isArray(recipe.ingredients)) {
+          return false;
+        }
+        
+        return recipe.ingredients.every(ingredient => {
+          const ingredientName = typeof ingredient === 'string' 
+            ? ingredient.toLowerCase() 
+            : ingredient.name?.toLowerCase();
+          
+          if (!ingredientName) return false;
+          
+          // Check if we have this ingredient (partial match)
+          return Array.from(availableIngredients).some(available => 
+            available.includes(ingredientName) || ingredientName.includes(available)
+          );
+        });
+      })
+      .slice(0, limit); // Limit results
+    
+    return suggestedRecipes;
   }
   
   // Meal planning endpoints
@@ -116,6 +166,25 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   if (endpoint === '/api/analytics/api-health' && method === 'GET') {
     return storage.getApiUsageStats(userId!, '', params?.days || 7);
+  }
+  
+  // Chat messages endpoint
+  if (endpoint === '/api/chat/messages' && method === 'GET') {
+    const messages = await storage.getChatMessages(userId!, params?.limit || 50);
+    return messages;
+  }
+  
+  // Storage locations endpoint  
+  if (endpoint === '/api/storage-locations' && method === 'GET') {
+    return storage.getStorageLocations(userId!);
+  }
+  
+  // Common food items endpoint
+  if (endpoint === '/api/common-food-items' && method === 'GET') {
+    if (params?.category) {
+      return storage.getCommonFoodItemsByCategory(params.category, params?.limit || 50);
+    }
+    return storage.getAllCommonFoodItems();
   }
   
   throw new Error(`Unsupported batch endpoint: ${method} ${endpoint}`);
