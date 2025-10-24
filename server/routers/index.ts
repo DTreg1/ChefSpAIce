@@ -15,6 +15,7 @@ import feedbackRouter from "./feedback.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
+import { storage } from "../storage";
 
 export async function registerModularRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware first
@@ -32,7 +33,7 @@ export async function registerModularRoutes(app: Express): Promise<Server> {
   app.use("/api/analytics", analyticsRouter); // Analytics endpoints
   
   // Register special endpoints
-  const seedEndpoint = createSeedEndpoint();
+  const seedEndpoint = createSeedEndpoint(storage);
   app.use("/api", seedEndpoint);
   
   // Health check endpoint

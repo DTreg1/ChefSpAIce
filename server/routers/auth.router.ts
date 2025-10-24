@@ -8,7 +8,7 @@ import type { StorageLocation } from "@shared/schema";
 const router = Router();
 
 // Get authenticated user
-router.get("/auth/user", isAuthenticated, asyncHandler(async (req: any, res) => {
+router.get("/user", isAuthenticated, asyncHandler(async (req: any, res) => {
   const userId = req.user.claims.sub;
   const user = await storage.getUser(userId);
   res.json(user);
@@ -54,7 +54,7 @@ router.post("/user/reset", isAuthenticated, asyncHandler(async (req: any, res) =
 }));
 
 // Health check
-router.get("/auth/health", asyncHandler(async (req: any, res) => {
+router.get("/health", asyncHandler(async (req: any, res) => {
   const health: any = {
     status: "healthy",
     timestamp: new Date().toISOString(),
@@ -125,7 +125,7 @@ router.get("/auth/health", asyncHandler(async (req: any, res) => {
 }));
 
 // Session diagnostics
-router.get("/auth/diagnostics", isAuthenticated, asyncHandler(async (req: any, res) => {
+router.get("/diagnostics", isAuthenticated, asyncHandler(async (req: any, res) => {
   const userId = req.user.claims.sub;
   const user = req.user as any;
 
@@ -190,7 +190,7 @@ router.get("/auth/diagnostics", isAuthenticated, asyncHandler(async (req: any, r
 }));
 
 // Token status
-router.get("/auth/token-status", asyncHandler(async (req: any, res) => {
+router.get("/token-status", asyncHandler(async (req: any, res) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     return res.status(401).json({
       authenticated: false,
@@ -238,7 +238,7 @@ const cleanupStaleManualRefreshes = () => {
 };
 
 // Force token refresh
-router.post("/auth/force-refresh", asyncHandler(async (req: any, res) => {
+router.post("/force-refresh", asyncHandler(async (req: any, res) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     return res.status(401).json({
       error: "Not authenticated",

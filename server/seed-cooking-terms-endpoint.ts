@@ -1,7 +1,7 @@
 // API endpoint to seed initial cooking terms data
 // This endpoint should be called once to populate the database with initial cooking terms
 
-import { Request, Response } from "express";
+import { Router, Request, Response } from "express";
 import { initialCookingTerms } from "./seed-cooking-terms";
 import type { IStorage } from "./storage";
 
@@ -39,7 +39,9 @@ export async function seedCookingTerms(storage: IStorage) {
 }
 
 export function createSeedEndpoint(storage: IStorage) {
-  return async (req: Request, res: Response) => {
+  const router = Router();
+  
+  router.post("/seed-cooking-terms", async (req: Request, res: Response) => {
     const result = await seedCookingTerms(storage);
     
     if (result.success) {
@@ -47,5 +49,7 @@ export function createSeedEndpoint(storage: IStorage) {
     } else {
       res.status(400).json(result);
     }
-  };
+  });
+  
+  return router;
 }
