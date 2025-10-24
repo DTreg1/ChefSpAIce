@@ -1,31 +1,37 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query";
-import { CacheStorage } from "@/lib/cacheStorage";
-import { useEffect } from "react";
+import { getCacheConfigForQuery } from "@/lib/queryClient";
 
-type CachedQueryOptions<TData> = {
-  cacheKey: string;
-  expiryMs?: number;
-} & UseQueryOptions<TData>;
-
-export function useCachedQuery<TData>({
-  cacheKey,
-  expiryMs,
-  ...queryOptions
-}: CachedQueryOptions<TData>): UseQueryResult<TData> {
-  const cachedData = CacheStorage.get<TData>(cacheKey, expiryMs);
+/**
+ * A hook that wraps useQuery with intelligent cache configuration based on data type.
+ * Uses the cache configs defined in queryClient.ts to determine staleTime and refetch behavior.
+ */
+export function useCachedQuery<
+  TQueryFnData = unknown,
+  TError = Error,
+  TData = TQueryFnData,
+  TQueryKey extends ReadonlyArray<unknown> = readonly unknown[]
+>(
+  queryOptions: UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>
+): UseQueryResult<TData, TError> {
+  // Get cache config based on the query key
+  const cacheConfig = queryOptions.queryKey 
+    ? getCacheConfigForQuery([...queryOptions.queryKey] as unknown[])
+    : {};
   
-  const query = useQuery<TData>({
+  // Merge the intelligent cache config with any provided options
+  const mergedOptions: UseQueryOptions<TQueryFnData, TError, TData, TQueryKey> = {
     ...queryOptions,
-    initialData: cachedData || undefined,
-  });
-
-  useEffect(() => {
-    if (query.data && query.isSuccess) {
-      CacheStorage.set(cacheKey, query.data, expiryMs);
-    } else if (query.isError) {
-      CacheStorage.remove(cacheKey);
-    }
-  }, [query.data, query.isSuccess, query.isError, cacheKey, expiryMs]);
-
-  return query;
+    // Apply cache config defaults, but allow explicit overrides to take precedence
+    staleTime: queryOptions.staleTime !== undefined 
+      ? queryOptions.staleTime 
+      : cacheConfig.staleTime,
+    refetchOnWindowFocus: queryOptions.refetchOnWindowFocus !== undefined
+      ? queryOptions.refetchOnWindowFocus
+      : cacheConfig.refetchOnWindowFocus,
+    refetchInterval: queryOptions.refetchInterval !== undefined
+      ? queryOptions.refetchInterval
+      : cacheConfig.refetchInterval,
+  };
+  
+  return useQuery<TQueryFnData, TError, TData, TQueryKey>(mergedOptions);
 }
