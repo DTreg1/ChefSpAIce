@@ -14,7 +14,7 @@ import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { UnifiedAddFood } from "@/components/unified-add-food";
 import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
 import { FeedbackWidget } from "@/components/feedback-widget";
-import { AnimatedBackground } from "@/components/animated-background";
+import { LazyAnimatedBackground } from "@/components/lazy/LazyAnimatedBackground";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { RouteLoading } from "@/components/route-loading";
 import { useAuth } from "@/hooks/useAuth";
@@ -190,7 +190,7 @@ function AppContent() {
     <>
       {/* Only show animated background on chat/home page */}
       {(location === "/" || location === "/chat") && (
-        <AnimatedBackground
+        <LazyAnimatedBackground
           variant="both"
           gradientType="primary"
           particleCount={2000}
