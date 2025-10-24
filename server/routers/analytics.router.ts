@@ -16,26 +16,56 @@ router.post("/", analyticsRateLimit, asyncHandler(async (req: any, res) => {
   const userAgent = req.headers["user-agent"] || null;
   const url = req.headers["referer"] || req.headers["origin"] || null;
 
-  // Log the incoming data for debugging
-  console.log("Analytics POST received:", {
-    body: req.body,
-    userId,
-    userAgent: userAgent?.substring(0, 50),
-    url
-  });
+  // Log the incoming data for debugging in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Analytics POST received:", {
+      body: req.body,
+      userId,
+      userAgent: userAgent?.substring(0, 50),
+      url
+    });
+  }
 
-  // Validate using Zod schema
-  const validated = insertWebVitalSchema.parse({
-    ...req.body,
-    userId,
-    metricId: req.body.id, // Map 'id' from web-vitals to 'metricId'
-    navigationType: req.body.navigationType || null,
-    userAgent,
-    url,
-  });
+  try {
+    // Validate using Zod schema
+    const validated = insertWebVitalSchema.parse({
+      ...req.body,
+      userId,
+      metricId: req.body.id, // Map 'id' from web-vitals to 'metricId'
+      navigationType: req.body.navigationType || null,
+      userAgent,
+      url,
+    });
 
-  await storage.recordWebVital(validated);
+    // Record with retry logic
+    let retries = 3;
+    let lastError;
+    
+    while (retries > 0) {
+      try {
+        await storage.recordWebVital(validated);
+        break; // Success, exit retry loop
+      } catch (error) {
+        lastError = error;
+        retries--;
+        if (retries > 0) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, 3 - retries) * 100));
+        }
+      }
+    }
+    
+    if (retries === 0 && lastError) {
+      // Log error but don't fail the request
+      console.error("Failed to record web vital after retries:", lastError);
+    }
+    
+  } catch (validationError) {
+    // Log validation errors but don't fail the request
+    console.warn("Analytics validation error:", validationError);
+  }
 
+  // Always return success to not break client analytics
   res.status(200).json({ success: true });
 }));
 
@@ -81,7 +111,10 @@ router.get(
       daysNum = parsed;
     }
     
-    const stats = await storage.getApiUsageStats(userId, daysNum);
+    // Get stats for all APIs if no userId, or user-specific stats
+    const stats = userId 
+      ? await storage.getApiUsageStats(userId, '', daysNum)  // Empty string for all APIs
+      : { totalCalls: 0, successfulCalls: 0, failedCalls: 0 };
     
     // Calculate success rate
     const successRate = stats.totalCalls > 0

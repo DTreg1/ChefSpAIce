@@ -12,6 +12,7 @@ import adminRouter from "./admin.router";
 import analyticsRouter from "./analytics.router";
 import nutritionRouter from "./nutrition.router";
 import feedbackRouter from "./feedback.router";
+import batchRouter from "./batch.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -31,6 +32,7 @@ export async function registerModularRoutes(app: Express): Promise<Server> {
   app.use("/api", feedbackRouter);    // Handles user feedback
   app.use("/api/admin", adminRouter); // Admin endpoints
   app.use("/api/analytics", analyticsRouter); // Analytics endpoints
+  app.use("/api", batchRouter);       // Batch API for optimized requests
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);

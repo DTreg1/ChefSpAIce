@@ -222,6 +222,8 @@ export interface IStorage {
     userId: string,
     startDate?: string,
     endDate?: string,
+    mealType?: string,
+    date?: string,
   ): Promise<MealPlan[]>;
   getMealPlan(userId: string, id: string): Promise<MealPlan | undefined>;
   createMealPlan(
@@ -269,6 +271,12 @@ export interface IStorage {
 
   // Shopping List Items (user-scoped)
   getShoppingListItems(userId: string): Promise<ShoppingListItem[]>;
+  getGroupedShoppingListItems(userId: string): Promise<{
+    items: ShoppingListItem[];
+    grouped: Record<string, ShoppingListItem[]>;
+    totalItems: number;
+    checkedItems: number;
+  }>;
   createShoppingListItem(
     userId: string,
     item: Omit<InsertShoppingListItem, "userId">,
@@ -394,10 +402,61 @@ export interface IStorage {
   searchCookingTerms(searchText: string): Promise<CookingTerm[]>;
 }
 
+// Simple cache interface
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number; // Time to live in milliseconds
+}
+
 export class DatabaseStorage implements IStorage {
   private userInitialized = new Set<string>();
   private initializationPromises = new Map<string, Promise<void>>();
   private initializationLock = new Map<string, boolean>(); // Mutex for atomic operations
+  
+  // Cache for frequently accessed data
+  private cache = new Map<string, CacheEntry<any>>();
+  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly USER_PREFS_TTL = 10 * 60 * 1000; // 10 minutes for user preferences
+  
+  // Cache management methods
+  private getCached<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    
+    const now = Date.now();
+    if (now - entry.timestamp > entry.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.data as T;
+  }
+  
+  private setCached<T>(key: string, data: T, ttl: number = this.DEFAULT_CACHE_TTL): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl
+    });
+  }
+  
+  private invalidateCache(pattern?: string): void {
+    if (!pattern) {
+      this.cache.clear();
+      return;
+    }
+    
+    // Remove all cache entries that match the pattern
+    const keysToDelete: string[] = [];
+    this.cache.forEach((_, key) => {
+      if (key.includes(pattern)) {
+        keysToDelete.push(key);
+      }
+    });
+    
+    keysToDelete.forEach(key => this.cache.delete(key));
+  }
 
   private async ensureDefaultDataForUser(userId: string) {
     // Fast path: already initialized
@@ -567,7 +626,21 @@ export class DatabaseStorage implements IStorage {
   // User Preferences
   async getUserPreferences(userId: string): Promise<User | undefined> {
     try {
+      // Check cache first
+      const cacheKey = `user_prefs:${userId}`;
+      const cached = this.getCached<User>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+      
+      // Fetch from database
       const [user] = await db.select().from(users).where(eq(users.id, userId));
+      
+      // Cache the result
+      if (user) {
+        this.setCached(cacheKey, user, this.USER_PREFS_TTL);
+      }
+      
       return user;
     } catch (error) {
       console.error(`Error getting user preferences for ${userId}:`, error);
@@ -580,6 +653,9 @@ export class DatabaseStorage implements IStorage {
     preferences: Partial<User>,
   ): Promise<User> {
     try {
+      // Invalidate cache for this user
+      this.invalidateCache(`user_prefs:${userId}`);
+      
       const [updatedUser] = await db
         .update(users)
         .set({
@@ -592,6 +668,10 @@ export class DatabaseStorage implements IStorage {
       if (!updatedUser) {
         throw new Error("User not found");
       }
+      
+      // Cache the updated preferences
+      const cacheKey = `user_prefs:${userId}`;
+      this.setCached(cacheKey, updatedUser, this.USER_PREFS_TTL);
 
       return updatedUser;
     } catch (error) {
@@ -1615,28 +1695,35 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     startDate?: string,
     endDate?: string,
+    mealType?: string,
+    date?: string,
   ): Promise<MealPlan[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
 
+      // Build where conditions
+      const conditions: any[] = [eq(mealPlans.userId, userId)];
+      
+      if (date) {
+        conditions.push(eq(mealPlans.date, date));
+      } else {
+        if (startDate) {
+          conditions.push(sql`${mealPlans.date} >= ${startDate}`);
+        }
+        if (endDate) {
+          conditions.push(sql`${mealPlans.date} <= ${endDate}`);
+        }
+      }
+      
+      if (mealType) {
+        conditions.push(eq(mealPlans.mealType, mealType));
+      }
+
       const plans = await db
         .select()
         .from(mealPlans)
-        .where(eq(mealPlans.userId, userId));
-
-      // Filter by date range if provided
-      if (startDate || endDate) {
-        return plans.filter((plan) => {
-          if (startDate && endDate) {
-            return plan.date >= startDate && plan.date <= endDate;
-          } else if (startDate) {
-            return plan.date >= startDate;
-          } else if (endDate) {
-            return plan.date <= endDate;
-          }
-          return true;
-        });
-      }
+        .where(and(...conditions))
+        .orderBy(mealPlans.date);
 
       return plans;
     } catch (error) {
@@ -1950,6 +2037,32 @@ export class DatabaseStorage implements IStorage {
       .where(eq(shoppingListItems.userId, userId))
       .orderBy(shoppingListItems.createdAt);
     return items;
+  }
+
+  async getGroupedShoppingListItems(userId: string): Promise<{
+    items: ShoppingListItem[];
+    grouped: Record<string, ShoppingListItem[]>;
+    totalItems: number;
+    checkedItems: number;
+  }> {
+    const items = await this.getShoppingListItems(userId);
+    
+    // Group by recipe or manual entry
+    const grouped = items.reduce((acc: Record<string, ShoppingListItem[]>, item) => {
+      const key = item.recipeId || "manual";
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(item);
+      return acc;
+    }, {});
+    
+    return {
+      items,
+      grouped,
+      totalItems: items.length,
+      checkedItems: items.filter(i => i.isChecked).length,
+    };
   }
 
   async createShoppingListItem(

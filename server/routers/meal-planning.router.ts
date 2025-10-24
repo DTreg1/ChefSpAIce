@@ -21,22 +21,14 @@ router.get("/meal-plans", isAuthenticated, async (req: any, res: Response) => {
     const userId = req.user.claims.sub;
     const { date, startDate, endDate, mealType } = req.query;
 
-    // Get meal plans from storage with optional filters
-    let plans = await storage.getMealPlans(userId);
-    
-    if (date) {
-      plans = plans.filter((p: MealPlan) => p.date === date);
-    }
-    
-    if (startDate && endDate) {
-      plans = plans.filter((p: MealPlan) => 
-        p.date >= startDate && p.date <= endDate
-      );
-    }
-    
-    if (mealType) {
-      plans = plans.filter((p: MealPlan) => p.mealType === mealType);
-    }
+    // Get meal plans from storage with filters applied at database level
+    const plans = await storage.getMealPlans(
+      userId, 
+      startDate as string | undefined,
+      endDate as string | undefined,
+      mealType as string | undefined,
+      date as string | undefined
+    );
     
     res.json(plans);
   } catch (error) {
@@ -60,10 +52,10 @@ router.post(
         });
       }
 
-      const mealPlan = await storage.createMealPlan({
-        ...validation.data,
+      const mealPlan = await storage.createMealPlan(
         userId,
-      });
+        validation.data
+      );
       
       res.json(mealPlan);
     } catch (error) {
@@ -123,24 +115,9 @@ router.delete("/meal-plans/:id", isAuthenticated, async (req: any, res: Response
 router.get("/shopping-list", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
-    const items = await storage.getShoppingList(userId);
-    
-    // Group by category or recipe if needed
-    const grouped = items.reduce((acc: any, item: ShoppingListItem) => {
-      const key = item.recipeId || "manual";
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(item);
-      return acc;
-    }, {});
-    
-    res.json({
-      items,
-      grouped,
-      totalItems: items.length,
-      checkedItems: items.filter((i: ShoppingListItem) => i.isChecked).length,
-    });
+    // Use the consolidated method that groups data at storage layer
+    const shoppingData = await storage.getGroupedShoppingListItems(userId);
+    res.json(shoppingData);
   } catch (error) {
     console.error("Error fetching shopping list:", error);
     res.status(500).json({ error: "Failed to fetch shopping list" });
@@ -162,10 +139,10 @@ router.post(
         });
       }
 
-      const item = await storage.createShoppingListItem({
-        ...validation.data,
+      const item = await storage.createShoppingListItem(
         userId,
-      });
+        validation.data
+      );
       
       res.json(item);
     } catch (error) {
@@ -190,8 +167,7 @@ router.post(
       
       const items = await Promise.all(
         ingredients.map((ingredient: string) =>
-          storage.createShoppingListItem({
-            userId,
+          storage.createShoppingListItem(userId, {
             ingredient,
             recipeId,
             isChecked: false,
@@ -217,7 +193,7 @@ router.patch(
       const itemId = req.params.id;
       
       // Get current item
-      const items = await storage.getShoppingList(userId);
+      const items = await storage.getShoppingListItems(userId);
       const item = items.find((i: ShoppingListItem) => i.id === itemId);
       
       if (!item) {
@@ -242,7 +218,7 @@ router.delete("/shopping-list/:id", isAuthenticated, async (req: any, res: Respo
     const itemId = req.params.id;
     
     // Verify item belongs to user
-    const items = await storage.getShoppingList(userId);
+    const items = await storage.getShoppingListItems(userId);
     const existing = items.find((i: ShoppingListItem) => i.id === itemId);
     
     if (!existing) {
@@ -261,7 +237,7 @@ router.delete("/shopping-list/:id", isAuthenticated, async (req: any, res: Respo
 router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
-    const items = await storage.getShoppingList(userId);
+    const items = await storage.getShoppingListItems(userId);
     
     const checkedItems = items.filter((i: ShoppingListItem) => i.isChecked);
     

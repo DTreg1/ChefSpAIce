@@ -40,6 +40,7 @@ import {
   type StorageLocation,
   type InsertStorageLocation,
 } from "@shared/schema";
+import { cacheStrategies, handleConditionalRequests } from "./middleware/cache.middleware";
 
 // Define inline schema for storage locations validation
 const insertStorageLocationSchema = z.object({
@@ -184,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Preferences
-  app.get("/api/user/preferences", isAuthenticated, async (req: any, res) => {
+  app.get("/api/user/preferences", isAuthenticated, cacheStrategies.privateMedium, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const preferences = await storage.getUserPreferences(userId);
@@ -241,6 +242,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error resetting user data:", error);
       res.status(500).json({ error: "Failed to reset account data" });
+    }
+  });
+
+  // Batch API endpoint for optimizing multiple requests
+  app.post("/api/batch", isAuthenticated, async (req: any, res) => {
+    try {
+      const { requests } = req.body;
+      const userId = req.user.claims.sub;
+      
+      if (!Array.isArray(requests)) {
+        return res.status(400).json({ error: "Invalid batch request format" });
+      }
+      
+      if (requests.length > 20) {
+        return res.status(400).json({ error: "Batch size exceeds maximum limit of 20" });
+      }
+      
+      const responses: any[] = [];
+      
+      // Process each request in parallel where possible
+      const results = await Promise.allSettled(
+        requests.map(async (request: any) => {
+          const { endpoint, method = 'GET', params } = request;
+          
+          // Map endpoints to storage methods
+          try {
+            let result;
+            
+            // Food items endpoints
+            if (endpoint === '/api/food-items' && method === 'GET') {
+              result = await storage.getFoodItemsPaginated(
+                userId,
+                params?.page || 1,
+                params?.limit || 20,
+                params?.search,
+                params?.category
+              );
+            } else if (endpoint === '/api/food-items/expiring' && method === 'GET') {
+              result = await storage.getExpiringItems(userId, params?.days || 7);
+            }
+            // Recipes endpoints
+            else if (endpoint === '/api/recipes' && method === 'GET') {
+              result = await storage.getRecipesPaginated(
+                userId,
+                params?.page || 1,
+                params?.limit || 20
+              );
+            }
+            // Meal planning endpoints
+            else if (endpoint === '/api/meal-plans' && method === 'GET') {
+              result = await storage.getMealPlans(
+                userId,
+                params?.startDate,
+                params?.endDate,
+                params?.mealType
+              );
+            }
+            // Shopping list endpoints
+            else if (endpoint === '/api/shopping-list' && method === 'GET') {
+              result = await storage.getShoppingListItems(userId);
+            } else if (endpoint === '/api/shopping-list/grouped' && method === 'GET') {
+              result = await storage.getGroupedShoppingListItems(userId);
+            }
+            // User preferences
+            else if (endpoint === '/api/user/preferences' && method === 'GET') {
+              result = await storage.getUserPreferences(userId);
+            }
+            // Analytics endpoints
+            else if (endpoint === '/api/analytics/stats' && method === 'GET') {
+              result = await storage.getWebVitalsStats(params?.metric, params?.days || 7);
+            } else {
+              throw new Error(`Unsupported batch endpoint: ${method} ${endpoint}`);
+            }
+            
+            return { data: result };
+          } catch (error: any) {
+            return { error: error.message || "Request failed" };
+          }
+        })
+      );
+      
+      // Format results
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          responses.push(result.value);
+        } else {
+          responses.push({ error: result.reason?.message || "Request failed" });
+        }
+      });
+      
+      res.json({ responses });
+    } catch (error) {
+      console.error("Batch API error:", error);
+      res.status(500).json({ error: "Batch request failed" });
     }
   });
 
@@ -1017,7 +1112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  app.get("/api/food-categories", isAuthenticated, async (req: any, res) => {
+  app.get("/api/food-categories", isAuthenticated, cacheStrategies.privateMedium, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const categories = await storage.getFoodCategories(userId);
