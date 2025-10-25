@@ -134,28 +134,30 @@ export const insertBarcodeProductSchema = createInsertSchema(barcodeProducts).om
 export type InsertBarcodeProduct = z.infer<typeof insertBarcodeProductSchema>;
 export type BarcodeProduct = typeof barcodeProducts.$inferSelect;
 
-// Appliances - User's kitchen appliances
+// Appliances - User's kitchen appliances (matching current DB)
 export const appliances = pgTable("appliances", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  type: text("type"),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   categoryId: varchar("category_id").references(() => applianceCategories.id, { onDelete: "set null" }),
-  name: text("name").notNull(),
-  brand: text("brand"),
-  model: text("model"),
-  serialNumber: text("serial_number"),
+  barcodeProductId: varchar("barcode_product_id").references(() => barcodeProducts.barcodeNumber, { onDelete: "set null" }),
+  customBrand: text("custom_brand"),
+  customModel: text("custom_model"),
+  customCapabilities: text("custom_capabilities").array(),
+  customCapacity: text("custom_capacity"),
+  customServingSize: text("custom_serving_size"),
+  nickname: text("nickname"),
   purchaseDate: text("purchase_date"),
-  warrantyExpiryDate: text("warranty_expiry_date"),
+  warrantyEndDate: text("warranty_end_date"),
   notes: text("notes"),
-  manualUrl: text("manual_url"),
   imageUrl: text("image_url"),
-  barcode: text("barcode").references(() => barcodeProducts.barcodeNumber, { onDelete: "set null" }),
-  customFields: jsonb("custom_fields").$type<Record<string, any>>(),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   index("appliances_user_id_idx").on(table.userId),
   index("appliances_category_id_idx").on(table.categoryId),
-  index("appliances_barcode_idx").on(table.barcode),
 ]);
 
 export const insertApplianceSchema = createInsertSchema(appliances).omit({
@@ -254,6 +256,7 @@ export const recipes = pgTable("recipes", {
   notes: text("notes"),
   nutrition: jsonb("nutrition").$type<any>(),
   tags: jsonb("tags").$type<string[]>(),
+  neededEquipment: jsonb("needed_equipment").$type<string[]>(), // Required appliances, cookware, bakeware
   isFavorite: boolean("is_favorite").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -867,3 +870,62 @@ export const insertCookingTermSchema = createInsertSchema(cookingTerms).omit({
 
 export type InsertCookingTerm = z.infer<typeof insertCookingTermSchema>;
 export type CookingTerm = typeof cookingTerms.$inferSelect;
+
+// Appliance Library - Master catalog of all available appliances, cookware, and bakeware
+export const applianceLibrary = pgTable("appliance_library", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  category: text("category").notNull(), // 'appliance', 'cookware', 'bakeware', 'utensil'
+  subcategory: text("subcategory"), // 'oven', 'stovetop', 'pans', 'knives', etc.
+  brand: text("brand"), // Optional brand for specific items
+  model: text("model"), // Optional model
+  description: text("description"),
+  capabilities: text("capabilities").array(), // ['bake', 'broil', 'toast', 'air fry'] for appliances
+  sizeOrCapacity: text("size_or_capacity"), // '9x13"' for pans, '5qt' for pots
+  material: text("material"), // 'stainless steel', 'cast iron', 'ceramic'
+  isCommon: boolean("is_common").notNull().default(false), // Common items most people have
+  imageUrl: text("image_url"),
+  searchTerms: text("search_terms").array(), // Alternative names for searching
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("appliance_library_category_idx").on(table.category),
+  index("appliance_library_subcategory_idx").on(table.subcategory),
+  index("appliance_library_is_common_idx").on(table.isCommon),
+]);
+
+export const insertApplianceLibrarySchema = createInsertSchema(applianceLibrary).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertApplianceLibrary = z.infer<typeof insertApplianceLibrarySchema>;
+export type ApplianceLibrary = typeof applianceLibrary.$inferSelect;
+
+// User Appliances - Track which items from the library each user owns
+export const userAppliances = pgTable("user_appliances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  applianceLibraryId: varchar("appliance_library_id").notNull().references(() => applianceLibrary.id, { onDelete: "cascade" }),
+  nickname: text("nickname"), // User's custom name for the item
+  notes: text("notes"), // User notes about this specific item
+  purchaseDate: text("purchase_date"),
+  warrantyEndDate: text("warranty_end_date"),
+  isActive: boolean("is_active").notNull().default(true), // If user still has it
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("user_appliances_user_id_idx").on(table.userId),
+  index("user_appliances_library_id_idx").on(table.applianceLibraryId),
+  uniqueIndex("user_appliances_unique").on(table.userId, table.applianceLibraryId),
+]);
+
+export const insertUserApplianceSchema = createInsertSchema(userAppliances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserAppliance = z.infer<typeof insertUserApplianceSchema>;
+export type UserAppliance = typeof userAppliances.$inferSelect;
