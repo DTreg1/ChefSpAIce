@@ -102,7 +102,7 @@ router.post(
 
       // Calculate expiration if not provided
       let expirationDate = req.body.expirationDate;
-      if (!expirationDate && req.body.category) {
+      if (!expirationDate && req.body.foodCategory) {
         const categoryDefaults: Record<string, number> = {
           dairy: 7,
           meat: 3,
@@ -116,7 +116,7 @@ router.post(
           other: 30,
         };
 
-        const daysToAdd = categoryDefaults[req.body.category?.toLowerCase()] || 30;
+        const daysToAdd = categoryDefaults[req.body.foodCategory?.toLowerCase()] || 30;
         const expDate = new Date();
         expDate.setDate(expDate.getDate() + daysToAdd);
         expirationDate = expDate.toISOString().split("T")[0];
