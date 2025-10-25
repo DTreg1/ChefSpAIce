@@ -277,20 +277,31 @@ router.get("/recipes", isAuthenticated, async (req: any, res: Response) => {
       search 
     } = req.query;
 
-    // Get all user recipes first
-    let userRecipes = await storage.getRecipes(userId);
+    // Build filters object for database-level filtering
+    const filters: any = {};
     
-    // Apply filters
     if (saved === "true") {
-      userRecipes = userRecipes.filter((r: Recipe) => r.isFavorite === true);
+      filters.isFavorite = true;
     }
     
     if (search) {
-      const searchTerm = search.toString().toLowerCase();
-      userRecipes = userRecipes.filter((r: Recipe) => 
-        r.title.toLowerCase().includes(searchTerm)
-      );
+      filters.search = search.toString();
     }
+    
+    if (cuisine) {
+      filters.cuisine = cuisine.toString();
+    }
+    
+    if (difficulty) {
+      filters.difficulty = difficulty.toString();
+    }
+    
+    if (maxCookTime) {
+      filters.maxCookTime = parseInt(maxCookTime.toString());
+    }
+    
+    // Use optimized storage method with database-level filtering
+    const userRecipes = await storage.getRecipes(userId, filters);
 
     res.json(userRecipes);
   } catch (error) {
@@ -307,9 +318,8 @@ router.patch(
       const userId = req.user.claims.sub;
       const recipeId = req.params.id;
 
-      // Verify recipe belongs to user
-      const recipes = await storage.getRecipes(userId);
-      const existing = recipes.find((r: Recipe) => r.id === recipeId);
+      // Verify recipe belongs to user - optimized to fetch only the specific recipe
+      const existing = await storage.getRecipe(userId, recipeId);
 
       if (!existing) {
         return res.status(404).json({ error: "Recipe not found" });
@@ -329,9 +339,8 @@ router.delete("/recipes/:id", isAuthenticated, async (req: any, res: Response) =
     const userId = req.user.claims.sub;
     const recipeId = req.params.id;
 
-    // Verify recipe belongs to user
-    const recipes = await storage.getRecipes(userId);
-    const existing = recipes.find((r: Recipe) => r.id === recipeId);
+    // Verify recipe belongs to user - optimized to fetch only the specific recipe
+    const existing = await storage.getRecipe(userId, recipeId);
 
     if (!existing) {
       return res.status(404).json({ error: "Recipe not found" });

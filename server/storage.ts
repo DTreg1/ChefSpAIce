@@ -1697,13 +1697,55 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Recipes - Optimized with default limit to prevent memory issues
-  async getRecipes(userId: string, limit: number = 200): Promise<Recipe[]> {
+  // Recipes - Optimized with database-level filtering
+  async getRecipes(
+    userId: string, 
+    filters?: {
+      isFavorite?: boolean;
+      search?: string;
+      cuisine?: string;
+      difficulty?: string;
+      maxCookTime?: number;
+    },
+    limit: number = 200
+  ): Promise<Recipe[]> {
     try {
+      const conditions = [eq(recipes.userId, userId)];
+      
+      // Apply filters at the database level
+      if (filters?.isFavorite !== undefined) {
+        conditions.push(eq(recipes.isFavorite, filters.isFavorite));
+      }
+      
+      if (filters?.search) {
+        const searchTerm = `%${filters.search.toLowerCase()}%`;
+        conditions.push(
+          or(
+            sql`LOWER(${recipes.title}) LIKE ${searchTerm}`,
+            sql`LOWER(${recipes.description}) LIKE ${searchTerm}`
+          )!
+        );
+      }
+      
+      if (filters?.cuisine) {
+        conditions.push(eq(recipes.cuisine, filters.cuisine));
+      }
+      
+      if (filters?.difficulty) {
+        conditions.push(eq(recipes.difficulty, filters.difficulty));
+      }
+      
+      if (filters?.maxCookTime) {
+        // Convert cook time string to minutes for comparison
+        conditions.push(
+          sql`CAST(REGEXP_REPLACE(${recipes.cookTime}, '[^0-9]', '', 'g') AS INTEGER) <= ${filters.maxCookTime}`
+        );
+      }
+      
       return db
         .select()
         .from(recipes)
-        .where(eq(recipes.userId, userId))
+        .where(and(...conditions))
         .orderBy(sql`${recipes.createdAt} DESC`)
         .limit(limit);
     } catch (error) {
