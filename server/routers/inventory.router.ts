@@ -9,6 +9,7 @@ import { batchedApiLogger } from "../batchedApiLogger";
 import { validateBody, validateQuery } from "../middleware";
 import axios from "axios";
 import { openai } from "../openai";
+import rateLimiters from "../middleware/rateLimit";
 
 const router = Router();
 
@@ -292,7 +293,7 @@ router.post("/fdc/cache/clear", async (_req: Request, res: Response) => {
 const barcodeCache = new Map<string, { data: any; timestamp: number }>();
 const BARCODE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-router.get("/barcodelookup/search", isAuthenticated, async (req: any, res: Response) => {
+router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middleware(), async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
     const barcode = req.query.barcode as string;

@@ -8,6 +8,7 @@ import { validateBody, validateQuery } from "../middleware";
 import { openai } from "../openai";
 import { batchedApiLogger } from "../batchedApiLogger";
 import { cleanupOldMessagesForUser } from "../chatCleanup";
+import rateLimiters from "../middleware/rateLimit";
 
 const router = Router();
 
@@ -70,6 +71,7 @@ router.delete("/chat/messages", isAuthenticated, async (req: any, res: Response)
 router.post(
   "/chat",
   isAuthenticated,
+  rateLimiters.openai.middleware(),
   async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
@@ -159,6 +161,7 @@ router.post(
 router.post(
   "/recipes/generate",
   isAuthenticated,
+  rateLimiters.openai.middleware(),
   async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
