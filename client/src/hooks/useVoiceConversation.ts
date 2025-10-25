@@ -362,16 +362,40 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
     }
   }, [onSendMessage]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount and when recognition changes
   useEffect(() => {
     return () => {
+      // Stop recognition and remove all event handlers
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+          recognitionRef.current.onstart = null;
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.onend = null;
+          recognitionRef.current = null;
+        } catch (e) {
+          console.log('Error cleaning up recognition:', e);
+        }
       }
+      
+      // Clear any pending timers
       if (silenceTimerRef.current) {
         clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+      
+      // Cancel any ongoing speech synthesis
+      if (synthesisRef.current) {
+        synthesisRef.current.onstart = null;
+        synthesisRef.current.onend = null;
+        synthesisRef.current.onerror = null;
+        synthesisRef.current = null;
       }
       window.speechSynthesis.cancel();
+      
+      // Reset state flags
+      isStoppingRef.current = false;
     };
   }, []);
 

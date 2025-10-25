@@ -25,7 +25,25 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
       const age = Date.now() - new Date(cached.cachedAt).getTime();
       if (age < CACHE_TTL.BARCODE_PRODUCT) {
         console.log(`[Barcode Cache] Hit for barcode: ${barcode}`);
-        return cached;
+        // Return data in the same shape as the original API response
+        // Map database cached fields back to API response structure
+        return {
+          barcode_number: cached.barcodeNumber,
+          title: cached.productName,
+          brand: cached.brand,
+          category: cached.category,
+          images: cached.imageUrl ? [cached.imageUrl] : [],
+          description: cached.description,
+          manufacturer: cached.manufacturer,
+          asin: cached.asin,
+          mpn: cached.mpn,
+          stores: cached.stores?.map(store => ({
+            name: store.store_name,
+            price: store.store_price,
+            link: store.product_url,
+            currency: store.currency_symbol,
+          })) || []
+        };
       }
     }
     
