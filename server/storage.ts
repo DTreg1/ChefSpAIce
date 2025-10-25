@@ -73,6 +73,17 @@ import {
   matchIngredientWithInventory,
   type IngredientMatch,
 } from "./utils/unitConverter";
+import { PaginationHelper } from "./utils/pagination";
+
+// Standardized pagination response format
+export interface PaginatedResponse<T> {
+  data: T[];           // The actual data array
+  total: number;       // Total items count
+  page: number;        // Current page
+  totalPages: number;  // Total pages
+  limit: number;       // Items per page
+  offset: number;      // Current offset
+}
 
 export interface IStorage {
   // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
@@ -156,12 +167,7 @@ export interface IStorage {
     limit?: number,
     storageLocationId?: string,
     sortBy?: "name" | "expirationDate" | "addedAt",
-  ): Promise<{
-    items: FoodItem[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }>;
+  ): Promise<PaginatedResponse<FoodItem>>;
   getFoodItem(userId: string, id: string): Promise<FoodItem | undefined>;
   createFoodItem(
     userId: string,
@@ -181,12 +187,7 @@ export interface IStorage {
     userId: string,
     page?: number,
     limit?: number,
-  ): Promise<{
-    messages: ChatMessage[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }>;
+  ): Promise<PaginatedResponse<ChatMessage>>;
   createChatMessage(
     userId: string,
     message: Omit<InsertChatMessage, "userId">,
@@ -198,12 +199,7 @@ export interface IStorage {
     userId: string,
     page?: number,
     limit?: number,
-  ): Promise<{
-    recipes: Recipe[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }>;
+  ): Promise<PaginatedResponse<Recipe>>;
   getRecipe(userId: string, id: string): Promise<Recipe | undefined>;
   createRecipe(
     userId: string,
@@ -317,10 +313,10 @@ export interface IStorage {
   getFeedback(userId: string, id: string): Promise<Feedback | undefined>;
   getUserFeedback(userId: string, limit?: number): Promise<Feedback[]>;
   getAllFeedback(
+    page?: number,
     limit?: number,
-    offset?: number,
     status?: string,
-  ): Promise<{ items: Feedback[]; total: number }>;
+  ): Promise<PaginatedResponse<Feedback>>;
   getCommunityFeedback(
     type?: string,
     sortBy?: "upvotes" | "recent",
@@ -1306,12 +1302,7 @@ export class DatabaseStorage implements IStorage {
         .limit(limit)
         .offset(offset);
 
-      return {
-        items,
-        total,
-        page,
-        totalPages: Math.ceil(total / limit),
-      };
+      return PaginationHelper.createResponse(items, total, page, limit);
     } catch (error) {
       console.error(
         `Error getting paginated food items for user ${userId}:`,
@@ -1446,12 +1437,7 @@ export class DatabaseStorage implements IStorage {
         .limit(limit)
         .offset(offset);
 
-      return {
-        messages,
-        total,
-        page,
-        totalPages: Math.ceil(total / limit),
-      };
+      return PaginationHelper.createResponse(messages, total, page, limit);
     } catch (error) {
       console.error(
         `Error getting paginated chat messages for user ${userId}:`,
@@ -1583,12 +1569,7 @@ export class DatabaseStorage implements IStorage {
         .limit(limit)
         .offset(offset);
 
-      return {
-        recipes: paginatedRecipes,
-        total,
-        page,
-        totalPages: Math.ceil(total / limit),
-      };
+      return PaginationHelper.createResponse(paginatedRecipes, total, page, limit);
     } catch (error) {
       console.error(
         `Error getting paginated recipes for user ${userId}:`,
@@ -2350,11 +2331,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllFeedback(
+    page: number = 1,
     limit: number = 50,
-    offset: number = 0,
     status?: string,
-  ): Promise<{ items: Feedback[]; total: number }> {
+  ): Promise<PaginatedResponse<Feedback>> {
     try {
+      const offset = (page - 1) * limit;
       const whereCondition = status ? eq(feedback.status, status) : undefined;
 
       const countQuery = db
@@ -2378,7 +2360,8 @@ export class DatabaseStorage implements IStorage {
             .limit(limit)
             .offset(offset);
 
-      return { items, total: count };
+      const total = Number(count || 0);
+      return PaginationHelper.createResponse(items, total, page, limit);
     } catch (error) {
       console.error("Error getting all feedback:", error);
       throw new Error("Failed to get all feedback");
