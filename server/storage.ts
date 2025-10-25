@@ -288,7 +288,7 @@ export interface IStorage {
   }>;
 
   // FDC Cache Methods
-  getCachedFood(fdcId: string): Promise<FdcCache | undefined>;
+  getCachedFood(fdcId: string | number): Promise<FdcCache | undefined>;
   cacheFood(food: InsertFdcCache): Promise<FdcCache>;
   updateFoodLastAccessed(fdcId: string): Promise<void>;
   getCachedSearchResults(
@@ -296,8 +296,18 @@ export interface IStorage {
     dataType?: string,
     pageNumber?: number,
   ): Promise<FdcSearchQuery | undefined>;
+  getCachedSearches(query: string): Promise<FdcSearchQuery[]>;
   cacheSearchResults(search: InsertFdcSearchQuery): Promise<FdcSearchQuery>;
   clearOldCache(daysOld: number): Promise<void>;
+  
+  // Barcode Cache Methods
+  getCachedBarcodeProduct(barcode: string): Promise<BarcodeProduct | undefined>;
+  cacheBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct>;
+  clearOldBarcodeCache(cutoffDate: Date): Promise<void>;
+  
+  // Cache Stats Methods
+  getUSDACacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }>;
+  getBarcodeCacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }>;
 
   // Shopping List Items (user-scoped)
   getShoppingListItems(userId: string, limit?: number): Promise<ShoppingListItem[]>;
@@ -2072,12 +2082,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // FDC Cache Methods
-  async getCachedFood(fdcId: string): Promise<FdcCache | undefined> {
+  async getCachedFood(fdcId: string | number): Promise<FdcCache | undefined> {
     try {
+      const fdcIdStr = String(fdcId);
       const [cached] = await db
         .select()
         .from(fdcCache)
-        .where(eq(fdcCache.fdcId, fdcId));
+        .where(eq(fdcCache.fdcId, fdcIdStr));
       return cached;
     } catch (error) {
       console.error(`Error getting cached food ${fdcId}:`, error);
@@ -2220,6 +2231,108 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error clearing old cache:", error);
       // Don't throw - cache cleanup is not critical
+    }
+  }
+  
+  // Additional cache method - get multiple cached searches
+  async getCachedSearches(query: string): Promise<FdcSearchQuery[]> {
+    try {
+      const searches = await db
+        .select()
+        .from(fdcSearchQueries)
+        .where(eq(fdcSearchQueries.query, query.toLowerCase()))
+        .orderBy(desc(fdcSearchQueries.cachedAt))
+        .limit(10);
+      return searches;
+    } catch (error) {
+      console.error("Error getting cached searches:", error);
+      return [];
+    }
+  }
+  
+  // Barcode Cache Methods
+  async getCachedBarcodeProduct(barcode: string): Promise<BarcodeProduct | undefined> {
+    try {
+      const [cached] = await db
+        .select()
+        .from(barcodeProducts)
+        .where(eq(barcodeProducts.barcodeNumber, barcode));
+      return cached;
+    } catch (error) {
+      console.error(`Error getting cached barcode ${barcode}:`, error);
+      return undefined;
+    }
+  }
+  
+  async cacheBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct> {
+    try {
+      const [cached] = await db
+        .insert(barcodeProducts)
+        .values(product)
+        .onConflictDoUpdate({
+          target: barcodeProducts.barcodeNumber,
+          set: {
+            ...product,
+            cachedAt: new Date(),
+          },
+        })
+        .returning();
+      return cached;
+    } catch (error) {
+      console.error("Error caching barcode product:", error);
+      throw new Error("Failed to cache barcode product");
+    }
+  }
+  
+  async clearOldBarcodeCache(cutoffDate: Date): Promise<void> {
+    try {
+      await db
+        .delete(barcodeProducts)
+        .where(sql`${barcodeProducts.cachedAt} < ${cutoffDate.toISOString()}`);
+    } catch (error) {
+      console.error("Error clearing old barcode cache:", error);
+      // Don't throw - cache cleanup is not critical
+    }
+  }
+  
+  // Cache Stats Methods
+  async getUSDACacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }> {
+    try {
+      const [countResult] = await db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(fdcCache);
+      
+      const [oldestResult] = await db
+        .select({ oldest: sql<Date>`MIN(${fdcCache.cachedAt})` })
+        .from(fdcCache);
+      
+      return {
+        totalEntries: countResult?.count || 0,
+        oldestEntry: oldestResult?.oldest || null,
+      };
+    } catch (error) {
+      console.error("Error getting USDA cache stats:", error);
+      return { totalEntries: 0, oldestEntry: null };
+    }
+  }
+  
+  async getBarcodeCacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }> {
+    try {
+      const [countResult] = await db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(barcodeProducts);
+      
+      const [oldestResult] = await db
+        .select({ oldest: sql<Date>`MIN(${barcodeProducts.cachedAt})` })
+        .from(barcodeProducts);
+      
+      return {
+        totalEntries: countResult?.count || 0,
+        oldestEntry: oldestResult?.oldest || null,
+      };
+    } catch (error) {
+      console.error("Error getting barcode cache stats:", error);
+      return { totalEntries: 0, oldestEntry: null };
     }
   }
 
