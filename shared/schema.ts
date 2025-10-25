@@ -178,7 +178,6 @@ export const foodItems = pgTable("food_items", {
   unit: text("unit").notNull(),
   expirationDate: text("expiration_date"),
   storageLocationId: varchar("storage_location_id").notNull(),
-  category: text("category"),
   foodCategory: text("food_category"), // Mapped USDA category
   imageUrl: text("image_url"),
   barcode: text("barcode"),
