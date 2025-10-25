@@ -3,24 +3,43 @@ import { RecipeCard } from "@/components/recipe-card";
 import { RecipeUpload } from "@/components/recipe-upload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, BookOpen } from "lucide-react";
-import { useState } from "react";
-import type { Recipe } from "@shared/schema";
+import { Star, BookOpen, Utensils } from "lucide-react";
+import { useState, useMemo } from "react";
+import type { Recipe, UserAppliance } from "@shared/schema";
 import { PageTransition } from "@/components/page-transition";
 import { StaggerContainer, StaggerItem } from "@/components/stagger-children";
 import { AnimatedCard } from "@/components/animated-card";
 import { CardSkeleton } from "@/components/skeleton-loader";
 
 export default function Cookbook() {
-  const [filter, setFilter] = useState<"all" | "favorites">("all");
+  const [filter, setFilter] = useState<"all" | "favorites" | "available_equipment">("all");
   
-  const { data: recipes, isLoading } = useQuery<Recipe[]>({
+  const { data: recipes, isLoading: recipesLoading } = useQuery<Recipe[]>({
     queryKey: ["/api/recipes"],
   });
+
+  const { data: userEquipmentResponse, isLoading: equipmentLoading } = useQuery({
+    queryKey: ["/api/appliances/user"],
+  });
+
+  // Get the names of equipment the user owns
+  const userEquipmentNames = useMemo(() => {
+    const equipment = userEquipmentResponse as any;
+    return equipment?.data?.map((eq: any) => eq.applianceName?.toLowerCase()) || [];
+  }, [userEquipmentResponse]);
 
   const filteredRecipes = recipes?.filter(recipe => {
     if (filter === "favorites") {
       return recipe.isFavorite;
+    }
+    if (filter === "available_equipment") {
+      // Show only recipes where all needed equipment is available
+      if (!recipe.neededEquipment || recipe.neededEquipment.length === 0) {
+        return true; // Recipe doesn't need any equipment
+      }
+      return recipe.neededEquipment.every(equipment => 
+        userEquipmentNames.includes(equipment.toLowerCase())
+      );
     }
     return true;
   }).sort((a, b) => {
@@ -28,10 +47,20 @@ export default function Cookbook() {
     if (a.rating !== b.rating) {
       return (b.rating || 0) - (a.rating || 0);
     }
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
   });
 
   const favoriteCount = recipes?.filter(r => r.isFavorite).length || 0;
+  const availableEquipmentCount = recipes?.filter(recipe => {
+    if (!recipe.neededEquipment || recipe.neededEquipment.length === 0) return true;
+    return recipe.neededEquipment.every(equipment => 
+      userEquipmentNames.includes(equipment.toLowerCase())
+    );
+  }).length || 0;
+
+  const isLoading = recipesLoading || equipmentLoading;
 
   return (
     <PageTransition className="h-full overflow-y-auto bg-muted">
@@ -51,7 +80,7 @@ export default function Cookbook() {
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <RecipeUpload />
               <Button
                 variant={filter === "all" ? "default" : "outline"}
@@ -77,6 +106,20 @@ export default function Cookbook() {
                 {favoriteCount > 0 && (
                   <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
                     {favoriteCount}
+                  </Badge>
+                )}
+              </Button>
+              <Button
+                variant={filter === "available_equipment" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter("available_equipment")}
+                data-testid="button-filter-equipment"
+              >
+                <Utensils className="w-4 h-4 mr-1" />
+                Can Make
+                {availableEquipmentCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                    {availableEquipmentCount}
                   </Badge>
                 )}
               </Button>
@@ -127,6 +170,7 @@ export default function Cookbook() {
                 usedIngredients={recipe.usedIngredients}
                 missingIngredients={recipe.missingIngredients || []}
                 ingredientMatches={recipe.ingredientMatches}
+                neededEquipment={recipe.neededEquipment || []}
                 isFavorite={recipe.isFavorite}
                 rating={recipe.rating || undefined}
                 showControls={true}
