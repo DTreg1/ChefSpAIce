@@ -161,7 +161,7 @@ export default function Onboarding() {
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
       // Single POST request to complete onboarding
-      const response = await apiRequest("POST", "/api/onboarding/complete", {
+      const response = await apiRequest("POST", "/api/auth/onboarding/complete", {
         preferences: data,
         customStorageAreas: customStorageAreas,
         selectedCommonItems: selectedCommonItems,
