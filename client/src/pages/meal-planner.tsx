@@ -54,6 +54,7 @@ export default function MealPlanner() {
     weekStart.setHours(0, 0, 0, 0);
     return weekStart;
   });
+  const [generatingShoppingList, setGeneratingShoppingList] = useState(false);
 
   // Calculate week dates
   const weekDates = useMemo(() => {
@@ -108,6 +109,116 @@ export default function MealPlanner() {
       });
     },
   });
+
+  // Generate shopping list from meal plans
+  const generateShoppingList = async () => {
+    if (generatingShoppingList) return;
+    
+    setGeneratingShoppingList(true);
+    
+    // Calculate the date range to use
+    const rangeStartDate = weekDates[0].toLocaleDateString("en-CA");
+    const rangeEndDate = weekDates[6].toLocaleDateString("en-CA");
+    
+    // Show initial toast
+    const { dismiss } = toast({
+      title: "Generating Shopping List",
+      description: "Starting to process meal plans...",
+      duration: Infinity, // Keep it open
+    });
+    
+    try {
+      const response = await fetch("/api/shopping-list/generate-from-meal-plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          startDate: rangeStartDate, 
+          endDate: rangeEndDate 
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to generate shopping list");
+      }
+      
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) {
+        throw new Error("Response body is not readable");
+      }
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+        
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.error) {
+                dismiss();
+                toast({
+                  title: "Error",
+                  description: data.message || "Failed to generate shopping list",
+                  variant: "destructive",
+                });
+                setGeneratingShoppingList(false);
+                return;
+              }
+              
+              // Update progress toast
+              dismiss();
+              const progressToast = toast({
+                title: "Generating Shopping List",
+                description: data.message,
+                duration: data.progress === 100 ? 5000 : Infinity,
+              });
+              
+              if (data.progress === 100) {
+                // Complete - invalidate queries and navigate
+                await queryClient.invalidateQueries({ 
+                  queryKey: ["/api/shopping-list/items"] 
+                });
+                
+                // Show completion toast
+                setTimeout(() => {
+                  progressToast.dismiss();
+                  toast({
+                    title: "✅ Shopping List Generated!",
+                    description: `Added ${data.data?.itemsAdded || 0} items to your shopping list`,
+                    duration: 5000,
+                  });
+                }, 1000);
+                
+                // Navigate to shopping list after a short delay
+                setTimeout(() => {
+                  window.location.href = "/shopping-list";
+                }, 2000);
+              }
+            } catch (e) {
+              console.error("Failed to parse SSE data:", e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      dismiss();
+      console.error("Error generating shopping list:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate shopping list. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingShoppingList(false);
+    }
+  };
 
   // Navigation
   const goToPreviousWeek = () => {
@@ -560,16 +671,18 @@ export default function MealPlanner() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => {
-                  // TODO: Navigate to shopping list
-                  toast({
-                    title: "Coming soon",
-                    description: "Shopping list feature will be implemented next",
-                  });
-                }}
-                data-testid="button-view-shopping-list"
+                onClick={() => generateShoppingList()}
+                disabled={generatingShoppingList || mealPlans.length === 0}
+                data-testid="button-generate-shopping-list"
               >
-                View Shopping List
+                {generatingShoppingList ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Generating...
+                  </>
+                ) : (
+                  "Generate Shopping List"
+                )}
               </Button>
             </div>
             

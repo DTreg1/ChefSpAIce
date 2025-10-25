@@ -168,7 +168,7 @@ router.post(
       const items = await Promise.all(
         ingredients.map((ingredient: string) =>
           storage.createShoppingListItem(userId, {
-            ingredient,
+            name: ingredient,
             recipeId,
             isChecked: false,
           })
@@ -253,6 +253,158 @@ router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: any, 
   } catch (error) {
     console.error("Error clearing checked items:", error);
     res.status(500).json({ error: "Failed to clear checked items" });
+  }
+});
+
+// Generate shopping list from meal plans
+router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (req: any, res: Response) => {
+  try {
+    const userId = req.user.claims.sub;
+    const { startDate, endDate } = req.body;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Start date and end date are required" });
+    }
+    
+    // Set up SSE for progress updates
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+    
+    const sendProgress = (progress: number, message: string, data?: any) => {
+      res.write(`data: ${JSON.stringify({ progress, message, data })}\n\n`);
+    };
+    
+    sendProgress(0, "Starting shopping list generation...");
+    
+    // Step 1: Get meal plans for the date range
+    sendProgress(10, "Fetching meal plans...");
+    const mealPlans = await storage.getMealPlans(userId, startDate, endDate);
+    
+    if (mealPlans.length === 0) {
+      sendProgress(100, "No meal plans found for the selected date range", { itemsAdded: 0 });
+      res.end();
+      return;
+    }
+    
+    sendProgress(20, `Found ${mealPlans.length} meal plans`);
+    
+    // Step 2: Get unique recipe IDs from meal plans
+    const recipeIds = Array.from(new Set(mealPlans
+      .filter(plan => plan.recipeId)
+      .map(plan => plan.recipeId)));
+    
+    if (recipeIds.length === 0) {
+      sendProgress(100, "No recipes found in meal plans", { itemsAdded: 0 });
+      res.end();
+      return;
+    }
+    
+    sendProgress(30, `Processing ${recipeIds.length} unique recipes`);
+    
+    // Step 3: Get recipe details and ingredients
+    const recipes = await Promise.all(
+      recipeIds.map(id => storage.getRecipe(userId, id))
+    );
+    
+    // Extract all ingredients from recipes
+    const ingredientsByRecipe = new Map<string, string[]>();
+    recipes.forEach(recipe => {
+      if (recipe && recipe.ingredients) {
+        ingredientsByRecipe.set(recipe.id, recipe.ingredients);
+      }
+    });
+    
+    sendProgress(40, "Analyzing ingredients...");
+    
+    // Step 4: Get current inventory
+    const inventory = await storage.getFoodItems(userId);
+    const inventoryNames = new Set(
+      inventory.map(item => item.name.toLowerCase())
+    );
+    
+    sendProgress(50, "Comparing with inventory...");
+    
+    // Step 5: Get existing shopping list items to avoid duplicates
+    const existingShoppingItems = await storage.getShoppingListItems(userId);
+    const existingItemNames = new Set(
+      existingShoppingItems.map(item => item.name.toLowerCase())
+    );
+    
+    sendProgress(60, "Identifying missing items...");
+    
+    // Step 6: Find missing ingredients
+    const missingItems: { ingredient: string; recipeId: string }[] = [];
+    
+    ingredientsByRecipe.forEach((ingredients, recipeId) => {
+      ingredients.forEach(ingredient => {
+        // Simple ingredient parsing (remove quantities and units)
+        const cleanIngredient = ingredient
+          .replace(/^\d+[\s\/\d]*/, '') // Remove leading numbers
+          .replace(/^(cup|cups|tbsp|tablespoon|tsp|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter)s?\s+/i, '') // Remove units
+          .trim();
+        
+        const ingredientLower = cleanIngredient.toLowerCase();
+        
+        // Check if not in inventory and not already in shopping list
+        if (!inventoryNames.has(ingredientLower) && 
+            !existingItemNames.has(ingredientLower)) {
+          missingItems.push({ ingredient: cleanIngredient, recipeId });
+          existingItemNames.add(ingredientLower); // Prevent duplicates within this batch
+        }
+      });
+    });
+    
+    sendProgress(70, `Found ${missingItems.length} missing items`);
+    
+    if (missingItems.length === 0) {
+      sendProgress(100, "All ingredients are already in inventory or shopping list!", { itemsAdded: 0 });
+      res.end();
+      return;
+    }
+    
+    // Step 7: Add missing items to shopping list
+    sendProgress(80, "Adding items to shopping list...");
+    
+    const addedItems = [];
+    const batchSize = 5;
+    
+    for (let i = 0; i < missingItems.length; i += batchSize) {
+      const batch = missingItems.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(item =>
+          storage.createShoppingListItem(userId, {
+            name: item.ingredient,
+            recipeId: item.recipeId,
+            isChecked: false
+          })
+        )
+      );
+      addedItems.push(...batchResults);
+      
+      const progressPercent = 80 + (20 * (i + batch.length) / missingItems.length);
+      sendProgress(
+        Math.min(progressPercent, 99),
+        `Added ${Math.min(i + batch.length, missingItems.length)} of ${missingItems.length} items`
+      );
+    }
+    
+    sendProgress(100, "Shopping list generation complete!", {
+      itemsAdded: addedItems.length,
+      items: addedItems
+    });
+    
+    res.end();
+  } catch (error) {
+    console.error("Error generating shopping list from meal plans:", error);
+    res.write(`data: ${JSON.stringify({ 
+      error: "Failed to generate shopping list",
+      message: error instanceof Error ? error.message : "Unknown error"
+    })}\n\n`);
+    res.end();
   }
 });
 
