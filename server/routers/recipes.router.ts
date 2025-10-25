@@ -193,6 +193,21 @@ router.post(
         }
       }
 
+      // Get user's available equipment
+      const userAppliances = await storage.getUserAppliances(userId);
+      if (userAppliances && userAppliances.length > 0) {
+        // Get appliance library details for user's equipment
+        const applianceLibrary = await storage.getApplianceLibrary();
+        const userEquipmentDetails = userAppliances.map(ua => {
+          const libItem = applianceLibrary.find((al: any) => al.id === ua.applianceLibraryId);
+          return libItem ? libItem.name : null;
+        }).filter(Boolean);
+        
+        context += `\nAvailable kitchen equipment:\n${userEquipmentDetails
+          .join(", ")}\n`;
+        context += `\nPlease only suggest recipes that can be made with this equipment. If special equipment is needed, make sure it's from the available list.\n`;
+      }
+
       if (dietaryRestrictions.length > 0) {
         context += `\nDietary restrictions: ${dietaryRestrictions.join(", ")}\n`;
       }
@@ -213,7 +228,8 @@ Return a JSON object with the following structure:
   "cookTime": "Y minutes",
   "servings": number,
   "usedIngredients": ["ingredients from user inventory"],
-  "missingIngredients": ["ingredients user needs to buy"]
+  "missingIngredients": ["ingredients user needs to buy"],
+  "neededEquipment": ["equipment name 1", "equipment name 2", ...]
 }`;
 
       const completion = await openai.chat.completions.create({
