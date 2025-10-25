@@ -4,7 +4,6 @@ import {
   type User,
   type UpsertUser,
   type StorageLocation,
-  type InsertStorageLocation,
   type Appliance,
   type InsertAppliance,
   type ApplianceCategory,
@@ -41,6 +40,10 @@ import {
   type InsertCommonFoodItem,
   type CookingTerm,
   type InsertCookingTerm,
+  type ApplianceLibrary,
+  type InsertApplianceLibrary,
+  type UserAppliance,
+  type InsertUserAppliance,
   type InsertAnalyticsEvent,
   type AnalyticsEvent,
   type InsertUserSession,
@@ -66,6 +69,8 @@ import {
   cookingTerms,
   analyticsEvents,
   userSessions,
+  applianceLibrary,
+  userAppliances,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, desc, gte, lte } from "drizzle-orm";
@@ -113,7 +118,7 @@ export interface IStorage {
   ): Promise<StorageLocation | undefined>;
   createStorageLocation(
     userId: string,
-    location: InsertStorageLocation,
+    location: Omit<StorageLocation, "id">,
   ): Promise<StorageLocation>;
 
   // Appliances (user-scoped)
@@ -856,7 +861,7 @@ export class DatabaseStorage implements IStorage {
       }>;
       const location = locations.find((loc) => loc.id === id);
 
-      return location ? { ...location, userId } : undefined;
+      return location;
     } catch (error) {
       console.error(`Error getting storage location ${id}:`, error);
       throw new Error("Failed to retrieve storage location");
@@ -865,7 +870,7 @@ export class DatabaseStorage implements IStorage {
 
   async createStorageLocation(
     userId: string,
-    location: InsertStorageLocation,
+    location: Omit<StorageLocation, "id">,
   ): Promise<StorageLocation> {
     try {
       // Get current user with storage locations
@@ -901,10 +906,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(users.id, userId));
 
-      return {
-        ...newLocation,
-        userId,
-      };
+      return newLocation;
     } catch (error) {
       console.error("Error creating storage location:", error);
       throw new Error("Failed to create storage location");
@@ -1260,12 +1262,7 @@ export class DatabaseStorage implements IStorage {
     limit: number = 30,
     storageLocationId?: string,
     sortBy: "name" | "expirationDate" | "addedAt" = "expirationDate",
-  ): Promise<{
-    items: FoodItem[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  ): Promise<PaginatedResponse<FoodItem>> {
     try {
       const offset = (page - 1) * limit;
 
@@ -1399,7 +1396,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(chatMessages)
         .where(eq(chatMessages.userId, userId))
-        .orderBy(sql`${chatMessages.timestamp} DESC`) // Most recent first
+        .orderBy(desc(chatMessages.createdAt)) // Most recent first
         .limit(limit);
     } catch (error) {
       console.error(`Error getting chat messages for user ${userId}:`, error);
@@ -1411,12 +1408,7 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     page: number = 1,
     limit: number = 50,
-  ): Promise<{
-    messages: ChatMessage[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  ): Promise<PaginatedResponse<ChatMessage>> {
     try {
       const offset = (page - 1) * limit;
 
@@ -1433,7 +1425,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(chatMessages)
         .where(eq(chatMessages.userId, userId))
-        .orderBy(sql`${chatMessages.timestamp} DESC`)
+        .orderBy(desc(chatMessages.createdAt))
         .limit(limit)
         .offset(offset);
 
@@ -1543,12 +1535,7 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     page: number = 1,
     limit: number = 20,
-  ): Promise<{
-    recipes: Recipe[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  ): Promise<PaginatedResponse<Recipe>> {
     try {
       const offset = (page - 1) * limit;
 
