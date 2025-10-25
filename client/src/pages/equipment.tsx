@@ -54,10 +54,7 @@ export default function Equipment() {
   // Batch update mutation
   const batchUpdateMutation = useMutation({
     mutationFn: async (data: { add: string[]; remove: string[] }) => {
-      return apiRequest("/api/user-appliances/batch", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", "/api/user-appliances/batch", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user-appliances"] });
