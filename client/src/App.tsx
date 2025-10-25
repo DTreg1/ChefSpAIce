@@ -36,6 +36,7 @@ const Nutrition = lazy(() => import("@/pages/nutrition"));
 const MealPlanner = lazy(() => import("@/pages/meal-planner"));
 const ShoppingList = lazy(() => import("@/pages/shopping-list"));
 const Appliances = lazy(() => import("@/pages/appliances"));
+const Equipment = lazy(() => import("@/pages/equipment"));
 const Settings = lazy(() => import("@/pages/settings"));
 const FoodGroups = lazy(() => import("@/pages/food-groups"));
 const FeedbackAnalytics = lazy(() => import("@/pages/feedback-analytics"));
@@ -61,6 +62,7 @@ function AuthenticatedRouter() {
         <Route path="/meal-planner" component={MealPlanner} />
         <Route path="/shopping-list" component={ShoppingList} />
         <Route path="/appliances" component={Appliances} />
+        <Route path="/equipment" component={Equipment} />
         <Route path="/inventory" component={Storage} />
         <Route path="/storage/all" component={Storage} />
         <Route path="/storage/:location" component={Storage} />

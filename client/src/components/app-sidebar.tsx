@@ -274,6 +274,21 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/equipment"}
+                  >
+                    <Link
+                      href="/equipment"
+                      data-testid="link-equipment"
+                      onClick={handleLinkClick}
+                    >
+                      <ChefHat className="w-4 h-4" />
+                      <span className="flex-1">Kitchen Equipment</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 <Collapsible
                   open={foodGroupsOpen}
                   onOpenChange={setFoodGroupsOpen}
