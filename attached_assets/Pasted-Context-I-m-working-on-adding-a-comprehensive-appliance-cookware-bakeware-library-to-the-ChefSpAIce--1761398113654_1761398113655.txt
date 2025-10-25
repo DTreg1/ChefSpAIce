@@ -1,0 +1,50 @@
+Context
+I'm working on adding a comprehensive appliance/cookware/bakeware library to the ChefSpAIce app so recipes can be tailored to what equipment users actually have available.
+
+What's Already Done
+Created database schema for:
+appliance_library table - master catalog of all equipment
+user_appliances table - tracks which items each user owns
+Added needed_equipment field to recipes table
+Created server/appliance-library-data.ts with 70+ items including appliances, cookware, bakeware, and utensils
+Initialized the appliance_library table with data using server/init-appliance-library.ts
+What Still Needs to Be Done
+1. Fix Storage Layer (server/storage.ts)
+Add these methods to IStorage interface and implement them:
+getApplianceLibrary() - get all library items
+getApplianceLibraryByCategory(category) - filter by category
+searchApplianceLibrary(query) - search items
+getCommonAppliances() - get common items for onboarding
+getUserAppliances(userId) - get user's equipment
+addUserAppliance(userId, applianceLibraryId, details) - add to user's collection
+updateUserAppliance(userId, id, updates) - update user's item
+deleteUserAppliance(userId, id) - remove from collection
+getUserAppliancesByCategory(userId, category) - get user's items by category
+2. Create API Endpoints (server/routers/appliances.router.ts)
+GET /api/appliance-library - browse all equipment
+GET /api/user-appliances - get user's equipment
+POST /api/user-appliances - add to user's collection
+PATCH /api/user-appliances/:id - update user's item
+DELETE /api/user-appliances/:id - remove from collection
+3. Update Recipe Generation
+Modify recipe generation prompt to include available equipment
+Add "Needed:" section to generated recipes listing required equipment
+Filter recipes based on user's available equipment
+4. Create Equipment Selection UI
+Add new page at /equipment or /appliances
+Show library items grouped by category (appliances, cookware, bakeware, utensils)
+Allow users to select what they own
+Add to onboarding flow for new users
+Show common items pre-selected
+5. Update Recipe Display
+Show "Needed Equipment" section on recipe cards and details
+Highlight missing equipment in red if user doesn't have it
+Add filter on recipes page to show only recipes with available equipment
+6. Testing
+Test equipment selection and saving
+Verify recipe generation includes equipment requirements
+Test filtering recipes by available equipment
+Current Issues
+The server is running but there are TypeScript errors in server/storage.ts (61 diagnostics) that need to be fixed related to missing type imports for ApplianceLibrary and UserAppliance.
+
+Please continue implementing this feature, starting with fixing the storage layer and completing all remaining tasks.
