@@ -96,7 +96,7 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
   if ((descLower.includes('meat') || descLower.includes('chicken') || 
        descLower.includes('beef') || descLower.includes('pork') || 
        descLower.includes('fish') || descLower.includes('egg')) && 
-      nutrition.protein === 0 && nutrition.calories > 0) {
+      nutrition.protein === 0 && nutrition.calories && nutrition.calories > 0) {
     console.warn(`Invalid nutrition data for "${foodDescription}": protein food with zero protein`);
     return false;
   }
@@ -189,6 +189,9 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
     foodCategory = food.brandedFoodCategory;
   }
 
+  // Extract nutrition info if available
+  const nutritionInfo = extractNutritionInfo(food);
+
   return {
     fdcId: food.fdcId,
     description: food.description,
@@ -199,7 +202,18 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
     foodCategory: foodCategory,
     servingSize: food.servingSize,
     servingSizeUnit: food.servingSizeUnit,
-    nutrition: extractNutritionInfo(food),
+    // Add foodNutrients if we have nutrition data
+    ...(nutritionInfo && {
+      foodNutrients: [
+        { nutrientId: 1008, nutrientName: 'Energy', unitName: 'kcal', value: nutritionInfo.calories || 0 },
+        { nutrientId: 1003, nutrientName: 'Protein', unitName: 'g', value: nutritionInfo.protein || 0 },
+        { nutrientId: 1005, nutrientName: 'Carbohydrates', unitName: 'g', value: nutritionInfo.carbs || 0 },
+        { nutrientId: 1004, nutrientName: 'Total lipid (fat)', unitName: 'g', value: nutritionInfo.fat || 0 },
+        ...(nutritionInfo.fiber !== undefined ? [{ nutrientId: 1079, nutrientName: 'Fiber', unitName: 'g', value: nutritionInfo.fiber }] : []),
+        ...(nutritionInfo.sugar !== undefined ? [{ nutrientId: 2000, nutrientName: 'Sugars', unitName: 'g', value: nutritionInfo.sugar }] : []),
+        ...(nutritionInfo.sodium !== undefined ? [{ nutrientId: 1093, nutrientName: 'Sodium', unitName: 'mg', value: nutritionInfo.sodium }] : []),
+      ]
+    }),
   };
 }
 
@@ -294,6 +308,12 @@ export async function searchUSDAFoods(
       totalHits: data.totalHits,
       currentPage: data.currentPage,
       totalPages: data.totalPages,
+      pageList: data.totalPages ? Array.from({ length: Math.min(10, data.totalPages) }, (_, i) => i + 1) : [1],
+      foodSearchCriteria: {
+        query: typeof options === 'string' ? options : options.query,
+        pageNumber: data.currentPage || 1,
+        pageSize: typeof options === 'string' ? 25 : (options.pageSize || 25),
+      },
     };
   } catch (error: any) {
     if (error instanceof ApiError) {
@@ -343,6 +363,26 @@ export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null
       throw error;
     }
     console.error("USDA API error:", error);
+    return null;
+  }
+}
+
+// Get enriched onboarding item data - searches for the item name and returns the first result
+export async function getEnrichedOnboardingItem(itemName: string): Promise<USDAFoodItem | null> {
+  try {
+    const searchResult = await searchUSDAFoods({
+      query: itemName,
+      pageSize: 1,
+      dataType: ['Foundation', 'SR Legacy', 'Branded']
+    });
+
+    if (searchResult.foods && searchResult.foods.length > 0) {
+      return searchResult.foods[0];
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Failed to get enriched data for "${itemName}":`, error);
     return null;
   }
 }

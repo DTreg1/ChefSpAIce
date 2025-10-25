@@ -488,11 +488,8 @@ router.post(
             unit: commonItem.unit,
             storageLocationId,
             expirationDate: expirationDate.toISOString(),
-            fcdId: commonItem.fcdId || null,
             nutrition: commonItem.nutrition || null,
-            usdaData: commonItem.usdaData
-              ? JSON.stringify(commonItem.usdaData)
-              : null,
+            usdaData: commonItem.usdaData || null,
             foodCategory: commonItem.foodCategory,
           });
           successCount++;
@@ -530,7 +527,6 @@ router.post(
             unit: itemData.unit,
             storageLocationId,
             expirationDate: expirationDate.toISOString(),
-            fcdId: itemData.fcdId || null,
             foodCategory,
           });
           successCount++;
