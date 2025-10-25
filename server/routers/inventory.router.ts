@@ -366,7 +366,7 @@ router.post("/food/enrich", isAuthenticated, async (req: any, res: Response) => 
 ${context}
 
 Provide a JSON response with:
-1. category: one of [dairy, meat, produce, grains, canned, frozen, condiments, beverages, snacks, other]
+1. foodCategory: one of [dairy, meat, produce, grains, canned, frozen, condiments, beverages, snacks, other]
 2. defaultShelfLife: estimated shelf life in days
 3. storageRecommendation: best storage location [fridge, freezer, pantry]
 4. nutritionSummary: brief nutrition highlights (2-3 key points)
@@ -392,7 +392,7 @@ Response must be valid JSON only, no additional text.`;
   } catch (error) {
     console.error("Food enrichment error:", error);
     res.json({
-      category: "other",
+      foodCategory: "other",
       defaultShelfLife: 30,
       storageRecommendation: "pantry",
       nutritionSummary: "Nutritional information not available",
@@ -404,18 +404,18 @@ Response must be valid JSON only, no additional text.`;
 // Onboarding common items
 router.get("/onboarding/common-items", async (_req: Request, res: Response) => {
   const commonItems = [
-    { name: "Milk", category: "dairy", icon: "🥛" },
-    { name: "Eggs", category: "dairy", icon: "🥚" },
-    { name: "Bread", category: "grains", icon: "🍞" },
-    { name: "Butter", category: "dairy", icon: "🧈" },
-    { name: "Chicken Breast", category: "meat", icon: "🍗" },
-    { name: "Ground Beef", category: "meat", icon: "🥩" },
-    { name: "Rice", category: "grains", icon: "🍚" },
-    { name: "Pasta", category: "grains", icon: "🍝" },
-    { name: "Tomatoes", category: "produce", icon: "🍅" },
-    { name: "Onions", category: "produce", icon: "🧅" },
-    { name: "Potatoes", category: "produce", icon: "🥔" },
-    { name: "Cheese", category: "dairy", icon: "🧀" },
+    { name: "Milk", foodCategory: "dairy", icon: "🥛" },
+    { name: "Eggs", foodCategory: "dairy", icon: "🥚" },
+    { name: "Bread", foodCategory: "grains", icon: "🍞" },
+    { name: "Butter", foodCategory: "dairy", icon: "🧈" },
+    { name: "Chicken Breast", foodCategory: "meat", icon: "🍗" },
+    { name: "Ground Beef", foodCategory: "meat", icon: "🥩" },
+    { name: "Rice", foodCategory: "grains", icon: "🍚" },
+    { name: "Pasta", foodCategory: "grains", icon: "🍝" },
+    { name: "Tomatoes", foodCategory: "produce", icon: "🍅" },
+    { name: "Onions", foodCategory: "produce", icon: "🧅" },
+    { name: "Potatoes", foodCategory: "produce", icon: "🥔" },
+    { name: "Cheese", foodCategory: "dairy", icon: "🧀" },
   ];
   res.json(commonItems);
 });

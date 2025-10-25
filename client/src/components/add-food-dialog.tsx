@@ -386,9 +386,9 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         setSearchQuery(analysis.name || "");
 
         // Suggest storage location based on category
-        if (storageLocations && analysis.category) {
+        if (storageLocations && analysis.foodCategory) {
           const suggestedLocation = getSuggestedStorageLocation(
-            analysis.category,
+            analysis.foodCategory,
             analysis.name,
             storageLocations,
           );
@@ -398,8 +398,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         }
 
         // Suggest expiration date based on category or use default
-        if (!expirationDate && analysis.category) {
-          const shelfLife = getSuggestedShelfLife(analysis.category);
+        if (!expirationDate && analysis.foodCategory) {
+          const shelfLife = getSuggestedShelfLife(analysis.foodCategory);
           const futureDate = new Date();
           futureDate.setDate(futureDate.getDate() + shelfLife);
           setExpirationDate(futureDate.toISOString().split("T")[0]);
