@@ -224,6 +224,59 @@ export class BarcodeLookupService {
   }
 
   /**
+   * Look up multiple products by barcode in batch
+   * Optimizes by checking cache first and fetching missing ones in parallel
+   */
+  async lookupBatch(barcodes: string[]): Promise<Map<string, BarcodeProduct | null>> {
+    const results = new Map<string, BarcodeProduct | null>();
+    const uncachedBarcodes: string[] = [];
+    
+    // First, check cache for all barcodes
+    for (const barcode of barcodes) {
+      const cached = await this.storage.getBarcodeProduct(barcode);
+      if (cached) {
+        results.set(barcode, cached);
+      } else {
+        uncachedBarcodes.push(barcode);
+      }
+    }
+    
+    console.log(`Found ${results.size} cached barcodes, need to fetch ${uncachedBarcodes.length}`);
+    
+    // If we have uncached barcodes and an API key, fetch them
+    if (uncachedBarcodes.length > 0 && this.apiKey) {
+      // Process in parallel with controlled concurrency (max 5 at a time)
+      const concurrencyLimit = 5;
+      const chunks: string[][] = [];
+      
+      for (let i = 0; i < uncachedBarcodes.length; i += concurrencyLimit) {
+        chunks.push(uncachedBarcodes.slice(i, i + concurrencyLimit));
+      }
+      
+      for (const chunk of chunks) {
+        const promises = chunk.map(async (barcode) => {
+          try {
+            const product = await this.lookupByBarcode(barcode);
+            results.set(barcode, product);
+          } catch (error) {
+            console.error(`Failed to lookup barcode ${barcode}:`, error);
+            results.set(barcode, null);
+          }
+        });
+        
+        await Promise.all(promises);
+      }
+    } else if (uncachedBarcodes.length > 0) {
+      // No API key, set all uncached to null
+      for (const barcode of uncachedBarcodes) {
+        results.set(barcode, null);
+      }
+    }
+    
+    return results;
+  }
+
+  /**
    * Search for products by query
    */
   async searchProducts(query: string): Promise<BarcodeProduct[]> {

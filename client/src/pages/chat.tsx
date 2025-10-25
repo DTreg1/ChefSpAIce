@@ -17,17 +17,54 @@ import { useAuth } from "@/hooks/useAuth";
 import { useVoiceConversation } from "@/hooks/useVoiceConversation";
 import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
 import { ExpirationTicker } from "@/components/expiration-ticker";
+import { useStreamedContent } from "@/hooks/use-streamed-content";
+
+// Extended type for UI-only properties
+interface ChatMessageUI {
+  id: string;
+  userId: string;
+  role: string;
+  content: string;
+  createdAt: Date | null;
+  timestamp?: Date; // For UI display
+  attachments?: Array<{
+    type: "image" | "audio" | "file";
+    url: string;
+    name?: string;
+    size?: number;
+    mimeType?: string;
+  }>;
+  metadata?: any;
+}
+
+// Extended Recipe type for UI
+interface RecipeUI extends Recipe {
+  usedIngredients?: string[];
+  missingIngredients?: string[];
+}
 
 export default function Chat() {
-  const [messages, setMessages] = useState<ChatMessageType[]>([]);
+  const [messages, setMessages] = useState<ChatMessageUI[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
-  const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
+  const [generatedRecipe, setGeneratedRecipe] = useState<RecipeUI | null>(null);
   const [wasVoiceInput, setWasVoiceInput] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const streamingMessageRef = useRef<string>("");
   const { toast } = useToast();
+  
+  // Use batched streaming hook for better performance
+  const {
+    displayContent: streamingContent,
+    appendChunk,
+    complete: completeStreaming,
+    reset: resetStreaming,
+    getFullContent,
+  } = useStreamedContent({
+    batchInterval: 100, // Update UI every 100ms
+    onComplete: (content) => {
+      console.log("Streaming completed with content length:", content.length);
+    }
+  });
   const { user } = useAuth();
 
   const getUserInitials = () => {
@@ -65,7 +102,14 @@ export default function Chat() {
 
   useEffect(() => {
     if (chatHistory) {
-      setMessages(chatHistory);
+      // Convert ChatMessageType[] to ChatMessageUI[]
+      const uiMessages: ChatMessageUI[] = chatHistory.map(msg => ({
+        ...msg,
+        timestamp: msg.createdAt || new Date(),
+        attachments: [],
+        metadata: null,
+      }));
+      setMessages(uiMessages);
     }
   }, [chatHistory]);
 
@@ -109,11 +153,12 @@ export default function Chat() {
     } catch (error) {
       console.error("Failed to save recipe message:", error);
       // Still show the message locally even if save fails
-      const recipeMessage: ChatMessageType = {
+      const recipeMessage: ChatMessageUI = {
         id: Date.now().toString(),
         userId: user?.id || "",
         role: "assistant",
         content: `I've created a recipe for you: ${recipe.title}`,
+        createdAt: new Date(),
         timestamp: new Date(),
         metadata: JSON.stringify({ recipeId: recipe.id }),
         attachments: [],
@@ -138,11 +183,12 @@ export default function Chat() {
       setWasVoiceInput(true);
     }
 
-    const userMessage: ChatMessageType = {
+    const userMessage: ChatMessageUI = {
       id: Date.now().toString(),
       userId: user?.id || "",
       role: "user",
       content,
+      createdAt: new Date(),
       timestamp: new Date(),
       metadata: null,
       attachments: attachments || [],
@@ -150,7 +196,7 @@ export default function Chat() {
 
     setMessages((prev) => [...prev, userMessage]);
     setIsStreaming(true);
-    setStreamingContent("");
+    resetStreaming(); // Clear any previous streaming content
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -177,36 +223,43 @@ export default function Chat() {
         throw new Error("No response body");
       }
 
-      let accumulated = "";
-      streamingMessageRef.current = "";
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
+        buffer += chunk;
+        const lines = buffer.split("\n");
+        
+        // Keep the last incomplete line in the buffer
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
           if (line.startsWith("data: ")) {
             const data = line.slice(6);
             if (data === "[DONE]") {
-              const aiMessage: ChatMessageType = {
+              // Complete the streaming
+              completeStreaming();
+              const finalContent = getFullContent();
+              
+              const aiMessage: ChatMessageUI = {
                 id: (Date.now() + 1).toString(),
                 userId: user?.id || "",
                 role: "assistant",
-                content: accumulated,
+                content: finalContent,
+                createdAt: new Date(),
                 timestamp: new Date(),
                 metadata: null,
                 attachments: [],
               };
               setMessages((prev) => [...prev, aiMessage]);
-              setStreamingContent("");
               setIsStreaming(false);
               abortControllerRef.current = null;
 
               // Auto-play voice response if the input was from voice
-              if (wasVoiceInput && accumulated) {
+              if (wasVoiceInput && finalContent) {
                 // The VoiceControls component will handle auto-playing
                 setWasVoiceInput(false); // Reset for next message
               }
@@ -221,9 +274,8 @@ export default function Chat() {
             try {
               const parsed = JSON.parse(data);
               if (parsed.content) {
-                accumulated += parsed.content;
-                streamingMessageRef.current = accumulated;
-                setStreamingContent(accumulated);
+                // Use batched streaming - this will update UI every 100ms
+                appendChunk(parsed.content);
               }
             } catch (e) {
               // Skip invalid JSON
@@ -243,7 +295,7 @@ export default function Chat() {
         variant: "destructive",
       });
       setIsStreaming(false);
-      setStreamingContent("");
+      resetStreaming();
       abortControllerRef.current = null;
     }
   };
@@ -300,7 +352,7 @@ export default function Chat() {
                   content={message.content}
                   userProfileImageUrl={user?.profileImageUrl || undefined}
                   userInitials={getUserInitials()}
-                  timestamp={new Date(message.timestamp).toLocaleTimeString(
+                  timestamp={(message.timestamp || message.createdAt || new Date()).toLocaleTimeString(
                     [],
                     {
                       hour: "2-digit",
@@ -320,7 +372,7 @@ export default function Chat() {
                           servings={generatedRecipe.servings || undefined}
                           ingredients={generatedRecipe.ingredients}
                           instructions={generatedRecipe.instructions}
-                          usedIngredients={generatedRecipe.usedIngredients}
+                          usedIngredients={generatedRecipe.usedIngredients || []}
                           missingIngredients={
                             generatedRecipe.missingIngredients || []
                           }

@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { MealPlanningDialog } from "@/components/meal-planning-dialog";
 import { ServingAdjuster } from "@/components/serving-adjuster";
 import { StarRating } from "@/components/star-rating";
@@ -43,7 +43,7 @@ interface RecipeCardProps {
   showControls?: boolean;
 }
 
-export function RecipeCard({
+export const RecipeCard = React.memo(function RecipeCard({
   id,
   title,
   prepTime,
@@ -84,18 +84,18 @@ export function RecipeCard({
     },
   });
 
-  const toggleFavorite = () => {
+  const toggleFavorite = useCallback(() => {
     const newFavorite = !localFavorite;
     setLocalFavorite(newFavorite);
     updateMutation.mutate({ isFavorite: newFavorite });
-  };
+  }, [localFavorite, updateMutation]);
 
-  const setRating = (newRating: number) => {
+  const setRating = useCallback((newRating: number) => {
     setLocalRating(newRating);
     updateMutation.mutate({ rating: newRating });
-  };
+  }, [updateMutation]);
 
-  const refreshAvailability = async () => {
+  const refreshAvailability = useCallback(async () => {
     if (!id) return;
     
     setIsRefreshing(true);
@@ -127,14 +127,14 @@ export function RecipeCard({
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [id, toast]);
 
-  const handleServingsChange = (newServings: number, adjustedIngs: string[]) => {
+  const handleServingsChange = useCallback((newServings: number, adjustedIngs: string[]) => {
     setCurrentServings(newServings);
     setAdjustedIngredients(adjustedIngs);
-  };
+  }, []);
 
-  const addMissingToShoppingList = async () => {
+  const addMissingToShoppingList = useCallback(async () => {
     if (!id) return;
     
     // Get the missing ingredients
@@ -174,7 +174,7 @@ export function RecipeCard({
     } finally {
       setIsAddingToShoppingList(false);
     }
-  };
+  }, [id, localIngredientMatches, missingIngredients, toast]);
 
   return (
     <Card className="glass-morph hover-elevate active-elevate-2 card-hover border-2 border-primary/20 shadow-glass hover:shadow-glass-hover transition-morph" data-testid="card-recipe">
@@ -445,4 +445,4 @@ export function RecipeCard({
       </CardContent>
     </Card>
   );
-}
+});

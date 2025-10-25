@@ -1,9 +1,26 @@
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
 // Use modular routes instead of monolithic routes.ts
 import { registerModularRoutes } from "./routers";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// Enable gzip compression for better performance
+app.use(compression({
+  level: 6, // Balanced compression level
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    // Don't compress SSE (Server-Sent Events) or streaming responses
+    const contentType = res.getHeader('Content-Type') as string;
+    if (contentType && (contentType.includes('text/event-stream') || contentType.includes('stream'))) {
+      return false;
+    }
+    // Use default compression filter for other responses
+    return compression.filter(req, res);
+  }
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

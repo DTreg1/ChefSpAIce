@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -29,7 +29,7 @@ interface VirtualizedFoodGridProps {
   onItemSelect: (id: string) => void;
 }
 
-function VirtualizedFoodGrid({ 
+const VirtualizedFoodGrid = React.memo(function VirtualizedFoodGrid({ 
   items, 
   storageLocations, 
   scrollContainerRef,
@@ -133,7 +133,7 @@ function VirtualizedFoodGrid({
       </div>
     </div>
   );
-}
+});
 
 export default function Storage() {
   const [, params] = useRoute("/storage/:location");
