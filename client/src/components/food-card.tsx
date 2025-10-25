@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ interface FoodCardProps {
   storageLocationName: string;
 }
 
-export function FoodCard({ item, storageLocationName }: FoodCardProps) {
+export const FoodCard = React.memo(function FoodCard({ item, storageLocationName }: FoodCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [nutritionDialogOpen, setNutritionDialogOpen] = useState(false);
   const [localQuantity, setLocalQuantity] = useState<number>(parseFloat(item.quantity) || 0);
@@ -602,4 +602,4 @@ export function FoodCard({ item, storageLocationName }: FoodCardProps) {
       )}
     </>
   );
-}
+});
