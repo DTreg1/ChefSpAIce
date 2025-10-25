@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart, RefreshCw, Plus, ShoppingBasket } from "lucide-react";
+import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, ShoppingCart, RefreshCw, Plus, ShoppingBasket, Utensils } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -38,6 +38,7 @@ interface RecipeCardProps {
   usedIngredients: string[];
   missingIngredients?: string[];
   ingredientMatches?: IngredientMatch[];
+  neededEquipment?: string[];
   isFavorite?: boolean;
   rating?: number;
   showControls?: boolean;
@@ -54,6 +55,7 @@ export const RecipeCard = React.memo(function RecipeCard({
   usedIngredients,
   missingIngredients = [],
   ingredientMatches,
+  neededEquipment = [],
   isFavorite = false,
   rating,
   showControls = false,
@@ -416,6 +418,33 @@ export const RecipeCard = React.memo(function RecipeCard({
               </ul>
             </AccordionContent>
           </AccordionItem>
+
+          {neededEquipment && neededEquipment.length > 0 && (
+            <AccordionItem value="equipment" data-testid="accordion-equipment">
+              <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                <div className="flex items-center justify-between w-full mr-2">
+                  <span>Equipment Needed</span>
+                  <Badge variant="outline" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                    {neededEquipment.length} item{neededEquipment.length !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <ul className="space-y-2 pt-2">
+                  {neededEquipment.map((equipment, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-center gap-2 text-base"
+                      data-testid={`text-equipment-${idx}`}
+                    >
+                      <Utensils className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span>{equipment}</span>
+                    </li>
+                  ))}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          )}
 
           <AccordionItem value="instructions" data-testid="accordion-instructions">
             <AccordionTrigger className="text-base font-semibold hover:no-underline">
