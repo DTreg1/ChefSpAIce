@@ -32,6 +32,9 @@ import {
   Plus,
   Package,
   Loader2,
+  Home,
+  Package2,
+  Utensils,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -41,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ApplianceLibrary } from "@shared/schema";
 
 const defaultStorageAreaOptions = [
   { name: "Refrigerator", icon: Refrigerator },
@@ -124,11 +128,18 @@ export default function Onboarding() {
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [foodToAvoid, setFoodToAvoid] = useState("");
   const [foodsToAvoidList, setFoodsToAvoidList] = useState<string[]>([]);
+  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
 
   // Fetch common items from API
   const { data: commonItemsData, isLoading: itemsLoading } =
     useQuery<CommonItemsResponse>({
       queryKey: ["/api/onboarding/common-items"],
+    });
+
+  // Fetch common equipment from API
+  const { data: commonEquipment, isLoading: equipmentLoading } =
+    useQuery<ApplianceLibrary[]>({
+      queryKey: ["/api/appliance-library/common"],
     });
 
   // Set all items as selected by default when data loads
@@ -165,6 +176,7 @@ export default function Onboarding() {
         preferences: data,
         customStorageAreas: customStorageAreas,
         selectedCommonItems: selectedCommonItems,
+        selectedEquipment: selectedEquipment,
       });
 
       const result = await response.json();
@@ -172,6 +184,7 @@ export default function Onboarding() {
         successCount: result.foodItemsCreated,
         failedItems: result.failedItems,
         createdStorageLocations: result.createdStorageLocations,
+        equipmentAdded: result.equipmentAdded,
       };
     },
     onSuccess: (data) => {
@@ -242,6 +255,13 @@ export default function Onboarding() {
       ? selectedCommonItems.filter((i) => i !== itemName)
       : [...selectedCommonItems, itemName];
     setSelectedCommonItems(newSelected);
+  };
+
+  const toggleEquipment = (equipmentId: string) => {
+    const newSelected = selectedEquipment.includes(equipmentId)
+      ? selectedEquipment.filter((e) => e !== equipmentId)
+      : [...selectedEquipment, equipmentId];
+    setSelectedEquipment(newSelected);
   };
 
   const toggleDietary = (option: string) => {
@@ -367,6 +387,78 @@ export default function Onboarding() {
                   {form.formState.errors.storageAreasEnabled && (
                     <p className="text-sm text-destructive">
                       {form.formState.errors.storageAreasEnabled.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <FormLabel>Select Your Kitchen Equipment</FormLabel>
+                  <FormDescription>
+                    Select the appliances, cookware, and utensils you have available. This helps us suggest recipes tailored to your kitchen.
+                  </FormDescription>
+                  {equipmentLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : commonEquipment && commonEquipment.length > 0 ? (
+                    <div className="space-y-3">
+                      {/* Group equipment by category */}
+                      {["appliance", "cookware", "bakeware", "utensil"].map((category) => {
+                        const categoryItems = commonEquipment.filter(
+                          (item) => item.category === category
+                        );
+                        if (categoryItems.length === 0) return null;
+                        
+                        const categoryIcons: Record<string, any> = {
+                          appliance: Home,
+                          cookware: Package2,
+                          bakeware: ChefHat,
+                          utensil: Utensils,
+                        };
+                        const CategoryIcon = categoryIcons[category] || Package;
+                        
+                        return (
+                          <div key={category}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <CategoryIcon className="w-4 h-4 text-muted-foreground" />
+                              <h4 className="text-sm font-medium capitalize">
+                                {category === "appliance" ? "Appliances" : 
+                                 category === "cookware" ? "Cookware" :
+                                 category === "bakeware" ? "Bakeware" : "Utensils"}
+                              </h4>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {categoryItems.map((item) => (
+                                <Badge
+                                  key={item.id}
+                                  variant={
+                                    selectedEquipment.includes(item.id)
+                                      ? "default"
+                                      : "outline"
+                                  }
+                                  className="cursor-pointer hover-elevate active-elevate-2"
+                                  onClick={() => toggleEquipment(item.id)}
+                                  data-testid={`badge-equipment-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                                >
+                                  {item.name}
+                                  {selectedEquipment.includes(item.id) && (
+                                    <X className="w-3 h-3 ml-1" />
+                                  )}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground py-4">
+                      No equipment available
+                    </div>
+                  )}
+                  {selectedEquipment.length > 0 && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {selectedEquipment.length} item{selectedEquipment.length !== 1 ? "s" : ""} selected
                     </p>
                   )}
                 </div>
