@@ -155,6 +155,27 @@ export interface IStorage {
   ): Promise<ApplianceCategory>;
   deleteApplianceCategory(id: string): Promise<void>;
 
+  // Appliance Library - Master catalog of all equipment
+  getApplianceLibrary(): Promise<ApplianceLibrary[]>;
+  getApplianceLibraryByCategory(category: string): Promise<ApplianceLibrary[]>;
+  searchApplianceLibrary(query: string): Promise<ApplianceLibrary[]>;
+  getCommonAppliances(): Promise<ApplianceLibrary[]>;
+
+  // User Appliances - What equipment each user owns
+  getUserAppliances(userId: string): Promise<UserAppliance[]>;
+  addUserAppliance(
+    userId: string,
+    applianceLibraryId: string,
+    details?: Partial<InsertUserAppliance>,
+  ): Promise<UserAppliance>;
+  updateUserAppliance(
+    userId: string,
+    id: string,
+    updates: Partial<InsertUserAppliance>,
+  ): Promise<UserAppliance>;
+  deleteUserAppliance(userId: string, id: string): Promise<void>;
+  getUserAppliancesByCategory(userId: string, category: string): Promise<UserAppliance[]>;
+
   // Barcode Products
   getBarcodeProduct(barcodeNumber: string): Promise<BarcodeProduct | undefined>;
   createBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct>;
@@ -1100,6 +1121,156 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error deleting appliance category ${id}:`, error);
       throw new Error("Failed to delete appliance category");
+    }
+  }
+
+  // Appliance Library methods
+  async getApplianceLibrary(): Promise<ApplianceLibrary[]> {
+    try {
+      return db.select().from(applianceLibrary);
+    } catch (error) {
+      console.error("Error getting appliance library:", error);
+      throw new Error("Failed to retrieve appliance library");
+    }
+  }
+
+  async getApplianceLibraryByCategory(category: string): Promise<ApplianceLibrary[]> {
+    try {
+      return db
+        .select()
+        .from(applianceLibrary)
+        .where(eq(applianceLibrary.category, category));
+    } catch (error) {
+      console.error(`Error getting appliances by category ${category}:`, error);
+      throw new Error("Failed to retrieve appliances by category");
+    }
+  }
+
+  async searchApplianceLibrary(query: string): Promise<ApplianceLibrary[]> {
+    try {
+      const searchTerm = `%${query.toLowerCase()}%`;
+      return db
+        .select()
+        .from(applianceLibrary)
+        .where(
+          sql`LOWER(${applianceLibrary.name}) LIKE ${searchTerm} OR 
+               LOWER(${applianceLibrary.description}) LIKE ${searchTerm} OR
+               LOWER(${applianceLibrary.subcategory}) LIKE ${searchTerm}`
+        );
+    } catch (error) {
+      console.error(`Error searching appliance library for "${query}":`, error);
+      throw new Error("Failed to search appliance library");
+    }
+  }
+
+  async getCommonAppliances(): Promise<ApplianceLibrary[]> {
+    try {
+      return db
+        .select()
+        .from(applianceLibrary)
+        .where(eq(applianceLibrary.isCommon, true));
+    } catch (error) {
+      console.error("Error getting common appliances:", error);
+      throw new Error("Failed to retrieve common appliances");
+    }
+  }
+
+  // User Appliances methods
+  async getUserAppliances(userId: string): Promise<UserAppliance[]> {
+    try {
+      return db
+        .select()
+        .from(userAppliances)
+        .where(eq(userAppliances.userId, userId));
+    } catch (error) {
+      console.error(`Error getting user appliances for ${userId}:`, error);
+      throw new Error("Failed to retrieve user appliances");
+    }
+  }
+
+  async addUserAppliance(
+    userId: string,
+    applianceLibraryId: string,
+    details?: Partial<InsertUserAppliance>,
+  ): Promise<UserAppliance> {
+    try {
+      const [newUserAppliance] = await db
+        .insert(userAppliances)
+        .values({
+          userId,
+          applianceLibraryId,
+          ...details,
+        })
+        .returning();
+      return newUserAppliance;
+    } catch (error) {
+      console.error("Error adding user appliance:", error);
+      throw new Error("Failed to add user appliance");
+    }
+  }
+
+  async updateUserAppliance(
+    userId: string,
+    id: string,
+    updates: Partial<InsertUserAppliance>,
+  ): Promise<UserAppliance> {
+    try {
+      const [updated] = await db
+        .update(userAppliances)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(
+          and(
+            eq(userAppliances.id, id),
+            eq(userAppliances.userId, userId)
+          )
+        )
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error(`Error updating user appliance ${id}:`, error);
+      throw new Error("Failed to update user appliance");
+    }
+  }
+
+  async deleteUserAppliance(userId: string, id: string): Promise<void> {
+    try {
+      await db
+        .delete(userAppliances)
+        .where(
+          and(
+            eq(userAppliances.id, id),
+            eq(userAppliances.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error(`Error deleting user appliance ${id}:`, error);
+      throw new Error("Failed to delete user appliance");
+    }
+  }
+
+  async getUserAppliancesByCategory(userId: string, category: string): Promise<UserAppliance[]> {
+    try {
+      // Join with appliance library to filter by category
+      const result = await db
+        .select({
+          userAppliance: userAppliances,
+        })
+        .from(userAppliances)
+        .innerJoin(
+          applianceLibrary,
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+        )
+        .where(
+          and(
+            eq(userAppliances.userId, userId),
+            eq(applianceLibrary.category, category)
+          )
+        );
+      
+      return result.map(r => r.userAppliance);
+    } catch (error) {
+      console.error(`Error getting user appliances by category ${category}:`, error);
+      throw new Error("Failed to retrieve user appliances by category");
     }
   }
 
