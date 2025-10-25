@@ -133,7 +133,7 @@ export default function Onboarding() {
   // Fetch common items from API
   const { data: commonItemsData, isLoading: itemsLoading } =
     useQuery<CommonItemsResponse>({
-      queryKey: ["/api/onboarding/common-items"],
+      queryKey: ["/api/auth/onboarding/common-items"],
     });
 
   // Fetch common equipment from API
