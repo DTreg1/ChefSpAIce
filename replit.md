@@ -39,6 +39,8 @@ Key architectural decisions include:
     - **Food Category Filtering**: Allows filtering inventory by USDA food categories and viewing items organized by groups.
     - **Barcode Integration**: Utilizes UPC/GTIN barcodes for product image search and leverages USDA data for enriched item details. Accessible via Quick Actions or FDC Search page.
     - **USDA Food Search**: Comprehensive search interface with always-visible filters (Brand Owners, UPC/GTIN Code, Sort By, Sort Order, Results Per Page) for easy access to nutritional data. Supports searching by UPC/GTIN barcodes to find specific branded products.
+    - **Push Notifications**: Browser-based push notification system with Web Push API. Includes service worker registration, notification scheduler for expiring food items and meal reminders, user preference toggles in settings, and VAPID key configuration for secure delivery.
+    - **Cooking Terms Integration**: Smart detection and display of culinary terminology in recipes. Features automatic term detection during recipe generation, interactive tooltips with definitions in recipe instructions, comprehensive glossary page at `/glossary` with search and filtering, and database with 23 pre-seeded cooking terms across categories (Technique, Ingredient, Tool).
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon-backed)

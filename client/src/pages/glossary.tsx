@@ -42,7 +42,8 @@ export default function Glossary() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(term => 
         term.term.toLowerCase().includes(query) ||
-        term.definition.toLowerCase().includes(query) ||
+        (term.shortDefinition && term.shortDefinition.toLowerCase().includes(query)) ||
+        (term.longDefinition && term.longDefinition.toLowerCase().includes(query)) ||
         (term.searchTerms && term.searchTerms.some(st => st.toLowerCase().includes(query)))
       );
     }
@@ -217,7 +218,7 @@ export default function Glossary() {
                       </CardHeader>
                       <CardContent>
                         <CardDescription className="text-base">
-                          {term.definition}
+                          {term.longDefinition || term.shortDefinition || ""}
                         </CardDescription>
                         {term.example && (
                           <div className="mt-3 p-3 bg-muted rounded-md">
