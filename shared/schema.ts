@@ -42,12 +42,6 @@ export const users = pgTable("users", {
   notifyMealReminders: boolean("notify_meal_reminders").notNull().default(true),
   notificationTime: text("notification_time").default("09:00"), // Time of day for daily notifications
   
-  // Storage locations as JSONB array (previously in storageLocations table)
-  storageLocations: jsonb("storage_locations").$type<Array<{
-    id: string;
-    name: string;
-    icon: string;
-  }>>().default([]),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -55,6 +49,33 @@ export const users = pgTable("users", {
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// User Storage Locations - Storage areas each user has available
+export const userStorage = pgTable("user_storage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(), // e.g., "Refrigerator", "Pantry", "Wine Cellar"
+  icon: text("icon").notNull().default("package"), // Icon name for display
+  isDefault: boolean("is_default").notNull().default(false), // If it's a default area like Fridge/Pantry
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("user_storage_user_id_idx").on(table.userId),
+  uniqueIndex("user_storage_user_name_idx").on(table.userId, table.name),
+]);
+
+export const insertUserStorageSchema = createInsertSchema(userStorage).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserStorage = z.infer<typeof insertUserStorageSchema>;
+export type UserStorage = typeof userStorage.$inferSelect;
+// For backward compatibility
+export type StorageLocation = UserStorage;
 
 // Push Notification Tokens - Store device tokens for push notifications
 export const pushTokens = pgTable("push_tokens", {
@@ -156,13 +177,6 @@ export const insertUserInventorySchema = createInsertSchema(userInventory).omit(
 
 export type InsertUserInventory = z.infer<typeof insertUserInventorySchema>;
 export type UserInventory = typeof userInventory.$inferSelect;
-
-// Storage Locations Type
-export type StorageLocation = {
-  id: string;
-  name: string;
-  icon: string;
-};
 
 // Chat Messages - Store conversation history
 export const userChats = pgTable("user_chats", {

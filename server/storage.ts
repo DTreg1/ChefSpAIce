@@ -3,7 +3,10 @@ import { parallelQueries, batchInsert, QueryCache } from "./utils/batchQueries";
 import {
   type User,
   type UpsertUser,
-  type StorageLocation,
+  type UserStorage,
+  type UserStorage as StorageLocation,
+  type InsertUserStorage,
+  userStorage,
   type UserInventory,
   type InsertUserInventory,
   type UserInventory as FoodItem,
@@ -548,7 +551,7 @@ export class DatabaseStorage implements IStorage {
             return;
           }
 
-          // Check if user has storage locations
+          // Check if user has storage locations in the userStorage table
           const [user] = await db
             .select()
             .from(users)
@@ -558,33 +561,22 @@ export class DatabaseStorage implements IStorage {
             throw new Error(`User ${userId} not found`);
           }
 
-          const existingLocations =
-            (user.storageLocations as Array<{
-              id: string;
-              name: string;
-              icon: string;
-            }>) || [];
+          // Check if user already has storage locations
+          const existingLocations = await db
+            .select()
+            .from(userStorage)
+            .where(eq(userStorage.userId, userId));
 
           if (existingLocations.length === 0) {
             // Initialize default storage locations for this user
             const defaultLocations = [
-              { id: crypto.randomUUID(), name: "Refrigerator", icon: "refrigerator" },
-              { id: crypto.randomUUID(), name: "Freezer", icon: "snowflake" },
-              { id: crypto.randomUUID(), name: "Pantry", icon: "pizza" },
-              {
-                id: crypto.randomUUID(),
-                name: "Counter",
-                icon: "utensils-crossed",
-              },
+              { userId, name: "Refrigerator", icon: "refrigerator", isDefault: true, sortOrder: 1 },
+              { userId, name: "Freezer", icon: "snowflake", isDefault: true, sortOrder: 2 },
+              { userId, name: "Pantry", icon: "pizza", isDefault: true, sortOrder: 3 },
+              { userId, name: "Counter", icon: "utensils-crossed", isDefault: true, sortOrder: 4 },
             ];
 
-            await db
-              .update(users)
-              .set({
-                storageLocations: defaultLocations,
-                updatedAt: new Date(),
-              })
-              .where(eq(users.id, userId));
+            await db.insert(userStorage).values(defaultLocations);
 
             // Initialize default userAppliances for this user
             const defaultAppliances = [
@@ -797,29 +789,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Storage Locations (now stored in users.storageLocations JSONB array)
+  // Storage Locations (now stored in userStorage table)
   async getStorageLocations(userId: string): Promise<StorageLocation[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
 
-      // Get user with storage locations
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
-
-      if (!user || !user.storageLocations) {
-        return [];
-      }
-
-      // Add userId to each location and count items for each location
-      const locations = (
-        user.storageLocations as Array<{
-          id: string;
-          name: string;
-          icon: string;
-        }>
-      ).map((loc) => ({
-        ...loc,
-        userId,
-      }));
+      // Get user's storage locations from userStorage table
+      const locations = await db
+        .select()
+        .from(userStorage)
+        .where(and(eq(userStorage.userId, userId), eq(userStorage.isActive, true)))
+        .orderBy(userStorage.sortOrder);
 
       // Get item counts for each location
       const items = await db
@@ -835,6 +815,7 @@ export class DatabaseStorage implements IStorage {
         items.map((item) => [item.storageLocationId, item.count]),
       );
 
+      // Add itemCount to each location
       return locations.map((loc) => ({
         ...loc,
         itemCount: countMap.get(loc.id) || 0,
@@ -854,18 +835,15 @@ export class DatabaseStorage implements IStorage {
   ): Promise<StorageLocation | undefined> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
-
-      if (!user || !user.storageLocations) {
-        return undefined;
-      }
-
-      const locations = user.storageLocations as Array<{
-        id: string;
-        name: string;
-        icon: string;
-      }>;
-      const location = locations.find((loc) => loc.id === id);
+      
+      const [location] = await db
+        .select()
+        .from(userStorage)
+        .where(and(
+          eq(userStorage.userId, userId),
+          eq(userStorage.id, id),
+          eq(userStorage.isActive, true)
+        ));
 
       return location;
     } catch (error) {
@@ -876,41 +854,33 @@ export class DatabaseStorage implements IStorage {
 
   async createStorageLocation(
     userId: string,
-    location: Omit<StorageLocation, "id">,
+    location: Omit<StorageLocation, "id" | "userId" | "createdAt" | "updatedAt" | "isDefault" | "isActive" | "sortOrder">,
   ): Promise<StorageLocation> {
     try {
-      // Get current user with storage locations
+      // Check if user exists
       const [user] = await db.select().from(users).where(eq(users.id, userId));
-
       if (!user) {
         throw new Error("User not found");
       }
 
-      // Generate new ID for the storage location
-      const newLocationId = crypto.randomUUID();
-      const newLocation = {
-        id: newLocationId,
-        name: location.name,
-        icon: location.icon,
-      };
+      // Get current max sort order for this user
+      const [maxSort] = await db
+        .select({ maxOrder: sql<number>`COALESCE(MAX(${userStorage.sortOrder}), 0)` })
+        .from(userStorage)
+        .where(eq(userStorage.userId, userId));
 
-      // Add to existing storage locations array
-      const currentLocations =
-        (user.storageLocations as Array<{
-          id: string;
-          name: string;
-          icon: string;
-        }>) || [];
-      const updatedLocations = [...currentLocations, newLocation];
-
-      // Update user with new storage locations
-      await db
-        .update(users)
-        .set({
-          storageLocations: updatedLocations,
-          updatedAt: new Date(),
+      // Create new storage location
+      const [newLocation] = await db
+        .insert(userStorage)
+        .values({
+          userId,
+          name: location.name,
+          icon: location.icon || "package",
+          isDefault: false,
+          isActive: true,
+          sortOrder: (maxSort?.maxOrder || 0) + 1,
         })
-        .where(eq(users.id, userId));
+        .returning();
 
       return newLocation;
     } catch (error) {
