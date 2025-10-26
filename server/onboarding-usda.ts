@@ -32,11 +32,11 @@ export async function fetchOnboardingItemUsdaData(itemName: string): Promise<USD
       console.log(`UPC search failed for ${itemName}`);
     }
     
-    // Try FDC ID if available (cast to any to access fcdId)
+    // Try FDC ID if available (cast to any to access fdcId)
     const mappingWithFdc = mapping as any;
-    if (mappingWithFdc.fcdId) {
-      console.log(`Searching for ${itemName} by FDC ID: ${mappingWithFdc.fcdId}`);
-      const fdcData = await getFoodByFdcId(parseInt(mappingWithFdc.fcdId));
+    if (mappingWithFdc.fdcId) {
+      console.log(`Searching for ${itemName} by FDC ID: ${mappingWithFdc.fdcId}`);
+      const fdcData = await getFoodByFdcId(parseInt(mappingWithFdc.fdcId));
       if (fdcData) {
         usdaDataCache.set(cacheKey, fdcData);
         return fdcData;
@@ -83,7 +83,7 @@ export async function getEnrichedOnboardingItem(itemName: string): Promise<{
   unit: string;
   storage: string;
   expirationDays: number;
-  fcdId?: string;
+  fdcId?: string;
   nutrition?: string;
   usdaData?: any;
 } | null> {
@@ -100,7 +100,7 @@ export async function getEnrichedOnboardingItem(itemName: string): Promise<{
     unit: mapping.unit,
     storage: mapping.storage,
     expirationDays: mapping.expirationDays,
-    fcdId: usdaData?.fdcId ? String(usdaData.fdcId) : undefined,
+    fdcId: usdaData?.fdcId ? String(usdaData.fdcId) : undefined,
     nutrition: usdaData?.nutrition ? JSON.stringify(usdaData.nutrition) : undefined,
     usdaData: usdaData ? {
       fdcId: usdaData.fdcId,

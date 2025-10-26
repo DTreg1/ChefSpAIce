@@ -346,7 +346,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
       unit,
       storageLocationId: selectedLocation,
       expirationDate: expirationDate || format(addDays(new Date(), 7), "yyyy-MM-dd"),
-      fcdId: selectedFood.fdcId.toString(),
+      fdcId: selectedFood.fdcId.toString(),
       usdaData: selectedFood,
       foodCategory: selectedFood.foodCategory,
     };

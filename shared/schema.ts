@@ -787,7 +787,7 @@ export const commonFoodItems = pgTable("common_food_items", {
   // Identifier fields
   displayName: text("display_name").notNull().unique(), // Unique name for the item
   upc: text("upc"), // UPC barcode if available
-  fcdId: varchar("fcd_id"), // FDC ID from USDA
+  fdcId: varchar("fdc_id"), // FDC ID from USDA
   
   // Basic item data
   description: text("description"), // Detailed description from USDA or predefined
@@ -816,7 +816,7 @@ export const commonFoodItems = pgTable("common_food_items", {
 }, (table) => [
   index("common_food_items_display_name_idx").on(table.displayName),
   index("common_food_items_upc_idx").on(table.upc),
-  index("common_food_items_fcd_id_idx").on(table.fcdId),
+  index("common_food_items_fdc_id_idx").on(table.fdcId),
   index("common_food_items_category_idx").on(table.category),
   index("common_food_items_food_category_idx").on(table.foodCategory),
 ]);

@@ -775,7 +775,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     // Log the mutation data for debugging
     const mutationData = {
       name: selectedFood.description,
-      fcdId: selectedFood.fdcId?.toString() || null,
+      fdcId: selectedFood.fdcId?.toString() || null,
       quantity,
       unit,
       storageLocationId,

@@ -3,7 +3,7 @@
 
 export const onboardingUsdaMapping: Record<string, {
   upc?: string;  // Optional UPC barcode for product lookup
-  fcdId?: string;  // Optional FDC ID for USDA database lookup  
+  fdcId?: string;  // Optional FDC ID for USDA database lookup  
   displayName: string;
   quantity: string;
   unit: string;
@@ -14,7 +14,7 @@ export const onboardingUsdaMapping: Record<string, {
   // Pantry Staples
   "Salt": {
     upc: "024600017008", // Morton Table Salt
-    fcdId: "173410",
+    fdcId: "173410",
     displayName: "Salt",
     quantity: "1",
     unit: "container",
@@ -24,7 +24,7 @@ export const onboardingUsdaMapping: Record<string, {
   },
   "Black Pepper": {
     upc: "052100002989", // McCormick Black Pepper
-    fcdId: "170931",
+    fdcId: "170931",
     displayName: "Black Pepper",
     quantity: "1",
     unit: "container",

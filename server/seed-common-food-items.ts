@@ -31,7 +31,7 @@ export async function seedCommonFoodItems(forceUpdate = false) {
       allItems.set(name, {
         ...existingItem,
         upc: mappingData.upc || existingItem.upc,
-        fcdId: mappingData.fcdId || existingItem.fcdId,
+        fdcId: mappingData.fdcId || existingItem.fdcId,
         description: mappingData.description || existingItem.description,
       });
     } else {
@@ -76,7 +76,7 @@ export async function seedCommonFoodItems(forceUpdate = false) {
         const commonItem: InsertCommonFoodItem = {
           displayName,
           upc: itemData.upc || null,
-          fcdId: usdaData?.fdcId ? String(usdaData.fdcId) : itemData.fcdId || null,
+          fdcId: usdaData?.fdcId ? String(usdaData.fdcId) : itemData.fdcId || null,
           description: usdaData?.description || itemData.description || displayName,
           quantity: itemData.quantity || "1",
           unit: itemData.unit || "unit",
@@ -103,7 +103,7 @@ export async function seedCommonFoodItems(forceUpdate = false) {
           servingSizeUnit: usdaData?.servingSizeUnit || null,
           dataSource: usdaData ? 
             (itemData.upc ? 'usda_upc' : 
-             itemData.fcdId ? 'usda_fdc' : 
+             itemData.fdcId ? 'usda_fdc' : 
              'usda_search') : 
             'manual',
         };

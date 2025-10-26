@@ -8,7 +8,7 @@ CREATE INDEX IF NOT EXISTS idx_users_is_admin ON users(is_admin);
 -- Food items table: Composite and single column indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_food_items_user_expiration ON food_items(user_id, expiration_date);
 CREATE INDEX IF NOT EXISTS idx_food_items_storage_location ON food_items(storage_location_id);
-CREATE INDEX IF NOT EXISTS idx_food_items_fdc_id ON food_items(fcd_id);
+CREATE INDEX IF NOT EXISTS idx_food_items_fdc_id ON food_items(fdc_id);
 CREATE INDEX IF NOT EXISTS idx_food_items_food_category ON food_items(food_category);
 
 -- JSONB indexes for users table

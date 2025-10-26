@@ -108,8 +108,8 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
             {/* Additional Information */}
             <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
               <p>* Percent Daily Values are based on a 2,000 calorie diet.</p>
-              {item.fcdId && (
-                <p>USDA FoodData Central ID: {item.fcdId}</p>
+              {item.fdcId && (
+                <p>USDA FoodData Central ID: {item.fdcId}</p>
               )}
             </div>
           </div>

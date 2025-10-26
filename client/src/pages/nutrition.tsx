@@ -34,7 +34,7 @@ type MissingNutritionItem = {
   name: string;
   quantity: string;
   unit: string | null;
-  fcdId?: string | null;
+  fdcId?: string | null;
   locationName: string;
 };
 

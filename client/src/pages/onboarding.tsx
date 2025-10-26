@@ -86,7 +86,7 @@ const cookingSkillOptions = [
 // Interface for common items from API
 interface CommonItem {
   displayName: string;
-  fcdId: string;
+  fdcId: string;
   description: string;
   storage: string;
   quantity: string;

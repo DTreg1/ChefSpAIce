@@ -35,12 +35,12 @@ async function updateMissingNutrition() {
       try {
         let nutrition = null;
         let usdaData = null;
-        let fcdId = item.fcdId;
+        let fdcId = item.fdcId;
 
         // Try FDC ID first if available
-        if (fcdId) {
-          console.log(`  - Trying FDC ID: ${fcdId}`);
-          const foodDetails = await getFoodByFdcId(parseInt(fcdId));
+        if (fdcId) {
+          console.log(`  - Trying FDC ID: ${fdcId}`);
+          const foodDetails = await getFoodByFdcId(parseInt(fdcId));
           if (foodDetails && foodDetails.nutrition) {
             nutrition = JSON.stringify(foodDetails.nutrition) as any;
             usdaData = JSON.stringify(foodDetails) as any;
@@ -63,7 +63,7 @@ async function updateMissingNutrition() {
                 if (foodDetails && foodDetails.nutrition) {
                   nutrition = JSON.stringify(foodDetails.nutrition) as any;
                   usdaData = JSON.stringify(foodDetails) as any;
-                  fcdId = foodDetails.fdcId.toString();
+                  fdcId = foodDetails.fdcId.toString();
                   console.log(`  ✓ Found nutrition data for "${item.name}"`);
                   break;
                 }
@@ -92,7 +92,7 @@ async function updateMissingNutrition() {
             .set({
               nutrition,
               usdaData,
-              fcdId,
+              fdcId,
               weightInGrams,
             })
             .where(eq(foodItems.id, item.id));
