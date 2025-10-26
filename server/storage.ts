@@ -4,8 +4,6 @@ import {
   type User,
   type UpsertUser,
   type StorageLocation,
-  type ApplianceCategory,
-  type InsertApplianceCategory,
   type UserInventory,
   type InsertUserInventory,
   type UserInventory as FoodItem,
@@ -53,7 +51,6 @@ import {
   pushTokens,
   userAppliances,
   userAppliances as appliances, // Alias for backward compatibility
-  applianceCategories,
   userInventory,
   userInventory as foodItems, // Alias for backward compatibility
   chatMessages,
@@ -136,24 +133,12 @@ export interface IStorage {
   deleteAppliance(userId: string, id: string): Promise<void>;
   getAppliancesByCategory(
     userId: string,
-    categoryId: string,
+    category: string,
   ): Promise<Appliance[]>;
   getAppliancesByCapability(
     userId: string,
     capability: string,
   ): Promise<Appliance[]>;
-
-  // Appliance Categories
-  getApplianceCategories(): Promise<ApplianceCategory[]>;
-  getApplianceCategory(id: string): Promise<ApplianceCategory | undefined>;
-  createApplianceCategory(
-    category: InsertApplianceCategory,
-  ): Promise<ApplianceCategory>;
-  updateApplianceCategory(
-    id: string,
-    category: Partial<InsertApplianceCategory>,
-  ): Promise<ApplianceCategory>;
-  deleteApplianceCategory(id: string): Promise<void>;
 
   // Appliance Library - Master catalog of all equipment
   getApplianceLibrary(): Promise<ApplianceLibrary[]>;
@@ -1011,18 +996,27 @@ export class DatabaseStorage implements IStorage {
 
   async getAppliancesByCategory(
     userId: string,
-    categoryId: string,
+    category: string,
   ): Promise<Appliance[]> {
     try {
-      return db
-        .select()
+      // Get user appliances that have an applianceLibraryId linked to the specified category
+      const results = await db
+        .select({
+          appliance: appliances,
+        })
         .from(appliances)
+        .leftJoin(
+          applianceLibrary,
+          eq(appliances.applianceLibraryId, applianceLibrary.id)
+        )
         .where(
           and(
             eq(appliances.userId, userId),
-            eq(appliances.categoryId, categoryId),
-          ),
+            eq(applianceLibrary.category, category)
+          )
         );
+      
+      return results.map(r => r.appliance);
     } catch (error) {
       console.error(
         `Error getting appliances by category for user ${userId}:`,
@@ -1056,76 +1050,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Appliance Categories
-  async getApplianceCategories(): Promise<ApplianceCategory[]> {
-    try {
-      return db
-        .select()
-        .from(applianceCategories)
-        .orderBy(applianceCategories.sortOrder);
-    } catch (error) {
-      console.error("Error getting appliance categories:", error);
-      throw new Error("Failed to retrieve appliance categories");
-    }
-  }
-
-  async getApplianceCategory(
-    id: string,
-  ): Promise<ApplianceCategory | undefined> {
-    try {
-      const [category] = await db
-        .select()
-        .from(applianceCategories)
-        .where(eq(applianceCategories.id, id));
-      return category || undefined;
-    } catch (error) {
-      console.error(`Error getting appliance category ${id}:`, error);
-      throw new Error("Failed to retrieve appliance category");
-    }
-  }
-
-  async createApplianceCategory(
-    category: InsertApplianceCategory,
-  ): Promise<ApplianceCategory> {
-    try {
-      const [newCategory] = await db
-        .insert(applianceCategories)
-        .values(category)
-        .returning();
-      return newCategory;
-    } catch (error) {
-      console.error("Error creating appliance category:", error);
-      throw new Error("Failed to create appliance category");
-    }
-  }
-
-  async updateApplianceCategory(
-    id: string,
-    category: Partial<InsertApplianceCategory>,
-  ): Promise<ApplianceCategory> {
-    try {
-      const [updatedCategory] = await db
-        .update(applianceCategories)
-        .set(category)
-        .where(eq(applianceCategories.id, id))
-        .returning();
-      return updatedCategory;
-    } catch (error) {
-      console.error(`Error updating appliance category ${id}:`, error);
-      throw new Error("Failed to update appliance category");
-    }
-  }
-
-  async deleteApplianceCategory(id: string): Promise<void> {
-    try {
-      await db
-        .delete(applianceCategories)
-        .where(eq(applianceCategories.id, id));
-    } catch (error) {
-      console.error(`Error deleting appliance category ${id}:`, error);
-      throw new Error("Failed to delete appliance category");
-    }
-  }
 
   // Appliance Library methods
   async getApplianceLibrary(): Promise<ApplianceLibrary[]> {
