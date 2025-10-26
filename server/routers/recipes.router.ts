@@ -245,10 +245,35 @@ Return a JSON object with the following structure:
 
       const recipeData = JSON.parse(completion.choices[0].message?.content || "{}");
 
+      // Detect cooking terms in instructions
+      const { default: CookingTermsService } = await import("../services/cooking-terms.service");
+      
+      // Detect terms in instructions
+      const detectedTerms = [];
+      if (recipeData.instructions && Array.isArray(recipeData.instructions)) {
+        for (const instruction of recipeData.instructions) {
+          const terms = await CookingTermsService.detectTermsInText(instruction);
+          if (terms.length > 0) {
+            detectedTerms.push(...terms);
+          }
+        }
+      }
+      
+      // Remove duplicates based on term name
+      const uniqueTerms = Array.from(
+        new Map(detectedTerms.map((term: any) => [term.term, term])).values()
+      );
+      
+      // Add detected terms to recipe data
+      const enrichedRecipeData = {
+        ...recipeData,
+        detectedCookingTerms: uniqueTerms,
+      };
+
       // Save recipe to database
       const saved = await storage.createRecipe({
         userId,
-        ...recipeData,
+        ...enrichedRecipeData,
       });
 
       // Log API usage
