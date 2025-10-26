@@ -195,7 +195,7 @@ function AppContent() {
         <LazyAnimatedBackground
           variant="both"
           gradientType="primary"
-          particleCount={2000}
+          particleCount={1000}
         />
       )}
       <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
