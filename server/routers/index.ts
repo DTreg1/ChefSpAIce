@@ -14,6 +14,7 @@ import nutritionRouter from "./nutrition.router";
 import feedbackRouter from "./feedback.router";
 import batchRouter from "./batch.router";
 import pushTokensRouter from "./push-tokens.router";
+import cookingTermsRouter from "./cooking-terms.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -35,6 +36,7 @@ export async function registerModularRoutes(app: Express): Promise<Server> {
   app.use("/api/analytics", analyticsRouter); // Analytics endpoints
   app.use("/api", batchRouter);       // Batch API for optimized requests
   app.use(pushTokensRouter);          // Push tokens endpoints
+  app.use(cookingTermsRouter);        // Cooking terms endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);
