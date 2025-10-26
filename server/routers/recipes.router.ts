@@ -366,10 +366,10 @@ router.delete("/recipes/:id", isAuthenticated, async (req: any, res: Response) =
       return res.status(404).json({ error: "Recipe not found" });
     }
 
-    // Delete recipe by updating it to mark as deleted or removing from user's recipes
-    // Since there's no deleteRecipe method, we'll need to update the recipe to mark it as deleted
-    // For now, return a 501 Not Implemented error
-    return res.status(501).json({ error: "Recipe deletion not implemented" });
+    // Delete the recipe (cascading deletes will handle related meal plans)
+    await storage.deleteRecipe(userId, recipeId);
+    
+    res.status(204).send();
   } catch (error) {
     console.error("Error deleting recipe:", error);
     res.status(500).json({ error: "Failed to delete recipe" });

@@ -224,6 +224,7 @@ export interface IStorage {
     id: string,
     updates: Partial<Recipe>,
   ): Promise<Recipe>;
+  deleteRecipe(userId: string, id: string): Promise<void>;
   getRecipesWithInventoryMatching(
     userId: string,
   ): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
@@ -1601,6 +1602,17 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error updating recipe ${id}:`, error);
       throw new Error("Failed to update recipe");
+    }
+  }
+
+  async deleteRecipe(userId: string, id: string): Promise<void> {
+    try {
+      await db
+        .delete(userRecipes)
+        .where(and(eq(userRecipes.id, id), eq(userRecipes.userId, userId)));
+    } catch (error) {
+      console.error(`Error deleting recipe ${id}:`, error);
+      throw new Error("Failed to delete recipe");
     }
   }
 
