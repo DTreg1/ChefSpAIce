@@ -766,6 +766,21 @@ export default function Settings() {
             </AccordionContent>
           </AccordionItem>
 
+          {/* Notifications Section */}
+          <AccordionItem value="notifications" className="border rounded-lg" data-testid="section-notifications">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">Notifications</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="space-y-4 pt-4">
+                <NotificationSettings />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
           {/* API Usage Section */}
           <AccordionItem value="api-usage" className="border rounded-lg" data-testid="section-api-usage">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">

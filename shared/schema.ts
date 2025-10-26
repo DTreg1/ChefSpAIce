@@ -35,6 +35,13 @@ export const users = pgTable("users", {
   foodsToAvoid: text("foods_to_avoid").array(),
   hasCompletedOnboarding: boolean("has_completed_onboarding").notNull().default(false),
   
+  // Notification preferences
+  notificationsEnabled: boolean("notifications_enabled").notNull().default(false),
+  notifyExpiringFood: boolean("notify_expiring_food").notNull().default(true),
+  notifyRecipeSuggestions: boolean("notify_recipe_suggestions").notNull().default(false),
+  notifyMealReminders: boolean("notify_meal_reminders").notNull().default(true),
+  notificationTime: text("notification_time").default("09:00"), // Time of day for daily notifications
+  
   // Storage locations as JSONB array (previously in storageLocations table)
   storageLocations: jsonb("storage_locations").$type<Array<{
     id: string;
