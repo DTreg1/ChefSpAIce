@@ -249,6 +249,21 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/glossary"}
+                  >
+                    <Link
+                      href="/glossary"
+                      data-testid="link-glossary"
+                      onClick={handleLinkClick}
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span className="flex-1">Cooking Terms</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
