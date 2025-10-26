@@ -71,7 +71,7 @@ export const pushTokens = pgTable("push_tokens", {
 export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
   id: true,
   createdAt: true,
-  lastUsedAt: true,
+  updatedAt: true,
 });
 
 export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
@@ -95,48 +95,14 @@ export const insertApplianceCategorySchema = createInsertSchema(applianceCategor
 export type InsertApplianceCategory = z.infer<typeof insertApplianceCategorySchema>;
 export type ApplianceCategory = typeof applianceCategories.$inferSelect;
 
-// Barcode Products - Product cache from Barcode Lookup API
-export const barcodeProducts = pgTable("barcode_products", {
-  id: varchar("id").primaryKey(),  // Changed to match database
-  barcodeNumber: text("barcode_number").notNull(),
-  title: text("title").notNull(),
-  category: text("category"),
-  brand: text("brand"),
-  stores: jsonb("stores").$type<Array<{
-    store_name: string;
-    store_price: string;
-    product_url: string;
-    currency_code: string;
-    currency_symbol: string;
-  }>>(),
-  rawData: jsonb("raw_data").$type<any>(),  // Added to match database
-  lastUpdate: timestamp("last_update").notNull(),  // Added to match database
-  createdAt: timestamp("created_at").notNull(),  // Added to match database
-  cachedAt: timestamp("cached_at"),
-  expiresAt: timestamp("expires_at"),
-  lookupFailed: boolean("lookup_failed").notNull().default(false),  // Added to match database
-  source: text("source"),  // Added to match database
-  productAttributes: jsonb("product_attributes").$type<any>(),  // Added to match database
-});
 
-export const insertBarcodeProductSchema = createInsertSchema(barcodeProducts).omit({
-  id: true,
-  createdAt: true,
-  lastUpdate: true,
-  cachedAt: true,
-});
-
-export type InsertBarcodeProduct = z.infer<typeof insertBarcodeProductSchema>;
-export type BarcodeProduct = typeof barcodeProducts.$inferSelect;
-
-// Appliances - User's kitchen appliances (matching current DB)
-export const appliances = pgTable("appliances", {
+// User Appliances - User's kitchen appliances
+export const userAppliances = pgTable("user_appliances", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   type: text("type"),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   categoryId: varchar("category_id").references(() => applianceCategories.id, { onDelete: "set null" }),
-  barcodeProductId: varchar("barcode_product_id").references(() => barcodeProducts.id, { onDelete: "set null" }),
   customBrand: text("custom_brand"),
   customModel: text("custom_model"),
   customCapabilities: text("custom_capabilities").array(),
@@ -151,21 +117,21 @@ export const appliances = pgTable("appliances", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
-  index("appliances_user_id_idx").on(table.userId),
-  index("appliances_category_id_idx").on(table.categoryId),
+  index("user_appliances_user_id_idx").on(table.userId),
+  index("user_appliances_category_id_idx").on(table.categoryId),
 ]);
 
-export const insertApplianceSchema = createInsertSchema(appliances).omit({
+export const insertUserApplianceSchema = createInsertSchema(userAppliances).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export type InsertAppliance = z.infer<typeof insertApplianceSchema>;
-export type Appliance = typeof appliances.$inferSelect;
+export type InsertUserAppliance = z.infer<typeof insertUserApplianceSchema>;
+export type UserAppliance = typeof userAppliances.$inferSelect;
 
-// Food Items - User's inventory
-export const foodItems = pgTable("food_items", {
+// User Inventory - User's food inventory
+export const userInventory = pgTable("user_inventory", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
@@ -186,20 +152,20 @@ export const foodItems = pgTable("food_items", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
-  index("food_items_user_id_idx").on(table.userId),
-  index("food_items_expiration_date_idx").on(table.expirationDate),
-  index("food_items_storage_location_idx").on(table.storageLocationId),
-  index("food_items_food_category_idx").on(table.foodCategory),
+  index("user_inventory_user_id_idx").on(table.userId),
+  index("user_inventory_expiration_date_idx").on(table.expirationDate),
+  index("user_inventory_storage_location_idx").on(table.storageLocationId),
+  index("user_inventory_food_category_idx").on(table.foodCategory),
 ]);
 
-export const insertFoodItemSchema = createInsertSchema(foodItems).omit({
+export const insertUserInventorySchema = createInsertSchema(userInventory).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export type InsertFoodItem = z.infer<typeof insertFoodItemSchema>;
-export type FoodItem = typeof foodItems.$inferSelect;
+export type InsertUserInventory = z.infer<typeof insertUserInventorySchema>;
+export type UserInventory = typeof userInventory.$inferSelect;
 
 // Storage Locations Type
 export type StorageLocation = {
@@ -351,33 +317,6 @@ export const insertFdcCacheSchema = createInsertSchema(fdcCache).omit({
 export type InsertFdcCache = z.infer<typeof insertFdcCacheSchema>;
 export type FdcCache = typeof fdcCache.$inferSelect;
 
-// FDC Search Queries - Cache search results
-export const fdcSearchQueries = pgTable("fdc_search_queries", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  queryHash: text("query_hash").notNull().unique(), // Hash of search params for dedup
-  query: text("query").notNull(),
-  dataTypes: jsonb("data_types").$type<string[]>(),
-  pageNumber: integer("page_number").notNull(),
-  sortBy: text("sort_by"),
-  sortOrder: text("sort_order"),
-  brandOwner: text("brand_owner"),
-  results: jsonb("results").$type<any>().notNull(), // Cached search results
-  totalHits: integer("total_hits"),
-  totalPages: integer("total_pages"),
-  cachedAt: timestamp("cached_at").notNull().defaultNow(),
-  expiresAt: timestamp("expires_at"),
-}, (table) => [
-  index("fdc_search_queries_query_hash_idx").on(table.queryHash),
-  index("fdc_search_queries_expires_at_idx").on(table.expiresAt),
-]);
-
-export const insertFdcSearchQuerySchema = createInsertSchema(fdcSearchQueries).omit({
-  id: true,
-  cachedAt: true,
-});
-
-export type InsertFdcSearchQuery = z.infer<typeof insertFdcSearchQuerySchema>;
-export type FdcSearchQuery = typeof fdcSearchQueries.$inferSelect;
 
 // Shopping List Items - User's shopping list
 export const shoppingListItems = pgTable("shopping_list_items", {
@@ -763,8 +702,8 @@ export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
 
-// Common Food Items - Pre-populated onboarding items with USDA data
-export const commonFoodItems = pgTable("common_food_items", {
+// Onboarding Inventory - Pre-populated onboarding items with USDA data
+export const onboardingInventory = pgTable("onboarding_inventory", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   
   // Identifier fields
@@ -797,20 +736,20 @@ export const commonFoodItems = pgTable("common_food_items", {
   lastUpdated: timestamp("last_updated").notNull().defaultNow(),
   dataSource: text("data_source"), // 'usda_upc', 'usda_fdc', 'usda_search', 'manual'
 }, (table) => [
-  index("common_food_items_display_name_idx").on(table.displayName),
-  index("common_food_items_upc_idx").on(table.upc),
-  index("common_food_items_fdc_id_idx").on(table.fdcId),
-  index("common_food_items_category_idx").on(table.category),
-  index("common_food_items_food_category_idx").on(table.foodCategory),
+  index("onboarding_inventory_display_name_idx").on(table.displayName),
+  index("onboarding_inventory_upc_idx").on(table.upc),
+  index("onboarding_inventory_fdc_id_idx").on(table.fdcId),
+  index("onboarding_inventory_category_idx").on(table.category),
+  index("onboarding_inventory_food_category_idx").on(table.foodCategory),
 ]);
 
-export const insertCommonFoodItemSchema = createInsertSchema(commonFoodItems).omit({
+export const insertOnboardingInventorySchema = createInsertSchema(onboardingInventory).omit({
   id: true,
   lastUpdated: true,
 });
 
-export type InsertCommonFoodItem = z.infer<typeof insertCommonFoodItemSchema>;
-export type CommonFoodItem = typeof commonFoodItems.$inferSelect;
+export type InsertOnboardingInventory = z.infer<typeof insertOnboardingInventorySchema>;
+export type OnboardingInventory = typeof onboardingInventory.$inferSelect;
 
 // Cooking Terms - Interactive cooking knowledge bank
 export const cookingTerms = pgTable("cooking_terms", {
@@ -885,38 +824,3 @@ export const insertApplianceLibrarySchema = createInsertSchema(applianceLibrary)
 export type InsertApplianceLibrary = z.infer<typeof insertApplianceLibrarySchema>;
 export type ApplianceLibrary = typeof applianceLibrary.$inferSelect;
 
-// User Appliances - Track which items from the library each user owns
-export const userAppliances = pgTable("user_appliances", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  type: text("type").notNull(),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  categoryId: varchar("category_id").references(() => applianceCategories.id, { onDelete: "cascade" }),
-  barcodeProductId: varchar("barcode_product_id").references(() => barcodeProducts.id, { onDelete: "set null" }),
-  customBrand: text("custom_brand"),
-  customModel: text("custom_model"),
-  customCapabilities: text("custom_capabilities").array(),
-  customCapacity: text("custom_capacity"),
-  customServingSize: text("custom_serving_size"),
-  nickname: text("nickname"), // User's custom name for the item
-  purchaseDate: text("purchase_date"),
-  warrantyEndDate: text("warranty_end_date"),
-  notes: text("notes"), // User notes about this specific item
-  imageUrl: text("image_url"),
-  isActive: boolean("is_active").notNull().default(true), // If user still has it
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
-}, (table) => [
-  index("user_appliances_user_id_idx").on(table.userId),
-  index("user_appliances_category_id_idx").on(table.categoryId),
-  index("user_appliances_barcode_product_id_idx").on(table.barcodeProductId),
-]);
-
-export const insertUserApplianceSchema = createInsertSchema(userAppliances).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertUserAppliance = z.infer<typeof insertUserApplianceSchema>;
-export type UserAppliance = typeof userAppliances.$inferSelect;

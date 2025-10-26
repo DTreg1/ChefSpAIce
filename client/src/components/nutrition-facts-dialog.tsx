@@ -9,7 +9,7 @@ import { NutritionFactsLabel } from "./nutrition-facts-label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Package2, Info } from "lucide-react";
-import type { FoodItem, NutritionInfo } from "@shared/schema";
+import type { UserInventory as FoodItem, NutritionInfo } from "@shared/schema";
 
 interface NutritionFactsDialogProps {
   open: boolean;

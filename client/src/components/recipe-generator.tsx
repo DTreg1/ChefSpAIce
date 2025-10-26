@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ChefHat, AlertTriangle, Package } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Recipe, FoodItem } from "@shared/schema";
+import type { Recipe, UserInventory as FoodItem } from "@shared/schema";
 import {
   Tooltip,
   TooltipContent,

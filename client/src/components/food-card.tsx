@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSwipe } from "@/hooks/use-swipe";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { useProgressiveDisclosure } from "@/hooks/useProgressiveDisclosure";
-import type { FoodItem, NutritionInfo } from "@shared/schema";
+import type { UserInventory as FoodItem, NutritionInfo } from "@shared/schema";
 import { format } from "date-fns";
 
 interface FoodCardProps {

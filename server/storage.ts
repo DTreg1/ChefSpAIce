@@ -4,14 +4,12 @@ import {
   type User,
   type UpsertUser,
   type StorageLocation,
-  type Appliance,
-  type InsertAppliance,
   type ApplianceCategory,
   type InsertApplianceCategory,
-  type BarcodeProduct,
-  type InsertBarcodeProduct,
-  type FoodItem,
-  type InsertFoodItem,
+  type UserInventory,
+  type InsertUserInventory,
+  type UserInventory as FoodItem,
+  type InsertUserInventory as InsertFoodItem,
   type ChatMessage,
   type InsertChatMessage,
   type Recipe,
@@ -22,8 +20,6 @@ import {
   type InsertApiUsageLog,
   type FdcCache,
   type InsertFdcCache,
-  type FdcSearchQuery,
-  type InsertFdcSearchQuery,
   type ShoppingListItem,
   type InsertShoppingListItem,
   type Feedback,
@@ -36,14 +32,18 @@ import {
   type InsertPushToken,
   type WebVital,
   type InsertWebVital,
-  type CommonFoodItem,
-  type InsertCommonFoodItem,
+  type OnboardingInventory,
+  type InsertOnboardingInventory,
+  type OnboardingInventory as CommonFoodItem,
+  type InsertOnboardingInventory as InsertCommonFoodItem,
   type CookingTerm,
   type InsertCookingTerm,
   type ApplianceLibrary,
   type InsertApplianceLibrary,
   type UserAppliance,
   type InsertUserAppliance,
+  type UserAppliance as Appliance,
+  type InsertUserAppliance as InsertAppliance,
   type InsertAnalyticsEvent,
   type AnalyticsEvent,
   type InsertUserSession,
@@ -51,26 +51,26 @@ import {
   insertAnalyticsEventSchema,
   users,
   pushTokens,
-  appliances,
+  userAppliances,
+  userAppliances as appliances, // Alias for backward compatibility
   applianceCategories,
-  barcodeProducts,
-  foodItems,
+  userInventory,
+  userInventory as foodItems, // Alias for backward compatibility
   chatMessages,
   recipes,
   mealPlans,
   apiUsageLogs,
   fdcCache,
-  fdcSearchQueries,
   shoppingListItems,
   feedback,
   donations,
   webVitals,
-  commonFoodItems,
+  onboardingInventory,
+  onboardingInventory as commonFoodItems, // Alias for backward compatibility
   cookingTerms,
   analyticsEvents,
   userSessions,
   applianceLibrary,
-  userAppliances,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte } from "drizzle-orm";
@@ -176,14 +176,7 @@ export interface IStorage {
   deleteUserAppliance(userId: string, id: string): Promise<void>;
   getUserAppliancesByCategory(userId: string, category: string): Promise<UserAppliance[]>;
 
-  // Barcode Products
-  getBarcodeProduct(barcodeNumber: string): Promise<BarcodeProduct | undefined>;
-  createBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct>;
-  updateBarcodeProduct(
-    barcodeNumber: string,
-    product: Partial<InsertBarcodeProduct>,
-  ): Promise<BarcodeProduct>;
-  searchBarcodeProducts(query: string): Promise<BarcodeProduct[]>;
+  // Barcode Products - removed (tables deleted)
 
   // Food Items (user-scoped)
   getFoodItems(userId: string, storageLocationId?: string, limit?: number): Promise<FoodItem[]>;
@@ -301,23 +294,13 @@ export interface IStorage {
   getCachedFood(fdcId: string | number): Promise<FdcCache | undefined>;
   cacheFood(food: InsertFdcCache): Promise<FdcCache>;
   updateFoodLastAccessed(fdcId: string): Promise<void>;
-  getCachedSearchResults(
-    query: string,
-    dataType?: string,
-    pageNumber?: number,
-  ): Promise<FdcSearchQuery | undefined>;
-  getCachedSearches(query: string): Promise<FdcSearchQuery[]>;
-  cacheSearchResults(search: InsertFdcSearchQuery): Promise<FdcSearchQuery>;
   clearOldCache(daysOld: number): Promise<void>;
-  
-  // Barcode Cache Methods
-  getCachedBarcodeProduct(barcode: string): Promise<BarcodeProduct | undefined>;
-  cacheBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct>;
-  clearOldBarcodeCache(cutoffDate: Date): Promise<void>;
   
   // Cache Stats Methods
   getUSDACacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }>;
-  getBarcodeCacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }>;
+  
+  // Common Food Items (onboarding inventory)
+  getCommonFoodItems(): Promise<CommonFoodItem[]>;
 
   // Shopping List Items (user-scoped)
   getShoppingListItems(userId: string, limit?: number): Promise<ShoppingListItem[]>;
@@ -1294,108 +1277,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Barcode Products
-  async getBarcodeProduct(
-    barcodeNumber: string,
-  ): Promise<BarcodeProduct | undefined> {
-    try {
-      const [product] = await db
-        .select()
-        .from(barcodeProducts)
-        .where(eq(barcodeProducts.barcodeNumber, barcodeNumber));
-      return product || undefined;
-    } catch (error) {
-      console.error(`Error getting barcode product ${barcodeNumber}:`, error);
-      throw new Error("Failed to retrieve barcode product");
-    }
-  }
-
-  async createBarcodeProduct(
-    product: InsertBarcodeProduct,
-  ): Promise<BarcodeProduct> {
-    try {
-      const insertData: any = { ...product };
-
-      // Move dimensions into productAttributes if present
-      if ((product as any).dimensions) {
-        if (!insertData.productAttributes) {
-          insertData.productAttributes = {};
-        }
-        insertData.productAttributes.dimensions = (product as any)
-          .dimensions as { length?: string; width?: string; height?: string };
-        delete insertData.dimensions;
-      }
-      if (product.stores) {
-        insertData.stores = product.stores;
-      }
-
-      const [newProduct] = await db
-        .insert(barcodeProducts)
-        .values(insertData)
-        .returning();
-      return newProduct;
-    } catch (error) {
-      console.error("Error creating barcode product:", error);
-      throw new Error("Failed to create barcode product");
-    }
-  }
-
-  async updateBarcodeProduct(
-    barcodeNumber: string,
-    product: Partial<InsertBarcodeProduct>,
-  ): Promise<BarcodeProduct> {
-    try {
-      const updateData: any = {
-        ...product,
-        lastUpdate: new Date(),
-      };
-
-      // Move dimensions into productAttributes if present
-      if ((product as any).dimensions) {
-        if (!updateData.productAttributes) {
-          updateData.productAttributes = {};
-        }
-        updateData.productAttributes.dimensions = (product as any)
-          .dimensions as {
-          length?: string;
-          width?: string;
-          height?: string;
-        } | null;
-        delete updateData.dimensions;
-      }
-      if (product.stores) {
-        updateData.stores = product.stores;
-      }
-
-      const [updatedProduct] = await db
-        .update(barcodeProducts)
-        .set(updateData)
-        .where(eq(barcodeProducts.barcodeNumber, barcodeNumber))
-        .returning();
-      return updatedProduct;
-    } catch (error) {
-      console.error(`Error updating barcode product ${barcodeNumber}:`, error);
-      throw new Error("Failed to update barcode product");
-    }
-  }
-
-  async searchBarcodeProducts(query: string): Promise<BarcodeProduct[]> {
-    try {
-      const searchPattern = `%${query}%`;
-      return db.select().from(barcodeProducts).where(sql`
-          ${barcodeProducts.title} ILIKE ${searchPattern}
-          OR ${barcodeProducts.brand} ILIKE ${searchPattern}
-          OR ${barcodeProducts.manufacturer} ILIKE ${searchPattern}
-          OR ${barcodeProducts.productName} ILIKE ${searchPattern}
-        `);
-    } catch (error) {
-      console.error(
-        `Error searching barcode products for query ${query}:`,
-        error,
-      );
-      throw new Error("Failed to search barcode products");
-    }
-  }
+  // Barcode Products - removed (tables deleted)
 
   // Food Items - Optimized with default limit to prevent memory issues
   async getFoodItems(
@@ -2148,75 +2030,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCachedSearchResults(
-    query: string,
-    dataType?: string,
-    pageNumber?: number,
-  ): Promise<FdcSearchQuery | undefined> {
-    try {
-      const conditions = [eq(fdcSearchQueries.query, query.toLowerCase())];
-
-      if (dataType) {
-        conditions.push(sql`${fdcSearchQueries.dataTypes} @> ${JSON.stringify([dataType])}`);
-      }
-
-      if (pageNumber) {
-        conditions.push(eq(fdcSearchQueries.pageNumber, pageNumber));
-      }
-
-      const [cached] = await db
-        .select()
-        .from(fdcSearchQueries)
-        .where(and(...conditions))
-        .orderBy(sql`${fdcSearchQueries.cachedAt} DESC`)
-        .limit(1);
-
-      // Check if cache is still valid (24 hours)
-      if (cached) {
-        const cacheAge = Date.now() - new Date(cached.cachedAt).getTime();
-        const ttlMs = 24 * 60 * 60 * 1000; // 24 hours
-
-        if (cacheAge < ttlMs) {
-          return cached;
-        }
-      }
-
-      return undefined;
-    } catch (error) {
-      console.error("Error getting cached search results:", error);
-      return undefined;
-    }
-  }
-
-  async cacheSearchResults(
-    search: InsertFdcSearchQuery,
-  ): Promise<FdcSearchQuery> {
-    try {
-      const searchToInsert = {
-        ...search,
-        query: search.query.toLowerCase(),
-      };
-
-      const [cachedSearch] = await db
-        .insert(fdcSearchQueries)
-        .values(searchToInsert)
-        .returning();
-      return cachedSearch;
-    } catch (error) {
-      console.error("Error caching search results:", error);
-      throw new Error("Failed to cache search results");
-    }
-  }
-
   async clearOldCache(daysOld: number = 30): Promise<void> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-
-      // Clear old search cache
-      await db
-        .delete(fdcSearchQueries)
-        .where(sql`${fdcSearchQueries.cachedAt} < ${cutoffDate.toISOString()}`);
 
       // Clear old food cache that hasn't been accessed recently
       await db
@@ -2224,67 +2041,6 @@ export class DatabaseStorage implements IStorage {
         .where(sql`${fdcCache.cachedAt} < ${cutoffDate.toISOString()}`);
     } catch (error) {
       console.error("Error clearing old cache:", error);
-      // Don't throw - cache cleanup is not critical
-    }
-  }
-  
-  // Additional cache method - get multiple cached searches
-  async getCachedSearches(query: string): Promise<FdcSearchQuery[]> {
-    try {
-      const searches = await db
-        .select()
-        .from(fdcSearchQueries)
-        .where(eq(fdcSearchQueries.query, query.toLowerCase()))
-        .orderBy(desc(fdcSearchQueries.cachedAt))
-        .limit(10);
-      return searches;
-    } catch (error) {
-      console.error("Error getting cached searches:", error);
-      return [];
-    }
-  }
-  
-  // Barcode Cache Methods
-  async getCachedBarcodeProduct(barcode: string): Promise<BarcodeProduct | undefined> {
-    try {
-      const [cached] = await db
-        .select()
-        .from(barcodeProducts)
-        .where(eq(barcodeProducts.barcodeNumber, barcode));
-      return cached;
-    } catch (error) {
-      console.error(`Error getting cached barcode ${barcode}:`, error);
-      return undefined;
-    }
-  }
-  
-  async cacheBarcodeProduct(product: InsertBarcodeProduct): Promise<BarcodeProduct> {
-    try {
-      const [cached] = await db
-        .insert(barcodeProducts)
-        .values(product)
-        .onConflictDoUpdate({
-          target: barcodeProducts.barcodeNumber,
-          set: {
-            ...product,
-            cachedAt: new Date(),
-          },
-        })
-        .returning();
-      return cached;
-    } catch (error) {
-      console.error("Error caching barcode product:", error);
-      throw new Error("Failed to cache barcode product");
-    }
-  }
-  
-  async clearOldBarcodeCache(cutoffDate: Date): Promise<void> {
-    try {
-      await db
-        .delete(barcodeProducts)
-        .where(sql`${barcodeProducts.cachedAt} < ${cutoffDate.toISOString()}`);
-    } catch (error) {
-      console.error("Error clearing old barcode cache:", error);
       // Don't throw - cache cleanup is not critical
     }
   }
@@ -2306,26 +2062,6 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Error getting USDA cache stats:", error);
-      return { totalEntries: 0, oldestEntry: null };
-    }
-  }
-  
-  async getBarcodeCacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }> {
-    try {
-      const [countResult] = await db
-        .select({ count: sql<number>`COUNT(*)::int` })
-        .from(barcodeProducts);
-      
-      const [oldestResult] = await db
-        .select({ oldest: sql<Date>`MIN(${barcodeProducts.cachedAt})` })
-        .from(barcodeProducts);
-      
-      return {
-        totalEntries: countResult?.count || 0,
-        oldestEntry: oldestResult?.oldest || null,
-      };
-    } catch (error) {
-      console.error("Error getting barcode cache stats:", error);
       return { totalEntries: 0, oldestEntry: null };
     }
   }

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { StorageLocation, FoodItem } from "@shared/schema";
+import type { StorageLocation, UserInventory as FoodItem } from "@shared/schema";
 
 interface EditFoodDialogProps {
   open: boolean;

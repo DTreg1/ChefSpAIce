@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FoodCardSkeletonGrid } from "@/components/food-card-skeleton";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipe-generator";
-import type { FoodItem, StorageLocation, Recipe } from "@shared/schema";
+import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";
 
 export default function FoodGroups() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());

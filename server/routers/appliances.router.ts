@@ -3,14 +3,15 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { 
-  appliances, 
+  userAppliances, 
   applianceCategories,
-  insertApplianceSchema, 
-  type Appliance,
-  type ApplianceCategory,
-  type ApplianceLibrary,
+  insertUserApplianceSchema, 
   type UserAppliance,
-  insertUserApplianceSchema
+  type UserAppliance as Appliance,
+  type InsertUserAppliance as InsertAppliance,
+  insertUserApplianceSchema as insertApplianceSchema,
+  type ApplianceCategory,
+  type ApplianceLibrary
 } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
 import { validateBody } from "../middleware";

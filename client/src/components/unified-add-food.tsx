@@ -57,10 +57,10 @@ import {
   Loader2,
 } from "lucide-react";
 import type {
-  FoodItem as FoodItemType,
+  UserInventory as FoodItemType,
   StorageLocation,
   USDAFoodItem,
-  InsertFoodItem,
+  InsertUserInventory as InsertFoodItem,
 } from "@shared/schema";
 
 interface UnifiedAddFoodProps {

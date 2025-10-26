@@ -21,7 +21,7 @@ import { UnifiedFoodSearch } from "@/components/unified-food-search";
 import type {
   StorageLocation,
   USDASearchResponse,
-  InsertFoodItem,
+  InsertUserInventory as InsertFoodItem,
 } from "@shared/schema";
 import type { UploadResult } from "@uppy/core";
 

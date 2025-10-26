@@ -54,7 +54,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import { Logo } from "@/components/Logo";
-import type { StorageLocation, FoodItem } from "@shared/schema";
+import type { StorageLocation, UserInventory as FoodItem } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
   refrigerator: Refrigerator,

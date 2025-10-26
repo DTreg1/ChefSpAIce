@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, X, Trash2, Package, Calendar, CheckSquare, Square, Check } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { format, addDays } from "date-fns";
-import type { FoodItem, StorageLocation, Recipe } from "@shared/schema";
+import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";
 
 // Virtual scrolling component for large food grids with multi-select support
 interface VirtualizedFoodGridProps {

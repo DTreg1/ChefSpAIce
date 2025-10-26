@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { foodItems, insertFoodItemSchema, type FoodItem, type InsertFoodItem } from "@shared/schema";
+import { userInventory, insertUserInventorySchema, type UserInventory as FoodItem, type InsertUserInventory as InsertFoodItem } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
 import { ApiError } from "../apiError";
 import { batchedApiLogger } from "../batchedApiLogger";
@@ -73,7 +73,7 @@ router.post(
   async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
-      const validation = insertFoodItemSchema.safeParse(req.body);
+      const validation = insertUserInventorySchema.safeParse(req.body);
       
       if (!validation.success) {
         return res.status(400).json({ 
