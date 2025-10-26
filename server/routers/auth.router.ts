@@ -33,6 +33,12 @@ const userPreferencesUpdateSchema = z.object({
   preferredUnits: z.enum(["metric", "imperial"]).optional(),
   foodsToAvoid: z.array(z.string()).optional(),
   hasCompletedOnboarding: z.boolean().optional(),
+  // Notification preferences
+  notificationsEnabled: z.boolean().optional(),
+  notifyExpiringFood: z.boolean().optional(),
+  notifyRecipeSuggestions: z.boolean().optional(),
+  notifyMealReminders: z.boolean().optional(),
+  notificationTime: z.string().optional(),
 });
 
 router.put(
