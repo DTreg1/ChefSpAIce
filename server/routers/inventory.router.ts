@@ -13,6 +13,52 @@ import rateLimiters from "../middleware/rateLimit";
 
 const router = Router();
 
+// Unified inventory endpoint with server-side filtering
+router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
+  try {
+    const userId = req.user.claims.sub;
+    const { location, category, view, page = 1, limit = 50 } = req.query;
+    
+    // Get food items with server-side filtering
+    const items = await storage.getFoodItems(
+      userId, 
+      location && location !== "all" ? location : undefined,
+      category ? category : undefined
+    );
+    
+    // Apply additional view filtering (e.g., "expiring" items)
+    let filteredItems = items;
+    if (view === "expiring") {
+      const today = new Date();
+      const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      filteredItems = items.filter((item: FoodItem) => {
+        if (!item.expirationDate) return false;
+        const expDate = new Date(item.expirationDate);
+        return expDate >= today && expDate <= sevenDaysFromNow;
+      });
+    }
+    
+    // Standardized pagination response
+    const startIndex = (Number(page) - 1) * Number(limit);
+    const endIndex = startIndex + Number(limit);
+    const paginatedItems = filteredItems.slice(startIndex, endIndex);
+    
+    res.json({
+      data: paginatedItems,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: filteredItems.length,
+        totalPages: Math.ceil(filteredItems.length / Number(limit))
+      },
+      type: "items"
+    });
+  } catch (error) {
+    console.error("Error fetching inventory:", error);
+    res.status(500).json({ error: "Failed to fetch inventory data" });
+  }
+});
+
 // Storage locations endpoints - now managed in users.storageLocations JSONB
 router.get("/storage-locations", isAuthenticated, async (req: any, res: Response) => {
   try {
