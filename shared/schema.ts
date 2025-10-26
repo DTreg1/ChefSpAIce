@@ -61,8 +61,8 @@ export const pushTokens = pgTable("push_tokens", {
     osVersion?: string;
     appVersion?: string;
   }>(),
-  lastUsedAt: timestamp("last_used_at").notNull().defaultNow(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   uniqueIndex("push_tokens_user_token_idx").on(table.userId, table.token),
   index("push_tokens_user_id_idx").on(table.userId),
@@ -97,25 +97,11 @@ export type ApplianceCategory = typeof applianceCategories.$inferSelect;
 
 // Barcode Products - Product cache from Barcode Lookup API
 export const barcodeProducts = pgTable("barcode_products", {
-  barcodeNumber: text("barcode_number").primaryKey(),
-  productName: text("product_name"),
-  title: text("title"),
-  alias: text("alias"),
-  description: text("description"),
-  brand: text("brand"),
-  manufacturer: text("manufacturer"),
-  mpn: text("mpn"),
-  msrp: text("msrp"),
-  asin: text("asin"),
+  id: varchar("id").primaryKey(),  // Changed to match database
+  barcodeNumber: text("barcode_number").notNull(),
+  title: text("title").notNull(),
   category: text("category"),
-  imageUrl: text("image_url"),
-  reviews: jsonb("reviews").$type<Array<{
-    name: string;
-    rating: string;
-    title: string;
-    review: string;
-    datetime: string;
-  }>>(),
+  brand: text("brand"),
   stores: jsonb("stores").$type<Array<{
     store_name: string;
     store_price: string;
@@ -123,11 +109,20 @@ export const barcodeProducts = pgTable("barcode_products", {
     currency_code: string;
     currency_symbol: string;
   }>>(),
-  cachedAt: timestamp("cached_at").notNull().defaultNow(),
+  rawData: jsonb("raw_data").$type<any>(),  // Added to match database
+  lastUpdate: timestamp("last_update").notNull(),  // Added to match database
+  createdAt: timestamp("created_at").notNull(),  // Added to match database
+  cachedAt: timestamp("cached_at"),
   expiresAt: timestamp("expires_at"),
+  lookupFailed: boolean("lookup_failed").notNull().default(false),  // Added to match database
+  source: text("source"),  // Added to match database
+  productAttributes: jsonb("product_attributes").$type<any>(),  // Added to match database
 });
 
 export const insertBarcodeProductSchema = createInsertSchema(barcodeProducts).omit({
+  id: true,
+  createdAt: true,
+  lastUpdate: true,
   cachedAt: true,
 });
 
@@ -141,7 +136,7 @@ export const appliances = pgTable("appliances", {
   type: text("type"),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   categoryId: varchar("category_id").references(() => applianceCategories.id, { onDelete: "set null" }),
-  barcodeProductId: varchar("barcode_product_id").references(() => barcodeProducts.barcodeNumber, { onDelete: "set null" }),
+  barcodeProductId: varchar("barcode_product_id").references(() => barcodeProducts.id, { onDelete: "set null" }),
   customBrand: text("custom_brand"),
   customModel: text("custom_model"),
   customCapabilities: text("custom_capabilities").array(),
@@ -239,8 +234,10 @@ export const recipes = pgTable("recipes", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description"),
-  ingredients: jsonb("ingredients").$type<string[]>().notNull(),
-  instructions: jsonb("instructions").$type<string[]>().notNull(),
+  ingredients: text("ingredients").array().notNull(),
+  instructions: text("instructions").array().notNull(),
+  usedIngredients: text("used_ingredients").array().notNull().default([]),
+  missingIngredients: text("missing_ingredients").array(),
   prepTime: text("prep_time"),
   cookTime: text("cook_time"),
   totalTime: text("total_time"),
@@ -335,29 +332,28 @@ export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
 
 // FDC Cache - Cache USDA FoodData Central responses
 export const fdcCache = pgTable("fdc_cache", {
-  fdcId: varchar("fdc_id").primaryKey(),
-  dataType: text("data_type").notNull(), // 'Branded', 'Survey', 'Foundation', etc.
+  id: varchar("id").primaryKey(),  // Changed to match database
+  fdcId: text("fdc_id").notNull(),
+  dataType: text("data_type"), // Nullable to match database
   description: text("description").notNull(),
   brandOwner: text("brand_owner"),
   brandName: text("brand_name"),
-  gtinUpc: text("gtin_upc"),
   ingredients: text("ingredients"),
   servingSize: real("serving_size"),
   servingSizeUnit: text("serving_size_unit"),
-  foodCategory: text("food_category"),
-  foodNutrients: jsonb("food_nutrients").$type<any>().notNull(),
-  fullData: jsonb("full_data").$type<any>().notNull(), // Complete FDC response
-  cachedAt: timestamp("cached_at").notNull().defaultNow(),
-  expiresAt: timestamp("expires_at"),
+  nutrients: jsonb("nutrients").$type<any>(),  // Changed from foodNutrients to match database
+  fullData: jsonb("full_data").$type<any>(),  // Nullable to match database
+  cachedAt: timestamp("cached_at").notNull(),
+  lastAccessed: timestamp("last_accessed").notNull(),  // Added to match database
 }, (table) => [
-  index("fdc_cache_gtin_upc_idx").on(table.gtinUpc),
   index("fdc_cache_description_idx").on(table.description),
   index("fdc_cache_brand_owner_idx").on(table.brandOwner),
-  index("fdc_cache_expires_at_idx").on(table.expiresAt),
 ]);
 
 export const insertFdcCacheSchema = createInsertSchema(fdcCache).omit({
+  id: true,
   cachedAt: true,
+  lastAccessed: true,
 });
 
 export type InsertFdcCache = z.infer<typeof insertFdcCacheSchema>;
@@ -395,7 +391,7 @@ export type FdcSearchQuery = typeof fdcSearchQueries.$inferSelect;
 export const shoppingListItems = pgTable("shopping_list_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
+  ingredient: text("ingredient").notNull(),  // Changed from 'name' to match database
   quantity: text("quantity"),
   unit: text("unit"),
   category: text("category"),
