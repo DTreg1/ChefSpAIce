@@ -51,7 +51,7 @@ import {
   Loader2,
   UtensilsCrossed
 } from "lucide-react";
-import type { Appliance, ApplianceCategory } from "@shared/schema";
+import type { Appliance } from "@shared/schema";
 
 export default function Appliances() {
   const { toast } = useToast();
@@ -70,7 +70,7 @@ export default function Appliances() {
   });
 
   // Fetch categories
-  const { data: categories = [] } = useQuery<ApplianceCategory[]>({
+  const { data: categories = [] } = useQuery<{ name: string; count: number }[]>({
     queryKey: ['/api/appliance-categories'],
   });
 
@@ -163,7 +163,10 @@ export default function Appliances() {
 
   // Filter appliances
   const filteredAppliances = appliances.filter((appliance: Appliance) => {
-    const matchesCategory = selectedCategory === "all" || appliance.categoryId === selectedCategory;
+    // For now, we can't filter by category directly since appliances don't have a category field
+    // They have applianceLibraryId which would require a join to get the category
+    // TODO: Update API to include category info with appliances
+    const matchesCategory = selectedCategory === "all"; // Temporarily disabled category filtering
     const matchesSearch = appliance.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           appliance.nickname?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -233,8 +236,8 @@ export default function Appliances() {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
+                  <SelectItem key={cat.name} value={cat.name}>
+                    {cat.name} ({cat.count})
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -4,13 +4,11 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { 
   userAppliances, 
-  applianceCategories,
   insertUserApplianceSchema, 
   type UserAppliance,
   type UserAppliance as Appliance,
   type InsertUserAppliance as InsertAppliance,
   insertUserApplianceSchema as insertApplianceSchema,
-  type ApplianceCategory,
   type ApplianceLibrary
 } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
@@ -123,10 +121,26 @@ router.delete("/appliances/:id", isAuthenticated, async (req: any, res: Response
   }
 });
 
-// Appliance categories - public endpoint
+// Appliance categories - get unique categories from appliance library
 router.get("/appliance-categories", async (_req: Request, res: Response) => {
   try {
-    const categories = await storage.getApplianceCategories();
+    const library = await storage.getApplianceLibrary();
+    // Extract unique categories from the appliance library
+    const categoriesMap = new Map<string, { name: string, count: number }>();
+    
+    library.forEach(item => {
+      if (item.category) {
+        const existing = categoriesMap.get(item.category);
+        if (existing) {
+          existing.count++;
+        } else {
+          categoriesMap.set(item.category, { name: item.category, count: 1 });
+        }
+      }
+    });
+    
+    // Convert to array and sort by name
+    const categories = Array.from(categoriesMap.values()).sort((a, b) => a.name.localeCompare(b.name));
     res.json(categories);
   } catch (error) {
     console.error("Error fetching appliance categories:", error);
