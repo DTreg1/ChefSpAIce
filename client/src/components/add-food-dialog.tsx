@@ -346,7 +346,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   };
 
   const addItemMutation = useMutation({
-    mutationFn: async (data: InsertFoodItem) => {
+    mutationFn: async (data: Omit<InsertFoodItem, 'userId'>) => {
       const response = await apiRequest("POST", "/api/food-items", data);
       return await response.json();
     },
