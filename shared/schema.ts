@@ -77,32 +77,15 @@ export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
 export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 export type PushToken = typeof pushTokens.$inferSelect;
 
-// Appliance Categories - Reference table for appliance types
-export const applianceCategories = pgTable("appliance_categories", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull().unique(),
-  icon: text("icon").notNull(),
-  description: text("description"),
-  sortOrder: integer("sort_order").notNull().default(0),
-}, (table) => [
-  index("appliance_categories_sort_order_idx").on(table.sortOrder),
-]);
-
-export const insertApplianceCategorySchema = createInsertSchema(applianceCategories).omit({
-  id: true,
-});
-
-export type InsertApplianceCategory = z.infer<typeof insertApplianceCategorySchema>;
-export type ApplianceCategory = typeof applianceCategories.$inferSelect;
 
 
-// User Appliances - User's kitchen appliances
+// User Appliances - User's kitchen appliances linked to the library
 export const userAppliances = pgTable("user_appliances", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   type: text("type"),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  categoryId: varchar("category_id").references(() => applianceCategories.id, { onDelete: "set null" }),
+  applianceLibraryId: varchar("appliance_library_id").references(() => applianceLibrary.id, { onDelete: "set null" }),
   customBrand: text("custom_brand"),
   customModel: text("custom_model"),
   customCapabilities: text("custom_capabilities").array(),
@@ -118,7 +101,7 @@ export const userAppliances = pgTable("user_appliances", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
   index("user_appliances_user_id_idx").on(table.userId),
-  index("user_appliances_category_id_idx").on(table.categoryId),
+  index("user_appliances_appliance_library_id_idx").on(table.applianceLibraryId),
 ]);
 
 export const insertUserApplianceSchema = createInsertSchema(userAppliances).omit({
