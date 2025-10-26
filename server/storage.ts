@@ -50,20 +50,17 @@ import {
   users,
   pushTokens,
   userAppliances,
-  userAppliances as appliances, // Alias for backward compatibility
   userInventory,
-  userInventory as foodItems, // Alias for backward compatibility
-  chatMessages,
-  recipes,
+  userChats,
+  userRecipes,
   mealPlans,
   apiUsageLogs,
   fdcCache,
-  shoppingListItems,
-  feedback,
+  userShopping,
+  userFeedback,
   donations,
   webVitals,
   onboardingInventory,
-  onboardingInventory as commonFoodItems, // Alias for backward compatibility
   cookingTerms,
   analyticsEvents,
   userSessions,
@@ -228,7 +225,7 @@ export interface IStorage {
     userId: string,
   ): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
 
-  // Expiration Handling (now in foodItems table)
+  // Expiration Handling (now in userInventory table)
   getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]>;
   dismissFoodItemNotification(
     userId: string,
@@ -362,7 +359,7 @@ export interface IStorage {
     contextType: string,
   ): Promise<Feedback[]>;
 
-  // Feedback Upvotes (now in feedback.upvotes JSONB)
+  // Feedback Upvotes (now in userFeedback.upvotes JSONB)
   upvoteFeedback(userId: string, feedbackId: string): Promise<void>;
   removeUpvote(userId: string, feedbackId: string): Promise<void>;
   hasUserUpvoted(userId: string, feedbackId: string): Promise<boolean>;
@@ -589,7 +586,7 @@ export class DatabaseStorage implements IStorage {
               })
               .where(eq(users.id, userId));
 
-            // Initialize default appliances for this user
+            // Initialize default userAppliances for this user
             const defaultAppliances = [
               { userId, name: "Oven", type: "cooking" },
               { userId, name: "Stove", type: "cooking" },
@@ -597,7 +594,7 @@ export class DatabaseStorage implements IStorage {
               { userId, name: "Air Fryer", type: "cooking" },
             ];
 
-            await db.insert(appliances).values(defaultAppliances);
+            await db.insert(userAppliances).values(defaultAppliances);
           }
 
           // Mark as initialized only on success
@@ -827,12 +824,12 @@ export class DatabaseStorage implements IStorage {
       // Get item counts for each location
       const items = await db
         .select({
-          storageLocationId: foodItems.storageLocationId,
+          storageLocationId: userInventory.storageLocationId,
           count: sql<number>`COUNT(*)::int`,
         })
-        .from(foodItems)
-        .where(eq(foodItems.userId, userId))
-        .groupBy(foodItems.storageLocationId);
+        .from(userInventory)
+        .where(eq(userInventory.userId, userId))
+        .groupBy(userInventory.storageLocationId);
 
       const countMap = new Map(
         items.map((item) => [item.storageLocationId, item.count]),
@@ -926,10 +923,10 @@ export class DatabaseStorage implements IStorage {
   async getAppliances(userId: string): Promise<Appliance[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      return db.select().from(appliances).where(eq(appliances.userId, userId));
+      return db.select().from(userAppliances).where(eq(userAppliances.userId, userId));
     } catch (error) {
-      console.error(`Error getting appliances for user ${userId}:`, error);
-      throw new Error("Failed to retrieve appliances");
+      console.error(`Error getting userAppliances for user ${userId}:`, error);
+      throw new Error("Failed to retrieve userAppliances");
     }
   }
 
@@ -939,7 +936,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<Appliance> {
     try {
       const [newAppliance] = await db
-        .insert(appliances)
+        .insert(userAppliances)
         .values({ ...appliance, userId })
         .returning();
       return newAppliance;
@@ -956,8 +953,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [appliance] = await db
         .select()
-        .from(appliances)
-        .where(and(eq(appliances.id, id), eq(appliances.userId, userId)));
+        .from(userAppliances)
+        .where(and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)));
       return appliance || undefined;
     } catch (error) {
       console.error(`Error getting appliance ${id}:`, error);
@@ -972,9 +969,9 @@ export class DatabaseStorage implements IStorage {
   ): Promise<Appliance> {
     try {
       const [updatedAppliance] = await db
-        .update(appliances)
+        .update(userAppliances)
         .set({ ...appliance, updatedAt: new Date() })
-        .where(and(eq(appliances.id, id), eq(appliances.userId, userId)))
+        .where(and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)))
         .returning();
       return updatedAppliance;
     } catch (error) {
@@ -986,8 +983,8 @@ export class DatabaseStorage implements IStorage {
   async deleteAppliance(userId: string, id: string): Promise<void> {
     try {
       await db
-        .delete(appliances)
-        .where(and(eq(appliances.id, id), eq(appliances.userId, userId)));
+        .delete(userAppliances)
+        .where(and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)));
     } catch (error) {
       console.error(`Error deleting appliance ${id}:`, error);
       throw new Error("Failed to delete appliance");
@@ -999,19 +996,19 @@ export class DatabaseStorage implements IStorage {
     category: string,
   ): Promise<Appliance[]> {
     try {
-      // Get user appliances that have an applianceLibraryId linked to the specified category
+      // Get user userAppliances that have an applianceLibraryId linked to the specified category
       const results = await db
         .select({
-          appliance: appliances,
+          appliance: userAppliances,
         })
-        .from(appliances)
+        .from(userAppliances)
         .leftJoin(
           applianceLibrary,
-          eq(appliances.applianceLibraryId, applianceLibrary.id)
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
         )
         .where(
           and(
-            eq(appliances.userId, userId),
+            eq(userAppliances.userId, userId),
             eq(applianceLibrary.category, category)
           )
         );
@@ -1019,10 +1016,10 @@ export class DatabaseStorage implements IStorage {
       return results.map(r => r.appliance);
     } catch (error) {
       console.error(
-        `Error getting appliances by category for user ${userId}:`,
+        `Error getting userAppliances by category for user ${userId}:`,
         error,
       );
-      throw new Error("Failed to retrieve appliances by category");
+      throw new Error("Failed to retrieve userAppliances by category");
     }
   }
 
@@ -1033,20 +1030,20 @@ export class DatabaseStorage implements IStorage {
     try {
       const results = await db
         .select()
-        .from(appliances)
-        .where(and(eq(appliances.userId, userId)));
+        .from(userAppliances)
+        .where(and(eq(userAppliances.userId, userId)));
 
-      // Filter appliances that have the specified capability
+      // Filter userAppliances that have the specified capability
       return results.filter((appliance) => {
         const capabilities = appliance.customCapabilities || [];
         return capabilities.includes(capability);
       });
     } catch (error) {
       console.error(
-        `Error getting appliances by capability for user ${userId}:`,
+        `Error getting userAppliances by capability for user ${userId}:`,
         error,
       );
-      throw new Error("Failed to retrieve appliances by capability");
+      throw new Error("Failed to retrieve userAppliances by capability");
     }
   }
 
@@ -1068,8 +1065,8 @@ export class DatabaseStorage implements IStorage {
         .from(applianceLibrary)
         .where(eq(applianceLibrary.category, category));
     } catch (error) {
-      console.error(`Error getting appliances by category ${category}:`, error);
-      throw new Error("Failed to retrieve appliances by category");
+      console.error(`Error getting userAppliances by category ${category}:`, error);
+      throw new Error("Failed to retrieve userAppliances by category");
     }
   }
 
@@ -1097,8 +1094,8 @@ export class DatabaseStorage implements IStorage {
         .from(applianceLibrary)
         .where(eq(applianceLibrary.isCommon, true));
     } catch (error) {
-      console.error("Error getting common appliances:", error);
-      throw new Error("Failed to retrieve common appliances");
+      console.error("Error getting common userAppliances:", error);
+      throw new Error("Failed to retrieve common userAppliances");
     }
   }
 
@@ -1110,8 +1107,8 @@ export class DatabaseStorage implements IStorage {
         .from(userAppliances)
         .where(eq(userAppliances.userId, userId));
     } catch (error) {
-      console.error(`Error getting user appliances for ${userId}:`, error);
-      throw new Error("Failed to retrieve user appliances");
+      console.error(`Error getting user userAppliances for ${userId}:`, error);
+      throw new Error("Failed to retrieve user userAppliances");
     }
   }
 
@@ -1196,8 +1193,8 @@ export class DatabaseStorage implements IStorage {
       
       return result.map(r => r.userAppliance);
     } catch (error) {
-      console.error(`Error getting user appliances by category ${category}:`, error);
-      throw new Error("Failed to retrieve user appliances by category");
+      console.error(`Error getting user userAppliances by category ${category}:`, error);
+      throw new Error("Failed to retrieve user userAppliances by category");
     }
   }
 
@@ -1213,21 +1210,21 @@ export class DatabaseStorage implements IStorage {
       if (storageLocationId) {
         return db
           .select()
-          .from(foodItems)
+          .from(userInventory)
           .where(
             and(
-              eq(foodItems.storageLocationId, storageLocationId),
-              eq(foodItems.userId, userId),
+              eq(userInventory.storageLocationId, storageLocationId),
+              eq(userInventory.userId, userId),
             ),
           )
-          .orderBy(foodItems.expirationDate) // Prioritize expiring items
+          .orderBy(userInventory.expirationDate) // Prioritize expiring items
           .limit(limit);
       }
       return db
         .select()
-        .from(foodItems)
-        .where(eq(foodItems.userId, userId))
-        .orderBy(foodItems.expirationDate) // Prioritize expiring items
+        .from(userInventory)
+        .where(eq(userInventory.userId, userId))
+        .orderBy(userInventory.expirationDate) // Prioritize expiring items
         .limit(limit);
     } catch (error) {
       console.error(`Error getting food items for user ${userId}:`, error);
@@ -1246,17 +1243,17 @@ export class DatabaseStorage implements IStorage {
       const offset = (page - 1) * limit;
 
       // Build where clause
-      const whereConditions = [eq(foodItems.userId, userId)];
+      const whereConditions = [eq(userInventory.userId, userId)];
       if (storageLocationId && storageLocationId !== "all") {
         whereConditions.push(
-          eq(foodItems.storageLocationId, storageLocationId),
+          eq(userInventory.storageLocationId, storageLocationId),
         );
       }
 
       // Get total count
       const [countResult] = await db
         .select({ count: sql<number>`count(*)` })
-        .from(foodItems)
+        .from(userInventory)
         .where(and(...whereConditions));
 
       const total = Number(countResult?.count || 0);
@@ -1264,15 +1261,15 @@ export class DatabaseStorage implements IStorage {
       // Determine sort order
       const orderClause =
         sortBy === "name"
-          ? foodItems.name
+          ? userInventory.name
           : sortBy === "createdAt"
-            ? sql`${foodItems.createdAt} DESC`
-            : foodItems.expirationDate;
+            ? sql`${userInventory.createdAt} DESC`
+            : userInventory.expirationDate;
 
       // Get paginated items
       const items = await db
         .select()
-        .from(foodItems)
+        .from(userInventory)
         .where(and(...whereConditions))
         .orderBy(orderClause)
         .limit(limit)
@@ -1292,8 +1289,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [item] = await db
         .select()
-        .from(foodItems)
-        .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)));
+        .from(userInventory)
+        .where(and(eq(userInventory.id, id), eq(userInventory.userId, userId)));
       return item || undefined;
     } catch (error) {
       console.error(`Error getting food item ${id}:`, error);
@@ -1307,7 +1304,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<FoodItem> {
     try {
       const [newItem] = await db
-        .insert(foodItems)
+        .insert(userInventory)
         .values({ ...item, userId })
         .returning();
       return newItem;
@@ -1324,9 +1321,9 @@ export class DatabaseStorage implements IStorage {
   ): Promise<FoodItem> {
     try {
       const [updated] = await db
-        .update(foodItems)
+        .update(userInventory)
         .set(item)
-        .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)))
+        .where(and(eq(userInventory.id, id), eq(userInventory.userId, userId)))
         .returning();
 
       if (!updated) {
@@ -1343,8 +1340,8 @@ export class DatabaseStorage implements IStorage {
   async deleteFoodItem(userId: string, id: string): Promise<void> {
     try {
       await db
-        .delete(foodItems)
-        .where(and(eq(foodItems.id, id), eq(foodItems.userId, userId)));
+        .delete(userInventory)
+        .where(and(eq(userInventory.id, id), eq(userInventory.userId, userId)));
     } catch (error) {
       console.error(`Error deleting food item ${id}:`, error);
       throw new Error("Failed to delete food item");
@@ -1373,9 +1370,9 @@ export class DatabaseStorage implements IStorage {
     try {
       return db
         .select()
-        .from(chatMessages)
-        .where(eq(chatMessages.userId, userId))
-        .orderBy(desc(chatMessages.createdAt)) // Most recent first
+        .from(userChats)
+        .where(eq(userChats.userId, userId))
+        .orderBy(desc(userChats.createdAt)) // Most recent first
         .limit(limit);
     } catch (error) {
       console.error(`Error getting chat messages for user ${userId}:`, error);
@@ -1394,17 +1391,17 @@ export class DatabaseStorage implements IStorage {
       // Get total count
       const [countResult] = await db
         .select({ count: sql<number>`count(*)` })
-        .from(chatMessages)
-        .where(eq(chatMessages.userId, userId));
+        .from(userChats)
+        .where(eq(userChats.userId, userId));
 
       const total = Number(countResult?.count || 0);
 
       // Get paginated messages
       const messages = await db
         .select()
-        .from(chatMessages)
-        .where(eq(chatMessages.userId, userId))
-        .orderBy(desc(chatMessages.createdAt))
+        .from(userChats)
+        .where(eq(userChats.userId, userId))
+        .orderBy(desc(userChats.createdAt))
         .limit(limit)
         .offset(offset);
 
@@ -1430,7 +1427,7 @@ export class DatabaseStorage implements IStorage {
       };
       
       const [newMessage] = await db
-        .insert(chatMessages)
+        .insert(userChats)
         .values(messageData)
         .returning();
       return newMessage;
@@ -1442,7 +1439,7 @@ export class DatabaseStorage implements IStorage {
 
   async clearChatMessages(userId: string): Promise<void> {
     try {
-      await db.delete(chatMessages).where(eq(chatMessages.userId, userId));
+      await db.delete(userChats).where(eq(userChats.userId, userId));
     } catch (error) {
       console.error(`Error clearing chat messages for user ${userId}:`, error);
       throw new Error("Failed to clear chat messages");
@@ -1458,11 +1455,11 @@ export class DatabaseStorage implements IStorage {
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
 
       const result = await db
-        .delete(chatMessages)
+        .delete(userChats)
         .where(
           and(
-            eq(chatMessages.userId, userId),
-            sql`${chatMessages.createdAt} < ${cutoffDate}`,
+            eq(userChats.userId, userId),
+            sql`${userChats.createdAt} < ${cutoffDate}`,
           ),
         )
         .returning();
@@ -1490,47 +1487,47 @@ export class DatabaseStorage implements IStorage {
     limit: number = 200
   ): Promise<Recipe[]> {
     try {
-      const conditions = [eq(recipes.userId, userId)];
+      const conditions = [eq(userRecipes.userId, userId)];
       
       // Apply filters at the database level
       if (filters?.isFavorite !== undefined) {
-        conditions.push(eq(recipes.isFavorite, filters.isFavorite));
+        conditions.push(eq(userRecipes.isFavorite, filters.isFavorite));
       }
       
       if (filters?.search) {
         const searchTerm = `%${filters.search.toLowerCase()}%`;
         conditions.push(
           or(
-            sql`LOWER(${recipes.title}) LIKE ${searchTerm}`,
-            sql`LOWER(${recipes.description}) LIKE ${searchTerm}`
+            sql`LOWER(${userRecipes.title}) LIKE ${searchTerm}`,
+            sql`LOWER(${userRecipes.description}) LIKE ${searchTerm}`
           )!
         );
       }
       
       if (filters?.cuisine) {
-        conditions.push(eq(recipes.cuisine, filters.cuisine));
+        conditions.push(eq(userRecipes.cuisine, filters.cuisine));
       }
       
       if (filters?.difficulty) {
-        conditions.push(eq(recipes.difficulty, filters.difficulty));
+        conditions.push(eq(userRecipes.difficulty, filters.difficulty));
       }
       
       if (filters?.maxCookTime) {
         // Convert cook time string to minutes for comparison
         conditions.push(
-          sql`CAST(REGEXP_REPLACE(${recipes.cookTime}, '[^0-9]', '', 'g') AS INTEGER) <= ${filters.maxCookTime}`
+          sql`CAST(REGEXP_REPLACE(${userRecipes.cookTime}, '[^0-9]', '', 'g') AS INTEGER) <= ${filters.maxCookTime}`
         );
       }
       
       return db
         .select()
-        .from(recipes)
+        .from(userRecipes)
         .where(and(...conditions))
-        .orderBy(sql`${recipes.createdAt} DESC`)
+        .orderBy(sql`${userRecipes.createdAt} DESC`)
         .limit(limit);
     } catch (error) {
-      console.error(`Error getting recipes for user ${userId}:`, error);
-      throw new Error("Failed to retrieve recipes");
+      console.error(`Error getting userRecipes for user ${userId}:`, error);
+      throw new Error("Failed to retrieve userRecipes");
     }
   }
 
@@ -1545,27 +1542,27 @@ export class DatabaseStorage implements IStorage {
       // Get total count
       const [countResult] = await db
         .select({ count: sql<number>`count(*)` })
-        .from(recipes)
-        .where(eq(recipes.userId, userId));
+        .from(userRecipes)
+        .where(eq(userRecipes.userId, userId));
 
       const total = Number(countResult?.count || 0);
 
-      // Get paginated recipes
+      // Get paginated userRecipes
       const paginatedRecipes = await db
         .select()
-        .from(recipes)
-        .where(eq(recipes.userId, userId))
-        .orderBy(sql`${recipes.createdAt} DESC`)
+        .from(userRecipes)
+        .where(eq(userRecipes.userId, userId))
+        .orderBy(sql`${userRecipes.createdAt} DESC`)
         .limit(limit)
         .offset(offset);
 
       return PaginationHelper.createResponse(paginatedRecipes, total, page, limit);
     } catch (error) {
       console.error(
-        `Error getting paginated recipes for user ${userId}:`,
+        `Error getting paginated userRecipes for user ${userId}:`,
         error,
       );
-      throw new Error("Failed to retrieve recipes");
+      throw new Error("Failed to retrieve userRecipes");
     }
   }
 
@@ -1573,8 +1570,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [recipe] = await db
         .select()
-        .from(recipes)
-        .where(and(eq(recipes.id, id), eq(recipes.userId, userId)));
+        .from(userRecipes)
+        .where(and(eq(userRecipes.id, id), eq(userRecipes.userId, userId)));
       return recipe || undefined;
     } catch (error) {
       console.error(`Error getting recipe ${id}:`, error);
@@ -1588,7 +1585,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<Recipe> {
     try {
       const [newRecipe] = await db
-        .insert(recipes)
+        .insert(userRecipes)
         .values({ ...recipe, userId })
         .returning();
       return newRecipe;
@@ -1605,9 +1602,9 @@ export class DatabaseStorage implements IStorage {
   ): Promise<Recipe> {
     try {
       const [updated] = await db
-        .update(recipes)
+        .update(userRecipes)
         .set(updates)
-        .where(and(eq(recipes.id, id), eq(recipes.userId, userId)))
+        .where(and(eq(userRecipes.id, id), eq(userRecipes.userId, userId)))
         .returning();
 
       if (!updated) {
@@ -1625,7 +1622,7 @@ export class DatabaseStorage implements IStorage {
     userId: string,
   ): Promise<Array<Recipe & { ingredientMatches: IngredientMatch[] }>> {
     try {
-      // Fetch recipes and inventory in parallel for better performance
+      // Fetch userRecipes and inventory in parallel for better performance
       const [userRecipes, inventory] = await parallelQueries([
         this.getRecipes(userId),
         this.getFoodItems(userId)
@@ -1657,20 +1654,20 @@ export class DatabaseStorage implements IStorage {
       });
     } catch (error) {
       console.error(
-        `Error getting recipes with inventory matching for user ${userId}:`,
+        `Error getting userRecipes with inventory matching for user ${userId}:`,
         error,
       );
-      throw new Error("Failed to retrieve recipes with inventory matching");
+      throw new Error("Failed to retrieve userRecipes with inventory matching");
     }
   }
 
-  // Expiration Handling (now using foodItems table with notification fields)
+  // Expiration Handling (now using userInventory table with notification fields)
   async dismissFoodItemNotification(
     userId: string,
     foodItemId: string,
   ): Promise<void> {
     // TODO: Implement notification dismissal tracking
-    // The notificationDismissed and lastNotifiedAt columns don't exist in foodItems
+    // The notificationDismissed and lastNotifiedAt columns don't exist in userInventory
     // This would need to be tracked in a separate table or added to the schema
     console.log(`Dismissing notification for food item ${foodItemId} for user ${userId}`);
   }
@@ -1688,14 +1685,14 @@ export class DatabaseStorage implements IStorage {
 
       const expiringItems = await db
         .select()
-        .from(foodItems)
+        .from(userInventory)
         .where(
           and(
-            eq(foodItems.userId, userId),
-            sql`${foodItems.expirationDate} IS NOT NULL`,
-            sql`${foodItems.expirationDate} != ''`,
-            sql`CAST(NULLIF(${foodItems.expirationDate}, '') AS TIMESTAMP) >= ${now.toISOString()}::TIMESTAMP`,
-            sql`CAST(NULLIF(${foodItems.expirationDate}, '') AS TIMESTAMP) <= ${maxExpiryDate.toISOString()}::TIMESTAMP`,
+            eq(userInventory.userId, userId),
+            sql`${userInventory.expirationDate} IS NOT NULL`,
+            sql`${userInventory.expirationDate} != ''`,
+            sql`CAST(NULLIF(${userInventory.expirationDate}, '') AS TIMESTAMP) >= ${now.toISOString()}::TIMESTAMP`,
+            sql`CAST(NULLIF(${userInventory.expirationDate}, '') AS TIMESTAMP) <= ${maxExpiryDate.toISOString()}::TIMESTAMP`,
           ),
         );
 
@@ -1918,7 +1915,7 @@ export class DatabaseStorage implements IStorage {
         ingredients: food.ingredients,
         servingSize: food.servingSize,
         servingSizeUnit: food.servingSizeUnit,
-        foodCategory: food.foodCategory,
+        category: food.category,
         gtinUpc: food.gtinUpc,
         foodNutrients: food.foodNutrients,
         fullData: food.fullData,
@@ -1995,9 +1992,9 @@ export class DatabaseStorage implements IStorage {
     await this.ensureDefaultDataForUser(userId);
     const items = await db
       .select()
-      .from(shoppingListItems)
-      .where(eq(shoppingListItems.userId, userId))
-      .orderBy(shoppingListItems.createdAt)
+      .from(userShopping)
+      .where(eq(userShopping.userId, userId))
+      .orderBy(userShopping.createdAt)
       .limit(limit);
     return items;
   }
@@ -2034,7 +2031,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<ShoppingListItem> {
     await this.ensureDefaultDataForUser(userId);
     const [newItem] = await db
-      .insert(shoppingListItems)
+      .insert(userShopping)
       .values({ ...item, userId })
       .returning();
     return newItem;
@@ -2046,10 +2043,10 @@ export class DatabaseStorage implements IStorage {
     updates: Partial<Omit<InsertShoppingListItem, "userId">>,
   ): Promise<ShoppingListItem> {
     const [updated] = await db
-      .update(shoppingListItems)
+      .update(userShopping)
       .set(updates)
       .where(
-        and(eq(shoppingListItems.id, id), eq(shoppingListItems.userId, userId)),
+        and(eq(userShopping.id, id), eq(userShopping.userId, userId)),
       )
       .returning();
 
@@ -2061,19 +2058,19 @@ export class DatabaseStorage implements IStorage {
 
   async deleteShoppingListItem(userId: string, id: string): Promise<void> {
     await db
-      .delete(shoppingListItems)
+      .delete(userShopping)
       .where(
-        and(eq(shoppingListItems.id, id), eq(shoppingListItems.userId, userId)),
+        and(eq(userShopping.id, id), eq(userShopping.userId, userId)),
       );
   }
 
   async clearCheckedShoppingListItems(userId: string): Promise<void> {
     await db
-      .delete(shoppingListItems)
+      .delete(userShopping)
       .where(
         and(
-          eq(shoppingListItems.userId, userId),
-          eq(shoppingListItems.isChecked, true),
+          eq(userShopping.userId, userId),
+          eq(userShopping.isChecked, true),
         ),
       );
   }
@@ -2110,7 +2107,7 @@ export class DatabaseStorage implements IStorage {
     });
 
     const newItems = await db
-      .insert(shoppingListItems)
+      .insert(userShopping)
       .values(items)
       .returning();
 
@@ -2123,15 +2120,15 @@ export class DatabaseStorage implements IStorage {
       await db.transaction(async (tx) => {
         // Delete all user data in order (respecting foreign key constraints)
         await tx
-          .delete(shoppingListItems)
-          .where(eq(shoppingListItems.userId, userId));
+          .delete(userShopping)
+          .where(eq(userShopping.userId, userId));
         await tx.delete(mealPlans).where(eq(mealPlans.userId, userId));
-        await tx.delete(foodItems).where(eq(foodItems.userId, userId));
-        await tx.delete(chatMessages).where(eq(chatMessages.userId, userId));
-        await tx.delete(recipes).where(eq(recipes.userId, userId));
-        await tx.delete(appliances).where(eq(appliances.userId, userId));
+        await tx.delete(userInventory).where(eq(userInventory.userId, userId));
+        await tx.delete(userChats).where(eq(userChats.userId, userId));
+        await tx.delete(userRecipes).where(eq(userRecipes.userId, userId));
+        await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
         await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
-        await tx.delete(feedback).where(eq(feedback.userId, userId));
+        await tx.delete(userFeedback).where(eq(userFeedback.userId, userId));
 
         // Reset user data including preferences and storage locations to defaults
         await tx
@@ -2176,7 +2173,7 @@ export class DatabaseStorage implements IStorage {
     },
   ): Promise<Feedback> {
     try {
-      // Extract the extra fields that aren't part of the feedback table
+      // Extract the extra fields that aren't part of the userFeedback table
       const { isFlagged, flagReason, similarTo, ...feedbackFields } = feedbackData;
       
       // Store flags in the tags array if provided
@@ -2192,7 +2189,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       const [newFeedback] = await db
-        .insert(feedback)
+        .insert(userFeedback)
         .values({
           // Required fields
           userId,
@@ -2218,8 +2215,8 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newFeedback;
     } catch (error) {
-      console.error("Error creating feedback:", error);
-      throw new Error("Failed to create feedback");
+      console.error("Error creating userFeedback:", error);
+      throw new Error("Failed to create userFeedback");
     }
   }
 
@@ -2227,12 +2224,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .select()
-        .from(feedback)
-        .where(and(eq(feedback.id, id), eq(feedback.userId, userId)));
+        .from(userFeedback)
+        .where(and(eq(userFeedback.id, id), eq(userFeedback.userId, userId)));
       return result;
     } catch (error) {
-      console.error("Error getting feedback:", error);
-      throw new Error("Failed to get feedback");
+      console.error("Error getting userFeedback:", error);
+      throw new Error("Failed to get userFeedback");
     }
   }
 
@@ -2243,14 +2240,14 @@ export class DatabaseStorage implements IStorage {
     try {
       const results = await db
         .select()
-        .from(feedback)
-        .where(eq(feedback.userId, userId))
-        .orderBy(sql`${feedback.createdAt} DESC`)
+        .from(userFeedback)
+        .where(eq(userFeedback.userId, userId))
+        .orderBy(sql`${userFeedback.createdAt} DESC`)
         .limit(limit);
       return results;
     } catch (error) {
-      console.error("Error getting user feedback:", error);
-      throw new Error("Failed to get user feedback");
+      console.error("Error getting user userFeedback:", error);
+      throw new Error("Failed to get user userFeedback");
     }
   }
 
@@ -2261,13 +2258,13 @@ export class DatabaseStorage implements IStorage {
   ): Promise<PaginatedResponse<Feedback>> {
     try {
       const offset = (page - 1) * limit;
-      const whereCondition = status ? eq(feedback.status, status) : undefined;
+      const whereCondition = status ? eq(userFeedback.status, status) : undefined;
 
       const countQuery = db
         .select({ count: sql<number>`count(*)` })
-        .from(feedback);
+        .from(userFeedback);
 
-      const dataQuery = db.select().from(feedback);
+      const dataQuery = db.select().from(userFeedback);
 
       const [{ count }] = whereCondition
         ? await countQuery.where(whereCondition)
@@ -2276,19 +2273,19 @@ export class DatabaseStorage implements IStorage {
       const items = whereCondition
         ? await dataQuery
             .where(whereCondition)
-            .orderBy(sql`${feedback.createdAt} DESC`)
+            .orderBy(sql`${userFeedback.createdAt} DESC`)
             .limit(limit)
             .offset(offset)
         : await dataQuery
-            .orderBy(sql`${feedback.createdAt} DESC`)
+            .orderBy(sql`${userFeedback.createdAt} DESC`)
             .limit(limit)
             .offset(offset);
 
       const total = Number(count || 0);
       return PaginationHelper.createResponse(items, total, page, limit);
     } catch (error) {
-      console.error("Error getting all feedback:", error);
-      throw new Error("Failed to get all feedback");
+      console.error("Error getting all userFeedback:", error);
+      throw new Error("Failed to get all userFeedback");
     }
   }
 
@@ -2308,9 +2305,9 @@ export class DatabaseStorage implements IStorage {
       }
 
       const [updated] = await db
-        .update(feedback)
+        .update(userFeedback)
         .set(updateData)
-        .where(eq(feedback.id, id))
+        .where(eq(userFeedback.id, id))
         .returning();
 
       if (!updated) {
@@ -2319,8 +2316,8 @@ export class DatabaseStorage implements IStorage {
 
       return updated;
     } catch (error) {
-      console.error("Error updating feedback status:", error);
-      throw new Error("Failed to update feedback status");
+      console.error("Error updating userFeedback status:", error);
+      throw new Error("Failed to update userFeedback status");
     }
   }
 
@@ -2329,11 +2326,11 @@ export class DatabaseStorage implements IStorage {
     response: FeedbackResponse,
   ): Promise<Feedback> {
     try {
-      // Get current feedback
+      // Get current userFeedback
       const [currentFeedback] = await db
         .select()
-        .from(feedback)
-        .where(eq(feedback.id, feedbackId));
+        .from(userFeedback)
+        .where(eq(userFeedback.id, feedbackId));
 
       if (!currentFeedback) {
         throw new Error("Feedback not found");
@@ -2348,28 +2345,28 @@ export class DatabaseStorage implements IStorage {
       };
       const updatedResponses = [...currentResponses, newResponse];
 
-      // Update feedback with new responses
+      // Update userFeedback with new responses
       const [updated] = await db
-        .update(feedback)
+        .update(userFeedback)
         .set({
           responses: updatedResponses,
         })
-        .where(eq(feedback.id, feedbackId))
+        .where(eq(userFeedback.id, feedbackId))
         .returning();
 
       return updated;
     } catch (error) {
-      console.error("Error adding feedback response:", error);
-      throw new Error("Failed to add feedback response");
+      console.error("Error adding userFeedback response:", error);
+      throw new Error("Failed to add userFeedback response");
     }
   }
 
   async getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]> {
     try {
       const [currentFeedback] = await db
-        .select({ responses: feedback.responses })
-        .from(feedback)
-        .where(eq(feedback.id, feedbackId));
+        .select({ responses: userFeedback.responses })
+        .from(userFeedback)
+        .where(eq(userFeedback.id, feedbackId));
 
       if (!currentFeedback) {
         return [];
@@ -2383,8 +2380,8 @@ export class DatabaseStorage implements IStorage {
         return dateA - dateB;
       });
     } catch (error) {
-      console.error("Error getting feedback responses:", error);
-      throw new Error("Failed to get feedback responses");
+      console.error("Error getting userFeedback responses:", error);
+      throw new Error("Failed to get userFeedback responses");
     }
   }
 
@@ -2399,17 +2396,17 @@ export class DatabaseStorage implements IStorage {
       const allFeedback = userId
         ? await db
             .select()
-            .from(feedback)
+            .from(userFeedback)
             .where(
               and(
-                eq(feedback.userId, userId),
-                sql`${feedback.createdAt} >= ${startDate}`,
+                eq(userFeedback.userId, userId),
+                sql`${userFeedback.createdAt} >= ${startDate}`,
               ),
             )
         : await db
             .select()
-            .from(feedback)
-            .where(sql`${feedback.createdAt} >= ${startDate}`);
+            .from(userFeedback)
+            .where(sql`${userFeedback.createdAt} >= ${startDate}`);
 
       // Calculate analytics
       const totalFeedback = allFeedback.length;
@@ -2515,8 +2512,8 @@ export class DatabaseStorage implements IStorage {
         topIssues,
       };
     } catch (error) {
-      console.error("Error getting feedback analytics:", error);
-      throw new Error("Failed to get feedback analytics");
+      console.error("Error getting userFeedback analytics:", error);
+      throw new Error("Failed to get userFeedback analytics");
     }
   }
 
@@ -2527,18 +2524,18 @@ export class DatabaseStorage implements IStorage {
     try {
       const results = await db
         .select()
-        .from(feedback)
+        .from(userFeedback)
         .where(
           and(
-            eq(feedback.contextId, contextId),
-            eq(feedback.contextType, contextType),
+            eq(userFeedback.contextId, contextId),
+            eq(userFeedback.contextType, contextType),
           ),
         )
-        .orderBy(sql`${feedback.createdAt} DESC`);
+        .orderBy(sql`${userFeedback.createdAt} DESC`);
       return results;
     } catch (error) {
-      console.error("Error getting feedback by context:", error);
-      throw new Error("Failed to get feedback by context");
+      console.error("Error getting userFeedback by context:", error);
+      throw new Error("Failed to get userFeedback by context");
     }
   }
 
@@ -2548,25 +2545,25 @@ export class DatabaseStorage implements IStorage {
     limit: number = 50,
   ): Promise<Array<Feedback & { userUpvoted: boolean }>> {
     try {
-      const whereCondition = type ? eq(feedback.type, type) : undefined;
+      const whereCondition = type ? eq(userFeedback.type, type) : undefined;
       const orderByClause =
         sortBy === "upvotes"
-          ? sql`${feedback.upvoteCount} DESC, ${feedback.createdAt} DESC`
-          : sql`${feedback.createdAt} DESC`;
+          ? sql`${userFeedback.upvoteCount} DESC, ${userFeedback.createdAt} DESC`
+          : sql`${userFeedback.createdAt} DESC`;
 
       const results = whereCondition
         ? await db
             .select()
-            .from(feedback)
+            .from(userFeedback)
             .where(whereCondition)
             .orderBy(orderByClause)
             .limit(limit)
-        : await db.select().from(feedback).orderBy(orderByClause).limit(limit);
+        : await db.select().from(userFeedback).orderBy(orderByClause).limit(limit);
 
       return results.map((item) => ({ ...item, userUpvoted: false }));
     } catch (error) {
-      console.error("Error getting community feedback:", error);
-      throw new Error("Failed to get community feedback");
+      console.error("Error getting community userFeedback:", error);
+      throw new Error("Failed to get community userFeedback");
     }
   }
 
@@ -2577,22 +2574,22 @@ export class DatabaseStorage implements IStorage {
     limit: number = 50,
   ): Promise<Array<Feedback & { userUpvoted: boolean }>> {
     try {
-      const whereCondition = type ? eq(feedback.type, type) : undefined;
+      const whereCondition = type ? eq(userFeedback.type, type) : undefined;
       const orderByClause =
         sortBy === "upvotes"
-          ? sql`${feedback.upvoteCount} DESC, ${feedback.createdAt} DESC`
-          : sql`${feedback.createdAt} DESC`;
+          ? sql`${userFeedback.upvoteCount} DESC, ${userFeedback.createdAt} DESC`
+          : sql`${userFeedback.createdAt} DESC`;
 
       const results = whereCondition
         ? await db
             .select()
-            .from(feedback)
+            .from(userFeedback)
             .where(whereCondition)
             .orderBy(orderByClause)
             .limit(limit)
-        : await db.select().from(feedback).orderBy(orderByClause).limit(limit);
+        : await db.select().from(userFeedback).orderBy(orderByClause).limit(limit);
 
-      // Check if user has upvoted each feedback item
+      // Check if user has upvoted each userFeedback item
       return results.map((item) => {
         const upvotes = (item.upvotes as Array<{userId: string, createdAt: string}>) || [];
         return {
@@ -2601,18 +2598,18 @@ export class DatabaseStorage implements IStorage {
         };
       });
     } catch (error) {
-      console.error("Error getting community feedback for user:", error);
-      throw new Error("Failed to get community feedback");
+      console.error("Error getting community userFeedback for user:", error);
+      throw new Error("Failed to get community userFeedback");
     }
   }
 
   async upvoteFeedback(userId: string, feedbackId: string): Promise<void> {
     try {
-      // Get the current feedback item
+      // Get the current userFeedback item
       const [currentFeedback] = await db
         .select()
-        .from(feedback)
-        .where(eq(feedback.id, feedbackId));
+        .from(userFeedback)
+        .where(eq(userFeedback.id, feedbackId));
 
       if (!currentFeedback) {
         throw new Error("Feedback not found");
@@ -2631,25 +2628,25 @@ export class DatabaseStorage implements IStorage {
       }];
 
       await db
-        .update(feedback)
+        .update(userFeedback)
         .set({
           upvotes: updatedUpvotes,
           upvoteCount: updatedUpvotes.length,
         })
-        .where(eq(feedback.id, feedbackId));
+        .where(eq(userFeedback.id, feedbackId));
     } catch (error) {
-      console.error("Error upvoting feedback:", error);
-      throw new Error("Failed to upvote feedback");
+      console.error("Error upvoting userFeedback:", error);
+      throw new Error("Failed to upvote userFeedback");
     }
   }
 
   async removeUpvote(userId: string, feedbackId: string): Promise<void> {
     try {
-      // Get the current feedback item
+      // Get the current userFeedback item
       const [currentFeedback] = await db
         .select()
-        .from(feedback)
-        .where(eq(feedback.id, feedbackId));
+        .from(userFeedback)
+        .where(eq(userFeedback.id, feedbackId));
 
       if (!currentFeedback) {
         throw new Error("Feedback not found");
@@ -2662,12 +2659,12 @@ export class DatabaseStorage implements IStorage {
       // Only update if the user was actually in the upvotes array
       if (upvotes.length !== updatedUpvotes.length) {
         await db
-          .update(feedback)
+          .update(userFeedback)
           .set({
             upvotes: updatedUpvotes,
             upvoteCount: updatedUpvotes.length,
           })
-          .where(eq(feedback.id, feedbackId));
+          .where(eq(userFeedback.id, feedbackId));
       }
     } catch (error) {
       console.error("Error removing upvote:", error);
@@ -2678,9 +2675,9 @@ export class DatabaseStorage implements IStorage {
   async hasUserUpvoted(userId: string, feedbackId: string): Promise<boolean> {
     try {
       const [currentFeedback] = await db
-        .select({ upvotes: feedback.upvotes })
-        .from(feedback)
-        .where(eq(feedback.id, feedbackId));
+        .select({ upvotes: userFeedback.upvotes })
+        .from(userFeedback)
+        .where(eq(userFeedback.id, feedbackId));
 
       if (!currentFeedback) {
         return false;
@@ -2697,9 +2694,9 @@ export class DatabaseStorage implements IStorage {
   async getFeedbackUpvoteCount(feedbackId: string): Promise<number> {
     try {
       const [result] = await db
-        .select({ upvoteCount: feedback.upvoteCount })
-        .from(feedback)
-        .where(eq(feedback.id, feedbackId));
+        .select({ upvoteCount: userFeedback.upvoteCount })
+        .from(userFeedback)
+        .where(eq(userFeedback.id, feedbackId));
       return result?.upvoteCount || 0;
     } catch (error) {
       console.error("Error getting upvote count:", error);
@@ -2946,7 +2943,7 @@ export class DatabaseStorage implements IStorage {
   // Common Food Items Methods
   async getCommonFoodItems(): Promise<CommonFoodItem[]> {
     try {
-      return db.select().from(commonFoodItems);
+      return db.select().from(onboardingInventory);
     } catch (error) {
       console.error("Error getting common food items:", error);
       throw new Error("Failed to get common food items");
@@ -2957,8 +2954,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [item] = await db
         .select()
-        .from(commonFoodItems)
-        .where(eq(commonFoodItems.displayName, displayName));
+        .from(onboardingInventory)
+        .where(eq(onboardingInventory.displayName, displayName));
       return item;
     } catch (error) {
       console.error("Error getting common food item by name:", error);
@@ -2972,8 +2969,8 @@ export class DatabaseStorage implements IStorage {
       // Use a parameterized query with ARRAY constructor
       return db
         .select()
-        .from(commonFoodItems)
-        .where(sql`${commonFoodItems.displayName} = ANY(ARRAY[${sql.join(displayNames.map(name => sql`${name}`), sql`, `)}])`);
+        .from(onboardingInventory)
+        .where(sql`${onboardingInventory.displayName} = ANY(ARRAY[${sql.join(displayNames.map(name => sql`${name}`), sql`, `)}])`);
     } catch (error) {
       console.error("Error getting common food items by names:", error);
       throw new Error("Failed to get common food items");
@@ -2983,10 +2980,10 @@ export class DatabaseStorage implements IStorage {
   async upsertCommonFoodItem(item: InsertCommonFoodItem): Promise<CommonFoodItem> {
     try {
       const [result] = await db
-        .insert(commonFoodItems)
+        .insert(onboardingInventory)
         .values(item)
         .onConflictDoUpdate({
-          target: commonFoodItems.displayName,
+          target: onboardingInventory.displayName,
           set: {
             ...item,
             lastUpdated: new Date(),
@@ -3003,8 +3000,8 @@ export class DatabaseStorage implements IStorage {
   async deleteCommonFoodItem(displayName: string): Promise<void> {
     try {
       await db
-        .delete(commonFoodItems)
-        .where(eq(commonFoodItems.displayName, displayName));
+        .delete(onboardingInventory)
+        .where(eq(onboardingInventory.displayName, displayName));
     } catch (error) {
       console.error("Error deleting common food item:", error);
       throw new Error("Failed to delete common food item");

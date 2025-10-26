@@ -158,27 +158,27 @@ export type StorageLocation = {
 };
 
 // Chat Messages - Store conversation history
-export const chatMessages = pgTable("chat_messages", {
+export const userChats = pgTable("user_chats", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
-  index("chat_messages_user_id_idx").on(table.userId),
-  index("chat_messages_created_at_idx").on(table.createdAt),
+  index("user_chats_user_id_idx").on(table.userId),
+  index("user_chats_created_at_idx").on(table.createdAt),
 ]);
 
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
+export const insertChatMessageSchema = createInsertSchema(userChats).omit({
   id: true,
   createdAt: true,
 });
 
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
-export type ChatMessage = typeof chatMessages.$inferSelect;
+export type ChatMessage = typeof userChats.$inferSelect;
 
 // Recipes - User's saved recipes
-export const recipes = pgTable("recipes", {
+export const userRecipes = pgTable("user_recipes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
@@ -206,25 +206,25 @@ export const recipes = pgTable("recipes", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
-  index("recipes_user_id_idx").on(table.userId),
-  index("recipes_is_favorite_idx").on(table.isFavorite),
-  index("recipes_created_at_idx").on(table.createdAt),
+  index("user_recipes_user_id_idx").on(table.userId),
+  index("user_recipes_is_favorite_idx").on(table.isFavorite),
+  index("user_recipes_created_at_idx").on(table.createdAt),
 ]);
 
-export const insertRecipeSchema = createInsertSchema(recipes).omit({
+export const insertRecipeSchema = createInsertSchema(userRecipes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
-export type Recipe = typeof recipes.$inferSelect;
+export type Recipe = typeof userRecipes.$inferSelect;
 
 // Meal Plans - User's planned meals
 export const mealPlans = pgTable("meal_plans", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  recipeId: varchar("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+  recipeId: varchar("recipe_id").notNull().references(() => userRecipes.id, { onDelete: "cascade" }),
   date: text("date").notNull(), // YYYY-MM-DD format
   mealType: text("meal_type").notNull(), // 'breakfast', 'lunch', 'dinner', 'snack'
   servings: integer("servings").notNull().default(1),
@@ -302,29 +302,29 @@ export type FdcCache = typeof fdcCache.$inferSelect;
 
 
 // Shopping List Items - User's shopping list
-export const shoppingListItems = pgTable("shopping_list_items", {
+export const userShopping = pgTable("user_shopping", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   ingredient: text("ingredient").notNull(),  // Changed from 'name' to match database
   quantity: text("quantity"),
   unit: text("unit"),
-  recipeId: varchar("recipe_id").references(() => recipes.id, { onDelete: "set null" }), // If from a recipe
+  recipeId: varchar("recipe_id").references(() => userRecipes.id, { onDelete: "set null" }), // If from a recipe
   isChecked: boolean("is_checked").notNull().default(false),
   createdAt: timestamp("created_at").notNull(),
   fdcId: text("fdc_id"), // Added to match database
 }, (table) => [
-  index("shopping_list_items_user_id_idx").on(table.userId),
-  index("shopping_list_items_is_checked_idx").on(table.isChecked),
-  index("shopping_list_items_recipe_id_idx").on(table.recipeId),
+  index("user_shopping_list_items_user_id_idx").on(table.userId),
+  index("user_shopping_list_items_is_checked_idx").on(table.isChecked),
+  index("user_shopping_list_items_recipe_id_idx").on(table.recipeId),
 ]);
 
-export const insertShoppingListItemSchema = createInsertSchema(shoppingListItems).omit({
+export const insertShoppingListItemSchema = createInsertSchema(userShopping).omit({
   id: true,
   createdAt: true,
 });
 
 export type InsertShoppingListItem = z.infer<typeof insertShoppingListItemSchema>;
-export type ShoppingListItem = typeof shoppingListItems.$inferSelect;
+export type ShoppingListItem = typeof userShopping.$inferSelect;
 
 // Nutrition Info Interface
 export interface NutritionInfo {
@@ -415,7 +415,7 @@ export interface USDASearchResponse {
 }
 
 // Feedback - User feedback and issue tracking
-export const feedback = pgTable("feedback", {
+export const userFeedback = pgTable("user_feedback", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }), // Allow anonymous feedback
   userEmail: text("user_email"), // For anonymous feedback
@@ -457,14 +457,14 @@ export const feedback = pgTable("feedback", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   resolvedAt: timestamp("resolved_at"),
 }, (table) => [
-  index("feedback_user_id_idx").on(table.userId),
-  index("feedback_type_idx").on(table.type),
-  index("feedback_status_idx").on(table.status),
-  index("feedback_priority_idx").on(table.priority),
-  index("feedback_created_at_idx").on(table.createdAt),
+  index("user_feedback_user_id_idx").on(table.userId),
+  index("user_feedback_type_idx").on(table.type),
+  index("user_feedback_status_idx").on(table.status),
+  index("user_feedback_priority_idx").on(table.priority),
+  index("user_feedback_created_at_idx").on(table.createdAt),
 ]);
 
-export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+export const insertFeedbackSchema = createInsertSchema(userFeedback).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -479,7 +479,7 @@ export const insertFeedbackSchema = createInsertSchema(feedback).omit({
 });
 
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
-export type Feedback = typeof feedback.$inferSelect;
+export type Feedback = typeof userFeedback.$inferSelect;
 
 // Feedback Upvotes and Responses - MERGED INTO feedback TABLE AS JSONB ARRAYS
 // Types preserved for backward compatibility during migration
