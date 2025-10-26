@@ -316,6 +316,17 @@ export interface IStorage {
   // Account Management
   resetUserData(userId: string): Promise<void>;
 
+  // Admin Management
+  getAllUsers(
+    page?: number,
+    limit?: number,
+    sortBy?: string,
+    sortOrder?: string,
+  ): Promise<PaginatedResponse<User>>;
+  updateUserAdminStatus(userId: string, isAdmin: boolean): Promise<User>;
+  deleteUser(userId: string): Promise<void>;
+  getAdminCount(): Promise<number>;
+
   // Feedback System (consolidated with upvotes and responses in JSONB)
   createFeedback(
     userId: string,
@@ -647,10 +658,34 @@ export class DatabaseStorage implements IStorage {
         return updatedUser;
       }
 
-      // No existing user, insert new one
+      // Check if this should be an admin
+      let isAdmin = false;
+      
+      // Check if user email is in ADMIN_EMAILS env var
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
+      if (userData.email && adminEmails.includes(userData.email)) {
+        isAdmin = true;
+        console.log(`Auto-promoting ${userData.email} to admin (via ADMIN_EMAILS)`);
+      } else {
+        // Check if this is the first user
+        const [countResult] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(users);
+        const userCount = countResult?.count || 0;
+        
+        if (userCount === 0) {
+          isAdmin = true;
+          console.log(`Auto-promoting ${userData.email} to admin (first user)`);
+        }
+      }
+
+      // No existing user, insert new one with admin status
       const [user] = await db
         .insert(users)
-        .values(userData)
+        .values({
+          ...userData,
+          isAdmin,
+        })
         .onConflictDoUpdate({
           target: users.id,
           set: {
@@ -2166,6 +2201,138 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error resetting user data for ${userId}:`, error);
       throw new Error("Failed to reset user data - transaction rolled back");
+    }
+  }
+
+  // Admin Management Implementation
+  async getAllUsers(
+    page: number = 1,
+    limit: number = 10,
+    sortBy: string = "createdAt",
+    sortOrder: string = "desc",
+  ): Promise<PaginatedResponse<User>> {
+    try {
+      const offset = (page - 1) * limit;
+
+      // Build sort column
+      const sortColumn =
+        sortBy === "email"
+          ? users.email
+          : sortBy === "firstName"
+          ? users.firstName
+          : sortBy === "lastName"
+          ? users.lastName
+          : users.createdAt;
+
+      // Get total count
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(users);
+      const total = countResult?.count || 0;
+
+      // Get paginated users
+      const query = db.select().from(users);
+
+      const data =
+        sortOrder === "asc"
+          ? await query.orderBy(sortColumn).limit(limit).offset(offset)
+          : await query.orderBy(desc(sortColumn)).limit(limit).offset(offset);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data,
+        total,
+        page,
+        totalPages,
+        limit,
+        offset,
+      };
+    } catch (error) {
+      console.error("Error getting all users:", error);
+      throw new Error("Failed to retrieve users");
+    }
+  }
+
+  async updateUserAdminStatus(
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<User> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          isAdmin,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!updatedUser) {
+        throw new Error("User not found");
+      }
+
+      // Invalidate cache for this user
+      this.invalidateCache(`user_prefs:${userId}`);
+
+      return updatedUser;
+    } catch (error) {
+      console.error(`Error updating admin status for user ${userId}:`, error);
+      throw new Error("Failed to update admin status");
+    }
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      // Use a transaction to ensure complete deletion or rollback
+      await db.transaction(async (tx) => {
+        // Delete all user-related data (cascade will handle most, but we'll be explicit)
+        await tx.delete(pushTokens).where(eq(pushTokens.userId, userId));
+        await tx.delete(userStorage).where(eq(userStorage.userId, userId));
+        await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
+        await tx.delete(userInventory).where(eq(userInventory.userId, userId));
+        await tx.delete(userChats).where(eq(userChats.userId, userId));
+        await tx.delete(userRecipes).where(eq(userRecipes.userId, userId));
+        await tx.delete(mealPlans).where(eq(mealPlans.userId, userId));
+        await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
+        await tx.delete(userShopping).where(eq(userShopping.userId, userId));
+        
+        // Delete feedback where userId is set (nullable column)
+        await tx.delete(userFeedback).where(eq(userFeedback.userId, userId));
+        
+        // Delete donations where userId is set (nullable column)
+        await tx.delete(donations).where(eq(donations.userId, userId));
+        
+        // Delete analytics events
+        await tx.delete(analyticsEvents).where(eq(analyticsEvents.userId, userId));
+        await tx.delete(userSessions).where(eq(userSessions.userId, userId));
+
+        // Finally, delete the user record
+        await tx.delete(users).where(eq(users.id, userId));
+      });
+
+      // Clear the initialization flag and cache
+      this.userInitialized.delete(userId);
+      this.invalidateCache(`user_prefs:${userId}`);
+
+      console.log(`Successfully deleted user ${userId} and all associated data`);
+    } catch (error) {
+      console.error(`Error deleting user ${userId}:`, error);
+      throw new Error("Failed to delete user - transaction rolled back");
+    }
+  }
+
+  async getAdminCount(): Promise<number> {
+    try {
+      const [result] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(users)
+        .where(eq(users.isAdmin, true));
+
+      return result?.count || 0;
+    } catch (error) {
+      console.error("Error getting admin count:", error);
+      throw new Error("Failed to get admin count");
     }
   }
 

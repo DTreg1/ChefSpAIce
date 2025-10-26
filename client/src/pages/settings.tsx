@@ -799,6 +799,26 @@ export default function Settings() {
             </AccordionContent>
           </AccordionItem>
 
+          {/* Admin Management Section - Only visible to admins */}
+          {user?.isAdmin && (
+            <AccordionItem value="admin-management" className="border rounded-lg" data-testid="section-admin">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-muted-foreground" />
+                  <span className="font-semibold">Admin Management</span>
+                  <Badge variant="default" className="ml-2 no-default-hover-elevate no-default-active-elevate">
+                    Admin Only
+                  </Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                <div className="pt-4">
+                  <AdminManagementSection />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
           {/* Danger Zone Section */}
           <AccordionItem value="danger-zone" className="border border-destructive/50 rounded-lg" data-testid="section-danger">
             <AccordionTrigger className="px-6 py-4 hover:no-underline text-destructive">
@@ -981,6 +1001,275 @@ function ApiUsageSection() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface AdminUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
+interface AdminUsersResponse {
+  users: AdminUser[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+function AdminManagementSection() {
+  const { user: currentUser } = useAuth();
+  const { toast } = useToast();
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+  const [userToToggleAdmin, setUserToToggleAdmin] = useState<AdminUser | null>(null);
+
+  const { data: usersData, isLoading } = useQuery<AdminUsersResponse>({
+    queryKey: ["/api/admin/users"],
+  });
+
+  const toggleAdminMutation = useMutation({
+    mutationFn: async ({ userId, makeAdmin }: { userId: string; makeAdmin: boolean }) => {
+      const response = await apiRequest("PATCH", `/api/admin/users/${userId}/admin`, { isAdmin: makeAdmin });
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Success",
+        description: variables.makeAdmin 
+          ? "User promoted to admin successfully." 
+          : "User demoted from admin successfully.",
+      });
+      setUserToToggleAdmin(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update admin status.",
+        variant: "destructive",
+      });
+      setUserToToggleAdmin(null);
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${userId}`, null);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Success",
+        description: "User and all associated data deleted successfully.",
+      });
+      setUserToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user.",
+        variant: "destructive",
+      });
+      setUserToDelete(null);
+    },
+  });
+
+  const getUserInitials = (user: AdminUser) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user.firstName) return user.firstName[0].toUpperCase();
+    if (user.email) return user.email[0].toUpperCase();
+    return "U";
+  };
+
+  const getUserDisplayName = (user: AdminUser) => {
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user.firstName) return user.firstName;
+    return user.email;
+  };
+
+  if (isLoading) {
+    return <div className="text-sm text-muted-foreground">Loading users...</div>;
+  }
+
+  if (!usersData || usersData.users.length === 0) {
+    return <div className="text-sm text-muted-foreground">No users found.</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">User Management</h3>
+          <p className="text-sm text-muted-foreground">
+            Manage user accounts and admin privileges
+          </p>
+        </div>
+        <Badge variant="secondary" className="no-default-hover-elevate no-default-active-elevate">
+          {usersData.total} {usersData.total === 1 ? 'User' : 'Users'}
+        </Badge>
+      </div>
+
+      <div className="border border-border rounded-lg divide-y divide-border">
+        {usersData.users.map((user) => {
+          const isCurrentUser = user.id === currentUser?.id;
+          
+          return (
+            <div key={user.id} className="p-4 flex items-center justify-between gap-4" data-testid={`user-row-${user.id}`}>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <Avatar className="w-10 h-10 border border-border rounded-md flex-shrink-0">
+                  <AvatarImage src={user.profileImageUrl || undefined} />
+                  <AvatarFallback className="rounded-md">{getUserInitials(user)}</AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium truncate" data-testid={`text-user-name-${user.id}`}>
+                      {getUserDisplayName(user)}
+                    </span>
+                    {user.isAdmin && (
+                      <Badge variant="default" className="no-default-hover-elevate no-default-active-elevate" data-testid={`badge-admin-${user.id}`}>
+                        Admin
+                      </Badge>
+                    )}
+                    {isCurrentUser && (
+                      <Badge variant="secondary" className="no-default-hover-elevate no-default-active-elevate">
+                        You
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground truncate" data-testid={`text-user-email-${user.id}`}>
+                    {user.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Joined {new Date(user.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {!isCurrentUser && (
+                  <>
+                    <Button
+                      variant={user.isAdmin ? "secondary" : "default"}
+                      size="sm"
+                      onClick={() => setUserToToggleAdmin(user)}
+                      disabled={toggleAdminMutation.isPending}
+                      data-testid={`button-toggle-admin-${user.id}`}
+                    >
+                      <Shield className="w-4 h-4 mr-2" />
+                      {user.isAdmin ? "Demote" : "Promote"}
+                    </Button>
+                    
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setUserToDelete(user)}
+                      disabled={deleteUserMutation.isPending}
+                      data-testid={`button-delete-user-${user.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Confirm Admin Toggle Dialog */}
+      <AlertDialog open={!!userToToggleAdmin} onOpenChange={() => setUserToToggleAdmin(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {userToToggleAdmin?.isAdmin ? "Demote Admin" : "Promote to Admin"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {userToToggleAdmin?.isAdmin ? (
+                <>
+                  Are you sure you want to remove admin privileges from{" "}
+                  <span className="font-medium">{getUserDisplayName(userToToggleAdmin)}</span>?
+                  They will lose access to admin features including user management.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to grant admin privileges to{" "}
+                  <span className="font-medium">{getUserDisplayName(userToToggleAdmin)}</span>?
+                  They will have full access to manage users and system settings.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-toggle-admin">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (userToToggleAdmin) {
+                  toggleAdminMutation.mutate({
+                    userId: userToToggleAdmin.id,
+                    makeAdmin: !userToToggleAdmin.isAdmin,
+                  });
+                }
+              }}
+              data-testid="button-confirm-toggle-admin"
+            >
+              {userToToggleAdmin?.isAdmin ? "Demote" : "Promote"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Delete User Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you absolutely sure you want to delete{" "}
+              <span className="font-medium">{userToDelete && getUserDisplayName(userToDelete)}</span>'s account?
+              <br /><br />
+              This action cannot be undone. This will permanently delete:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>User account and profile</li>
+                <li>All food inventory items</li>
+                <li>All saved recipes</li>
+                <li>All chat conversations</li>
+                <li>All meal plans</li>
+                <li>All preferences and settings</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-user">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (userToDelete) {
+                  deleteUserMutation.mutate(userToDelete.id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-user"
+            >
+              Yes, Delete User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

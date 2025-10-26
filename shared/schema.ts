@@ -42,6 +42,8 @@ export const users = pgTable("users", {
   notifyMealReminders: boolean("notify_meal_reminders").notNull().default(true),
   notificationTime: text("notification_time").default("09:00"), // Time of day for daily notifications
   
+  // Admin role
+  isAdmin: boolean("is_admin").notNull().default(false),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
