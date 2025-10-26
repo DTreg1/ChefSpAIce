@@ -150,9 +150,38 @@ export default function Storage() {
 
   const { data: storageLocations, error: locationsError, isLoading: locationsLoading } = useStorageLocations();
 
-  const { data: allItems, error: itemsError, isLoading: itemsLoading } = useQuery<FoodItem[]>({
-    queryKey: ["/api/food-items"],
+  const currentLocation = storageLocations?.find(
+    (loc) => loc.name.toLowerCase() === location.toLowerCase()
+  );
+
+  // Build query params for server-side filtering
+  const queryParams = new URLSearchParams({
+    type: "items"
   });
+  
+  if (location !== "all" && currentLocation?.id) {
+    queryParams.append("location", currentLocation.id);
+  }
+  
+  if (selectedCategory) {
+    queryParams.append("category", selectedCategory);
+  }
+
+  const { data: inventoryResponse, error: itemsError, isLoading: itemsLoading } = useQuery<{
+    data: FoodItem[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+    type: string;
+  }>({
+    queryKey: ["/api/inventory", location, selectedCategory, currentLocation?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/inventory?${queryParams.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch items");
+      return response.json();
+    },
+    enabled: location === "all" || !!currentLocation?.id
+  });
+
+  const items = inventoryResponse?.data;
 
   const { data: categories } = useQuery<string[]>({
     queryKey: ["/api/food-categories"],
@@ -178,19 +207,6 @@ export default function Storage() {
       });
     }
   }, [itemsError, toast]);
-
-  const currentLocation = storageLocations?.find(
-    (loc) => loc.name.toLowerCase() === location.toLowerCase()
-  );
-
-  let items = location === "all" 
-    ? allItems 
-    : allItems?.filter((item) => item.storageLocationId === currentLocation?.id);
-  
-  // Apply category filter if selected
-  if (selectedCategory && items) {
-    items = items.filter((item) => item.foodCategory === selectedCategory);
-  }
 
   const handleRecipeGenerated = (recipe: Recipe) => {
     // Navigate to chat to see the recipe
@@ -232,7 +248,7 @@ export default function Storage() {
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
       toast({
@@ -259,7 +275,7 @@ export default function Storage() {
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
       toast({
         title: "Items moved",
@@ -286,7 +302,7 @@ export default function Storage() {
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       toast({
         title: "Expiration dates updated",
         description: `Successfully updated ${selectedItems.size} items`,

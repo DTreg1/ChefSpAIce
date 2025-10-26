@@ -14,30 +14,29 @@ const router = Router();
 router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
-    const { type = "items", location, status, page = 1, limit = 50 } = req.query;
+    const { type = "items", location, category, status, page = 1, limit = 50 } = req.query;
     
     switch (type) {
       case "items": {
-        // Get food items with optional filtering
-        const items = await storage.getFoodItems(userId);
-        let filtered = items;
-        
-        if (location && location !== "all") {
-          filtered = items.filter((item: any) => item.storageLocationId === location);
-        }
+        // Get food items with optional filtering (now using server-side filtering)
+        const items = await storage.getFoodItems(
+          userId, 
+          location && location !== "all" ? location : undefined,
+          category ? category : undefined
+        );
         
         // Standardized pagination response
         const startIndex = (Number(page) - 1) * Number(limit);
         const endIndex = startIndex + Number(limit);
-        const paginatedItems = filtered.slice(startIndex, endIndex);
+        const paginatedItems = items.slice(startIndex, endIndex);
         
         res.json({
           data: paginatedItems,
           pagination: {
             page: Number(page),
             limit: Number(limit),
-            total: filtered.length,
-            totalPages: Math.ceil(filtered.length / Number(limit))
+            total: items.length,
+            totalPages: Math.ceil(items.length / Number(limit))
           },
           type: "items"
         });

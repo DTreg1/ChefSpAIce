@@ -164,12 +164,13 @@ export interface IStorage {
   // Barcode Products - removed (tables deleted)
 
   // Food Items (user-scoped)
-  getFoodItems(userId: string, storageLocationId?: string, limit?: number): Promise<FoodItem[]>;
+  getFoodItems(userId: string, storageLocationId?: string, foodCategory?: string, limit?: number): Promise<FoodItem[]>;
   getFoodItemsPaginated(
     userId: string,
     page?: number,
     limit?: number,
     storageLocationId?: string,
+    foodCategory?: string,
     sortBy?: "name" | "expirationDate" | "createdAt",
   ): Promise<PaginatedResponse<FoodItem>>;
   getFoodItem(userId: string, id: string): Promise<FoodItem | undefined>;
@@ -1218,26 +1219,25 @@ export class DatabaseStorage implements IStorage {
   async getFoodItems(
     userId: string,
     storageLocationId?: string,
+    foodCategory?: string,
     limit: number = 500, // Default limit to prevent loading thousands of items
   ): Promise<FoodItem[]> {
     try {
+      // Build where conditions dynamically
+      const whereConditions = [eq(userInventory.userId, userId)];
+      
       if (storageLocationId) {
-        return db
-          .select()
-          .from(userInventory)
-          .where(
-            and(
-              eq(userInventory.storageLocationId, storageLocationId),
-              eq(userInventory.userId, userId),
-            ),
-          )
-          .orderBy(userInventory.expirationDate) // Prioritize expiring items
-          .limit(limit);
+        whereConditions.push(eq(userInventory.storageLocationId, storageLocationId));
       }
+      
+      if (foodCategory) {
+        whereConditions.push(eq(userInventory.foodCategory, foodCategory));
+      }
+
       return db
         .select()
         .from(userInventory)
-        .where(eq(userInventory.userId, userId))
+        .where(and(...whereConditions))
         .orderBy(userInventory.expirationDate) // Prioritize expiring items
         .limit(limit);
     } catch (error) {
@@ -1251,6 +1251,7 @@ export class DatabaseStorage implements IStorage {
     page: number = 1,
     limit: number = 30,
     storageLocationId?: string,
+    foodCategory?: string,
     sortBy: "name" | "expirationDate" | "createdAt" = "expirationDate",
   ): Promise<PaginatedResponse<FoodItem>> {
     try {
@@ -1262,6 +1263,9 @@ export class DatabaseStorage implements IStorage {
         whereConditions.push(
           eq(userInventory.storageLocationId, storageLocationId),
         );
+      }
+      if (foodCategory) {
+        whereConditions.push(eq(userInventory.foodCategory, foodCategory));
       }
 
       // Get total count
