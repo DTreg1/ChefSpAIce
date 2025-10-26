@@ -31,7 +31,7 @@ Feedback Type: ${type}
 Feedback Content: "${content}"
 
 Existing Feedback (to check for duplicates):
-${existingFeedback.slice(0, 20).map(f => `ID: ${f.id}, Content: ${f.content || 'N/A'}, Tags: ${f.tags?.join(', ') || 'N/A'}`).join('\n')}
+${existingFeedback.slice(0, 20).map(f => `ID: ${f.id}, Content: ${f.description || 'N/A'}, Tags: ${f.tags?.join(', ') || 'N/A'}`).join('\n')}
 
 Respond ONLY with a valid JSON object in this exact format:
 {
@@ -98,7 +98,7 @@ export async function consolidateFeedback(
     const prompt = `Consolidate and summarize the following user feedback into key themes and insights. Group similar feedback together and highlight the most important points.
 
 Feedback:
-${feedbackItems.map((f, i) => `${i + 1}. [${f.type}] ${f.content || 'N/A'} (Priority: ${f.priority || 'N/A'}, Sentiment: ${f.sentiment || 'N/A'})`).join('\n')}
+${feedbackItems.map((f, i) => `${i + 1}. [${f.type}] ${f.description || 'N/A'} (Priority: ${f.priority || 'N/A'}, Sentiment: ${f.sentiment || 'N/A'})`).join('\n')}
 
 Provide a concise summary (max 300 words) highlighting:
 - Main themes and patterns

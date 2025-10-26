@@ -4,7 +4,7 @@
  */
 
 import { db } from './db';
-import { foodItems } from '@shared/schema';
+import { userInventory } from '@shared/schema';
 import { normalizeCategory } from './category-mapping';
 import { eq, sql } from 'drizzle-orm';
 
@@ -14,8 +14,8 @@ async function migrateCategories() {
   try {
     // Get all unique categories currently in the database
     const currentCategories = await db
-      .selectDistinct({ category: foodItems.foodCategory })
-      .from(foodItems)
+      .selectDistinct({ category: userInventory.foodCategory })
+      .from(userInventory)
       .execute();
     
     console.log('Current categories in database:');
@@ -24,10 +24,10 @@ async function migrateCategories() {
     for (const row of currentCategories) {
       const count = await db
         .select({ count: sql<number>`count(*)` })
-        .from(foodItems)
+        .from(userInventory)
         .where(row.category === null 
-          ? sql`${foodItems.foodCategory} IS NULL`
-          : eq(foodItems.foodCategory, row.category))
+          ? sql`${userInventory.foodCategory} IS NULL`
+          : eq(userInventory.foodCategory, row.category))
         .then(r => r[0]?.count || 0);
       
       categoryCounts[row.category || 'null'] = count;
@@ -37,7 +37,7 @@ async function migrateCategories() {
     console.log('\nMigrating categories to 5 major food groups...');
     
     // Get all items and update their categories
-    const allItems = await db.select().from(foodItems);
+    const allItems = await db.select().from(userInventory);
     let updateCount = 0;
     const migrationMap: Record<string, number> = {};
     
@@ -47,9 +47,9 @@ async function migrateCategories() {
       
       if (oldCategory !== newCategory) {
         await db
-          .update(foodItems)
+          .update(userInventory)
           .set({ foodCategory: newCategory })
-          .where(eq(foodItems.id, item.id));
+          .where(eq(userInventory.id, item.id));
         
         updateCount++;
         
@@ -71,17 +71,17 @@ async function migrateCategories() {
     // Show final category distribution
     console.log('\nFinal category distribution:');
     const finalCategories = await db
-      .selectDistinct({ category: foodItems.foodCategory })
-      .from(foodItems)
+      .selectDistinct({ category: userInventory.foodCategory })
+      .from(userInventory)
       .execute();
     
     for (const row of finalCategories) {
       const count = await db
         .select({ count: sql<number>`count(*)` })
-        .from(foodItems)
+        .from(userInventory)
         .where(row.category === null 
-          ? sql`${foodItems.foodCategory} IS NULL`
-          : eq(foodItems.foodCategory, row.category))
+          ? sql`${userInventory.foodCategory} IS NULL`
+          : eq(userInventory.foodCategory, row.category))
         .then(r => r[0]?.count || 0);
       
       console.log(`  - ${row.category}: ${count} items`);

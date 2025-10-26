@@ -116,11 +116,8 @@ function AppContent() {
   // Initialize global keyboard shortcuts
   useGlobalKeyboardShortcuts();
 
-  const { data: preferences, isLoading: prefLoading } = useCachedQuery<{
-    hasCompletedOnboarding?: boolean;
-  }>({
+  const { data: preferences, isLoading: prefLoading } = useCachedQuery<any>({
     queryKey: ["/api/auth/user"],
-    cacheKey: "cache:user:preferences",
     enabled: isAuthenticated,
   });
 

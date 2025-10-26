@@ -160,7 +160,7 @@ export default function FeedbackBoard() {
                 )}
               </div>
               <p className="text-sm" data-testid={`text-content-${item.id}`}>
-                {item.content || 'No description provided'}
+                {item.content || item.description || 'No description provided'}
               </p>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span>

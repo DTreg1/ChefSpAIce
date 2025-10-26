@@ -61,23 +61,20 @@ export function StarRating({
     } else {
       // Submit immediately without text feedback
       submitRatingMutation.mutate({
-        type: contextType,
-        rating: newRating,
+        type: newRating >= 4 ? 'praise' : 'improvement',
         sentiment: newRating >= 4 ? 'positive' : newRating <= 2 ? 'negative' : 'neutral',
-        contextId,
-        contextType
+        subject: `${newRating} star rating for ${contextType}`,
+        description: `User gave ${newRating} stars (${contextId})`
       });
     }
   };
 
   const handleSubmitWithComment = () => {
     submitRatingMutation.mutate({
-      type: contextType,
-      rating,
-      content: comment,
-      sentiment: rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral',
-      contextId,
-      contextType
+      type: rating >= 4 ? 'praise' : 'improvement',
+      subject: `${rating} star rating for ${contextType}`,
+      description: comment ? `${comment} (${rating} stars - ${contextId})` : `User gave ${rating} stars (${contextId})`,
+      sentiment: rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral'
     });
   };
 
@@ -149,11 +146,10 @@ export function StarRating({
                 setIsOpen(false);
                 // Submit without comment
                 submitRatingMutation.mutate({
-                  type: contextType,
-                  rating,
+                  type: rating >= 4 ? 'praise' : 'improvement',
                   sentiment: rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral',
-                  contextId,
-                  contextType
+                  subject: `${rating} star rating for ${contextType}`,
+                  description: `User gave ${rating} stars (${contextId})`
                 });
               }}
               data-testid="button-skip-comment"

@@ -167,7 +167,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
     if (inventoryData && Array.isArray(inventoryData)) {
       const sorted = [...inventoryData]
         .sort((a: FoodItemType, b: FoodItemType) => 
-          new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
         )
         .slice(0, 5);
       setRecentItems(sorted);
@@ -301,7 +301,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   
   // Add food mutation
   const addFoodMutation = useMutation({
-    mutationFn: async (data: InsertFoodItem) => {
+    mutationFn: async (data: any) => {
       const response = await apiRequest("POST", "/api/food-items", data);
       return response.json();
     },
@@ -340,18 +340,17 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
       return;
     }
     
-    const foodItem: InsertFoodItem = {
+    const foodItem = {
       name: selectedFood.description,
       quantity: quantity,
       unit,
       storageLocationId: selectedLocation,
       expirationDate: expirationDate || format(addDays(new Date(), 7), "yyyy-MM-dd"),
-      fdcId: selectedFood.fdcId.toString(),
-      usdaData: selectedFood,
-      foodCategory: selectedFood.foodCategory,
+      usdaData: selectedFood as any,
+      foodCategory: selectedFood.foodCategory || null,
     };
     
-    addFoodMutation.mutate(foodItem);
+    addFoodMutation.mutate(foodItem as any);
   };
   
   // Reset form

@@ -113,24 +113,26 @@ export class PushNotificationService {
           .where(
             and(
               eq(userInventory.userId, user.id),
-              lt(userInventory.expirationDate, threeDaysFromNow)
+              lt(userInventory.expirationDate, threeDaysFromNow.toISOString().split('T')[0])
             )
           );
 
         if (expiringItems.length === 0) continue;
 
         // Group items by days until expiration
+        const todayStr = today.toISOString().split('T')[0];
+        const threeDaysStr = threeDaysFromNow.toISOString().split('T')[0];
+        
         const expiredItems = expiringItems.filter(
-          item => item.expirationDate && item.expirationDate < today
+          item => item.expirationDate && item.expirationDate < todayStr
         );
         const todayItems = expiringItems.filter(
-          item => item.expirationDate && 
-            item.expirationDate.toDateString() === today.toDateString()
+          item => item.expirationDate && item.expirationDate === todayStr
         );
         const soonItems = expiringItems.filter(
           item => item.expirationDate && 
-            item.expirationDate > today &&
-            item.expirationDate < threeDaysFromNow
+            item.expirationDate > todayStr &&
+            item.expirationDate < threeDaysStr
         );
 
         let notificationBody = "";

@@ -1,4 +1,4 @@
-import type { FoodItem, NutritionInfo } from "@shared/schema";
+import type { UserInventory, NutritionInfo } from "@shared/schema";
 
 // Extract nutrition information from USDA data
 export function extractNutrition(usdaData: any): NutritionInfo | null {
@@ -51,7 +51,7 @@ export function extractNutrition(usdaData: any): NutritionInfo | null {
 
 // Calculate nutrition for a food item based on its weight/quantity
 export function calculateNutrition(
-  item: FoodItem, 
+  item: UserInventory, 
   baseNutrition: NutritionInfo | null
 ): NutritionInfo | null {
   if (!baseNutrition || !item.weightInGrams) {
@@ -63,10 +63,10 @@ export function calculateNutrition(
   const scaleFactor = item.weightInGrams / servingGrams;
 
   return {
-    calories: Math.round(baseNutrition.calories * scaleFactor),
-    protein: Math.round(baseNutrition.protein * scaleFactor * 10) / 10,
-    carbs: Math.round(baseNutrition.carbs * scaleFactor * 10) / 10,
-    fat: Math.round(baseNutrition.fat * scaleFactor * 10) / 10,
+    calories: Math.round((baseNutrition.calories || 0) * scaleFactor),
+    protein: Math.round((baseNutrition.protein || 0) * scaleFactor * 10) / 10,
+    carbs: Math.round((baseNutrition.carbs || 0) * scaleFactor * 10) / 10,
+    fat: Math.round((baseNutrition.fat || 0) * scaleFactor * 10) / 10,
     fiber: baseNutrition.fiber ? Math.round(baseNutrition.fiber * scaleFactor * 10) / 10 : undefined,
     sugar: baseNutrition.sugar ? Math.round(baseNutrition.sugar * scaleFactor * 10) / 10 : undefined,
     sodium: baseNutrition.sodium ? Math.round(baseNutrition.sodium * scaleFactor) : undefined,
@@ -76,7 +76,7 @@ export function calculateNutrition(
 }
 
 // Aggregate nutrition for multiple items
-export function aggregateNutrition(items: FoodItem[]): NutritionInfo {
+export function aggregateNutrition(items: UserInventory[]): NutritionInfo {
   const totals: NutritionInfo = {
     calories: 0,
     protein: 0,
@@ -93,10 +93,10 @@ export function aggregateNutrition(items: FoodItem[]): NutritionInfo {
     if (item.nutrition) {
       try {
         const nutrition = JSON.parse(item.nutrition) as NutritionInfo;
-        totals.calories += nutrition.calories || 0;
-        totals.protein += nutrition.protein || 0;
-        totals.carbs += nutrition.carbs || 0;
-        totals.fat += nutrition.fat || 0;
+        totals.calories = (totals.calories || 0) + (nutrition.calories || 0);
+        totals.protein = (totals.protein || 0) + (nutrition.protein || 0);
+        totals.carbs = (totals.carbs || 0) + (nutrition.carbs || 0);
+        totals.fat = (totals.fat || 0) + (nutrition.fat || 0);
         totals.fiber = (totals.fiber || 0) + (nutrition.fiber || 0);
         totals.sugar = (totals.sugar || 0) + (nutrition.sugar || 0);
         totals.sodium = (totals.sodium || 0) + (nutrition.sodium || 0);
@@ -108,10 +108,10 @@ export function aggregateNutrition(items: FoodItem[]): NutritionInfo {
 
   // Round to reasonable precision
   return {
-    calories: Math.round(totals.calories),
-    protein: Math.round(totals.protein * 10) / 10,
-    carbs: Math.round(totals.carbs * 10) / 10,
-    fat: Math.round(totals.fat * 10) / 10,
+    calories: Math.round(totals.calories || 0),
+    protein: Math.round((totals.protein || 0) * 10) / 10,
+    carbs: Math.round((totals.carbs || 0) * 10) / 10,
+    fat: Math.round((totals.fat || 0) * 10) / 10,
     fiber: totals.fiber ? Math.round(totals.fiber * 10) / 10 : undefined,
     sugar: totals.sugar ? Math.round(totals.sugar * 10) / 10 : undefined,
     sodium: totals.sodium ? Math.round(totals.sodium) : undefined,
@@ -121,8 +121,8 @@ export function aggregateNutrition(items: FoodItem[]): NutritionInfo {
 }
 
 // Calculate nutrition stats by category
-export function calculateCategoryStats(items: FoodItem[]): Record<string, NutritionInfo> {
-  const categoryMap: Record<string, FoodItem[]> = {};
+export function calculateCategoryStats(items: UserInventory[]): Record<string, NutritionInfo> {
+  const categoryMap: Record<string, UserInventory[]> = {};
   
   // Group items by category
   for (const item of items) {

@@ -24,10 +24,7 @@ router.post(
         });
       }
 
-      const feedback = await storage.createFeedback({
-        ...validation.data,
-        userId,
-      });
+      const feedback = await storage.createFeedback(userId, validation.data);
       
       res.json(feedback);
     } catch (error) {

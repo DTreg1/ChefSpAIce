@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { insertMealPlanSchema, type MealType } from "@shared/schema";
+import { insertMealPlanSchema } from "@shared/schema";
 import { z } from "zod";
 
 interface MealPlanningDialogProps {

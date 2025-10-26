@@ -30,7 +30,7 @@ export function useCachedQuery<
       : cacheConfig.refetchOnWindowFocus,
     refetchInterval: queryOptions.refetchInterval !== undefined
       ? queryOptions.refetchInterval
-      : cacheConfig.refetchInterval,
+      : (typeof cacheConfig.refetchInterval === 'boolean' ? false : cacheConfig.refetchInterval),
   };
   
   return useQuery<TQueryFnData, TError, TData, TQueryKey>(mergedOptions);

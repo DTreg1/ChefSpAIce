@@ -17,8 +17,8 @@ const router = Router();
 router.get("/storage-locations", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
-    const user = await storage.getUser(userId);
-    res.json(user?.storageLocations || []);
+    const locations = await storage.getStorageLocations(userId);
+    res.json(locations);
   } catch (error) {
     console.error("Error fetching storage locations:", error);
     res.status(500).json({ error: "Failed to fetch storage locations" });
@@ -37,16 +37,7 @@ router.post(
   async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
-      const newLocation = {
-        id: crypto.randomUUID(),
-        ...req.body,
-      };
-      
-      const user = await storage.getUser(userId);
-      const locations = user?.storageLocations || [];
-      locations.push(newLocation);
-      
-      await storage.updateUser(userId, { storageLocations: locations });
+      const newLocation = await storage.createStorageLocation(userId, req.body);
       res.json(newLocation);
     } catch (error) {
       console.error("Error creating storage location:", error);
@@ -83,8 +74,7 @@ router.post(
       }
 
       // Verify storage location belongs to user
-      const user = await storage.getUser(userId);
-      const locations = user?.storageLocations || [];
+      const locations = await storage.getStorageLocations(userId);
       const locationExists = locations.some((loc: any) => loc.id === req.body.storageLocationId);
       
       if (!locationExists) {
@@ -123,9 +113,8 @@ router.post(
         expirationDate = expDate.toISOString().split("T")[0];
       }
 
-      const item = await storage.createFoodItem({
+      const item = await storage.createFoodItem(userId, {
         ...validation.data,
-        userId,
         expirationDate: expirationDate || new Date().toISOString().split("T")[0],
         usdaData: nutritionData,
       });
@@ -156,8 +145,7 @@ router.put(
 
       // If changing storage location, verify it belongs to user
       if (req.body.storageLocationId) {
-        const user = await storage.getUser(userId);
-        const locations = user?.storageLocations || [];
+        const locations = await storage.getStorageLocations(userId);
         const locationExists = locations.some((loc: any) => loc.id === req.body.storageLocationId);
         
         if (!locationExists) {
@@ -165,7 +153,7 @@ router.put(
         }
       }
 
-      const updated = await storage.updateFoodItem(itemId, userId, req.body);
+      const updated = await storage.updateFoodItem(userId, itemId, req.body);
       res.json(updated);
     } catch (error) {
       console.error("Error updating food item:", error);
@@ -187,7 +175,7 @@ router.delete("/food-items/:id", isAuthenticated, async (req: any, res: Response
       return res.status(404).json({ error: "Food item not found" });
     }
 
-    await storage.deleteFoodItem(itemId, userId);
+    await storage.deleteFoodItem(userId, itemId);
     res.json({ message: "Food item deleted successfully" });
   } catch (error) {
     console.error("Error deleting food item:", error);
@@ -439,7 +427,7 @@ router.put("/food-images", isAuthenticated, async (req: any, res: Response) => {
       return res.status(404).json({ error: "Food item not found" });
     }
 
-    await storage.updateFoodItem(itemId, userId, { imageUrl });
+    await storage.updateFoodItem(userId, itemId, { imageUrl });
     res.json({ message: "Image updated successfully" });
   } catch (error) {
     console.error("Error updating food image:", error);

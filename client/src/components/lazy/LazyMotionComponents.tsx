@@ -60,10 +60,10 @@ export function LazySuccessAnimation(props: ComponentProps<typeof SuccessAnimati
 
 export function LazyMotionButton(props: ComponentProps<typeof MotionButton>) {
   // Fallback to a regular button
-  const { children, className, ...rest } = props;
+  const { children, className, onClick, disabled, type } = props;
   return (
     <Suspense fallback={
-      <button className={className} {...rest}>
+      <button className={className} onClick={onClick} disabled={disabled} type={type}>
         {children}
       </button>
     }>

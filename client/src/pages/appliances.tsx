@@ -51,7 +51,7 @@ import {
   Loader2,
   UtensilsCrossed
 } from "lucide-react";
-import type { Appliance } from "@shared/schema";
+import type { UserAppliance } from "@shared/schema";
 
 export default function Appliances() {
   const { toast } = useToast();
@@ -60,12 +60,12 @@ export default function Appliances() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
-  const [editingAppliance, setEditingAppliance] = useState<Appliance | null>(null);
+  const [editingAppliance, setEditingAppliance] = useState<UserAppliance | null>(null);
   const [barcodeInput, setBarcodeInput] = useState("");
   const [deleteApplianceId, setDeleteApplianceId] = useState<string | null>(null);
 
   // Fetch appliances
-  const { data: appliances = [], isLoading } = useQuery<Appliance[]>({
+  const { data: appliances = [], isLoading } = useQuery<UserAppliance[]>({
     queryKey: ["/api/appliances"],
   });
 
@@ -162,7 +162,7 @@ export default function Appliances() {
   });
 
   // Filter appliances
-  const filteredAppliances = appliances.filter((appliance: Appliance) => {
+  const filteredAppliances = appliances.filter((appliance: UserAppliance) => {
     // For now, we can't filter by category directly since appliances don't have a category field
     // They have applianceLibraryId which would require a join to get the category
     // TODO: Update API to include category info with appliances
@@ -287,7 +287,7 @@ export default function Appliances() {
         </Card>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAppliances.map((appliance: Appliance) => (
+          {filteredAppliances.map((appliance: UserAppliance) => (
             <Card key={appliance.id} className="hover-elevate" data-testid={`card-appliance-${appliance.id}`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -348,7 +348,7 @@ export default function Appliances() {
         <Card>
           <CardContent className="p-0">
             <ScrollArea className="h-[600px]">
-              {filteredAppliances.map((appliance: Appliance, index: number) => (
+              {filteredAppliances.map((appliance: UserAppliance, index: number) => (
                 <div key={appliance.id}>
                   <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">

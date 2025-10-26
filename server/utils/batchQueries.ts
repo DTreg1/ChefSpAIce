@@ -61,7 +61,7 @@ export async function batchInsert<T>(
   for (let i = 0; i < items.length; i += chunkSize) {
     const chunk = items.slice(i, i + chunkSize);
     const chunkResult = await db.insert(table).values(chunk).returning();
-    results.push(...chunkResult);
+    results.push(...(Array.isArray(chunkResult) ? chunkResult : [chunkResult]));
   }
 
   return results;

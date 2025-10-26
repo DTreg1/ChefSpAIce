@@ -39,14 +39,18 @@ export default function Equipment() {
   });
 
   // Fetch user's current appliances
-  const { data: userAppliances, isLoading: userAppliancesLoading } = useQuery({
+  const { data: userAppliances, isLoading: userAppliancesLoading } = useQuery<UserAppliance[]>({
     queryKey: ["/api/user-appliances"],
   });
 
   // Initialize selected items from user's current appliances
   useEffect(() => {
     if (userAppliances) {
-      const userApplianceIds = new Set(userAppliances.map((ua: UserAppliance) => ua.applianceLibraryId));
+      const userApplianceIds = new Set(
+        userAppliances
+          .map((ua: UserAppliance) => ua.applianceLibraryId)
+          .filter((id): id is string => id !== null)
+      );
       setSelectedItems(userApplianceIds);
     }
   }, [userAppliances]);
@@ -89,7 +93,9 @@ export default function Equipment() {
   // Save changes
   const handleSaveChanges = () => {
     const userApplianceIds = new Set(
-      userAppliances?.map((ua: UserAppliance) => ua.applianceLibraryId) || []
+      userAppliances
+        ?.map((ua: UserAppliance) => ua.applianceLibraryId)
+        .filter((id): id is string => id !== null) || []
     );
     
     const toAdd: string[] = [];

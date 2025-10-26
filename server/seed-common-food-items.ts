@@ -3,7 +3,7 @@ import { fetchOnboardingItemUsdaData } from "./onboarding-usda";
 import { getOnboardingUpcs, onboardingUsdaMapping } from "./onboarding-usda-mapping";
 import { getItemsByCategory } from "./onboarding-items-expanded";
 import { normalizeCategory } from "./category-mapping";
-import type { InsertCommonFoodItem } from "@shared/schema";
+import type { InsertOnboardingInventory } from "@shared/schema";
 
 /**
  * Seeds the commonFoodItems table with all onboarding items and their USDA data.
@@ -73,7 +73,7 @@ export async function seedCommonFoodItems(forceUpdate = false) {
         const usdaData = await fetchOnboardingItemUsdaData(displayName);
         
         // Prepare the common food item data
-        const commonItem: InsertCommonFoodItem = {
+        const commonItem: InsertOnboardingInventory = {
           displayName,
           upc: itemData.upc || null,
           fdcId: usdaData?.fdcId ? String(usdaData.fdcId) : itemData.fdcId || null,

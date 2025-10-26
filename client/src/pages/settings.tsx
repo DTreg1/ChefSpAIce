@@ -285,14 +285,13 @@ export default function Settings() {
 
   const getUserInitials = () => {
     if (!user) return "U";
-    const typedUser = user as User;
-    const firstName = typedUser.firstName || "";
-    const lastName = typedUser.lastName || "";
+    const firstName = user.firstName || "";
+    const lastName = user.lastName || "";
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`.toUpperCase();
     }
     if (firstName) return firstName[0].toUpperCase();
-    if (typedUser.email) return typedUser.email[0].toUpperCase();
+    if (user.email) return user.email[0].toUpperCase();
     return "U";
   };
 
@@ -309,7 +308,7 @@ export default function Settings() {
                 <User2 className="w-5 h-5 text-muted-foreground" />
                 <span className="font-semibold">Profile</span>
                 <Badge variant="secondary" className="ml-2 no-default-hover-elevate no-default-active-elevate">
-                  {(user as User)?.email || "Guest"}
+                  {user?.email || "Guest"}
                 </Badge>
               </div>
             </AccordionTrigger>
@@ -317,7 +316,7 @@ export default function Settings() {
               <div className="flex flex-col md:flex-row gap-6 pt-4">
                 <div className="flex-shrink-0">
                   <Avatar className="w-32 h-32 border-4 border-border rounded-md">
-                    <AvatarImage src={(user as User)?.profileImageUrl || undefined} />
+                    <AvatarImage src={user?.profileImageUrl || undefined} />
                     <AvatarFallback className="text-3xl rounded-md">{getUserInitials()}</AvatarFallback>
                   </Avatar>
                 </div>
@@ -325,12 +324,12 @@ export default function Settings() {
                 <div className="flex-1 space-y-4">
                   <div>
                     <h2 className="text-2xl font-bold mb-1" data-testid="text-profile-name">
-                      {(user as User)?.firstName && (user as User)?.lastName 
-                        ? `${(user as User).firstName} ${(user as User).lastName}`
-                        : (user as User)?.email || "User"}
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}`
+                        : user?.email || "User"}
                     </h2>
                     <p className="text-sm text-muted-foreground" data-testid="text-profile-email">
-                      {(user as User)?.email}
+                      {user?.email}
                     </p>
                   </div>
 
@@ -340,7 +339,7 @@ export default function Settings() {
                       <div>
                         <div className="text-muted-foreground">Member ID</div>
                         <div className="font-mono text-xs" data-testid="text-member-id">
-                          {(user as User)?.id?.slice(0, 8).toUpperCase() || "N/A"}
+                          {user?.id?.slice(0, 8).toUpperCase() || "N/A"}
                         </div>
                       </div>
                     </div>
@@ -350,8 +349,8 @@ export default function Settings() {
                       <div>
                         <div className="text-muted-foreground">Member Since</div>
                         <div className="font-medium" data-testid="text-member-since">
-                          {(user as User)?.createdAt 
-                            ? new Date((user as User).createdAt!).toLocaleDateString('en-US', { 
+                          {user?.createdAt 
+                            ? new Date(user.createdAt).toLocaleDateString('en-US', { 
                                 month: 'short', 
                                 year: 'numeric' 
                               })

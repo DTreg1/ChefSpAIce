@@ -37,11 +37,8 @@ interface ChatMessageUI {
   metadata?: any;
 }
 
-// Extended Recipe type for UI
-interface RecipeUI extends Recipe {
-  usedIngredients?: string[];
-  missingIngredients?: string[];
-}
+// Extended Recipe type for UI - Recipe already has these fields, just ensuring compatibility
+type RecipeUI = Recipe;
 
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessageUI[]>([]);

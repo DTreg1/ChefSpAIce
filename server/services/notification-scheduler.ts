@@ -1,13 +1,13 @@
-import cron from "node-cron";
-import PushNotificationService from "./push-notification.service";
+import cron, { ScheduledTask } from "node-cron";
+import { PushNotificationService } from "./push-notification.service";
 import { db } from "../db";
 import { users, mealPlans } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
 export class NotificationScheduler {
-  private static expiringFoodTask: cron.ScheduledTask | null = null;
-  private static dailyRecipeTask: cron.ScheduledTask | null = null;
-  private static mealReminderTasks: Map<string, cron.ScheduledTask> = new Map();
+  private static expiringFoodTask: ScheduledTask | null = null;
+  private static dailyRecipeTask: ScheduledTask | null = null;
+  private static mealReminderTasks: Map<string, ScheduledTask> = new Map();
 
   /**
    * Start all notification schedulers
@@ -67,9 +67,6 @@ export class NotificationScheduler {
       } catch (error) {
         console.error("Error in expiring food notification scheduler:", error);
       }
-    }, {
-      scheduled: true,
-      timezone: "America/New_York" // Default timezone, should be user-specific in production
     });
   }
 
@@ -92,9 +89,6 @@ export class NotificationScheduler {
       } catch (error) {
         console.error("Error in recipe suggestion scheduler:", error);
       }
-    }, {
-      scheduled: true,
-      timezone: "America/New_York"
     });
   }
 
@@ -164,9 +158,6 @@ export class NotificationScheduler {
               } catch (error) {
                 console.error(`Error sending meal reminder:`, error);
               }
-            }, {
-              scheduled: true,
-              timezone: "America/New_York"
             });
             
             this.mealReminderTasks.set(reminderKey, task);

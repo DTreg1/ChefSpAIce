@@ -83,6 +83,7 @@ export const pushTokens = pgTable("push_tokens", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   token: text("token").notNull(),
   platform: text("platform").notNull(), // 'ios', 'android', 'web'
+  isActive: boolean("is_active").notNull().default(true),
   deviceInfo: jsonb("device_info").$type<{
     deviceId?: string;
     deviceModel?: string;
@@ -407,6 +408,7 @@ export interface USDAFoodItem {
     unitName: string;
     value: number;
   }>;
+  nutrition?: any; // Computed/transformed nutrition data for compatibility
   finalFoodInputFoods?: Array<any>;
   foodMeasures?: Array<any>;
   foodAttributes?: Array<any>;
@@ -500,7 +502,13 @@ export const insertFeedbackSchema = createInsertSchema(userFeedback).omit({
 });
 
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
-export type Feedback = typeof userFeedback.$inferSelect;
+export type Feedback = typeof userFeedback.$inferSelect & {
+  // Add computed/optional fields that may be present in API responses
+  content?: string; // Alias for description for backward compatibility
+  rating?: number | null; // Optional rating field
+  upvoteCount?: number; // Computed from upvotes array length
+  estimatedTurnaround?: string | null; // Optional ETA for completion
+};
 
 // Feedback Upvotes and Responses - MERGED INTO feedback TABLE AS JSONB ARRAYS
 // Types preserved for backward compatibility during migration
@@ -766,6 +774,7 @@ export const cookingTerms = pgTable("cooking_terms", {
   // Definitions
   shortDefinition: text("short_definition").notNull(), // Brief tooltip definition (1-2 sentences)
   longDefinition: text("long_definition").notNull(), // Detailed explanation with steps
+  example: text("example"), // Example usage of the term
   
   // Additional information
   difficulty: text("difficulty"), // "beginner", "intermediate", "advanced"

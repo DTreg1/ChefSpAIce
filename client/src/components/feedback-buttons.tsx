@@ -45,12 +45,15 @@ export function FeedbackButtons({
       return;
     }
 
+    // Map contextType to valid feedback type values
+    const feedbackType: InsertFeedback['type'] = 'improvement';
+
     submitFeedbackMutation.mutate({
-      type: contextType === 'chat_message' ? 'chat_response' : contextType,
+      type: feedbackType,
+      subject: `${newSentiment === 'positive' ? 'Positive' : 'Negative'} feedback on ${contextType}`,
+      description: `User provided ${newSentiment} feedback for ${contextType} with ID: ${contextId}`,
       sentiment: newSentiment,
-      contextId,
-      contextType,
-      rating: newSentiment === 'positive' ? 5 : 1
+      tags: [contextType, contextId, newSentiment]
     });
   };
 

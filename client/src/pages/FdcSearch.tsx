@@ -177,11 +177,12 @@ export default function FdcSearch() {
       );
 
       setIsScanning(true);
-    } catch (err: any) {
-      console.error("Scanner start error:", err);
+    } catch (err) {
+      const error = err as Error;
+      console.error("Scanner start error:", error);
       toast({
         title: "Scanner Error",
-        description: err.message || "Failed to access camera",
+        description: error.message || "Failed to access camera",
         variant: "destructive"
       });
       setBarcodeScannerOpen(false);
@@ -195,8 +196,9 @@ export default function FdcSearch() {
         scannerRef.current.clear();
         scannerRef.current = null;
         setIsScanning(false);
-      } catch (err: any) {
-        console.error("Scanner stop error:", err);
+      } catch (err) {
+        const error = err as Error;
+        console.error("Scanner stop error:", error);
       }
     }
   };
@@ -292,7 +294,17 @@ export default function FdcSearch() {
   
   // Add to inventory mutation
   const addToInventoryMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: {
+      fdcId: string;
+      name: string;
+      quantity: string;
+      unit: string;
+      storageLocationId: string;
+      expirationDate: string;
+      usdaData?: any;
+      foodCategory?: string;
+      nutrition?: string;
+    }) => {
       return apiRequest('POST', '/api/food-items', data);
     },
     onSuccess: () => {

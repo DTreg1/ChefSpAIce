@@ -43,10 +43,7 @@ router.post(
         });
       }
 
-      const appliance = await storage.createAppliance({
-        ...validation.data,
-        userId,
-      });
+      const appliance = await storage.createAppliance(userId, validation.data);
       
       res.json(appliance);
     } catch (error) {

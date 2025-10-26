@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import type { InsertFeedback } from "@shared/schema";
 
-type FeedbackType = 'bug' | 'feature' | 'general';
+type FeedbackType = 'bug' | 'feature_request' | 'other';
 
 interface FeedbackWidgetProps {
   mode?: 'floating' | 'inline';
@@ -26,7 +26,7 @@ interface FeedbackWidgetProps {
 
 export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>('general');
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>('other');
   const [content, setContent] = useState("");
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [satisfaction, setSatisfaction] = useState<'positive' | 'negative' | 'neutral'>('neutral');
@@ -57,7 +57,7 @@ export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
   });
 
   const resetForm = () => {
-    setFeedbackType('general');
+    setFeedbackType('other');
     setContent("");
     setPriority('medium');
     setSatisfaction('neutral');
@@ -73,15 +73,21 @@ export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
       return;
     }
 
+    // Generate subject based on feedback type
+    const subject = feedbackType === 'bug' 
+      ? 'Bug Report'
+      : feedbackType === 'feature_request'
+      ? 'Feature Request'
+      : 'General Feedback';
+
     submitFeedbackMutation.mutate({
       type: feedbackType,
-      content: content.trim(),
+      subject,
+      description: content.trim(),
       priority: feedbackType === 'bug' ? priority : undefined,
       sentiment: satisfaction,
-      metadata: {
-        userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString()
-      }
+      userAgent: navigator.userAgent,
+      url: location
     });
   };
 
@@ -144,8 +150,8 @@ export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
             <Label>Feedback Type</Label>
             <RadioGroup value={feedbackType} onValueChange={(v) => setFeedbackType(v as FeedbackType)}>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="general" id="general" />
-                <Label htmlFor="general" className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="other" id="other" />
+                <Label htmlFor="other" className="flex items-center gap-2 cursor-pointer">
                   <MessageSquarePlus className="w-4 h-4" />
                   General Feedback
                 </Label>
@@ -158,8 +164,8 @@ export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="feature" id="feature" />
-                <Label htmlFor="feature" className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="feature_request" id="feature_request" />
+                <Label htmlFor="feature_request" className="flex items-center gap-2 cursor-pointer">
                   <Lightbulb className="w-4 h-4" />
                   Request Feature
                 </Label>
@@ -204,14 +210,14 @@ export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
           <div className="space-y-2">
             <Label>
               {feedbackType === 'bug' ? 'Describe the issue' :
-               feedbackType === 'feature' ? 'Describe your idea' :
+               feedbackType === 'feature_request' ? 'Describe your idea' :
                'Your feedback'}
             </Label>
             <Textarea
               placeholder={
                 feedbackType === 'bug' ? 
                   "What happened? What did you expect to happen?" :
-                feedbackType === 'feature' ?
+                feedbackType === 'feature_request' ?
                   "What would you like to see added or improved?" :
                   "Share your thoughts with us..."
               }

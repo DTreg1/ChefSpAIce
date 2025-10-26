@@ -1,5 +1,43 @@
-import type { BarcodeProduct, InsertBarcodeProduct } from "@shared/schema";
-import type { IStorage } from "../storage";
+// Barcode product types (database tables removed, API-only service)
+export interface BarcodeProduct {
+  barcodeNumber: string;
+  title: string;
+  category?: string | null;
+  brand?: string | null;
+  productAttributes?: {
+    barcodeFormats?: string;
+    mpn?: string;
+    model?: string;
+    asin?: string;
+    manufacturer?: string;
+    color?: string;
+    material?: string;
+    size?: string;
+    weight?: string;
+    dimensions?: {
+      length?: string;
+      width?: string;
+      height?: string;
+    };
+    description?: string;
+    features?: string[];
+    images?: string[];
+    capabilities?: string[];
+    capacity?: string;
+    servingSize?: string;
+  } | null;
+  stores?: Array<{
+    name: string;
+    country: string;
+    currency: string;
+    price: string;
+    salePrice?: string;
+    link?: string;
+    availability?: string;
+    lastUpdate: string;
+  }> | null;
+  rawData?: any;
+}
 
 export interface BarcodeLookupResponse {
   products: Array<{
@@ -48,11 +86,12 @@ export interface BarcodeLookupResponse {
 export class BarcodeLookupService {
   private readonly apiKey: string;
   private readonly baseUrl = "https://api.barcodelookup.com/v3";
-  private readonly storage: IStorage;
+  // In-memory cache since database tables were removed
+  private cache: Map<string, { product: BarcodeProduct; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-  constructor(storage: IStorage) {
+  constructor() {
     this.apiKey = process.env.BARCODE_LOOKUP_API_KEY || '';
-    this.storage = storage;
     
     if (!this.apiKey) {
       console.warn('Barcode Lookup API key not configured');
@@ -116,15 +155,22 @@ export class BarcodeLookupService {
   }
 
   /**
+   * Check if cached product is still valid
+   */
+  private isValidCache(timestamp: number): boolean {
+    return Date.now() - timestamp < this.CACHE_TTL;
+  }
+
+  /**
    * Look up a product by barcode
    */
   async lookupByBarcode(barcode: string): Promise<BarcodeProduct | null> {
     try {
-      // First check if we have it cached in our database
-      const cachedProduct = await this.storage.getBarcodeProduct(barcode);
-      if (cachedProduct) {
+      // Check in-memory cache
+      const cached = this.cache.get(barcode);
+      if (cached && this.isValidCache(cached.timestamp)) {
         console.log(`Found cached barcode product: ${barcode}`);
-        return cachedProduct;
+        return cached.product;
       }
 
       // If not cached and we have an API key, fetch from API
@@ -159,8 +205,8 @@ export class BarcodeLookupService {
       const capabilities = this.extractCapabilities(product);
       const { capacity, servingSize } = this.extractCapacity(product);
       
-      // Transform API response to our database format
-      const barcodeProduct: InsertBarcodeProduct = {
+      // Transform API response to our format
+      const barcodeProduct: BarcodeProduct = {
         barcodeNumber: product.barcode_number,
         title: product.title,
         category: product.category,
@@ -212,11 +258,14 @@ export class BarcodeLookupService {
         rawData: data
       };
 
-      // Save to database
-      const savedProduct = await this.storage.createBarcodeProduct(barcodeProduct);
+      // Cache the product in memory
+      this.cache.set(barcode, {
+        product: barcodeProduct,
+        timestamp: Date.now()
+      });
       console.log(`Cached barcode product: ${barcode}`);
       
-      return savedProduct;
+      return barcodeProduct;
     } catch (error) {
       console.error(`Error looking up barcode ${barcode}:`, error);
       throw error;
@@ -233,9 +282,9 @@ export class BarcodeLookupService {
     
     // First, check cache for all barcodes
     for (const barcode of barcodes) {
-      const cached = await this.storage.getBarcodeProduct(barcode);
-      if (cached) {
-        results.set(barcode, cached);
+      const cached = this.cache.get(barcode);
+      if (cached && this.isValidCache(cached.timestamp)) {
+        results.set(barcode, cached.product);
       } else {
         uncachedBarcodes.push(barcode);
       }
@@ -277,19 +326,11 @@ export class BarcodeLookupService {
   }
 
   /**
-   * Search for products by query
+   * Search for products by query (no caching for search results, just API calls)
    */
   async searchProducts(query: string): Promise<BarcodeProduct[]> {
     try {
-      // First search in our cached products
-      const cachedProducts = await this.storage.searchBarcodeProducts(query);
-      
-      if (cachedProducts.length > 0) {
-        console.log(`Found ${cachedProducts.length} cached products for query: ${query}`);
-        return cachedProducts;
-      }
-
-      // If no cached results and we have an API key, search via API
+      // No database search available, go directly to API
       if (!this.apiKey) {
         console.warn('Cannot search products: API key not configured');
         return [];
@@ -315,23 +356,16 @@ export class BarcodeLookupService {
         return [];
       }
 
-      // Transform and cache all results
+      // Transform all results
       const products: BarcodeProduct[] = [];
       
       for (const product of data.products) {
-        // Check if already cached
-        const existing = await this.storage.getBarcodeProduct(product.barcode_number);
-        if (existing) {
-          products.push(existing);
-          continue;
-        }
-
         // Extract capabilities and capacity
         const capabilities = this.extractCapabilities(product);
         const { capacity, servingSize } = this.extractCapacity(product);
         
-        // Transform and save
-        const barcodeProduct: InsertBarcodeProduct = {
+        // Transform to our format
+        const barcodeProduct: BarcodeProduct = {
           barcodeNumber: product.barcode_number,
           title: product.title,
           category: product.category,
@@ -373,11 +407,16 @@ export class BarcodeLookupService {
           rawData: { products: [product] }
         };
 
-        const savedProduct = await this.storage.createBarcodeProduct(barcodeProduct);
-        products.push(savedProduct);
+        // Cache this product
+        this.cache.set(product.barcode_number, {
+          product: barcodeProduct,
+          timestamp: Date.now()
+        });
+        
+        products.push(barcodeProduct);
       }
 
-      console.log(`Cached ${products.length} products from search`);
+      console.log(`Found ${products.length} products from search`);
       return products;
     } catch (error) {
       console.error(`Error searching products for query "${query}":`, error);

@@ -2,20 +2,24 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { isAuthenticated } from "../replitAuth";
-import { validateQuery, daysQuerySchema } from "../middleware";
 import { extractNutrition, aggregateNutrition, calculateCategoryStats } from "../utils/nutritionCalculator";
+import { z } from "zod";
 
 const router = Router();
+
+// Query validation schema
+const daysQuerySchema = z.object({
+  days: z.coerce.number().min(1).max(365).optional().default(7),
+});
 
 // Get nutrition statistics
 router.get(
   "/nutrition/stats",
   isAuthenticated,
-  validateQuery(daysQuerySchema),
   async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
-      const days = req.query.days || 7;
+      const { days } = daysQuerySchema.parse(req.query);
       
       // Get food items for the user
       const items = await storage.getFoodItems(userId);
@@ -23,7 +27,7 @@ router.get(
       // Calculate nutrition stats based on items
       const stats = {
         totalItems: items.length,
-        itemsWithNutrition: items.filter((item: any) => item.usdaData).length,
+        itemsWithNutrition: items.filter((item) => item.usdaData).length,
         averageCalories: 0,
         averageProtein: 0,
         averageCarbs: 0,
@@ -32,10 +36,12 @@ router.get(
       };
       
       // Calculate averages if there are items with nutrition data
-      const itemsWithNutrition = items.filter((item: any) => item.usdaData);
+      const itemsWithNutrition = items.filter((item) => item.usdaData);
       if (itemsWithNutrition.length > 0) {
-        const totals = itemsWithNutrition.reduce((acc: any, item: any) => {
+        const totals = itemsWithNutrition.reduce((acc, item) => {
           const nutrition = extractNutrition(item.usdaData);
+          if (!nutrition) return acc;
+          
           return {
             calories: acc.calories + (nutrition.calories || 0),
             protein: acc.protein + (nutrition.protein || 0),
@@ -69,16 +75,18 @@ router.get(
       
       // Get food items with nutrition data
       let items = await storage.getFoodItems(userId);
-      items = items.filter((item: any) => item.usdaData);
+      items = items.filter((item) => item.usdaData);
       
       // Apply filters
       if (category) {
-        items = items.filter((item: any) => item.foodCategory === category);
+        items = items.filter((item) => item.foodCategory === category);
       }
       
       if (minCalories || maxCalories) {
-        items = items.filter((item: any) => {
+        items = items.filter((item) => {
           const nutrition = extractNutrition(item.usdaData);
+          if (!nutrition) return false;
+          
           const calories = nutrition.calories || 0;
           
           if (minCalories && calories < Number(minCalories)) return false;
@@ -89,35 +97,35 @@ router.get(
       
       // Sort items
       if (sortBy === "calories") {
-        items.sort((a: any, b: any) => {
+        items.sort((a, b) => {
           const aNutrition = extractNutrition(a.usdaData);
           const bNutrition = extractNutrition(b.usdaData);
-          return (bNutrition.calories || 0) - (aNutrition.calories || 0);
+          return (bNutrition?.calories || 0) - (aNutrition?.calories || 0);
         });
       } else if (sortBy === "protein") {
-        items.sort((a: any, b: any) => {
+        items.sort((a, b) => {
           const aNutrition = extractNutrition(a.usdaData);
           const bNutrition = extractNutrition(b.usdaData);
-          return (bNutrition.protein || 0) - (aNutrition.protein || 0);
+          return (bNutrition?.protein || 0) - (aNutrition?.protein || 0);
         });
       } else {
-        items.sort((a: any, b: any) => a.name.localeCompare(b.name));
+        items.sort((a, b) => a.name.localeCompare(b.name));
       }
       
       // Add nutrition summary to each item
-      const itemsWithNutrition = items.map((item: any) => {
+      const itemsWithNutrition = items.map((item) => {
         const nutrition = extractNutrition(item.usdaData);
         return {
           ...item,
-          nutritionSummary: {
+          nutritionSummary: nutrition ? {
             calories: nutrition.calories,
             protein: nutrition.protein,
-            carbohydrates: nutrition.carbohydrates,
+            carbohydrates: nutrition.carbs,
             fat: nutrition.fat,
             fiber: nutrition.fiber,
             sugar: nutrition.sugar,
             sodium: nutrition.sodium,
-          },
+          } : null,
         };
       });
       
@@ -140,12 +148,12 @@ router.get(
       
       // Get meal plans for the date
       const mealPlans = await storage.getMealPlans(userId);
-      const todaysMeals = mealPlans.filter((plan: any) => plan.date === date);
+      const todaysMeals = mealPlans.filter((plan) => plan.date === date);
       
       // Get recipes for those meal plans
       const recipes = await storage.getRecipes(userId);
-      const todaysRecipes = recipes.filter((recipe: any) =>
-        todaysMeals.some((plan: any) => plan.recipeId === recipe.id)
+      const todaysRecipes = recipes.filter((recipe) =>
+        todaysMeals.some((plan) => plan.recipeId === recipe.id)
       );
       
       // Calculate total nutrition for the day
@@ -157,14 +165,24 @@ router.get(
         totalCarbs: 0,
         totalFat: 0,
         totalFiber: 0,
-        mealBreakdown: [] as any[],
+        mealBreakdown: [] as Array<{
+          mealType: string;
+          recipeName: string;
+          servings: number;
+          nutrition: {
+            calories: number;
+            protein: number;
+            carbs: number;
+            fat: number;
+          };
+        }>,
       };
       
       // Add nutrition from each meal
-      todaysMeals.forEach((plan: any) => {
-        const recipe = todaysRecipes.find((r: any) => r.id === plan.recipeId);
-        if (recipe && recipe.nutritionInfo) {
-          const nutrition = recipe.nutritionInfo;
+      todaysMeals.forEach((plan) => {
+        const recipe = todaysRecipes.find((r) => r.id === plan.recipeId);
+        if (recipe && recipe.nutrition) {
+          const nutrition = recipe.nutrition;
           const servingMultiplier = plan.servings || 1;
           
           dailyNutrition.totalCalories += (nutrition.calories || 0) * servingMultiplier;

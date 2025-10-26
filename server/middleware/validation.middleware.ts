@@ -13,8 +13,8 @@ export const daysQuerySchema = z.object({
 });
 
 export const paginationQuerySchema = z.object({
-  page: z.string().transform(val => parseInt(val)).optional().default("1"),
-  limit: z.string().transform(val => parseInt(val)).optional().default("10"),
+  page: z.coerce.number().optional().default(1),
+  limit: z.coerce.number().optional().default(10),
   sortBy: z.string().optional(),
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });

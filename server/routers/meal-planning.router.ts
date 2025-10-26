@@ -3,8 +3,6 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { 
-  mealPlans, 
-  shoppingListItems,
   insertMealPlanSchema, 
   insertShoppingListItemSchema,
   type MealPlan, 
@@ -168,7 +166,7 @@ router.post(
       const items = await Promise.all(
         ingredients.map((ingredient: string) =>
           storage.createShoppingListItem(userId, {
-            name: ingredient,
+            ingredient: ingredient,
             recipeId,
             isChecked: false,
           })
@@ -331,7 +329,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     // Step 5: Get existing shopping list items to avoid duplicates
     const existingShoppingItems = await storage.getShoppingListItems(userId);
     const existingItemNames = new Set(
-      existingShoppingItems.map(item => item.name.toLowerCase())
+      existingShoppingItems.map(item => item.ingredient.toLowerCase())
     );
     
     sendProgress(60, "Identifying missing items...");
@@ -377,7 +375,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
       const batchResults = await Promise.all(
         batch.map(item =>
           storage.createShoppingListItem(userId, {
-            name: item.ingredient,
+            ingredient: item.ingredient,
             recipeId: item.recipeId,
             isChecked: false
           })

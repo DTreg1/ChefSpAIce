@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { isAuthenticated } from "../replitAuth";
 import { validateBody } from "../middleware";
 import { storage } from "../storage";
-import { insertFoodItemSchema, insertShoppingListItemSchema } from "@shared/schema";
+import { insertUserInventorySchema, insertShoppingListItemSchema } from "@shared/schema";
 import { z } from "zod";
 
 const router = Router();
@@ -67,9 +67,9 @@ router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
       
       case "locations": {
         // Get storage locations
-        const user = await storage.getUser(userId);
+        const locations = await storage.getStorageLocations(userId);
         res.json({
-          data: user?.storageLocations || [],
+          data: locations,
           type: "locations"
         });
         break;
@@ -100,7 +100,7 @@ router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
 const inventoryItemSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("item"),
-    data: insertFoodItemSchema
+    data: insertUserInventorySchema
   }),
   z.object({
     type: z.literal("shopping-list"),
@@ -123,8 +123,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
     switch (type) {
       case "item": {
         // Verify storage location
-        const user = await storage.getUser(userId);
-        const locations = user?.storageLocations || [];
+        const locations = await storage.getStorageLocations(userId);
         const locationExists = locations.some((loc: any) => loc.id === data.storageLocationId);
         
         if (!locationExists) {
@@ -162,16 +161,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
       }
       
       case "location": {
-        const newLocation = {
-          id: crypto.randomUUID(),
-          ...data
-        };
-        
-        const user = await storage.getUser(userId);
-        const locations = user?.storageLocations || [];
-        locations.push(newLocation);
-        
-        await storage.updateUserPreferences(userId, { storageLocations: locations });
+        const newLocation = await storage.createStorageLocation(userId, data);
         res.json({ data: newLocation, type: "location" });
         break;
       }
@@ -204,7 +194,7 @@ router.post("/inventory/batch", isAuthenticated, async (req: any, res: Response)
           const createdItems = await Promise.all(
             ingredients.map((ingredient: string) =>
               storage.createShoppingListItem(userId, {
-                name: ingredient,
+                ingredient: ingredient,
                 recipeId,
                 isChecked: false
               })
@@ -356,7 +346,7 @@ router.post("/inventory/shopping-list/add-missing", isAuthenticated, async (req:
     const items = await Promise.all(
       ingredients.map((ingredient: string) =>
         storage.createShoppingListItem(userId, {
-          name: ingredient,
+          ingredient: ingredient,
           recipeId,
           isChecked: false
         })

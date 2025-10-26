@@ -420,7 +420,7 @@ export function AppSidebar() {
                             </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
-                        {storageLocations?.map((loc) => {
+                        {storageLocations?.map((loc: StorageLocation) => {
                           const IconComponent =
                             iconMap[loc.icon] || UtensilsCrossed;
                           const locCount =

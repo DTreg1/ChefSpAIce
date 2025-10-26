@@ -767,7 +767,7 @@ export class DatabaseStorage implements IStorage {
               | { deviceId?: string; model?: string; osVersion?: string }
               | null
               | undefined,
-            lastUsedAt: new Date(),
+            updatedAt: new Date(),
           },
         })
         .returning();
@@ -1088,11 +1088,19 @@ export class DatabaseStorage implements IStorage {
     details?: Partial<InsertUserAppliance>,
   ): Promise<UserAppliance> {
     try {
+      // Get appliance library item to extract name if not provided in details
+      const [libraryItem] = await db
+        .select()
+        .from(applianceLibrary)
+        .where(eq(applianceLibrary.id, applianceLibraryId));
+      
       const [newUserAppliance] = await db
         .insert(userAppliances)
         .values({
           userId,
           applianceLibraryId,
+          name: details?.name || libraryItem?.name || 'Unknown Appliance',
+          type: details?.type || libraryItem?.category,
           ...details,
         })
         .returning();
@@ -1554,9 +1562,17 @@ export class DatabaseStorage implements IStorage {
     recipe: Omit<InsertRecipe, "userId">,
   ): Promise<Recipe> {
     try {
+      const recipeToInsert = {
+        ...recipe,
+        userId,
+        ingredients: Array.from(recipe.ingredients || []),
+        instructions: Array.from(recipe.instructions || []),
+        usedIngredients: Array.from(recipe.usedIngredients || []),
+        missingIngredients: recipe.missingIngredients ? Array.from(recipe.missingIngredients) : undefined,
+      };
       const [newRecipe] = await db
         .insert(userRecipes)
-        .values({ ...recipe, userId })
+        .values(recipeToInsert as typeof userRecipes.$inferInsert)
         .returning();
       return newRecipe;
     } catch (error) {
@@ -1787,9 +1803,14 @@ export class DatabaseStorage implements IStorage {
     log: Omit<InsertApiUsageLog, "userId">,
   ): Promise<ApiUsageLog> {
     try {
+      const logToInsert = {
+        ...log,
+        userId,
+        timestamp: new Date(),
+      };
       const [newLog] = await db
         .insert(apiUsageLogs)
-        .values({ ...log, userId })
+        .values(logToInsert)
         .returning();
       return newLog;
     } catch (error) {
@@ -1815,7 +1836,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(apiUsageLogs)
         .where(conditions)
-        .orderBy(sql`${apiUsageLogs.createdAt} DESC`)
+        .orderBy(sql`${apiUsageLogs.timestamp} DESC`)
         .limit(limit);
       return logs;
     } catch (error) {
@@ -1844,7 +1865,7 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(apiUsageLogs.userId, userId),
             eq(apiUsageLogs.apiName, apiName),
-            sql`${apiUsageLogs.createdAt} >= ${cutoffDate.toISOString()}`,
+            sql`${apiUsageLogs.timestamp} >= ${cutoffDate.toISOString()}`,
           ),
         );
 
@@ -1876,7 +1897,9 @@ export class DatabaseStorage implements IStorage {
 
   async cacheFood(food: InsertFdcCache): Promise<FdcCache> {
     try {
+      const now = new Date();
       const foodToInsert = {
+        id: `fdc_${food.fdcId}`,
         fdcId: food.fdcId,
         description: food.description,
         dataType: food.dataType,
@@ -1885,20 +1908,20 @@ export class DatabaseStorage implements IStorage {
         ingredients: food.ingredients,
         servingSize: food.servingSize,
         servingSizeUnit: food.servingSizeUnit,
-        category: food.category,
-        gtinUpc: food.gtinUpc,
-        foodNutrients: food.foodNutrients,
+        nutrients: food.nutrients,
         fullData: food.fullData,
+        cachedAt: now,
+        lastAccessed: now,
       };
 
       const [cachedFood] = await db
         .insert(fdcCache)
         .values(foodToInsert)
         .onConflictDoUpdate({
-          target: fdcCache.fdcId,
+          target: fdcCache.id,
           set: {
             ...foodToInsert,
-            cachedAt: new Date(),
+            lastAccessed: new Date(),
           },
         })
         .returning();
@@ -2002,7 +2025,7 @@ export class DatabaseStorage implements IStorage {
     await this.ensureDefaultDataForUser(userId);
     const [newItem] = await db
       .insert(userShopping)
-      .values({ ...item, userId })
+      .values({ ...item, userId, createdAt: new Date() })
       .returning();
     return newItem;
   }
@@ -2052,6 +2075,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<ShoppingListItem[]> {
     await this.ensureDefaultDataForUser(userId);
 
+    const now = new Date();
     // Parse each ingredient to extract quantity and unit if possible
     const items = ingredients.map((ingredient) => {
       // Simple parsing - could be enhanced
@@ -2064,6 +2088,7 @@ export class DatabaseStorage implements IStorage {
           recipeId,
           isChecked: false,
           userId,
+          createdAt: now,
         };
       }
       return {
@@ -2073,6 +2098,7 @@ export class DatabaseStorage implements IStorage {
         recipeId,
         isChecked: false,
         userId,
+        createdAt: now,
       };
     });
 
@@ -2100,7 +2126,7 @@ export class DatabaseStorage implements IStorage {
         await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
         await tx.delete(userFeedback).where(eq(userFeedback.userId, userId));
 
-        // Reset user data including preferences and storage locations to defaults
+        // Reset user data including preferences to defaults
         await tx
           .update(users)
           .set({
@@ -2115,8 +2141,6 @@ export class DatabaseStorage implements IStorage {
             preferredUnits: "imperial",
             foodsToAvoid: [],
             hasCompletedOnboarding: false,
-            // Clear storage locations (they will be re-initialized)
-            storageLocations: [],
             updatedAt: new Date(),
           })
           .where(eq(users.id, userId));
@@ -2158,30 +2182,20 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
+      // Prepare the insert data following the pattern of other nullable userId tables
+      const insertData = {
+        ...feedbackFields,
+        ...(userId && { userId }), // Only include userId if provided (nullable for anonymous)
+        tags: Array.from(finalTags) as string[],
+        upvotes: [],
+        responses: [],
+        // Convert readonly arrays to mutable for JSONB fields
+        attachments: feedbackFields.attachments ? Array.from(feedbackFields.attachments) as string[] : undefined
+      };
+      
       const [newFeedback] = await db
         .insert(userFeedback)
-        .values({
-          // Required fields
-          userId,
-          type: feedbackFields.type,
-          subject: feedbackFields.subject,
-          description: feedbackFields.description,
-          
-          // Optional fields
-          userEmail: feedbackFields.userEmail,
-          category: feedbackFields.category,
-          url: feedbackFields.url,
-          userAgent: feedbackFields.userAgent,
-          appVersion: feedbackFields.appVersion,
-          sentiment: feedbackFields.sentiment,
-          priority: feedbackFields.priority,
-          status: feedbackFields.status || 'pending',
-          resolution: feedbackFields.resolution,
-          attachments: feedbackFields.attachments,
-          tags: finalTags,
-          upvotes: [],
-          responses: []
-        })
+        .values(insertData)
         .returning();
       return newFeedback;
     } catch (error) {
@@ -2380,13 +2394,7 @@ export class DatabaseStorage implements IStorage {
 
       // Calculate analytics
       const totalFeedback = allFeedback.length;
-      const ratings = allFeedback
-        .filter((f) => f.rating !== null)
-        .map((f) => f.rating!);
-      const averageRating =
-        ratings.length > 0
-          ? ratings.reduce((a, b) => a + b, 0) / ratings.length
-          : null;
+      const averageRating = null; // Rating field no longer exists in schema
 
       const sentimentDistribution = {
         positive: allFeedback.filter((f) => f.sentiment === "positive").length,
@@ -2492,14 +2500,15 @@ export class DatabaseStorage implements IStorage {
     contextType: string,
   ): Promise<Feedback[]> {
     try {
+      // Note: contextId and contextType fields don't exist in the schema
+      // This method searches for context information encoded in tags
+      const contextTag = `context:${contextType}:${contextId}`;
+      
       const results = await db
         .select()
         .from(userFeedback)
         .where(
-          and(
-            eq(userFeedback.contextId, contextId),
-            eq(userFeedback.contextType, contextType),
-          ),
+          sql`${userFeedback.tags} @> ${JSON.stringify([contextTag])}::jsonb`
         )
         .orderBy(sql`${userFeedback.createdAt} DESC`);
       return results;
@@ -2518,7 +2527,7 @@ export class DatabaseStorage implements IStorage {
       const whereCondition = type ? eq(userFeedback.type, type) : undefined;
       const orderByClause =
         sortBy === "upvotes"
-          ? sql`${userFeedback.upvoteCount} DESC, ${userFeedback.createdAt} DESC`
+          ? sql`jsonb_array_length(COALESCE(${userFeedback.upvotes}, '[]'::jsonb)) DESC, ${userFeedback.createdAt} DESC`
           : sql`${userFeedback.createdAt} DESC`;
 
       const results = whereCondition
@@ -2547,7 +2556,7 @@ export class DatabaseStorage implements IStorage {
       const whereCondition = type ? eq(userFeedback.type, type) : undefined;
       const orderByClause =
         sortBy === "upvotes"
-          ? sql`${userFeedback.upvoteCount} DESC, ${userFeedback.createdAt} DESC`
+          ? sql`jsonb_array_length(COALESCE(${userFeedback.upvotes}, '[]'::jsonb)) DESC, ${userFeedback.createdAt} DESC`
           : sql`${userFeedback.createdAt} DESC`;
 
       const results = whereCondition
@@ -2591,7 +2600,7 @@ export class DatabaseStorage implements IStorage {
         return; // Already upvoted
       }
 
-      // Add user to upvotes array and increment count
+      // Add user to upvotes array
       const updatedUpvotes = [...upvotes, { 
         userId, 
         createdAt: new Date().toISOString() 
@@ -2601,7 +2610,6 @@ export class DatabaseStorage implements IStorage {
         .update(userFeedback)
         .set({
           upvotes: updatedUpvotes,
-          upvoteCount: updatedUpvotes.length,
         })
         .where(eq(userFeedback.id, feedbackId));
     } catch (error) {
@@ -2632,7 +2640,6 @@ export class DatabaseStorage implements IStorage {
           .update(userFeedback)
           .set({
             upvotes: updatedUpvotes,
-            upvoteCount: updatedUpvotes.length,
           })
           .where(eq(userFeedback.id, feedbackId));
       }
@@ -2664,10 +2671,14 @@ export class DatabaseStorage implements IStorage {
   async getFeedbackUpvoteCount(feedbackId: string): Promise<number> {
     try {
       const [result] = await db
-        .select({ upvoteCount: userFeedback.upvoteCount })
+        .select({ upvotes: userFeedback.upvotes })
         .from(userFeedback)
         .where(eq(userFeedback.id, feedbackId));
-      return result?.upvoteCount || 0;
+      
+      if (!result) return 0;
+      
+      const upvotes = (result.upvotes as Array<{userId: string, createdAt: string}>) || [];
+      return upvotes.length;
     } catch (error) {
       console.error("Error getting upvote count:", error);
       return 0;
@@ -3158,8 +3169,6 @@ export class DatabaseStorage implements IStorage {
     }
   ): Promise<AnalyticsEvent[]> {
     try {
-      let query = db.select().from(analyticsEvents);
-      
       const conditions = [];
       if (userId) conditions.push(eq(analyticsEvents.userId, userId));
       if (filters?.eventType) conditions.push(eq(analyticsEvents.eventType, filters.eventType));
@@ -3167,15 +3176,16 @@ export class DatabaseStorage implements IStorage {
       if (filters?.startDate) conditions.push(gte(analyticsEvents.timestamp, filters.startDate));
       if (filters?.endDate) conditions.push(lte(analyticsEvents.timestamp, filters.endDate));
       
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
+      const baseQuery = db.select().from(analyticsEvents);
+      const queryWithWhere = conditions.length > 0 
+        ? baseQuery.where(and(...conditions))
+        : baseQuery;
+      const queryWithOrder = queryWithWhere.orderBy(desc(analyticsEvents.timestamp));
+      const finalQuery = filters?.limit 
+        ? queryWithOrder.limit(filters.limit)
+        : queryWithOrder;
       
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
-      }
-      
-      return query.orderBy(desc(analyticsEvents.timestamp));
+      return await finalQuery;
     } catch (error) {
       console.error("Error getting analytics events:", error);
       throw new Error("Failed to get analytics events");
@@ -3185,9 +3195,14 @@ export class DatabaseStorage implements IStorage {
   // User Sessions Methods
   async createUserSession(session: InsertUserSession): Promise<UserSession> {
     try {
+      // Convert readonly arrays to mutable arrays for JSONB fields
+      const sessionData = {
+        ...session,
+        goalCompletions: session.goalCompletions ? Array.from(session.goalCompletions) as string[] : undefined,
+      };
       const [result] = await db
         .insert(userSessions)
-        .values(session)
+        .values(sessionData)
         .returning();
       return result;
     } catch (error) {
@@ -3198,9 +3213,14 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserSession(sessionId: string, update: Partial<InsertUserSession>): Promise<UserSession> {
     try {
+      // Convert readonly arrays to mutable arrays for JSONB fields
+      const updateData = {
+        ...update,
+        goalCompletions: update.goalCompletions ? Array.from(update.goalCompletions) as string[] : undefined,
+      };
       const [result] = await db
         .update(userSessions)
-        .set(update)
+        .set(updateData)
         .where(eq(userSessions.sessionId, sessionId))
         .returning();
       
@@ -3223,22 +3243,21 @@ export class DatabaseStorage implements IStorage {
     }
   ): Promise<UserSession[]> {
     try {
-      let query = db.select().from(userSessions);
-      
       const conditions = [];
       if (userId) conditions.push(eq(userSessions.userId, userId));
       if (filters?.startDate) conditions.push(gte(userSessions.startTime, filters.startDate));
       if (filters?.endDate) conditions.push(lte(userSessions.startTime, filters.endDate));
       
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
+      const baseQuery = db.select().from(userSessions);
+      const queryWithWhere = conditions.length > 0 
+        ? baseQuery.where(and(...conditions))
+        : baseQuery;
+      const queryWithOrder = queryWithWhere.orderBy(desc(userSessions.startTime));
+      const finalQuery = filters?.limit 
+        ? queryWithOrder.limit(filters.limit)
+        : queryWithOrder;
       
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
-      }
-      
-      return query.orderBy(desc(userSessions.startTime));
+      return await finalQuery;
     } catch (error) {
       console.error("Error getting user sessions:", error);
       throw new Error("Failed to get user sessions");

@@ -15,35 +15,22 @@ const CACHE_TTL = {
 // Cached USDA function already exists in usdaCache.ts, import it
 export { searchUSDAFoodsCached, getCachedFoodById, preloadCommonSearches } from "../utils/usdaCache";
 
-// Cache for barcode products with database persistence
+// In-memory cache for barcode products (simple implementation)
+const barcodeCache = new Map<string, { data: any; timestamp: number }>();
+
+// Cache for barcode products with in-memory storage
 export async function getBarcodeLookupProductCached(barcode: string): Promise<any | null> {
   try {
-    // Check if we have this barcode cached in the database
-    const cached = await storage.getCachedBarcodeProduct(barcode);
-    
+    // Check in-memory cache
+    const cached = barcodeCache.get(barcode);
     if (cached) {
-      const age = Date.now() - new Date(cached.cachedAt).getTime();
+      const age = Date.now() - cached.timestamp;
       if (age < CACHE_TTL.BARCODE_PRODUCT) {
         console.log(`[Barcode Cache] Hit for barcode: ${barcode}`);
-        // Return data in the same shape as the original API response
-        // Map database cached fields back to API response structure
-        return {
-          barcode_number: cached.barcodeNumber,
-          title: cached.productName,
-          brand: cached.brand,
-          category: cached.category,
-          images: cached.imageUrl ? [cached.imageUrl] : [],
-          description: cached.description,
-          manufacturer: cached.manufacturer,
-          asin: cached.asin,
-          mpn: cached.mpn,
-          stores: cached.stores?.map(store => ({
-            name: store.store_name,
-            price: store.store_price,
-            link: store.product_url,
-            currency: store.currency_symbol,
-          })) || []
-        };
+        return cached.data;
+      } else {
+        // Cache expired, remove it
+        barcodeCache.delete(barcode);
       }
     }
     
@@ -52,31 +39,11 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
     const product = await originalGetBarcodeLookupProduct(barcode);
     
     if (product) {
-      // Store in database cache
-      await storage.cacheBarcodeProduct({
-        barcodeNumber: barcode,
-        productName: product.title || product.barcode_number || '',
-        title: product.title,
-        alias: product.title, // Using title as alias if not provided
-        description: product.description,
-        brand: product.brand,
-        manufacturer: product.manufacturer,
-        mpn: product.mpn,
-        msrp: product.weight, // Assuming weight might contain price info
-        asin: product.asin,
-        category: product.category,
-        imageUrl: product.images?.[0],
-        reviews: [], // Barcode Lookup doesn't provide reviews in basic tier
-        stores: product.stores?.map(store => ({
-          store_name: store.name || '',
-          store_price: store.price || '',
-          product_url: store.link || '',
-          currency_code: 'USD',
-          currency_symbol: '$',
-        })) || [],
-        cachedAt: new Date(),
+      // Store in memory cache
+      barcodeCache.set(barcode, {
+        data: product,
+        timestamp: Date.now(),
       });
-      
       console.log(`[Barcode Cache] Cached product for barcode: ${barcode}`);
       return product;
     }
@@ -86,10 +53,9 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
     console.error(`[Barcode Cache] Error for barcode ${barcode}:`, error);
     // If it's a 404, cache the null result to avoid repeated lookups
     if ((error as any)?.status === 404) {
-      await storage.cacheBarcodeProduct({
-        barcodeNumber: barcode,
-        productName: 'NOT_FOUND',
-        cachedAt: new Date(),
+      barcodeCache.set(barcode, {
+        data: null,
+        timestamp: Date.now(),
       });
     }
     throw error;
@@ -99,15 +65,18 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
 // Clean up old cache entries for all APIs
 export async function cleanupAllCaches(): Promise<void> {
   try {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
     // Clean USDA cache
     await storage.clearOldCache(30);
     console.log('[Cache Cleanup] USDA cache cleaned');
     
-    // Clean barcode cache
-    await storage.clearOldBarcodeCache(thirtyDaysAgo);
+    // Clean in-memory barcode cache
+    const now = Date.now();
+    Array.from(barcodeCache.entries()).forEach(([key, value]) => {
+      const age = now - value.timestamp;
+      if (age > CACHE_TTL.BARCODE_PRODUCT) {
+        barcodeCache.delete(key);
+      }
+    });
     console.log('[Cache Cleanup] Barcode cache cleaned');
     
     console.log('[Cache Cleanup] All caches cleaned successfully');
@@ -123,11 +92,21 @@ export async function getCacheStats(): Promise<{
 }> {
   try {
     const usdaStats = await storage.getUSDACacheStats();
-    const barcodeStats = await storage.getBarcodeCacheStats();
+    
+    // Get barcode cache stats from in-memory cache
+    let oldestTimestamp: number | null = null;
+    Array.from(barcodeCache.values()).forEach(value => {
+      if (oldestTimestamp === null || value.timestamp < oldestTimestamp) {
+        oldestTimestamp = value.timestamp;
+      }
+    });
     
     return {
       usda: usdaStats,
-      barcode: barcodeStats,
+      barcode: {
+        totalEntries: barcodeCache.size,
+        oldestEntry: oldestTimestamp ? new Date(oldestTimestamp) : null,
+      },
     };
   } catch (error) {
     console.error('[Cache Stats] Error getting stats:', error);

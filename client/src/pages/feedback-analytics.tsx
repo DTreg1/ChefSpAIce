@@ -384,9 +384,9 @@ export default function FeedbackAnalyticsPage() {
                             {new Date(item.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        {item.content && (
+                        {(item.content || item.description) && (
                           <p className="text-sm text-muted-foreground line-clamp-2">
-                            {item.content}
+                            {item.content || item.description}
                           </p>
                         )}
                       </div>
