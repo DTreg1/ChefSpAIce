@@ -10,20 +10,24 @@ export interface NotificationPayload {
 class PushNotificationService {
   private isInitialized = false;
   private pushToken: string | null = null;
+  private permissionState: 'granted' | 'denied' | 'prompt' | 'unknown' = 'unknown';
+  private initializationError: Error | null = null;
 
   async initialize(): Promise<void> {
-    // Only initialize on native platforms
-    if (!Capacitor.isNativePlatform()) {
-      console.log('Push notifications are only available on native platforms');
-      return;
-    }
-
     if (this.isInitialized) {
       return;
     }
 
+    // Check if on native platform (iOS/Android) or web
+    if (!Capacitor.isNativePlatform()) {
+      console.log('Initializing web push notifications');
+      await this.initializeWebPush();
+      return;
+    }
+
     try {
-      // Request permission
+      // Native platform push notification setup
+      console.log('Initializing native push notifications');
       const permStatus = await PushNotifications.requestPermissions();
 
       if (permStatus.receive === 'granted') {
@@ -73,17 +77,119 @@ class PushNotificationService {
     }
   }
 
+  private async initializeWebPush(): Promise<void> {
+    try {
+      // Check if service worker and push notifications are supported
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        const error = new Error('Web push notifications are not supported in this browser');
+        this.initializationError = error;
+        console.warn('Web push not supported:', error.message);
+        this.dispatchPermissionEvent('denied', error.message);
+        return;
+      }
+
+      // Request notification permission
+      const permission = await Notification.requestPermission();
+      this.permissionState = permission as any;
+      
+      if (permission !== 'granted') {
+        const message = permission === 'denied' 
+          ? 'You have denied notification permissions. You can enable them in your browser settings.'
+          : 'Notification permission is required to receive updates.';
+        console.log('Notification permission not granted:', permission);
+        this.dispatchPermissionEvent(permission as any, message);
+        return;
+      }
+
+      // Register service worker if not already registered
+      let registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        registration = await navigator.serviceWorker.register('/sw.js');
+        console.log('Service worker registered');
+      }
+
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready;
+
+      // Get VAPID public key from environment
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      if (!vapidPublicKey) {
+        console.error('VAPID public key not configured');
+        return;
+      }
+
+      // Subscribe to push notifications
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey),
+      });
+
+      console.log('Web push subscription created:', subscription);
+
+      // Send subscription to backend
+      await this.sendWebSubscriptionToBackend(subscription);
+
+      this.isInitialized = true;
+      this.dispatchPermissionEvent('granted', 'Notifications enabled successfully');
+      console.log('Web push notifications initialized successfully');
+    } catch (error) {
+      const err = error as Error;
+      this.initializationError = err;
+      this.permissionState = 'denied';
+      console.error('Error initializing web push notifications:', err);
+      this.dispatchPermissionEvent('denied', err.message || 'Failed to initialize push notifications');
+    }
+  }
+
+  private urlBase64ToUint8Array(base64String: string): Uint8Array {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  private async sendWebSubscriptionToBackend(subscription: PushSubscription): Promise<void> {
+    try {
+      const response = await fetch('/api/push-tokens/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+          platform: 'web',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to send web subscription to backend');
+      }
+
+      const data = await response.json();
+      console.log('Web subscription sent to backend successfully:', data.message);
+    } catch (error) {
+      console.error('Error sending web subscription to backend:', error);
+    }
+  }
+
   private async sendTokenToBackend(token: string): Promise<void> {
     try {
       // Get device info
       const platform = Capacitor.getPlatform(); // 'ios', 'android', or 'web'
       const deviceInfo = {
         deviceId: await this.getDeviceId(),
-        model: await this.getDeviceModel(),
+        deviceModel: await this.getDeviceModel(),
         osVersion: await this.getOsVersion(),
+        appVersion: '1.0.0', // You can get this from package.json or config
       };
 
-      const response = await fetch('/api/push-token', {
+      const response = await fetch('/api/push-tokens/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,12 +203,15 @@ class PushNotificationService {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send push token to backend');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to send push token to backend');
       }
 
-      console.log('Push token sent to backend successfully');
+      const data = await response.json();
+      console.log('Push token sent to backend successfully:', data.message);
     } catch (error) {
       console.error('Error sending push token to backend:', error);
+      // Don't throw - allow app to continue even if token registration fails
     }
   }
 
@@ -137,29 +246,99 @@ class PushNotificationService {
   }
 
   private handleNotificationReceived(notification: PushNotificationSchema): void {
-    // You can show an in-app notification or update UI
-    console.log('Notification received while app is open:', notification);
+    console.log('Notification received while app is in foreground:', notification);
     
-    // Optionally show a toast or update UI
-    if (notification.data?.type === 'expiration_alert') {
-      // Handle food expiration alert
-      this.handleExpirationAlert(notification);
-    }
+    // Dispatch custom event for React components to handle
+    const event = new CustomEvent('push-notification-received', {
+      detail: {
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+        id: notification.id,
+      },
+    });
+    window.dispatchEvent(event);
+
+    // Track notification delivery
+    this.trackNotificationDelivery(notification);
   }
 
   private handleNotificationAction(action: ActionPerformed): void {
-    // Handle user tapping on notification
-    const data = action.notification.data;
+    console.log('Notification action performed:', action);
     
-    if (data?.type === 'expiration_alert') {
-      // Navigate to storage page
-      window.location.href = data.location || '/storage/fridge';
+    // Dispatch custom event for React components to handle navigation
+    const event = new CustomEvent('push-notification-action', {
+      detail: {
+        notification: action.notification,
+        actionId: action.actionId,
+      },
+    });
+    window.dispatchEvent(event);
+
+    // Track notification opened
+    this.trackNotificationOpened(action.notification);
+
+    // Handle navigation based on notification type
+    const data = action.notification.data;
+    if (data?.url) {
+      // Use the URL from notification data
+      window.location.href = data.url;
+    } else {
+      // Fallback navigation based on type
+      this.navigateBasedOnType(data?.type);
     }
   }
 
-  private handleExpirationAlert(notification: PushNotificationSchema): void {
-    // You could show an in-app alert or update the UI
-    console.log('Food expiration alert:', notification.data);
+  private navigateBasedOnType(type: string): void {
+    const navigationMap: Record<string, string> = {
+      'expiring-food': '/inventory',
+      'recipe-suggestion': '/chat',
+      'meal-reminder': '/meal-planning',
+      'test': '/',
+    };
+
+    const path = navigationMap[type];
+    if (path) {
+      window.location.href = path;
+    }
+  }
+
+  private async trackNotificationDelivery(notification: PushNotificationSchema): Promise<void> {
+    try {
+      await fetch('/api/notifications/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          notificationId: notification.id,
+          status: 'delivered',
+          data: notification.data,
+        }),
+      });
+    } catch (error) {
+      console.error('Error tracking notification delivery:', error);
+    }
+  }
+
+  private async trackNotificationOpened(notification: any): Promise<void> {
+    try {
+      await fetch('/api/notifications/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          notificationId: notification.id,
+          status: 'opened',
+          data: notification.data,
+        }),
+      });
+    } catch (error) {
+      console.error('Error tracking notification opened:', error);
+    }
   }
 
   async getDeliveredNotifications(): Promise<any[]> {
@@ -190,6 +369,29 @@ class PushNotificationService {
 
     await PushNotifications.removeAllListeners();
     this.isInitialized = false;
+  }
+
+  // Dispatch custom event for permission changes
+  private dispatchPermissionEvent(state: string, message: string): void {
+    const event = new CustomEvent('push-notification-permission', {
+      detail: { state, message },
+    });
+    window.dispatchEvent(event);
+  }
+
+  // Get current permission state
+  getPermissionState(): string {
+    return this.permissionState;
+  }
+
+  // Get initialization error if any
+  getInitializationError(): Error | null {
+    return this.initializationError;
+  }
+
+  // Check if initialized
+  isReady(): boolean {
+    return this.isInitialized;
   }
 }
 

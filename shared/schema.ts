@@ -108,7 +108,35 @@ export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
 export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 export type PushToken = typeof pushTokens.$inferSelect;
 
+// Notification History - Track delivered notifications and their status
+export const notificationHistory = pgTable("notification_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // 'expiring-food', 'recipe-suggestion', 'meal-reminder', 'test'
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  data: jsonb("data").$type<any>(),
+  status: text("status").notNull().default('sent'), // 'sent', 'delivered', 'opened', 'dismissed', 'failed'
+  platform: text("platform").notNull(), // 'ios', 'android', 'web'
+  pushTokenId: varchar("push_token_id").references(() => pushTokens.id, { onDelete: "set null" }),
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
+  deliveredAt: timestamp("delivered_at"),
+  openedAt: timestamp("opened_at"),
+  dismissedAt: timestamp("dismissed_at"),
+}, (table) => [
+  index("notification_history_user_id_idx").on(table.userId),
+  index("notification_history_type_idx").on(table.type),
+  index("notification_history_status_idx").on(table.status),
+  index("notification_history_sent_at_idx").on(table.sentAt),
+]);
 
+export const insertNotificationHistorySchema = createInsertSchema(notificationHistory).omit({
+  id: true,
+  sentAt: true,
+});
+
+export type InsertNotificationHistory = z.infer<typeof insertNotificationHistorySchema>;
+export type NotificationHistory = typeof notificationHistory.$inferSelect;
 
 // User Appliances - User's kitchen appliances linked to the library
 export const userAppliances = pgTable("user_appliances", {

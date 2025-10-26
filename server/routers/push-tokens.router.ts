@@ -15,11 +15,17 @@ router.post("/api/push-tokens/register", isAuthenticated, async (req: any, res) 
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { subscription, platform } = req.body;
+    const { token, subscription, platform, deviceInfo } = req.body;
 
-    if (!subscription || !platform) {
-      return res.status(400).json({ error: "Subscription and platform are required" });
+    // Accept either 'token' (for native) or 'subscription' (for web)
+    const tokenData = token || subscription;
+    
+    if (!tokenData || !platform) {
+      return res.status(400).json({ error: "Token/subscription and platform are required" });
     }
+
+    // Normalize token data to string for storage
+    const tokenString = typeof tokenData === 'string' ? tokenData : JSON.stringify(tokenData);
 
     // Check if token already exists
     const existingToken = await db
@@ -29,15 +35,16 @@ router.post("/api/push-tokens/register", isAuthenticated, async (req: any, res) 
         and(
           eq(pushTokens.userId, userId),
           eq(pushTokens.platform, platform),
-          eq(pushTokens.token, JSON.stringify(subscription))
+          eq(pushTokens.token, tokenString)
         )
       );
 
     if (existingToken.length > 0) {
-      // Update last used time
+      // Update last used time and device info if provided
       await db
         .update(pushTokens)
         .set({
+          deviceInfo: deviceInfo || existingToken[0].deviceInfo,
           updatedAt: new Date(),
         })
         .where(eq(pushTokens.id, existingToken[0].id));
@@ -46,20 +53,21 @@ router.post("/api/push-tokens/register", isAuthenticated, async (req: any, res) 
     }
 
     // Create new push token
-    const [token] = await db
+    const [newToken] = await db
       .insert(pushTokens)
       .values({
         id: crypto.randomUUID(),
         userId,
-        token: JSON.stringify(subscription),
+        token: tokenString,
         platform,
+        deviceInfo,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
       .returning();
 
-    res.json({ message: "Token registered", id: token.id });
+    res.json({ message: "Token registered", id: newToken.id });
   } catch (error) {
     console.error("Error registering push token:", error);
     res.status(500).json({ error: "Failed to register push token" });

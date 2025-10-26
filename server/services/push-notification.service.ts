@@ -1,14 +1,29 @@
 import webpush from "web-push";
 import { eq, and, lt } from "drizzle-orm";
 import { db } from "../db";
-import { pushTokens, users, userInventory } from "@shared/schema";
+import { pushTokens, users, userInventory, notificationHistory } from "@shared/schema";
+import crypto from "crypto";
 
 // Configure web push
 const publicVapidKey = process.env.VITE_VAPID_PUBLIC_KEY || "BKd0F0KpK_3Yw2c4lxVhQGNqPWnMGqWXA1kapi6VLEsL0VBs9K8PtRmUugKM8qCqX7EMz_2lPcrecNaRc9LbKxo";
 const privateVapidKey = process.env.VAPID_PRIVATE_KEY || "your-private-key-here";
 const vapidSubject = process.env.VAPID_SUBJECT || "mailto:admin@chefspaice.com";
 
-// Initialize web push
+// Validate VAPID configuration
+const isVapidConfigured = privateVapidKey !== "your-private-key-here" && publicVapidKey.length > 20;
+if (!isVapidConfigured) {
+  console.warn(
+    '⚠️  VAPID keys are not properly configured. Web push notifications will NOT work.\n' +
+    '   To enable web push notifications:\n' +
+    '   1. Generate VAPID keys using: npx web-push generate-vapid-keys\n' +
+    '   2. Set environment variables:\n' +
+    '      - VITE_VAPID_PUBLIC_KEY=<your-public-key>\n' +
+    '      - VAPID_PRIVATE_KEY=<your-private-key>\n' +
+    '      - VAPID_SUBJECT=mailto:your-email@domain.com\n'
+  );
+}
+
+// Initialize web push (even with placeholder keys for development)
 webpush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
 
 export interface NotificationPayload {
@@ -48,11 +63,32 @@ export class PushNotificationService {
       // Send notification to all active tokens
       for (const token of tokens) {
         try {
-          const subscription = JSON.parse(token.token);
-          
-          await webpush.sendNotification(subscription, JSON.stringify(payload));
+          // Handle different platform types
+          if (token.platform === 'web') {
+            // Web push uses subscription objects
+            const subscription = JSON.parse(token.token);
+            await webpush.sendNotification(subscription, JSON.stringify(payload));
+          } else {
+            // Native platforms (iOS/Android) - not yet implemented
+            // For now, skip native tokens as they require APNS/FCM integration
+            console.warn(`Native push notifications for ${token.platform} are not yet implemented`);
+            continue;
+          }
           
           sent++;
+          
+          // Record notification in history
+          await db.insert(notificationHistory).values({
+            id: crypto.randomUUID(),
+            userId,
+            type: payload.tag || 'notification',
+            title: payload.title,
+            body: payload.body,
+            data: payload.data,
+            status: 'sent',
+            platform: token.platform,
+            pushTokenId: token.id,
+          });
           
           // Update last used time
           await db
@@ -62,6 +98,19 @@ export class PushNotificationService {
         } catch (error: any) {
           console.error(`Failed to send notification to token ${token.id}:`, error);
           failed++;
+          
+          // Record failed notification in history
+          await db.insert(notificationHistory).values({
+            id: crypto.randomUUID(),
+            userId,
+            type: payload.tag || 'notification',
+            title: payload.title,
+            body: payload.body,
+            data: payload.data,
+            status: 'failed',
+            platform: token.platform,
+            pushTokenId: token.id,
+          });
           
           // If the subscription is invalid, deactivate it
           if (error.statusCode === 410) {

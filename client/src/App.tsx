@@ -17,6 +17,7 @@ import { FeedbackWidget } from "@/components/feedback-widget";
 import { LazyAnimatedBackground } from "@/components/lazy/LazyAnimatedBackground";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { RouteLoading } from "@/components/route-loading";
+import { PushNotificationHandler } from "@/components/PushNotificationHandler";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useToast } from "@/hooks/use-toast";
@@ -197,6 +198,7 @@ function AppContent() {
           particleCount={1000}
         />
       )}
+      <PushNotificationHandler />
       <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <RecipeCustomizationDialog
         open={recipeDialogOpen}

@@ -129,3 +129,73 @@ self.addEventListener('message', (event) => {
     );
   }
 });
+
+// Push notification event handler
+self.addEventListener('push', (event) => {
+  console.log('Push notification received:', event);
+  
+  let notificationData = {
+    title: 'ChefSpAIce Notification',
+    body: 'You have a new notification',
+    icon: '/logo-192.png',
+    badge: '/logo-72x72.png',
+    data: {}
+  };
+
+  try {
+    if (event.data) {
+      const payload = event.data.json();
+      notificationData = {
+        title: payload.title || notificationData.title,
+        body: payload.body || notificationData.body,
+        icon: payload.icon || notificationData.icon,
+        badge: payload.badge || notificationData.badge,
+        tag: payload.tag,
+        data: payload.data || {},
+        actions: payload.actions || []
+      };
+    }
+  } catch (error) {
+    console.error('Error parsing push notification data:', error);
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      tag: notificationData.tag,
+      data: notificationData.data,
+      actions: notificationData.actions,
+      requireInteraction: false,
+      vibrate: [200, 100, 200]
+    })
+  );
+});
+
+// Notification click event handler
+self.addEventListener('notificationclick', (event) => {
+  console.log('Notification clicked:', event);
+  
+  event.notification.close();
+
+  const data = event.notification.data || {};
+  const urlToOpen = data.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUntracked: true })
+      .then((clientList) => {
+        // Check if there's already a window open
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url === new URL(urlToOpen, self.location.origin).href && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // If no window is open, open a new one
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
