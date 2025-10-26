@@ -219,7 +219,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
   const { toast } = useToast();
 
-  const { data: storageLocations } = useStorageLocations();
+  const { data: storageLocations } = useStorageLocations() as { data: StorageLocation[] | undefined };
 
   // Set default storage location when dialog opens
   useEffect(() => {
