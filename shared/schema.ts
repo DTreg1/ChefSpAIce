@@ -303,28 +303,20 @@ export const apiUsageLogs = pgTable("api_usage_logs", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   apiName: text("api_name").notNull(), // 'openai', 'barcode_lookup', 'usda', 'stripe', etc.
   endpoint: text("endpoint").notNull(),
-  method: text("method"), // 'GET', 'POST', etc.
-  requestPayload: jsonb("request_payload").$type<any>(),
-  responsePayload: jsonb("response_payload").$type<any>(),
-  statusCode: integer("status_code"),
-  success: boolean("success").notNull(),
-  errorMessage: text("error_message"),
-  responseTimeMs: integer("response_time_ms"),
-  costInCents: real("cost_in_cents"), // If applicable
   queryParams: text("query_params"),
-  headers: jsonb("headers").$type<any>(),
-  metadata: jsonb("metadata").$type<any>(), // Extra data specific to the API
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  statusCode: integer("status_code").notNull(),
+  success: boolean("success").notNull(),
+  timestamp: timestamp("timestamp").notNull(),
 }, (table) => [
   index("api_usage_logs_user_id_idx").on(table.userId),
   index("api_usage_logs_api_name_idx").on(table.apiName),
-  index("api_usage_logs_created_at_idx").on(table.createdAt),
+  index("api_usage_logs_timestamp_idx").on(table.timestamp),
   index("api_usage_logs_success_idx").on(table.success),
 ]);
 
 export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs).omit({
   id: true,
-  createdAt: true,
+  timestamp: true,
 });
 
 export type InsertApiUsageLog = z.infer<typeof insertApiUsageLogSchema>;
@@ -394,24 +386,19 @@ export const shoppingListItems = pgTable("shopping_list_items", {
   ingredient: text("ingredient").notNull(),  // Changed from 'name' to match database
   quantity: text("quantity"),
   unit: text("unit"),
-  category: text("category"),
-  isChecked: boolean("is_checked").notNull().default(false),
-  notes: text("notes"),
   recipeId: varchar("recipe_id").references(() => recipes.id, { onDelete: "set null" }), // If from a recipe
-  mealPlanId: varchar("meal_plan_id").references(() => mealPlans.id, { onDelete: "set null" }), // If from meal plan
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  isChecked: boolean("is_checked").notNull().default(false),
+  createdAt: timestamp("created_at").notNull(),
+  fdcId: text("fdc_id"), // Added to match database
 }, (table) => [
   index("shopping_list_items_user_id_idx").on(table.userId),
   index("shopping_list_items_is_checked_idx").on(table.isChecked),
   index("shopping_list_items_recipe_id_idx").on(table.recipeId),
-  index("shopping_list_items_meal_plan_id_idx").on(table.mealPlanId),
 ]);
 
 export const insertShoppingListItemSchema = createInsertSchema(shoppingListItems).omit({
   id: true,
   createdAt: true,
-  updatedAt: true,
 });
 
 export type InsertShoppingListItem = z.infer<typeof insertShoppingListItemSchema>;
@@ -901,19 +888,28 @@ export type ApplianceLibrary = typeof applianceLibrary.$inferSelect;
 // User Appliances - Track which items from the library each user owns
 export const userAppliances = pgTable("user_appliances", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  applianceLibraryId: varchar("appliance_library_id").notNull().references(() => applianceLibrary.id, { onDelete: "cascade" }),
+  categoryId: varchar("category_id").references(() => applianceCategories.id, { onDelete: "cascade" }),
+  barcodeProductId: varchar("barcode_product_id").references(() => barcodeProducts.id, { onDelete: "set null" }),
+  customBrand: text("custom_brand"),
+  customModel: text("custom_model"),
+  customCapabilities: text("custom_capabilities").array(),
+  customCapacity: text("custom_capacity"),
+  customServingSize: text("custom_serving_size"),
   nickname: text("nickname"), // User's custom name for the item
-  notes: text("notes"), // User notes about this specific item
   purchaseDate: text("purchase_date"),
   warrantyEndDate: text("warranty_end_date"),
+  notes: text("notes"), // User notes about this specific item
+  imageUrl: text("image_url"),
   isActive: boolean("is_active").notNull().default(true), // If user still has it
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
 }, (table) => [
   index("user_appliances_user_id_idx").on(table.userId),
-  index("user_appliances_library_id_idx").on(table.applianceLibraryId),
-  uniqueIndex("user_appliances_unique").on(table.userId, table.applianceLibraryId),
+  index("user_appliances_category_id_idx").on(table.categoryId),
+  index("user_appliances_barcode_product_id_idx").on(table.barcodeProductId),
 ]);
 
 export const insertUserApplianceSchema = createInsertSchema(userAppliances).omit({
