@@ -50,7 +50,7 @@ router.get(
       const userId = req.user.claims.sub;
       const { page = 1, limit = 10, category, status } = req.query;
       
-      let feedbacks = await storage.getFeedback(userId);
+      let feedbacks = await storage.getUserFeedback(userId, limit * 10); // Get more for filtering
       
       // Apply filters
       if (category) {
@@ -82,25 +82,17 @@ router.get(
   }
 );
 
-// Update feedback (user can update their own)
+// Upvote feedback
 router.patch(
-  "/feedback/:id",
+  "/feedback/:id/upvote",
   isAuthenticated,
   async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
       const feedbackId = req.params.id;
       
-      // Verify feedback belongs to user
-      const feedbacks = await storage.getFeedback(userId);
-      const existing = feedbacks.find((f: Feedback) => f.id === feedbackId);
-      
-      if (!existing) {
-        return res.status(404).json({ error: "Feedback not found" });
-      }
-      
-      const updated = await storage.updateFeedback(feedbackId, userId, req.body);
-      res.json(updated);
+      await storage.upvoteFeedback(userId, feedbackId);
+      res.json({ success: true });
     } catch (error) {
       console.error("Error updating feedback:", error);
       res.status(500).json({ error: "Failed to update feedback" });

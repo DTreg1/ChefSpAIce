@@ -73,7 +73,7 @@ import {
   userAppliances,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and, desc, gte, lte } from "drizzle-orm";
+import { eq, sql, and, or, desc, gte, lte } from "drizzle-orm";
 import {
   matchIngredientWithInventory,
   type IngredientMatch,
@@ -192,7 +192,7 @@ export interface IStorage {
     page?: number,
     limit?: number,
     storageLocationId?: string,
-    sortBy?: "name" | "expirationDate" | "addedAt",
+    sortBy?: "name" | "expirationDate" | "createdAt",
   ): Promise<PaginatedResponse<FoodItem>>;
   getFoodItem(userId: string, id: string): Promise<FoodItem | undefined>;
   createFoodItem(
@@ -220,7 +220,17 @@ export interface IStorage {
   ): Promise<ChatMessage>;
 
   // Recipes (user-scoped)
-  getRecipes(userId: string, limit?: number): Promise<Recipe[]>;
+  getRecipes(
+    userId: string, 
+    filters?: {
+      isFavorite?: boolean;
+      search?: string;
+      cuisine?: string;
+      difficulty?: string;
+      maxCookTime?: number;
+    },
+    limit?: number
+  ): Promise<Recipe[]>;
   getRecipesPaginated(
     userId: string,
     page?: number,
@@ -800,7 +810,7 @@ export class DatabaseStorage implements IStorage {
               | { deviceId?: string; model?: string; osVersion?: string }
               | null
               | undefined,
-            updatedAt: new Date(),
+            lastUsedAt: new Date(),
           },
         })
         .returning();
@@ -1393,8 +1403,8 @@ export class DatabaseStorage implements IStorage {
       return db.select().from(barcodeProducts).where(sql`
           ${barcodeProducts.title} ILIKE ${searchPattern}
           OR ${barcodeProducts.brand} ILIKE ${searchPattern}
-          OR ${barcodeProducts.productAttributes}->>'manufacturer' ILIKE ${searchPattern}
-          OR ${barcodeProducts.productAttributes}->>'model' ILIKE ${searchPattern}
+          OR ${barcodeProducts.manufacturer} ILIKE ${searchPattern}
+          OR ${barcodeProducts.productName} ILIKE ${searchPattern}
         `);
     } catch (error) {
       console.error(
@@ -1442,7 +1452,7 @@ export class DatabaseStorage implements IStorage {
     page: number = 1,
     limit: number = 30,
     storageLocationId?: string,
-    sortBy: "name" | "expirationDate" | "addedAt" = "expirationDate",
+    sortBy: "name" | "expirationDate" | "createdAt" = "expirationDate",
   ): Promise<PaginatedResponse<FoodItem>> {
     try {
       const offset = (page - 1) * limit;
@@ -1467,8 +1477,8 @@ export class DatabaseStorage implements IStorage {
       const orderClause =
         sortBy === "name"
           ? foodItems.name
-          : sortBy === "addedAt"
-            ? sql`${foodItems.addedAt} DESC`
+          : sortBy === "createdAt"
+            ? sql`${foodItems.createdAt} DESC`
             : foodItems.expirationDate;
 
       // Get paginated items
@@ -1682,7 +1692,7 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(chatMessages.userId, userId),
-            sql`${chatMessages.timestamp} < ${cutoffDate}`,
+            sql`${chatMessages.createdAt} < ${cutoffDate}`,
           ),
         )
         .returning();
@@ -2079,7 +2089,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(apiUsageLogs)
         .where(conditions)
-        .orderBy(sql`${apiUsageLogs.timestamp} DESC`)
+        .orderBy(sql`${apiUsageLogs.createdAt} DESC`)
         .limit(limit);
       return logs;
     } catch (error) {
@@ -2108,7 +2118,7 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(apiUsageLogs.userId, userId),
             eq(apiUsageLogs.apiName, apiName),
-            sql`${apiUsageLogs.timestamp} >= ${cutoffDate.toISOString()}`,
+            sql`${apiUsageLogs.createdAt} >= ${cutoffDate.toISOString()}`,
           ),
         );
 
@@ -2184,7 +2194,7 @@ export class DatabaseStorage implements IStorage {
     try {
       await db
         .update(fdcCache)
-        .set({ lastAccessed: new Date() })
+        .set({ cachedAt: new Date() })
         .where(eq(fdcCache.fdcId, fdcId));
     } catch (error) {
       console.error(`Error updating last accessed for ${fdcId}:`, error);
@@ -2201,7 +2211,7 @@ export class DatabaseStorage implements IStorage {
       const conditions = [eq(fdcSearchQueries.query, query.toLowerCase())];
 
       if (dataType) {
-        conditions.push(eq(fdcSearchQueries.dataType, dataType));
+        conditions.push(sql`${fdcSearchQueries.dataTypes} @> ${JSON.stringify([dataType])}`);
       }
 
       if (pageNumber) {
@@ -2237,12 +2247,8 @@ export class DatabaseStorage implements IStorage {
   ): Promise<FdcSearchQuery> {
     try {
       const searchToInsert = {
+        ...search,
         query: search.query.toLowerCase(),
-        dataType: search.dataType,
-        pageNumber: search.pageNumber,
-        pageSize: search.pageSize,
-        totalHits: search.totalHits,
-        fdcIds: search.fdcIds, // Array of FDC IDs instead of full results
       };
 
       const [cachedSearch] = await db
@@ -2269,7 +2275,7 @@ export class DatabaseStorage implements IStorage {
       // Clear old food cache that hasn't been accessed recently
       await db
         .delete(fdcCache)
-        .where(sql`${fdcCache.lastAccessed} < ${cutoffDate.toISOString()}`);
+        .where(sql`${fdcCache.cachedAt} < ${cutoffDate.toISOString()}`);
     } catch (error) {
       console.error("Error clearing old cache:", error);
       // Don't throw - cache cleanup is not critical

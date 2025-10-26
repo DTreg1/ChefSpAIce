@@ -72,7 +72,6 @@ export default function Settings() {
 
   const { data: preferences } = useCachedQuery<User>({
     queryKey: ["/api/auth/user"],
-    cacheKey: "cache:user:preferences",
   });
 
   const { data: storageLocations } = useStorageLocations();

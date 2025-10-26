@@ -88,7 +88,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
       'name'
     );
     
-    if (!foodItems.items || foodItems.items.length === 0) {
+    if (!foodItems.data || foodItems.data.length === 0) {
       return []; // No ingredients, no recipes can be made
     }
     
@@ -100,24 +100,24 @@ async function processRequest(request: any, userId?: string): Promise<any> {
       50 // Check up to 50 recipes
     );
     
-    if (!recipesData.items || recipesData.items.length === 0) {
+    if (!recipesData.data || recipesData.data.length === 0) {
       return [];
     }
     
     // Create a set of available ingredient names for faster lookup
     const availableIngredients = new Set(
-      foodItems.items.map(item => item.name.toLowerCase())
+      foodItems.data.map((item: any) => item.name.toLowerCase())
     );
     
     // Filter recipes that can be made with available ingredients
-    const suggestedRecipes = recipesData.items
+    const suggestedRecipes = recipesData.data
       .filter(recipe => {
         // Check if we have all required ingredients
         if (!recipe.ingredients || !Array.isArray(recipe.ingredients)) {
           return false;
         }
         
-        return recipe.ingredients.every(ingredient => {
+        return recipe.ingredients.every((ingredient: any) => {
           const ingredientName = typeof ingredient === 'string' 
             ? ingredient.toLowerCase() 
             : ingredient.name?.toLowerCase();
@@ -181,10 +181,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   // Common food items endpoint
   if (endpoint === '/api/common-food-items' && method === 'GET') {
-    if (params?.category) {
-      return storage.getCommonFoodItemsByCategory(params.category, params?.limit || 50);
-    }
-    return storage.getAllCommonFoodItems();
+    return storage.getCommonFoodItems();
   }
   
   throw new Error(`Unsupported batch endpoint: ${method} ${endpoint}`);
