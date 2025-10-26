@@ -21,7 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, BellOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { NotificationSettings } from "@/components/notification-settings";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import type { User, StorageLocation } from "@shared/schema";
 
 const storageAreaOptions = [
