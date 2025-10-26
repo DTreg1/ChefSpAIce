@@ -153,4 +153,73 @@ router.get("/api/push-tokens", isAuthenticated, async (req: any, res) => {
   }
 });
 
+// Test push notification
+router.post("/api/push-tokens/test", isAuthenticated, async (req: any, res) => {
+  try {
+    const userId = req.user.claims.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Dynamically import to avoid circular dependencies
+    const { default: PushNotificationService } = await import("../services/push-notification.service");
+    
+    const result = await PushNotificationService.sendTestNotification(userId);
+    res.json({ 
+      message: "Test notification sent", 
+      sent: result.sent, 
+      failed: result.failed 
+    });
+  } catch (error) {
+    console.error("Error sending test notification:", error);
+    res.status(500).json({ error: "Failed to send test notification" });
+  }
+});
+
+// Trigger expiring food notifications (admin only, for testing)
+router.post("/api/push-tokens/trigger-expiring", isAuthenticated, async (req: any, res) => {
+  try {
+    // For testing purposes, allow any authenticated user
+    // In production, you'd check for admin rights
+    const userId = req.user.claims.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { default: NotificationScheduler } = await import("../services/notification-scheduler");
+    
+    const result = await NotificationScheduler.triggerExpiringFoodNotifications();
+    res.json({ 
+      message: "Expiring food notifications triggered", 
+      totalSent: result.totalSent,
+      usersNotified: result.usersNotified
+    });
+  } catch (error) {
+    console.error("Error triggering expiring food notifications:", error);
+    res.status(500).json({ error: "Failed to trigger notifications" });
+  }
+});
+
+// Trigger recipe suggestions (admin only, for testing)
+router.post("/api/push-tokens/trigger-recipes", isAuthenticated, async (req: any, res) => {
+  try {
+    const userId = req.user.claims.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { default: NotificationScheduler } = await import("../services/notification-scheduler");
+    
+    const result = await NotificationScheduler.triggerRecipeSuggestions();
+    res.json({ 
+      message: "Recipe suggestions triggered", 
+      totalSent: result.totalSent,
+      usersNotified: result.usersNotified
+    });
+  } catch (error) {
+    console.error("Error triggering recipe suggestions:", error);
+    res.status(500).json({ error: "Failed to trigger suggestions" });
+  }
+});
+
 export default router;

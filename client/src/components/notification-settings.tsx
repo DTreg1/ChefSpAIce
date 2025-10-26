@@ -222,6 +222,31 @@ export function NotificationSettings() {
               <div className="text-xs text-muted-foreground">
                 You can manage specific notification types below
               </div>
+
+              {/* Test notification button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await apiRequest("POST", "/api/push-tokens/test");
+                    const result = await response.json();
+                    toast({
+                      title: "Test Sent",
+                      description: `Notification sent to ${result.sent} device(s)`,
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to send test notification",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="button-test-notification"
+              >
+                Send Test Notification
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
