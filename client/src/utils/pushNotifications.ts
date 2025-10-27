@@ -1,5 +1,6 @@
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
+import { Device } from '@capacitor/device';
 
 export interface NotificationPayload {
   title: string;
@@ -182,10 +183,11 @@ class PushNotificationService {
     try {
       // Get device info
       const platform = Capacitor.getPlatform(); // 'ios', 'android', or 'web'
+      const info = await Device.getInfo();
       const deviceInfo = {
-        deviceId: await this.getDeviceId(),
-        deviceModel: await this.getDeviceModel(),
-        osVersion: await this.getOsVersion(),
+        deviceId: await Device.getId().then(id => id.identifier),
+        deviceModel: info.model,
+        osVersion: info.osVersion,
         appVersion: '1.0.0', // You can get this from package.json or config
       };
 
@@ -215,35 +217,6 @@ class PushNotificationService {
     }
   }
 
-  private async getDeviceId(): Promise<string | undefined> {
-    try {
-      const { Device } = await import('@capacitor/device');
-      const info = await Device.getId();
-      return info.identifier;
-    } catch {
-      return undefined;
-    }
-  }
-
-  private async getDeviceModel(): Promise<string | undefined> {
-    try {
-      const { Device } = await import('@capacitor/device');
-      const info = await Device.getInfo();
-      return info.model;
-    } catch {
-      return undefined;
-    }
-  }
-
-  private async getOsVersion(): Promise<string | undefined> {
-    try {
-      const { Device } = await import('@capacitor/device');
-      const info = await Device.getInfo();
-      return info.osVersion;
-    } catch {
-      return undefined;
-    }
-  }
 
   private handleNotificationReceived(notification: PushNotificationSchema): void {
     console.log('Notification received while app is in foreground:', notification);
