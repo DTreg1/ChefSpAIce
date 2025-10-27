@@ -165,17 +165,19 @@ class LogRetentionService {
       const duration = endTime.getTime() - startTime.getTime();
       
       // Log the cleanup completion as a system event
+      const metadata: Record<string, any> = {
+        totalDeleted,
+        duration,
+        results,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+      };
+      
       await storage.createActivityLog({
         userId: null, // System action
         action: "log_cleanup_completed",
         entity: "activity_logs",
-        metadata: {
-          totalDeleted,
-          duration,
-          results,
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
-        },
+        metadata,
       });
       
       console.log(
@@ -185,14 +187,16 @@ class LogRetentionService {
       console.error("[LogRetention] Fatal error during cleanup:", error);
       
       // Log the error as a system event
+      const errorMetadata: Record<string, any> = {
+        error: error instanceof Error ? error.message : "Unknown error",
+        startTime: startTime.toISOString(),
+      };
+      
       await storage.createActivityLog({
         userId: null,
         action: "log_cleanup_error",
         entity: "activity_logs",
-        metadata: {
-          error: error instanceof Error ? error.message : "Unknown error",
-          startTime: startTime.toISOString(),
-        },
+        metadata: errorMetadata,
       });
     } finally {
       this.isRunning = false;
