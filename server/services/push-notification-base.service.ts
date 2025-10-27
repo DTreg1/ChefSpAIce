@@ -68,7 +68,7 @@ export abstract class BasePushNotificationService {
    */
   async getUserTokens(userId: string): Promise<PushToken[]> {
     try {
-      const tokens = await storage.getPushNotificationTokens(userId);
+      const tokens = await storage.getPushTokens(userId);
       return tokens || [];
     } catch (error) {
       console.error(`[${this.serviceName}] Error fetching user tokens:`, error);
@@ -81,13 +81,10 @@ export abstract class BasePushNotificationService {
    */
   async registerToken(userId: string, token: string, metadata?: any): Promise<void> {
     try {
-      await storage.savePushNotificationToken({
-        userId,
+      await storage.upsertPushToken(userId, {
         token,
-        provider: this.serviceName.toLowerCase() as any,
-        metadata,
-        createdAt: new Date(),
-        lastUsed: new Date(),
+        platform: this.serviceName.toLowerCase() as any,
+        deviceInfo: metadata,
       });
       
       console.log(`[${this.serviceName}] Token registered for user ${userId}`);
@@ -102,7 +99,7 @@ export abstract class BasePushNotificationService {
    */
   async removeInvalidToken(userId: string, token: string): Promise<void> {
     try {
-      await storage.removePushNotificationToken(userId, token);
+      await storage.deletePushToken(userId, token);
       console.log(`[${this.serviceName}] Removed invalid token for user ${userId}`);
     } catch (error) {
       console.error(`[${this.serviceName}] Error removing invalid token:`, error);
@@ -166,8 +163,11 @@ export abstract class BasePushNotificationService {
           if (result.success) {
             successCount++;
             
-            // Update last used timestamp
-            await storage.updatePushNotificationTokenLastUsed(userId, token);
+            // Update last used timestamp by upserting with new timestamp
+            await storage.upsertPushToken(userId, {
+              token,
+              platform: this.serviceName.toLowerCase() as any,
+            });
           } else {
             failureCount++;
             
@@ -317,21 +317,14 @@ export abstract class BasePushNotificationService {
     name: string;
     totalTokens?: number;
   }> {
-    let totalTokens: number | undefined;
-    
-    try {
-      const allTokens = await storage.getAllPushNotificationTokens();
-      totalTokens = allTokens.filter(
-        t => t.provider === this.serviceName.toLowerCase()
-      ).length;
-    } catch (error) {
-      console.error(`[${this.serviceName}] Error getting status:`, error);
-    }
+    // Note: Total token count is not available without a specific userId
+    // This would require implementing a getAllPushTokens method in storage
+    // For now, returning status without token count
     
     return {
       initialized: this.initialized,
       name: this.serviceName,
-      totalTokens,
+      // totalTokens is omitted as we can't get all tokens across all users
     };
   }
 }
