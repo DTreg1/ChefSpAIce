@@ -113,21 +113,40 @@ router.get('/admin/ai-metrics', isAuthenticated, adminOnly, async (req: any, res
       errorsByCode[error.code] = (errorsByCode[error.code] || 0) + 1;
     });
 
-    // Get circuit breaker status
+    // Get circuit breaker status for both services
+    const chatStats = chatCircuitBreaker.getStats();
+    const recipeStats = recipeCircuitBreaker.getStats();
+    
+    // Provide comprehensive circuit breaker status
     const circuitBreakerStatus = {
-      chat: {
-        state: chatCircuitBreaker.getState(),
-        failures: chatCircuitBreaker.getFailureCount(),
-        successCount: chatCircuitBreaker.getSuccessCount(),
-        lastFailureTime: chatCircuitBreaker.getLastFailureTime(),
-        nextAttemptTime: chatCircuitBreaker.getNextAttemptTime()
-      },
-      recipe: {
-        state: recipeCircuitBreaker.getState(),
-        failures: recipeCircuitBreaker.getFailureCount(),
-        successCount: recipeCircuitBreaker.getSuccessCount(),
-        lastFailureTime: recipeCircuitBreaker.getLastFailureTime(),
-        nextAttemptTime: recipeCircuitBreaker.getNextAttemptTime()
+      // Primary circuit breaker (chat) for compatibility
+      state: chatStats.state,
+      failures: chatStats.failures,
+      successCount: chatStats.successes,
+      lastFailureTime: chatStats.lastFailureTime ? new Date(chatStats.lastFailureTime) : undefined,
+      nextAttemptTime: chatStats.state === 'open' && chatStats.lastFailureTime
+        ? new Date(chatStats.lastFailureTime + 60000) // recovery timeout of 60 seconds
+        : undefined,
+      // Detailed status for both services
+      services: {
+        chat: {
+          state: chatStats.state,
+          failures: chatStats.failures,
+          successes: chatStats.successes,
+          totalRequests: chatStats.totalRequests,
+          totalFailures: chatStats.totalFailures,
+          totalSuccesses: chatStats.totalSuccesses,
+          lastFailureTime: chatStats.lastFailureTime ? new Date(chatStats.lastFailureTime) : undefined
+        },
+        recipe: {
+          state: recipeStats.state,
+          failures: recipeStats.failures,
+          successes: recipeStats.successes,
+          totalRequests: recipeStats.totalRequests,
+          totalFailures: recipeStats.totalFailures,
+          totalSuccesses: recipeStats.totalSuccesses,
+          lastFailureTime: recipeStats.lastFailureTime ? new Date(recipeStats.lastFailureTime) : undefined
+        }
       }
     };
 

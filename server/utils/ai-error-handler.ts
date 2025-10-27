@@ -44,14 +44,23 @@ export enum AIErrorCode {
  */
 export function handleOpenAIError(error: any): AIError {
   // Log the full error for debugging
-  console.error('[AI Error Handler] Raw error:', error);
+  console.log('[AI Error Handler] Raw error:', error);
+
+  // First check for axios-style error responses
+  const status = error?.response?.status || error?.status;
+  const data = error?.response?.data || error?.data;
+  const headers = error?.response?.headers || error?.headers;
+  const errorInfo = data?.error || data;
+  const message = errorInfo?.message || error?.message || 'Unknown error';
+  const errorType = errorInfo?.type;
+  const errorCode = errorInfo?.code;
 
   // Handle OpenAI API errors
-  if (error?.status) {
+  if (status) {
     // Rate limiting (429)
-    if (error.status === 429) {
-      const retryAfter = error.headers?.['retry-after'] 
-        ? parseInt(error.headers['retry-after']) * 1000 
+    if (status === 429) {
+      const retryAfter = headers?.['retry-after'] 
+        ? parseInt(headers['retry-after']) * 1000 
         : 60000; // Default to 60 seconds
       
       return new AIError(
@@ -65,7 +74,7 @@ export function handleOpenAIError(error: any): AIError {
     }
 
     // Invalid API key (401)
-    if (error.status === 401) {
+    if (status === 401) {
       return new AIError(
         'Invalid API key',
         AIErrorCode.AUTH_ERROR,
@@ -76,21 +85,21 @@ export function handleOpenAIError(error: any): AIError {
     }
 
     // Server errors (500-599) - retryable
-    if (error.status >= 500) {
+    if (status >= 500) {
       return new AIError(
-        `OpenAI server error: ${error.status}`,
+        `OpenAI server error: ${status}`,
         AIErrorCode.SERVER_ERROR,
-        error.status,
+        status,
         true,
         'AI service temporarily unavailable. Please try again in a few moments.'
       );
     }
 
     // Content policy violation (400)
-    if (error.status === 400) {
-      const message = error.message?.toLowerCase() || '';
+    if (status === 400) {
+      const lowerMessage = message?.toLowerCase() || '';
       
-      if (message.includes('content_policy') || message.includes('content policy')) {
+      if (lowerMessage.includes('content_policy') || lowerMessage.includes('content policy')) {
         return new AIError(
           'Content policy violation',
           AIErrorCode.CONTENT_POLICY,
@@ -101,7 +110,7 @@ export function handleOpenAIError(error: any): AIError {
       }
 
       // Context length exceeded
-      if (message.includes('context') || message.includes('token') || message.includes('length')) {
+      if (errorCode === 'context_length_exceeded' || lowerMessage.includes('context') || lowerMessage.includes('token') || lowerMessage.includes('length')) {
         return new AIError(
           'Context length exceeded',
           AIErrorCode.CONTEXT_LENGTH_EXCEEDED,
@@ -113,7 +122,7 @@ export function handleOpenAIError(error: any): AIError {
     }
 
     // Model not found or other 404 errors
-    if (error.status === 404) {
+    if (status === 404) {
       return new AIError(
         'Model or endpoint not found',
         AIErrorCode.UNKNOWN,
@@ -223,11 +232,20 @@ export async function retryWithBackoff<T>(
       lastError = aiError;
 
       // Don't retry if not retryable
-      if (!aiError.retryable || attempt === maxRetries - 1) {
+      if (!aiError.retryable) {
+        console.log(`[AI Retry] Error is not retryable: ${aiError.code}`);
         throw aiError;
       }
 
-      // Calculate delay
+      // Check if this was the last attempt
+      if (attempt === maxRetries - 1) {
+        console.log(
+          `[AI Retry] All ${maxRetries} attempts exhausted. Final error: ${aiError.code}`
+        );
+        throw aiError;
+      }
+
+      // Calculate delay for next retry
       const delay = aiError.retryAfter || calculateRetryDelay(attempt, config);
       
       console.log(
@@ -235,11 +253,12 @@ export async function retryWithBackoff<T>(
         `Retrying in ${delay}ms. Error: ${aiError.code}`
       );
 
-      // Wait before retry
+      // Wait before next retry
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
+  // Should never reach here, but throw last error if it does
   throw lastError || new Error('Retry failed');
 }
 
