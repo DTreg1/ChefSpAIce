@@ -93,6 +93,15 @@ export class ApnsService {
 
       this.bundleId = apnsBundleId;
 
+      // Check if we have valid credentials before creating options
+      const hasP8Auth = apnsKeyId && apnsTeamId && (apnsKeyFile || apnsKeyContent);
+      const hasP12Auth = (apnsCertFile || apnsCertContent);
+      
+      if (!hasP8Auth && !hasP12Auth) {
+        // No valid credentials, skip initialization
+        return;
+      }
+
       const options: apn.ProviderOptions = {
         production: apnsProduction,
       };

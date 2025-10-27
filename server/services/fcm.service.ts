@@ -91,11 +91,9 @@ export class FcmService {
         console.log('✅ FCM initialized with service account from file');
       } else if (fcmServerKey) {
         // Legacy initialization with server key (deprecated but still supported)
-        this.app = admin.initializeApp({
-          credential: admin.credential.applicationDefault(),
-        });
-        this.isInitialized = true;
-        console.log('✅ FCM initialized with server key');
+        // Server key alone isn't sufficient - need service account
+        console.warn('⚠️  FCM_SERVER_KEY alone is not sufficient. Please use service account instead.');
+        return;
       }
     } catch (error) {
       console.error('❌ Failed to initialize FCM:', error);
