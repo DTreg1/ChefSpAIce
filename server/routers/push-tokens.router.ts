@@ -4,6 +4,7 @@ import { db } from "../db";
 import { pushTokens } from "@shared/schema";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import crypto from "crypto";
+import PushStatusService from "../services/push-status.service";
 
 const router = Router();
 
@@ -227,6 +228,17 @@ router.post("/api/push-tokens/trigger-recipes", isAuthenticated, async (req: any
   } catch (error) {
     console.error("Error triggering recipe suggestions:", error);
     res.status(500).json({ error: "Failed to trigger suggestions" });
+  }
+});
+
+// Get push notification services status
+router.get("/api/push-tokens/status", isAuthenticated, async (req: any, res) => {
+  try {
+    const status = PushStatusService.getStatus();
+    res.json(status);
+  } catch (error) {
+    console.error("Error getting push notification status:", error);
+    res.status(500).json({ error: "Failed to get status" });
   }
 });
 

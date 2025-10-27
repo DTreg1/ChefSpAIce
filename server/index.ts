@@ -4,6 +4,7 @@ import compression from "compression";
 import { registerModularRoutes } from "./routers";
 import { setupVite, serveStatic, log } from "./vite";
 import { logRetentionService } from "./services/log-retention.service";
+import PushStatusService from "./services/push-status.service";
 
 const app = express();
 
@@ -98,6 +99,9 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Validate push notification services on startup
+    PushStatusService.validateOnStartup();
     
     // Start the log retention service
     logRetentionService.start();
