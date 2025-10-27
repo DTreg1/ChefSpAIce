@@ -33,7 +33,7 @@ router.get(
   asyncHandler(async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
-      throw new ApiError(401, "User not authenticated");
+      throw new ApiError("User not authenticated", 401);
     }
 
     const page = parseInt(req.query.page as string) || 1;
@@ -80,7 +80,7 @@ router.get(
   asyncHandler(async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
-      throw new ApiError(401, "User not authenticated");
+      throw new ApiError("User not authenticated", 401);
     }
 
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
@@ -109,7 +109,7 @@ router.get(
   asyncHandler(async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
-      throw new ApiError(401, "User not authenticated");
+      throw new ApiError("User not authenticated", 401);
     }
 
     const startDate = req.query.startDate 
@@ -137,7 +137,7 @@ router.get(
   asyncHandler(async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
-      throw new ApiError(401, "User not authenticated");
+      throw new ApiError("User not authenticated", 401);
     }
 
     const logs = await storage.exportUserActivityLogs(userId);
@@ -301,10 +301,10 @@ router.post(
     
     // Validate retention days
     if (retentionDays < 7) {
-      throw new ApiError(400, "Retention period must be at least 7 days");
+      throw new ApiError("Retention period must be at least 7 days", 400);
     }
     if (retentionDays > 365) {
-      throw new ApiError(400, "Retention period cannot exceed 365 days");
+      throw new ApiError("Retention period cannot exceed 365 days", 400);
     }
     
     const deletedCount = await storage.cleanupOldActivityLogs(
@@ -365,12 +365,12 @@ router.delete(
   asyncHandler(async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
-      throw new ApiError(401, "User not authenticated");
+      throw new ApiError("User not authenticated", 401);
     }
 
     // Require explicit confirmation
     if (req.body.confirm !== true) {
-      throw new ApiError(400, "Please confirm deletion by setting confirm: true");
+      throw new ApiError("Please confirm deletion by setting confirm: true", 400);
     }
     
     const deletedCount = await storage.deleteUserActivityLogs(userId);
