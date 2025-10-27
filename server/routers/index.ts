@@ -6,6 +6,7 @@ import { setupAuth } from "../replitAuth";
 import authRouter from "./auth.router";
 import inventoryRouter from "./inventory.router";
 import recipesRouter from "./recipes.router";
+import chatStreamRouter from "./chat-stream.router";
 import mealPlanningRouter from "./meal-planning.router";
 import appliancesRouter from "./appliances.router";
 import adminRouter from "./admin.router";
@@ -37,6 +38,7 @@ export async function registerModularRoutes(app: Express): Promise<Server> {
   app.use("/api/auth", authRouter);
   app.use("/api", inventoryRouter);  // Handles food-items, storage-locations, barcode, fdc
   app.use("/api", recipesRouter);     // Handles chat and recipes
+  app.use("/api/chat", chatStreamRouter); // Handles streaming chat with SSE
   app.use("/api", mealPlanningRouter); // Handles meal-plans and shopping-list
   app.use("/api", appliancesRouter);  // Handles appliances
   app.use("/api", nutritionRouter);   // Handles nutrition stats and analysis

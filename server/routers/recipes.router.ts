@@ -9,8 +9,29 @@ import { openai } from "../openai";
 import { batchedApiLogger } from "../batchedApiLogger";
 import { cleanupOldMessagesForUser } from "../chatCleanup";
 import rateLimiters from "../middleware/rateLimit";
+import {
+  AIError,
+  handleOpenAIError,
+  retryWithBackoff,
+  createErrorResponse,
+  formatErrorForLogging
+} from "../utils/ai-error-handler";
+import { getCircuitBreaker } from "../utils/circuit-breaker";
 
 const router = Router();
+
+// Circuit breakers for different OpenAI operations
+const chatCircuitBreaker = getCircuitBreaker('openai-chat-standard', {
+  failureThreshold: 5,
+  recoveryTimeout: 60000,
+  successThreshold: 2
+});
+
+const recipeCircuitBreaker = getCircuitBreaker('openai-recipe-generation', {
+  failureThreshold: 3,
+  recoveryTimeout: 90000, // Longer recovery time for recipe generation
+  successThreshold: 1
+});
 
 /**
  * GET /chat/messages
@@ -101,16 +122,32 @@ router.post(
   isAuthenticated,
   rateLimiters.openai.middleware(),
   async (req: any, res: Response) => {
+    const userId = req.user.claims.sub;
+    let assistantMessage = "";
+    
     try {
-      const userId = req.user.claims.sub;
       const { message, includeInventory } = req.body;
 
       if (!message) {
-        return res.status(400).json({ error: "Message is required" });
+        const error = new AIError(
+          'Message is required',
+          'VALIDATION_ERROR',
+          400,
+          false,
+          'Please provide a message'
+        );
+        return res.status(400).json(createErrorResponse(error));
       }
 
       if (!openai) {
-        return res.status(500).json({ error: "OpenAI API not configured" });
+        const error = new AIError(
+          'OpenAI API not configured',
+          'CONFIG_ERROR',
+          500,
+          false,
+          'AI service is not configured. Please contact support.'
+        );
+        return res.status(500).json(createErrorResponse(error));
       }
 
       // Persist user message to database for conversation history
@@ -120,11 +157,9 @@ router.post(
       });
 
       // Periodic cleanup to prevent unbounded growth of chat history
-      // Keeps database size manageable and ensures relevant context
       await cleanupOldMessagesForUser(userId);
 
       // Build inventory context when requested
-      // Enables AI to provide recommendations based on what user actually has
       let inventoryContext = "";
       if (includeInventory) {
         const items = await storage.getFoodItems(userId);
@@ -137,7 +172,6 @@ router.post(
       }
 
       // Fetch recent conversation history to maintain context
-      // Limited to 10 messages to balance context vs. token usage
       const history = await storage.getChatMessages(userId, 10);
 
       const messages: any[] = [
@@ -151,14 +185,33 @@ router.post(
         })),
       ];
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo",
-        messages,
-        temperature: 0.7,
-        max_tokens: 500,
+      // Execute through circuit breaker with retry logic
+      const completion = await chatCircuitBreaker.execute(async () => {
+        return await retryWithBackoff(async () => {
+          return await openai.chat.completions.create({
+            model: "gpt-4-turbo",
+            messages,
+            temperature: 0.7,
+            max_tokens: 500,
+          });
+        }, {
+          maxRetries: 3,
+          initialDelay: 1000,
+          maxDelay: 10000
+        });
       });
 
-      const assistantMessage = completion.choices[0].message?.content || "";
+      assistantMessage = completion.choices[0].message?.content || "";
+
+      if (!assistantMessage) {
+        throw new AIError(
+          'Empty response from AI',
+          'INVALID_RESPONSE',
+          502,
+          true,
+          'AI returned an empty response. Please try again.'
+        );
+      }
 
       // Save assistant message
       const saved = await storage.createChatMessage(userId, {
@@ -166,7 +219,7 @@ router.post(
         content: assistantMessage,
       });
 
-      // Log API usage
+      // Log successful API usage
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "chat",
@@ -179,9 +232,25 @@ router.post(
         message: assistantMessage,
         saved,
       });
-    } catch (error) {
-      console.error("Error in chat:", error);
-      res.status(500).json({ error: "Failed to process chat" });
+    } catch (error: any) {
+      // Log the error details
+      console.error("Error in chat:", formatErrorForLogging(error));
+      
+      // Log failed API usage
+      const aiError = error instanceof AIError ? error : handleOpenAIError(error);
+      await batchedApiLogger.logApiUsage(userId, {
+        apiName: "openai",
+        endpoint: "chat",
+        queryParams: `model=gpt-4-turbo,error=${aiError.code}`,
+        statusCode: aiError.statusCode,
+        success: false,
+      }).catch(logError => {
+        console.error('Failed to log API error:', logError);
+      });
+      
+      // Send error response
+      const errorResponse = createErrorResponse(error);
+      res.status(aiError.statusCode).json(errorResponse);
     }
   }
 );
@@ -223,8 +292,9 @@ router.post(
   isAuthenticated,
   rateLimiters.openai.middleware(),
   async (req: any, res: Response) => {
+    const userId = req.user.claims.sub;
+    
     try {
-      const userId = req.user.claims.sub;
       const { 
         prompt, 
         useInventory, 
@@ -236,7 +306,14 @@ router.post(
       } = req.body;
 
       if (!openai) {
-        return res.status(500).json({ error: "OpenAI API not configured" });
+        const error = new AIError(
+          'OpenAI API not configured',
+          'CONFIG_ERROR',
+          500,
+          false,
+          'AI service is not configured. Please contact support.'
+        );
+        return res.status(500).json(createErrorResponse(error));
       }
 
       // Build comprehensive context for AI recipe generation
@@ -298,15 +375,46 @@ Return a JSON object with the following structure:
   "neededEquipment": ["equipment name 1", "equipment name 2", ...]
 }`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo",
-        messages: [{ role: "user", content: context }],
-        temperature: 0.8,
-        max_tokens: 1000,
-        response_format: { type: "json_object" },
+      // Execute through circuit breaker with retry logic
+      const completion = await recipeCircuitBreaker.execute(async () => {
+        return await retryWithBackoff(async () => {
+          return await openai.chat.completions.create({
+            model: "gpt-4-turbo",
+            messages: [{ role: "user", content: context }],
+            temperature: 0.8,
+            max_tokens: 1000,
+            response_format: { type: "json_object" },
+          });
+        }, {
+          maxRetries: 2, // Fewer retries for expensive operations
+          initialDelay: 2000,
+          maxDelay: 15000
+        });
       });
 
-      const recipeData = JSON.parse(completion.choices[0].message?.content || "{}");
+      const recipeContent = completion.choices[0].message?.content;
+      if (!recipeContent) {
+        throw new AIError(
+          'Empty recipe response from AI',
+          'INVALID_RESPONSE',
+          502,
+          true,
+          'AI failed to generate a recipe. Please try again.'
+        );
+      }
+
+      let recipeData;
+      try {
+        recipeData = JSON.parse(recipeContent);
+      } catch (parseError) {
+        throw new AIError(
+          'Invalid JSON in recipe response',
+          'INVALID_RESPONSE',
+          502,
+          true,
+          'AI returned invalid recipe format. Please try again.'
+        );
+      }
 
       // Smart cooking term detection and enrichment
       // Scans recipe instructions for culinary terminology and provides definitions
@@ -348,9 +456,25 @@ Return a JSON object with the following structure:
       });
 
       res.json(saved);
-    } catch (error) {
-      console.error("Error generating recipe:", error);
-      res.status(500).json({ error: "Failed to generate recipe" });
+    } catch (error: any) {
+      // Log the error details
+      console.error("Error generating recipe:", formatErrorForLogging(error));
+      
+      // Log failed API usage
+      const aiError = error instanceof AIError ? error : handleOpenAIError(error);
+      await batchedApiLogger.logApiUsage(userId, {
+        apiName: "openai",
+        endpoint: "recipes/generate",
+        queryParams: `model=gpt-4-turbo,error=${aiError.code}`,
+        statusCode: aiError.statusCode,
+        success: false,
+      }).catch(logError => {
+        console.error('Failed to log API error:', logError);
+      });
+      
+      // Send error response
+      const errorResponse = createErrorResponse(error);
+      res.status(aiError.statusCode).json(errorResponse);
     }
   }
 );
