@@ -1,23 +1,15 @@
 import { storage } from "../storage";
 import { searchUSDAFoods as originalSearchUSDAFoods, USDASearchOptions } from "../usda";
 import type { USDASearchResponse, USDAFoodItem } from "@shared/schema";
-import crypto from "crypto";
+import { ApiCacheService, apiCache } from "./ApiCacheService";
 
-// Cache TTL settings (in milliseconds)
-const CACHE_TTL = {
-  FOOD_ITEM: 7 * 24 * 60 * 60 * 1000, // 7 days for individual food items
-};
-
-// In-memory cache for search results (since database search cache was removed)
+// Interface for search cache entries
 interface SearchCacheEntry {
   query: string;
   fdcIds: string[];
   totalHits: number;
-  cachedAt: Date;
+  foods?: USDAFoodItem[]; // Cache the full food items
 }
-
-const searchCache = new Map<string, SearchCacheEntry>();
-const SEARCH_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 // Generate cache key from search options
 function generateCacheKey(options: USDASearchOptions | string): string {
@@ -32,19 +24,7 @@ function generateCacheKey(options: USDASearchOptions | string): string {
     brandOwner: searchOptions.brandOwner?.sort() || [],
   };
   
-  return crypto
-    .createHash('sha256')
-    .update(JSON.stringify(normalized))
-    .digest('hex')
-    .substring(0, 16); // Use first 16 chars for shorter keys
-}
-
-// Check if cache is still valid
-function isCacheValid(cachedAt: Date | string, ttlMs: number): boolean {
-  const cachedDate = typeof cachedAt === 'string' ? new Date(cachedAt) : cachedAt;
-  const now = new Date();
-  const age = now.getTime() - cachedDate.getTime();
-  return age < ttlMs;
+  return ApiCacheService.generateKey('usda.search', normalized);
 }
 
 // Cached version of searchUSDAFoods
@@ -58,45 +38,61 @@ export async function searchUSDAFoodsCached(
   const cacheKey = generateCacheKey(searchOptions);
   
   try {
-    // Check in-memory search cache
-    const cachedSearch = searchCache.get(cacheKey);
+    // Check in-memory search cache using new ApiCacheService
+    const cachedSearch = apiCache.get<SearchCacheEntry>(cacheKey);
     
-    if (cachedSearch && isCacheValid(cachedSearch.cachedAt, SEARCH_CACHE_TTL)) {
-      console.log(`[USDA Cache] Hit for query: "${searchOptions.query}" (key: ${cacheKey})`);
+    if (cachedSearch && cachedSearch.foods) {
+      console.log(`[USDA Cache] Hit for query: "${searchOptions.query}"`);
+      
+      // Return cached response directly if we have the foods
+      return {
+        foods: cachedSearch.foods,
+        totalHits: cachedSearch.totalHits,
+        currentPage: searchOptions.pageNumber || 1,
+        totalPages: Math.ceil(cachedSearch.totalHits / (searchOptions.pageSize || 20)),
+        pageList: Array.from({ length: Math.min(10, Math.ceil(cachedSearch.totalHits / (searchOptions.pageSize || 20))) }, (_, i) => i + 1),
+        foodSearchCriteria: {
+          query: searchOptions.query,
+          pageNumber: searchOptions.pageNumber || 1,
+          pageSize: searchOptions.pageSize || 20,
+        },
+      };
+    }
+    
+    // If we have cached fdcIds but not the full foods, try to get them from storage
+    if (cachedSearch && cachedSearch.fdcIds) {
+      console.log(`[USDA Cache] Partial hit for query: "${searchOptions.query}" - fetching foods from storage`);
       
       // Get cached food items from fdcCache
-      const foodPromises = cachedSearch.fdcIds.map((fdcId: string) => 
-        storage.getCachedFood(fdcId)
-      );
-      const cachedFoods = await Promise.all(foodPromises);
+      const foodPromises = cachedSearch.fdcIds.map(async (fdcId: string) => {
+        // First check the ApiCache for individual foods
+        const cachedFood = apiCache.get<USDAFoodItem>(`usda.food:${fdcId}`);
+        if (cachedFood) return cachedFood;
+        
+        // Fall back to database cache
+        const dbFood = await storage.getCachedFood(fdcId);
+        if (dbFood && dbFood.fullData) {
+          const foodData = dbFood.fullData as USDAFoodItem;
+          // Cache in memory for faster access
+          apiCache.set(`usda.food:${fdcId}`, foodData, undefined, 'usda.food');
+          return foodData;
+        }
+        return null;
+      });
       
-      // Filter out any null results and reconstruct the response
-      const validFoods = cachedFoods.filter((food): food is NonNullable<typeof food> => food !== null);
+      const cachedFoods = await Promise.all(foodPromises);
+      const validFoods = cachedFoods.filter((food): food is USDAFoodItem => food !== null);
       
       if (validFoods.length > 0) {
-        // Map FdcCache to USDAFoodItem format
-        const foods: USDAFoodItem[] = validFoods.map(food => {
-          // Use fullData if available, otherwise construct from cached fields
-          if (food.fullData) {
-            return food.fullData as USDAFoodItem;
-          }
-          
-          // Construct from available fields
-          return {
-            fdcId: parseInt(food.fdcId),
-            description: food.description,
-            dataType: food.dataType || undefined,
-            brandOwner: food.brandOwner || undefined,
-            brandName: food.brandName || undefined,
-            ingredients: food.ingredients || undefined,
-            servingSize: food.servingSize || undefined,
-            servingSizeUnit: food.servingSizeUnit || undefined,
-            foodNutrients: food.nutrients as any,
-          };
-        });
+        // Update cache with full foods for faster access next time
+        const updatedEntry: SearchCacheEntry = {
+          ...cachedSearch,
+          foods: validFoods,
+        };
+        apiCache.set(cacheKey, updatedEntry, undefined, 'usda.search');
         
         return {
-          foods,
+          foods: validFoods,
           totalHits: cachedSearch.totalHits,
           currentPage: searchOptions.pageNumber || 1,
           totalPages: Math.ceil(cachedSearch.totalHits / (searchOptions.pageSize || 20)),
@@ -111,14 +107,18 @@ export async function searchUSDAFoodsCached(
     }
     
     // Cache miss - fetch from USDA API
-    console.log(`[USDA Cache] Miss for query: "${searchOptions.query}" (key: ${cacheKey}) - fetching from API`);
+    console.log(`[USDA Cache] Miss for query: "${searchOptions.query}" - fetching from API`);
     const response = await originalSearchUSDAFoods(searchOptions);
     
     // Cache the search results
     if (response && response.foods && response.foods.length > 0) {
-      // Cache individual foods
-      const cachePromises = response.foods.map(food => 
-        storage.cacheFood({
+      // Cache individual foods in both ApiCache and database
+      const cachePromises = response.foods.map(async (food) => {
+        // Cache in memory
+        apiCache.set(`usda.food:${food.fdcId}`, food, undefined, food.brandOwner ? 'usda.branded' : 'usda.food');
+        
+        // Cache in database for persistence
+        return storage.cacheFood({
           fdcId: String(food.fdcId),
           description: food.description,
           dataType: food.dataType,
@@ -127,21 +127,22 @@ export async function searchUSDAFoodsCached(
           ingredients: food.ingredients,
           servingSize: food.servingSize,
           servingSizeUnit: food.servingSizeUnit,
-          nutrients: food.foodNutrients as any, // JSONB type - cast to any
-          fullData: food as any, // JSONB type - cast to any
-        })
-      );
+          nutrients: food.foodNutrients as any,
+          fullData: food as any,
+        });
+      });
       
       await Promise.all(cachePromises);
       
-      // Cache the search query with FDC IDs in memory
-      searchCache.set(cacheKey, {
+      // Cache the search query with full foods
+      const cacheEntry: SearchCacheEntry = {
         query: searchOptions.query,
         fdcIds: response.foods.map(f => String(f.fdcId)),
         totalHits: response.totalHits,
-        cachedAt: new Date(),
-      });
+        foods: response.foods,
+      };
       
+      apiCache.set(cacheKey, cacheEntry, undefined, 'usda.search');
       console.log(`[USDA Cache] Cached ${response.foods.length} foods for query: "${searchOptions.query}"`);
     }
     
@@ -156,12 +157,26 @@ export async function searchUSDAFoodsCached(
 // Get cached food by FDC ID
 export async function getCachedFoodById(fdcId: number): Promise<any | null> {
   try {
-    const cached = await storage.getCachedFood(String(fdcId));
-    if (cached && isCacheValid(cached.cachedAt, CACHE_TTL.FOOD_ITEM)) {
-      console.log(`[USDA Cache] Hit for FDC ID: ${fdcId}`);
-      return cached.fullData || cached;
+    // First check ApiCache
+    const cacheKey = `usda.food:${fdcId}`;
+    const cachedFood = apiCache.get<USDAFoodItem>(cacheKey);
+    
+    if (cachedFood) {
+      console.log(`[USDA Cache] Memory hit for FDC ID: ${fdcId}`);
+      return cachedFood;
     }
-    console.log(`[USDA Cache] Miss or expired for FDC ID: ${fdcId}`);
+    
+    // Fall back to database cache
+    const dbCached = await storage.getCachedFood(String(fdcId));
+    if (dbCached && dbCached.fullData) {
+      console.log(`[USDA Cache] Database hit for FDC ID: ${fdcId}`);
+      const foodData = dbCached.fullData;
+      // Cache in memory for faster access
+      apiCache.set(cacheKey, foodData, undefined, dbCached.brandOwner ? 'usda.branded' : 'usda.food');
+      return foodData;
+    }
+    
+    console.log(`[USDA Cache] Miss for FDC ID: ${fdcId}`);
     return null;
   } catch (error) {
     console.error(`[USDA Cache] Error getting cached food ${fdcId}:`, error);
@@ -178,12 +193,15 @@ export async function preloadCommonSearches(): Promise<void> {
   
   console.log('[USDA Cache] Preloading common searches...');
   
+  // Create warmup data for ApiCacheService
+  const warmupData = [];
+  
   for (const query of commonSearches) {
     try {
-      // Check if already cached in memory
       const cacheKey = generateCacheKey(query);
-      const cached = searchCache.get(cacheKey);
-      if (!cached || !isCacheValid(cached.cachedAt, SEARCH_CACHE_TTL)) {
+      
+      // Check if already cached
+      if (!apiCache.has(cacheKey)) {
         // Preload with small page size
         await searchUSDAFoodsCached({ query, pageSize: 10, pageNumber: 1 });
         // Add delay to avoid rate limiting
@@ -200,19 +218,26 @@ export async function preloadCommonSearches(): Promise<void> {
 // Clear old cache entries
 export async function cleanupCache(): Promise<void> {
   try {
-    // Clear old in-memory search cache
-    const now = new Date();
-    const entries = Array.from(searchCache.entries());
-    for (const [key, entry] of entries) {
-      if (!isCacheValid(entry.cachedAt, SEARCH_CACHE_TTL)) {
-        searchCache.delete(key);
-      }
-    }
-    
-    // Clear old database cache
-    await storage.clearOldCache(30); // Clear cache older than 30 days
-    console.log('[USDA Cache] Cleanup completed');
+    // The ApiCacheService handles its own cleanup automatically
+    // Just clear old database cache entries
+    await storage.clearOldCache(30); // Clear database cache older than 30 days
+    console.log('[USDA Cache] Database cleanup completed');
   } catch (error) {
     console.error('[USDA Cache] Cleanup failed:', error);
   }
+}
+
+// Export cache statistics
+export function getCacheStats() {
+  return apiCache.getStats();
+}
+
+// Invalidate cache by pattern
+export function invalidateCache(pattern: string): number {
+  return apiCache.invalidate(pattern);
+}
+
+// Clear all cache
+export function clearAllCache(): void {
+  apiCache.clear();
 }
