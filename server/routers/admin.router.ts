@@ -322,11 +322,9 @@ router.post(
       await storage.logApiUsage(req.user.claims.sub, {
         apiName: "admin-cache-invalidate",
         endpoint: "/api/admin/cache/invalidate",
-        method: "POST",
         statusCode: 200,
-        responseTimeMs: 0,
-        timestamp: new Date(),
-        metadata: { pattern, invalidatedCount },
+        success: true,
+        queryParams: JSON.stringify({ pattern, invalidatedCount }),
       });
       
       res.json({
@@ -359,11 +357,9 @@ router.post(
       await storage.logApiUsage(req.user.claims.sub, {
         apiName: "admin-cache-clear",
         endpoint: "/api/admin/cache/clear",
-        method: "POST",
         statusCode: 200,
-        responseTimeMs: 0,
-        timestamp: new Date(),
-        metadata: { clearedEntries: statsBeforeClear.size },
+        success: true,
+        queryParams: JSON.stringify({ clearedEntries: statsBeforeClear.size }),
       });
       
       res.json({
@@ -397,11 +393,9 @@ router.post(
       await storage.logApiUsage(req.user.claims.sub, {
         apiName: "admin-cache-warm",
         endpoint: "/api/admin/cache/warm",
-        method: "POST",
         statusCode: 202,
-        responseTimeMs: 0,
-        timestamp: new Date(),
-        metadata: { status: "initiated" },
+        success: true,
+        queryParams: JSON.stringify({ status: "initiated" }),
       });
       
       res.status(202).json({
