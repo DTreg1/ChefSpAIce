@@ -5,7 +5,7 @@
  * Runs periodic cleanup jobs to remove expired logs and maintain database performance.
  */
 
-import cron from "node-cron";
+import * as cron from "node-cron";
 import { storage } from "../storage";
 
 interface RetentionPolicy {
