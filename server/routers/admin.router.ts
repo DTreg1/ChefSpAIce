@@ -4,6 +4,8 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { isAuthenticated } from "../replitAuth";
 import { validateBody, validateQuery, paginationQuerySchema } from "../middleware";
+import { apiCache } from "../utils/ApiCacheService";
+import { getCacheStats, invalidateCache, clearAllCache } from "../utils/usdaCache";
 
 const router = Router();
 
@@ -271,6 +273,204 @@ router.get(
     } catch (error) {
       console.error("Error fetching activity:", error);
       res.status(500).json({ error: "Failed to fetch activity" });
+    }
+  }
+);
+
+// Cache Management Routes
+
+// Get cache statistics
+router.get(
+  "/cache/stats",
+  isAuthenticated,
+  isAdmin,
+  async (req: any, res: Response) => {
+    try {
+      const stats = getCacheStats();
+      const dbStats = await storage.getUSDACacheStats();
+      
+      res.json({
+        memory: stats,
+        database: dbStats,
+        config: {
+          maxSize: parseInt(process.env.CACHE_MAX_SIZE || '10000'),
+          enabled: process.env.CACHE_ENABLED !== 'false',
+          defaultTTL: parseInt(process.env.CACHE_DEFAULT_TTL_DAYS || '30'),
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching cache stats:", error);
+      res.status(500).json({ error: "Failed to fetch cache statistics" });
+    }
+  }
+);
+
+// Invalidate cache by pattern
+router.post(
+  "/cache/invalidate",
+  isAuthenticated,
+  isAdmin,
+  validateBody(z.object({
+    pattern: z.string().min(1),
+  })),
+  async (req: any, res: Response) => {
+    try {
+      const { pattern } = req.body;
+      const invalidatedCount = invalidateCache(pattern);
+      
+      // Log admin action
+      await storage.logApiUsage(req.user.claims.sub, {
+        apiName: "admin-cache-invalidate",
+        endpoint: "/api/admin/cache/invalidate",
+        method: "POST",
+        statusCode: 200,
+        responseTimeMs: 0,
+        timestamp: new Date(),
+        metadata: { pattern, invalidatedCount },
+      });
+      
+      res.json({
+        success: true,
+        pattern,
+        invalidatedCount,
+        message: `Successfully invalidated ${invalidatedCount} cache entries matching pattern: ${pattern}`,
+      });
+    } catch (error) {
+      console.error("Error invalidating cache:", error);
+      res.status(500).json({ error: "Failed to invalidate cache" });
+    }
+  }
+);
+
+// Clear entire cache
+router.post(
+  "/cache/clear",
+  isAuthenticated,
+  isAdmin,
+  async (req: any, res: Response) => {
+    try {
+      const statsBeforeClear = getCacheStats();
+      clearAllCache();
+      
+      // Also clear database cache
+      await storage.clearOldCache(0); // Clear all database cache
+      
+      // Log admin action
+      await storage.logApiUsage(req.user.claims.sub, {
+        apiName: "admin-cache-clear",
+        endpoint: "/api/admin/cache/clear",
+        method: "POST",
+        statusCode: 200,
+        responseTimeMs: 0,
+        timestamp: new Date(),
+        metadata: { clearedEntries: statsBeforeClear.size },
+      });
+      
+      res.json({
+        success: true,
+        clearedEntries: statsBeforeClear.size,
+        message: "Successfully cleared all cache entries",
+      });
+    } catch (error) {
+      console.error("Error clearing cache:", error);
+      res.status(500).json({ error: "Failed to clear cache" });
+    }
+  }
+);
+
+// Warm cache with common searches
+router.post(
+  "/cache/warm",
+  isAuthenticated,
+  isAdmin,
+  async (req: any, res: Response) => {
+    try {
+      // Import preloadCommonSearches function
+      const { preloadCommonSearches } = await import("../utils/usdaCache");
+      
+      // Start warming in background
+      preloadCommonSearches().catch(error => {
+        console.error("Cache warming failed:", error);
+      });
+      
+      // Log admin action
+      await storage.logApiUsage(req.user.claims.sub, {
+        apiName: "admin-cache-warm",
+        endpoint: "/api/admin/cache/warm",
+        method: "POST",
+        statusCode: 202,
+        responseTimeMs: 0,
+        timestamp: new Date(),
+        metadata: { status: "initiated" },
+      });
+      
+      res.status(202).json({
+        success: true,
+        status: "warming_initiated",
+        message: "Cache warming has been initiated in the background",
+      });
+    } catch (error) {
+      console.error("Error initiating cache warming:", error);
+      res.status(500).json({ error: "Failed to initiate cache warming" });
+    }
+  }
+);
+
+// Get specific cache entry details
+router.get(
+  "/cache/entry/:key",
+  isAuthenticated,
+  isAdmin,
+  async (req: any, res: Response) => {
+    try {
+      const { key } = req.params;
+      const entry = apiCache.getEntryInfo(key);
+      
+      if (!entry) {
+        return res.status(404).json({ error: "Cache entry not found" });
+      }
+      
+      res.json({
+        key,
+        entry,
+      });
+    } catch (error) {
+      console.error("Error fetching cache entry:", error);
+      res.status(500).json({ error: "Failed to fetch cache entry" });
+    }
+  }
+);
+
+// List all cache keys
+router.get(
+  "/cache/keys",
+  isAuthenticated,
+  isAdmin,
+  validateQuery(z.object({
+    prefix: z.string().optional(),
+    limit: z.coerce.number().optional().default(100),
+  })),
+  async (req: any, res: Response) => {
+    try {
+      const { prefix, limit = 100 } = req.query;
+      let keys = apiCache.getKeys();
+      
+      // Filter by prefix if provided
+      if (prefix) {
+        keys = keys.filter(key => key.startsWith(prefix));
+      }
+      
+      // Limit results
+      keys = keys.slice(0, Number(limit));
+      
+      res.json({
+        keys,
+        total: keys.length,
+        filtered: !!prefix,
+      });
+    } catch (error) {
+      console.error("Error fetching cache keys:", error);
+      res.status(500).json({ error: "Failed to fetch cache keys" });
     }
   }
 );
