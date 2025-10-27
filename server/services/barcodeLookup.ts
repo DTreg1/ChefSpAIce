@@ -1,3 +1,5 @@
+import { ApiCacheService, apiCache } from '../utils/ApiCacheService';
+
 // Barcode product types (database tables removed, API-only service)
 export interface BarcodeProduct {
   barcodeNumber: string;
@@ -86,9 +88,6 @@ export interface BarcodeLookupResponse {
 export class BarcodeLookupService {
   private readonly apiKey: string;
   private readonly baseUrl = "https://api.barcodelookup.com/v3";
-  // In-memory cache since database tables were removed
-  private cache: Map<string, { product: BarcodeProduct; timestamp: number }> = new Map();
-  private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
   constructor() {
     this.apiKey = process.env.BARCODE_LOOKUP_API_KEY || '';
@@ -155,22 +154,16 @@ export class BarcodeLookupService {
   }
 
   /**
-   * Check if cached product is still valid
-   */
-  private isValidCache(timestamp: number): boolean {
-    return Date.now() - timestamp < this.CACHE_TTL;
-  }
-
-  /**
    * Look up a product by barcode
    */
   async lookupByBarcode(barcode: string): Promise<BarcodeProduct | null> {
     try {
-      // Check in-memory cache
-      const cached = this.cache.get(barcode);
-      if (cached && this.isValidCache(cached.timestamp)) {
+      // Check ApiCacheService cache
+      const cacheKey = ApiCacheService.generateKey('barcode', barcode);
+      const cached = apiCache.get<BarcodeProduct>(cacheKey);
+      if (cached) {
         console.log(`Found cached barcode product: ${barcode}`);
-        return cached.product;
+        return cached;
       }
 
       // If not cached and we have an API key, fetch from API
@@ -258,11 +251,8 @@ export class BarcodeLookupService {
         rawData: data
       };
 
-      // Cache the product in memory
-      this.cache.set(barcode, {
-        product: barcodeProduct,
-        timestamp: Date.now()
-      });
+      // Cache the product using ApiCacheService
+      apiCache.set(cacheKey, barcodeProduct);
       console.log(`Cached barcode product: ${barcode}`);
       
       return barcodeProduct;
@@ -282,9 +272,10 @@ export class BarcodeLookupService {
     
     // First, check cache for all barcodes
     for (const barcode of barcodes) {
-      const cached = this.cache.get(barcode);
-      if (cached && this.isValidCache(cached.timestamp)) {
-        results.set(barcode, cached.product);
+      const cacheKey = ApiCacheService.generateKey('barcode', barcode);
+      const cached = apiCache.get<BarcodeProduct>(cacheKey);
+      if (cached) {
+        results.set(barcode, cached);
       } else {
         uncachedBarcodes.push(barcode);
       }
@@ -407,11 +398,9 @@ export class BarcodeLookupService {
           rawData: { products: [product] }
         };
 
-        // Cache this product
-        this.cache.set(product.barcode_number, {
-          product: barcodeProduct,
-          timestamp: Date.now()
-        });
+        // Cache this product using ApiCacheService
+        const productCacheKey = ApiCacheService.generateKey('barcode', product.barcode_number);
+        apiCache.set(productCacheKey, barcodeProduct);
         
         products.push(barcodeProduct);
       }
