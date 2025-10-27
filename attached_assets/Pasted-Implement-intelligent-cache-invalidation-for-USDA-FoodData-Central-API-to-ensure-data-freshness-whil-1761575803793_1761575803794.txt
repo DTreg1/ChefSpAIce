@@ -1,0 +1,187 @@
+Implement intelligent cache invalidation for USDA FoodData Central API
+to ensure data freshness while minimizing API calls.
+
+CURRENT CACHING BEHAVIOR:
+- Basic in-memory caching exists
+- No expiration or invalidation
+- Cache grows indefinitely
+- No cache statistics
+
+REQUIREMENTS:
+1. Add Time-To-Live (TTL) based expiration:
+- Food data: 30 days (stable data)
+- Search results: 7 days (may change with new foods added)
+- Nutrient data: 90 days (very stable)
+- Branded foods: 14 days (products may update)
+
+2. Implement cache invalidation strategies:
+
+A. Time-based (TTL):
+interface CacheEntry<T> {
+data: T;
+cachedAt: Date;
+expiresAt: Date;
+hitCount: number;
+}
+
+B. Size-based (LRU - Least Recently Used):
+- Maximum cache size: 10,000 entries
+- Remove least recently used when limit reached
+- Track access timestamps
+
+C. Manual invalidation:
+- Admin endpoint to clear specific cache entries
+- Bulk cache clearing by pattern
+- Cache warming for popular foods
+
+IMPLEMENTATION:
+1. Update ApiCacheService class:
+
+class ApiCacheService {
+private cache = new Map<string, CacheEntry<any>>();
+private maxSize = 10000;
+private defaultTTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+get<T>(key: string): T | null {
+const entry = this.cache.get(key);
+if (!entry) return null;
+
+// Check expiration
+if (Date.now() > entry.expiresAt.getTime()) {
+this.cache.delete(key);
+return null;
+}
+
+// Update hit count and last accessed
+entry.hitCount++;
+entry.lastAccessed = new Date();
+return entry.data;
+}
+
+set<T>(key: string, data: T, ttl?: number): void {
+// Implement LRU eviction if at max size
+if (this.cache.size >= this.maxSize) {
+this.evictLRU();
+}
+
+this.cache.set(key, {
+data,
+cachedAt: new Date(),
+expiresAt: new Date(Date.now() + (ttl || this.defaultTTL)),
+hitCount: 0,
+lastAccessed: new Date()
+});
+}
+
+private evictLRU(): void {
+// Find and remove least recently used entry
+let oldestKey: string | null = null;
+let oldestTime = Date.now();
+
+for (const [key, entry] of this.cache.entries()) {
+if (entry.lastAccessed.getTime() < oldestTime) {
+oldestTime = entry.lastAccessed.getTime();
+oldestKey = key;
+}
+}
+
+if (oldestKey) {
+this.cache.delete(oldestKey);
+}
+}
+
+invalidate(pattern: string): number {
+let count = 0;
+for (const key of this.cache.keys()) {
+if (key.includes(pattern)) {
+this.cache.delete(key);
+count++;
+}
+}
+return count;
+}
+
+getStats(): CacheStats {
+return {
+size: this.cache.size,
+maxSize: this.maxSize,
+hitRate: this.calculateHitRate(),
+oldestEntry: this.getOldestEntry(),
+newestEntry: this.getNewestEntry()
+};
+}
+}
+
+2. Add cache warming on server startup:
+- Preload top 100 most common foods
+- Cache popular search queries
+- Background refresh for frequently accessed items
+
+3. Create admin endpoints:
+- GET /api/admin/cache/stats - view cache statistics
+- POST /api/admin/cache/invalidate - clear specific patterns
+- POST /api/admin/cache/clear - clear entire cache
+- POST /api/admin/cache/warm - trigger cache warming
+
+4. Implement cache headers:
+- Add Cache-Control headers to API responses
+- Use ETag for conditional requests
+- Return 304 Not Modified when appropriate
+
+ADVANCED FEATURES:
+1. Persistent cache (optional):
+- Store cache in database for faster startup
+- Survive server restarts
+- Share cache across multiple server instances
+
+2. Cache analytics:
+- Track hit/miss rates
+- Identify most cached foods
+- Monitor cache performance
+- Alert on low hit rates
+
+3. Smart prefetching:
+- Predict likely next searches
+- Preload related foods
+- Background refresh expiring entries
+
+CONFIGURATION:
+1. Add to .env:
+CACHE_MAX_SIZE=10000
+CACHE_DEFAULT_TTL_DAYS=30
+CACHE_ENABLED=true
+CACHE_PERSISTENT=false
+
+2. Make TTLs configurable:
+{
+'usda.food': 30 * 24 * 60 * 60 * 1000,
+'usda.search': 7 * 24 * 60 * 60 * 1000,
+'usda.nutrients': 90 * 24 * 60 * 60 * 1000,
+'barcode': 14 * 24 * 60 * 60 * 1000
+}
+
+MONITORING:
+1. Log cache events:
+- Cache hits/misses
+- Evictions
+- Invalidations
+- Performance metrics
+
+2. Add metrics endpoint:
+GET /api/metrics/cache
+Returns:
+{
+hitRate: 0.87,
+missRate: 0.13,
+size: 5432,
+evictions: 123,
+avgAccessTime: "2.3ms"
+}
+
+TESTING:
+- Verify TTL expiration works
+- Test LRU eviction at max size
+- Check manual invalidation patterns work
+- Test cache warming doesn't block startup
+- Validate stats are accurate
+- Test with disabled cache (CACHE_ENABLED=false)
