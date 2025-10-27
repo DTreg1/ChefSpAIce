@@ -117,6 +117,10 @@ export type ApplianceWithCategory = UserAppliance & {
   } | null;
 };
 
+// Type aliases for common food items (onboarding inventory)
+export type CommonFoodItem = OnboardingInventory;
+export type InsertCommonFoodItem = InsertOnboardingInventory;
+
 /**
  * Standardized pagination response format
  *
@@ -267,7 +271,7 @@ export interface IStorage {
     storageLocationId?: string,
     foodCategory?: string,
     limit?: number,
-  ): Promise<OnboardingInventory[]>;
+  ): Promise<UserInventory[]>;
   getFoodItemsPaginated(
     userId: string,
     page?: number,
@@ -275,17 +279,17 @@ export interface IStorage {
     storageLocationId?: string,
     foodCategory?: string,
     sortBy?: "name" | "expirationDate" | "createdAt",
-  ): Promise<PaginatedResponse<OnboardingInventory>>;
-  getFoodItem(userId: string, id: string): Promise<OnboardingInventory | undefined>;
+  ): Promise<PaginatedResponse<UserInventory>>;
+  getFoodItem(userId: string, id: string): Promise<UserInventory | undefined>;
   createFoodItem(
     userId: string,
-    item: Omit<InsertOnboardingInventory, "userId">,
-  ): Promise<OnboardingInventory>;
+    item: Omit<InsertUserInventory, "userId">,
+  ): Promise<UserInventory>;
   updateFoodItem(
     userId: string,
     id: string,
-    item: Partial<Omit<InsertOnboardingInventory, "userId">>,
-  ): Promise<OnboardingInventory>;
+    item: Partial<Omit<InsertUserInventory, "userId">>,
+  ): Promise<UserInventory>;
   deleteFoodItem(userId: string, id: string): Promise<void>;
   getFoodCategories(userId: string): Promise<string[]>;
 
@@ -334,7 +338,7 @@ export interface IStorage {
   ): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
 
   // Expiration Handling (now in userInventory table)
-  getExpiringItems(userId: string, daysThreshold: number): Promise<OnboardingInventory[]>;
+  getExpiringItems(userId: string, daysThreshold: number): Promise<UserInventory[]>;
   dismissFoodItemNotification(
     userId: string,
     foodItemId: string,
@@ -1327,11 +1331,16 @@ export class DatabaseStorage implements IStorage {
         )
         .where(eq(userAppliances.userId, userId));
 
-      // Return appliances with category information as flat fields
+      // Return appliances with category information as nested object
       return results.map((r) => ({
         ...r.appliance,
-        category: r.library?.category || null,
-        subcategory: r.library?.subcategory || null,
+        category: r.library
+          ? {
+              id: r.library.category,
+              name: r.library.category,
+              subcategory: r.library.subcategory || null,
+            }
+          : null,
       }));
     } catch (error) {
       console.error(`Error getting userAppliances for user ${userId}:`, error);
@@ -1553,11 +1562,16 @@ export class DatabaseStorage implements IStorage {
         )
         .where(eq(userAppliances.userId, userId));
 
-      // Return appliances with category information as flat fields
+      // Return appliances with category information as nested object
       return results.map((r) => ({
         ...r.appliance,
-        category: r.library?.category || null,
-        subcategory: r.library?.subcategory || null,
+        category: r.library
+          ? {
+              id: r.library.category,
+              name: r.library.category,
+              subcategory: r.library.subcategory || null,
+            }
+          : null,
       }));
     } catch (error) {
       console.error(`Error getting user userAppliances for ${userId}:`, error);
@@ -1652,8 +1666,13 @@ export class DatabaseStorage implements IStorage {
 
       return result.map((r) => ({
         ...r.appliance,
-        category: r.library?.category || null,
-        subcategory: r.library?.subcategory || null,
+        category: r.library
+          ? {
+              id: r.library.category,
+              name: r.library.category,
+              subcategory: r.library.subcategory || null,
+            }
+          : null,
       }));
     } catch (error) {
       console.error(
@@ -1792,7 +1811,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getFoodItem(userId: string, id: string): Promise<OnboardingInventory | undefined> {
+  async getFoodItem(userId: string, id: string): Promise<UserInventory | undefined> {
     try {
       const [item] = await db
         .select()
@@ -1808,7 +1827,7 @@ export class DatabaseStorage implements IStorage {
   async createFoodItem(
     userId: string,
     item: Omit<InsertUserInventory, "userId">,
-  ): Promise<OnboardingInventory> {
+  ): Promise<UserInventory> {
     try {
       const [newItem] = await db
         .insert(userInventory)
@@ -1825,7 +1844,7 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     id: string,
     item: Partial<Omit<InsertUserInventory, "userId">>,
-  ): Promise<OnboardingInventory> {
+  ): Promise<UserInventory> {
     try {
       const [updated] = await db
         .update(userInventory)
@@ -2213,7 +2232,7 @@ export class DatabaseStorage implements IStorage {
   async getExpiringItems(
     userId: string,
     daysThreshold: number,
-  ): Promise<OnboardingInventory[]> {
+  ): Promise<UserInventory[]> {
     try {
       // Optimized: use SQL to filter items expiring within threshold instead of fetching all items
       const now = new Date();
@@ -4420,7 +4439,7 @@ export class DatabaseStorage implements IStorage {
           retentionDays,
           deletedCount,
           cutoffDate: cutoffDate.toISOString(),
-        },
+        } as Record<string, any>,
         ipAddress: null,
         userAgent: null,
         sessionId: null,
@@ -4446,7 +4465,7 @@ export class DatabaseStorage implements IStorage {
         metadata: {
           type: "activity_logs",
           count: logs.length,
-        },
+        } as Record<string, any>,
         ipAddress: null,
         userAgent: null,
         sessionId: null,
