@@ -330,6 +330,12 @@ router.get("/fdc/search", async (req: Request, res: Response) => {
     const cached = fdcCache.get(cacheKey);
     
     if (cached && Date.now() - cached.timestamp < FDC_CACHE_TTL) {
+      // Set cache headers for cached response
+      res.set({
+        'Cache-Control': 'public, max-age=86400', // 24 hours
+        'X-Cache': 'HIT',
+        'ETag': `W/"${Buffer.from(JSON.stringify(cached.data)).toString('base64').slice(0, 27)}"`,
+      });
       return res.json(cached.data);
     }
 
@@ -350,6 +356,13 @@ router.get("/fdc/search", async (req: Request, res: Response) => {
     const result = response.data;
     fdcCache.set(cacheKey, { data: result, timestamp: Date.now() });
 
+    // Set cache headers for fresh response
+    res.set({
+      'Cache-Control': 'public, max-age=86400', // 24 hours
+      'X-Cache': 'MISS',
+      'ETag': `W/"${Buffer.from(JSON.stringify(result)).toString('base64').slice(0, 27)}"`,
+    });
+
     res.json(result);
   } catch (error) {
     console.error("FDC search error:", error);
@@ -365,6 +378,12 @@ router.get("/fdc/food/:fdcId", async (req: Request, res: Response) => {
     const cached = fdcCache.get(cacheKey);
     
     if (cached && Date.now() - cached.timestamp < FDC_CACHE_TTL) {
+      // Set cache headers for cached response
+      res.set({
+        'Cache-Control': 'public, max-age=2592000', // 30 days for specific food items
+        'X-Cache': 'HIT',
+        'ETag': `W/"${fdcId}-${cached.timestamp}"`,
+      });
       return res.json(cached.data);
     }
 
@@ -378,7 +397,15 @@ router.get("/fdc/food/:fdcId", async (req: Request, res: Response) => {
     });
 
     const result = response.data;
-    fdcCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    const timestamp = Date.now();
+    fdcCache.set(cacheKey, { data: result, timestamp });
+
+    // Set cache headers for fresh response
+    res.set({
+      'Cache-Control': 'public, max-age=2592000', // 30 days for specific food items
+      'X-Cache': 'MISS',
+      'ETag': `W/"${fdcId}-${timestamp}"`,
+    });
 
     res.json(result);
   } catch (error) {
