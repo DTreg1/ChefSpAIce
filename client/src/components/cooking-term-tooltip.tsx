@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -12,8 +12,24 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Info, ChefHat, Wrench, Lightbulb, ExternalLink } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  Info, 
+  ChefHat, 
+  Wrench, 
+  Lightbulb, 
+  ExternalLink,
+  BookOpen,
+  Star,
+  Clock,
+  Users,
+  ChevronRight,
+  Sparkles
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import type { CookingTerm } from "@shared/schema";
 
 interface CookingTermTooltipProps {
@@ -21,15 +37,21 @@ interface CookingTermTooltipProps {
   children: React.ReactNode;
   className?: string;
   usePopover?: boolean; // Use popover for mobile-friendly interaction
+  showGlossaryLink?: boolean;
+  onRelatedTermClick?: (term: string) => void;
 }
 
 export function CookingTermTooltip({ 
   term, 
   children, 
   className = "",
-  usePopover = false 
+  usePopover = false,
+  showGlossaryLink = true,
+  onRelatedTermClick
 }: CookingTermTooltipProps) {
   const [open, setOpen] = useState(false);
+  const [showFullDefinition, setShowFullDefinition] = useState(false);
+  const { toast } = useToast();
 
   // Fetch the cooking term data
   const { data: termData, isLoading } = useQuery<CookingTerm>({
@@ -41,39 +63,75 @@ export function CookingTermTooltip({
     return <span className={className}>{children}</span>;
   }
 
-  // Category colors
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "knife_skills":
-        return "default";
-      case "cooking_methods":
-        return "secondary";
-      case "prep_techniques":
-        return "outline";
-      case "baking_pastry":
-        return "secondary";
-      case "sauces_liquids":
-        return "default";
-      case "heat_doneness":
-        return "destructive";
-      case "kitchen_tools":
-        return "outline";
-      default:
-        return "default";
-    }
+  // Category colors and icons
+  const getCategoryConfig = (category: string) => {
+    const configs: Record<string, { color: string; icon: any; bgClass: string }> = {
+      knife_skills: {
+        color: "default",
+        icon: ChefHat,
+        bgClass: "bg-gray-50 dark:bg-gray-900"
+      },
+      cooking_methods: {
+        color: "secondary",
+        icon: Clock,
+        bgClass: "bg-yellow-50 dark:bg-yellow-900/20"
+      },
+      prep_techniques: {
+        color: "outline",
+        icon: Wrench,
+        bgClass: "bg-blue-50 dark:bg-blue-900/20"
+      },
+      baking_pastry: {
+        color: "secondary",
+        icon: Sparkles,
+        bgClass: "bg-purple-50 dark:bg-purple-900/20"
+      },
+      sauces_liquids: {
+        color: "default",
+        icon: ChefHat,
+        bgClass: "bg-indigo-50 dark:bg-indigo-900/20"
+      },
+      heat_doneness: {
+        color: "destructive",
+        icon: Clock,
+        bgClass: "bg-red-50 dark:bg-red-900/20"
+      },
+      kitchen_tools: {
+        color: "outline",
+        icon: Wrench,
+        bgClass: "bg-green-50 dark:bg-green-900/20"
+      }
+    };
+    return configs[category] || configs.knife_skills;
   };
 
-  // Difficulty colors
-  const getDifficultyColor = (difficulty?: string | null) => {
+  // Difficulty colors and icons
+  const getDifficultyConfig = (difficulty?: string | null) => {
     switch (difficulty) {
       case "beginner":
-        return "text-green-600 dark:text-green-400";
+        return {
+          color: "text-green-600 dark:text-green-400",
+          icon: "⭐",
+          label: "Beginner"
+        };
       case "intermediate":
-        return "text-yellow-600 dark:text-yellow-400";
+        return {
+          color: "text-yellow-600 dark:text-yellow-400",
+          icon: "⭐⭐",
+          label: "Intermediate"
+        };
       case "advanced":
-        return "text-red-600 dark:text-red-400";
+        return {
+          color: "text-red-600 dark:text-red-400",
+          icon: "⭐⭐⭐",
+          label: "Advanced"
+        };
       default:
-        return "text-gray-600 dark:text-gray-400";
+        return {
+          color: "text-gray-600 dark:text-gray-400",
+          icon: "",
+          label: ""
+        };
     }
   };
 
@@ -84,85 +142,152 @@ export function CookingTermTooltip({
       .join(" ");
   };
 
+  const categoryConfig = getCategoryConfig(termData.category);
+  const difficultyConfig = getDifficultyConfig(termData.difficulty);
+  const CategoryIcon = categoryConfig.icon;
+
+  const handleRelatedTermClick = useCallback((relatedTerm: string) => {
+    if (onRelatedTermClick) {
+      onRelatedTermClick(relatedTerm);
+      setOpen(false);
+    } else {
+      toast({
+        title: "Related term",
+        description: `Look for "${relatedTerm}" in the glossary!`,
+      });
+    }
+  }, [onRelatedTermClick, toast]);
+
   const content = (
-    <div className="space-y-3 max-w-sm">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h4 className="font-semibold text-base flex items-center gap-2">
-            <ChefHat className="w-4 h-4" />
-            {termData.term}
-          </h4>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant={getCategoryColor(termData.category)} className="text-xs">
-              {formatCategory(termData.category)}
-            </Badge>
-            {termData.difficulty && (
-              <span className={`text-xs font-medium ${getDifficultyColor(termData.difficulty)}`}>
-                {termData.difficulty}
-              </span>
-            )}
+    <ScrollArea className="max-h-[500px]">
+      <div className="space-y-3 max-w-sm p-1">
+        {/* Header with term name and badges */}
+        <div className={`${categoryConfig.bgClass} rounded-md p-3 -m-1`}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <h4 className="font-semibold text-base flex items-center gap-2">
+                <CategoryIcon className="w-4 h-4 text-primary" />
+                {termData.term}
+              </h4>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant={categoryConfig.color as any} className="text-xs">
+                  {formatCategory(termData.category)}
+                </Badge>
+                {termData.difficulty && difficultyConfig.label && (
+                  <div className="flex items-center gap-1">
+                    <span className={`text-xs font-medium ${difficultyConfig.color}`}>
+                      {difficultyConfig.icon} {difficultyConfig.label}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          {termData.shortDefinition}
-        </p>
-        
-        {termData.longDefinition && (
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {termData.longDefinition}
+        {/* Definitions */}
+        <div className="space-y-2">
+          <p className="text-sm leading-relaxed">
+            {termData.shortDefinition}
           </p>
+          
+          {termData.longDefinition && (
+            <>
+              {!showFullDefinition ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFullDefinition(true)}
+                  className="h-auto p-0 text-xs text-primary hover:bg-transparent"
+                >
+                  <ChevronRight className="w-3 h-3 mr-1" />
+                  Show more details
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Separator />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {termData.longDefinition}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Tips section */}
+        {termData.tips && termData.tips.length > 0 && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-xs font-medium">
+              <Lightbulb className="w-3 h-3" />
+              Tips:
+            </div>
+            <ul className="text-xs text-muted-foreground space-y-0.5">
+              {termData.tips.map((tip, index) => (
+                <li key={index} className="flex items-start gap-1">
+                  <span className="text-primary mt-1">•</span>
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Tools section */}
+        {termData.tools && termData.tools.length > 0 && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-1 text-xs font-medium">
+              <Wrench className="w-3 h-3" />
+              Tools needed:
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {termData.tools.map((tool, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {tool}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Related terms section */}
+        {termData.relatedTerms && termData.relatedTerms.length > 0 && (
+          <div className="pt-2 border-t">
+            <div className="text-xs font-medium mb-1">Related terms:</div>
+            <div className="flex flex-wrap gap-1">
+              {termData.relatedTerms.map((relatedTerm, index) => (
+                <Button
+                  key={index}
+                  variant="secondary"
+                  size="sm"
+                  className="h-auto py-1 px-2 text-xs"
+                  onClick={() => handleRelatedTermClick(relatedTerm)}
+                >
+                  {relatedTerm}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Footer with glossary link */}
+        {showGlossaryLink && (
+          <div className="pt-2 border-t">
+            <Link href="/glossary">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto py-1 px-2 text-xs w-full justify-start"
+              >
+                <BookOpen className="w-3 h-3 mr-1" />
+                View in Glossary
+                <ExternalLink className="w-3 h-3 ml-auto" />
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
-
-      {termData.tips && termData.tips.length > 0 && (
-        <div className="space-y-1">
-          <div className="flex items-center gap-1 text-xs font-medium">
-            <Lightbulb className="w-3 h-3" />
-            Tips:
-          </div>
-          <ul className="text-xs text-muted-foreground space-y-0.5">
-            {termData.tips.map((tip, index) => (
-              <li key={index} className="flex items-start gap-1">
-                <span className="text-primary mt-1">•</span>
-                <span>{tip}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {termData.tools && termData.tools.length > 0 && (
-        <div className="space-y-1">
-          <div className="flex items-center gap-1 text-xs font-medium">
-            <Wrench className="w-3 h-3" />
-            Tools needed:
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {termData.tools.map((tool, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
-                {tool}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {termData.relatedTerms && termData.relatedTerms.length > 0 && (
-        <div className="pt-2 border-t">
-          <div className="text-xs font-medium mb-1">Related terms:</div>
-          <div className="flex flex-wrap gap-1">
-            {termData.relatedTerms.map((relatedTerm, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {relatedTerm}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    </ScrollArea>
   );
 
   // Use popover for touch devices or when explicitly requested
