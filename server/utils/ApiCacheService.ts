@@ -69,15 +69,25 @@ export class ApiCacheService {
   }
 
   private getTTLConfigFromEnv(): { [key: string]: number } {
-    const ttlDays = parseInt(process.env.CACHE_DEFAULT_TTL_DAYS || '30');
+    // Parse TTL from environment - supports both days and milliseconds
+    const parseEnvTTL = (envValue: string | undefined, defaultMs: number): number => {
+      if (!envValue) return defaultMs;
+      
+      // If value is less than 365, assume it's in days and convert to milliseconds
+      const parsed = parseInt(envValue);
+      if (isNaN(parsed)) return defaultMs;
+      
+      // Values < 365 are treated as days, >= 365 as milliseconds
+      return parsed < 365 ? parsed * 24 * 60 * 60 * 1000 : parsed;
+    };
+    
     return {
-      ...DEFAULT_TTL_CONFIG,
-      // Allow environment overrides
-      'usda.food': parseInt(process.env.CACHE_TTL_FOOD || String(DEFAULT_TTL_CONFIG['usda.food'])),
-      'usda.search': parseInt(process.env.CACHE_TTL_SEARCH || String(DEFAULT_TTL_CONFIG['usda.search'])),
-      'usda.nutrients': parseInt(process.env.CACHE_TTL_NUTRIENTS || String(DEFAULT_TTL_CONFIG['usda.nutrients'])),
-      'usda.branded': parseInt(process.env.CACHE_TTL_BRANDED || String(DEFAULT_TTL_CONFIG['usda.branded'])),
-      'barcode': parseInt(process.env.CACHE_TTL_BARCODE || String(DEFAULT_TTL_CONFIG['barcode'])),
+      // Use environment overrides or defaults (in milliseconds)
+      'usda.food': parseEnvTTL(process.env.CACHE_TTL_FOOD_DAYS, DEFAULT_TTL_CONFIG['usda.food']),
+      'usda.search': parseEnvTTL(process.env.CACHE_TTL_SEARCH_DAYS, DEFAULT_TTL_CONFIG['usda.search']),
+      'usda.nutrients': parseEnvTTL(process.env.CACHE_TTL_NUTRIENTS_DAYS, DEFAULT_TTL_CONFIG['usda.nutrients']),
+      'usda.branded': parseEnvTTL(process.env.CACHE_TTL_BRANDED_DAYS, DEFAULT_TTL_CONFIG['usda.branded']),
+      'barcode': parseEnvTTL(process.env.CACHE_TTL_BARCODE_DAYS, DEFAULT_TTL_CONFIG['barcode']),
     };
   }
 
