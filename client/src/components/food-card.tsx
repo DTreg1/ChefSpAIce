@@ -1,3 +1,120 @@
+/**
+ * Food Card Component
+ * 
+ * Interactive card displaying a single food inventory item with inline editing capabilities.
+ * Supports quick quantity adjustments, expiration tracking, storage location changes, and nutrition display.
+ * 
+ * Features:
+ * - Inline Editing: Quantity, expiration date, and storage location editable without opening dialogs
+ * - Expiration Tracking: Visual progress bar with color-coded status (expired, expiring soon, fresh)
+ * - Quick Adjustments: +/- buttons for rapid quantity changes with optimistic updates
+ * - Storage Location Selector: Click-to-change dropdown styled as a badge
+ * - Progressive Nutrition: Collapsible nutrition panel (uses progressive disclosure pattern)
+ * - Image Display: Shows food image or placeholder icon
+ * - Swipe Actions: Mobile-friendly swipe gestures (via useSwipe hook)
+ * - Full Edit Dialog: Opens comprehensive edit form for complex changes
+ * 
+ * Inline Editing Capabilities:
+ * - Quantity: Click value to type, or use +/- buttons (min: 0.1)
+ * - Expiration Date: Click date to open inline date picker
+ * - Storage Location: Click badge to open dropdown selector
+ * - All updates: Optimistic UI with automatic rollback on error
+ * 
+ * Expiration Status:
+ * - Expired: Red badge, "Expired" text, 10% progress bar
+ * - Expiring Soon (≤3 days): Amber badge, "Xd left" text, 10-30% progress bar
+ * - Fresh (>3 days): Green badge, "Xd left" text, 30-100% progress bar
+ * - Progress bar: Animated, scales based on days remaining (0-30 day range)
+ * 
+ * Nutrition Display:
+ * - Progressive disclosure: Initially shows calories + serving size
+ * - Expandable: Click to reveal protein, carbs, fat, fiber, sugar, sodium
+ * - Data sources: USDA data (preferred) or basic nutrition field
+ * - Per serving calculation: Displays nutrition per serving size
+ * - Visual hierarchy: Icons, color coding, grid layout
+ * 
+ * Storage Location Badge:
+ * - Color coded: Fridge (blue), Freezer (cyan), Pantry (amber), Counter (green)
+ * - Interactive: Click to open dropdown with all storage locations
+ * - Icon indicator: MapPin icon for visual clarity
+ * - Hover effect: Subtle background change on hover
+ * 
+ * API Integration:
+ * - PUT /api/food-items/:id: Update quantity, expiration, or storage location
+ *   - Optimistic updates with automatic rollback on error
+ *   - Invalidates: /api/food-items, /api/nutrition/stats, /api/nutrition/items
+ * - DELETE /api/food-items/:id: Remove item from inventory
+ *   - Invalidates: /api/food-items, /api/storage-locations, nutrition queries
+ * 
+ * State Management:
+ * - localQuantity: Tracks quantity for optimistic updates
+ * - isEditingQuantity: Controls inline quantity input display
+ * - localExpiry: Tracks expiration date for inline editing
+ * - isEditingExpiry: Controls inline date picker display
+ * - Mutations: updateQuantityMutation, updateExpiryMutation, updateStorageMutation, deleteMutation
+ * 
+ * Optimistic Updates:
+ * - Quantity changes: Immediate UI update, rollback on error
+ * - Query cancellation: Prevents race conditions during rapid changes
+ * - Context preservation: Stores previous data for rollback
+ * - Cache invalidation: Triggers refetch on success
+ * 
+ * Progressive Disclosure Pattern:
+ * - Uses useProgressiveDisclosure hook
+ * - Unique ID per item: `food-card-nutrition-${item.id}`
+ * - State persisted across renders
+ * - Toggle indicator: ChevronUp/ChevronDown icons
+ * 
+ * Component Actions:
+ * - Increase/Decrease Quantity: +/- buttons with optimistic updates
+ * - Edit Quantity: Click value to type directly
+ * - Edit Expiration: Click date to open inline picker
+ * - Change Location: Click badge to select new storage area
+ * - Full Edit: Opens EditFoodDialog for comprehensive changes
+ * - View Nutrition: Opens NutritionFactsDialog with detailed facts
+ * - Delete: Removes item with confirmation toast
+ * 
+ * Visual Design:
+ * - Glass morphism effect: Translucent background with blur
+ * - Hover elevation: Subtle lift on hover (hover-elevate)
+ * - Active elevation: Press-down effect (active-elevate-2)
+ * - Border styling: Subtle border with transparency
+ * - Image zoom: Hover effect on food images
+ * 
+ * Accessibility:
+ * - data-testid attributes on all interactive elements
+ * - Keyboard navigation: Enter to submit, Escape to cancel
+ * - ARIA labels: Implicit through semantic HTML
+ * - Focus management: Auto-focus on inline inputs
+ * 
+ * Performance:
+ * - React.memo: Prevents unnecessary re-renders
+ * - useMemo: Memoizes nutrition parsing and status calculations
+ * - Optimistic updates: Immediate feedback without waiting for server
+ * 
+ * @example
+ * // Basic usage in inventory list
+ * <FoodCard 
+ *   item={foodItem} 
+ *   storageLocationName="Refrigerator" 
+ * />
+ * 
+ * @example
+ * // With full data including nutrition
+ * <FoodCard 
+ *   item={{
+ *     id: "123",
+ *     name: "Organic Milk",
+ *     quantity: "2",
+ *     unit: "L",
+ *     expirationDate: "2025-11-05",
+ *     storageLocationId: "fridge-id",
+ *     nutrition: { calories: 150, protein: 8, carbs: 12, fat: 8 }
+ *   }}
+ *   storageLocationName="Refrigerator"
+ * />
+ */
+
 import React, { useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";

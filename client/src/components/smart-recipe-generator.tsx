@@ -1,3 +1,87 @@
+/**
+ * Smart Recipe Generator Component
+ * 
+ * AI-powered one-click recipe generation using intelligent inventory analysis.
+ * Automatically prioritizes expiring items and abundant ingredients to reduce waste.
+ * 
+ * Features:
+ * - Intelligent Inventory Analysis: Tracks expiring items, high-quantity items, and categories
+ * - Waste Reduction: Prioritizes items expiring within 3 days in recipe generation
+ * - User Preferences: Remembers cuisine type, dietary restrictions, serving size, cooking time
+ * - Auto-Generation: Optional automatic recipe creation when multiple items are expiring
+ * - Multi-Variant Display: Supports default, quick (icon-only), and sidebar presentations
+ * - Visual Indicators: Shows expiring item count with pulsing badge
+ * 
+ * Inventory Analysis:
+ * - Expiring Items: Items with ≤3 days until expiration
+ * - High Quantity: Items with quantity > 5
+ * - Categories: Groups items by USDA food category
+ * - Smart Prioritization: Balances expiring items with abundant ingredients
+ * 
+ * API Integration:
+ * - POST /api/recipes/generate: Generate recipe with smart request payload
+ *   Payload includes: onlyUseOnHand, prioritizeExpiring, expiringItems[], abundantItems[]
+ * - Auto-invalidates: /api/food-items, /api/recipes queries after generation
+ * 
+ * State Management:
+ * - localStorage: Persists user preferences (PREFERENCE_KEY)
+ * - sessionStorage: Prevents duplicate auto-generation per day
+ * - Query: Fetches inventory from /api/food-items
+ * - Mutation: Generates recipe and invalidates queries on success
+ * 
+ * User Preferences (Persistent):
+ * - lastCuisineType: Preferred cuisine style
+ * - lastDietaryRestrictions: Dietary limitations array
+ * - lastServingSize: Default serving count (default: 4)
+ * - lastCookingTime: Max cooking duration in minutes (default: "30")
+ * - preferExpiringItems: Prioritize expiring ingredients (default: true)
+ * - autoGenerateOnExpiring: Auto-generate when >2 items expiring (default: false)
+ * 
+ * Component Variants:
+ * - default: Full button with badge showing expiring count
+ * - quick: Icon-only button for toolbars (responsive: icon on mobile, text on desktop)
+ * - sidebar: Full-width button optimized for sidebar navigation
+ * 
+ * User Flow:
+ * 1. Component analyzes inventory on mount (expiring, abundant, categories)
+ * 2. User clicks Smart Recipe button (or auto-generates if enabled)
+ * 3. Builds intelligent request with inventory analysis + preferences
+ * 4. Sends POST /api/recipes/generate with smart payload
+ * 5. AI generates recipe prioritizing expiring/abundant items
+ * 6. Invalidates queries and fetches updated recipe with inventory matching
+ * 7. Shows success toast with context-specific message
+ * 8. Calls onRecipeGenerated callback with updated recipe
+ * 
+ * Auto-Generation Logic:
+ * - Triggered when: autoGenerateOnExpiring=true AND >2 items expiring
+ * - Frequency: Once per calendar day (tracked in sessionStorage)
+ * - Session Key: `auto-generated-${dateString}`
+ * 
+ * Error Handling:
+ * - No inventory: Button disabled with tooltip explanation
+ * - Generation failure: Shows destructive toast with error message
+ * - Network errors: Caught and displayed in user-friendly format
+ * 
+ * Performance:
+ * - Inventory analysis recalculated on foodItems change (via Array.reduce)
+ * - Auto-generation check via useEffect (triggers when conditions met)
+ * - Query invalidation after successful generation
+ * 
+ * @example
+ * // Default variant with full features
+ * <SmartRecipeGenerator 
+ *   onRecipeGenerated={(recipe) => navigate(`/recipes/${recipe.id}`)} 
+ * />
+ * 
+ * @example
+ * // Quick variant for header toolbar
+ * <SmartRecipeGenerator variant="quick" />
+ * 
+ * @example
+ * // Sidebar variant for navigation
+ * <SmartRecipeGenerator variant="sidebar" />
+ */
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

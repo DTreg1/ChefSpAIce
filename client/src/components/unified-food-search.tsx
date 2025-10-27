@@ -1,3 +1,106 @@
+/**
+ * Unified Food Search Component
+ * 
+ * Multi-source food search interface for finding items with comprehensive nutrition data.
+ * Primarily searches USDA FoodData Central database with support for additional sources.
+ * 
+ * Features:
+ * - USDA FoodData Central: Official USDA nutrition database with 600k+ food items
+ * - Debounced Search: 300ms delay after typing stops to reduce API calls
+ * - Minimum Query Length: Requires ≥2 characters before searching
+ * - Rich Food Data: Brand owners, categories, UPC codes, nutrition facts
+ * - Loading States: Skeleton loaders during search
+ * - Error Handling: User-friendly error messages for failed searches
+ * 
+ * Search Sources:
+ * - USDA FoodData Central: Branded foods, SR Legacy, FNDDS, Foundation Foods
+ *   - Includes: Description, brand owner, category, UPC/GTIN, nutrition
+ *   - Data types: Branded, Survey (FNDDS), SR Legacy, Foundation
+ * - Barcode Lookup API: (placeholder in response structure, not actively used)
+ * - Open Food Facts: (placeholder in response structure, not actively used)
+ * 
+ * API Integration:
+ * - GET /api/food/unified-search?query={searchQuery}
+ *   - Returns: { usda, barcodeLookup, openFoodFacts }
+ *   - USDA includes: foods[], totalHits, currentPage, totalPages
+ * - Response includes pagination metadata for future expansion
+ * 
+ * State Management:
+ * - searchQuery: Raw user input (immediate updates)
+ * - debouncedSearch: Delayed query (300ms after typing stops)
+ * - Query enabled when: debouncedSearch.length >= 2
+ * - Auto-refetch: Disabled (manual searches only)
+ * 
+ * USDA Food Object:
+ * - fdcId: Unique USDA food database identifier
+ * - description: Food name/description
+ * - dataType: Branded, Survey (FNDDS), SR Legacy, Foundation
+ * - brandOwner: Manufacturer/brand (for branded foods)
+ * - gtinUpc: UPC/GTIN barcode
+ * - ingredients: Ingredient list (for branded foods)
+ * - foodCategory: USDA category classification
+ * - servingSize: Default serving amount
+ * - servingSizeUnit: Serving unit (g, ml, etc.)
+ * - nutrition: { calories, protein, carbs, fat }
+ * 
+ * Result Display:
+ * - Shows USDA foods in clickable cards
+ * - Badge displays: data type, brand owner, category, UPC
+ * - Results counter badge shows total hits
+ * - Ghost variant buttons for low visual weight
+ * - Hover elevation effect for interactivity
+ * 
+ * User Flow:
+ * 1. User types search query (minimum 2 characters)
+ * 2. Component waits 300ms after typing stops (debounce)
+ * 3. Fetches from GET /api/food/unified-search
+ * 4. Shows skeleton loaders during fetch
+ * 5. Displays USDA results with rich metadata
+ * 6. User clicks food item to select
+ * 7. Calls onSelectUSDA callback with full food object
+ * 
+ * Performance Optimizations:
+ * - Debounced search (300ms): Reduces API calls during typing
+ * - Conditional queries: Only fetches when query length ≥ 2
+ * - ScrollArea: Virtual scrolling for large result sets
+ * - Skeleton loaders: Perceived performance during loads
+ * 
+ * Error States:
+ * - No query: Shows "Type at least 2 characters" message
+ * - Search failed: Shows "Failed to search. Please try again."
+ * - No results: Shows "No results found. Try a different search term."
+ * - Loading: Shows 3 skeleton cards
+ * 
+ * Accessibility:
+ * - data-testid on search input and result buttons
+ * - Semantic HTML with proper ARIA roles
+ * - Keyboard navigation support via Button components
+ * 
+ * @example
+ * // Basic usage for food item addition
+ * <UnifiedFoodSearch 
+ *   onSelectUSDA={(food) => {
+ *     // Pre-fill form with USDA data
+ *     setName(food.description);
+ *     setNutrition(food.nutrition);
+ *     setCategory(food.foodCategory);
+ *   }}
+ * />
+ * 
+ * @example
+ * // Used in add-food dialog
+ * <Dialog>
+ *   <DialogContent>
+ *     <UnifiedFoodSearch 
+ *       onSelectUSDA={(food) => {
+ *         populateFormFromUSDA(food);
+ *         setDialogOpen(false);
+ *       }}
+ *     />
+ *   </DialogContent>
+ * </Dialog>
+ */
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";

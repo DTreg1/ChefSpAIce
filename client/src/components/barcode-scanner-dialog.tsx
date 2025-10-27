@@ -1,3 +1,140 @@
+/**
+ * Barcode Scanner Dialog Component
+ * 
+ * Camera-based barcode scanning for quick food item addition with USDA enrichment.
+ * Uses html5-qrcode library for real-time barcode detection and USDA API for product lookup.
+ * 
+ * Features:
+ * - Live Camera Scanning: Real-time UPC/EAN barcode detection via device camera
+ * - USDA Integration: Automatic product lookup and nutrition data enrichment
+ * - Smart Defaults: Intelligent expiration date and storage location suggestions
+ * - Continuous Scanning: "Save & Add Another" for rapid multi-item entry
+ * - Error Recovery: Graceful handling of camera errors and barcode lookup failures
+ * - Three-State UI: Scanning → Confirming → Error (with transitions)
+ * 
+ * Scanner States:
+ * - scanning: Active camera view with real-time barcode detection
+ * - confirming: Product found, showing details and edit form
+ * - error: Scan failed or product not found, with retry option
+ * 
+ * Workflow:
+ * 1. Dialog opens → Start camera scanning (100ms delay for DOM readiness)
+ * 2. User positions barcode in camera view
+ * 3. html5-qrcode detects barcode → Triggers handleScan
+ * 4. Camera stops → USDA lookup via GET /api/fdc/search?query={barcode}
+ * 5. Product found → State: confirming (shows product details + form)
+ * 6. User confirms/edits → POST /api/food-items (add to inventory)
+ * 7. Success → "Save & Exit" (closes) or "Save & Add Another" (restart scan)
+ * 
+ * USDA Barcode Lookup:
+ * - GET /api/fdc/search?query={barcode}&pageSize=1
+ * - Searches by: UPC, GTIN, or other barcode formats
+ * - Returns: USDAFoodItem with description, brandOwner, nutrition, category
+ * - Branded foods preferred: Most likely to have barcodes in USDA database
+ * 
+ * Smart Default Logic:
+ * - Storage Location: Prefers "Fridge/Refrigerator" > first available location
+ * - Expiration Date: Calculated based on food type keywords
+ *   - Frozen items: +90 days
+ *   - Fresh produce: +7 days
+ *   - Dairy (milk, yogurt, cheese): +14 days
+ *   - Meat (chicken, beef, pork): +3 days
+ *   - Canned/packaged: +365 days
+ *   - Default: +21 days
+ * - Quantity: Defaults to "1"
+ * - Unit: Defaults to "item"
+ * 
+ * Camera Integration:
+ * - Uses html5-qrcode library (via useBarcodeScanner hook)
+ * - Target element: <div id="barcode-scanner-video" />
+ * - Starts: On dialog open (100ms delay)
+ * - Stops: On scan success, dialog close, or error
+ * - Permissions: Requests camera access on first use
+ * 
+ * Form Fields (Confirming State):
+ * - Product Name: Auto-filled from USDA (description)
+ * - Brand Owner: Displayed if available
+ * - Quantity: Editable number input (default: 1)
+ * - Unit: Dropdown selector (item, g, kg, oz, lb, ml, l)
+ * - Storage Location: Dropdown with all user storage locations
+ * - Expiration Date: Date picker with smart default
+ * 
+ * Actions:
+ * - Cancel: Return to scanning state (clears scanned data)
+ * - Save & Add Another: Add item + restart scanning (continuous mode)
+ * - Save & Exit: Add item + close dialog
+ * - Try Again: Restart scanning after error
+ * - Close: Exit dialog (from error state)
+ * 
+ * API Integration:
+ * - GET /api/fdc/search: USDA barcode lookup
+ *   - Query param: barcode string
+ *   - Returns: { foods: USDAFoodItem[] }
+ * - POST /api/food-items: Add scanned item to inventory
+ *   - Payload: { name, quantity, unit, storageLocationId, expirationDate, category, barcode, nutrition }
+ *   - Invalidates: /api/food-items, /api/storage-locations
+ * 
+ * State Management:
+ * - scannerState: "scanning" | "confirming" | "error"
+ * - scannedBarcode: Detected barcode string
+ * - scannedFood: USDAFoodItem from lookup
+ * - quantity, unit, selectedLocation, expirationDate: Form fields
+ * - isSearching: Loading state during USDA lookup
+ * 
+ * Error Handling:
+ * - Camera permission denied: Shows error state with friendly message
+ * - Barcode not found in USDA: Error state with manual search suggestion
+ * - Network errors: Error state with retry option
+ * - Invalid form data: Disabled save buttons until valid
+ * 
+ * Continuous Scanning Mode:
+ * - "Save & Add Another" button: addFoodMutation.mutate(true)
+ * - On success: Resets form, clears scanned data, returns to scanning state
+ * - Enables rapid multi-item entry without closing dialog
+ * - Persists storage location preference between scans
+ * 
+ * Dialog Lifecycle:
+ * - On open: Start camera (if scanning state)
+ * - On close: Stop camera, reset all state
+ * - State reset: scannerState="scanning", clear all form fields
+ * - Auto-cleanup: useEffect cleanup on unmount
+ * 
+ * Visual Feedback:
+ * - Scanning: Live camera feed with loading overlay during lookup
+ * - Confirming: Success alert with product name + brand
+ * - Error: Destructive alert with error message
+ * - Loading: Loader2 spinner with "Looking up barcode..." text
+ * 
+ * Accessibility:
+ * - data-testid on all inputs and buttons
+ * - Semantic HTML with proper labels
+ * - Keyboard navigation support
+ * - Screen reader friendly alerts
+ * 
+ * @example
+ * // Basic usage
+ * const [scannerOpen, setScannerOpen] = useState(false);
+ * 
+ * <Button onClick={() => setScannerOpen(true)}>Scan Barcode</Button>
+ * <BarcodeScannerDialog 
+ *   open={scannerOpen} 
+ *   onOpenChange={setScannerOpen} 
+ * />
+ * 
+ * @example
+ * // Quick action integration
+ * <QuickActions>
+ *   <QuickAction 
+ *     label="Scan Barcode" 
+ *     onClick={() => setScannerOpen(true)} 
+ *   />
+ * </QuickActions>
+ * <BarcodeScannerDialog 
+ *   open={scannerOpen} 
+ *   onOpenChange={setScannerOpen} 
+ * />
+ */
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
