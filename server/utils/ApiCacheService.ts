@@ -93,6 +93,9 @@ export class ApiCacheService {
     if (!entry) {
       this.stats.totalMisses++;
       this.recordAccessTime(Date.now() - startTime);
+      if (process.env.CACHE_DEBUG === 'true') {
+        console.log(`[ApiCache] MISS: ${key} - Not found in cache`);
+      }
       return null;
     }
 
@@ -101,7 +104,7 @@ export class ApiCacheService {
       this.cache.delete(key);
       this.stats.totalMisses++;
       this.recordAccessTime(Date.now() - startTime);
-      console.log(`[ApiCache] Expired entry removed: ${key}`);
+      console.log(`[ApiCache] EXPIRED: ${key} - TTL expired at ${entry.expiresAt.toISOString()}`);
       return null;
     }
 
@@ -111,6 +114,10 @@ export class ApiCacheService {
     this.stats.totalHits++;
     this.recordAccessTime(Date.now() - startTime);
 
+    if (process.env.CACHE_DEBUG === 'true') {
+      console.log(`[ApiCache] HIT: ${key} - Hit count: ${entry.hitCount}, Size: ${entry.size || 0} bytes`);
+    }
+
     return entry.data;
   }
 
@@ -118,13 +125,19 @@ export class ApiCacheService {
    * Set item in cache with optional TTL
    */
   set<T>(key: string, data: T, ttl?: number, cacheType?: string): void {
-    if (!this.config.enabled) return;
+    if (!this.config.enabled) {
+      if (process.env.CACHE_DEBUG === 'true') {
+        console.log(`[ApiCache] SET SKIPPED: ${key} - Cache disabled`);
+      }
+      return;
+    }
 
     // Determine TTL based on cache type or use provided/default
     const effectiveTTL = ttl || (cacheType ? this.config.ttlConfig[cacheType] : null) || this.config.defaultTTL;
 
     // Implement LRU eviction if at max size
     if (this.cache.size >= this.config.maxSize) {
+      console.log(`[ApiCache] EVICTION REQUIRED: Cache at max size (${this.config.maxSize})`);
       this.evictLRU();
     }
 
@@ -138,8 +151,10 @@ export class ApiCacheService {
       size: this.estimateSize(data),
     };
 
+    const isUpdate = this.cache.has(key);
     this.cache.set(key, entry);
-    console.log(`[ApiCache] Cached: ${key} (TTL: ${effectiveTTL / 1000}s, Type: ${cacheType || 'default'})`);
+    
+    console.log(`[ApiCache] ${isUpdate ? 'UPDATED' : 'SET'}: ${key} | TTL: ${effectiveTTL / 1000}s | Type: ${cacheType || 'default'} | Size: ${entry.size || 0} bytes | Cache size: ${this.cache.size}/${this.config.maxSize}`);
   }
 
   /**
@@ -148,18 +163,21 @@ export class ApiCacheService {
   private evictLRU(): void {
     let oldestKey: string | null = null;
     let oldestTime = Date.now();
+    let oldestHitCount = 0;
 
     for (const [key, entry] of Array.from(this.cache.entries())) {
       if (entry.lastAccessed.getTime() < oldestTime) {
         oldestTime = entry.lastAccessed.getTime();
         oldestKey = key;
+        oldestHitCount = entry.hitCount;
       }
     }
 
     if (oldestKey) {
+      const age = Math.floor((Date.now() - oldestTime) / 1000 / 60); // Age in minutes
       this.cache.delete(oldestKey);
       this.stats.evictions++;
-      console.log(`[ApiCache] LRU Eviction: ${oldestKey}`);
+      console.log(`[ApiCache] LRU EVICTION: ${oldestKey} | Age: ${age} min | Hit count: ${oldestHitCount} | Cache size now: ${this.cache.size}/${this.config.maxSize}`);
     }
   }
 
@@ -167,19 +185,29 @@ export class ApiCacheService {
    * Invalidate cache entries matching pattern
    */
   invalidate(pattern: string): number {
-    if (!this.config.enabled) return 0;
+    if (!this.config.enabled) {
+      if (process.env.CACHE_DEBUG === 'true') {
+        console.log(`[ApiCache] INVALIDATE SKIPPED: Cache disabled`);
+      }
+      return 0;
+    }
 
     let count = 0;
+    const invalidatedKeys: string[] = [];
     const regex = new RegExp(pattern);
 
     for (const key of Array.from(this.cache.keys())) {
       if (regex.test(key) || key.includes(pattern)) {
         this.cache.delete(key);
+        invalidatedKeys.push(key);
         count++;
       }
     }
 
-    console.log(`[ApiCache] Invalidated ${count} entries matching: ${pattern}`);
+    console.log(`[ApiCache] INVALIDATED: ${count} entries matching pattern '${pattern}' | Cache size now: ${this.cache.size}/${this.config.maxSize}`);
+    if (process.env.CACHE_DEBUG === 'true' && invalidatedKeys.length > 0) {
+      console.log(`[ApiCache] Invalidated keys:`, invalidatedKeys);
+    }
     return count;
   }
 
@@ -188,6 +216,10 @@ export class ApiCacheService {
    */
   clear(): void {
     const size = this.cache.size;
+    const totalHits = this.stats.totalHits;
+    const totalMisses = this.stats.totalMisses;
+    const hitRate = totalHits + totalMisses > 0 ? (totalHits / (totalHits + totalMisses) * 100).toFixed(2) : 0;
+    
     this.cache.clear();
     this.stats = {
       totalHits: 0,
@@ -195,7 +227,8 @@ export class ApiCacheService {
       evictions: 0,
       accessTimes: [],
     };
-    console.log(`[ApiCache] Cleared ${size} entries`);
+    
+    console.log(`[ApiCache] CLEARED: ${size} entries | Previous hit rate: ${hitRate}% | Hits: ${totalHits} | Misses: ${totalMisses}`);
   }
 
   /**
