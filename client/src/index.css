@@ -651,4 +651,120 @@
   .ticker-content[data-speed="fast"] {
     animation-duration: 20s;
   }
+
+  /* Cooking Term Highlights */
+  .cooking-term-highlight {
+    @apply cursor-help relative transition-all duration-200;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: hsl(var(--primary) / 0.4);
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+
+  .cooking-term-highlight:hover {
+    @apply rounded-sm px-1;
+    background: hsl(var(--primary) / 0.1);
+    text-decoration-style: solid;
+    text-decoration-color: hsl(var(--primary) / 0.7);
+  }
+
+  /* Category-specific colors */
+  .cooking-term--knife-skills {
+    text-decoration-color: hsl(var(--chart-1) / 0.5);
+  }
+  
+  .cooking-term--knife-skills:hover {
+    background: hsl(var(--chart-1) / 0.1);
+    text-decoration-color: hsl(var(--chart-1) / 0.8);
+  }
+
+  .cooking-term--cooking-methods {
+    text-decoration-color: hsl(var(--chart-2) / 0.5);
+  }
+  
+  .cooking-term--cooking-methods:hover {
+    background: hsl(var(--chart-2) / 0.1);
+    text-decoration-color: hsl(var(--chart-2) / 0.8);
+  }
+
+  .cooking-term--prep-techniques {
+    text-decoration-color: hsl(var(--chart-3) / 0.5);
+  }
+  
+  .cooking-term--prep-techniques:hover {
+    background: hsl(var(--chart-3) / 0.1);
+    text-decoration-color: hsl(var(--chart-3) / 0.8);
+  }
+
+  .cooking-term--baking-pastry {
+    text-decoration-color: hsl(var(--chart-4) / 0.5);
+  }
+  
+  .cooking-term--baking-pastry:hover {
+    background: hsl(var(--chart-4) / 0.1);
+    text-decoration-color: hsl(var(--chart-4) / 0.8);
+  }
+
+  .cooking-term--sauces-liquids {
+    text-decoration-color: hsl(var(--chart-5) / 0.5);
+  }
+  
+  .cooking-term--sauces-liquids:hover {
+    background: hsl(var(--chart-5) / 0.1);
+    text-decoration-color: hsl(var(--chart-5) / 0.8);
+  }
+
+  .cooking-term--heat-doneness {
+    text-decoration-color: hsl(var(--destructive) / 0.5);
+  }
+  
+  .cooking-term--heat-doneness:hover {
+    background: hsl(var(--destructive) / 0.1);
+    text-decoration-color: hsl(var(--destructive) / 0.8);
+  }
+
+  .cooking-term--kitchen-tools {
+    text-decoration-color: hsl(var(--accent) / 0.5);
+  }
+  
+  .cooking-term--kitchen-tools:hover {
+    background: hsl(var(--accent) / 0.15);
+    text-decoration-color: hsl(var(--accent) / 0.8);
+  }
+
+  /* Enriched content containers */
+  .enriched-content {
+    @apply leading-relaxed;
+  }
+
+  .enriched-paragraph {
+    @apply mb-4 leading-relaxed;
+  }
+
+  .enriched-html {
+    @apply space-y-2;
+  }
+
+  /* HTML-based cooking terms (from server) */
+  .cooking-term {
+    @apply cursor-help relative transition-all duration-200;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: hsl(var(--primary) / 0.4);
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+
+  .cooking-term:hover {
+    @apply rounded-sm px-1;
+    background: hsl(var(--primary) / 0.1);
+    text-decoration-style: solid;
+    text-decoration-color: hsl(var(--primary) / 0.7);
+  }
+
+  /* Loading state for enriched content */
+  .enriched-content-loading {
+    @apply animate-pulse;
+  }
 }
