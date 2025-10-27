@@ -1,16 +1,16 @@
 /**
  * Data Storage Layer
- * 
+ *
  * Centralized database abstraction layer using Drizzle ORM with PostgreSQL.
  * Provides type-safe CRUD operations for all application entities with user-scoped data isolation.
- * 
+ *
  * Architecture:
  * - Database: PostgreSQL via Drizzle ORM
  * - User Scoping: All data operations enforce user ownership through userId checks
  * - Caching: In-memory cache with TTL for frequently accessed data (user preferences, etc.)
  * - Performance: Implements parallel queries, batch operations, and pagination
  * - Initialization: Lazy initialization of default data (storage locations, appliances) per user
- * 
+ *
  * Key Responsibilities:
  * - User Management: OIDC claims to user record mapping, admin status, preferences
  * - Inventory Operations: Food items with expiration tracking, storage locations, categories
@@ -22,12 +22,12 @@
  * - Feedback System: User feedback with upvotes, responses, and community visibility
  * - Payments: Stripe donation tracking and statistics
  * - Caching: USDA FoodData Central API response caching
- * 
+ *
  * Error Handling:
  * - All methods throw descriptive errors on database failures
  * - User scoping prevents cross-user data access
  * - Transaction rollbacks handled automatically by Drizzle
- * 
+ *
  * @module server/storage
  */
 
@@ -36,14 +36,6 @@ import { parallelQueries, batchInsert, QueryCache } from "./utils/batchQueries";
 import {
   type User,
   type UpsertUser,
-  type UserStorage,
-  type UserStorage as StorageLocation,
-  type InsertUserStorage,
-  userStorage,
-  type UserInventory,
-  type InsertUserInventory,
-  type UserInventory as FoodItem,
-  type InsertUserInventory as InsertFoodItem,
   type ChatMessage,
   type InsertChatMessage,
   type Recipe,
@@ -69,16 +61,12 @@ import {
   type InsertWebVital,
   type OnboardingInventory,
   type InsertOnboardingInventory,
-  type OnboardingInventory as CommonFoodItem,
-  type InsertOnboardingInventory as InsertCommonFoodItem,
   type CookingTerm,
   type InsertCookingTerm,
   type ApplianceLibrary,
   type InsertApplianceLibrary,
   type UserAppliance,
   type InsertUserAppliance,
-  type UserAppliance as Appliance,
-  type InsertUserAppliance as InsertAppliance,
   type InsertAnalyticsEvent,
   type AnalyticsEvent,
   type InsertUserSession,
@@ -93,6 +81,7 @@ import {
   userInventory,
   userChats,
   userRecipes,
+  userStorage,
   mealPlans,
   apiUsageLogs,
   fdcCache,
@@ -116,7 +105,7 @@ import {
 import { PaginationHelper } from "./utils/pagination";
 
 // Extended types for appliances with category information
-export type ApplianceWithCategory = Appliance & {
+export type ApplianceWithCategory = UserAppliance & {
   category: {
     id: string;
     name: string;
@@ -126,28 +115,28 @@ export type ApplianceWithCategory = Appliance & {
 
 /**
  * Standardized pagination response format
- * 
+ *
  * All paginated endpoints return this consistent structure for client-side rendering.
  * Includes metadata needed for pagination UI components (page numbers, total counts).
  */
 export interface PaginatedResponse<T> {
-  data: T[];           // The actual data array
-  total: number;       // Total items count
-  page: number;        // Current page
-  totalPages: number;  // Total pages
-  limit: number;       // Items per page
-  offset: number;      // Current offset
+  data: T[]; // The actual data array
+  total: number; // Total items count
+  page: number; // Current page
+  totalPages: number; // Total pages
+  limit: number; // Items per page
+  offset: number; // Current offset
 }
 
 /**
  * Storage Interface
- * 
+ *
  * Defines all data access operations for the application.
  * All methods are user-scoped (require userId) except for:
  * - System-wide data (cooking terms, appliance library, common food items)
  * - Admin operations (user management, analytics aggregations)
  * - Public data (donation totals, feedback community view)
- * 
+ *
  * Method Patterns:
  * - get*: Retrieve single record or filtered list
  * - get*Paginated: Retrieve paginated results with metadata
@@ -155,31 +144,31 @@ export interface PaginatedResponse<T> {
  * - update*: Modify existing record, returns updated entity
  * - delete*: Remove record, returns void
  * - upsert*: Insert or update, returns entity
- * 
+ *
  * All user-scoped methods enforce data isolation via userId in WHERE clauses.
  */
 export interface IStorage {
   // ==================== User Operations ====================
   // REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
-  
+
   /**
    * Retrieve user by ID
-   * 
+   *
    * @param id - User ID (typically OIDC sub claim)
    * @returns User record or undefined if not found
    */
   getUser(id: string): Promise<User | undefined>;
-  
+
   /**
    * Create or update user from OIDC claims
-   * 
+   *
    * Called on every authenticated request to ensure user exists in database.
    * On first login: Creates user record with admin status if first user or in ADMIN_EMAILS env var
    * On subsequent logins: Updates user profile data (name, image, etc.)
-   * 
+   *
    * @param user - User data from OIDC claims (id, email, firstName, lastName, profileImageUrl)
    * @returns Created or updated user record
-   * 
+   *
    * Admin Assignment:
    * - First user in system is automatically admin
    * - Users with email in ADMIN_EMAILS environment variable are admin
@@ -203,43 +192,39 @@ export interface IStorage {
   deletePushToken(userId: string, token: string): Promise<void>;
 
   // Notification Management (user-scoped)
-  dismissNotification(userId: string, notificationId: string, dismissedBy?: string): Promise<void>;
+  dismissNotification(
+    userId: string,
+    notificationId: string,
+    dismissedBy?: string,
+  ): Promise<void>;
   getUndismissedNotifications(userId: string, limit?: number): Promise<any[]>;
-
-  // Storage Locations (now in users.storageLocations JSONB)
-  getStorageLocations(userId: string): Promise<StorageLocation[]>;
-  getStorageLocation(
-    userId: string,
-    id: string,
-  ): Promise<StorageLocation | undefined>;
-  createStorageLocation(
-    userId: string,
-    location: Omit<StorageLocation, "id">,
-  ): Promise<StorageLocation>;
 
   // Appliances (user-scoped)
   getAppliances(userId: string): Promise<ApplianceWithCategory[]>;
-  getAppliance(userId: string, id: string): Promise<ApplianceWithCategory | undefined>;
+  getAppliance(
+    userId: string,
+    id: string,
+  ): Promise<ApplianceWithCategory | undefined>;
   createAppliance(
     userId: string,
-    appliance: Omit<InsertAppliance, "userId">,
-  ): Promise<Appliance>;
+    appliance: Omit<InsertUserAppliance, "userId">,
+  ): Promise<UserAppliance>;
   updateAppliance(
     userId: string,
     id: string,
-    appliance: Partial<Omit<InsertAppliance, "userId">>,
-  ): Promise<Appliance>;
+    appliance: Partial<Omit<InsertUserAppliance, "userId">>,
+  ): Promise<UserAppliance>;
   deleteAppliance(userId: string, id: string): Promise<void>;
   getAppliancesByCategory(
     userId: string,
     category: string,
-  ): Promise<Appliance[]>;
+  ): Promise<UserAppliance[]>;
   getAppliancesByCapability(
     userId: string,
     capability: string,
-  ): Promise<Appliance[]>;
+  ): Promise<UserAppliance[]>;
 
-  // Appliance Library - Master catalog of all equipment
+  // UserAppliance Library - Master catalog of all equipment
   getApplianceLibrary(): Promise<ApplianceLibrary[]>;
   getApplianceLibraryByCategory(category: string): Promise<ApplianceLibrary[]>;
   searchApplianceLibrary(query: string): Promise<ApplianceLibrary[]>;
@@ -258,17 +243,27 @@ export interface IStorage {
     updates: Partial<InsertUserAppliance>,
   ): Promise<UserAppliance>;
   deleteUserAppliance(userId: string, id: string): Promise<void>;
-  getUserAppliancesByCategory(userId: string, category: string): Promise<ApplianceWithCategory[]>;
-  getApplianceCategories(userId: string): Promise<Array<{
-    id: string;
-    name: string;
-    count: number;
-  }>>;
+  getUserAppliancesByCategory(
+    userId: string,
+    category: string,
+  ): Promise<ApplianceWithCategory[]>;
+  getApplianceCategories(userId: string): Promise<
+    Array<{
+      id: string;
+      name: string;
+      count: number;
+    }>
+  >;
 
   // Barcode Products - removed (tables deleted)
 
   // Food Items (user-scoped)
-  getFoodItems(userId: string, storageLocationId?: string, foodCategory?: string, limit?: number): Promise<FoodItem[]>;
+  getFoodItems(
+    userId: string,
+    storageLocationId?: string,
+    foodCategory?: string,
+    limit?: number,
+  ): Promise<FoodItem[]>;
   getFoodItemsPaginated(
     userId: string,
     page?: number,
@@ -304,7 +299,7 @@ export interface IStorage {
 
   // Recipes (user-scoped)
   getRecipes(
-    userId: string, 
+    userId: string,
     filters?: {
       isFavorite?: boolean;
       search?: string;
@@ -312,7 +307,7 @@ export interface IStorage {
       difficulty?: string;
       maxCookTime?: number;
     },
-    limit?: number
+    limit?: number,
   ): Promise<Recipe[]>;
   getRecipesPaginated(
     userId: string,
@@ -386,15 +381,21 @@ export interface IStorage {
   cacheFood(food: InsertFdcCache): Promise<FdcCache>;
   updateFoodLastAccessed(fdcId: string): Promise<void>;
   clearOldCache(daysOld: number): Promise<void>;
-  
+
   // Cache Stats Methods
-  getUSDACacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }>;
-  
+  getUSDACacheStats(): Promise<{
+    totalEntries: number;
+    oldestEntry: Date | null;
+  }>;
+
   // Common Food Items (onboarding inventory)
-  getCommonFoodItems(): Promise<CommonFoodItem[]>;
+  getOnboardingInventory(): Promise<OnboardingInventory[]>;
 
   // Shopping List Items (user-scoped)
-  getShoppingListItems(userId: string, limit?: number): Promise<ShoppingListItem[]>;
+  getShoppingListItems(
+    userId: string,
+    limit?: number,
+  ): Promise<ShoppingListItem[]>;
   getGroupedShoppingListItems(userId: string): Promise<{
     items: ShoppingListItem[];
     grouped: Record<string, ShoppingListItem[]>;
@@ -532,13 +533,18 @@ export interface IStorage {
   getCookingTermByTerm(term: string): Promise<CookingTerm | undefined>;
   getCookingTermsByCategory(category: string): Promise<CookingTerm[]>;
   createCookingTerm(term: InsertCookingTerm): Promise<CookingTerm>;
-  updateCookingTerm(id: string, term: Partial<InsertCookingTerm>): Promise<CookingTerm>;
+  updateCookingTerm(
+    id: string,
+    term: Partial<InsertCookingTerm>,
+  ): Promise<CookingTerm>;
   deleteCookingTerm(id: string): Promise<void>;
   searchCookingTerms(searchText: string): Promise<CookingTerm[]>;
 
   // Analytics Events
   recordAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
-  recordAnalyticsEventsBatch(events: InsertAnalyticsEvent[]): Promise<AnalyticsEvent[]>;
+  recordAnalyticsEventsBatch(
+    events: InsertAnalyticsEvent[],
+  ): Promise<AnalyticsEvent[]>;
   getAnalyticsEvents(
     userId?: string,
     filters?: {
@@ -547,23 +553,26 @@ export interface IStorage {
       startDate?: Date;
       endDate?: Date;
       limit?: number;
-    }
+    },
   ): Promise<AnalyticsEvent[]>;
 
   // User Sessions
   createUserSession(session: InsertUserSession): Promise<UserSession>;
-  updateUserSession(sessionId: string, update: Partial<InsertUserSession>): Promise<UserSession>;
+  updateUserSession(
+    sessionId: string,
+    update: Partial<InsertUserSession>,
+  ): Promise<UserSession>;
   getUserSessions(
     userId?: string,
     filters?: {
       startDate?: Date;
       endDate?: Date;
       limit?: number;
-    }
+    },
   ): Promise<UserSession[]>;
   getAnalyticsStats(
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     totalEvents: number;
     uniqueUsers: number;
@@ -575,18 +584,18 @@ export interface IStorage {
   }>;
 
   // ==================== Activity Logging ====================
-  
+
   /**
    * Create an activity log entry
-   * 
+   *
    * @param log - Activity log data
    * @returns Created activity log
    */
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
-  
+
   /**
    * Get activity logs with optional filters
-   * 
+   *
    * @param userId - Filter by user ID (null for system events)
    * @param filters - Additional filters (action, entity, date range, etc.)
    * @returns Array of activity logs
@@ -601,12 +610,12 @@ export interface IStorage {
       endDate?: Date;
       limit?: number;
       offset?: number;
-    }
+    },
   ): Promise<ActivityLog[]>;
-  
+
   /**
    * Get paginated activity logs
-   * 
+   *
    * @param userId - Filter by user ID
    * @param page - Page number (1-indexed)
    * @param limit - Items per page
@@ -623,39 +632,37 @@ export interface IStorage {
       entityId?: string;
       startDate?: Date;
       endDate?: Date;
-    }
+    },
   ): Promise<PaginatedResponse<ActivityLog>>;
-  
+
   /**
    * Get user's activity timeline
-   * 
+   *
    * @param userId - User ID
    * @param limit - Number of recent activities
    * @returns User's activity timeline
    */
   getUserActivityTimeline(
     userId: string,
-    limit?: number
+    limit?: number,
   ): Promise<ActivityLog[]>;
-  
+
   /**
    * Get system events (activities with no user)
-   * 
+   *
    * @param filters - Optional filters
    * @returns System event logs
    */
-  getSystemActivityLogs(
-    filters?: {
-      action?: string | string[];
-      startDate?: Date;
-      endDate?: Date;
-      limit?: number;
-    }
-  ): Promise<ActivityLog[]>;
-  
+  getSystemActivityLogs(filters?: {
+    action?: string | string[];
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<ActivityLog[]>;
+
   /**
    * Get activity statistics
-   * 
+   *
    * @param userId - Filter by user ID (optional)
    * @param startDate - Start date for stats
    * @param endDate - End date for stats
@@ -664,36 +671,36 @@ export interface IStorage {
   getActivityStats(
     userId?: string | null,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     total: number;
     byAction: Array<{ action: string; count: number }>;
     byEntity: Array<{ entity: string; count: number }>;
   }>;
-  
+
   /**
    * Clean up old activity logs based on retention policy
-   * 
+   *
    * @param retentionDays - Days to retain logs (default: 90)
    * @param excludeActions - Actions to exclude from cleanup
    * @returns Number of deleted logs
    */
   cleanupOldActivityLogs(
     retentionDays?: number,
-    excludeActions?: string[]
+    excludeActions?: string[],
   ): Promise<number>;
-  
+
   /**
    * Export user's activity logs
-   * 
+   *
    * @param userId - User ID
    * @returns User's activity logs
    */
   exportUserActivityLogs(userId: string): Promise<ActivityLog[]>;
-  
+
   /**
    * Delete user's activity logs (GDPR compliance)
-   * 
+   *
    * @param userId - User ID
    * @returns Number of deleted logs
    */
@@ -712,83 +719,87 @@ interface CacheEntry<T> {
 
 /**
  * Database Storage Implementation
- * 
+ *
  * Implements the IStorage interface using Drizzle ORM with PostgreSQL.
  * Provides comprehensive data access layer with caching, user initialization, and performance optimizations.
- * 
+ *
  * Key Features:
  * - User Initialization: Lazy creation of default data (storage locations, appliances) on first access
  * - Caching Strategy: In-memory cache with TTL for user preferences and frequently accessed data
  * - Performance: Parallel queries, batch inserts, pagination with proper indexing
  * - Data Isolation: All user-scoped methods enforce userId checks to prevent cross-user access
  * - Transaction Safety: Uses Drizzle's transaction support for multi-step operations
- * 
+ *
  * Initialization Process:
  * 1. First authenticated request for a user triggers ensureDefaultDataForUser()
  * 2. Creates default storage locations (Refrigerator, Freezer, Pantry, Counter)
  * 3. Creates default appliances (Oven, Stove, Microwave, Air Fryer)
  * 4. Uses atomic locks to prevent race conditions during concurrent requests
- * 
+ *
  * Caching Strategy:
  * - User preferences cached for 10 minutes
  * - Other frequently accessed data cached for 5 minutes
  * - Cache keys follow pattern: `{entity}:{userId}` or `{entity}:{id}`
  * - Cache invalidation on mutations affecting cached data
- * 
+ *
  * Error Handling:
  * - All database errors are caught, logged, and rethrown with user-friendly messages
  * - Failed initializations are retried on next access (lock is released)
  * - Stale cache entries are automatically pruned on access
- * 
+ *
  * @implements {IStorage}
  */
 export class DatabaseStorage implements IStorage {
   /** Tracks which users have had default data initialized */
   private userInitialized = new Set<string>();
-  
+
   /** Stores in-progress initialization promises to prevent duplicate initialization */
   private initializationPromises = new Map<string, Promise<void>>();
-  
+
   /** Mutex for atomic initialization operations */
   private initializationLock = new Map<string, boolean>();
-  
+
   /** In-memory cache for frequently accessed data */
   private cache = new Map<string, CacheEntry<any>>();
-  
+
   /** Default cache TTL: 5 minutes */
   private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000;
-  
+
   /** User preferences cache TTL: 10 minutes (accessed frequently) */
   private readonly USER_PREFS_TTL = 10 * 60 * 1000;
-  
+
   // Cache management methods
   private getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
-    
+
     const now = Date.now();
     if (now - entry.timestamp > entry.ttl) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data as T;
   }
-  
-  private setCached<T>(key: string, data: T, ttl: number = this.DEFAULT_CACHE_TTL): void {
+
+  private setCached<T>(
+    key: string,
+    data: T,
+    ttl: number = this.DEFAULT_CACHE_TTL,
+  ): void {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
   }
-  
+
   private invalidateCache(pattern?: string): void {
     if (!pattern) {
       this.cache.clear();
       return;
     }
-    
+
     // Remove all cache entries that match the pattern
     const keysToDelete: string[] = [];
     this.cache.forEach((_, key) => {
@@ -796,8 +807,8 @@ export class DatabaseStorage implements IStorage {
         keysToDelete.push(key);
       }
     });
-    
-    keysToDelete.forEach(key => this.cache.delete(key));
+
+    keysToDelete.forEach((key) => this.cache.delete(key));
   }
 
   private async ensureDefaultDataForUser(userId: string) {
@@ -856,10 +867,34 @@ export class DatabaseStorage implements IStorage {
           if (existingLocations.length === 0) {
             // Initialize default storage locations for this user
             const defaultLocations = [
-              { userId, name: "Refrigerator", icon: "refrigerator", isDefault: true, sortOrder: 1 },
-              { userId, name: "Freezer", icon: "snowflake", isDefault: true, sortOrder: 2 },
-              { userId, name: "Pantry", icon: "pizza", isDefault: true, sortOrder: 3 },
-              { userId, name: "Counter", icon: "utensils-crossed", isDefault: true, sortOrder: 4 },
+              {
+                userId,
+                name: "Refrigerator",
+                icon: "refrigerator",
+                isDefault: true,
+                sortOrder: 1,
+              },
+              {
+                userId,
+                name: "Freezer",
+                icon: "snowflake",
+                isDefault: true,
+                sortOrder: 2,
+              },
+              {
+                userId,
+                name: "Pantry",
+                icon: "pizza",
+                isDefault: true,
+                sortOrder: 3,
+              },
+              {
+                userId,
+                name: "Counter",
+                icon: "utensils-crossed",
+                isDefault: true,
+                sortOrder: 4,
+              },
             ];
 
             await db.insert(userStorage).values(defaultLocations);
@@ -934,19 +969,22 @@ export class DatabaseStorage implements IStorage {
 
       // Check if this should be an admin
       let isAdmin = false;
-      
+
       // Check if user email is in ADMIN_EMAILS env var
-      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
+      const adminEmails =
+        process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()) || [];
       if (userData.email && adminEmails.includes(userData.email)) {
         isAdmin = true;
-        console.log(`Auto-promoting ${userData.email} to admin (via ADMIN_EMAILS)`);
+        console.log(
+          `Auto-promoting ${userData.email} to admin (via ADMIN_EMAILS)`,
+        );
       } else {
         // Check if this is the first user
         const [countResult] = await db
           .select({ count: sql<number>`count(*)::int` })
           .from(users);
         const userCount = countResult?.count || 0;
-        
+
         if (userCount === 0) {
           isAdmin = true;
           console.log(`Auto-promoting ${userData.email} to admin (first user)`);
@@ -987,15 +1025,15 @@ export class DatabaseStorage implements IStorage {
       if (cached) {
         return cached;
       }
-      
+
       // Fetch from database
       const [user] = await db.select().from(users).where(eq(users.id, userId));
-      
+
       // Cache the result
       if (user) {
         this.setCached(cacheKey, user, this.USER_PREFS_TTL);
       }
-      
+
       return user;
     } catch (error) {
       console.error(`Error getting user preferences for ${userId}:`, error);
@@ -1010,7 +1048,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Invalidate cache for this user
       this.invalidateCache(`user_prefs:${userId}`);
-      
+
       const [updatedUser] = await db
         .update(users)
         .set({
@@ -1023,7 +1061,7 @@ export class DatabaseStorage implements IStorage {
       if (!updatedUser) {
         throw new Error("User not found");
       }
-      
+
       // Cache the updated preferences
       const cacheKey = `user_prefs:${userId}`;
       this.setCached(cacheKey, updatedUser, this.USER_PREFS_TTL);
@@ -1100,20 +1138,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Notification Management
-  async dismissNotification(userId: string, notificationId: string, dismissedBy?: string): Promise<void> {
+  async dismissNotification(
+    userId: string,
+    notificationId: string,
+    dismissedBy?: string,
+  ): Promise<void> {
     try {
       const result = await db
         .update(notificationHistory)
         .set({
-          status: 'dismissed',
+          status: "dismissed",
           dismissedAt: new Date(),
-          dismissedBy: dismissedBy || 'web-app',
+          dismissedBy: dismissedBy || "web-app",
         })
         .where(
           and(
             eq(notificationHistory.id, notificationId),
-            eq(notificationHistory.userId, userId)
-          )
+            eq(notificationHistory.userId, userId),
+          ),
         )
         .returning();
 
@@ -1126,7 +1168,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUndismissedNotifications(userId: string, limit: number = 50): Promise<NotificationHistory[]> {
+  async getUndismissedNotifications(
+    userId: string,
+    limit: number = 50,
+  ): Promise<NotificationHistory[]> {
     try {
       return await db
         .select()
@@ -1134,8 +1179,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(notificationHistory.userId, userId),
-            isNull(notificationHistory.dismissedAt)
-          )
+            isNull(notificationHistory.dismissedAt),
+          ),
         )
         .orderBy(desc(notificationHistory.sentAt))
         .limit(limit);
@@ -1154,7 +1199,9 @@ export class DatabaseStorage implements IStorage {
       const locations = await db
         .select()
         .from(userStorage)
-        .where(and(eq(userStorage.userId, userId), eq(userStorage.isActive, true)))
+        .where(
+          and(eq(userStorage.userId, userId), eq(userStorage.isActive, true)),
+        )
         .orderBy(userStorage.sortOrder);
 
       // Get item counts for each location
@@ -1191,15 +1238,17 @@ export class DatabaseStorage implements IStorage {
   ): Promise<StorageLocation | undefined> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      
+
       const [location] = await db
         .select()
         .from(userStorage)
-        .where(and(
-          eq(userStorage.userId, userId),
-          eq(userStorage.id, id),
-          eq(userStorage.isActive, true)
-        ));
+        .where(
+          and(
+            eq(userStorage.userId, userId),
+            eq(userStorage.id, id),
+            eq(userStorage.isActive, true),
+          ),
+        );
 
       return location;
     } catch (error) {
@@ -1210,7 +1259,16 @@ export class DatabaseStorage implements IStorage {
 
   async createStorageLocation(
     userId: string,
-    location: Omit<StorageLocation, "id" | "userId" | "createdAt" | "updatedAt" | "isDefault" | "isActive" | "sortOrder">,
+    location: Omit<
+      StorageLocation,
+      | "id"
+      | "userId"
+      | "createdAt"
+      | "updatedAt"
+      | "isDefault"
+      | "isActive"
+      | "sortOrder"
+    >,
   ): Promise<StorageLocation> {
     try {
       // Check if user exists
@@ -1221,7 +1279,9 @@ export class DatabaseStorage implements IStorage {
 
       // Get current max sort order for this user
       const [maxSort] = await db
-        .select({ maxOrder: sql<number>`COALESCE(MAX(${userStorage.sortOrder}), 0)` })
+        .select({
+          maxOrder: sql<number>`COALESCE(MAX(${userStorage.sortOrder}), 0)`,
+        })
         .from(userStorage)
         .where(eq(userStorage.userId, userId));
 
@@ -1249,7 +1309,7 @@ export class DatabaseStorage implements IStorage {
   async getAppliances(userId: string): Promise<ApplianceWithCategory[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      
+
       // Join with applianceLibrary to get category information
       const results = await db
         .select({
@@ -1259,12 +1319,12 @@ export class DatabaseStorage implements IStorage {
         .from(userAppliances)
         .leftJoin(
           applianceLibrary,
-          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id),
         )
         .where(eq(userAppliances.userId, userId));
-      
+
       // Return appliances with category information as flat fields
-      return results.map(r => ({
+      return results.map((r) => ({
         ...r.appliance,
         category: r.library?.category || null,
         subcategory: r.library?.subcategory || null,
@@ -1278,7 +1338,7 @@ export class DatabaseStorage implements IStorage {
   async createAppliance(
     userId: string,
     appliance: Omit<InsertAppliance, "userId">,
-  ): Promise<Appliance> {
+  ): Promise<UserAppliance> {
     try {
       const [newAppliance] = await db
         .insert(userAppliances)
@@ -1304,20 +1364,24 @@ export class DatabaseStorage implements IStorage {
         .from(userAppliances)
         .leftJoin(
           applianceLibrary,
-          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id),
         )
-        .where(and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)));
-      
+        .where(
+          and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)),
+        );
+
       if (results.length === 0) return undefined;
-      
+
       const r = results[0];
       return {
         ...r.appliance,
-        category: r.library ? {
-          id: r.library.category,
-          name: r.library.category,
-          subcategory: r.library.subcategory,
-        } : null,
+        category: r.library
+          ? {
+              id: r.library.category,
+              name: r.library.category,
+              subcategory: r.library.subcategory,
+            }
+          : null,
       };
     } catch (error) {
       console.error(`Error getting appliance ${id}:`, error);
@@ -1329,12 +1393,14 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     id: string,
     appliance: Partial<Omit<InsertAppliance, "userId">>,
-  ): Promise<Appliance> {
+  ): Promise<UserAppliance> {
     try {
       const [updatedAppliance] = await db
         .update(userAppliances)
         .set({ ...appliance, updatedAt: new Date() })
-        .where(and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)))
+        .where(
+          and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)),
+        )
         .returning();
       return updatedAppliance;
     } catch (error) {
@@ -1347,7 +1413,9 @@ export class DatabaseStorage implements IStorage {
     try {
       await db
         .delete(userAppliances)
-        .where(and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)));
+        .where(
+          and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)),
+        );
     } catch (error) {
       console.error(`Error deleting appliance ${id}:`, error);
       throw new Error("Failed to delete appliance");
@@ -1357,7 +1425,7 @@ export class DatabaseStorage implements IStorage {
   async getAppliancesByCategory(
     userId: string,
     category: string,
-  ): Promise<Appliance[]> {
+  ): Promise<UserAppliance[]> {
     try {
       // Get user userAppliances that have an applianceLibraryId linked to the specified category
       const results = await db
@@ -1367,16 +1435,16 @@ export class DatabaseStorage implements IStorage {
         .from(userAppliances)
         .leftJoin(
           applianceLibrary,
-          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id),
         )
         .where(
           and(
             eq(userAppliances.userId, userId),
-            eq(applianceLibrary.category, category)
-          )
+            eq(applianceLibrary.category, category),
+          ),
         );
-      
-      return results.map(r => r.appliance);
+
+      return results.map((r) => r.appliance);
     } catch (error) {
       console.error(
         `Error getting userAppliances by category for user ${userId}:`,
@@ -1389,7 +1457,7 @@ export class DatabaseStorage implements IStorage {
   async getAppliancesByCapability(
     userId: string,
     capability: string,
-  ): Promise<Appliance[]> {
+  ): Promise<UserAppliance[]> {
     try {
       const results = await db
         .select()
@@ -1410,8 +1478,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-
-  // Appliance Library methods
+  // UserAppliance Library methods
   async getApplianceLibrary(): Promise<ApplianceLibrary[]> {
     try {
       return db.select().from(applianceLibrary);
@@ -1421,14 +1488,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getApplianceLibraryByCategory(category: string): Promise<ApplianceLibrary[]> {
+  async getApplianceLibraryByCategory(
+    category: string,
+  ): Promise<ApplianceLibrary[]> {
     try {
       return db
         .select()
         .from(applianceLibrary)
         .where(eq(applianceLibrary.category, category));
     } catch (error) {
-      console.error(`Error getting userAppliances by category ${category}:`, error);
+      console.error(
+        `Error getting userAppliances by category ${category}:`,
+        error,
+      );
       throw new Error("Failed to retrieve userAppliances by category");
     }
   }
@@ -1442,7 +1514,7 @@ export class DatabaseStorage implements IStorage {
         .where(
           sql`LOWER(${applianceLibrary.name}) LIKE ${searchTerm} OR 
                LOWER(${applianceLibrary.description}) LIKE ${searchTerm} OR
-               LOWER(${applianceLibrary.subcategory}) LIKE ${searchTerm}`
+               LOWER(${applianceLibrary.subcategory}) LIKE ${searchTerm}`,
         );
     } catch (error) {
       console.error(`Error searching appliance library for "${query}":`, error);
@@ -1473,12 +1545,12 @@ export class DatabaseStorage implements IStorage {
         .from(userAppliances)
         .leftJoin(
           applianceLibrary,
-          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id),
         )
         .where(eq(userAppliances.userId, userId));
-      
+
       // Return appliances with category information as flat fields
-      return results.map(r => ({
+      return results.map((r) => ({
         ...r.appliance,
         category: r.library?.category || null,
         subcategory: r.library?.subcategory || null,
@@ -1500,13 +1572,13 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(applianceLibrary)
         .where(eq(applianceLibrary.id, applianceLibraryId));
-      
+
       const [newUserAppliance] = await db
         .insert(userAppliances)
         .values({
           userId,
           applianceLibraryId,
-          name: details?.name || libraryItem?.name || 'Unknown Appliance',
+          name: details?.name || libraryItem?.name || "Unknown UserAppliance",
           type: details?.type || libraryItem?.category,
           ...details,
         })
@@ -1528,10 +1600,7 @@ export class DatabaseStorage implements IStorage {
         .update(userAppliances)
         .set({ ...updates, updatedAt: new Date() })
         .where(
-          and(
-            eq(userAppliances.id, id),
-            eq(userAppliances.userId, userId)
-          )
+          and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)),
         )
         .returning();
       return updated;
@@ -1546,10 +1615,7 @@ export class DatabaseStorage implements IStorage {
       await db
         .delete(userAppliances)
         .where(
-          and(
-            eq(userAppliances.id, id),
-            eq(userAppliances.userId, userId)
-          )
+          and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)),
         );
     } catch (error) {
       console.error(`Error deleting user appliance ${id}:`, error);
@@ -1557,7 +1623,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserAppliancesByCategory(userId: string, category: string): Promise<ApplianceWithCategory[]> {
+  async getUserAppliancesByCategory(
+    userId: string,
+    category: string,
+  ): Promise<ApplianceWithCategory[]> {
     try {
       // Join with appliance library to filter by category
       const result = await db
@@ -1568,31 +1637,36 @@ export class DatabaseStorage implements IStorage {
         .from(userAppliances)
         .innerJoin(
           applianceLibrary,
-          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id),
         )
         .where(
           and(
             eq(userAppliances.userId, userId),
-            eq(applianceLibrary.category, category)
-          )
+            eq(applianceLibrary.category, category),
+          ),
         );
-      
-      return result.map(r => ({
+
+      return result.map((r) => ({
         ...r.appliance,
         category: r.library?.category || null,
         subcategory: r.library?.subcategory || null,
       }));
     } catch (error) {
-      console.error(`Error getting user userAppliances by category ${category}:`, error);
+      console.error(
+        `Error getting user userAppliances by category ${category}:`,
+        error,
+      );
       throw new Error("Failed to retrieve user userAppliances by category");
     }
   }
 
-  async getApplianceCategories(userId: string): Promise<Array<{
-    id: string;
-    name: string;
-    count: number;
-  }>> {
+  async getApplianceCategories(userId: string): Promise<
+    Array<{
+      id: string;
+      name: string;
+      count: number;
+    }>
+  > {
     try {
       // Get all user appliances with their category info
       const result = await db
@@ -1603,18 +1677,21 @@ export class DatabaseStorage implements IStorage {
         .from(userAppliances)
         .innerJoin(
           applianceLibrary,
-          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id),
         )
         .where(eq(userAppliances.userId, userId))
         .groupBy(applianceLibrary.category);
-      
-      return result.map(r => ({
+
+      return result.map((r) => ({
         id: r.category,
         name: r.category,
         count: r.count,
       }));
     } catch (error) {
-      console.error(`Error getting appliance categories for user ${userId}:`, error);
+      console.error(
+        `Error getting appliance categories for user ${userId}:`,
+        error,
+      );
       throw new Error("Failed to retrieve appliance categories");
     }
   }
@@ -1631,11 +1708,13 @@ export class DatabaseStorage implements IStorage {
     try {
       // Build where conditions dynamically
       const whereConditions = [eq(userInventory.userId, userId)];
-      
+
       if (storageLocationId) {
-        whereConditions.push(eq(userInventory.storageLocationId, storageLocationId));
+        whereConditions.push(
+          eq(userInventory.storageLocationId, storageLocationId),
+        );
       }
-      
+
       if (foodCategory) {
         whereConditions.push(eq(userInventory.foodCategory, foodCategory));
       }
@@ -1790,7 +1869,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Chat Messages - Optimized with default limit to prevent memory issues
-  async getChatMessages(userId: string, limit: number = 100): Promise<ChatMessage[]> {
+  async getChatMessages(
+    userId: string,
+    limit: number = 100,
+  ): Promise<ChatMessage[]> {
     try {
       return db
         .select()
@@ -1849,7 +1931,7 @@ export class DatabaseStorage implements IStorage {
         role: message.role,
         content: message.content,
       };
-      
+
       const [newMessage] = await db
         .insert(userChats)
         .values(messageData)
@@ -1900,7 +1982,7 @@ export class DatabaseStorage implements IStorage {
 
   // Recipes - Optimized with database-level filtering
   async getRecipes(
-    userId: string, 
+    userId: string,
     filters?: {
       isFavorite?: boolean;
       search?: string;
@@ -1908,41 +1990,41 @@ export class DatabaseStorage implements IStorage {
       difficulty?: string;
       maxCookTime?: number;
     },
-    limit: number = 200
+    limit: number = 200,
   ): Promise<Recipe[]> {
     try {
       const conditions = [eq(userRecipes.userId, userId)];
-      
+
       // Apply filters at the database level
       if (filters?.isFavorite !== undefined) {
         conditions.push(eq(userRecipes.isFavorite, filters.isFavorite));
       }
-      
+
       if (filters?.search) {
         const searchTerm = `%${filters.search.toLowerCase()}%`;
         conditions.push(
           or(
             sql`LOWER(${userRecipes.title}) LIKE ${searchTerm}`,
-            sql`LOWER(${userRecipes.description}) LIKE ${searchTerm}`
-          )!
+            sql`LOWER(${userRecipes.description}) LIKE ${searchTerm}`,
+          )!,
         );
       }
-      
+
       if (filters?.cuisine) {
         conditions.push(eq(userRecipes.cuisine, filters.cuisine));
       }
-      
+
       if (filters?.difficulty) {
         conditions.push(eq(userRecipes.difficulty, filters.difficulty));
       }
-      
+
       if (filters?.maxCookTime) {
         // Convert cook time string to minutes for comparison
         conditions.push(
-          sql`CAST(REGEXP_REPLACE(${userRecipes.cookTime}, '[^0-9]', '', 'g') AS INTEGER) <= ${filters.maxCookTime}`
+          sql`CAST(REGEXP_REPLACE(${userRecipes.cookTime}, '[^0-9]', '', 'g') AS INTEGER) <= ${filters.maxCookTime}`,
         );
       }
-      
+
       return db
         .select()
         .from(userRecipes)
@@ -1980,7 +2062,12 @@ export class DatabaseStorage implements IStorage {
         .limit(limit)
         .offset(offset);
 
-      return PaginationHelper.createResponse(paginatedRecipes, total, page, limit);
+      return PaginationHelper.createResponse(
+        paginatedRecipes,
+        total,
+        page,
+        limit,
+      );
     } catch (error) {
       console.error(
         `Error getting paginated userRecipes for user ${userId}:`,
@@ -2014,7 +2101,9 @@ export class DatabaseStorage implements IStorage {
         ingredients: Array.from(recipe.ingredients || []),
         instructions: Array.from(recipe.instructions || []),
         usedIngredients: Array.from(recipe.usedIngredients || []),
-        missingIngredients: recipe.missingIngredients ? Array.from(recipe.missingIngredients) : undefined,
+        missingIngredients: recipe.missingIngredients
+          ? Array.from(recipe.missingIngredients)
+          : undefined,
       };
       const [newRecipe] = await db
         .insert(userRecipes)
@@ -2068,7 +2157,7 @@ export class DatabaseStorage implements IStorage {
       // Fetch userRecipes and inventory in parallel for better performance
       const [userRecipes, inventory] = await parallelQueries([
         this.getRecipes(userId),
-        this.getFoodItems(userId)
+        this.getFoodItems(userId),
       ]);
 
       // Enrich each recipe with real-time inventory matching
@@ -2112,7 +2201,9 @@ export class DatabaseStorage implements IStorage {
     // TODO: Implement notification dismissal tracking
     // The notificationDismissed and lastNotifiedAt columns don't exist in userInventory
     // This would need to be tracked in a separate table or added to the schema
-    console.log(`Dismissing notification for food item ${foodItemId} for user ${userId}`);
+    console.log(
+      `Dismissing notification for food item ${foodItemId} for user ${userId}`,
+    );
   }
 
   async getExpiringItems(
@@ -2159,7 +2250,7 @@ export class DatabaseStorage implements IStorage {
 
       // Build where conditions
       const conditions: any[] = [eq(mealPlans.userId, userId)];
-      
+
       if (date) {
         conditions.push(eq(mealPlans.date, date));
       } else {
@@ -2170,7 +2261,7 @@ export class DatabaseStorage implements IStorage {
           conditions.push(sql`${mealPlans.date} <= ${endDate}`);
         }
       }
-      
+
       if (mealType) {
         conditions.push(eq(mealPlans.mealType, mealType));
       }
@@ -2415,18 +2506,21 @@ export class DatabaseStorage implements IStorage {
       // Don't throw - cache cleanup is not critical
     }
   }
-  
+
   // Cache Stats Methods
-  async getUSDACacheStats(): Promise<{ totalEntries: number; oldestEntry: Date | null }> {
+  async getUSDACacheStats(): Promise<{
+    totalEntries: number;
+    oldestEntry: Date | null;
+  }> {
     try {
       const [countResult] = await db
         .select({ count: sql<number>`COUNT(*)::int` })
         .from(fdcCache);
-      
+
       const [oldestResult] = await db
         .select({ oldest: sql<Date>`MIN(${fdcCache.cachedAt})` })
         .from(fdcCache);
-      
+
       return {
         totalEntries: countResult?.count || 0,
         oldestEntry: oldestResult?.oldest || null,
@@ -2438,7 +2532,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Shopping List Methods - Optimized with default limit
-  async getShoppingListItems(userId: string, limit: number = 200): Promise<ShoppingListItem[]> {
+  async getShoppingListItems(
+    userId: string,
+    limit: number = 200,
+  ): Promise<ShoppingListItem[]> {
     await this.ensureDefaultDataForUser(userId);
     const items = await db
       .select()
@@ -2456,22 +2553,25 @@ export class DatabaseStorage implements IStorage {
     checkedItems: number;
   }> {
     const items = await this.getShoppingListItems(userId);
-    
+
     // Group by recipe or manual entry
-    const grouped = items.reduce((acc: Record<string, ShoppingListItem[]>, item) => {
-      const key = item.recipeId || "manual";
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(item);
-      return acc;
-    }, {});
-    
+    const grouped = items.reduce(
+      (acc: Record<string, ShoppingListItem[]>, item) => {
+        const key = item.recipeId || "manual";
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(item);
+        return acc;
+      },
+      {},
+    );
+
     return {
       items,
       grouped,
       totalItems: items.length,
-      checkedItems: items.filter(i => i.isChecked).length,
+      checkedItems: items.filter((i) => i.isChecked).length,
     };
   }
 
@@ -2495,9 +2595,7 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(userShopping)
       .set(updates)
-      .where(
-        and(eq(userShopping.id, id), eq(userShopping.userId, userId)),
-      )
+      .where(and(eq(userShopping.id, id), eq(userShopping.userId, userId)))
       .returning();
 
     if (!updated) {
@@ -2509,19 +2607,14 @@ export class DatabaseStorage implements IStorage {
   async deleteShoppingListItem(userId: string, id: string): Promise<void> {
     await db
       .delete(userShopping)
-      .where(
-        and(eq(userShopping.id, id), eq(userShopping.userId, userId)),
-      );
+      .where(and(eq(userShopping.id, id), eq(userShopping.userId, userId)));
   }
 
   async clearCheckedShoppingListItems(userId: string): Promise<void> {
     await db
       .delete(userShopping)
       .where(
-        and(
-          eq(userShopping.userId, userId),
-          eq(userShopping.isChecked, true),
-        ),
+        and(eq(userShopping.userId, userId), eq(userShopping.isChecked, true)),
       );
   }
 
@@ -2559,10 +2652,7 @@ export class DatabaseStorage implements IStorage {
       };
     });
 
-    const newItems = await db
-      .insert(userShopping)
-      .values(items)
-      .returning();
+    const newItems = await db.insert(userShopping).values(items).returning();
 
     return newItems;
   }
@@ -2572,14 +2662,14 @@ export class DatabaseStorage implements IStorage {
       // Use a transaction to ensure all deletions complete or all rollback
       await db.transaction(async (tx) => {
         // Delete all user data in order (respecting foreign key constraints)
-        await tx
-          .delete(userShopping)
-          .where(eq(userShopping.userId, userId));
+        await tx.delete(userShopping).where(eq(userShopping.userId, userId));
         await tx.delete(mealPlans).where(eq(mealPlans.userId, userId));
         await tx.delete(userInventory).where(eq(userInventory.userId, userId));
         await tx.delete(userChats).where(eq(userChats.userId, userId));
         await tx.delete(userRecipes).where(eq(userRecipes.userId, userId));
-        await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
+        await tx
+          .delete(userAppliances)
+          .where(eq(userAppliances.userId, userId));
         await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
         await tx.delete(userFeedback).where(eq(userFeedback.userId, userId));
 
@@ -2629,10 +2719,10 @@ export class DatabaseStorage implements IStorage {
         sortBy === "email"
           ? users.email
           : sortBy === "firstName"
-          ? users.firstName
-          : sortBy === "lastName"
-          ? users.lastName
-          : users.createdAt;
+            ? users.firstName
+            : sortBy === "lastName"
+              ? users.lastName
+              : users.createdAt;
 
       // Get total count
       const [countResult] = await db
@@ -2664,10 +2754,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateUserAdminStatus(
-    userId: string,
-    isAdmin: boolean,
-  ): Promise<User> {
+  async updateUserAdminStatus(userId: string, isAdmin: boolean): Promise<User> {
     try {
       const [updatedUser] = await db
         .update(users)
@@ -2699,22 +2786,26 @@ export class DatabaseStorage implements IStorage {
         // Delete all user-related data (cascade will handle most, but we'll be explicit)
         await tx.delete(pushTokens).where(eq(pushTokens.userId, userId));
         await tx.delete(userStorage).where(eq(userStorage.userId, userId));
-        await tx.delete(userAppliances).where(eq(userAppliances.userId, userId));
+        await tx
+          .delete(userAppliances)
+          .where(eq(userAppliances.userId, userId));
         await tx.delete(userInventory).where(eq(userInventory.userId, userId));
         await tx.delete(userChats).where(eq(userChats.userId, userId));
         await tx.delete(userRecipes).where(eq(userRecipes.userId, userId));
         await tx.delete(mealPlans).where(eq(mealPlans.userId, userId));
         await tx.delete(apiUsageLogs).where(eq(apiUsageLogs.userId, userId));
         await tx.delete(userShopping).where(eq(userShopping.userId, userId));
-        
+
         // Delete feedback where userId is set (nullable column)
         await tx.delete(userFeedback).where(eq(userFeedback.userId, userId));
-        
+
         // Delete donations where userId is set (nullable column)
         await tx.delete(donations).where(eq(donations.userId, userId));
-        
+
         // Delete analytics events
-        await tx.delete(analyticsEvents).where(eq(analyticsEvents.userId, userId));
+        await tx
+          .delete(analyticsEvents)
+          .where(eq(analyticsEvents.userId, userId));
         await tx.delete(userSessions).where(eq(userSessions.userId, userId));
 
         // Finally, delete the user record
@@ -2725,7 +2816,9 @@ export class DatabaseStorage implements IStorage {
       this.userInitialized.delete(userId);
       this.invalidateCache(`user_prefs:${userId}`);
 
-      console.log(`Successfully deleted user ${userId} and all associated data`);
+      console.log(
+        `Successfully deleted user ${userId} and all associated data`,
+      );
     } catch (error) {
       console.error(`Error deleting user ${userId}:`, error);
       throw new Error("Failed to delete user - transaction rolled back");
@@ -2757,12 +2850,13 @@ export class DatabaseStorage implements IStorage {
   ): Promise<Feedback> {
     try {
       // Extract the extra fields that aren't part of the userFeedback table
-      const { isFlagged, flagReason, similarTo, ...feedbackFields } = feedbackData;
-      
+      const { isFlagged, flagReason, similarTo, ...feedbackFields } =
+        feedbackData;
+
       // Store flags in the tags array if provided
       let finalTags = feedbackFields.tags || [];
       if (isFlagged) {
-        finalTags = [...finalTags, 'flagged'];
+        finalTags = [...finalTags, "flagged"];
         if (flagReason) {
           finalTags = [...finalTags, `flag-reason:${flagReason}`];
         }
@@ -2770,7 +2864,7 @@ export class DatabaseStorage implements IStorage {
           finalTags = [...finalTags, `similar-to:${similarTo}`];
         }
       }
-      
+
       // Prepare the insert data following the pattern of other nullable userId tables
       const insertData = {
         ...feedbackFields,
@@ -2779,9 +2873,11 @@ export class DatabaseStorage implements IStorage {
         upvotes: [],
         responses: [],
         // Convert readonly arrays to mutable for JSONB fields
-        attachments: feedbackFields.attachments ? Array.from(feedbackFields.attachments) as string[] : undefined
+        attachments: feedbackFields.attachments
+          ? (Array.from(feedbackFields.attachments) as string[])
+          : undefined,
       };
-      
+
       const [newFeedback] = await db
         .insert(userFeedback)
         .values(insertData)
@@ -2831,7 +2927,9 @@ export class DatabaseStorage implements IStorage {
   ): Promise<PaginatedResponse<Feedback>> {
     try {
       const offset = (page - 1) * limit;
-      const whereCondition = status ? eq(userFeedback.status, status) : undefined;
+      const whereCondition = status
+        ? eq(userFeedback.status, status)
+        : undefined;
 
       const countQuery = db
         .select({ count: sql<number>`count(*)` })
@@ -3092,12 +3190,12 @@ export class DatabaseStorage implements IStorage {
       // Note: contextId and contextType fields don't exist in the schema
       // This method searches for context information encoded in tags
       const contextTag = `context:${contextType}:${contextId}`;
-      
+
       const results = await db
         .select()
         .from(userFeedback)
         .where(
-          sql`${userFeedback.tags} @> ${JSON.stringify([contextTag])}::jsonb`
+          sql`${userFeedback.tags} @> ${JSON.stringify([contextTag])}::jsonb`,
         )
         .orderBy(sql`${userFeedback.createdAt} DESC`);
       return results;
@@ -3126,7 +3224,11 @@ export class DatabaseStorage implements IStorage {
             .where(whereCondition)
             .orderBy(orderByClause)
             .limit(limit)
-        : await db.select().from(userFeedback).orderBy(orderByClause).limit(limit);
+        : await db
+            .select()
+            .from(userFeedback)
+            .orderBy(orderByClause)
+            .limit(limit);
 
       return results.map((item) => ({ ...item, userUpvoted: false }));
     } catch (error) {
@@ -3155,14 +3257,19 @@ export class DatabaseStorage implements IStorage {
             .where(whereCondition)
             .orderBy(orderByClause)
             .limit(limit)
-        : await db.select().from(userFeedback).orderBy(orderByClause).limit(limit);
+        : await db
+            .select()
+            .from(userFeedback)
+            .orderBy(orderByClause)
+            .limit(limit);
 
       // Check if user has upvoted each userFeedback item
       return results.map((item) => {
-        const upvotes = (item.upvotes as Array<{userId: string, createdAt: string}>) || [];
+        const upvotes =
+          (item.upvotes as Array<{ userId: string; createdAt: string }>) || [];
         return {
           ...item,
-          userUpvoted: upvotes.some(upvote => upvote.userId === userId),
+          userUpvoted: upvotes.some((upvote) => upvote.userId === userId),
         };
       });
     } catch (error) {
@@ -3184,16 +3291,23 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Check if user already upvoted
-      const upvotes = (currentFeedback.upvotes as Array<{userId: string, createdAt: string}>) || [];
-      if (upvotes.some(upvote => upvote.userId === userId)) {
+      const upvotes =
+        (currentFeedback.upvotes as Array<{
+          userId: string;
+          createdAt: string;
+        }>) || [];
+      if (upvotes.some((upvote) => upvote.userId === userId)) {
         return; // Already upvoted
       }
 
       // Add user to upvotes array
-      const updatedUpvotes = [...upvotes, { 
-        userId, 
-        createdAt: new Date().toISOString() 
-      }];
+      const updatedUpvotes = [
+        ...upvotes,
+        {
+          userId,
+          createdAt: new Date().toISOString(),
+        },
+      ];
 
       await db
         .update(userFeedback)
@@ -3220,8 +3334,14 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Remove user from upvotes array
-      const upvotes = (currentFeedback.upvotes as Array<{userId: string, createdAt: string}>) || [];
-      const updatedUpvotes = upvotes.filter((upvote) => upvote.userId !== userId);
+      const upvotes =
+        (currentFeedback.upvotes as Array<{
+          userId: string;
+          createdAt: string;
+        }>) || [];
+      const updatedUpvotes = upvotes.filter(
+        (upvote) => upvote.userId !== userId,
+      );
 
       // Only update if the user was actually in the upvotes array
       if (upvotes.length !== updatedUpvotes.length) {
@@ -3249,8 +3369,12 @@ export class DatabaseStorage implements IStorage {
         return false;
       }
 
-      const upvotes = (currentFeedback.upvotes as Array<{userId: string, createdAt: string}>) || [];
-      return upvotes.some(upvote => upvote.userId === userId);
+      const upvotes =
+        (currentFeedback.upvotes as Array<{
+          userId: string;
+          createdAt: string;
+        }>) || [];
+      return upvotes.some((upvote) => upvote.userId === userId);
     } catch (error) {
       console.error("Error checking upvote status:", error);
       return false;
@@ -3263,10 +3387,11 @@ export class DatabaseStorage implements IStorage {
         .select({ upvotes: userFeedback.upvotes })
         .from(userFeedback)
         .where(eq(userFeedback.id, feedbackId));
-      
+
       if (!result) return 0;
-      
-      const upvotes = (result.upvotes as Array<{userId: string, createdAt: string}>) || [];
+
+      const upvotes =
+        (result.upvotes as Array<{ userId: string; createdAt: string }>) || [];
       return upvotes.length;
     } catch (error) {
       console.error("Error getting upvote count:", error);
@@ -3511,7 +3636,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Common Food Items Methods
-  async getCommonFoodItems(): Promise<CommonFoodItem[]> {
+  async getOnboardingInventory(): Promise<OnboardingInventory[]> {
     try {
       return db.select().from(onboardingInventory);
     } catch (error) {
@@ -3520,7 +3645,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCommonFoodItemByName(displayName: string): Promise<CommonFoodItem | undefined> {
+  async getOnboardingInventoryByName(
+    displayName: string,
+  ): Promise<OnboardingInventory | undefined> {
     try {
       const [item] = await db
         .select()
@@ -3533,21 +3660,30 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCommonFoodItemsByNames(displayNames: string[]): Promise<CommonFoodItem[]> {
+  async getOnboardingInventoryByNames(
+    displayNames: string[],
+  ): Promise<OnboardingInventory[]> {
     try {
       if (displayNames.length === 0) return [];
       // Use a parameterized query with ARRAY constructor
       return db
         .select()
         .from(onboardingInventory)
-        .where(sql`${onboardingInventory.displayName} = ANY(ARRAY[${sql.join(displayNames.map(name => sql`${name}`), sql`, `)}])`);
+        .where(
+          sql`${onboardingInventory.displayName} = ANY(ARRAY[${sql.join(
+            displayNames.map((name) => sql`${name}`),
+            sql`, `,
+          )}])`,
+        );
     } catch (error) {
       console.error("Error getting common food items by names:", error);
       throw new Error("Failed to get common food items");
     }
   }
 
-  async upsertCommonFoodItem(item: InsertCommonFoodItem): Promise<CommonFoodItem> {
+  async upsertCommonFoodItem(
+    item: InsertCommonFoodItem,
+  ): Promise<CommonFoodItem> {
     try {
       const [result] = await db
         .insert(onboardingInventory)
@@ -3628,10 +3764,7 @@ export class DatabaseStorage implements IStorage {
 
   async createCookingTerm(term: InsertCookingTerm): Promise<CookingTerm> {
     try {
-      const [result] = await db
-        .insert(cookingTerms)
-        .values(term)
-        .returning();
+      const [result] = await db.insert(cookingTerms).values(term).returning();
       return result;
     } catch (error) {
       console.error("Error creating cooking term:", error);
@@ -3639,7 +3772,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateCookingTerm(id: string, term: Partial<InsertCookingTerm>): Promise<CookingTerm> {
+  async updateCookingTerm(
+    id: string,
+    term: Partial<InsertCookingTerm>,
+  ): Promise<CookingTerm> {
     try {
       const [result] = await db
         .update(cookingTerms)
@@ -3649,7 +3785,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(cookingTerms.id, id))
         .returning();
-      
+
       if (!result) {
         throw new Error("Cooking term not found");
       }
@@ -3662,9 +3798,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCookingTerm(id: string): Promise<void> {
     try {
-      await db
-        .delete(cookingTerms)
-        .where(eq(cookingTerms.id, id));
+      await db.delete(cookingTerms).where(eq(cookingTerms.id, id));
     } catch (error) {
       console.error("Error deleting cooking term:", error);
       throw new Error("Failed to delete cooking term");
@@ -3674,7 +3808,7 @@ export class DatabaseStorage implements IStorage {
   async searchCookingTerms(searchText: string): Promise<CookingTerm[]> {
     try {
       const lowerSearch = searchText.toLowerCase();
-      
+
       // Search in term, short definition, and search terms array
       return db
         .select()
@@ -3685,7 +3819,7 @@ export class DatabaseStorage implements IStorage {
                OR EXISTS (
                  SELECT 1 FROM unnest(${cookingTerms.searchTerms}) AS search_term
                  WHERE LOWER(search_term) LIKE ${`%${lowerSearch}%`}
-               )`
+               )`,
         );
     } catch (error) {
       console.error("Error searching cooking terms:", error);
@@ -3694,7 +3828,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Analytics Events Methods
-  async recordAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+  async recordAnalyticsEvent(
+    event: InsertAnalyticsEvent,
+  ): Promise<AnalyticsEvent> {
     try {
       const [result] = await db
         .insert(analyticsEvents)
@@ -3707,35 +3843,37 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async recordAnalyticsEventsBatch(events: InsertAnalyticsEvent[]): Promise<AnalyticsEvent[]> {
+  async recordAnalyticsEventsBatch(
+    events: InsertAnalyticsEvent[],
+  ): Promise<AnalyticsEvent[]> {
     try {
       if (events.length === 0) return [];
-      
+
       // Validate each event and set server-side timestamps
       const validatedEvents = [];
       const currentTimestamp = new Date();
-      
+
       for (const event of events) {
         try {
           // Validate event using the schema
           const validated = insertAnalyticsEventSchema.parse(event);
-          
+
           // Add server-side timestamp (will override any client timestamp)
           validatedEvents.push({
             ...validated,
-            timestamp: currentTimestamp
+            timestamp: currentTimestamp,
           });
         } catch (validationError) {
           // Log validation errors but continue with valid events
           console.warn("Event validation error in batch:", validationError);
         }
       }
-      
+
       if (validatedEvents.length === 0) {
         console.warn("No valid events to insert after validation");
         return [];
       }
-      
+
       // Batch insert validated events
       return await db
         .insert(analyticsEvents)
@@ -3755,25 +3893,32 @@ export class DatabaseStorage implements IStorage {
       startDate?: Date;
       endDate?: Date;
       limit?: number;
-    }
+    },
   ): Promise<AnalyticsEvent[]> {
     try {
       const conditions = [];
       if (userId) conditions.push(eq(analyticsEvents.userId, userId));
-      if (filters?.eventType) conditions.push(eq(analyticsEvents.eventType, filters.eventType));
-      if (filters?.eventCategory) conditions.push(eq(analyticsEvents.eventCategory, filters.eventCategory));
-      if (filters?.startDate) conditions.push(gte(analyticsEvents.timestamp, filters.startDate));
-      if (filters?.endDate) conditions.push(lte(analyticsEvents.timestamp, filters.endDate));
-      
+      if (filters?.eventType)
+        conditions.push(eq(analyticsEvents.eventType, filters.eventType));
+      if (filters?.eventCategory)
+        conditions.push(
+          eq(analyticsEvents.eventCategory, filters.eventCategory),
+        );
+      if (filters?.startDate)
+        conditions.push(gte(analyticsEvents.timestamp, filters.startDate));
+      if (filters?.endDate)
+        conditions.push(lte(analyticsEvents.timestamp, filters.endDate));
+
       const baseQuery = db.select().from(analyticsEvents);
-      const queryWithWhere = conditions.length > 0 
-        ? baseQuery.where(and(...conditions))
-        : baseQuery;
-      const queryWithOrder = queryWithWhere.orderBy(desc(analyticsEvents.timestamp));
-      const finalQuery = filters?.limit 
+      const queryWithWhere =
+        conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+      const queryWithOrder = queryWithWhere.orderBy(
+        desc(analyticsEvents.timestamp),
+      );
+      const finalQuery = filters?.limit
         ? queryWithOrder.limit(filters.limit)
         : queryWithOrder;
-      
+
       return await finalQuery;
     } catch (error) {
       console.error("Error getting analytics events:", error);
@@ -3787,7 +3932,9 @@ export class DatabaseStorage implements IStorage {
       // Convert readonly arrays to mutable arrays for JSONB fields
       const sessionData = {
         ...session,
-        goalCompletions: session.goalCompletions ? Array.from(session.goalCompletions) as string[] : undefined,
+        goalCompletions: session.goalCompletions
+          ? (Array.from(session.goalCompletions) as string[])
+          : undefined,
       };
       const [result] = await db
         .insert(userSessions)
@@ -3800,19 +3947,24 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateUserSession(sessionId: string, update: Partial<InsertUserSession>): Promise<UserSession> {
+  async updateUserSession(
+    sessionId: string,
+    update: Partial<InsertUserSession>,
+  ): Promise<UserSession> {
     try {
       // Convert readonly arrays to mutable arrays for JSONB fields
       const updateData = {
         ...update,
-        goalCompletions: update.goalCompletions ? Array.from(update.goalCompletions) as string[] : undefined,
+        goalCompletions: update.goalCompletions
+          ? (Array.from(update.goalCompletions) as string[])
+          : undefined,
       };
       const [result] = await db
         .update(userSessions)
         .set(updateData)
         .where(eq(userSessions.sessionId, sessionId))
         .returning();
-      
+
       if (!result) {
         throw new Error("Session not found");
       }
@@ -3829,23 +3981,26 @@ export class DatabaseStorage implements IStorage {
       startDate?: Date;
       endDate?: Date;
       limit?: number;
-    }
+    },
   ): Promise<UserSession[]> {
     try {
       const conditions = [];
       if (userId) conditions.push(eq(userSessions.userId, userId));
-      if (filters?.startDate) conditions.push(gte(userSessions.startTime, filters.startDate));
-      if (filters?.endDate) conditions.push(lte(userSessions.startTime, filters.endDate));
-      
+      if (filters?.startDate)
+        conditions.push(gte(userSessions.startTime, filters.startDate));
+      if (filters?.endDate)
+        conditions.push(lte(userSessions.startTime, filters.endDate));
+
       const baseQuery = db.select().from(userSessions);
-      const queryWithWhere = conditions.length > 0 
-        ? baseQuery.where(and(...conditions))
-        : baseQuery;
-      const queryWithOrder = queryWithWhere.orderBy(desc(userSessions.startTime));
-      const finalQuery = filters?.limit 
+      const queryWithWhere =
+        conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+      const queryWithOrder = queryWithWhere.orderBy(
+        desc(userSessions.startTime),
+      );
+      const finalQuery = filters?.limit
         ? queryWithOrder.limit(filters.limit)
         : queryWithOrder;
-      
+
       return await finalQuery;
     } catch (error) {
       console.error("Error getting user sessions:", error);
@@ -3855,7 +4010,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAnalyticsStats(
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     totalEvents: number;
     uniqueUsers: number;
@@ -3869,11 +4024,12 @@ export class DatabaseStorage implements IStorage {
       const conditions = [];
       if (startDate) conditions.push(gte(analyticsEvents.timestamp, startDate));
       if (endDate) conditions.push(lte(analyticsEvents.timestamp, endDate));
-      
+
       const sessionConditions = [];
-      if (startDate) sessionConditions.push(gte(userSessions.startTime, startDate));
+      if (startDate)
+        sessionConditions.push(gte(userSessions.startTime, startDate));
       if (endDate) sessionConditions.push(lte(userSessions.startTime, endDate));
-      
+
       // Execute all queries in parallel for better performance
       const [
         totalEventsResults,
@@ -3881,70 +4037,83 @@ export class DatabaseStorage implements IStorage {
         sessionStatsResults,
         topEventsResults,
         topCategoriesResults,
-        goalsResults
+        goalsResults,
       ] = await parallelQueries([
         // Total events query
-        db.select({ count: sql<number>`count(*)` })
+        db
+          .select({ count: sql<number>`count(*)` })
           .from(analyticsEvents)
           .where(conditions.length > 0 ? and(...conditions) : undefined),
-        
+
         // Unique users query
-        db.select({ count: sql<number>`count(distinct ${analyticsEvents.userId})` })
+        db
+          .select({
+            count: sql<number>`count(distinct ${analyticsEvents.userId})`,
+          })
           .from(analyticsEvents)
           .where(conditions.length > 0 ? and(...conditions) : undefined),
-        
+
         // Session stats query
-        db.select({
-          totalSessions: sql<number>`count(*)`,
-          avgDuration: sql<number>`avg(${userSessions.duration})`,
-        })
+        db
+          .select({
+            totalSessions: sql<number>`count(*)`,
+            avgDuration: sql<number>`avg(${userSessions.duration})`,
+          })
           .from(userSessions)
-          .where(sessionConditions.length > 0 ? and(...sessionConditions) : undefined),
-        
+          .where(
+            sessionConditions.length > 0
+              ? and(...sessionConditions)
+              : undefined,
+          ),
+
         // Top events query
-        db.select({
-          eventType: analyticsEvents.eventType,
-          count: sql<number>`count(*)`,
-        })
+        db
+          .select({
+            eventType: analyticsEvents.eventType,
+            count: sql<number>`count(*)`,
+          })
           .from(analyticsEvents)
           .where(conditions.length > 0 ? and(...conditions) : undefined)
           .groupBy(analyticsEvents.eventType)
           .orderBy(desc(sql`count(*)`))
           .limit(10),
-        
+
         // Top categories query
-        db.select({
-          eventCategory: analyticsEvents.eventCategory,
-          count: sql<number>`count(*)`,
-        })
+        db
+          .select({
+            eventCategory: analyticsEvents.eventCategory,
+            count: sql<number>`count(*)`,
+          })
           .from(analyticsEvents)
           .where(conditions.length > 0 ? and(...conditions) : undefined)
           .groupBy(analyticsEvents.eventCategory)
           .orderBy(desc(sql`count(*)`))
           .limit(10),
-        
+
         // Goals query for conversion rate
-        db.select({ count: sql<number>`count(*)` })
+        db
+          .select({ count: sql<number>`count(*)` })
           .from(analyticsEvents)
           .where(
             and(
-              eq(analyticsEvents.eventType, 'goal_completion'),
-              ...(conditions.length > 0 ? conditions : [])
-            )
-          )
+              eq(analyticsEvents.eventType, "goal_completion"),
+              ...(conditions.length > 0 ? conditions : []),
+            ),
+          ),
       ]);
-      
+
       const [totalEventsResult] = totalEventsResults;
       const [uniqueUsersResult] = uniqueUsersResults;
       const [sessionStats] = sessionStatsResults;
       const topEvents = topEventsResults;
       const topCategories = topCategoriesResults;
       const [goalsResult] = goalsResults;
-      
-      const conversionRate = sessionStats.totalSessions > 0
-        ? (goalsResult.count / sessionStats.totalSessions) * 100
-        : 0;
-      
+
+      const conversionRate =
+        sessionStats.totalSessions > 0
+          ? (goalsResult.count / sessionStats.totalSessions) * 100
+          : 0;
+
       return {
         totalEvents: totalEventsResult.count || 0,
         uniqueUsers: uniqueUsersResult.count || 0,
@@ -3964,10 +4133,7 @@ export class DatabaseStorage implements IStorage {
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
     try {
-      const [newLog] = await db
-        .insert(activityLogs)
-        .values(log)
-        .returning();
+      const [newLog] = await db.insert(activityLogs).values(log).returning();
       return newLog;
     } catch (error) {
       console.error("Error creating activity log:", error);
@@ -3985,13 +4151,10 @@ export class DatabaseStorage implements IStorage {
       endDate?: Date;
       limit?: number;
       offset?: number;
-    }
+    },
   ): Promise<ActivityLog[]> {
     try {
-      let query = db
-        .select()
-        .from(activityLogs)
-        .$dynamic();
+      let query = db.select().from(activityLogs).$dynamic();
 
       const conditions: any[] = [];
 
@@ -4062,7 +4225,7 @@ export class DatabaseStorage implements IStorage {
       entityId?: string;
       startDate?: Date;
       endDate?: Date;
-    }
+    },
   ): Promise<PaginatedResponse<ActivityLog>> {
     try {
       const offset = (page - 1) * limit;
@@ -4133,26 +4296,24 @@ export class DatabaseStorage implements IStorage {
 
   async getUserActivityTimeline(
     userId: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<ActivityLog[]> {
     return this.getActivityLogs(userId, { limit });
   }
 
-  async getSystemActivityLogs(
-    filters?: {
-      action?: string | string[];
-      startDate?: Date;
-      endDate?: Date;
-      limit?: number;
-    }
-  ): Promise<ActivityLog[]> {
+  async getSystemActivityLogs(filters?: {
+    action?: string | string[];
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<ActivityLog[]> {
     return this.getActivityLogs(null, filters);
   }
 
   async getActivityStats(
     userId?: string | null,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     total: number;
     byAction: Array<{ action: string; count: number }>;
@@ -4175,7 +4336,8 @@ export class DatabaseStorage implements IStorage {
         conditions.push(lte(activityLogs.timestamp, endDate));
       }
 
-      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
 
       // Get action counts
       const actionCounts = await db
@@ -4222,39 +4384,35 @@ export class DatabaseStorage implements IStorage {
 
   async cleanupOldActivityLogs(
     retentionDays: number = 90,
-    excludeActions?: string[]
+    excludeActions?: string[],
   ): Promise<number> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-      const conditions: any[] = [
-        lte(activityLogs.timestamp, cutoffDate)
-      ];
+      const conditions: any[] = [lte(activityLogs.timestamp, cutoffDate)];
 
       // Exclude certain important actions from cleanup
       if (excludeActions && excludeActions.length > 0) {
         conditions.push(
           sql`${activityLogs.action} NOT IN (${sql.raw(
-            excludeActions.map(a => `'${a}'`).join(',')
-          )})`
+            excludeActions.map((a) => `'${a}'`).join(","),
+          )})`,
         );
       }
 
-      const result = await db
-        .delete(activityLogs)
-        .where(and(...conditions));
+      const result = await db.delete(activityLogs).where(and(...conditions));
 
       const deletedCount = result.rowCount || 0;
 
       // Log the cleanup as a system event
       await this.createActivityLog({
         userId: null,
-        action: 'cleanup_job',
-        entity: 'system',
+        action: "cleanup_job",
+        entity: "system",
         entityId: null,
         metadata: {
-          type: 'activity_logs_cleanup',
+          type: "activity_logs_cleanup",
           retentionDays,
           deletedCount,
           cutoffDate: cutoffDate.toISOString(),
@@ -4278,11 +4436,11 @@ export class DatabaseStorage implements IStorage {
       // Log the export action
       await this.createActivityLog({
         userId,
-        action: 'data_exported',
-        entity: 'user',
+        action: "data_exported",
+        entity: "user",
         entityId: userId,
         metadata: {
-          type: 'activity_logs',
+          type: "activity_logs",
           count: logs.length,
         },
         ipAddress: null,
