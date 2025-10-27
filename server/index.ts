@@ -6,6 +6,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { logRetentionService } from "./services/log-retention.service";
 import PushStatusService from "./services/push-status.service";
 import { preloadCommonSearches } from "./utils/usdaCache";
+import { termDetector } from "./services/term-detector.service";
 
 const app = express();
 
@@ -115,5 +116,12 @@ app.use((req, res, next) => {
       });
       log("Cache warming initiated for USDA common searches");
     }
+    
+    // Initialize the cooking term detector
+    termDetector.initialize().then(() => {
+      log("✓ Cooking term detector initialized");
+    }).catch(error => {
+      console.error("[Term Detector] Failed to initialize:", error);
+    });
   });
 })();

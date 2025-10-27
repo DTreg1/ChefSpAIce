@@ -4,6 +4,7 @@ import { db } from "../db";
 import { cookingTerms } from "@shared/schema";
 import CookingTermsService from "../services/cooking-terms.service";
 import { asyncHandler } from "../middleware/error.middleware";
+import { termDetector } from "../services/term-detector.service";
 
 const router = Router();
 
@@ -86,6 +87,66 @@ router.get("/api/cooking-terms/search/:query", asyncHandler(async (req, res) => 
   
   const results = await CookingTermsService.searchTerms(query);
   res.json(results);
+}));
+
+// Enhanced term detection - detect terms with variations
+router.post("/api/cooking-terms/detect-enhanced", asyncHandler(async (req, res) => {
+  const { text, excludeCategories, maxMatches, contextAware } = req.body;
+  
+  if (!text || typeof text !== "string") {
+    return res.status(400).json({ error: "Text is required" });
+  }
+  
+  if (text.length > 10000) {
+    return res.status(400).json({ error: "Text too long. Maximum 10,000 characters allowed" });
+  }
+  
+  const matches = await termDetector.detectTerms(text, {
+    excludeCategories,
+    maxMatches: maxMatches || 100,
+    contextAware: contextAware !== false
+  });
+  
+  res.json({ matches });
+}));
+
+// Enrich text with HTML markup for terms
+router.post("/api/cooking-terms/enrich", asyncHandler(async (req, res) => {
+  const { text, excludeCategories, linkToGlossary, includeTooltip } = req.body;
+  
+  if (!text || typeof text !== "string") {
+    return res.status(400).json({ error: "Text is required" });
+  }
+  
+  if (text.length > 10000) {
+    return res.status(400).json({ error: "Text too long. Maximum 10,000 characters allowed" });
+  }
+  
+  const enrichedText = await termDetector.enrichText(text, {
+    excludeCategories,
+    linkToGlossary: linkToGlossary || false,
+    includeTooltip: includeTooltip !== false
+  });
+  
+  res.json({ text: enrichedText });
+}));
+
+// Get detection statistics for text
+router.post("/api/cooking-terms/stats", asyncHandler(async (req, res) => {
+  const { text } = req.body;
+  
+  if (!text || typeof text !== "string") {
+    return res.status(400).json({ error: "Text is required" });
+  }
+  
+  const stats = await termDetector.getDetectionStats(text);
+  res.json(stats);
+}));
+
+// Initialize/refresh term detector
+router.post("/api/cooking-terms/refresh", asyncHandler(async (req, res) => {
+  await termDetector.refresh();
+  res.json({ message: "Term detector refreshed successfully" });
 }));
 
 export default router;
