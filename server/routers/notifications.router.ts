@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../db";
 import { notificationHistory } from "@shared/schema";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import crypto from "crypto";
+import { storage } from "../storage";
 
 const router = Router();
 
@@ -42,14 +43,33 @@ router.get("/api/notifications/history", isAuthenticated, async (req: any, res) 
 
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
+    const includeDismissed = req.query.includeDismissed === 'true';
 
-    const history = await db
+    let query = db
       .select()
       .from(notificationHistory)
       .where(eq(notificationHistory.userId, userId))
       .orderBy(desc(notificationHistory.sentAt))
       .limit(limit)
       .offset(offset);
+
+    // Filter out dismissed notifications by default
+    if (!includeDismissed) {
+      query = db
+        .select()
+        .from(notificationHistory)
+        .where(
+          and(
+            eq(notificationHistory.userId, userId),
+            isNull(notificationHistory.dismissedAt)
+          )
+        )
+        .orderBy(desc(notificationHistory.sentAt))
+        .limit(limit)
+        .offset(offset);
+    }
+
+    const history = await query;
 
     res.json(history);
   } catch (error) {
@@ -115,6 +135,29 @@ router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req: any
   } catch (error) {
     console.error("Error marking notification as read:", error);
     res.status(500).json({ error: "Failed to mark notification as read" });
+  }
+});
+
+// Dismiss a notification
+router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req: any, res) => {
+  try {
+    const userId = req.user.claims.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { id } = req.params;
+    const { dismissedBy } = req.body;
+
+    await storage.dismissNotification(userId, id, dismissedBy);
+
+    res.json({ message: "Notification dismissed successfully" });
+  } catch (error: any) {
+    console.error("Error dismissing notification:", error);
+    if (error.message === "Notification not found") {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+    res.status(500).json({ error: "Failed to dismiss notification" });
   }
 });
 

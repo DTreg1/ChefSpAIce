@@ -407,6 +407,7 @@ export const notificationHistory = pgTable("notification_history", {
   deliveredAt: timestamp("delivered_at"),
   openedAt: timestamp("opened_at"),
   dismissedAt: timestamp("dismissed_at"),
+  dismissedBy: varchar("dismissed_by"), // device/client identifier that dismissed the notification
 }, (table) => [
   index("notification_history_user_id_idx").on(table.userId),
   index("notification_history_type_idx").on(table.type),

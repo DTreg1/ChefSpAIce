@@ -64,6 +64,7 @@ import {
   type InsertDonation,
   type PushToken,
   type InsertPushToken,
+  type NotificationHistory,
   type WebVital,
   type InsertWebVital,
   type OnboardingInventory,
@@ -85,6 +86,7 @@ import {
   insertAnalyticsEventSchema,
   users,
   pushTokens,
+  notificationHistory,
   userAppliances,
   userInventory,
   userChats,
@@ -103,7 +105,7 @@ import {
   applianceLibrary,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and, or, desc, gte, lte } from "drizzle-orm";
+import { eq, sql, and, or, desc, gte, lte, isNull } from "drizzle-orm";
 import {
   matchIngredientWithInventory,
   type IngredientMatch,
@@ -187,6 +189,10 @@ export interface IStorage {
     token: Omit<InsertPushToken, "userId">,
   ): Promise<PushToken>;
   deletePushToken(userId: string, token: string): Promise<void>;
+
+  // Notification Management (user-scoped)
+  dismissNotification(userId: string, notificationId: string, dismissedBy?: string): Promise<void>;
+  getUndismissedNotifications(userId: string, limit?: number): Promise<any[]>;
 
   // Storage Locations (now in users.storageLocations JSONB)
   getStorageLocations(userId: string): Promise<StorageLocation[]>;
@@ -948,6 +954,52 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting push token:", error);
       throw new Error("Failed to delete push token");
+    }
+  }
+
+  // Notification Management
+  async dismissNotification(userId: string, notificationId: string, dismissedBy?: string): Promise<void> {
+    try {
+      const result = await db
+        .update(notificationHistory)
+        .set({
+          status: 'dismissed',
+          dismissedAt: new Date(),
+          dismissedBy: dismissedBy || 'web-app',
+        })
+        .where(
+          and(
+            eq(notificationHistory.id, notificationId),
+            eq(notificationHistory.userId, userId)
+          )
+        )
+        .returning();
+
+      if (result.length === 0) {
+        throw new Error("Notification not found");
+      }
+    } catch (error) {
+      console.error("Error dismissing notification:", error);
+      throw error;
+    }
+  }
+
+  async getUndismissedNotifications(userId: string, limit: number = 50): Promise<NotificationHistory[]> {
+    try {
+      return await db
+        .select()
+        .from(notificationHistory)
+        .where(
+          and(
+            eq(notificationHistory.userId, userId),
+            isNull(notificationHistory.dismissedAt)
+          )
+        )
+        .orderBy(desc(notificationHistory.sentAt))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error getting undismissed notifications:", error);
+      throw new Error("Failed to get undismissed notifications");
     }
   }
 

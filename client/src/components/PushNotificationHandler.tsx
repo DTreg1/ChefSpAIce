@@ -11,7 +11,7 @@ export function PushNotificationHandler() {
     // Listen for foreground notifications
     const handleNotificationReceived = (event: Event) => {
       const customEvent = event as CustomEvent;
-      const { title, body, data } = customEvent.detail;
+      const { title, body, data, notificationId } = customEvent.detail;
 
       // Determine emoji/prefix based on notification type
       const getPrefix = (type: string) => {
