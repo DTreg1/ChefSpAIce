@@ -128,7 +128,7 @@ function AppContent() {
     const handleGenerateSmartRecipe = () => {
       // This will trigger the smart recipe generation
       const button = document.querySelector<HTMLButtonElement>(
-        '[data-testid="button-smart-recipe-quick"]'
+        '[data-testid="button-smart-recipe-quick"]',
       );
       if (button) {
         button.click();
@@ -151,7 +151,10 @@ function AppContent() {
 
     return () => {
       document.removeEventListener("openAddFoodDialog", handleOpenAddFood);
-      document.removeEventListener("generateSmartRecipe", handleGenerateSmartRecipe);
+      document.removeEventListener(
+        "generateSmartRecipe",
+        handleGenerateSmartRecipe,
+      );
       document.removeEventListener("escapePressed", handleEscape);
     };
   }, []);
@@ -175,7 +178,6 @@ function AppContent() {
     "--sidebar-width": "20rem",
     "--sidebar-width-icon": "4rem",
   } as React.CSSProperties;
-
 
   // Show landing page layout for non-authenticated users
   if (isLoading || !isAuthenticated) {
@@ -205,7 +207,7 @@ function AppContent() {
         onOpenChange={setRecipeDialogOpen}
       />
       {/* Only show floating FeedbackWidget on non-chat pages */}
-      {location !== '/' && !location.startsWith('/chat') && <FeedbackWidget />}
+      {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
           {/* Header is now at the top level, outside the flex container with sidebar */}
@@ -245,7 +247,10 @@ function AppContent() {
           {/* Main content area with sidebar and main content */}
           <div className="flex flex-1 min-h-0 w-full">
             <AppSidebar />
-            <main ref={mainRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+            <main
+              ref={mainRef}
+              className="flex-1 overflow-y-auto overflow-x-hidden"
+            >
               <Router />
             </main>
           </div>

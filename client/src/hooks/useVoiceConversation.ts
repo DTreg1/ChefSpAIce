@@ -1,3 +1,107 @@
+/**
+ * useVoiceConversation Hook
+ *
+ * Real-time voice interaction with AI conversation assistant.
+ * Uses Web Speech API for both voice input (recognition) and output (synthesis).
+ *
+ * Features:
+ * - Speech Recognition: Browser's native speech-to-text API
+ * - Text-to-Speech: Browser's SpeechSynthesis API for AI responses
+ * - Continuous Listening: Automatically restarts after silence or speaking
+ * - Auto-Send: Sends transcript after detecting silence period
+ * - Voice Settings: Configurable voice, rate, pitch, and volume
+ * - Conversation Flow: Pauses listening while speaking to avoid feedback
+ *
+ * Returns:
+ * - voiceState: Object containing isVoiceMode, isListening, isSpeaking, isProcessing, currentTranscript
+ * - voices: Available speech synthesis voices
+ * - selectedVoice: Currently selected voice for text-to-speech
+ * - speechRate: Speech rate (0.1 to 10, default 1.0)
+ * - speechPitch: Speech pitch (0 to 2, default 1.0)
+ * - speechVolume: Speech volume (0 to 1, default 1.0)
+ * - toggleVoiceMode: Toggle voice mode on/off
+ * - startVoiceMode: Begin voice conversation mode
+ * - stopVoiceMode: End voice mode and cleanup
+ * - speak: Function to speak text via TTS
+ * - stopSpeaking: Cancel current speech
+ * - sendTranscript: Manually send current transcript
+ * - setSelectedVoice: Change TTS voice
+ * - setSpeechRate: Adjust speech speed
+ * - setSpeechPitch: Adjust speech pitch
+ * - setSpeechVolume: Adjust speech volume
+ *
+ * Options:
+ * - onTranscript: Callback when final transcript is received
+ * - onSendMessage: Callback to send transcript (e.g., to AI)
+ * - autoSend: Auto-send transcript after silence (default: true)
+ * - silenceTimeout: Milliseconds of silence before auto-send (default: 2000)
+ * - locale: Language for speech recognition (default: 'en-US')
+ *
+ * Technical Details:
+ * - Browser API: webkitSpeechRecognition (Chrome/Edge) or SpeechRecognition (standard)
+ * - Continuous: true (keeps listening until manually stopped)
+ * - Interim Results: true (provides real-time transcription as user speaks)
+ * - Max Alternatives: 1 (single best transcription result)
+ * - Voice Selection: Prioritizes "Natural" voices, then English voices, then first available
+ *
+ * Conversation Flow:
+ * 1. User activates voice mode → startVoiceMode()
+ * 2. Speech recognition starts listening
+ * 3. User speaks → real-time interim transcript displayed
+ * 4. User pauses → final transcript captured
+ * 5. After silence timeout → auto-send transcript (if enabled)
+ * 6. Recognition pauses while processing/speaking
+ * 7. AI response received → speak() called with response text
+ * 8. After speaking completes → recognition restarts automatically
+ * 9. Loop continues until user stops voice mode
+ *
+ * Error Handling:
+ * - "no-speech": Automatically restarts recognition (normal behavior)
+ * - "not-allowed": Shows permission error and exits voice mode
+ * - Other errors: Shows error toast with specific error message
+ * - Browser compatibility: Checks for SpeechRecognition support, shows error if unavailable
+ *
+ * State Management:
+ * - isVoiceMode: Overall voice mode active/inactive
+ * - isListening: Microphone actively capturing audio
+ * - isSpeaking: Text-to-speech currently playing
+ * - isProcessing: Waiting for AI response
+ * - currentTranscript: Current accumulated transcript text
+ *
+ * Cleanup:
+ * - Automatically stops recognition on unmount
+ * - Clears silence timers
+ * - Cancels ongoing speech synthesis
+ * - Removes all event listeners
+ *
+ * Browser Support:
+ * - Chrome/Edge: Full support (uses webkitSpeechRecognition)
+ * - Safari: Partial support (may require user interaction)
+ * - Firefox: Limited/no support for Web Speech API
+ *
+ * Usage:
+ * ```tsx
+ * const { voiceState, toggleVoiceMode, speak } = useVoiceConversation({
+ *   onSendMessage: async (text) => {
+ *     const response = await sendToAI(text);
+ *     speak(response);
+ *   },
+ *   autoSend: true,
+ *   silenceTimeout: 2000,
+ * });
+ *
+ * return (
+ *   <div>
+ *     <Button onClick={toggleVoiceMode}>
+ *       {voiceState.isVoiceMode ? 'Stop' : 'Start'} Voice Mode
+ *     </Button>
+ *     {voiceState.isListening && <Mic className="animate-pulse" />}
+ *     <p>{voiceState.currentTranscript}</p>
+ *   </div>
+ * );
+ * ```
+ */
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
