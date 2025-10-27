@@ -6,7 +6,7 @@
  */
 
 import { storage } from "../storage";
-import type { PushNotificationToken } from "@shared/schema";
+import type { PushToken } from "@shared/schema";
 
 export interface PushNotificationPayload {
   title: string;
@@ -66,7 +66,7 @@ export abstract class BasePushNotificationService {
   /**
    * Get all tokens for a user from storage
    */
-  async getUserTokens(userId: string): Promise<PushNotificationToken[]> {
+  async getUserTokens(userId: string): Promise<PushToken[]> {
     try {
       const tokens = await storage.getPushNotificationTokens(userId);
       return tokens || [];
