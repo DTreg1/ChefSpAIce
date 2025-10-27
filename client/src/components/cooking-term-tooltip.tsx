@@ -55,7 +55,7 @@ export function CookingTermTooltip({
 
   // Fetch the cooking term data
   const { data: termData, isLoading } = useQuery<CookingTerm>({
-    queryKey: ["/api/cooking-terms", term],
+    queryKey: [`/api/cooking-terms/${encodeURIComponent(term)}`],
     enabled: !!term,
   });
 
