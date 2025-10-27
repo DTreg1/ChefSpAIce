@@ -469,4 +469,74 @@ router.get(
   }
 );
 
+// Cache metrics endpoint for monitoring
+router.get(
+  "/cache/metrics",
+  isAuthenticated,
+  isAdmin,
+  async (_req: any, res: Response) => {
+    try {
+      const stats = apiCache.getStats();
+      const metrics = apiCache.getMetrics();
+      
+      // Calculate cache efficiency metrics
+      const totalRequests = stats.hits + stats.misses;
+      const hitRate = totalRequests > 0 ? (stats.hits / totalRequests) * 100 : 0;
+      const missRate = totalRequests > 0 ? (stats.misses / totalRequests) * 100 : 0;
+      const avgHitCount = stats.entries > 0 ? stats.totalHitCount / stats.entries : 0;
+      
+      // Calculate memory usage estimate (rough)
+      const avgEntrySize = 1024; // Assume 1KB average per entry
+      const estimatedMemoryMB = (stats.entries * avgEntrySize) / (1024 * 1024);
+      
+      // Get per-cache-type metrics
+      const cacheTypeMetrics = Object.entries(metrics.hitsByType).map(([type, hits]) => ({
+        type,
+        hits,
+        misses: metrics.missesByType[type] || 0,
+        evictions: metrics.evictionsByType[type] || 0,
+        ttlExpirations: metrics.ttlExpirationsByType[type] || 0,
+        hitRate: ((hits / (hits + (metrics.missesByType[type] || 0))) * 100).toFixed(2) + '%'
+      }));
+      
+      res.json({
+        overview: {
+          totalEntries: stats.entries,
+          maxEntries: stats.maxSize,
+          utilizationPercent: ((stats.entries / stats.maxSize) * 100).toFixed(2) + '%',
+          estimatedMemoryMB: estimatedMemoryMB.toFixed(2),
+        },
+        performance: {
+          totalRequests,
+          hits: stats.hits,
+          misses: stats.misses,
+          hitRate: hitRate.toFixed(2) + '%',
+          missRate: missRate.toFixed(2) + '%',
+          averageHitCountPerEntry: avgHitCount.toFixed(2),
+        },
+        lifecycle: {
+          totalEvictions: stats.evictions,
+          lruEvictions: metrics.lruEvictions,
+          ttlExpirations: metrics.ttlExpirations,
+          manualInvalidations: metrics.manualInvalidations,
+          evictionRate: totalRequests > 0 ? ((stats.evictions / totalRequests) * 100).toFixed(2) + '%' : '0%'
+        },
+        cacheTypes: cacheTypeMetrics,
+        health: {
+          isHealthy: hitRate > 50 && stats.entries < stats.maxSize * 0.95,
+          warnings: [
+            hitRate < 30 && 'Low hit rate detected - consider reviewing cache keys',
+            stats.entries > stats.maxSize * 0.9 && 'Cache approaching maximum size',
+            stats.evictions > totalRequests * 0.1 && 'High eviction rate - consider increasing cache size',
+          ].filter(Boolean)
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error getting cache metrics:', error);
+      res.status(500).json({ error: 'Failed to retrieve cache metrics' });
+    }
+  }
+);
+
 export default router;
