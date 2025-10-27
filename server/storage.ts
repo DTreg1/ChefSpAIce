@@ -115,6 +115,15 @@ import {
 } from "./utils/unitConverter";
 import { PaginationHelper } from "./utils/pagination";
 
+// Extended types for appliances with category information
+export type ApplianceWithCategory = Appliance & {
+  category: {
+    id: string;
+    name: string;
+    subcategory: string | null;
+  } | null;
+};
+
 /**
  * Standardized pagination response format
  * 
@@ -209,8 +218,8 @@ export interface IStorage {
   ): Promise<StorageLocation>;
 
   // Appliances (user-scoped)
-  getAppliances(userId: string): Promise<Appliance[]>;
-  getAppliance(userId: string, id: string): Promise<Appliance | undefined>;
+  getAppliances(userId: string): Promise<ApplianceWithCategory[]>;
+  getAppliance(userId: string, id: string): Promise<ApplianceWithCategory | undefined>;
   createAppliance(
     userId: string,
     appliance: Omit<InsertAppliance, "userId">,
@@ -237,7 +246,7 @@ export interface IStorage {
   getCommonAppliances(): Promise<ApplianceLibrary[]>;
 
   // User Appliances - What equipment each user owns
-  getUserAppliances(userId: string): Promise<UserAppliance[]>;
+  getUserAppliances(userId: string): Promise<ApplianceWithCategory[]>;
   addUserAppliance(
     userId: string,
     applianceLibraryId: string,
@@ -249,7 +258,12 @@ export interface IStorage {
     updates: Partial<InsertUserAppliance>,
   ): Promise<UserAppliance>;
   deleteUserAppliance(userId: string, id: string): Promise<void>;
-  getUserAppliancesByCategory(userId: string, category: string): Promise<UserAppliance[]>;
+  getUserAppliancesByCategory(userId: string, category: string): Promise<ApplianceWithCategory[]>;
+  getApplianceCategories(userId: string): Promise<Array<{
+    id: string;
+    name: string;
+    count: number;
+  }>>;
 
   // Barcode Products - removed (tables deleted)
 
@@ -1232,10 +1246,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Appliances
-  async getAppliances(userId: string): Promise<Appliance[]> {
+  async getAppliances(userId: string): Promise<ApplianceWithCategory[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
-      return db.select().from(userAppliances).where(eq(userAppliances.userId, userId));
+      
+      // Join with applianceLibrary to get category information
+      const results = await db
+        .select({
+          appliance: userAppliances,
+          library: applianceLibrary,
+        })
+        .from(userAppliances)
+        .leftJoin(
+          applianceLibrary,
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+        )
+        .where(eq(userAppliances.userId, userId));
+      
+      // Return appliances with category information as flat fields
+      return results.map(r => ({
+        ...r.appliance,
+        category: r.library?.category || null,
+        subcategory: r.library?.subcategory || null,
+      }));
     } catch (error) {
       console.error(`Error getting userAppliances for user ${userId}:`, error);
       throw new Error("Failed to retrieve userAppliances");
@@ -1261,13 +1294,31 @@ export class DatabaseStorage implements IStorage {
   async getAppliance(
     userId: string,
     id: string,
-  ): Promise<Appliance | undefined> {
+  ): Promise<ApplianceWithCategory | undefined> {
     try {
-      const [appliance] = await db
-        .select()
+      const results = await db
+        .select({
+          appliance: userAppliances,
+          library: applianceLibrary,
+        })
         .from(userAppliances)
+        .leftJoin(
+          applianceLibrary,
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+        )
         .where(and(eq(userAppliances.id, id), eq(userAppliances.userId, userId)));
-      return appliance || undefined;
+      
+      if (results.length === 0) return undefined;
+      
+      const r = results[0];
+      return {
+        ...r.appliance,
+        category: r.library ? {
+          id: r.library.category,
+          name: r.library.category,
+          subcategory: r.library.subcategory,
+        } : null,
+      };
     } catch (error) {
       console.error(`Error getting appliance ${id}:`, error);
       throw new Error("Failed to retrieve appliance");
@@ -1412,12 +1463,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User Appliances methods
-  async getUserAppliances(userId: string): Promise<UserAppliance[]> {
+  async getUserAppliances(userId: string): Promise<ApplianceWithCategory[]> {
     try {
-      return db
-        .select()
+      const results = await db
+        .select({
+          appliance: userAppliances,
+          library: applianceLibrary,
+        })
         .from(userAppliances)
+        .leftJoin(
+          applianceLibrary,
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+        )
         .where(eq(userAppliances.userId, userId));
+      
+      // Return appliances with category information as flat fields
+      return results.map(r => ({
+        ...r.appliance,
+        category: r.library?.category || null,
+        subcategory: r.library?.subcategory || null,
+      }));
     } catch (error) {
       console.error(`Error getting user userAppliances for ${userId}:`, error);
       throw new Error("Failed to retrieve user userAppliances");
@@ -1492,12 +1557,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserAppliancesByCategory(userId: string, category: string): Promise<UserAppliance[]> {
+  async getUserAppliancesByCategory(userId: string, category: string): Promise<ApplianceWithCategory[]> {
     try {
       // Join with appliance library to filter by category
       const result = await db
         .select({
-          userAppliance: userAppliances,
+          appliance: userAppliances,
+          library: applianceLibrary,
         })
         .from(userAppliances)
         .innerJoin(
@@ -1511,10 +1577,45 @@ export class DatabaseStorage implements IStorage {
           )
         );
       
-      return result.map(r => r.userAppliance);
+      return result.map(r => ({
+        ...r.appliance,
+        category: r.library?.category || null,
+        subcategory: r.library?.subcategory || null,
+      }));
     } catch (error) {
       console.error(`Error getting user userAppliances by category ${category}:`, error);
       throw new Error("Failed to retrieve user userAppliances by category");
+    }
+  }
+
+  async getApplianceCategories(userId: string): Promise<Array<{
+    id: string;
+    name: string;
+    count: number;
+  }>> {
+    try {
+      // Get all user appliances with their category info
+      const result = await db
+        .select({
+          category: applianceLibrary.category,
+          count: sql<number>`COUNT(*)`,
+        })
+        .from(userAppliances)
+        .innerJoin(
+          applianceLibrary,
+          eq(userAppliances.applianceLibraryId, applianceLibrary.id)
+        )
+        .where(eq(userAppliances.userId, userId))
+        .groupBy(applianceLibrary.category);
+      
+      return result.map(r => ({
+        id: r.category,
+        name: r.category,
+        count: r.count,
+      }));
+    } catch (error) {
+      console.error(`Error getting appliance categories for user ${userId}:`, error);
+      throw new Error("Failed to retrieve appliance categories");
     }
   }
 

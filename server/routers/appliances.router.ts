@@ -20,7 +20,16 @@ const router = Router();
 router.get("/appliances", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
-    const userAppliances = await storage.getAppliances(userId);
+    const category = req.query.category as string | undefined;
+    
+    let userAppliances;
+    if (category) {
+      // Filter by category if provided
+      userAppliances = await storage.getUserAppliancesByCategory(userId, category);
+    } else {
+      userAppliances = await storage.getAppliances(userId);
+    }
+    
     res.json(userAppliances);
   } catch (error) {
     console.error("Error fetching appliances:", error);
@@ -52,6 +61,18 @@ router.post(
     }
   }
 );
+
+// Get user's appliance categories with counts
+router.get("/appliances/categories", isAuthenticated, async (req: any, res: Response) => {
+  try {
+    const userId = req.user.claims.sub;
+    const categories = await storage.getApplianceCategories(userId);
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching appliance categories:", error);
+    res.status(500).json({ error: "Failed to fetch appliance categories" });
+  }
+});
 
 router.get("/appliances/:id", isAuthenticated, async (req: any, res: Response) => {
   try {
@@ -186,7 +207,7 @@ router.get("/user-appliances", isAuthenticated, async (req: any, res: Response) 
     const userId = req.user.claims.sub;
     const category = req.query.category as string | undefined;
     
-    let userAppliances: UserAppliance[];
+    let userAppliances;
     if (category) {
       userAppliances = await storage.getUserAppliancesByCategory(userId, category);
     } else {
@@ -197,6 +218,18 @@ router.get("/user-appliances", isAuthenticated, async (req: any, res: Response) 
   } catch (error) {
     console.error("Error fetching user appliances:", error);
     res.status(500).json({ error: "Failed to fetch user appliances" });
+  }
+});
+
+// Get user's appliance categories with counts
+router.get("/user-appliances/categories", isAuthenticated, async (req: any, res: Response) => {
+  try {
+    const userId = req.user.claims.sub;
+    const categories = await storage.getApplianceCategories(userId);
+    res.json(categories);
+  } catch (error) {
+    console.error("Error fetching user appliance categories:", error);
+    res.status(500).json({ error: "Failed to fetch user appliance categories" });
   }
 });
 

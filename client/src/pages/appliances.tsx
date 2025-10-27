@@ -49,29 +49,46 @@ import {
   Grid,
   List,
   Loader2,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Layers
 } from "lucide-react";
 import type { UserAppliance } from "@shared/schema";
+
+// Extended type with category information
+type ApplianceWithCategory = UserAppliance & {
+  category?: string | null;
+  subcategory?: string | null;
+};
 
 export default function Appliances() {
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "grouped">("grid");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
   const [editingAppliance, setEditingAppliance] = useState<UserAppliance | null>(null);
   const [barcodeInput, setBarcodeInput] = useState("");
   const [deleteApplianceId, setDeleteApplianceId] = useState<string | null>(null);
 
-  // Fetch appliances
-  const { data: appliances = [], isLoading } = useQuery<UserAppliance[]>({
-    queryKey: ["/api/appliances"],
+  // Fetch appliances with category filter
+  const { data: appliances = [], isLoading } = useQuery<ApplianceWithCategory[]>({
+    queryKey: selectedCategory === "all" 
+      ? ["/api/appliances"]
+      : ["/api/appliances", { category: selectedCategory }],
+    queryFn: async () => {
+      const url = selectedCategory === "all"
+        ? "/api/appliances"
+        : `/api/appliances?category=${encodeURIComponent(selectedCategory)}`;
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch appliances');
+      return response.json();
+    },
   });
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery<{ name: string; count: number }[]>({
-    queryKey: ['/api/appliance-categories'],
+  // Fetch categories from user's appliances
+  const { data: categories = [] } = useQuery<{ id: string; name: string; count: number }[]>({
+    queryKey: ['/api/appliances/categories'],
   });
 
   // Add appliance mutation
@@ -161,15 +178,13 @@ export default function Appliances() {
     },
   });
 
-  // Filter appliances
-  const filteredAppliances = appliances.filter((appliance: UserAppliance) => {
-    // For now, we can't filter by category directly since appliances don't have a category field
-    // They have applianceLibraryId which would require a join to get the category
-    // TODO: Update API to include category info with appliances
-    const matchesCategory = selectedCategory === "all"; // Temporarily disabled category filtering
+  // Filter appliances (category filtering is done server-side via query param)
+  const filteredAppliances = appliances.filter((appliance: ApplianceWithCategory) => {
     const matchesSearch = appliance.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          appliance.nickname?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+                          appliance.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          appliance.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          appliance.customBrand?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
   // Render capabilities badges
@@ -259,6 +274,14 @@ export default function Appliances() {
               >
                 <List className="w-4 h-4" />
               </Button>
+              <Button
+                variant={viewMode === "grouped" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setViewMode("grouped")}
+                data-testid="button-view-grouped"
+              >
+                <Layers className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -285,9 +308,92 @@ export default function Appliances() {
             </Button>
           </CardContent>
         </Card>
+      ) : viewMode === "grouped" ? (
+        // Group appliances by category
+        <div className="space-y-6">
+          {(() => {
+            const grouped = filteredAppliances.reduce((acc, appliance) => {
+              const category = appliance.category || 'Uncategorized';
+              if (!acc[category]) {
+                acc[category] = [];
+              }
+              acc[category].push(appliance);
+              return acc;
+            }, {} as Record<string, ApplianceWithCategory[]>);
+
+            return Object.entries(grouped)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([category, categoryAppliances]) => (
+                <div key={category}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <h3 className="text-lg font-semibold">{category}</h3>
+                    <Badge variant="secondary">{categoryAppliances.length}</Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {categoryAppliances.map((appliance) => (
+                      <Card key={appliance.id} className="hover-elevate" data-testid={`card-appliance-${appliance.id}`}>
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <CardTitle className="text-lg">
+                                {appliance.nickname || appliance.name}
+                              </CardTitle>
+                              {appliance.nickname && appliance.nickname !== appliance.name && (
+                                <CardDescription>{appliance.name}</CardDescription>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditingAppliance(appliance)}
+                                data-testid={`button-edit-${appliance.id}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleteApplianceId(appliance.id)}
+                                data-testid={`button-delete-${appliance.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {appliance.imageUrl && (
+                            <img 
+                              src={appliance.imageUrl} 
+                              alt={appliance.name}
+                              className="w-full h-32 object-contain mb-3 rounded"
+                            />
+                          )}
+                          <div className="space-y-2">
+                            {appliance.customBrand && (
+                              <div className="text-sm text-muted-foreground">
+                                Brand: {appliance.customBrand}
+                              </div>
+                            )}
+                            {appliance.customCapacity && (
+                              <div className="text-sm text-muted-foreground">
+                                Capacity: {appliance.customCapacity}
+                              </div>
+                            )}
+                            {renderCapabilities(appliance.customCapabilities)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ));
+          })()}
+        </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAppliances.map((appliance: UserAppliance) => (
+          {filteredAppliances.map((appliance: ApplianceWithCategory) => (
             <Card key={appliance.id} className="hover-elevate" data-testid={`card-appliance-${appliance.id}`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -297,6 +403,11 @@ export default function Appliances() {
                     </CardTitle>
                     {appliance.nickname && appliance.nickname !== appliance.name && (
                       <CardDescription>{appliance.name}</CardDescription>
+                    )}
+                    {appliance.category && (
+                      <Badge variant="outline" className="mt-2">
+                        {appliance.category}
+                      </Badge>
                     )}
                   </div>
                   <div className="flex gap-1">
@@ -348,7 +459,7 @@ export default function Appliances() {
         <Card>
           <CardContent className="p-0">
             <ScrollArea className="h-[600px]">
-              {filteredAppliances.map((appliance: UserAppliance, index: number) => (
+              {filteredAppliances.map((appliance: ApplianceWithCategory, index: number) => (
                 <div key={appliance.id}>
                   <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
@@ -365,6 +476,11 @@ export default function Appliances() {
                         </div>
                         {appliance.nickname && appliance.nickname !== appliance.name && (
                           <div className="text-sm text-muted-foreground">{appliance.name}</div>
+                        )}
+                        {appliance.category && (
+                          <Badge variant="outline" className="mt-1">
+                            {appliance.category}
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -410,8 +526,8 @@ export default function Appliances() {
               name: formData.get('name'),
               type: formData.get('type') || 'cooking',
               nickname: formData.get('nickname'),
-              notes: formData.get('notes'),
-              categoryId: formData.get('categoryId') === 'none' ? null : formData.get('categoryId'),
+              // UserAppliance schema doesn't have notes or categoryId fields
+              // Only send valid fields
             });
           }}>
             <div className="space-y-4">
@@ -436,10 +552,6 @@ export default function Appliances() {
                     <SelectItem value="bakeware">Bakeware</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <Label htmlFor="notes">Notes (optional)</Label>
-                <Textarea id="notes" name="notes" placeholder="Any special notes..." />
               </div>
             </div>
             <DialogFooter className="mt-4">
