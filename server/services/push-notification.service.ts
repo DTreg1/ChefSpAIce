@@ -3,6 +3,8 @@ import { eq, and, lt } from "drizzle-orm";
 import { db } from "../db";
 import { pushTokens, users, userInventory, notificationHistory } from "@shared/schema";
 import crypto from "crypto";
+import FcmService from "./fcm.service";
+import ApnsService from "./apns.service";
 
 // Configure web push
 const publicVapidKey = process.env.VITE_VAPID_PUBLIC_KEY || "BKd0F0KpK_3Yw2c4lxVhQGNqPWnMGqWXA1kapi6VLEsL0VBs9K8PtRmUugKM8qCqX7EMz_2lPcrecNaRc9LbKxo";
@@ -101,10 +103,16 @@ export class PushNotificationService {
             // Token is a JSON-serialized PushSubscription object
             const subscription = JSON.parse(token.token);
             await webpush.sendNotification(subscription, JSON.stringify(payload));
+          } else if (token.platform === 'ios') {
+            // iOS: Uses Apple Push Notification Service (APNs)
+            // Token is a 64-character hex string device token
+            await ApnsService.sendNotification(token.token, payload);
+          } else if (token.platform === 'android') {
+            // Android: Uses Firebase Cloud Messaging (FCM)
+            // Token is an FCM registration token (typically 152+ characters)
+            await FcmService.sendNotification(token.token, payload);
           } else {
-            // Native platforms require APNS (iOS) or FCM (Android)
-            // Not yet implemented - requires additional service setup
-            console.warn(`Native push notifications for ${token.platform} are not yet implemented`);
+            console.warn(`Unknown platform: ${token.platform}`);
             continue;
           }
           
