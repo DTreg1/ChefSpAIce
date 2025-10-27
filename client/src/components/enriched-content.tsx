@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CookingTermTooltip } from "./cooking-term-tooltip";
@@ -40,7 +40,7 @@ interface EnrichedContentProps {
  * - Performance optimization with caching
  * - Graceful error handling
  */
-export function EnrichedContent({
+export const EnrichedContent = memo(function EnrichedContent({
   text,
   className = "",
   enableDetection = true,
@@ -157,7 +157,7 @@ export function EnrichedContent({
       {enrichedElements}
     </span>
   );
-}
+});
 
 /**
  * EnrichedParagraph Component
@@ -165,7 +165,7 @@ export function EnrichedContent({
  * Wrapper for paragraph-level content with term enrichment.
  * Handles multiple lines and maintains paragraph formatting.
  */
-export function EnrichedParagraph({
+export const EnrichedParagraph = memo(function EnrichedParagraph({
   text,
   className = "",
   ...props
@@ -175,7 +175,7 @@ export function EnrichedParagraph({
       <EnrichedContent text={text} {...props} />
     </p>
   );
-}
+});
 
 /**
  * EnrichedHTML Component

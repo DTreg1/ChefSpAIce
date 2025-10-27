@@ -35,6 +35,11 @@ export class TermDetector {
   private initialized: boolean = false;
   private lastInitialized: number = 0;
   private readonly CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+  
+  // Performance optimization: LRU cache for detection results
+  private detectionCache: Map<string, { result: DetectedTerm[]; timestamp: number }> = new Map();
+  private readonly MAX_CACHE_SIZE = 100;
+  private readonly CACHE_TTL = 1000 * 60 * 10; // 10 minutes
 
   /**
    * Initialize the detector with all cooking terms from database
@@ -168,6 +173,56 @@ export class TermDetector {
   }
 
   /**
+   * Clear expired cache entries
+   */
+  private cleanCache() {
+    const now = Date.now();
+    const keysToDelete: string[] = [];
+    
+    for (const [key, value] of this.detectionCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        keysToDelete.push(key);
+      }
+    }
+    
+    keysToDelete.forEach(key => this.detectionCache.delete(key));
+    
+    // Implement LRU eviction if cache is too large
+    if (this.detectionCache.size > this.MAX_CACHE_SIZE) {
+      const sortedEntries = Array.from(this.detectionCache.entries())
+        .sort((a, b) => a[1].timestamp - b[1].timestamp);
+      
+      const toRemove = sortedEntries.slice(0, sortedEntries.length - this.MAX_CACHE_SIZE);
+      toRemove.forEach(([key]) => this.detectionCache.delete(key));
+    }
+  }
+
+  /**
+   * Generate cache key for detection request
+   */
+  private getCacheKey(text: string, options: any): string {
+    const optionsKey = JSON.stringify(options);
+    // Use first 100 chars of text + hash of full text for shorter keys
+    const textKey = text.length > 100 
+      ? text.substring(0, 100) + ':' + this.hashString(text)
+      : text;
+    return `${textKey}:${optionsKey}`;
+  }
+
+  /**
+   * Simple string hash function for cache keys
+   */
+  private hashString(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString(36);
+  }
+
+  /**
    * Detect cooking terms in text
    */
   async detectTerms(text: string, options: {
@@ -175,16 +230,29 @@ export class TermDetector {
     maxMatches?: number;
     contextAware?: boolean;
   } = {}): Promise<TermMatch[]> {
-    // Ensure initialized
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
     const { 
       excludeCategories = [], 
       maxMatches = 100,
       contextAware = true 
     } = options;
+
+    // Check cache first
+    const cacheKey = this.getCacheKey(text, options);
+    const cached = this.detectionCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      return cached.result;
+    }
+    
+    // Clean cache periodically
+    if (Math.random() < 0.1) { // 10% chance on each call
+      this.cleanCache();
+    }
+
+    // Ensure initialized
+    if (!this.initialized) {
+      await this.initialize();
+    }
 
     const matches: TermMatch[] = [];
     const usedRanges: Array<[number, number]> = [];
@@ -266,7 +334,15 @@ export class TermDetector {
     }
 
     // Sort by position in text
-    return matches.sort((a, b) => a.start - b.start);
+    const sortedMatches = matches.sort((a, b) => a.start - b.start);
+    
+    // Store in cache
+    this.detectionCache.set(cacheKey, {
+      result: sortedMatches,
+      timestamp: Date.now()
+    });
+    
+    return sortedMatches;
   }
 
   /**
