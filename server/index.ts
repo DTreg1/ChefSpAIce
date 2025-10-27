@@ -5,6 +5,7 @@ import { registerModularRoutes } from "./routers";
 import { setupVite, serveStatic, log } from "./vite";
 import { logRetentionService } from "./services/log-retention.service";
 import PushStatusService from "./services/push-status.service";
+import { preloadCommonSearches } from "./utils/usdaCache";
 
 const app = express();
 
@@ -106,5 +107,13 @@ app.use((req, res, next) => {
     // Start the log retention service
     logRetentionService.start();
     log("Log retention service started");
+    
+    // Warm up USDA cache with common searches (non-blocking)
+    if (process.env.CACHE_ENABLED !== 'false') {
+      preloadCommonSearches().catch(error => {
+        console.error("[Cache Warming] Failed to preload common searches:", error);
+      });
+      log("Cache warming initiated for USDA common searches");
+    }
   });
 })();
