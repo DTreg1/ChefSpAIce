@@ -76,6 +76,7 @@ import {
   type UserStorage,
   type InsertUserStorage,
   type InsertUserInventory,
+  type UserInventory,
   insertAnalyticsEventSchema,
   users,
   pushTokens,
