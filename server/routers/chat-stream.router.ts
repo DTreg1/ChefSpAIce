@@ -26,6 +26,7 @@ import {
   formatErrorForLogging
 } from "../utils/ai-error-handler";
 import { getCircuitBreaker } from "../utils/circuit-breaker";
+import { termDetector } from "../services/term-detector.service";
 import type { ChatMessage } from "@shared/schema";
 
 const router = Router();
@@ -202,6 +203,37 @@ router.post(
                 content: accumulatedContent,
               });
 
+              // Detect cooking terms in the response
+              let detectedTerms: Array<{
+                term: string;
+                termId: string;
+                category: string;
+                shortDefinition: string;
+                difficulty?: string | null;
+                start: number;
+                end: number;
+              }> = [];
+              try {
+                const matches = await termDetector.detectTerms(accumulatedContent, {
+                  maxMatches: 50,
+                  contextAware: true
+                });
+                
+                // Convert matches to simpler format for client
+                detectedTerms = matches.map(match => ({
+                  term: match.originalTerm,
+                  termId: match.termId,
+                  category: match.category,
+                  shortDefinition: match.shortDefinition,
+                  difficulty: match.difficulty,
+                  start: match.start,
+                  end: match.end
+                }));
+              } catch (termError) {
+                console.error('[Chat Stream] Error detecting cooking terms:', termError);
+                // Continue without terms - don't fail the whole response
+              }
+
               // Log successful API usage
               await batchedApiLogger.logApiUsage(userId, {
                 apiName: "openai",
@@ -210,6 +242,11 @@ router.post(
                 statusCode: 200,
                 success: true,
               });
+              
+              // Send detected terms if any were found
+              if (detectedTerms.length > 0) {
+                writeSSE(res, 'terms', detectedTerms);
+              }
             }
 
             // Send completion event
