@@ -460,7 +460,7 @@ router.post(
     });
 
     // Step 5: Create selected common food items from pre-populated database
-    const commonItems = await storage.getCommonFoodItemsByNames(
+    const commonItems = await storage.getOnboardingInventoryByNames(
       selectedCommonItems || [],
     );
     const commonItemsMap = new Map(

@@ -73,6 +73,9 @@ import {
   type UserSession,
   type ActivityLog,
   type InsertActivityLog,
+  type UserStorage,
+  type InsertUserStorage,
+  type InsertUserInventory,
   insertAnalyticsEventSchema,
   users,
   pushTokens,
@@ -263,7 +266,7 @@ export interface IStorage {
     storageLocationId?: string,
     foodCategory?: string,
     limit?: number,
-  ): Promise<FoodItem[]>;
+  ): Promise<OnboardingInventory[]>;
   getFoodItemsPaginated(
     userId: string,
     page?: number,
@@ -271,17 +274,17 @@ export interface IStorage {
     storageLocationId?: string,
     foodCategory?: string,
     sortBy?: "name" | "expirationDate" | "createdAt",
-  ): Promise<PaginatedResponse<FoodItem>>;
-  getFoodItem(userId: string, id: string): Promise<FoodItem | undefined>;
+  ): Promise<PaginatedResponse<OnboardingInventory>>;
+  getFoodItem(userId: string, id: string): Promise<OnboardingInventory | undefined>;
   createFoodItem(
     userId: string,
-    item: Omit<InsertFoodItem, "userId">,
-  ): Promise<FoodItem>;
+    item: Omit<InsertOnboardingInventory, "userId">,
+  ): Promise<OnboardingInventory>;
   updateFoodItem(
     userId: string,
     id: string,
-    item: Partial<Omit<InsertFoodItem, "userId">>,
-  ): Promise<FoodItem>;
+    item: Partial<Omit<InsertOnboardingInventory, "userId">>,
+  ): Promise<OnboardingInventory>;
   deleteFoodItem(userId: string, id: string): Promise<void>;
   getFoodCategories(userId: string): Promise<string[]>;
 
@@ -330,7 +333,7 @@ export interface IStorage {
   ): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
 
   // Expiration Handling (now in userInventory table)
-  getExpiringItems(userId: string, daysThreshold: number): Promise<FoodItem[]>;
+  getExpiringItems(userId: string, daysThreshold: number): Promise<OnboardingInventory[]>;
   dismissFoodItemNotification(
     userId: string,
     foodItemId: string,
@@ -1191,7 +1194,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Storage Locations (now stored in userStorage table)
-  async getStorageLocations(userId: string): Promise<StorageLocation[]> {
+  async getStorageLocations(userId: string): Promise<UserStorage[]> {
     try {
       await this.ensureDefaultDataForUser(userId);
 
@@ -1235,7 +1238,7 @@ export class DatabaseStorage implements IStorage {
   async getStorageLocation(
     userId: string,
     id: string,
-  ): Promise<StorageLocation | undefined> {
+  ): Promise<UserStorage | undefined> {
     try {
       await this.ensureDefaultDataForUser(userId);
 
@@ -1260,7 +1263,7 @@ export class DatabaseStorage implements IStorage {
   async createStorageLocation(
     userId: string,
     location: Omit<
-      StorageLocation,
+      UserStorage,
       | "id"
       | "userId"
       | "createdAt"
@@ -1269,7 +1272,7 @@ export class DatabaseStorage implements IStorage {
       | "isActive"
       | "sortOrder"
     >,
-  ): Promise<StorageLocation> {
+  ): Promise<UserStorage> {
     try {
       // Check if user exists
       const [user] = await db.select().from(users).where(eq(users.id, userId));
@@ -1337,7 +1340,7 @@ export class DatabaseStorage implements IStorage {
 
   async createAppliance(
     userId: string,
-    appliance: Omit<InsertAppliance, "userId">,
+    appliance: Omit<InsertUserAppliance, "userId">,
   ): Promise<UserAppliance> {
     try {
       const [newAppliance] = await db
@@ -1392,7 +1395,7 @@ export class DatabaseStorage implements IStorage {
   async updateAppliance(
     userId: string,
     id: string,
-    appliance: Partial<Omit<InsertAppliance, "userId">>,
+    appliance: Partial<Omit<InsertUserAppliance, "userId">>,
   ): Promise<UserAppliance> {
     try {
       const [updatedAppliance] = await db
@@ -1704,7 +1707,7 @@ export class DatabaseStorage implements IStorage {
     storageLocationId?: string,
     foodCategory?: string,
     limit: number = 500, // Default limit to prevent loading thousands of items
-  ): Promise<FoodItem[]> {
+  ): Promise<UserInventory[]> {
     try {
       // Build where conditions dynamically
       const whereConditions = [eq(userInventory.userId, userId)];
@@ -1738,7 +1741,7 @@ export class DatabaseStorage implements IStorage {
     storageLocationId?: string,
     foodCategory?: string,
     sortBy: "name" | "expirationDate" | "createdAt" = "expirationDate",
-  ): Promise<PaginatedResponse<FoodItem>> {
+  ): Promise<PaginatedResponse<UserInventory>> {
     try {
       const offset = (page - 1) * limit;
 
@@ -1788,7 +1791,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getFoodItem(userId: string, id: string): Promise<FoodItem | undefined> {
+  async getFoodItem(userId: string, id: string): Promise<OnboardingInventory | undefined> {
     try {
       const [item] = await db
         .select()
@@ -1803,8 +1806,8 @@ export class DatabaseStorage implements IStorage {
 
   async createFoodItem(
     userId: string,
-    item: Omit<InsertFoodItem, "userId">,
-  ): Promise<FoodItem> {
+    item: Omit<InsertUserInventory, "userId">,
+  ): Promise<OnboardingInventory> {
     try {
       const [newItem] = await db
         .insert(userInventory)
@@ -1820,8 +1823,8 @@ export class DatabaseStorage implements IStorage {
   async updateFoodItem(
     userId: string,
     id: string,
-    item: Partial<Omit<InsertFoodItem, "userId">>,
-  ): Promise<FoodItem> {
+    item: Partial<Omit<InsertUserInventory, "userId">>,
+  ): Promise<OnboardingInventory> {
     try {
       const [updated] = await db
         .update(userInventory)
@@ -2209,7 +2212,7 @@ export class DatabaseStorage implements IStorage {
   async getExpiringItems(
     userId: string,
     daysThreshold: number,
-  ): Promise<FoodItem[]> {
+  ): Promise<OnboardingInventory[]> {
     try {
       // Optimized: use SQL to filter items expiring within threshold instead of fetching all items
       const now = new Date();
