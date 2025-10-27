@@ -16,17 +16,45 @@ export interface DetectedTerm {
   endIndex: number;
 }
 
+/**
+ * CookingTermsService
+ * 
+ * Provides intelligent detection and explanation of culinary terminology in recipes.
+ * Helps users learn cooking techniques while following recipes.
+ * 
+ * Features:
+ * - Term Detection: Scans recipe text for cooking terminology
+ * - Educational Tooltips: Provides definitions, tips, and related terms
+ * - Smart Caching: Reduces database queries with 1-hour in-memory cache
+ * - Overlap Resolution: Handles compound terms intelligently
+ * - Category Organization: Groups terms by technique type
+ * 
+ * Use Cases:
+ * - Recipe Generation: Automatically detects and explains terms in AI-generated recipes
+ * - User Education: Beginners can learn techniques as they cook
+ * - Search: Users can browse cooking glossary by category
+ */
 export class CookingTermsService {
+  // In-memory cache to avoid repeated database queries
   private static termsCache: CookingTerm[] | null = null;
   private static cacheExpiry: number = 0;
   private static readonly CACHE_DURATION = 1000 * 60 * 60; // 1 hour
 
   /**
-   * Get all cooking terms (with caching)
+   * Retrieve all cooking terms with in-memory caching
+   * 
+   * Caching Strategy:
+   * - Cache duration: 1 hour (cooking terms rarely change)
+   * - Cache invalidation: Manual via clearCache() method
+   * - Reduces database load significantly for term detection
+   * 
+   * @returns Array of all cooking terms from database
+   * @private Internal use only - use public methods for term access
    */
   private static async getTerms(): Promise<CookingTerm[]> {
     const now = Date.now();
     
+    // Return cached terms if still fresh
     if (this.termsCache && this.cacheExpiry > now) {
       return this.termsCache;
     }
@@ -43,7 +71,22 @@ export class CookingTermsService {
   }
 
   /**
-   * Detect cooking terms in text (recipe instructions, descriptions, etc.)
+   * Detect cooking terms in recipe text
+   * 
+   * Scans text for culinary terminology and returns matched terms with position data.
+   * Used to add educational tooltips to recipe instructions.
+   * 
+   * Algorithm:
+   * 1. Fetch all cooking terms (from cache if available)
+   * 2. For each term, use regex to find whole-word matches in text
+   * 3. Track match positions (startIndex, endIndex) for highlighting
+   * 4. Sort matches by position in text (left to right)
+   * 5. Remove overlapping matches (prefers longer/more specific terms)
+   * 
+   * Example: "Sauté the onions" detects "Sauté" at position 0-5
+   * 
+   * @param text - Recipe instruction text to scan
+   * @returns Array of detected terms with position and definition data
    */
   static async detectTermsInText(text: string): Promise<DetectedTerm[]> {
     if (!text) return [];
@@ -52,11 +95,14 @@ export class CookingTermsService {
     const detectedTerms: DetectedTerm[] = [];
     const textLower = text.toLowerCase();
     
+    // Scan for each term using whole-word regex matching
+    // \\b ensures we match "sauté" but not "sautéed" as "sauté"
     for (const term of terms) {
-      // Create regex for whole word matching
+      // Case-insensitive whole word matching
       const regex = new RegExp(`\\b${term.term.toLowerCase()}\\b`, "gi");
       let match;
       
+      // Find all occurrences of this term in the text
       while ((match = regex.exec(text)) !== null) {
         detectedTerms.push({
           term: term.term,
@@ -73,17 +119,29 @@ export class CookingTermsService {
       }
     }
     
-    // Sort by position in text
+    // Sort by position for sequential processing
     detectedTerms.sort((a, b) => a.startIndex - b.startIndex);
     
-    // Remove overlapping terms (keep longer matches)
+    // Handle overlaps: "sear" and "searing" at same position → keep longer
     const filteredTerms = this.removeOverlappingTerms(detectedTerms);
     
     return filteredTerms;
   }
 
   /**
-   * Remove overlapping terms, keeping the longer matches
+   * Remove overlapping term matches, preferring longer/more specific terms
+   * 
+   * Handles cases where multiple terms match the same text position:
+   * Example: "fold in" vs "fold" → keeps "fold in" (more specific)
+   * 
+   * Algorithm:
+   * - Track the end position of the last kept term
+   * - Skip terms that start before the last term ended (overlap)
+   * - If overlapping term is longer, replace previous term
+   * 
+   * @param terms - Detected terms sorted by start position
+   * @returns Filtered terms with no overlaps
+   * @private Helper method for detectTermsInText
    */
   private static removeOverlappingTerms(terms: DetectedTerm[]): DetectedTerm[] {
     if (terms.length <= 1) return terms;
@@ -93,12 +151,14 @@ export class CookingTermsService {
     
     for (const term of terms) {
       if (term.startIndex >= lastEnd) {
+        // No overlap - add this term
         filtered.push(term);
         lastEnd = term.endIndex;
       } else if (term.endIndex > lastEnd) {
-        // If this term is longer than the previous one, replace it
+        // Overlaps but extends further - check if longer
         const lastTerm = filtered[filtered.length - 1];
         if ((term.endIndex - term.startIndex) > (lastTerm.endIndex - lastTerm.startIndex)) {
+          // Current term is longer - replace previous
           filtered[filtered.length - 1] = term;
           lastEnd = term.endIndex;
         }

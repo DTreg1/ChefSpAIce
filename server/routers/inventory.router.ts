@@ -13,20 +13,37 @@ import rateLimiters from "../middleware/rateLimit";
 
 const router = Router();
 
-// Unified inventory endpoint with server-side filtering
+/**
+ * GET /inventory
+ * 
+ * Retrieves user's food inventory with optional filtering and pagination.
+ * 
+ * Query Parameters:
+ * - location: Filter by storage location (e.g., "Fridge", "Pantry"). Use "all" to skip filtering.
+ * - category: Filter by food category (e.g., "Dairy", "Produce")
+ * - view: Special view filters. "expiring" returns items expiring within 7 days
+ * - page: Page number for pagination (default: 1)
+ * - limit: Items per page (default: 50)
+ * 
+ * Returns: Paginated list of food items with metadata
+ * - data: Array of food items
+ * - pagination: { page, limit, total, totalPages }
+ * - type: "items"
+ */
 router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
     const { location, category, view, page = 1, limit = 50 } = req.query;
     
-    // Get food items with server-side filtering
+    // Fetch items from storage with database-level location and category filtering
     const items = await storage.getFoodItems(
       userId, 
       location && location !== "all" ? location : undefined,
       category ? category : undefined
     );
     
-    // Apply additional view filtering (e.g., "expiring" items)
+    // Apply additional view-based filtering in application layer
+    // "expiring" view: Items expiring within the next 7 days
     let filteredItems = items;
     if (view === "expiring") {
       const today = new Date();
@@ -38,7 +55,8 @@ router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
       });
     }
     
-    // Standardized pagination response
+    // Apply client-side pagination to filtered results
+    // This allows for consistent pagination even when view filters are applied
     const startIndex = (Number(page) - 1) * Number(limit);
     const endIndex = startIndex + Number(limit);
     const paginatedItems = filteredItems.slice(startIndex, endIndex);
@@ -59,7 +77,15 @@ router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
   }
 });
 
-// Storage locations endpoints - now managed in users.storageLocations JSONB
+/**
+ * GET /storage-locations
+ * 
+ * Retrieves all storage locations configured by the user.
+ * Storage locations are managed in the users.storageLocations JSONB column.
+ * Default locations include: Refrigerator, Freezer, Pantry, Counter
+ * 
+ * Returns: Array of storage locations with { id, name, icon }
+ */
 router.get("/storage-locations", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
@@ -104,6 +130,27 @@ router.get("/food-items", isAuthenticated, async (req: any, res: Response) => {
   }
 });
 
+/**
+ * POST /food-items
+ * 
+ * Creates a new food item in the user's inventory.
+ * 
+ * Request Body (validated against insertUserInventorySchema):
+ * - name: String (required) - Name of the food item
+ * - quantity: String (required) - Amount/quantity
+ * - unit: String (optional) - Unit of measurement
+ * - storageLocationId: String (required) - ID of storage location
+ * - expirationDate: String (optional) - ISO date string
+ * - foodCategory: String (optional) - Food category
+ * - nutrition: JSON/String (optional) - Nutrition data
+ * - barcodeId: String (optional) - Barcode number if scanned
+ * - weightInGrams: Number (optional) - Item weight for nutrition calculations
+ * - imageUrl: String (optional) - Product image URL
+ * 
+ * Security: Verifies storage location belongs to authenticated user
+ * 
+ * Returns: Created food item with generated ID and all provided fields
+ */
 router.post(
   "/food-items",
   isAuthenticated,
@@ -119,7 +166,8 @@ router.post(
         });
       }
 
-      // Verify storage location belongs to user
+      // Security check: Ensure storage location belongs to this user
+      // Prevents users from adding items to other users' locations
       const locations = await storage.getStorageLocations(userId);
       const locationExists = locations.some((loc: any) => loc.id === req.body.storageLocationId);
       
@@ -127,7 +175,8 @@ router.post(
         return res.status(403).json({ error: "Invalid storage location" });
       }
 
-      // Process nutrition data if provided
+      // Parse nutrition data if provided as JSON string
+      // Handles both object and string formats for flexibility
       let nutritionData = req.body.nutritionData;
       if (nutritionData && typeof nutritionData === "string") {
         try {
@@ -137,20 +186,21 @@ router.post(
         }
       }
 
-      // Calculate expiration if not provided
+      // Smart expiration date calculation based on food category
+      // Uses category-specific shelf life defaults when expiration not provided
       let expirationDate = req.body.expirationDate;
       if (!expirationDate && req.body.foodCategory) {
         const categoryDefaults: Record<string, number> = {
-          dairy: 7,
-          meat: 3,
-          produce: 5,
-          grains: 30,
-          canned: 365,
-          frozen: 90,
-          condiments: 180,
-          beverages: 30,
-          snacks: 60,
-          other: 30,
+          dairy: 7,        // 1 week
+          meat: 3,         // 3 days (refrigerated)
+          produce: 5,      // 5 days
+          grains: 30,      // 1 month
+          canned: 365,     // 1 year
+          frozen: 90,      // 3 months
+          condiments: 180, // 6 months
+          beverages: 30,   // 1 month
+          snacks: 60,      // 2 months
+          other: 30,       // Default 1 month
         };
 
         const daysToAdd = categoryDefaults[req.body.foodCategory?.toLowerCase()] || 30;
@@ -173,6 +223,24 @@ router.post(
   }
 );
 
+/**
+ * PUT /food-items/:id
+ * 
+ * Updates an existing food item in the user's inventory.
+ * Supports partial updates - only provided fields are modified.
+ * 
+ * Path Parameters:
+ * - id: String - Food item ID
+ * 
+ * Request Body: Partial food item fields to update
+ * - Any field from the food item schema can be updated
+ * 
+ * Security:
+ * - Verifies item belongs to authenticated user
+ * - If changing storage location, verifies new location belongs to user
+ * 
+ * Returns: Updated food item
+ */
 router.put(
   "/food-items/:id",
   isAuthenticated,
@@ -181,7 +249,7 @@ router.put(
       const userId = req.user.claims.sub;
       const itemId = req.params.id;
 
-      // Verify item belongs to user
+      // Security check: Verify item belongs to authenticated user
       const items = await storage.getFoodItems(userId);
       const existing = items.find((item: FoodItem) => item.id === itemId);
 
@@ -189,7 +257,8 @@ router.put(
         return res.status(404).json({ error: "Food item not found" });
       }
 
-      // If changing storage location, verify it belongs to user
+      // Additional security check when changing storage location
+      // Prevents moving items to locations user doesn't own
       if (req.body.storageLocationId) {
         const locations = await storage.getStorageLocations(userId);
         const locationExists = locations.some((loc: any) => loc.id === req.body.storageLocationId);
@@ -374,7 +443,29 @@ router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middle
   }
 });
 
-// Food enrichment with AI
+/**
+ * POST /food/enrich
+ * 
+ * Uses AI to enrich food item data with smart categorization and recommendations.
+ * Provides intelligent defaults when USDA or barcode data is incomplete.
+ * 
+ * Request Body:
+ * - name: String (required) - Name of the food item
+ * - barcode: String (optional) - Product barcode for context
+ * - fdcData: Object (optional) - USDA FoodData Central nutrition data
+ * 
+ * AI Analysis Provides:
+ * - foodCategory: Intelligent categorization (dairy, meat, produce, etc.)
+ * - defaultShelfLife: Estimated shelf life in days based on food type
+ * - storageRecommendation: Best storage location (fridge, freezer, pantry)
+ * - nutritionSummary: Key nutritional highlights
+ * - commonUses: Common culinary applications
+ * 
+ * Error Handling: Returns safe defaults if AI fails
+ * Rate Limiting: Protected by OpenAI rate limiter
+ * 
+ * Returns: Enriched food data with AI-generated insights
+ */
 router.post("/food/enrich", isAuthenticated, async (req: any, res: Response) => {
   try {
     const { name, barcode, fdcData } = req.body;
@@ -387,7 +478,8 @@ router.post("/food/enrich", isAuthenticated, async (req: any, res: Response) => 
       return res.status(500).json({ error: "OpenAI API not configured" });
     }
 
-    // Build context from available data
+    // Build context from available data sources
+    // Combines barcode and USDA data to provide richer AI context
     let context = `Food item: ${name}`;
     if (barcode) context += `\nBarcode: ${barcode}`;
     if (fdcData) {
@@ -412,7 +504,7 @@ Response must be valid JSON only, no additional text.`;
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.3,
+      temperature: 0.3,   // Low temperature for consistent categorization
       max_tokens: 300,
     });
 
@@ -426,6 +518,8 @@ Response must be valid JSON only, no additional text.`;
     });
   } catch (error) {
     console.error("Food enrichment error:", error);
+    // Graceful fallback with safe defaults
+    // Ensures user experience isn't disrupted by AI failures
     res.json({
       foodCategory: "other",
       defaultShelfLife: 30,

@@ -1,4 +1,41 @@
-// Unit conversion utilities for ingredient quantity matching
+/**
+ * Unit Conversion Utilities
+ * 
+ * Comprehensive ingredient quantity conversion system for recipe-inventory matching.
+ * Handles volume, weight, count, and food-specific conversions.
+ * 
+ * Core Features:
+ * - Universal Units: Converts between metric/imperial volume and weight
+ * - Food-Specific: Special conversions (e.g., 1 lb bacon = 16 slices)
+ * - Ingredient Parsing: Extracts quantity, unit, and name from recipe strings
+ * - Fuzzy Matching: Intelligently matches ingredient names despite variations
+ * - Size Normalization: Handles "large eggs" vs "eggs" matching
+ * 
+ * Conversion Categories:
+ * 1. Volume: ml, l, tsp, tbsp, cup, pint, quart, gallon (base: ml)
+ * 2. Weight: g, kg, mg, oz, lb (base: grams)
+ * 3. Count: piece, slice, can, jar, clove, head, etc. (no conversion)
+ * 
+ * Food-Specific Conversions:
+ * - Bacon: 1 lb = 16 slices
+ * - Butter: 1 lb = 4 sticks = 32 tbsp; 1 stick = 8 tbsp
+ * - Cheese: 1 lb = 4 cups (shredded)
+ * - Eggs: 1 dozen = 12 pieces
+ * 
+ * Example Usage:
+ * ```
+ * // Recipe requires "2 cups flour"
+ * // User has "500g flour" in inventory
+ * const parsed = parseIngredient("2 cups flour");
+ * // { quantity: 2, unit: "cups", name: "flour" }
+ * 
+ * const grams = convertUnit(2, "cups", "g");
+ * // ~240g (2 cups * 120g/cup approximation for flour)
+ * 
+ * const matches = ingredientNamesMatch("flour", "all purpose flour");
+ * // true - fuzzy matching handles variations
+ * ```
+ */
 
 // Define common unit types and their conversion factors
 const UNIT_CONVERSIONS: { [key: string]: { [key: string]: number } } = {

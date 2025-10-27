@@ -1,3 +1,25 @@
+/**
+ * Barcode Lookup API Integration
+ * 
+ * Provides product information retrieval via barcode scanning.
+ * Used for quick food item entry - scan barcode to get product name, image, and details.
+ * 
+ * API Provider: barcodelookup.com
+ * Rate Limiting: Monthly quota based on API plan
+ * Error Handling: Comprehensive error mapping for all API failure scenarios
+ * 
+ * Features:
+ * - Single Product Lookup: Get full product details by barcode
+ * - Batch Lookup: Fetch up to 10 products at once
+ * - Text Search: Find products by name/keyword
+ * - Rate Limit Tracking: Monitor API quota usage
+ * - Image Extraction: Helper to get product images
+ * 
+ * Common Use Cases:
+ * - User scans grocery item barcode → auto-fills name and image
+ * - Bulk import from shopping receipt barcodes
+ * - Product search when barcode unavailable
+ */
 import axios from 'axios';
 import { ApiError } from './apiError';
 
@@ -82,6 +104,33 @@ export async function searchBarcodeLookup(query: string): Promise<BarcodeLookupS
   }
 }
 
+/**
+ * Lookup a single product by barcode
+ * 
+ * Primary method for barcode scanning feature.
+ * Returns full product details including name, brand, images, and pricing.
+ * 
+ * @param barcode - Product barcode number (UPC, EAN, etc.)
+ * @returns Product object if found, null if barcode not in database
+ * @throws ApiError for authentication, rate limiting, or service failures
+ * 
+ * Error Behavior:
+ * - 404 Not Found: Returns null (valid barcode, but not in their database)
+ * - 401/403: Throws ApiError (invalid API key or subscription expired)
+ * - 429: Throws ApiError (monthly quota exceeded)
+ * - 5xx: Throws ApiError (API service issues)
+ * - Network errors: Throws ApiError (connectivity problems)
+ * 
+ * Usage Example:
+ * ```
+ * const product = await getBarcodeLookupProduct("012345678905");
+ * if (product) {
+ *   // Use product.title, product.images[0], etc.
+ * } else {
+ *   // Barcode not found - fallback to manual entry
+ * }
+ * ```
+ */
 export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeLookupProduct | null> {
   const apiKey = process.env.BARCODE_LOOKUP_API_KEY;
   
@@ -100,6 +149,7 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
       }
     });
 
+    // API returns array of products; take first match
     if (response.data.products && response.data.products.length > 0) {
       return response.data.products[0];
     }
@@ -116,12 +166,14 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
       barcode
     });
     
-    // Return null only for 404 (not found), throw ApiError for other failures
+    // 404 indicates barcode not found in API database
+    // Return null (not an error) so caller can handle gracefully (e.g., manual entry fallback)
     if (status === 404) {
       return null;
     }
     
-    // Throw structured errors for non-404 failures so routes can return detailed messages
+    // All other errors are failures that should be reported to user
+    // Use structured ApiError for consistent error handling in routes
     if (status === 401 || status === 403) {
       throw new ApiError('Barcode Lookup API authentication failed. Please check your API key.', 401);
     } else if (status === 429) {
@@ -134,7 +186,7 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
       throw new ApiError('Cannot connect to Barcode Lookup API.', 503);
     }
     
-    // Log the full error for debugging unexpected cases
+    // Unexpected errors: Log for debugging and throw generic error
     console.error('Unexpected error in barcode lookup:', error);
     throw new ApiError(`Failed to fetch barcode product: ${error.message || 'Unknown error'}`, 500);
   }

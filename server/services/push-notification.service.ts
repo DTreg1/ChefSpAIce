@@ -40,13 +40,44 @@ export interface NotificationPayload {
   }>;
 }
 
+/**
+ * PushNotificationService
+ * 
+ * Handles sending push notifications to users across multiple platforms.
+ * Currently supports Web Push (using VAPID), with planned support for iOS/Android.
+ * 
+ * Features:
+ * - Multi-device support: Sends to all active push tokens for a user
+ * - Platform awareness: Handles web, iOS, and Android differently
+ * - Error resilience: Continues sending even if some tokens fail
+ * - Token cleanup: Automatically deactivates expired/invalid subscriptions
+ * - Notification history: Tracks all sent/failed notifications for analytics
+ * - Automatic expiration alerts: Scheduled notifications for expiring food
+ * - Recipe suggestions: AI-powered meal recommendations
+ */
 export class PushNotificationService {
   /**
-   * Send a push notification to a specific user
+   * Send a push notification to a specific user's devices
+   * 
+   * Sends notification to all active push tokens (devices) registered by the user.
+   * Handles different platforms (web, iOS, Android) with appropriate protocols.
+   * 
+   * @param userId - User's unique identifier
+   * @param payload - Notification content including title, body, icon, actions
+   * @returns Object with sent/failed counts for tracking success rate
+   * 
+   * Error Handling:
+   * - HTTP 410: Subscription expired - automatically deactivates token
+   * - Other errors: Logged but don't stop remaining sends
+   * 
+   * Notification History:
+   * - All sends (success/failure) are logged to notificationHistory table
+   * - Enables analytics on notification delivery and user engagement
    */
   static async sendToUser(userId: string, payload: NotificationPayload) {
     try {
-      // Get user's active push tokens
+      // Fetch all active push tokens for this user
+      // Users may have multiple devices (phone, tablet, desktop)
       const tokens = await db
         .select()
         .from(pushTokens)
@@ -60,17 +91,19 @@ export class PushNotificationService {
       let sent = 0;
       let failed = 0;
 
-      // Send notification to all active tokens
+      // Send to each device, continuing even if some fail
+      // Ensures maximum delivery rather than all-or-nothing
       for (const token of tokens) {
         try {
-          // Handle different platform types
+          // Platform-specific push notification protocols
           if (token.platform === 'web') {
-            // Web push uses subscription objects
+            // Web Push: Uses VAPID for authentication, subscription objects
+            // Token is a JSON-serialized PushSubscription object
             const subscription = JSON.parse(token.token);
             await webpush.sendNotification(subscription, JSON.stringify(payload));
           } else {
-            // Native platforms (iOS/Android) - not yet implemented
-            // For now, skip native tokens as they require APNS/FCM integration
+            // Native platforms require APNS (iOS) or FCM (Android)
+            // Not yet implemented - requires additional service setup
             console.warn(`Native push notifications for ${token.platform} are not yet implemented`);
             continue;
           }
@@ -133,11 +166,30 @@ export class PushNotificationService {
   }
 
   /**
-   * Send notifications about expiring food items
+   * Send expiring food notifications to all eligible users
+   * 
+   * Scheduled Task: Runs daily to notify users about food approaching expiration.
+   * This helps reduce food waste by reminding users to consume items before they spoil.
+   * 
+   * Algorithm:
+   * 1. Find users who have enabled expiring food notifications
+   * 2. For each user, query inventory for items expiring within 3 days
+   * 3. Categorize items: already expired, expires today, expires soon (1-3 days)
+   * 4. Build notification message summarizing expiration status
+   * 5. Send notification with action to view inventory
+   * 
+   * Smart Features:
+   * - Only sends if user has expiring items (no spam)
+   * - Provides detailed breakdown of expiration urgency
+   * - Includes actionable links to view and manage inventory
+   * - Groups multiple items into single notification (reduces noise)
+   * 
+   * @returns Statistics object with totalSent and usersNotified counts
    */
   static async sendExpiringFoodNotifications() {
     try {
-      // Get users with notifications enabled for expiring food
+      // Filter for users who opted in to expiring food alerts
+      // Respects user notification preferences for privacy
       const usersWithNotifications = await db
         .select()
         .from(users)
@@ -154,8 +206,10 @@ export class PushNotificationService {
 
       let totalSent = 0;
 
+      // Process each user individually to personalize notifications
       for (const user of usersWithNotifications) {
-        // Get expiring items for this user
+        // Query user's inventory for items expiring soon
+        // Date filter: expiration <= today + 3 days
         const expiringItems = await db
           .select()
           .from(userInventory)
@@ -168,7 +222,8 @@ export class PushNotificationService {
 
         if (expiringItems.length === 0) continue;
 
-        // Group items by days until expiration
+        // Categorize by expiration urgency for contextual messaging
+        // This helps users prioritize which items to use first
         const todayStr = today.toISOString().split('T')[0];
         const threeDaysStr = threeDaysFromNow.toISOString().split('T')[0];
         
@@ -184,6 +239,8 @@ export class PushNotificationService {
             item.expirationDate < threeDaysStr
         );
 
+        // Build notification message with urgency context
+        // Grammar-aware pluralization for better readability
         let notificationBody = "";
         
         if (expiredItems.length > 0) {

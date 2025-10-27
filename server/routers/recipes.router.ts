@@ -12,7 +12,17 @@ import rateLimiters from "../middleware/rateLimit";
 
 const router = Router();
 
-// Chat messages endpoints
+/**
+ * GET /chat/messages
+ * 
+ * Retrieves chat message history for the authenticated user.
+ * Messages are ordered chronologically for display in the chat UI.
+ * 
+ * Query Parameters:
+ * - limit: Number (optional) - Maximum number of messages to retrieve (default: 50)
+ * 
+ * Returns: Array of chat messages (user and assistant) in chronological order
+ */
 router.get("/chat/messages", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
@@ -64,7 +74,28 @@ router.delete("/chat/messages", isAuthenticated, async (req: any, res: Response)
   }
 });
 
-// Main chat endpoint with AI
+/**
+ * POST /chat
+ * 
+ * Main AI chat endpoint powered by OpenAI GPT-4.
+ * Provides conversational cooking assistance with inventory awareness.
+ * 
+ * Request Body:
+ * - message: String (required) - User's message to the assistant
+ * - includeInventory: Boolean (optional) - Whether to include user's food inventory in context
+ * 
+ * AI Features:
+ * - Maintains conversation context with 10-message history
+ * - Can reference user's current food inventory for personalized suggestions
+ * - Provides recipe suggestions, cooking tips, and meal planning advice
+ * - Automatically cleans up old messages to manage database size
+ * 
+ * Rate Limiting: Protected by OpenAI rate limiter to prevent abuse
+ * 
+ * Returns:
+ * - message: Assistant's response text
+ * - saved: The saved assistant message object
+ */
 router.post(
   "/chat",
   isAuthenticated,
@@ -82,16 +113,18 @@ router.post(
         return res.status(500).json({ error: "OpenAI API not configured" });
       }
 
-      // Save user message
+      // Persist user message to database for conversation history
       await storage.createChatMessage(userId, {
         role: "user",
         content: message,
       });
 
-      // Cleanup old messages periodically
+      // Periodic cleanup to prevent unbounded growth of chat history
+      // Keeps database size manageable and ensures relevant context
       await cleanupOldMessagesForUser(userId);
 
-      // Get inventory context if requested
+      // Build inventory context when requested
+      // Enables AI to provide recommendations based on what user actually has
       let inventoryContext = "";
       if (includeInventory) {
         const items = await storage.getFoodItems(userId);
@@ -103,7 +136,8 @@ router.post(
         }
       }
 
-      // Get recent chat history for context
+      // Fetch recent conversation history to maintain context
+      // Limited to 10 messages to balance context vs. token usage
       const history = await storage.getChatMessages(userId, 10);
 
       const messages: any[] = [
@@ -152,7 +186,38 @@ router.post(
   }
 );
 
-// Recipe generation endpoint
+/**
+ * POST /recipes/generate
+ * 
+ * AI-powered recipe generation endpoint using OpenAI GPT-4.
+ * Creates personalized recipes based on user's inventory, dietary needs, and preferences.
+ * 
+ * Request Body:
+ * - prompt: String (optional) - Free-form recipe request
+ * - useInventory: Boolean (optional) - Generate recipe using available ingredients
+ * - dietaryRestrictions: String[] (optional) - List of dietary restrictions (vegetarian, vegan, gluten-free, etc.)
+ * - cuisine: String (optional) - Cuisine type (Italian, Mexican, Asian, etc.)
+ * - mealType: String (optional) - Meal type (breakfast, lunch, dinner, snack)
+ * - difficulty: String (optional) - Cooking difficulty (beginner, medium, advanced, default: "medium")
+ * - maxCookTime: Number (optional) - Maximum cooking time in minutes
+ * 
+ * Smart Features:
+ * - Equipment Awareness: Only suggests recipes that match user's available kitchen equipment
+ * - Inventory Integration: Identifies which ingredients user has vs. needs to buy
+ * - Cooking Term Detection: Automatically detects and links cooking terminology
+ * - Personalization: Respects dietary restrictions and preferences
+ * 
+ * AI Model: GPT-4 Turbo with JSON response format for structured recipe data
+ * Rate Limiting: Protected to prevent abuse and manage API costs
+ * 
+ * Returns: Complete recipe object with:
+ * - title, description, ingredients, instructions
+ * - prepTime, cookTime, servings
+ * - usedIngredients (from user's inventory)
+ * - missingIngredients (needs to purchase)
+ * - neededEquipment (kitchen tools required)
+ * - detectedCookingTerms (culinary terms with definitions)
+ */
 router.post(
   "/recipes/generate",
   isAuthenticated,
@@ -174,13 +239,14 @@ router.post(
         return res.status(500).json({ error: "OpenAI API not configured" });
       }
 
-      // Build context
+      // Build comprehensive context for AI recipe generation
       let context = "Generate a detailed recipe with the following requirements:\n";
       
       if (prompt) {
         context += `\nUser request: ${prompt}\n`;
       }
 
+      // Include user's available ingredients for personalized recipes
       if (useInventory) {
         const items = await storage.getFoodItems(userId);
         
@@ -191,10 +257,11 @@ router.post(
         }
       }
 
-      // Get user's available equipment
+      // Ensure recipe matches user's available kitchen equipment
+      // Prevents suggesting recipes requiring tools the user doesn't own
       const userAppliances = await storage.getUserAppliances(userId);
       if (userAppliances && userAppliances.length > 0) {
-        // Get appliance library details for user's equipment
+        // Map user's appliance IDs to actual equipment names
         const applianceLibrary = await storage.getApplianceLibrary();
         const userEquipmentDetails = userAppliances.map(ua => {
           const libItem = applianceLibrary.find((al: any) => al.id === ua.applianceLibraryId);
@@ -206,6 +273,7 @@ router.post(
         context += `\nPlease only suggest recipes that can be made with this equipment. If special equipment is needed, make sure it's from the available list.\n`;
       }
 
+      // Apply user's dietary restrictions and preferences
       if (dietaryRestrictions.length > 0) {
         context += `\nDietary restrictions: ${dietaryRestrictions.join(", ")}\n`;
       }
@@ -240,10 +308,11 @@ Return a JSON object with the following structure:
 
       const recipeData = JSON.parse(completion.choices[0].message?.content || "{}");
 
-      // Detect cooking terms in instructions
+      // Smart cooking term detection and enrichment
+      // Scans recipe instructions for culinary terminology and provides definitions
       const { default: CookingTermsService } = await import("../services/cooking-terms.service");
       
-      // Detect terms in instructions
+      // Process each instruction step to find cooking terms
       const detectedTerms = [];
       if (recipeData.instructions && Array.isArray(recipeData.instructions)) {
         for (const instruction of recipeData.instructions) {
@@ -254,18 +323,19 @@ Return a JSON object with the following structure:
         }
       }
       
-      // Remove duplicates based on term name
+      // Deduplicate terms to avoid redundant definitions
+      // Uses Map to ensure each term appears only once
       const uniqueTerms = Array.from(
         new Map(detectedTerms.map((term: any) => [term.term, term])).values()
       );
       
-      // Add detected terms to recipe data
+      // Enrich recipe with detected cooking terms for educational tooltips
       const enrichedRecipeData = {
         ...recipeData,
         detectedCookingTerms: uniqueTerms,
       };
 
-      // Save recipe to database
+      // Persist generated recipe to user's cookbook
       const saved = await storage.createRecipe(userId, enrichedRecipeData);
 
       // Log API usage
@@ -285,7 +355,25 @@ Return a JSON object with the following structure:
   }
 );
 
-// Recipe CRUD endpoints
+/**
+ * GET /recipes
+ * 
+ * Retrieves user's recipe collection with optional filtering.
+ * All filtering is performed at the database level for optimal performance.
+ * 
+ * Query Parameters:
+ * - saved: Boolean ("true"/"false") - Filter for favorited recipes only
+ * - cuisine: String - Filter by cuisine type
+ * - difficulty: String - Filter by difficulty level (beginner, medium, advanced)
+ * - maxCookTime: Number - Filter recipes with cook time <= this value (in minutes)
+ * - search: String - Full-text search across recipe title and description
+ * 
+ * Performance Optimization:
+ * - Uses database-level filtering to minimize data transfer
+ * - Supports complex queries without loading all recipes into memory
+ * 
+ * Returns: Array of recipe objects matching the filters
+ */
 router.get("/recipes", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
@@ -298,6 +386,7 @@ router.get("/recipes", isAuthenticated, async (req: any, res: Response) => {
     } = req.query;
 
     // Build filters object for database-level filtering
+    // This approach allows storage layer to optimize query execution
     const filters: any = {};
     
     if (saved === "true") {
@@ -320,7 +409,7 @@ router.get("/recipes", isAuthenticated, async (req: any, res: Response) => {
       filters.maxCookTime = parseInt(maxCookTime.toString());
     }
     
-    // Use optimized storage method with database-level filtering
+    // Delegate to storage layer for optimized database query
     const userRecipes = await storage.getRecipes(userId, filters);
 
     res.json(userRecipes);

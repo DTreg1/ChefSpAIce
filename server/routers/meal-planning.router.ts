@@ -254,7 +254,38 @@ router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: any, 
   }
 });
 
-// Generate shopping list from meal plans
+/**
+ * POST /shopping-list/generate-from-meal-plans
+ * 
+ * Intelligently generates a shopping list from planned meals for a date range.
+ * Uses Server-Sent Events (SSE) to stream progress updates to the client.
+ * 
+ * Request Body:
+ * - startDate: String (required) - ISO date string for start of date range
+ * - endDate: String (required) - ISO date string for end of date range
+ * 
+ * Algorithm:
+ * 1. Fetches all meal plans in the date range
+ * 2. Extracts unique recipes from meal plans
+ * 3. Collects all ingredients from these recipes
+ * 4. Compares ingredients against current inventory
+ * 5. Filters out items already in shopping list (deduplication)
+ * 6. Adds only missing items to shopping list
+ * 
+ * Smart Features:
+ * - Inventory Awareness: Doesn't add items already in user's inventory
+ * - Deduplication: Prevents duplicate entries in shopping list
+ * - Progress Streaming: Real-time progress updates via SSE
+ * - Batch Database Writes: Processes 5 items at a time (lines 411-433)
+ * - Simple Text Parsing: Strips leading numbers and common units via regex (lines 380-383)
+ * 
+ * Response Format: Server-Sent Events stream with progress updates
+ * - Each event contains: { progress: 0-100, message: string, data?: object }
+ * - Final event includes itemsAdded count and list of added items
+ * 
+ * Use Case: User plans week of meals, clicks "Generate Shopping List",
+ *           and gets exactly what they need to buy (excluding pantry items)
+ */
 router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (req: any, res: Response) => {
   try {
     const userId = req.user.claims.sub;
@@ -264,12 +295,13 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
       return res.status(400).json({ error: "Start date and end date are required" });
     }
     
-    // Set up SSE for progress updates
+    // Set up Server-Sent Events for real-time progress streaming
+    // Allows frontend to display progress bar and status messages
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no'
+      'X-Accel-Buffering': 'no'  // Prevent nginx from buffering SSE
     });
     
     const sendProgress = (progress: number, message: string, data?: any) => {
@@ -278,7 +310,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     
     sendProgress(0, "Starting shopping list generation...");
     
-    // Step 1: Get meal plans for the date range
+    // Step 1: Fetch meal plans for the specified date range
     sendProgress(10, "Fetching meal plans...");
     const mealPlans = await storage.getMealPlans(userId, startDate, endDate);
     
@@ -318,7 +350,8 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     
     sendProgress(40, "Analyzing ingredients...");
     
-    // Step 4: Get current inventory
+    // Step 4: Compare against current inventory
+    // Items already in user's pantry don't need to be purchased
     const inventory = await storage.getFoodItems(userId);
     const inventoryNames = new Set(
       inventory.map(item => item.name.toLowerCase())
@@ -326,7 +359,8 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     
     sendProgress(50, "Comparing with inventory...");
     
-    // Step 5: Get existing shopping list items to avoid duplicates
+    // Step 5: Check existing shopping list to prevent duplicates
+    // Don't add items user already plans to buy
     const existingShoppingItems = await storage.getShoppingListItems(userId);
     const existingItemNames = new Set(
       existingShoppingItems.map(item => item.ingredient.toLowerCase())
@@ -334,20 +368,25 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     
     sendProgress(60, "Identifying missing items...");
     
-    // Step 6: Find missing ingredients
+    // Step 6: Identify missing ingredients needing purchase
+    // Uses simple parsing to remove quantities/units for accurate matching
     const missingItems: { ingredient: string; recipeId: string }[] = [];
     
     ingredientsByRecipe.forEach((ingredients, recipeId) => {
       ingredients.forEach(ingredient => {
-        // Simple ingredient parsing (remove quantities and units)
+        // Basic ingredient normalization
+        // Removes quantities (e.g., "2 cups") and units for better matching
+        // Example: "2 cups flour" → "flour"
         const cleanIngredient = ingredient
-          .replace(/^\d+[\s\/\d]*/, '') // Remove leading numbers
-          .replace(/^(cup|cups|tbsp|tablespoon|tsp|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter)s?\s+/i, '') // Remove units
+          .replace(/^\d+[\s\/\d]*/, '') // Remove leading numbers and fractions
+          .replace(/^(cup|cups|tbsp|tablespoon|tsp|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter)s?\s+/i, '') // Remove common units
           .trim();
         
         const ingredientLower = cleanIngredient.toLowerCase();
         
-        // Check if not in inventory and not already in shopping list
+        // Add to missing items only if:
+        // 1. Not already in user's inventory
+        // 2. Not already in shopping list
         if (!inventoryNames.has(ingredientLower) && 
             !existingItemNames.has(ingredientLower)) {
           missingItems.push({ ingredient: cleanIngredient, recipeId });
@@ -364,12 +403,14 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
       return;
     }
     
-    // Step 7: Add missing items to shopping list
+    // Step 7: Persist missing items to shopping list
+    // Uses batch processing for better performance with large lists
     sendProgress(80, "Adding items to shopping list...");
     
     const addedItems = [];
-    const batchSize = 5;
+    const batchSize = 5;  // Process 5 items at a time to balance speed and database load
     
+    // Process items in batches with progress updates
     for (let i = 0; i < missingItems.length; i += batchSize) {
       const batch = missingItems.slice(i, i + batchSize);
       const batchResults = await Promise.all(
@@ -377,12 +418,13 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
           storage.createShoppingListItem(userId, {
             ingredient: item.ingredient,
             recipeId: item.recipeId,
-            isChecked: false
+            isChecked: false  // Start unchecked for user to mark as purchased
           })
         )
       );
       addedItems.push(...batchResults);
       
+      // Stream incremental progress to frontend
       const progressPercent = 80 + (20 * (i + batch.length) / missingItems.length);
       sendProgress(
         Math.min(progressPercent, 99),
@@ -390,12 +432,13 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
       );
     }
     
+    // Final success message with summary
     sendProgress(100, "Shopping list generation complete!", {
       itemsAdded: addedItems.length,
       items: addedItems
     });
     
-    res.end();
+    res.end();  // Close SSE stream
   } catch (error) {
     console.error("Error generating shopping list from meal plans:", error);
     res.write(`data: ${JSON.stringify({ 

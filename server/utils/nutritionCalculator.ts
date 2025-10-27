@@ -1,6 +1,45 @@
+/**
+ * Nutrition Calculator Utilities
+ * 
+ * Provides nutrition data extraction, scaling, and aggregation for food items.
+ * Integrates with USDA FoodData Central API for standardized nutrition information.
+ * 
+ * Key Features:
+ * - USDA Data Extraction: Maps USDA nutrient IDs to application nutrition fields
+ * - Quantity Scaling: Adjusts nutrition values based on actual food weight
+ * - Aggregation: Sums nutrition across multiple items (meal plans, categories)
+ * - Category Statistics: Groups nutrition by food category
+ * 
+ * USDA Nutrient ID Mapping:
+ * - 1008: Energy (kcal) → calories
+ * - 1003: Protein (g) → protein  
+ * - 1005: Carbohydrate (g) → carbs
+ * - 1004: Total lipid (g) → fat
+ * - 1079: Fiber (g) → fiber
+ * - 2000: Sugars (g) → sugar
+ * - 1093: Sodium (mg) → sodium
+ * 
+ * Precision: 
+ * - Calories: Rounded to whole numbers
+ * - Macronutrients: Rounded to 1 decimal place (0.1g precision)
+ * - Sodium: Rounded to whole milligrams
+ */
 import type { UserInventory, NutritionInfo } from "@shared/schema";
 
-// Extract nutrition information from USDA data
+/**
+ * Extract nutrition information from USDA FoodData Central API response
+ * 
+ * Maps USDA's standardized nutrient IDs to application's nutrition schema.
+ * Handles both Foundation Foods and Survey Foods API formats.
+ * 
+ * @param usdaData - Raw USDA API response object with foodNutrients array
+ * @returns Normalized NutritionInfo object or null if data invalid
+ * 
+ * USDA API Quirks:
+ * - Some foods have nutrientId directly, others nested in nutrient.id
+ * - Amounts may be in 'amount' or 'value' field depending on food type
+ * - Optional nutrients (fiber, sugar, sodium) may be missing
+ */
 export function extractNutrition(usdaData: any): NutritionInfo | null {
   if (!usdaData || !usdaData.foodNutrients) {
     return null;
@@ -49,7 +88,28 @@ export function extractNutrition(usdaData: any): NutritionInfo | null {
   };
 }
 
-// Calculate nutrition for a food item based on its weight/quantity
+/**
+ * Scale nutrition values to match actual food quantity
+ * 
+ * USDA nutrition is per 100g serving by default. This function scales the values
+ * to match the user's actual inventory quantity.
+ * 
+ * @param item - Food inventory item with weightInGrams property
+ * @param baseNutrition - Base nutrition per serving (usually 100g from USDA)
+ * @returns Scaled nutrition matching item's actual weight
+ * 
+ * Algorithm:
+ * 1. Parse serving size from baseNutrition (default: 100g)
+ * 2. Calculate scaleFactor = actualWeight / servingWeight
+ * 3. Multiply all nutrient values by scaleFactor
+ * 4. Round to appropriate precision
+ * 
+ * Example:
+ * - Base: 200 calories per 100g
+ * - Item: 250g
+ * - Scale: 250 / 100 = 2.5
+ * - Result: 200 * 2.5 = 500 calories
+ */
 export function calculateNutrition(
   item: UserInventory, 
   baseNutrition: NutritionInfo | null
@@ -75,7 +135,26 @@ export function calculateNutrition(
   };
 }
 
-// Aggregate nutrition for multiple items
+/**
+ * Aggregate nutrition across multiple food items
+ * 
+ * Sums nutrition values for meal planning, category totals, or full inventory analysis.
+ * Handles JSON parsing errors gracefully to prevent single item failures from breaking aggregation.
+ * 
+ * @param items - Array of inventory items to aggregate
+ * @returns Total nutrition summed across all items
+ * 
+ * Use Cases:
+ * - Meal plan totals: Sum all ingredients in a recipe
+ * - Daily nutrition: Sum all food consumed in a day
+ * - Category analysis: Sum nutrition by food category (via calculateCategoryStats)
+ * - Inventory value: Total nutrition available in pantry
+ * 
+ * Error Handling:
+ * - Skips items with malformed nutrition JSON
+ * - Logs parsing errors for debugging
+ * - Continues processing remaining items
+ */
 export function aggregateNutrition(items: UserInventory[]): NutritionInfo {
   const totals: NutritionInfo = {
     calories: 0,
