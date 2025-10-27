@@ -1,3 +1,36 @@
+/**
+ * Data Storage Layer
+ * 
+ * Centralized database abstraction layer using Drizzle ORM with PostgreSQL.
+ * Provides type-safe CRUD operations for all application entities with user-scoped data isolation.
+ * 
+ * Architecture:
+ * - Database: PostgreSQL via Drizzle ORM
+ * - User Scoping: All data operations enforce user ownership through userId checks
+ * - Caching: In-memory cache with TTL for frequently accessed data (user preferences, etc.)
+ * - Performance: Implements parallel queries, batch operations, and pagination
+ * - Initialization: Lazy initialization of default data (storage locations, appliances) per user
+ * 
+ * Key Responsibilities:
+ * - User Management: OIDC claims to user record mapping, admin status, preferences
+ * - Inventory Operations: Food items with expiration tracking, storage locations, categories
+ * - Recipe Management: Creation, favorites, inventory matching, search with filters
+ * - Meal Planning: Meal plans with date filtering and shopping list generation
+ * - Chat System: Conversation history with AI assistant
+ * - Appliances: User equipment tracking with master library reference
+ * - Analytics: API usage logging, web vitals, user sessions, event tracking
+ * - Feedback System: User feedback with upvotes, responses, and community visibility
+ * - Payments: Stripe donation tracking and statistics
+ * - Caching: USDA FoodData Central API response caching
+ * 
+ * Error Handling:
+ * - All methods throw descriptive errors on database failures
+ * - User scoping prevents cross-user data access
+ * - Transaction rollbacks handled automatically by Drizzle
+ * 
+ * @module server/storage
+ */
+
 // Referenced from blueprint:javascript_log_in_with_replit - Added user operations and user-scoped data
 import { parallelQueries, batchInsert, QueryCache } from "./utils/batchQueries";
 import {
@@ -77,7 +110,12 @@ import {
 } from "./utils/unitConverter";
 import { PaginationHelper } from "./utils/pagination";
 
-// Standardized pagination response format
+/**
+ * Standardized pagination response format
+ * 
+ * All paginated endpoints return this consistent structure for client-side rendering.
+ * Includes metadata needed for pagination UI components (page numbers, total counts).
+ */
 export interface PaginatedResponse<T> {
   data: T[];           // The actual data array
   total: number;       // Total items count
@@ -87,9 +125,52 @@ export interface PaginatedResponse<T> {
   offset: number;      // Current offset
 }
 
+/**
+ * Storage Interface
+ * 
+ * Defines all data access operations for the application.
+ * All methods are user-scoped (require userId) except for:
+ * - System-wide data (cooking terms, appliance library, common food items)
+ * - Admin operations (user management, analytics aggregations)
+ * - Public data (donation totals, feedback community view)
+ * 
+ * Method Patterns:
+ * - get*: Retrieve single record or filtered list
+ * - get*Paginated: Retrieve paginated results with metadata
+ * - create*: Insert new record, returns created entity
+ * - update*: Modify existing record, returns updated entity
+ * - delete*: Remove record, returns void
+ * - upsert*: Insert or update, returns entity
+ * 
+ * All user-scoped methods enforce data isolation via userId in WHERE clauses.
+ */
 export interface IStorage {
-  // User operations - REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
+  // ==================== User Operations ====================
+  // REQUIRED for Replit Auth (from blueprint:javascript_log_in_with_replit)
+  
+  /**
+   * Retrieve user by ID
+   * 
+   * @param id - User ID (typically OIDC sub claim)
+   * @returns User record or undefined if not found
+   */
   getUser(id: string): Promise<User | undefined>;
+  
+  /**
+   * Create or update user from OIDC claims
+   * 
+   * Called on every authenticated request to ensure user exists in database.
+   * On first login: Creates user record with admin status if first user or in ADMIN_EMAILS env var
+   * On subsequent logins: Updates user profile data (name, image, etc.)
+   * 
+   * @param user - User data from OIDC claims (id, email, firstName, lastName, profileImageUrl)
+   * @returns Created or updated user record
+   * 
+   * Admin Assignment:
+   * - First user in system is automatically admin
+   * - Users with email in ADMIN_EMAILS environment variable are admin
+   * - Existing users retain their admin status
+   */
   upsertUser(user: UpsertUser): Promise<User>;
 
   // User Preferences (merged into users table)
@@ -471,22 +552,66 @@ export interface IStorage {
   }>;
 }
 
-// Simple cache interface
+/**
+ * Cache entry structure for in-memory caching
+ * @private
+ */
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
   ttl: number; // Time to live in milliseconds
 }
 
+/**
+ * Database Storage Implementation
+ * 
+ * Implements the IStorage interface using Drizzle ORM with PostgreSQL.
+ * Provides comprehensive data access layer with caching, user initialization, and performance optimizations.
+ * 
+ * Key Features:
+ * - User Initialization: Lazy creation of default data (storage locations, appliances) on first access
+ * - Caching Strategy: In-memory cache with TTL for user preferences and frequently accessed data
+ * - Performance: Parallel queries, batch inserts, pagination with proper indexing
+ * - Data Isolation: All user-scoped methods enforce userId checks to prevent cross-user access
+ * - Transaction Safety: Uses Drizzle's transaction support for multi-step operations
+ * 
+ * Initialization Process:
+ * 1. First authenticated request for a user triggers ensureDefaultDataForUser()
+ * 2. Creates default storage locations (Refrigerator, Freezer, Pantry, Counter)
+ * 3. Creates default appliances (Oven, Stove, Microwave, Air Fryer)
+ * 4. Uses atomic locks to prevent race conditions during concurrent requests
+ * 
+ * Caching Strategy:
+ * - User preferences cached for 10 minutes
+ * - Other frequently accessed data cached for 5 minutes
+ * - Cache keys follow pattern: `{entity}:{userId}` or `{entity}:{id}`
+ * - Cache invalidation on mutations affecting cached data
+ * 
+ * Error Handling:
+ * - All database errors are caught, logged, and rethrown with user-friendly messages
+ * - Failed initializations are retried on next access (lock is released)
+ * - Stale cache entries are automatically pruned on access
+ * 
+ * @implements {IStorage}
+ */
 export class DatabaseStorage implements IStorage {
+  /** Tracks which users have had default data initialized */
   private userInitialized = new Set<string>();
-  private initializationPromises = new Map<string, Promise<void>>();
-  private initializationLock = new Map<string, boolean>(); // Mutex for atomic operations
   
-  // Cache for frequently accessed data
+  /** Stores in-progress initialization promises to prevent duplicate initialization */
+  private initializationPromises = new Map<string, Promise<void>>();
+  
+  /** Mutex for atomic initialization operations */
+  private initializationLock = new Map<string, boolean>();
+  
+  /** In-memory cache for frequently accessed data */
   private cache = new Map<string, CacheEntry<any>>();
-  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-  private readonly USER_PREFS_TTL = 10 * 60 * 1000; // 10 minutes for user preferences
+  
+  /** Default cache TTL: 5 minutes */
+  private readonly DEFAULT_CACHE_TTL = 5 * 60 * 1000;
+  
+  /** User preferences cache TTL: 10 minutes (accessed frequently) */
+  private readonly USER_PREFS_TTL = 10 * 60 * 1000;
   
   // Cache management methods
   private getCached<T>(key: string): T | null {

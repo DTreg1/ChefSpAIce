@@ -1,29 +1,137 @@
+/**
+ * Batched API Usage Logger
+ * 
+ * Efficient logging service for API usage tracking with batching, retry logic, and graceful shutdown.
+ * Queues API usage logs in memory and periodically flushes them to the database in batches.
+ * 
+ * Purpose:
+ * - Track API usage (OpenAI, USDA, etc.) for analytics and cost monitoring
+ * - Prevent database connection exhaustion from individual log writes
+ * - Improve performance by batching multiple log entries into fewer database transactions
+ * - Handle transient database failures with automatic retry
+ * 
+ * Architecture:
+ * - Queue: In-memory FIFO queue of pending log entries
+ * - Batch Processing: Periodic flushes (time-based) or threshold-based (size-based)
+ * - Retry Logic: Exponential backoff with jitter for failed writes
+ * - Back-pressure: Drops logs when queue is full (prevents memory exhaustion)
+ * - Graceful Shutdown: Flushes remaining logs on process termination
+ * 
+ * Default Class Configuration:
+ * - batchSize: 10 logs per batch
+ * - flushInterval: 5000ms (5 seconds)
+ * - maxQueueSize: 1000 logs
+ * - maxRetries: 3 attempts per log
+ * - maxLogAge: 60000ms (60 seconds)
+ * 
+ * Production Singleton Configuration (batchedApiLogger export):
+ * - batchSize: 20 logs per batch (larger batches)
+ * - flushInterval: 3000ms (3 seconds, faster flushing)
+ * - maxQueueSize: 5000 logs (handle traffic spikes)
+ * - maxRetries: 3 attempts per log (same)
+ * - maxLogAge: 120000ms (2 minutes, more retry time)
+ * 
+ * Batching Strategy:
+ * - Flush Triggers:
+ *   1. Queue size reaches batchSize → immediate flush
+ *   2. flushInterval elapsed → periodic flush
+ * - Batch Size: Processes up to batchSize * 2 logs per flush (allows catching up)
+ * - Deduplication: No longer used (was too aggressive and dropped legitimate logs)
+ * 
+ * Retry Logic:
+ * - Exponential Backoff: delay = min(1000 * 2^retryCount, 10000)ms
+ * - Jitter: Random 0-1000ms added to prevent thundering herd
+ * - Retryable Errors:
+ *   - Network errors (ECONNREFUSED, ETIMEDOUT)
+ *   - Database connection errors
+ *   - 5xx server errors
+ *   - 429 rate limit errors
+ * - Non-Retryable: 4xx client errors (except 429)
+ * 
+ * Back-pressure Handling:
+ * - When queue is full (maxQueueSize), new logs are dropped
+ * - Warning logged every 10 seconds (not per drop to avoid spam)
+ * - Tracks dropped log count for monitoring
+ * - Prevents memory leaks and OOM errors
+ * 
+ * Graceful Shutdown:
+ * - Process signals (SIGINT, SIGTERM) trigger shutdown
+ * - Attempts to flush remaining logs (10-second timeout)
+ * - Logs dropped count if timeout occurs
+ * - Also handles uncaught exceptions and unhandled promise rejections
+ * 
+ * Error Handling:
+ * - All errors logged with context (userId, apiName, endpoint)
+ * - Failed logs retried with exponential backoff
+ * - Logs exceeding maxRetries are dropped (prevents infinite retry)
+ * - Logs older than maxLogAge are pruned before flush
+ * 
+ * Performance Characteristics:
+ * - Memory: O(maxQueueSize) worst case
+ * - CPU: Minimal (periodic timer + async processing)
+ * - Database: Reduced by batchSize factor (1 query per 20 logs instead of 20 queries)
+ * - Latency: Up to flushInterval delay (acceptable for analytics)
+ * 
+ * @module server/batchedApiLogger
+ */
+
 import { storage } from './storage';
 import type { InsertApiUsageLog } from '@shared/schema';
 
+/**
+ * Queued log entry with metadata
+ * @private
+ */
 interface QueuedLog {
-  userId: string;
-  log: Omit<InsertApiUsageLog, 'userId'>;
-  timestamp: number;
-  retryCount: number;
+  userId: string;                          // User who made the API call
+  log: Omit<InsertApiUsageLog, 'userId'>; // Log data (apiName, endpoint, etc.)
+  timestamp: number;                       // When log was queued (for age tracking)
+  retryCount: number;                      // Number of retry attempts so far
 }
 
+/**
+ * Logger configuration options
+ */
 interface LoggerConfig {
-  batchSize: number;
-  flushInterval: number;
-  maxQueueSize: number;
-  maxRetries: number;
-  maxLogAge: number;
+  batchSize: number;      // Flush after this many logs queued
+  flushInterval: number;  // Flush every N milliseconds
+  maxQueueSize: number;   // Max logs to keep in memory (back-pressure)
+  maxRetries: number;     // Max retry attempts per log
+  maxLogAge: number;      // Drop logs older than this (ms)
 }
 
+/**
+ * Batched API Logger Implementation
+ * 
+ * Efficiently logs API usage events to database using batching and retry logic.
+ * Singleton instance exported as `batchedApiLogger` for application-wide use.
+ * 
+ * Key Features:
+ * - Batching: Reduces database load by grouping log writes
+ * - Retry: Handles transient failures with exponential backoff
+ * - Back-pressure: Drops logs when queue is full (prevents OOM)
+ * - Graceful Shutdown: Flushes remaining logs on process exit
+ * - Monitoring: Provides stats (queue size, dropped logs, oldest log age)
+ * 
+ * Default Configuration:
+ * - batchSize: 10 logs per flush
+ * - flushInterval: 5 seconds
+ * - maxQueueSize: 1000 logs
+ * - maxRetries: 3 attempts per log
+ * - maxLogAge: 60 seconds before pruning
+ * 
+ * Note: Production singleton instance uses larger values (see batchedApiLogger export)
+ * 
+ * @class
+ */
 class BatchedApiLogger {
   private queue: QueuedLog[] = [];
   private config: LoggerConfig = {
-    batchSize: 10,          // Write after 10 logs
-    flushInterval: 5000,    // Or after 5 seconds
-    maxQueueSize: 1000,     // Max queue size to prevent memory leak
-    maxRetries: 3,          // Max retry attempts
-    maxLogAge: 60000,       // Drop logs older than 60 seconds
+    batchSize: 10,          // Write after 10 logs (default)
+    flushInterval: 5000,    // Or after 5 seconds (default)
+    maxQueueSize: 1000,     // Max queue size to prevent memory leak (default)
+    maxRetries: 3,          // Max retry attempts (default)
+    maxLogAge: 60000,       // Drop logs older than 60 seconds (default)
   };
   
   private flushTimer: NodeJS.Timeout | null = null;
@@ -42,6 +150,35 @@ class BatchedApiLogger {
     }, this.config.flushInterval);
   }
 
+  /**
+   * Queue an API usage log entry
+   * 
+   * Adds log to in-memory queue for eventual database write.
+   * Returns immediately (non-blocking) - actual write happens asynchronously.
+   * 
+   * @param userId - User who made the API call
+   * @param log - Log entry data (apiName, endpoint, statusCode, responseTime, etc.)
+   * 
+   * Behavior:
+   * - Queues log with timestamp and retry count
+   * - Triggers immediate flush if batch size reached
+   * - Drops log if queue is full (back-pressure)
+   * - Does not throw errors (fire-and-forget logging)
+   * 
+   * Back-pressure:
+   * - When queue reaches maxQueueSize, new logs are dropped
+   * - Warning logged periodically (every 10 seconds)
+   * - Prevents memory exhaustion from excessive logging
+   * 
+   * @example
+   * await batchedApiLogger.logApiUsage(userId, {
+   *   apiName: 'OpenAI',
+   *   endpoint: '/v1/chat/completions',
+   *   statusCode: 200,
+   *   responseTime: 1234,
+   *   errorMessage: null
+   * });
+   */
   async logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>) {
     // Create unique key for each API call to prevent duplicate drops
     // Include timestamp or a unique ID to ensure each call is tracked
@@ -87,6 +224,33 @@ class BatchedApiLogger {
     }
   }
 
+  /**
+   * Flush queued logs to database
+   * 
+   * Processes pending logs in batches, retries failures, and prunes old logs.
+   * Called automatically by periodic timer or when batch size reached.
+   * 
+   * Process:
+   * 1. Check if flush already in progress (prevent concurrent flushes)
+   * 2. Prune logs older than maxLogAge
+   * 3. Take batch of logs (up to batchSize * 2)
+   * 4. Attempt to write each log with retry logic
+   * 5. Re-queue failed logs (if retries remaining)
+   * 6. Update queue with remaining logs
+   * 
+   * Retry Logic:
+   * - Failed logs re-added to queue with incremented retryCount
+   * - Exponential backoff: delay = min(1000 * 2^retryCount, 10000)ms
+   * - Jitter added to prevent thundering herd
+   * - Logs exceeding maxRetries are dropped
+   * 
+   * Performance:
+   * - Processes at most batchSize * 2 logs per flush
+   * - Allows catching up if queue is large
+   * - Prevents infinite flush loops
+   * 
+   * @private
+   */
   async flush() {
     if (this.queue.length === 0 || this.isFlushInProgress) return;
 
@@ -182,6 +346,27 @@ class BatchedApiLogger {
     }
   }
 
+  /**
+   * Determine if error is retryable
+   * 
+   * Classifies errors as transient (retry) or permanent (drop).
+   * Retryable errors are typically network or temporary database issues.
+   * 
+   * @param error - Error object from database write attempt
+   * @returns true if error should be retried
+   * 
+   * Retryable Errors:
+   * - Network: ECONNREFUSED, ETIMEDOUT
+   * - Database: connection errors, timeouts
+   * - HTTP: 5xx server errors, 429 rate limit
+   * 
+   * Non-Retryable:
+   * - 4xx client errors (except 429)
+   * - Validation errors
+   * - Unknown errors (dropped to be safe)
+   * 
+   * @private
+   */
   private isRetryableError(error: any): boolean {
     // Network errors and temporary failures are retryable
     if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
@@ -207,7 +392,26 @@ class BatchedApiLogger {
     return false;
   }
 
-  // Get current queue stats
+  /**
+   * Get logger statistics
+   * 
+   * Returns current state of the logger for monitoring and debugging.
+   * Useful for health checks and observability.
+   * 
+   * @returns Stats object with queue metrics
+   * 
+   * Stats Returned:
+   * - queueSize: Current number of logs in queue
+   * - maxQueueSize: Configured maximum queue size
+   * - isFlushInProgress: Whether flush is currently running
+   * - droppedLogs: Number of logs dropped (since last warning)
+   * - oldestLogAge: Age of oldest log in queue (ms)
+   * 
+   * @example
+   * const stats = batchedApiLogger.getStats();
+   * console.log(`Queue: ${stats.queueSize}/${stats.maxQueueSize}`);
+   * console.log(`Oldest log: ${stats.oldestLogAge}ms ago`);
+   */
   getStats() {
     return {
       queueSize: this.queue.length,
@@ -220,7 +424,28 @@ class BatchedApiLogger {
     };
   }
 
-  // Graceful shutdown
+  /**
+   * Gracefully shutdown the logger
+   * 
+   * Stops periodic flush timer and attempts to flush remaining logs.
+   * Called automatically on process termination signals (SIGINT, SIGTERM).
+   * 
+   * @returns Promise that resolves when shutdown complete (or times out)
+   * 
+   * Shutdown Process:
+   * 1. Stop periodic flush timer
+   * 2. Attempt to flush remaining logs (10-second timeout)
+   * 3. Log warning if timeout occurs (logs may be lost)
+   * 
+   * Timeout:
+   * - 10 seconds max for flush completion
+   * - Prevents hanging on exit
+   * - Logs count of potentially lost logs
+   * 
+   * @example
+   * // Manual shutdown (normally handled automatically)
+   * await batchedApiLogger.shutdown();
+   */
   async shutdown() {
     console.log('[BatchedApiLogger] Shutting down...');
     
@@ -249,14 +474,48 @@ class BatchedApiLogger {
   }
 }
 
-// Singleton instance with production-ready config
+/**
+ * Singleton logger instance
+ * 
+ * Exported for application-wide use. 
+ * 
+ * Production Configuration (overrides class defaults):
+ * - batchSize: 20 logs per flush (vs default 10)
+ * - flushInterval: 3000ms / 3 seconds (vs default 5000ms)
+ * - maxQueueSize: 5000 logs (vs default 1000)
+ * - maxRetries: 3 attempts per log (same as default)
+ * - maxLogAge: 120000ms / 2 minutes (vs default 60000ms)
+ * 
+ * Rationale for Production Values:
+ * - Larger batches (20): Reduce database load further
+ * - Faster flush (3s): Reduce data loss window on crash
+ * - Bigger queue (5000): Handle traffic spikes better
+ * - Longer age (2m): More time for retries during outages
+ * 
+ * @example
+ * import { batchedApiLogger } from './batchedApiLogger';
+ * 
+ * await batchedApiLogger.logApiUsage(userId, {
+ *   apiName: 'OpenAI',
+ *   endpoint: '/v1/chat/completions',
+ *   statusCode: 200,
+ *   responseTime: 1234
+ * });
+ */
 export const batchedApiLogger = new BatchedApiLogger({
-  batchSize: 20,        // Larger batches in production
-  flushInterval: 3000,  // Flush more frequently
-  maxQueueSize: 5000,   // Allow larger queue
-  maxRetries: 3,
-  maxLogAge: 120000,    // Keep logs for 2 minutes max
+  batchSize: 20,        // Larger batches in production (default: 10)
+  flushInterval: 3000,  // Flush more frequently (default: 5000ms)
+  maxQueueSize: 5000,   // Allow larger queue (default: 1000)
+  maxRetries: 3,        // Same as default
+  maxLogAge: 120000,    // Keep logs for 2 minutes max (default: 60000ms)
 });
+
+/**
+ * Process signal handlers for graceful shutdown
+ * 
+ * Ensures pending logs are flushed before process termination.
+ * Handles SIGINT (Ctrl+C), SIGTERM (kill), uncaught exceptions, and unhandled rejections.
+ */
 
 // Ensure logs are flushed on process exit
 process.on('SIGINT', async () => {

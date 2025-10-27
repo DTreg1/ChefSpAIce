@@ -1,3 +1,58 @@
+/**
+ * Replit Authentication Setup
+ * 
+ * Configures OpenID Connect (OIDC) authentication with Replit integration.
+ * Handles user authentication, session management, and token refresh.
+ * 
+ * Architecture:
+ * - Protocol: OpenID Connect (OIDC) via Replit's identity provider
+ * - Session Storage: PostgreSQL via connect-pg-simple
+ * - Passport.js: Authentication middleware for Express
+ * - Token Refresh: Automatic refresh using refresh tokens
+ * 
+ * Authentication Flow:
+ * 1. User visits /api/login → redirects to Replit OAuth
+ * 2. User authenticates with Replit
+ * 3. Replit redirects to /api/callback with authorization code
+ * 4. Exchange code for access token + refresh token
+ * 5. Create session and upsert user in database
+ * 6. Redirect user to original destination or home
+ * 
+ * Session Management:
+ * - Storage: PostgreSQL 'sessions' table
+ * - TTL: 7 days (604800 seconds)
+ * - Cookies: HTTP-only, secure, same-site
+ * - Serialization: Full user object stored in session
+ * 
+ * Multi-Domain Support:
+ * - Strategies registered for each domain in REPLIT_DOMAINS
+ * - Dynamic strategy registration for new domains
+ * - Fallback to primary domain on authentication errors
+ * - Security: Only allows Replit domains (.replit.dev, .replit.app)
+ * 
+ * Token Refresh:
+ * - Automatic: isAuthenticated middleware checks token expiration
+ * - Deduplication: Prevents multiple concurrent refresh requests per user
+ * - Cleanup: Removes stale refresh promises after 30 seconds
+ * - Error Handling: Forces re-authentication on invalid refresh tokens
+ * 
+ * Environment Variables:
+ * - REPLIT_DOMAINS: Comma-separated list of allowed domains
+ * - ISSUER_URL: OIDC issuer (default: https://replit.com/oidc)
+ * - REPL_ID: Application identifier (client_id)
+ * - SESSION_SECRET: Session encryption key
+ * - DATABASE_URL: PostgreSQL connection string
+ * 
+ * Security Considerations:
+ * - Sessions stored server-side (PostgreSQL), only session ID in cookie
+ * - Tokens never exposed to client
+ * - HTTPS required (secure cookies)
+ * - Domain validation prevents unauthorized domains
+ * - Token refresh deduplicated to prevent race conditions
+ * 
+ * @module server/replitAuth
+ */
+
 // Referenced from blueprint:javascript_log_in_with_replit
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
@@ -13,6 +68,15 @@ if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
+/**
+ * Get OIDC configuration via discovery
+ * 
+ * Fetches OpenID Connect configuration from Replit's well-known endpoint.
+ * Cached for 1 hour to reduce unnecessary network calls.
+ * 
+ * @returns OIDC configuration object with endpoints and supported features
+ * @private
+ */
 const getOidcConfig = memoize(
   async () => {
     return await client.discovery(
@@ -23,6 +87,26 @@ const getOidcConfig = memoize(
   { maxAge: 3600 * 1000 }
 );
 
+/**
+ * Create Express session middleware
+ * 
+ * Configures session management using PostgreSQL for persistence.
+ * Sessions survive server restarts and scale across multiple instances.
+ * 
+ * @returns Express session middleware configured for Replit auth
+ * 
+ * Session Configuration:
+ * - Store: PostgreSQL via connect-pg-simple
+ * - TTL: 7 days (1 week)
+ * - Cookie: HTTP-only, secure, 1-week max age
+ * - Table: 'sessions' in main database
+ * 
+ * Security:
+ * - resave: false (only save modified sessions)
+ * - saveUninitialized: false (don't store empty sessions)
+ * - httpOnly: true (prevent XSS access to cookie)
+ * - secure: true (HTTPS only)
+ */
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
@@ -45,6 +129,16 @@ export function getSession() {
   });
 }
 
+/**
+ * Update user session with fresh tokens
+ * 
+ * Updates session object with new access/refresh tokens and claims.
+ * Called after initial login and after token refresh.
+ * 
+ * @param user - Session user object to update
+ * @param tokens - Fresh tokens from OIDC provider
+ * @private
+ */
 function updateUserSession(
   user: any,
   tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
@@ -55,6 +149,15 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
+/**
+ * Create or update user in database from OIDC claims
+ * 
+ * Ensures user record exists in database for authenticated user.
+ * Called on every login to keep user data synchronized with OIDC provider.
+ * 
+ * @param claims - OIDC token claims (sub, email, first_name, last_name, profile_image_url)
+ * @private
+ */
 async function upsertUser(
   claims: any,
 ) {
@@ -67,6 +170,34 @@ async function upsertUser(
   });
 }
 
+/**
+ * Setup authentication routes and middleware
+ * 
+ * Configures Passport.js with OIDC strategies for all domains.
+ * Registers routes for login, callback, and logout.
+ * 
+ * @param app - Express application instance
+ * 
+ * Routes Created:
+ * - GET /api/login - Initiates OAuth flow, accepts ?redirect_to query param
+ * - GET /api/callback - Handles OAuth callback, creates session
+ * - GET /api/logout - Destroys session, redirects to OIDC end_session_url
+ * 
+ * Strategies:
+ * - One strategy per domain in REPLIT_DOMAINS
+ * - Dynamic registration for new domains at runtime
+ * - Fallback mechanism if domain-specific auth fails
+ * 
+ * Redirect Handling:
+ * - ?redirect_to parameter validated for security (must be relative path)
+ * - Allowed paths: /, /pantry, /recipes, /meal-plans, /shopping, /chat, /appliances, /settings
+ * - Stored in session.returnTo, cleared after successful login
+ * 
+ * Security:
+ * - Domain whitelist prevents unauthorized domains
+ * - Relative path validation prevents open redirects
+ * - Strategies only registered for trusted domains
+ */
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
@@ -266,10 +397,23 @@ export async function setupAuth(app: Express) {
   });
 }
 
-// Map to track active token refreshes per user session
+/**
+ * Active token refresh operations
+ * 
+ * Tracks in-progress token refresh requests to prevent duplicate refreshes.
+ * Key: {userId}-{refreshTokenPrefix}, Value: { promise, timestamp }
+ * @private
+ */
 const activeRefreshes = new Map<string, { promise: Promise<client.TokenEndpointResponse & client.TokenEndpointResponseHelpers>, timestamp: number }>();
 
-// Clean up stale refresh promises (older than 30 seconds)
+/**
+ * Clean up stale refresh promises
+ * 
+ * Removes refresh promises older than 30 seconds to prevent memory leaks.
+ * Called before each new refresh operation.
+ * 
+ * @private
+ */
 const cleanupStaleRefreshes = () => {
   const now = Date.now();
   const staleTimeout = 30000; // 30 seconds
@@ -281,6 +425,41 @@ const cleanupStaleRefreshes = () => {
   });
 };
 
+/**
+ * Authentication middleware with automatic token refresh
+ * 
+ * Verifies user is authenticated and refreshes expired tokens automatically.
+ * Prevents multiple concurrent refresh requests for the same user.
+ * 
+ * @returns 401 if user not authenticated or token refresh fails
+ * @returns calls next() if authenticated with valid token
+ * 
+ * Token Refresh Logic:
+ * 1. Check if user is authenticated (req.isAuthenticated())
+ * 2. Check if access token is expired (user.expires_at < now)
+ * 3. If expired and refresh token available:
+ *    a. Check for existing refresh operation (prevent duplicates)
+ *    b. Refresh tokens via OIDC endpoint
+ *    c. Update session with new tokens
+ *    d. Continue request
+ * 4. If refresh fails: Force re-authentication (401 with requiresReauth flag)
+ * 
+ * Error Responses:
+ * - 401 Unauthorized: Not authenticated
+ * - 401 with requiresReauth: Refresh token invalid, re-login required
+ * 
+ * Deduplication:
+ * - Multiple concurrent requests from same user share one refresh promise
+ * - Prevents token refresh race conditions
+ * - Cleanup of stale promises (>30s) prevents memory leaks
+ * 
+ * @example
+ * // Protect a route
+ * app.get('/api/user/profile', isAuthenticated, async (req, res) => {
+ *   const user = await storage.getUser(req.user.claims.sub);
+ *   res.json(user);
+ * });
+ */
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 

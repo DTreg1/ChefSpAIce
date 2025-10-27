@@ -1,7 +1,59 @@
+/**
+ * USDA FoodData Central API Integration
+ * 
+ * Provides nutrition data lookup and food search functionality using USDA's FoodData Central API.
+ * Integrates standardized nutrition information for food items in the pantry management system.
+ * 
+ * API Details:
+ * - Base URL: https://api.nal.usda.gov/fdc/v1
+ * - Authentication: API key required (USDA_FDC_API_KEY environment variable)
+ * - Documentation: https://fdc.nal.usda.gov/api-guide.html
+ * 
+ * Endpoints Used:
+ * - GET /foods/search - Search foods by name with filtering options
+ * - GET /food/{fdcId} - Get detailed nutrition data for specific food
+ * 
+ * Data Types (dataType field):
+ * - Foundation: Lab-analyzed reference foods (most accurate, scientifically validated)
+ * - SR Legacy: USDA Standard Reference legacy data (comprehensive, reliable)
+ * - Survey Foods: FNDDS survey foods (what Americans actually eat)
+ * - Branded: Commercial products (variable quality, brand-specific)
+ * 
+ * Nutrition Data Sources:
+ * - labelNutrients: Branded foods (from nutrition labels)
+ * - foodNutrients: Foundation/SR Legacy foods (from lab analysis)
+ * - Nutrient IDs: Standard USDA nutrient numbers (208=calories, 203=protein, etc.)
+ * 
+ * Rate Limits:
+ * - No official limit documented, but best practice: cache responses
+ * - Failed requests return appropriate HTTP status codes (401, 429, 500, etc.)
+ * 
+ * Caching Strategy:
+ * - Responses should be cached in fdcCache table via storage layer
+ * - Nutrition data rarely changes, safe to cache long-term
+ * - Cache key: fdcId (unique food identifier)
+ * 
+ * Error Handling:
+ * - All API errors wrapped in ApiError with descriptive messages
+ * - Network failures logged and rethrown
+ * - Invalid/missing nutrition data returns undefined or null
+ * - Validation ensures data quality (rejects all-zero macros, suspicious values)
+ * 
+ * Data Validation:
+ * - Rejects foods where all macronutrients are zero
+ * - Validates food-specific expectations (oils should have fat, meat should have protein)
+ * - Warns on suspicious data patterns via console.warn
+ * 
+ * @module server/usda
+ */
+
 import type { USDAFoodItem, USDASearchResponse, NutritionInfo } from "@shared/schema";
 import { ApiError } from "./apiError";
 
+/** USDA FoodData Central API base URL */
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
+
+/** API key from environment (required for all requests) */
 const API_KEY = process.env.USDA_FDC_API_KEY;
 
 interface FDCNutrient {
@@ -70,6 +122,33 @@ interface FDCSearchResult {
   foods: FDCFood[];
 }
 
+/**
+ * Validate nutrition data quality
+ * 
+ * Ensures nutrition data is valid and not suspiciously incomplete.
+ * Catches common data quality issues from USDA API responses.
+ * 
+ * Validation Rules:
+ * - Rejects if all major macronutrients are zero (likely incomplete data)
+ * - Validates food-type specific expectations:
+ *   - Oils/butter/fats must have fat content > 0
+ *   - Meat/chicken/fish/eggs must have protein > 0 (if calories > 0)
+ * 
+ * @param nutrition - Extracted nutrition information to validate
+ * @param foodDescription - Food name/description for context in warnings
+ * @returns true if data appears valid, false if suspicious
+ * 
+ * Side Effects:
+ * - Logs warnings to console when suspicious data detected
+ * 
+ * @example
+ * const nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+ * isNutritionDataValid(nutrition, "apple"); // false - all zeros
+ * 
+ * @example
+ * const nutrition = { calories: 120, protein: 0, carbs: 0, fat: 14 };
+ * isNutritionDataValid(nutrition, "olive oil"); // true - fat content present
+ */
 export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: string): boolean {
   // Check if all major macronutrients are zero (suspicious)
   const allMacrosZero = nutrition.calories === 0 && 
@@ -104,6 +183,32 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
   return true;
 }
 
+/**
+ * Extract nutrition information from FDC food data
+ * 
+ * Handles multiple nutrition data formats from USDA API:
+ * 1. labelNutrients (Branded Foods) - from nutrition labels
+ * 2. foodNutrients (Foundation/SR Legacy) - from lab analysis
+ * 
+ * Nutrient Number Mapping (USDA Standard):
+ * - 208: Energy (calories)
+ * - 203: Protein (g)
+ * - 205: Carbohydrates (g)
+ * - 204: Total lipid/fat (g)
+ * - 291: Fiber (g)
+ * - 269: Sugars (g)
+ * - 307: Sodium (mg)
+ * 
+ * @param food - FDC food object from API response
+ * @returns Standardized nutrition info or undefined if invalid/missing
+ * 
+ * Data Quality:
+ * - Validates extracted data using isNutritionDataValid()
+ * - Returns undefined for invalid or incomplete data
+ * - Handles both 'value' and 'amount' field names (API inconsistency)
+ * 
+ * @private
+ */
 function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
   // First try labelNutrients (Branded Foods)
   if (food.labelNutrients) {
@@ -178,6 +283,29 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
   return undefined;
 }
 
+/**
+ * Map FDC API response to application's USDAFoodItem format
+ * 
+ * Transforms USDA API response structure into consistent internal format.
+ * Handles multiple foodCategory formats (string vs object).
+ * 
+ * @param food - Raw food data from USDA FDC API
+ * @returns Standardized USDAFoodItem for storage/display
+ * 
+ * Field Mapping:
+ * - fdcId: Unique USDA food identifier
+ * - description: Food name/description
+ * - dataType: Food data type (Foundation, SR Legacy, Branded, etc.)
+ * - foodCategory: Extracted from object or string format
+ * - foodNutrients: Mapped from extracted nutrition info (if valid)
+ * 
+ * Nutrition Data:
+ * - Only included if extractNutritionInfo() returns valid data
+ * - Formatted as array of nutrient objects with standard IDs
+ * - Includes calories, protein, carbs, fat, and optional fiber/sugar/sodium
+ * 
+ * @private
+ */
 function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
   // Extract foodCategory - handle both string and object formats
   let foodCategory: string | undefined;
@@ -217,16 +345,61 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
   };
 }
 
+/**
+ * Search options for USDA FoodData Central API
+ */
 export interface USDASearchOptions {
-  query: string;
-  pageSize?: number;
-  pageNumber?: number;
-  dataType?: string[];
+  query: string;                    // Search query (food name/description)
+  pageSize?: number;                 // Results per page (default: 20, max: 50)
+  pageNumber?: number;               // Page number (1-indexed, default: 1)
+  dataType?: string[];              // Filter by data types (Foundation, SR Legacy, etc.)
   sortBy?: 'dataType.keyword' | 'lowercaseDescription.keyword' | 'fdcId' | 'publishedDate';
-  sortOrder?: 'asc' | 'desc';
-  brandOwner?: string[];
+  sortOrder?: 'asc' | 'desc';       // Sort direction
+  brandOwner?: string[];            // Filter by brand (for Branded foods)
 }
 
+/**
+ * Search USDA FoodData Central database
+ * 
+ * Queries USDA API for foods matching search criteria with flexible filtering options.
+ * Results are ranked by USDA's relevance algorithm.
+ * 
+ * @param options - Search parameters (object or string for backward compatibility)
+ * @returns Search results with pagination metadata
+ * 
+ * Search Behavior:
+ * - Fuzzy matching: Partial word matches supported
+ * - Ranking: USDA's relevance algorithm (not customizable)
+ * - Pagination: Default 20 results per page, max 50
+ * - Filtering: Can restrict by dataType, brandOwner
+ * 
+ * Data Type Recommendations:
+ * - Generic items: ['Foundation', 'SR Legacy'] - most accurate
+ * - Branded products: ['Branded'] - specific to brands
+ * - All data: omit dataType filter
+ * 
+ * Error Handling:
+ * - 401/403: API key invalid or missing
+ * - 400: Invalid search parameters
+ * - 429: Rate limit exceeded (retry after delay)
+ * - 500+: USDA service unavailable
+ * - Network errors: Logged and rethrown as ApiError
+ * 
+ * @throws {ApiError} On API authentication, validation, or network failures
+ * 
+ * @example
+ * // Simple search (backward compatible)
+ * const results = await searchUSDAFoods("apple");
+ * 
+ * @example
+ * // Advanced search with filters
+ * const results = await searchUSDAFoods({
+ *   query: "chicken breast",
+ *   dataType: ['Foundation', 'SR Legacy'],
+ *   pageSize: 10,
+ *   sortBy: 'lowercaseDescription.keyword'
+ * });
+ */
 export async function searchUSDAFoods(
   options: USDASearchOptions | string
 ): Promise<USDASearchResponse> {
@@ -324,6 +497,41 @@ export async function searchUSDAFoods(
   }
 }
 
+/**
+ * Get detailed food information by FDC ID
+ * 
+ * Fetches complete nutrition data for a specific food using its unique FDC identifier.
+ * More detailed than search results, includes full nutrient breakdown.
+ * 
+ * @param fdcId - USDA FoodData Central ID (unique food identifier)
+ * @returns Complete food data with nutrition info, or null if not found
+ * 
+ * Use Cases:
+ * - Fetching details after search (user selected a result)
+ * - Retrieving cached food data by fdcId
+ * - Validating/updating existing food records
+ * 
+ * Response Data:
+ * - More detailed than search results
+ * - Includes full nutrient breakdown
+ * - Contains serving size information
+ * - May include brand owner, ingredients list
+ * 
+ * Error Handling:
+ * - 404: Food not found (returns null, not error)
+ * - 401/403: API key invalid
+ * - 429: Rate limit exceeded
+ * - 500+: Service unavailable
+ * - Network errors logged, returns null
+ * 
+ * @throws {ApiError} On API authentication or rate limit failures
+ * 
+ * @example
+ * const food = await getFoodByFdcId(123456);
+ * if (food) {
+ *   console.log(food.description, food.foodNutrients);
+ * }
+ */
 export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null> {
   if (!API_KEY) {
     throw new Error("USDA_FDC_API_KEY is not configured");
@@ -367,7 +575,36 @@ export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null
   }
 }
 
-// Get enriched onboarding item data - searches for the item name and returns the first result
+/**
+ * Get enriched nutrition data for onboarding inventory items
+ * 
+ * Searches USDA database for a common food item and returns the best match.
+ * Used during onboarding to populate default inventory with nutrition data.
+ * 
+ * @param itemName - Common food name (e.g., "milk", "eggs", "bread")
+ * @returns First/best matching food item with nutrition data, or null if not found
+ * 
+ * Search Strategy:
+ * - Queries top-quality data types only (Foundation, SR Legacy, Branded)
+ * - Returns single best match (pageSize: 1)
+ * - USDA's ranking determines "best" (typically most accurate/complete)
+ * 
+ * Use Case:
+ * - Enriching onboardingInventory table with USDA nutrition data
+ * - Pre-populating new user inventory with common items
+ * - Quick lookup for standard/common foods
+ * 
+ * Error Handling:
+ * - API failures logged, returns null (graceful degradation)
+ * - Empty results return null
+ * - Does not throw errors (onboarding should not fail on nutrition data)
+ * 
+ * @example
+ * const milk = await getEnrichedOnboardingItem("whole milk");
+ * if (milk) {
+ *   // Use milk.foodNutrients for nutrition info
+ * }
+ */
 export async function getEnrichedOnboardingItem(itemName: string): Promise<USDAFoodItem | null> {
   try {
     const searchResult = await searchUSDAFoods({
