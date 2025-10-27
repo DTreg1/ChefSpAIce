@@ -66,7 +66,6 @@ class LogRetentionService {
         await this.runCleanup();
       },
       {
-        scheduled: true,
         timezone: process.env.TZ || "UTC",
       }
     );
