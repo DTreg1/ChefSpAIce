@@ -11,7 +11,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import { MealPlanningDialog } from "@/components/meal-planning-dialog";
 import { ServingAdjuster } from "@/components/serving-adjuster";
 import { StarRating } from "@/components/star-rating";
-import { CookingTermHighlighter } from "@/components/cooking-term-highlighter";
+import { EnrichedContent } from "@/components/enriched-content";
 
 interface IngredientMatch {
   ingredientName: string;
@@ -464,7 +464,7 @@ export const RecipeCard = React.memo(function RecipeCard({
                     data-testid={`text-instruction-${idx}`}
                   >
                     <span className="font-semibold text-primary flex-shrink-0">{idx + 1}.</span>
-                    <CookingTermHighlighter text={instruction} />
+                    <EnrichedContent text={instruction} usePopover={true} />
                   </li>
                 ))}
               </ol>

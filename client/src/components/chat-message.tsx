@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import DOMPurify from "isomorphic-dompurify";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { VoiceControls } from "@/components/voice-controls";
+import { EnrichedContent } from "@/components/enriched-content";
 
 interface ChatMessageProps {
   role: "user" | "assistant" | "system";
@@ -74,10 +75,20 @@ export function ChatMessage({
           )}
           style={{ borderRadius: "var(--radius)" }}
         >
-          <p
-            className="text-base leading-relaxed whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
-          />
+          {isUser ? (
+            <p
+              className="text-base leading-relaxed whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
+            />
+          ) : (
+            <div className="text-base leading-relaxed whitespace-pre-wrap">
+              <EnrichedContent 
+                text={content} 
+                usePopover={true}
+                enableDetection={true}
+              />
+            </div>
+          )}
         </div>
 
         {children && <div className="w-full mt-1">{children}</div>}
