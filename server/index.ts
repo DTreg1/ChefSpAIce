@@ -3,6 +3,7 @@ import compression from "compression";
 // Use modular routes instead of monolithic routes.ts
 import { registerModularRoutes } from "./routers";
 import { setupVite, serveStatic, log } from "./vite";
+import { logRetentionService } from "./services/log-retention.service";
 
 const app = express();
 
@@ -97,5 +98,9 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start the log retention service
+    logRetentionService.start();
+    log("Log retention service started");
   });
 })();

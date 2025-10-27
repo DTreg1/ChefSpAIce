@@ -152,7 +152,7 @@ router.post(
       ];
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
+        model: "gpt-4-turbo",
         messages,
         temperature: 0.7,
         max_tokens: 500,
@@ -170,7 +170,7 @@ router.post(
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "chat",
-        queryParams: `model=gpt-4-turbo-preview`,
+        queryParams: `model=gpt-4-turbo`,
         statusCode: 200,
         success: true,
       });
@@ -299,7 +299,7 @@ Return a JSON object with the following structure:
 }`;
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
+        model: "gpt-4-turbo",
         messages: [{ role: "user", content: context }],
         temperature: 0.8,
         max_tokens: 1000,
@@ -342,7 +342,7 @@ Return a JSON object with the following structure:
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "recipes/generate",
-        queryParams: `model=gpt-4-turbo-preview`,
+        queryParams: `model=gpt-4-turbo`,
         statusCode: 200,
         success: true,
       });
@@ -354,6 +354,40 @@ Return a JSON object with the following structure:
     }
   }
 );
+
+/**
+ * POST /recipes
+ * 
+ * Creates a new recipe for the authenticated user.
+ * 
+ * Request Body:
+ * - title: String (required) - Recipe name
+ * - description: String (optional) - Brief description
+ * - ingredients: Array (required) - List of ingredients
+ * - instructions: Array (required) - Step-by-step instructions
+ * - prepTime: String (optional) - Preparation time
+ * - cookTime: String (optional) - Cooking time
+ * - servings: Number (optional) - Number of servings
+ * - cuisine: String (optional) - Cuisine type
+ * - difficulty: String (optional) - Difficulty level
+ * - source: String (optional) - Recipe source
+ * 
+ * Returns: Created recipe object with ID
+ */
+router.post("/recipes", isAuthenticated, async (req: any, res: Response) => {
+  try {
+    const userId = req.user.claims.sub;
+    const recipeData = req.body;
+    
+    // Create the recipe
+    const saved = await storage.createRecipe(userId, recipeData);
+    
+    res.json(saved);
+  } catch (error) {
+    console.error("Error creating recipe:", error);
+    res.status(500).json({ error: "Failed to create recipe" });
+  }
+});
 
 /**
  * GET /recipes

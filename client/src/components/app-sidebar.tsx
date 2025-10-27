@@ -25,6 +25,7 @@ import {
   Activity,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { CacheStorage } from "@/lib/cacheStorage";
 import { queryClient } from "@/lib/queryClient";
@@ -100,6 +101,7 @@ export function AppSidebar() {
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [foodGroupsOpen, setFoodGroupsOpen] = useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
+  const { user } = useAuth();
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -526,6 +528,26 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                {user?.isAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/admin-dashboard"}
+                    >
+                      <Link
+                        href="/admin-dashboard"
+                        data-testid="link-admin-dashboard"
+                        onClick={handleLinkClick}
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span className="flex-1">Admin Dashboard</span>
+                        <Badge variant="default" className="ml-auto">
+                          Admin
+                        </Badge>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

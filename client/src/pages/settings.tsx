@@ -18,10 +18,12 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, BellOff } from "lucide-react";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, BellOff, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import ActivityTimeline from "@/components/ActivityTimeline";
+import ActivityPrivacyControls from "@/components/ActivityPrivacyControls";
 import type { User, StorageLocation } from "@shared/schema";
 
 const storageAreaOptions = [
@@ -795,6 +797,32 @@ export default function Settings() {
                   Track your Barcode Lookup API usage and quota
                 </p>
                 <ApiUsageSection />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Activity History Section */}
+          <AccordionItem value="activity-history" className="border rounded-lg" data-testid="section-activity-history">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">Activity History & Privacy</span>
+                <span className="text-sm text-muted-foreground ml-2">
+                  Manage your activity data
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="pt-4">
+                <ActivityPrivacyControls />
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+                  <ActivityTimeline 
+                    showFilters={true} 
+                    limit={50} 
+                    className="border-0 shadow-none p-0"
+                  />
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>

@@ -83,6 +83,8 @@ import {
   type AnalyticsEvent,
   type InsertUserSession,
   type UserSession,
+  type ActivityLog,
+  type InsertActivityLog,
   insertAnalyticsEventSchema,
   users,
   pushTokens,
@@ -103,6 +105,7 @@ import {
   analyticsEvents,
   userSessions,
   applianceLibrary,
+  activityLogs,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull } from "drizzle-orm";
@@ -556,6 +559,131 @@ export interface IStorage {
     topCategories: Array<{ eventCategory: string; count: number }>;
     conversionRate: number;
   }>;
+
+  // ==================== Activity Logging ====================
+  
+  /**
+   * Create an activity log entry
+   * 
+   * @param log - Activity log data
+   * @returns Created activity log
+   */
+  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  
+  /**
+   * Get activity logs with optional filters
+   * 
+   * @param userId - Filter by user ID (null for system events)
+   * @param filters - Additional filters (action, entity, date range, etc.)
+   * @returns Array of activity logs
+   */
+  getActivityLogs(
+    userId?: string | null,
+    filters?: {
+      action?: string | string[];
+      entity?: string;
+      entityId?: string;
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<ActivityLog[]>;
+  
+  /**
+   * Get paginated activity logs
+   * 
+   * @param userId - Filter by user ID
+   * @param page - Page number (1-indexed)
+   * @param limit - Items per page
+   * @param filters - Additional filters
+   * @returns Paginated activity logs
+   */
+  getActivityLogsPaginated(
+    userId?: string | null,
+    page?: number,
+    limit?: number,
+    filters?: {
+      action?: string | string[];
+      entity?: string;
+      entityId?: string;
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<PaginatedResponse<ActivityLog>>;
+  
+  /**
+   * Get user's activity timeline
+   * 
+   * @param userId - User ID
+   * @param limit - Number of recent activities
+   * @returns User's activity timeline
+   */
+  getUserActivityTimeline(
+    userId: string,
+    limit?: number
+  ): Promise<ActivityLog[]>;
+  
+  /**
+   * Get system events (activities with no user)
+   * 
+   * @param filters - Optional filters
+   * @returns System event logs
+   */
+  getSystemActivityLogs(
+    filters?: {
+      action?: string | string[];
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    }
+  ): Promise<ActivityLog[]>;
+  
+  /**
+   * Get activity statistics
+   * 
+   * @param userId - Filter by user ID (optional)
+   * @param startDate - Start date for stats
+   * @param endDate - End date for stats
+   * @returns Activity statistics
+   */
+  getActivityStats(
+    userId?: string | null,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    total: number;
+    byAction: Array<{ action: string; count: number }>;
+    byEntity: Array<{ entity: string; count: number }>;
+  }>;
+  
+  /**
+   * Clean up old activity logs based on retention policy
+   * 
+   * @param retentionDays - Days to retain logs (default: 90)
+   * @param excludeActions - Actions to exclude from cleanup
+   * @returns Number of deleted logs
+   */
+  cleanupOldActivityLogs(
+    retentionDays?: number,
+    excludeActions?: string[]
+  ): Promise<number>;
+  
+  /**
+   * Export user's activity logs
+   * 
+   * @param userId - User ID
+   * @returns User's activity logs
+   */
+  exportUserActivityLogs(userId: string): Promise<ActivityLog[]>;
+  
+  /**
+   * Delete user's activity logs (GDPR compliance)
+   * 
+   * @param userId - User ID
+   * @returns Number of deleted logs
+   */
+  deleteUserActivityLogs(userId: string): Promise<number>;
 }
 
 /**
@@ -3070,7 +3198,7 @@ export class DatabaseStorage implements IStorage {
         .update(donations)
         .set({
           ...updates,
-          completedAt: updates.status === "succeeded" ? new Date() : undefined,
+          updatedAt: new Date(),
         })
         .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
         .returning();
@@ -3728,6 +3856,356 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting analytics stats:", error);
       throw new Error("Failed to get analytics stats");
+    }
+  }
+
+  // ==================== Activity Logging Implementation ====================
+
+  async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
+    try {
+      const [newLog] = await db
+        .insert(activityLogs)
+        .values(log)
+        .returning();
+      return newLog;
+    } catch (error) {
+      console.error("Error creating activity log:", error);
+      throw new Error("Failed to create activity log");
+    }
+  }
+
+  async getActivityLogs(
+    userId?: string | null,
+    filters?: {
+      action?: string | string[];
+      entity?: string;
+      entityId?: string;
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<ActivityLog[]> {
+    try {
+      let query = db
+        .select()
+        .from(activityLogs)
+        .$dynamic();
+
+      const conditions: any[] = [];
+
+      // User filter
+      if (userId !== undefined) {
+        if (userId === null) {
+          conditions.push(isNull(activityLogs.userId));
+        } else {
+          conditions.push(eq(activityLogs.userId, userId));
+        }
+      }
+
+      // Action filter (single or multiple)
+      if (filters?.action) {
+        if (Array.isArray(filters.action)) {
+          conditions.push(sql`${activityLogs.action} = ANY(${filters.action})`);
+        } else {
+          conditions.push(eq(activityLogs.action, filters.action));
+        }
+      }
+
+      // Entity filters
+      if (filters?.entity) {
+        conditions.push(eq(activityLogs.entity, filters.entity));
+      }
+      if (filters?.entityId) {
+        conditions.push(eq(activityLogs.entityId, filters.entityId));
+      }
+
+      // Date range filters
+      if (filters?.startDate) {
+        conditions.push(gte(activityLogs.timestamp, filters.startDate));
+      }
+      if (filters?.endDate) {
+        conditions.push(lte(activityLogs.timestamp, filters.endDate));
+      }
+
+      // Apply conditions
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      // Order by timestamp descending
+      query = query.orderBy(desc(activityLogs.timestamp));
+
+      // Apply limit and offset
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+      if (filters?.offset) {
+        query = query.offset(filters.offset);
+      }
+
+      return await query;
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+      throw new Error("Failed to fetch activity logs");
+    }
+  }
+
+  async getActivityLogsPaginated(
+    userId?: string | null,
+    page: number = 1,
+    limit: number = 50,
+    filters?: {
+      action?: string | string[];
+      entity?: string;
+      entityId?: string;
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<PaginatedResponse<ActivityLog>> {
+    try {
+      const offset = (page - 1) * limit;
+
+      // Get logs with limit + offset
+      const logs = await this.getActivityLogs(userId, {
+        ...filters,
+        limit,
+        offset,
+      });
+
+      // Get total count for pagination
+      let countQuery = db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(activityLogs)
+        .$dynamic();
+
+      const conditions: any[] = [];
+
+      if (userId !== undefined) {
+        if (userId === null) {
+          conditions.push(isNull(activityLogs.userId));
+        } else {
+          conditions.push(eq(activityLogs.userId, userId));
+        }
+      }
+
+      if (filters?.action) {
+        if (Array.isArray(filters.action)) {
+          conditions.push(sql`${activityLogs.action} = ANY(${filters.action})`);
+        } else {
+          conditions.push(eq(activityLogs.action, filters.action));
+        }
+      }
+
+      if (filters?.entity) {
+        conditions.push(eq(activityLogs.entity, filters.entity));
+      }
+      if (filters?.entityId) {
+        conditions.push(eq(activityLogs.entityId, filters.entityId));
+      }
+      if (filters?.startDate) {
+        conditions.push(gte(activityLogs.timestamp, filters.startDate));
+      }
+      if (filters?.endDate) {
+        conditions.push(lte(activityLogs.timestamp, filters.endDate));
+      }
+
+      if (conditions.length > 0) {
+        countQuery = countQuery.where(and(...conditions));
+      }
+
+      const [{ count: total }] = await countQuery;
+
+      return {
+        data: logs,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+        offset,
+      };
+    } catch (error) {
+      console.error("Error fetching paginated activity logs:", error);
+      throw new Error("Failed to fetch paginated activity logs");
+    }
+  }
+
+  async getUserActivityTimeline(
+    userId: string,
+    limit: number = 50
+  ): Promise<ActivityLog[]> {
+    return this.getActivityLogs(userId, { limit });
+  }
+
+  async getSystemActivityLogs(
+    filters?: {
+      action?: string | string[];
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    }
+  ): Promise<ActivityLog[]> {
+    return this.getActivityLogs(null, filters);
+  }
+
+  async getActivityStats(
+    userId?: string | null,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    total: number;
+    byAction: Array<{ action: string; count: number }>;
+    byEntity: Array<{ entity: string; count: number }>;
+  }> {
+    try {
+      const conditions: any[] = [];
+
+      if (userId !== undefined) {
+        if (userId === null) {
+          conditions.push(isNull(activityLogs.userId));
+        } else {
+          conditions.push(eq(activityLogs.userId, userId));
+        }
+      }
+      if (startDate) {
+        conditions.push(gte(activityLogs.timestamp, startDate));
+      }
+      if (endDate) {
+        conditions.push(lte(activityLogs.timestamp, endDate));
+      }
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      // Get action counts
+      const actionCounts = await db
+        .select({
+          action: activityLogs.action,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(activityLogs)
+        .where(whereClause)
+        .groupBy(activityLogs.action)
+        .orderBy(desc(sql`count(*)`));
+
+      // Get entity counts
+      const entityCounts = await db
+        .select({
+          entity: activityLogs.entity,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(activityLogs)
+        .where(whereClause)
+        .groupBy(activityLogs.entity)
+        .orderBy(desc(sql`count(*)`));
+
+      // Get total count
+      const [totalResult] = await db
+        .select({
+          total: sql<number>`count(*)::int`,
+        })
+        .from(activityLogs)
+        .where(whereClause);
+
+      const total = totalResult?.total || 0;
+
+      return {
+        total,
+        byAction: actionCounts,
+        byEntity: entityCounts,
+      };
+    } catch (error) {
+      console.error("Error fetching activity stats:", error);
+      throw new Error("Failed to fetch activity stats");
+    }
+  }
+
+  async cleanupOldActivityLogs(
+    retentionDays: number = 90,
+    excludeActions?: string[]
+  ): Promise<number> {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
+      const conditions: any[] = [
+        lte(activityLogs.timestamp, cutoffDate)
+      ];
+
+      // Exclude certain important actions from cleanup
+      if (excludeActions && excludeActions.length > 0) {
+        conditions.push(
+          sql`${activityLogs.action} NOT IN (${sql.raw(
+            excludeActions.map(a => `'${a}'`).join(',')
+          )})`
+        );
+      }
+
+      const result = await db
+        .delete(activityLogs)
+        .where(and(...conditions));
+
+      const deletedCount = result.rowCount || 0;
+
+      // Log the cleanup as a system event
+      await this.createActivityLog({
+        userId: null,
+        action: 'cleanup_job',
+        entity: 'system',
+        entityId: null,
+        metadata: {
+          type: 'activity_logs_cleanup',
+          retentionDays,
+          deletedCount,
+          cutoffDate: cutoffDate.toISOString(),
+        },
+        ipAddress: null,
+        userAgent: null,
+        sessionId: null,
+      });
+
+      return deletedCount;
+    } catch (error) {
+      console.error("Error cleaning up old activity logs:", error);
+      throw new Error("Failed to clean up old activity logs");
+    }
+  }
+
+  async exportUserActivityLogs(userId: string): Promise<ActivityLog[]> {
+    try {
+      const logs = await this.getActivityLogs(userId);
+
+      // Log the export action
+      await this.createActivityLog({
+        userId,
+        action: 'data_exported',
+        entity: 'user',
+        entityId: userId,
+        metadata: {
+          type: 'activity_logs',
+          count: logs.length,
+        },
+        ipAddress: null,
+        userAgent: null,
+        sessionId: null,
+      });
+
+      return logs;
+    } catch (error) {
+      console.error("Error exporting user activity logs:", error);
+      throw new Error("Failed to export user activity logs");
+    }
+  }
+
+  async deleteUserActivityLogs(userId: string): Promise<number> {
+    try {
+      const result = await db
+        .delete(activityLogs)
+        .where(eq(activityLogs.userId, userId));
+
+      return result.rowCount || 0;
+    } catch (error) {
+      console.error("Error deleting user activity logs:", error);
+      throw new Error("Failed to delete user activity logs");
     }
   }
 }

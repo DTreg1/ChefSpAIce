@@ -16,14 +16,22 @@ import batchRouter from "./batch.router";
 import pushTokensRouter from "./push-tokens.router";
 import notificationsRouter from "./notifications.router";
 import cookingTermsRouter from "./cooking-terms.router";
+import activityLogsRouter from "./activity-logs.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
 import { storage } from "../storage";
 
+// Import activity logging middleware
+import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";
+
 export async function registerModularRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware first
   await setupAuth(app);
+  
+  // Setup activity logging middleware after authentication
+  // This ensures we have user context when logging activities
+  app.use(activityLoggingMiddleware);
   
   // Register all route modules with their base paths
   app.use("/api/auth", authRouter);
@@ -36,6 +44,7 @@ export async function registerModularRoutes(app: Express): Promise<Server> {
   app.use("/api/admin", adminRouter); // Admin endpoints
   app.use("/api/analytics", analyticsRouter); // Analytics endpoints
   app.use("/api", batchRouter);       // Batch API for optimized requests
+  app.use("/api", activityLogsRouter); // Activity logs endpoints
   app.use(pushTokensRouter);          // Push tokens endpoints
   app.use(notificationsRouter);       // Notification tracking and history endpoints
   app.use(cookingTermsRouter);        // Cooking terms endpoints

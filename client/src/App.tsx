@@ -43,6 +43,7 @@ const FoodGroups = lazy(() => import("@/pages/food-groups"));
 const FeedbackAnalytics = lazy(() => import("@/pages/feedback-analytics"));
 const FeedbackBoard = lazy(() => import("@/pages/feedback-board"));
 const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
+const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
 const Donate = lazy(() => import("@/pages/donate"));
 const DonateSuccess = lazy(() => import("@/pages/donate-success"));
 const About = lazy(() => import("@/pages/about"));
@@ -72,6 +73,7 @@ function AuthenticatedRouter() {
         <Route path="/food-groups/:category" component={FoodGroups} />
         <Route path="/food-groups" component={FoodGroups} />
         <Route path="/analytics-dashboard" component={AnalyticsDashboard} />
+        <Route path="/admin-dashboard" component={AdminDashboard} />
         <Route path="/feedback-analytics" component={FeedbackAnalytics} />
         <Route path="/feedback" component={FeedbackBoard} />
         <Route path="/donate" component={Donate} />

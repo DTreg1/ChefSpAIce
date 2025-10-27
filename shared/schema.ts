@@ -2670,3 +2670,159 @@ export const insertApplianceLibrarySchema = createInsertSchema(applianceLibrary)
 
 export type InsertApplianceLibrary = z.infer<typeof insertApplianceLibrarySchema>;
 export type ApplianceLibrary = typeof applianceLibrary.$inferSelect;
+
+/**
+ * Activity Logs Table
+ * 
+ * Comprehensive audit trail for all user actions and system events.
+ * Tracks every significant activity for analytics, debugging, and compliance.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (nullable for system events)
+ * - action: Type of action performed
+ *   - User actions: 'login', 'logout', 'signup', 'settings_changed'
+ *   - Food inventory: 'food_added', 'food_updated', 'food_deleted', 'food_consumed'
+ *   - Recipes: 'recipe_generated', 'recipe_saved', 'recipe_deleted', 'recipe_rated', 'recipe_viewed'
+ *   - AI chat: 'message_sent', 'ai_response_received'
+ *   - Notifications: 'notification_sent', 'notification_dismissed'
+ *   - Shopping: 'shopping_list_created', 'item_checked_off'
+ *   - Meal planning: 'meal_planned', 'meal_completed'
+ *   - System: 'data_exported', 'bulk_import', 'cleanup_job', 'error_occurred'
+ * - entity: What was affected (e.g., 'food_item', 'recipe', 'user', 'meal_plan')
+ * - entityId: ID of the affected entity (nullable for actions without specific entity)
+ * 
+ * Context & Metadata:
+ * - metadata: JSONB field for additional context
+ *   - Can include: previous values, new values, error details, user input, etc.
+ *   - Example: { oldName: "Milk", newName: "Whole Milk", location: "fridge" }
+ * - ipAddress: User's IP address for security auditing (nullable)
+ * - userAgent: Browser/device information (nullable)
+ * - sessionId: Links to user session for grouping activities (nullable)
+ * - timestamp: When the action occurred
+ * 
+ * Privacy & Security:
+ * - Sensitive data (passwords, tokens) never logged in metadata
+ * - IP addresses stored for security but can be anonymized
+ * - User agent helps detect automated/suspicious activity
+ * - GDPR compliant with data deletion on user request
+ * 
+ * Performance Optimizations:
+ * - Asynchronous logging (doesn't block requests)
+ * - Batch inserts for high-volume events
+ * - Retention policy for automatic cleanup (90 days default)
+ * - Archival for important events before deletion
+ * 
+ * Query Patterns:
+ * - User timeline: Filter by userId + timestamp DESC
+ * - Action audit: Filter by action type
+ * - Entity history: Filter by entity + entityId
+ * - System events: WHERE userId IS NULL
+ * - Security audit: Filter by IP address or suspicious patterns
+ * 
+ * Business Rules:
+ * - Critical actions always logged (auth, deletions, admin actions)
+ * - Read operations optionally logged (configurable)
+ * - System events have null userId
+ * - Errors logged with full context in metadata
+ * - Retention: 90 days default, configurable per action type
+ * 
+ * Analytics Use Cases:
+ * - User engagement metrics (actions per day/week)
+ * - Feature usage tracking (which features are popular)
+ * - Error tracking and debugging
+ * - Security audit trail
+ * - Compliance reporting
+ * - Performance monitoring (via metadata.duration)
+ * 
+ * Example Log Entries:
+ * 
+ * ```typescript
+ * // Food item added
+ * {
+ *   userId: "user123",
+ *   action: "food_added",
+ *   entity: "food_item",
+ *   entityId: "food456",
+ *   metadata: {
+ *     name: "Organic Milk",
+ *     location: "fridge",
+ *     expirationDate: "2024-01-15",
+ *     quantity: 1
+ *   },
+ *   ipAddress: "192.168.1.1",
+ *   userAgent: "Mozilla/5.0...",
+ *   sessionId: "session789",
+ *   timestamp: "2024-01-05T10:30:00Z"
+ * }
+ * 
+ * // Recipe generated
+ * {
+ *   userId: "user123",
+ *   action: "recipe_generated",
+ *   entity: "recipe",
+ *   entityId: "recipe789",
+ *   metadata: {
+ *     title: "Chicken Stir Fry",
+ *     source: "ai_generated",
+ *     ingredientsUsed: 5,
+ *     prompt: "Quick dinner with chicken and vegetables"
+ *   },
+ *   timestamp: "2024-01-05T18:45:00Z"
+ * }
+ * 
+ * // System event
+ * {
+ *   userId: null,
+ *   action: "cleanup_job",
+ *   entity: "system",
+ *   metadata: {
+ *     type: "expired_logs",
+ *     deletedCount: 1523,
+ *     duration: 450,
+ *     status: "success"
+ *   },
+ *   timestamp: "2024-01-05T02:00:00Z"
+ * }
+ * ```
+ * 
+ * Indexes:
+ * - activity_logs_user_id_idx: User-specific queries
+ * - activity_logs_action_idx: Filter by action type
+ * - activity_logs_timestamp_idx: Time-based queries
+ * - activity_logs_entity_entity_id_idx: Entity history lookup
+ * 
+ * Relationships:
+ * - users → activityLogs: SET NULL (preserve logs if user deleted)
+ * 
+ * Implementation Notes:
+ * - Use ActivityLogger service for logging (handles async, batching)
+ * - Middleware auto-logs API requests
+ * - Manual logging for business logic events
+ * - Background job for retention/archival
+ */
+export const activityLogs = pgTable("activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }), // Nullable for system events
+  action: varchar("action", { length: 100 }).notNull(), // Type of action performed
+  entity: varchar("entity", { length: 50 }).notNull(), // What was affected
+  entityId: varchar("entity_id"), // ID of affected entity (nullable)
+  metadata: jsonb("metadata").$type<Record<string, any>>(), // Additional context data
+  ipAddress: varchar("ip_address", { length: 45 }), // Support IPv6
+  userAgent: text("user_agent"), // Browser/device info
+  sessionId: varchar("session_id"), // Session identifier
+  timestamp: timestamp("timestamp").notNull().defaultNow(), // When action occurred
+}, (table) => [
+  index("activity_logs_user_id_idx").on(table.userId),
+  index("activity_logs_action_idx").on(table.action),
+  index("activity_logs_timestamp_idx").on(table.timestamp),
+  index("activity_logs_entity_entity_id_idx").on(table.entity, table.entityId),
+]);
+
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type ActivityLog = typeof activityLogs.$inferSelect;
