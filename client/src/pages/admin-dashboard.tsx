@@ -1,4 +1,4 @@
-import { Navigate } from "wouter";
+import { Redirect } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   }
   
   if (!user || !user.isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Redirect to="/" />;
   }
   
   return (

@@ -61,7 +61,7 @@ export async function seedCommonFoodItems(forceUpdate = false) {
       try {
         // Check if item already exists and skip if not forcing update
         if (!forceUpdate) {
-          const existing = await storage.getCommonFoodItemByName(displayName);
+          const existing = await storage.getOnboardingInventoryByName(displayName);
           if (existing) {
             console.log(`Skipping ${displayName} - already exists`);
             return { success: true, skipped: true };
