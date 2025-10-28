@@ -185,7 +185,7 @@ jobs:
           git push origin "v${{ steps.next_version.outputs.version }}"
           
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', steps.next_version.outputs.version) || github.ref_name }}
           name: ChefSpAIce ${{ github.event_name == 'workflow_dispatch' && steps.next_version.outputs.version || github.ref_name }}
