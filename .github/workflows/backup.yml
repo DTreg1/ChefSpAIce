@@ -189,7 +189,7 @@ jobs:
     
     steps:
       - name: Download backup artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v6
         with:
           name: db-backup-${{ needs.backup.outputs.timestamp }}
           
