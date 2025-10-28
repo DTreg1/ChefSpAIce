@@ -163,6 +163,9 @@ function AppContent() {
     };
   }, []);
 
+  // Check if onboarding needs to be shown
+  const showOnboarding = !prefLoading && (!preferences || !preferences.hasCompletedOnboarding);
+
   useEffect(() => {
     const handleScroll = () => {
       if (mainRef.current) {
@@ -176,7 +179,7 @@ function AppContent() {
       mainElement.addEventListener("scroll", handleScroll);
       return () => mainElement.removeEventListener("scroll", handleScroll);
     }
-  }, []);
+  }, [showOnboarding]); // Re-attach listener when onboarding status changes
 
   const style = {
     "--sidebar-width": "20rem",
@@ -188,12 +191,7 @@ function AppContent() {
     return <Router />;
   }
 
-  // Show onboarding full-screen without sidebar if not completed
-  if (!prefLoading && (!preferences || !preferences.hasCompletedOnboarding)) {
-    return <Onboarding />;
-  }
-
-  // Show app layout with sidebar for authenticated users who completed onboarding
+  // Show app layout with header (with or without sidebar based on onboarding status)
   return (
     <>
       {/* Only show animated background on chat/home page */}
@@ -212,9 +210,10 @@ function AppContent() {
       />
       {/* Only show floating FeedbackWidget on non-chat pages */}
       {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
+      
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
-          {/* Header is now at the top level, outside the flex container with sidebar */}
+          {/* Header outside the sidebar container but inside SidebarProvider */}
           <header
             className={cn(
               "flex items-center gap-4 p-4 border-b transition-all-smooth sticky top-0 z-[60] w-full",
@@ -223,10 +222,12 @@ function AppContent() {
                 : "glass-vibrant border-border/30",
             )}
           >
-            <SidebarTrigger
-              data-testid="button-sidebar-toggle"
-              className="transition-morph hover:scale-105"
-            />
+            {!showOnboarding && (
+              <SidebarTrigger
+                data-testid="button-sidebar-toggle"
+                className="transition-morph hover:scale-105"
+              />
+            )}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/5 flex items-center justify-center shadow-lg glow-primary">
                 <ChefHat className="w-6 h-6 text-primary-foreground" />
@@ -240,23 +241,36 @@ function AppContent() {
                 </p>
               </div>
             </div>
-            <div className="ml-auto">
-              <QuickActionsBar
-                onAddFood={() => setAddFoodOpen(true)}
-                onGenerateRecipe={() => setRecipeDialogOpen(true)}
-              />
-            </div>
+            {!showOnboarding && (
+              <div className="ml-auto">
+                <QuickActionsBar
+                  onAddFood={() => setAddFoodOpen(true)}
+                  onGenerateRecipe={() => setRecipeDialogOpen(true)}
+                />
+              </div>
+            )}
           </header>
-
-          {/* Main content area with sidebar and main content */}
+          
+          {/* Main content area with sidebar (if completed onboarding) and main content */}
           <div className="flex flex-1 min-h-0 w-full">
-            <AppSidebar />
-            <main
-              ref={mainRef}
-              className="flex-1 overflow-y-auto overflow-x-hidden"
-            >
-              <Router />
-            </main>
+            {showOnboarding ? (
+              <main 
+                ref={mainRef}
+                className="flex-1 overflow-y-auto overflow-x-hidden"
+              >
+                <Onboarding />
+              </main>
+            ) : (
+              <>
+                <AppSidebar />
+                <main
+                  ref={mainRef}
+                  className="flex-1 overflow-y-auto overflow-x-hidden"
+                >
+                  <Router />
+                </main>
+              </>
+            )}
           </div>
         </div>
       </SidebarProvider>
