@@ -37,7 +37,7 @@ export class TermDetector {
   private readonly CACHE_DURATION = 1000 * 60 * 60; // 1 hour
   
   // Performance optimization: LRU cache for detection results
-  private detectionCache: Map<string, { result: DetectedTerm[]; timestamp: number }> = new Map();
+  private detectionCache: Map<string, { result: TermMatch[]; timestamp: number }> = new Map();
   private readonly MAX_CACHE_SIZE = 100;
   private readonly CACHE_TTL = 1000 * 60 * 10; // 10 minutes
 
@@ -179,11 +179,11 @@ export class TermDetector {
     const now = Date.now();
     const keysToDelete: string[] = [];
     
-    for (const [key, value] of this.detectionCache.entries()) {
+    Array.from(this.detectionCache.entries()).forEach(([key, value]) => {
       if (now - value.timestamp > this.CACHE_TTL) {
         keysToDelete.push(key);
       }
-    }
+    });
     
     keysToDelete.forEach(key => this.detectionCache.delete(key));
     
