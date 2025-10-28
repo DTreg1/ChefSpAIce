@@ -1227,13 +1227,13 @@ function AdminManagementSection() {
               {userToToggleAdmin?.isAdmin ? (
                 <>
                   Are you sure you want to remove admin privileges from{" "}
-                  <span className="font-medium">{getUserDisplayName(userToToggleAdmin)}</span>?
+                  <span className="font-medium">{userToToggleAdmin && getUserDisplayName(userToToggleAdmin)}</span>?
                   They will lose access to admin features including user management.
                 </>
               ) : (
                 <>
                   Are you sure you want to grant admin privileges to{" "}
-                  <span className="font-medium">{getUserDisplayName(userToToggleAdmin)}</span>?
+                  <span className="font-medium">{userToToggleAdmin && getUserDisplayName(userToToggleAdmin)}</span>?
                   They will have full access to manage users and system settings.
                 </>
               )}
