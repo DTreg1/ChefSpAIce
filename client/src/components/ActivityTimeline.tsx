@@ -180,7 +180,7 @@ export default function ActivityTimeline({
   }) || [];
   
   // Get unique entity types for filter
-  const entityTypes = [...new Set(data?.data.map(log => log.entity) || [])];
+  const entityTypes = Array.from(new Set(data?.data.map(log => log.entity) || []));
   
   // Export activity logs
   const handleExport = async () => {
