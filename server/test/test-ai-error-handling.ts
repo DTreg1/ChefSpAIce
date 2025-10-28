@@ -103,7 +103,8 @@ async function testCircuitBreaker() {
         throw new Error('Simulated failure');
       });
     } catch (error) {
-      logWarning(`Failure ${i + 1}: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      logWarning(`Failure ${i + 1}: ${message}`);
     }
   }
 
