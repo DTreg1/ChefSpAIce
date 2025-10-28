@@ -1,0 +1,221 @@
+# Release Workflow - Creates releases with semantic versioning and changelogs
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog generation
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+          
+      - name: Calculate next version
+        id: next_version
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          CURRENT_VERSION=${{ steps.current_version.outputs.version }}
+          RELEASE_TYPE=${{ github.event.inputs.release_type }}
+          
+          # Use npm version to calculate next version (dry run)
+          if [ "$RELEASE_TYPE" = "prerelease" ]; then
+            NEXT_VERSION=$(npm version prerelease --preid=beta --no-git-tag-version | sed 's/v//')
+          else
+            NEXT_VERSION=$(npm version $RELEASE_TYPE --no-git-tag-version | sed 's/v//')
+          fi
+          
+          echo "version=${NEXT_VERSION}" >> $GITHUB_OUTPUT
+          echo "Next version: ${NEXT_VERSION}"
+          
+      - name: Update version in package.json
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          npm version ${{ steps.next_version.outputs.version }} --no-git-tag-version
+          
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Install changelog generator
+          npm install -g conventional-changelog-cli
+          
+          # Generate changelog for this release
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="v${{ steps.next_version.outputs.version }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          
+          # Create changelog content
+          echo "## What's Changed" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"* %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"* %s (%h)" --no-merges)
+          fi
+          
+          # Categorize commits
+          echo "### ✨ Features" >> RELEASE_NOTES.md
+          echo "$COMMITS" | grep -E "^* (feat|feature)" >> RELEASE_NOTES.md || echo "No new features" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          echo "### 🐛 Bug Fixes" >> RELEASE_NOTES.md
+          echo "$COMMITS" | grep -E "^* (fix|bugfix)" >> RELEASE_NOTES.md || echo "No bug fixes" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          echo "### 📚 Documentation" >> RELEASE_NOTES.md
+          echo "$COMMITS" | grep -E "^* (docs|doc)" >> RELEASE_NOTES.md || echo "No documentation changes" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          echo "### 🔧 Maintenance" >> RELEASE_NOTES.md
+          echo "$COMMITS" | grep -E "^* (chore|refactor|perf|test)" >> RELEASE_NOTES.md || echo "No maintenance changes" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          echo "### Dependencies" >> RELEASE_NOTES.md
+          echo "$COMMITS" | grep -E "^* (deps|dependencies)" >> RELEASE_NOTES.md || echo "No dependency updates" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          # Add statistics
+          echo "### 📊 Statistics" >> RELEASE_NOTES.md
+          COMMIT_COUNT=$(echo "$COMMITS" | wc -l)
+          CONTRIBUTOR_COUNT=$(git log ${LAST_TAG}..HEAD --format="%an" | sort -u | wc -l)
+          echo "- Commits: $COMMIT_COUNT" >> RELEASE_NOTES.md
+          echo "- Contributors: $CONTRIBUTOR_COUNT" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          # Add full changelog link
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${TAG}" >> RELEASE_NOTES.md
+          
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          
+      - name: Create release artifacts
+        run: |
+          # Create release directory
+          mkdir -p release
+          
+          # Copy built files
+          cp -r dist release/
+          
+          # Create source archive
+          tar -czf release/chefspice-source.tar.gz \
+            --exclude=node_modules \
+            --exclude=dist \
+            --exclude=.git \
+            --exclude=release \
+            .
+            
+          # Create production archive
+          tar -czf release/chefspice-dist.tar.gz dist/
+          
+          # Create zip versions for Windows users
+          zip -r release/chefspice-source.zip . \
+            -x "node_modules/*" \
+            -x "dist/*" \
+            -x ".git/*" \
+            -x "release/*"
+            
+          zip -r release/chefspice-dist.zip dist/
+          
+      - name: Commit version bump
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json package-lock.json
+          git commit -m "chore(release): bump version to ${{ steps.next_version.outputs.version }}"
+          
+      - name: Push changes
+        if: github.event_name == 'workflow_dispatch'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          tags: false
+          
+      - name: Create and push tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git tag -a "v${{ steps.next_version.outputs.version }}" \
+            -m "Release v${{ steps.next_version.outputs.version }}"
+          git push origin "v${{ steps.next_version.outputs.version }}"
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', steps.next_version.outputs.version) || github.ref_name }}
+          name: ChefSpAIce ${{ github.event_name == 'workflow_dispatch' && steps.next_version.outputs.version || github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: ${{ github.event.inputs.release_type == 'prerelease' }}
+          files: |
+            release/chefspice-source.tar.gz
+            release/chefspice-dist.tar.gz
+            release/chefspice-source.zip
+            release/chefspice-dist.zip
+            
+      - name: Update CHANGELOG.md
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          # Prepend release notes to CHANGELOG.md
+          echo "# Changelog" > CHANGELOG.tmp.md
+          echo "" >> CHANGELOG.tmp.md
+          echo "## [${{ steps.next_version.outputs.version }}] - $(date +%Y-%m-%d)" >> CHANGELOG.tmp.md
+          cat RELEASE_NOTES.md >> CHANGELOG.tmp.md
+          echo "" >> CHANGELOG.tmp.md
+          
+          # Add existing changelog if it exists
+          if [ -f CHANGELOG.md ]; then
+            tail -n +2 CHANGELOG.md >> CHANGELOG.tmp.md
+          fi
+          
+          mv CHANGELOG.tmp.md CHANGELOG.md
+          
+          # Commit changelog
+          git add CHANGELOG.md
+          git commit -m "docs: update changelog for v${{ steps.next_version.outputs.version }}"
+          git push

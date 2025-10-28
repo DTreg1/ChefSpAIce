@@ -1,0 +1,178 @@
+# Dependabot configuration for automated dependency updates
+# Groups dependencies for efficient PR management
+version: 2
+
+updates:
+  # JavaScript dependencies (npm)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 10
+    
+    groups:
+      # Group React and related UI dependencies
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+          - "@vitejs/plugin-react"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group Tailwind and CSS dependencies
+      styling:
+        patterns:
+          - "tailwind*"
+          - "@tailwindcss/*"
+          - "postcss*"
+          - "autoprefixer"
+          - "class-variance-authority"
+          - "clsx"
+          - "tailwind-merge"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group Radix UI components
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group testing dependencies
+      testing:
+        patterns:
+          - "@playwright/*"
+          - "playwright*"
+          - "@types/jest"
+          - "vitest*"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group database dependencies
+      database:
+        patterns:
+          - "drizzle-*"
+          - "@neondatabase/*"
+          - "pg*"
+          - "@types/pg*"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group build tools
+      build-tools:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+          - "rollup*"
+          - "esbuild*"
+          - "typescript"
+          - "@types/node"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group linting and formatting
+      code-quality:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+          - "prettier*"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group AWS/Storage dependencies
+      storage:
+        patterns:
+          - "@uppy/*"
+          - "@google-cloud/*"
+          - "sharp"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group API and backend dependencies
+      backend:
+        patterns:
+          - "express*"
+          - "@types/express*"
+          - "compression"
+          - "cors"
+          - "helmet"
+          - "passport*"
+          - "@types/passport*"
+        update-types:
+          - "minor"
+          - "patch"
+          
+      # Group AI and external service dependencies
+      external-services:
+        patterns:
+          - "openai"
+          - "@stripe/*"
+          - "stripe"
+          - "firebase*"
+          - "web-push"
+        update-types:
+          - "minor"
+          - "patch"
+    
+    # Configuration for version updates
+    versioning-strategy: increase
+    
+    # Labels for PRs
+    labels:
+      - "dependencies"
+      - "javascript"
+      
+    # Auto-merge configuration
+    reviewers:
+      - "@dependencies-team"
+      
+    # Commit message configuration
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+      
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    
+    labels:
+      - "dependencies"
+      - "github-actions"
+      
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+      
+  # Docker dependencies (if using Docker)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    
+    labels:
+      - "dependencies"
+      - "docker"
+      
+    commit-message:
+      prefix: "docker"
+      include: "scope"

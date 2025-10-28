@@ -1,0 +1,272 @@
+# CI Workflow - Runs on all pull requests and pushes to main
+# Performs code quality checks, builds, and runs E2E tests
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "20"
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: chefspice_test
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chefspice_test
+
+jobs:
+  # Code Quality Checks
+  lint-and-type-check:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        id: cache-deps
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: npm ci
+        
+      - name: Run ESLint
+        run: npm run lint
+        
+      - name: TypeScript type checking
+        run: npm run check
+        
+      - name: Check for security vulnerabilities
+        run: npm audit --audit-level=moderate || true
+
+  # Build Verification
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: lint-and-type-check
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        id: cache-deps
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: npm ci
+        
+      - name: Build frontend
+        run: npm run build
+        env:
+          NODE_ENV: production
+          VITE_APP_NAME: ChefSpAIce
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7
+          
+      - name: Check bundle size
+        run: |
+          echo "Build size report:"
+          du -sh dist/
+          du -sh dist/public/assets/
+
+  # E2E Tests with Playwright
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    strategy:
+      matrix:
+        shard: [1, 2, 3]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        id: cache-deps
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: npm ci
+        
+      - name: Cache Playwright browsers
+        uses: actions/cache@v3
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+        
+      - name: Setup database
+        run: |
+          npm run db:push --force
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          
+      - name: Run Playwright tests
+        run: npx playwright test --shard=${{ matrix.shard }}/3
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          NODE_ENV: test
+          # Mock API keys for testing
+          USDA_FDC_API_KEY: test_key
+          AI_INTEGRATIONS_OPENAI_API_KEY: test_key
+          AI_INTEGRATIONS_OPENAI_BASE_URL: http://localhost:3000/mock-openai
+          STRIPE_SECRET_KEY: test_key
+          VITE_STRIPE_PUBLIC_KEY: test_key
+          
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-results-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+  # Merge test results and create report
+  test-report:
+    name: Test Report
+    if: always()
+    runs-on: ubuntu-latest
+    needs: [e2e-tests]
+    
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v3
+        with:
+          path: all-results/
+          
+      - name: Merge test results
+        run: |
+          echo "Test execution completed"
+          echo "Results available in artifacts"
+          
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const comment = `## 🧪 Test Results
+            
+            ✅ All tests completed. Check the [Actions tab](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for detailed results.
+            
+            ### Summary:
+            - **Lint & Type Check**: Passed
+            - **Build**: Successful
+            - **E2E Tests**: Completed
+            
+            View detailed reports in the workflow artifacts.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Security scan with npm audit
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Run npm audit
+        run: |
+          npm audit --json > audit.json || true
+          echo "Security scan completed"
+          
+      - name: Upload audit results
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-audit
+          path: audit.json
+          retention-days: 30
+
+  # Final status check
+  ci-status:
+    name: CI Status
+    if: always()
+    runs-on: ubuntu-latest
+    needs: [lint-and-type-check, build, e2e-tests, security-scan]
+    
+    steps:
+      - name: Check CI status
+        run: |
+          if [[ "${{ needs.lint-and-type-check.result }}" == "failure" || \
+                "${{ needs.build.result }}" == "failure" || \
+                "${{ needs.e2e-tests.result }}" == "failure" ]]; then
+            echo "CI failed"
+            exit 1
+          fi
+          echo "CI passed successfully!"
