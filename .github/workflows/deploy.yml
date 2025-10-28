@@ -93,7 +93,7 @@ jobs:
           
       - name: Deploy to Netlify
         if: vars.DEPLOYMENT_PLATFORM == 'netlify'
-        uses: nwtgck/actions-netlify@v2.0
+        uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: './dist/public'
           production-branch: main
