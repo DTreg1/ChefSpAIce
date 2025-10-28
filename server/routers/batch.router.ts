@@ -181,7 +181,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   // Common food items endpoint
   if (endpoint === '/api/common-food-items' && method === 'GET') {
-    return storage.getCommonFoodItems();
+    return storage.getOnboardingInventory();
   }
   
   throw new Error(`Unsupported batch endpoint: ${method} ${endpoint}`);
