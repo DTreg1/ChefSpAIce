@@ -90,7 +90,7 @@ jobs:
             
       - name: Install Google Cloud SDK
         if: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY != '' }}
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v3
         with:
           version: 'latest'
           
