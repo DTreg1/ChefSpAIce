@@ -159,7 +159,7 @@ router.get('/admin/ai-metrics', isAuthenticated, adminOnly, async (req: any, res
       averageResponseTime: Number(metricsData.avgResponseTime) || 0,
       errorsByCode,
       recentErrors: recentErrorsInTimeRange.slice(0, 50), // Last 50 errors
-      circuitBreakerStatus: circuitBreakerStatus.chat, // Use chat circuit breaker as primary
+      circuitBreakerStatus: circuitBreakerStatus.services.chat, // Use chat circuit breaker as primary
       timeRange
     });
   } catch (error) {
