@@ -12,7 +12,7 @@ import { ProgressiveDisclosureProvider } from "@/contexts/ProgressiveDisclosureC
 import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { UnifiedAddFood } from "@/components/unified-add-food";
-import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
+import { UnifiedRecipeDialog } from "@/components/unified-recipe-dialog";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
@@ -201,7 +201,7 @@ function AppContent() {
       )}
       <PushNotificationHandler />
       <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
-      <RecipeCustomizationDialog
+      <UnifiedRecipeDialog
         open={recipeDialogOpen}
         onOpenChange={setRecipeDialogOpen}
       />

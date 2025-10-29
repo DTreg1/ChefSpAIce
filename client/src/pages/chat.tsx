@@ -5,7 +5,7 @@ import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
 import { EmptyState } from "@/components/empty-state";
 import { RecipeCard } from "@/components/recipe-card";
-import { RecipeCustomizationDialog } from "@/components/recipe-customization-dialog";
+import { UnifiedRecipeDialog } from "@/components/unified-recipe-dialog";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loading-dots";
 import { FeedbackButtons } from "@/components/feedback-buttons";
@@ -280,8 +280,8 @@ export default function Chat() {
           }
         }
       }
-    } catch (error: Error | unknown) {
-      if (error.name === "AbortError") {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
         // console.log("Chat stream aborted");
         abortControllerRef.current = null;
         return;
@@ -325,7 +325,7 @@ export default function Chat() {
                 Start New Chat
               </Button>
             )}
-            <RecipeCustomizationDialog
+            <UnifiedRecipeDialog
               onRecipeGenerated={handleRecipeGenerated}
             />
           </div>
