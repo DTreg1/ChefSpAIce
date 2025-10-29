@@ -799,6 +799,7 @@ export const userRecipes = pgTable("user_recipes", {
   servings: integer("servings").notNull().default(4),
   difficulty: text("difficulty").default("medium"),
   cuisine: text("cuisine"),
+  category: text("category"), // Recipe category for ML categorization
   dietaryInfo: jsonb("dietary_info").$type<string[]>(),
   imageUrl: text("image_url"),
   source: text("source"), // 'manual', 'ai_generated', 'imported'
