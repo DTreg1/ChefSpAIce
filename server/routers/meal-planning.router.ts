@@ -1,6 +1,5 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
-import { z } from "zod";
+import type { Response } from "express";
 import { storage } from "../storage";
 import { 
   insertMealPlanSchema, 
@@ -9,7 +8,6 @@ import {
   type ShoppingListItem 
 } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
-import { validateBody, validateQuery } from "../middleware";
 
 const router = Router();
 

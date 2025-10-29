@@ -1,10 +1,8 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
-import { z } from "zod";
+import type { Response } from "express";
 import { storage } from "../storage";
-import { insertRecipeSchema, insertChatMessageSchema, type Recipe, type ChatMessage } from "@shared/schema";
+import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
-import { validateBody, validateQuery } from "../middleware";
 import { openai } from "../openai";
 import { batchedApiLogger } from "../batchedApiLogger";
 import { cleanupOldMessagesForUser } from "../chatCleanup";
@@ -406,7 +404,7 @@ Return a JSON object with the following structure:
       let recipeData;
       try {
         recipeData = JSON.parse(recipeContent);
-      } catch (parseError) {
+      } catch {
         throw new AIError(
           'Invalid JSON in recipe response',
           'INVALID_RESPONSE',

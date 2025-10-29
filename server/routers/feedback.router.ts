@@ -4,7 +4,7 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { insertFeedbackSchema, type Feedback } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
-import { validateBody, validateQuery, paginationQuerySchema } from "../middleware";
+import { paginationQuerySchema } from "../middleware";
 
 const router = Router();
 

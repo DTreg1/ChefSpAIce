@@ -1,8 +1,8 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { storage } from "../storage";
 import { isAuthenticated } from "../replitAuth";
-import { extractNutrition, aggregateNutrition, calculateCategoryStats } from "../utils/nutritionCalculator";
+import { extractNutrition } from "../utils/nutritionCalculator";
 import { z } from "zod";
 
 const router = Router();

@@ -3,7 +3,6 @@ import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../db";
 import { notificationHistory } from "@shared/schema";
 import { isAuthenticated } from "../middleware/auth.middleware";
-import crypto from "crypto";
 import { storage } from "../storage";
 
 const router = Router();
@@ -16,7 +15,7 @@ router.post("/api/notifications/track", isAuthenticated, async (req: any, res) =
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { notificationId, status, data } = req.body;
+    const { notificationId, status } = req.body;
 
     if (!status) {
       return res.status(400).json({ error: "Status is required" });

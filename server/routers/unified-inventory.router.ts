@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { isAuthenticated } from "../replitAuth";
 import { validateBody } from "../middleware";
 import { storage } from "../storage";

@@ -7,7 +7,7 @@
 
 import { db } from "../db";
 import { activityLogs, type InsertActivityLog, type ActivityLog } from "@shared/schema";
-import { eq, sql, and, desc, gte, lte, inArray, or, isNull } from "drizzle-orm";
+import { eq, sql, and, desc, gte, lte, inArray, isNull } from "drizzle-orm";
 
 // Define all tracked action types as constants for consistency
 export const ActivityActions = {

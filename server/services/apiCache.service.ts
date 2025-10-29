@@ -1,8 +1,5 @@
-import { storage } from "../storage";
-import { searchUSDAFoods as originalSearchUSDAFoods, USDASearchOptions } from "../usda";
 import { getBarcodeLookupProduct as originalGetBarcodeLookupProduct } from "../barcodelookup";
-import type { USDASearchResponse } from "@shared/schema";
-import crypto from "crypto";
+import { storage } from "../storage";
 
 // Cache TTL settings (in milliseconds)
 const CACHE_TTL = {

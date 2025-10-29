@@ -1,6 +1,6 @@
 import { storage } from "./storage";
 import { fetchOnboardingItemUsdaData } from "./onboarding-usda";
-import { getOnboardingUpcs, onboardingUsdaMapping } from "./onboarding-usda-mapping";
+import { onboardingUsdaMapping } from "./onboarding-usda-mapping";
 import { getItemsByCategory } from "./onboarding-items-expanded";
 import { normalizeCategory } from "./category-mapping";
 import type { InsertOnboardingInventory } from "@shared/schema";
@@ -174,7 +174,7 @@ if (isMainModule) {
   const forceUpdate = process.argv.includes("--force");
   
   seedCommonFoodItems(forceUpdate)
-    .then(result => {
+    .then(() => {
       console.log("\n✓ Seeding completed successfully");
       process.exit(0);
     })

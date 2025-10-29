@@ -2,11 +2,10 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { userInventory, insertUserInventorySchema, type UserInventory as FoodItem, type InsertUserInventory as InsertFoodItem } from "@shared/schema";
+import { insertUserInventorySchema, type UserInventory as FoodItem } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
-import { ApiError } from "../apiError";
 import { batchedApiLogger } from "../batchedApiLogger";
-import { validateBody, validateQuery } from "../middleware";
+import { validateBody } from "../middleware";
 import axios from "axios";
 import { openai } from "../openai";
 import rateLimiters from "../middleware/rateLimit";
@@ -181,7 +180,7 @@ router.post(
       if (nutritionData && typeof nutritionData === "string") {
         try {
           nutritionData = JSON.parse(nutritionData);
-        } catch (e) {
+        } catch {
           nutritionData = null;
         }
       }
