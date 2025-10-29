@@ -1,5 +1,5 @@
 import { searchUSDAFoods, getFoodByFdcId } from "./usda";
-import { onboardingUsdaMapping, getOnboardingItemByName } from "./onboarding-usda-mapping";
+import { getOnboardingItemByName } from "./onboarding-usda-mapping";
 import type { USDAFoodItem } from "@shared/schema";
 
 // Cache for USDA data to avoid repeated API calls

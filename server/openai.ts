@@ -15,7 +15,7 @@ if (!baseURL || !apiKey) {
   
   // Create a stub that will throw meaningful errors when AI features are actually used
   openai = new Proxy({} as OpenAI, {
-    get: (target, prop) => {
+    get: (_target, _prop) => {
       return () => {
         throw new Error('OpenAI is not configured. Please set AI_INTEGRATIONS_OPENAI_BASE_URL and AI_INTEGRATIONS_OPENAI_API_KEY environment variables.');
       };

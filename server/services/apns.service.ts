@@ -3,27 +3,6 @@ import { NotificationPayload } from './push-notification.service';
 import fs from 'fs';
 import path from 'path';
 
-interface ApnsNotification {
-  alert: {
-    title: string;
-    body: string;
-    subtitle?: string;
-  };
-  badge?: number;
-  sound?: string;
-  payload?: any;
-  topic?: string;
-  expiry?: number;
-  priority?: number;
-  collapseId?: string;
-  pushType?: 'alert' | 'background' | 'voip' | 'complication' | 'fileprovider' | 'mdm';
-  threadId?: string;
-  category?: string;
-  mutableContent?: boolean;
-  contentAvailable?: boolean;
-  urlArgs?: string[];
-}
-
 /**
  * Apple Push Notification Service (APNs) for iOS Push Notifications
  * 
@@ -124,7 +103,7 @@ export class ApnsService {
           setTimeout(() => {
             try {
               fs.unlinkSync(tempKeyPath);
-            } catch (e) {
+            } catch {
               // Ignore cleanup errors
             }
           }, 60000);
@@ -144,7 +123,7 @@ export class ApnsService {
           setTimeout(() => {
             try {
               fs.unlinkSync(tempCertPath);
-            } catch (e) {
+            } catch {
               // Ignore cleanup errors
             }
           }, 60000);

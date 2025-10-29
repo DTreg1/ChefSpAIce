@@ -46,7 +46,7 @@ router.post("/batch", isAuthenticated, asyncHandler(async (req: any, res) => {
  * Optimized to use efficient queries and avoid loading unnecessary data
  */
 async function processRequest(request: any, userId?: string): Promise<any> {
-  const { endpoint, method = 'GET', params, body } = request;
+  const { endpoint, method = 'GET', params } = request;
   
   // Map endpoints to storage methods
   

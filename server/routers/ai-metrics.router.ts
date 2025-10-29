@@ -8,7 +8,6 @@ import { Router, Request, Response } from 'express';
 import { isAuthenticated, adminOnly } from '../middleware/auth.middleware';
 import { getCircuitBreaker } from '../utils/circuit-breaker';
 import { db } from '../db';
-import { storage } from '../storage';
 import { sql } from 'drizzle-orm';
 import { subHours } from 'date-fns';
 import { apiUsageLogs } from '@shared/schema';

@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { eq, like, and } from "drizzle-orm";
 import { db } from "../db";
 import { cookingTerms } from "@shared/schema";
 import CookingTermsService from "../services/cooking-terms.service";

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { insertFeedbackSchema, type Feedback } from "@shared/schema";

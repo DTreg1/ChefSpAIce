@@ -1,9 +1,8 @@
 import { Router } from "express";
-import { z } from "zod";
 import { storage } from "../storage";
-import { validateQuery, analyticsRateLimit } from "../middleware";
+import { analyticsRateLimit } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { insertWebVitalSchema, insertAnalyticsEventSchema, insertUserSessionSchema } from "@shared/schema";
+import { insertWebVitalSchema, insertAnalyticsEventSchema } from "@shared/schema";
 
 const router = Router();
 

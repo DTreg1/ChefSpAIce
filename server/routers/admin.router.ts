@@ -256,7 +256,7 @@ router.get(
   })),
   async (req: any, res: Response) => {
     try {
-      const { page = 1, limit = 50, userId, action, startDate, endDate } = req.query;
+      const { page = 1, limit = 50 } = req.query;
       
       // Placeholder for activity logs
       const activities: any[] = [];

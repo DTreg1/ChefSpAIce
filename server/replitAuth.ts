@@ -507,7 +507,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
           // On success, remove immediately
           activeRefreshes.delete(refreshKey);
         })
-        .catch((error) => {
+        .catch(() => {
           // On failure, keep for 5 seconds to prevent immediate retries
           setTimeout(() => {
             activeRefreshes.delete(refreshKey);

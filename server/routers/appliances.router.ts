@@ -3,16 +3,12 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { 
-  userAppliances, 
-  insertUserApplianceSchema, 
   type UserAppliance,
   type UserAppliance as Appliance,
-  type InsertUserAppliance as InsertAppliance,
   insertUserApplianceSchema as insertApplianceSchema,
   type ApplianceLibrary
 } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
-import { validateBody } from "../middleware";
 
 const router = Router();
 

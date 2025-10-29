@@ -91,7 +91,7 @@ router.get("/health", asyncHandler(async (req: any, res) => {
       total: parseInt(result.rows[0].total_sessions),
       active: parseInt(result.rows[0].active_sessions),
     };
-  } catch (error) {
+  } catch {
     health.sessions = { error: "Failed to query sessions" };
     health.status = "degraded";
   }
@@ -187,7 +187,7 @@ router.get("/diagnostics", isAuthenticated, asyncHandler(async (req: any, res) =
           hasUserData: !!dbSession.rows[0].sess?.passport?.user,
         };
       }
-    } catch (error) {
+    } catch {
       diagnostics.sessionDatabase = { error: "Failed to query session" };
     }
   }
@@ -305,7 +305,7 @@ router.post("/force-refresh", asyncHandler(async (req: any, res) => {
         },
         wasQueued: true,
       });
-    } catch (error) {
+    } catch {
       // The existing refresh failed, try our own
       console.log(
         `[Auth] Existing refresh failed for user ${userId}, attempting new refresh`,
@@ -315,9 +315,6 @@ router.post("/force-refresh", asyncHandler(async (req: any, res) => {
 
   // Start a new refresh operation
   const refreshPromise = (async () => {
-    const issuerUrl = process.env.ISSUER_URL || "https://replit.com/oidc";
-    const clientId = process.env.REPLIT_DOMAINS || req.hostname;
-    
     // Perform the actual refresh using the OpenID client
     // This would require importing the actual refresh logic from replitAuth.ts
     // For now, we'll keep the existing pattern and let the main routes handle this
