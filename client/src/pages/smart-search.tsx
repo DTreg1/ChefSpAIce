@@ -37,9 +37,9 @@ export default function SmartSearch() {
   // Semantic search mutation
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      return apiRequest('/api/ml/search', {
+      return apiRequest('/api/ml/search/semantic', {
         method: 'POST',
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, contentType: 'all' }),
       });
     },
     onError: (error: any) => {

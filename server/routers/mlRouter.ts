@@ -71,7 +71,7 @@ router.post("/search/semantic", async (req: AuthRequest, res: Response) => {
   try {
     const schema = z.object({
       query: z.string().min(1),
-      contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan']),
+      contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan', 'all']),
       limit: z.number().min(1).max(50).optional().default(10),
     });
 
@@ -178,11 +178,28 @@ router.post("/categorize", async (req: AuthRequest, res: Response) => {
     const schema = z.object({
       contentId: z.string(),
       contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan']),
-      content: z.any(),
+      content: z.any().optional(), // Make content optional
     });
 
-    const { contentId, contentType, content } = schema.parse(req.body);
+    const { contentId, contentType } = schema.parse(req.body);
+    let { content } = schema.parse(req.body);
     const userId = req.user!.id;
+
+    // If content not provided, fetch it
+    if (!content) {
+      if (contentType === 'recipe') {
+        content = await storage.getRecipe(contentId, userId);
+      } else if (contentType === 'inventory') {
+        content = await storage.getFoodItem(userId, contentId);
+      }
+      
+      if (!content) {
+        return res.status(404).json({
+          success: false,
+          error: "Content not found"
+        });
+      }
+    }
 
     // Get available categories
     const categories = await storage.getCategories();
@@ -264,12 +281,29 @@ router.post("/tags/generate", async (req: AuthRequest, res: Response) => {
     const schema = z.object({
       contentId: z.string(),
       contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan']),
-      content: z.any(),
+      content: z.any().optional(), // Make content optional
       maxTags: z.number().min(1).max(10).optional().default(5),
     });
 
-    const { contentId, contentType, content, maxTags } = schema.parse(req.body);
+    const { contentId, contentType, maxTags } = schema.parse(req.body);
+    let { content } = schema.parse(req.body);
     const userId = req.user!.id;
+
+    // If content not provided, fetch it
+    if (!content) {
+      if (contentType === 'recipe') {
+        content = await storage.getRecipe(contentId, userId);
+      } else if (contentType === 'inventory') {
+        content = await storage.getFoodItem(userId, contentId);
+      }
+      
+      if (!content) {
+        return res.status(404).json({
+          success: false,
+          error: "Content not found"
+        });
+      }
+    }
 
     // Generate tags
     const tagNames = await mlService.generateTags(content, contentType, maxTags);

@@ -60,7 +60,7 @@ export function AutoCategorization({
   // Auto-tagging mutation
   const autoTagMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('/api/ml/auto-tag', {
+      const response = await apiRequest('/api/ml/tags/generate', {
         method: 'POST',
         body: JSON.stringify({ contentId, contentType }),
       });
