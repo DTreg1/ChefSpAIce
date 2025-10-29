@@ -118,7 +118,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
  * Admin-only access control
  * 
  * Verifies user is authenticated AND has admin privileges.
- * Checks user email against ADMIN_EMAILS environment variable.
+ * Checks user's isAdmin field in the database.
  * 
  * @param req - Express request (expects Passport session)
  * @param res - Express response
@@ -126,22 +126,18 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
  * 
  * Admin Verification:
  * 1. Check authentication (req.isAuthenticated())
- * 2. Extract email from req.user.claims.email
- * 3. Verify email exists in process.env.ADMIN_EMAILS
- * 
- * Environment Variable Format:
- * - ADMIN_EMAILS: Comma-separated list (e.g., "admin@example.com,super@example.com")
- * - Not set: No users have admin access
+ * 2. Extract userId from req.user.claims.sub
+ * 3. Query database to check isAdmin field
  * 
  * Error Cases:
  * - Not authenticated: 403 "Admin access required"
  * - Authenticated but not admin: 403 "Admin access required"
- * - No email in claims: 403 "Admin access required"
+ * - User not found: 403 "Admin access required"
  * 
  * Security Note:
- * - Uses string.includes() for email matching (simple but effective)
- * - Email comes from verified OIDC token (cannot be spoofed)
- * - Consider moving to database-based role system for production
+ * - Uses database isAdmin field for authorization
+ * - userId comes from verified OIDC token (cannot be spoofed)
+ * - Database-based role system suitable for production
  * 
  * @example
  * // Admin-only endpoint
@@ -149,17 +145,26 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
  *   await storage.deleteUser(req.params.id);
  *   res.json({ success: true });
  * });
- * 
- * @example
- * // Set admin emails in environment
- * // ADMIN_EMAILS=admin@example.com,superadmin@example.com
  */
-export function adminOnly(req: Request, res: Response, next: NextFunction) {
+export async function adminOnly(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated && req.isAuthenticated()) {
-    const userEmail = req.user?.claims?.email;
-    // Add your admin email check here
-    if (userEmail && process.env.ADMIN_EMAILS?.includes(userEmail)) {
-      return next();
+    const userId = req.user?.claims?.sub;
+    
+    if (!userId) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    
+    // Import storage dynamically to avoid circular dependencies
+    const { default: storage } = await import("../storage");
+    
+    try {
+      // Check if user is admin in database
+      const user = await storage.getUser(userId);
+      if (user && user.isAdmin) {
+        return next();
+      }
+    } catch (error) {
+      console.error("Error checking admin status:", error);
     }
   }
   res.status(403).json({ error: "Admin access required" });

@@ -2,7 +2,7 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { eq, and } from "drizzle-orm";
 import { db } from "../db";
 import { pushTokens } from "@shared/schema";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
 import crypto from "crypto";
 import PushStatusService from "../services/push-status.service";
 
@@ -190,13 +190,10 @@ router.post("/api/push-tokens/test", isAuthenticated, async (req: ExpressRequest
   }
 });
 
-// Trigger expiring food notifications (admin only, for testing)
-router.post("/api/push-tokens/trigger-expiring", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
+// Trigger expiring food notifications (admin only)
+router.post("/api/push-tokens/trigger-expiring", isAuthenticated, adminOnly, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
-    // For testing purposes, allow any authenticated user
-    // In production, you'd check for admin rights
     const userId = req.user?.claims.sub;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -215,11 +212,10 @@ router.post("/api/push-tokens/trigger-expiring", isAuthenticated, async (req: Ex
   }
 });
 
-// Trigger recipe suggestions (admin only, for testing)
-router.post("/api/push-tokens/trigger-recipes", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
+// Trigger recipe suggestions (admin only)
+router.post("/api/push-tokens/trigger-recipes", isAuthenticated, adminOnly, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
     const userId = req.user?.claims.sub;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
