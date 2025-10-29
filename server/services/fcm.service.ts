@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import * as fs from 'fs';
 import { NotificationPayload } from './push-notification.service';
+import Logger from './logger.service';
 
 /**
  * Firebase Cloud Messaging (FCM) Service for Android Push Notifications
@@ -19,6 +20,7 @@ import { NotificationPayload } from './push-notification.service';
 export class FcmService {
   private static isInitialized = false;
   private static app: admin.app.App | null = null;
+  private static logger = new Logger('FcmService');
 
   /**
    * Initialize Firebase Admin SDK
