@@ -93,7 +93,7 @@ export default function DonateSuccessPage() {
         });
       } catch (err) {
         // User cancelled or error occurred
-        console.log('Share cancelled or failed');
+        // console.log('Share cancelled or failed');
       }
     } else {
       // Fallback to copying to clipboard

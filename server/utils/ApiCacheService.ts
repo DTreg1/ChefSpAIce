@@ -104,7 +104,7 @@ export class ApiCacheService {
       this.stats.totalMisses++;
       this.recordAccessTime(Date.now() - startTime);
       if (process.env.CACHE_DEBUG === 'true') {
-        console.log(`[ApiCache] MISS: ${key} - Not found in cache`);
+        // console.log(`[ApiCache] MISS: ${key} - Not found in cache`);
       }
       return null;
     }
@@ -114,7 +114,7 @@ export class ApiCacheService {
       this.cache.delete(key);
       this.stats.totalMisses++;
       this.recordAccessTime(Date.now() - startTime);
-      console.log(`[ApiCache] EXPIRED: ${key} - TTL expired at ${entry.expiresAt.toISOString()}`);
+      // console.log(`[ApiCache] EXPIRED: ${key} - TTL expired at ${entry.expiresAt.toISOString()}`);
       return null;
     }
 
@@ -125,7 +125,7 @@ export class ApiCacheService {
     this.recordAccessTime(Date.now() - startTime);
 
     if (process.env.CACHE_DEBUG === 'true') {
-      console.log(`[ApiCache] HIT: ${key} - Hit count: ${entry.hitCount}, Size: ${entry.size || 0} bytes`);
+      // console.log(`[ApiCache] HIT: ${key} - Hit count: ${entry.hitCount}, Size: ${entry.size || 0} bytes`);
     }
 
     return entry.data;
@@ -137,7 +137,7 @@ export class ApiCacheService {
   set<T>(key: string, data: T, ttl?: number, cacheType?: string): void {
     if (!this.config.enabled) {
       if (process.env.CACHE_DEBUG === 'true') {
-        console.log(`[ApiCache] SET SKIPPED: ${key} - Cache disabled`);
+        // console.log(`[ApiCache] SET SKIPPED: ${key} - Cache disabled`);
       }
       return;
     }
@@ -147,7 +147,7 @@ export class ApiCacheService {
 
     // Implement LRU eviction if at max size
     if (this.cache.size >= this.config.maxSize) {
-      console.log(`[ApiCache] EVICTION REQUIRED: Cache at max size (${this.config.maxSize})`);
+      // console.log(`[ApiCache] EVICTION REQUIRED: Cache at max size (${this.config.maxSize})`);
       this.evictLRU();
     }
 
@@ -164,7 +164,7 @@ export class ApiCacheService {
     const isUpdate = this.cache.has(key);
     this.cache.set(key, entry);
     
-    console.log(`[ApiCache] ${isUpdate ? 'UPDATED' : 'SET'}: ${key} | TTL: ${effectiveTTL / 1000}s | Type: ${cacheType || 'default'} | Size: ${entry.size || 0} bytes | Cache size: ${this.cache.size}/${this.config.maxSize}`);
+    // console.log(`[ApiCache] ${isUpdate ? 'UPDATED' : 'SET'}: ${key} | TTL: ${effectiveTTL / 1000}s | Type: ${cacheType || 'default'} | Size: ${entry.size || 0} bytes | Cache size: ${this.cache.size}/${this.config.maxSize}`);
   }
 
   /**
@@ -187,7 +187,7 @@ export class ApiCacheService {
       const age = Math.floor((Date.now() - oldestTime) / 1000 / 60); // Age in minutes
       this.cache.delete(oldestKey);
       this.stats.evictions++;
-      console.log(`[ApiCache] LRU EVICTION: ${oldestKey} | Age: ${age} min | Hit count: ${oldestHitCount} | Cache size now: ${this.cache.size}/${this.config.maxSize}`);
+      // console.log(`[ApiCache] LRU EVICTION: ${oldestKey} | Age: ${age} min | Hit count: ${oldestHitCount} | Cache size now: ${this.cache.size}/${this.config.maxSize}`);
     }
   }
 
@@ -197,7 +197,7 @@ export class ApiCacheService {
   invalidate(pattern: string): number {
     if (!this.config.enabled) {
       if (process.env.CACHE_DEBUG === 'true') {
-        console.log(`[ApiCache] INVALIDATE SKIPPED: Cache disabled`);
+        // console.log(`[ApiCache] INVALIDATE SKIPPED: Cache disabled`);
       }
       return 0;
     }
@@ -214,9 +214,9 @@ export class ApiCacheService {
       }
     }
 
-    console.log(`[ApiCache] INVALIDATED: ${count} entries matching pattern '${pattern}' | Cache size now: ${this.cache.size}/${this.config.maxSize}`);
+    // console.log(`[ApiCache] INVALIDATED: ${count} entries matching pattern '${pattern}' | Cache size now: ${this.cache.size}/${this.config.maxSize}`);
     if (process.env.CACHE_DEBUG === 'true' && invalidatedKeys.length > 0) {
-      console.log(`[ApiCache] Invalidated keys:`, invalidatedKeys);
+      // console.log(`[ApiCache] Invalidated keys:`, invalidatedKeys);
     }
     return count;
   }
@@ -238,7 +238,7 @@ export class ApiCacheService {
       accessTimes: [],
     };
     
-    console.log(`[ApiCache] CLEARED: ${size} entries | Previous hit rate: ${hitRate}% | Hits: ${totalHits} | Misses: ${totalMisses}`);
+    // console.log(`[ApiCache] CLEARED: ${size} entries | Previous hit rate: ${hitRate}% | Hits: ${totalHits} | Misses: ${totalMisses}`);
   }
 
   /**
@@ -335,7 +335,7 @@ export class ApiCacheService {
   /**
    * Estimate size of data in bytes
    */
-  private estimateSize(data: any): number {
+  private estimateSize(data: unknown): number {
     try {
       return JSON.stringify(data).length * 2; // Rough estimate (2 bytes per char)
     } catch {
@@ -379,7 +379,7 @@ export class ApiCacheService {
     }
 
     if (removed > 0) {
-      console.log(`[ApiCache] Cleanup removed ${removed} expired entries`);
+      // console.log(`[ApiCache] Cleanup removed ${removed} expired entries`);
     }
   }
 
@@ -403,7 +403,7 @@ export class ApiCacheService {
   async warmCache(warmupFn: () => Promise<Array<{ key: string; data: any; ttl?: number; type?: string }>>): Promise<void> {
     if (!this.config.enabled) return;
 
-    console.log('[ApiCache] Starting cache warming...');
+    // console.log('[ApiCache] Starting cache warming...');
     
     try {
       const items = await warmupFn();
@@ -412,7 +412,7 @@ export class ApiCacheService {
         this.set(item.key, item.data, item.ttl, item.type);
       }
       
-      console.log(`[ApiCache] Cache warming complete: ${items.length} items`);
+      // console.log(`[ApiCache] Cache warming complete: ${items.length} items`);
     } catch (error) {
       console.error('[ApiCache] Cache warming failed:', error);
     }
@@ -449,7 +449,7 @@ export class ApiCacheService {
       imported++;
     }
 
-    console.log(`[ApiCache] Imported ${imported} entries (${expired} expired and skipped)`);
+    // console.log(`[ApiCache] Imported ${imported} entries (${expired} expired and skipped)`);
   }
 }
 

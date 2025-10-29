@@ -67,7 +67,7 @@ import type { Response, NextFunction } from "express";
  *   res.json(user);
  * });
  */
-export function isAuthenticated(req: any, res: Response, next: NextFunction) {
+export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated && req.isAuthenticated()) {
     return next();
   }
@@ -108,7 +108,7 @@ export function isAuthenticated(req: any, res: Response, next: NextFunction) {
  *   res.json(recipes);
  * });
  */
-export function optionalAuth(req: any, res: Response, next: NextFunction) {
+export function optionalAuth(req: Request, res: Response, next: NextFunction) {
   // Middleware for routes that work with or without authentication
   // but may provide additional features when authenticated
   next();
@@ -154,7 +154,7 @@ export function optionalAuth(req: any, res: Response, next: NextFunction) {
  * // Set admin emails in environment
  * // ADMIN_EMAILS=admin@example.com,superadmin@example.com
  */
-export function adminOnly(req: any, res: Response, next: NextFunction) {
+export function adminOnly(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated && req.isAuthenticated()) {
     const userEmail = req.user?.claims?.email;
     // Add your admin email check here

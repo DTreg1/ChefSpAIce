@@ -162,7 +162,7 @@ export class BarcodeLookupService {
       const cacheKey = ApiCacheService.generateKey('barcode', barcode);
       const cached = apiCache.get<BarcodeProduct>(cacheKey);
       if (cached) {
-        console.log(`Found cached barcode product: ${barcode}`);
+        // console.log(`Found cached barcode product: ${barcode}`);
         return cached;
       }
 
@@ -174,12 +174,12 @@ export class BarcodeLookupService {
 
       const url = `${this.baseUrl}/products?barcode=${barcode}&formatted=y&key=${this.apiKey}`;
       
-      console.log(`Fetching barcode data for: ${barcode}`);
+      // console.log(`Fetching barcode data for: ${barcode}`);
       const response = await fetch(url);
       
       if (!response.ok) {
         if (response.status === 404) {
-          console.log(`No product found for barcode: ${barcode}`);
+          // console.log(`No product found for barcode: ${barcode}`);
           return null;
         }
         throw new Error(`Barcode API error: ${response.status} ${response.statusText}`);
@@ -188,7 +188,7 @@ export class BarcodeLookupService {
       const data = await response.json() as BarcodeLookupResponse;
       
       if (!data.products || data.products.length === 0) {
-        console.log(`No products returned for barcode: ${barcode}`);
+        // console.log(`No products returned for barcode: ${barcode}`);
         return null;
       }
 
@@ -253,7 +253,7 @@ export class BarcodeLookupService {
 
       // Cache the product using ApiCacheService
       apiCache.set(cacheKey, barcodeProduct);
-      console.log(`Cached barcode product: ${barcode}`);
+      // console.log(`Cached barcode product: ${barcode}`);
       
       return barcodeProduct;
     } catch (error) {
@@ -281,7 +281,7 @@ export class BarcodeLookupService {
       }
     }
     
-    console.log(`Found ${results.size} cached barcodes, need to fetch ${uncachedBarcodes.length}`);
+    // console.log(`Found ${results.size} cached barcodes, need to fetch ${uncachedBarcodes.length}`);
     
     // If we have uncached barcodes and an API key, fetch them
     if (uncachedBarcodes.length > 0 && this.apiKey) {
@@ -329,12 +329,12 @@ export class BarcodeLookupService {
 
       const url = `${this.baseUrl}/products?search=${encodeURIComponent(query)}&formatted=y&key=${this.apiKey}`;
       
-      console.log(`Searching for products: ${query}`);
+      // console.log(`Searching for products: ${query}`);
       const response = await fetch(url);
       
       if (!response.ok) {
         if (response.status === 404) {
-          console.log(`No products found for query: ${query}`);
+          // console.log(`No products found for query: ${query}`);
           return [];
         }
         throw new Error(`Barcode API error: ${response.status} ${response.statusText}`);
@@ -343,7 +343,7 @@ export class BarcodeLookupService {
       const data = await response.json() as BarcodeLookupResponse;
       
       if (!data.products || data.products.length === 0) {
-        console.log(`No products returned for query: ${query}`);
+        // console.log(`No products returned for query: ${query}`);
         return [];
       }
 
@@ -405,7 +405,7 @@ export class BarcodeLookupService {
         products.push(barcodeProduct);
       }
 
-      console.log(`Found ${products.length} products from search`);
+      // console.log(`Found ${products.length} products from search`);
       return products;
     } catch (error) {
       console.error(`Error searching products for query "${query}":`, error);

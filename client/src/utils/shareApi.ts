@@ -73,10 +73,10 @@ class ShareService {
         // Fallback: copy to clipboard
         await this.fallbackToClipboard(options.text || '');
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       // User cancelled or error occurred
-      if (error.message !== 'Share canceled') {
-        console.error('Error sharing:', error);
+      if ((error instanceof Error ? error.message : String(error)) !== 'Share canceled') {
+        console.error('Error sharing:', String(error));
         throw error;
       }
     }
@@ -85,10 +85,10 @@ class ShareService {
   private async fallbackToClipboard(text: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);
-      console.log('Content copied to clipboard');
+      // console.log('Content copied to clipboard');
       // You might want to show a toast notification here
     } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+      console.error('Failed to copy to clipboard:', String(error));
       throw new Error('Sharing not supported on this device');
     }
   }

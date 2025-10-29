@@ -191,7 +191,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
       completeContent();
       setIsStreaming(false);
       
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       // Handle network or other errors
       const errorInfo: AIErrorInfo = {
         message: err.message || 'Failed to connect to chat service',
@@ -291,7 +291,7 @@ export function useOfflineQueue() {
     // Send each queued message
     for (const message of messages) {
       // Send message logic here
-      console.log('Sending queued message:', message);
+      // console.log('Sending queued message:', message);
     }
   }, [queue]);
 

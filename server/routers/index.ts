@@ -1,4 +1,4 @@
-import { Express } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "../replitAuth";
 

@@ -202,7 +202,7 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
 
   // Handle barcode scan
   const handleScan = async (barcode: string) => {
-    console.log("Barcode scanned:", barcode);
+    // console.log("Barcode scanned:", barcode);
     setScannedBarcode(barcode);
     setIsSearching(true);
 

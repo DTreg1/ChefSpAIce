@@ -30,7 +30,7 @@ export function ExpirationAlert() {
         queryKey: ["/api/notifications/expiration"],
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       console.error("Failed to check for expiring items:", error);
       localStorage.removeItem("lastExpirationCheck");
       toast({
@@ -58,7 +58,7 @@ export function ExpirationAlert() {
         title: "Notification dismissed",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       console.error("Failed to dismiss notification:", error);
       toast({
         title: "Error dismissing notification",

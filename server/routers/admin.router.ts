@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
@@ -10,7 +10,7 @@ import { getCacheStats, invalidateCache, clearAllCache } from "../utils/usdaCach
 const router = Router();
 
 // Admin middleware - checks if user is admin
-const isAdmin = async (req: any, res: Response, next: (...args: any[]) => any) => {
+const isAdmin = async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse, next: (...args: any[]) => any) => {
   try {
     const userId = req.user?.claims?.sub;
     if (!userId) {
@@ -49,7 +49,7 @@ router.get(
   isAuthenticated,
   isAdmin,
   validateQuery(adminUsersQuerySchema),
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = req.query;
       
@@ -81,7 +81,7 @@ router.get(
   "/users/:userId",
   isAuthenticated,
   isAdmin,
-  async (req: Request, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { userId } = req.params;
       const user = await storage.getUser(userId);
@@ -103,7 +103,7 @@ router.patch(
   "/users/:userId",
   isAuthenticated,
   isAdmin,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { userId } = req.params;
       const updates = req.body;
@@ -129,10 +129,10 @@ router.patch(
   validateBody(z.object({
     isAdmin: z.boolean(),
   })),
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { userId } = req.params;
-      const { isAdmin: newAdminStatus } = req.body;
+      const { isAdmin: newAdminStatus  } = req.body || {};
       const currentUserId = req.user.claims.sub;
 
       // Prevent users from promoting themselves
@@ -177,7 +177,7 @@ router.delete(
   "/users/:userId",
   isAuthenticated,
   isAdmin,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { userId } = req.params;
       const currentUserId = req.user.claims.sub;
@@ -224,7 +224,7 @@ router.get(
   "/stats",
   isAuthenticated,
   isAdmin,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const stats = {
         totalUsers: 0,
@@ -254,7 +254,7 @@ router.get(
     startDate: z.string().optional(),
     endDate: z.string().optional(),
   })),
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { page = 1, limit = 50 } = req.query;
       
@@ -284,7 +284,7 @@ router.get(
   "/cache/stats",
   isAuthenticated,
   isAdmin,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const stats = getCacheStats();
       const dbStats = await storage.getUSDACacheStats();
@@ -313,9 +313,9 @@ router.post(
   validateBody(z.object({
     pattern: z.string().min(1),
   })),
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const { pattern } = req.body;
+      const { pattern  } = req.body || {};
       const invalidatedCount = invalidateCache(pattern);
       
       // Log admin action
@@ -345,7 +345,7 @@ router.post(
   "/cache/clear",
   isAuthenticated,
   isAdmin,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const statsBeforeClear = getCacheStats();
       clearAllCache();
@@ -379,7 +379,7 @@ router.post(
   "/cache/warm",
   isAuthenticated,
   isAdmin,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       // Import preloadCommonSearches function
       const { preloadCommonSearches } = await import("../utils/usdaCache");
@@ -415,7 +415,7 @@ router.get(
   "/cache/entry/:key",
   isAuthenticated,
   isAdmin,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { key } = req.params;
       const entry = apiCache.getEntryInfo(key);
@@ -444,7 +444,7 @@ router.get(
     prefix: z.string().optional(),
     limit: z.coerce.number().optional().default(100),
   })),
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { prefix, limit = 100 } = req.query;
       let keys = apiCache.getKeys();
@@ -474,7 +474,7 @@ router.get(
   "/cache/metrics",
   isAuthenticated,
   isAdmin,
-  async (_req: any, res: Response) => {
+  async (_req: any, res: ExpressResponse) => {
     try {
       const stats = apiCache.getStats();
       

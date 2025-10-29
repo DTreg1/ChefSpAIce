@@ -200,7 +200,7 @@ export const cacheStrategies = {
  * 
  * @private
  */
-export function addETag(data: any): string {
+export function addETag(data: unknown): string {
   const hash = crypto.createHash('md5');
   hash.update(JSON.stringify(data));
   return `"${hash.digest('hex')}"`;
@@ -253,7 +253,7 @@ export function handleConditionalRequests() {
     const originalJson = res.json.bind(res);
     
     // Override json method to add ETag
-    res.json = function(data: any) {
+    res.json = function(data: unknown) {
       const etag = addETag(data);
       res.setHeader('ETag', etag);
       

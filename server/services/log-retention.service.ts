@@ -70,7 +70,7 @@ class LogRetentionService {
       }
     );
     
-    console.log("[LogRetention] Cleanup job scheduled for daily execution at 2 AM");
+    // console.log("[LogRetention] Cleanup job scheduled for daily execution at 2 AM");
     
     // Also run cleanup on service initialization if not recently run
     this.runInitialCleanupCheck();
@@ -89,10 +89,10 @@ class LogRetentionService {
         : Number.MAX_VALUE;
       
       if (hoursSinceLastCleanup > 24) {
-        console.log("[LogRetention] Running initial cleanup (last run:", lastCleanup || "never", ")");
+        // console.log("[LogRetention] Running initial cleanup (last run:", lastCleanup || "never", ")");
         await this.runCleanup();
       } else {
-        console.log("[LogRetention] Skipping initial cleanup (last run:", Math.floor(hoursSinceLastCleanup), "hours ago)");
+        // console.log("[LogRetention] Skipping initial cleanup (last run:", Math.floor(hoursSinceLastCleanup), "hours ago)");
       }
     } catch (error) {
       console.error("[LogRetention] Error checking initial cleanup:", error);
@@ -126,7 +126,7 @@ class LogRetentionService {
    */
   public async runCleanup(): Promise<void> {
     if (this.isRunning) {
-      console.log("[LogRetention] Cleanup already in progress, skipping...");
+      // console.log("[LogRetention] Cleanup already in progress, skipping...");
       return;
     }
     
@@ -136,12 +136,12 @@ class LogRetentionService {
     const results: Array<{ policy: string; deleted: number; error?: string }> = [];
     
     try {
-      console.log("[LogRetention] Starting scheduled cleanup at", startTime.toISOString());
+      // console.log("[LogRetention] Starting scheduled cleanup at", startTime.toISOString());
       
       // Process each retention policy
       for (const policy of this.policies) {
         if (!policy.enabled) {
-          console.log(`[LogRetention] Skipping disabled policy: ${policy.name}`);
+          // console.log(`[LogRetention] Skipping disabled policy: ${policy.name}`);
           continue;
         }
         
@@ -150,8 +150,8 @@ class LogRetentionService {
           totalDeleted += deleted;
           results.push({ policy: policy.name, deleted });
           
-          console.log(`[LogRetention] Policy ${policy.name}: Deleted ${deleted} logs`);
-        } catch (error: any) {
+          // console.log(`[LogRetention] Policy ${policy.name}: Deleted ${deleted} logs`);
+        } catch (error: Error | unknown) {
           console.error(`[LogRetention] Error processing policy ${policy.name}:`, error);
           results.push({ 
             policy: policy.name, 
@@ -253,7 +253,7 @@ class LogRetentionService {
    */
   public updatePolicies(policies: RetentionPolicy[]): void {
     this.policies = policies;
-    console.log("[LogRetention] Policies updated:", policies.length, "policies");
+    // console.log("[LogRetention] Policies updated:", policies.length, "policies");
   }
   
   /**
@@ -274,7 +274,7 @@ class LogRetentionService {
     try {
       await this.runCleanup();
       return { success: true };
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       return { 
         success: false, 
         error: error.message || "Cleanup failed" 
@@ -288,7 +288,7 @@ class LogRetentionService {
   public stop(): void {
     if (this.cleanupJob) {
       this.cleanupJob.stop();
-      console.log("[LogRetention] Cleanup job stopped");
+      // console.log("[LogRetention] Cleanup job stopped");
     }
   }
   
@@ -298,7 +298,7 @@ class LogRetentionService {
   public start(): void {
     if (this.cleanupJob) {
       this.cleanupJob.start();
-      console.log("[LogRetention] Cleanup job started");
+      // console.log("[LogRetention] Cleanup job started");
     }
   }
   

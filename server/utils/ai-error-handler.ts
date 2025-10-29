@@ -42,9 +42,9 @@ export enum AIErrorCode {
 /**
  * Handle OpenAI specific errors and convert to AIError
  */
-export function handleOpenAIError(error: any): AIError {
+export function handleOpenAIError(error: Error | unknown): AIError {
   // Log the full error for debugging
-  console.log('[AI Error Handler] Raw error:', error);
+  // console.log('[AI Error Handler] Raw error:', error);
 
   // First check for axios-style error responses
   const status = error?.response?.status || error?.status;
@@ -231,7 +231,7 @@ export async function retryWithBackoff<T>(
 
       // Don't retry if not retryable
       if (!aiError.retryable) {
-        console.log(`[AI Retry] Error is not retryable: ${aiError.code}`);
+        // console.log(`[AI Retry] Error is not retryable: ${aiError.code}`);
         throw aiError;
       }
 
@@ -263,7 +263,7 @@ export async function retryWithBackoff<T>(
 /**
  * Check if an error is retryable
  */
-export function isRetryableError(error: any): boolean {
+export function isRetryableError(error: Error | unknown): boolean {
   if (error instanceof AIError) {
     return error.retryable;
   }
@@ -275,7 +275,7 @@ export function isRetryableError(error: any): boolean {
 /**
  * Format error for logging
  */
-export function formatErrorForLogging(error: any): object {
+export function formatErrorForLogging(error: Error | unknown): object {
   if (error instanceof AIError) {
     return {
       type: 'AIError',
@@ -301,7 +301,7 @@ export function formatErrorForLogging(error: any): object {
 /**
  * Create a user-friendly error response
  */
-export function createErrorResponse(error: any): {
+export function createErrorResponse(error: Error | unknown): {
   error: string;
   code: string;
   retryable: boolean;

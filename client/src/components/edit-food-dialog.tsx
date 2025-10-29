@@ -47,7 +47,7 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
   }, [item]);
 
   const updateItemMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: unknown) => {
       return await apiRequest("PUT", `/api/food-items/${item?.id}`, data);
     },
     onSuccess: () => {

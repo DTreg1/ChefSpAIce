@@ -72,7 +72,7 @@ export async function searchBarcodeLookup(query: string): Promise<BarcodeLookupS
     });
 
     return response.data;
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     const status = error.response?.status;
     const statusText = error.response?.statusText;
     
@@ -154,7 +154,7 @@ export async function getBarcodeLookupProduct(barcode: string): Promise<BarcodeL
       return response.data.products[0];
     }
     return null;
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     const status = error.response?.status;
     const statusText = error.response?.statusText;
     
@@ -222,7 +222,7 @@ export async function getBarcodeLookupBatch(barcodes: string[]): Promise<Barcode
     });
 
     return response.data.products || [];
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     const status = error.response?.status;
     const statusText = error.response?.statusText;
     
@@ -343,7 +343,7 @@ export async function getBarcodeLookupRateLimits(): Promise<RateLimitResponse> {
       allowed_requests: apiData.allowed_calls_per_month || 0,
       reset_time: resetTime
     };
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     const status = error.response?.status;
     const statusText = error.response?.statusText;
     

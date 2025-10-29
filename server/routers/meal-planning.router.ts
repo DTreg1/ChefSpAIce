@@ -1,5 +1,4 @@
-import { Router } from "express";
-import type { Response } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
 import { 
   insertMealPlanSchema, 
@@ -12,9 +11,10 @@ import { isAuthenticated } from "../replitAuth";
 const router = Router();
 
 // Meal Plans endpoints
-router.get("/meal-plans", isAuthenticated, async (req: any, res: Response) => {
+router.get("/meal-plans", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { date, startDate, endDate, mealType } = req.query;
 
     // Get meal plans from storage with filters applied at database level
@@ -36,10 +36,11 @@ router.get("/meal-plans", isAuthenticated, async (req: any, res: Response) => {
 router.post(
   "/meal-plans",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
-      const validation = insertMealPlanSchema.safeParse(req.body);
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const validation = insertMealPlanSchema.safeParse(req.body as any);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -64,9 +65,10 @@ router.post(
 router.put(
   "/meal-plans/:id",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const mealPlanId = req.params.id;
       
       // Verify meal plan belongs to user
@@ -86,9 +88,10 @@ router.put(
   }
 );
 
-router.delete("/meal-plans/:id", isAuthenticated, async (req: any, res: Response) => {
+router.delete("/meal-plans/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const mealPlanId = req.params.id;
     
     // Verify meal plan belongs to user
@@ -108,9 +111,10 @@ router.delete("/meal-plans/:id", isAuthenticated, async (req: any, res: Response
 });
 
 // Shopping List endpoints
-router.get("/shopping-list", isAuthenticated, async (req: any, res: Response) => {
+router.get("/shopping-list", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     // Use the consolidated method that groups data at storage layer
     const shoppingData = await storage.getGroupedShoppingListItems(userId);
     res.json(shoppingData);
@@ -123,10 +127,11 @@ router.get("/shopping-list", isAuthenticated, async (req: any, res: Response) =>
 router.post(
   "/shopping-list",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
-      const validation = insertShoppingListItemSchema.safeParse(req.body);
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const validation = insertShoppingListItemSchema.safeParse(req.body as any);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -152,10 +157,11 @@ router.post(
 router.post(
   "/shopping-list/batch",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
-      const { recipeId, ingredients } = req.body;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const { recipeId, ingredients  } = req.body || {};
       
       if (!ingredients || !Array.isArray(ingredients)) {
         return res.status(400).json({ error: "Ingredients array is required" });
@@ -183,9 +189,10 @@ router.post(
 router.patch(
   "/shopping-list/:id/toggle",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const itemId = req.params.id;
       
       // Get current item
@@ -208,9 +215,10 @@ router.patch(
   }
 );
 
-router.delete("/shopping-list/:id", isAuthenticated, async (req: any, res: Response) => {
+router.delete("/shopping-list/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const itemId = req.params.id;
     
     // Verify item belongs to user
@@ -230,9 +238,10 @@ router.delete("/shopping-list/:id", isAuthenticated, async (req: any, res: Respo
 });
 
 // Clear completed items
-router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: any, res: Response) => {
+router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const items = await storage.getShoppingListItems(userId);
     
     const checkedItems = items.filter((i: ShoppingListItem) => i.isChecked);
@@ -284,10 +293,11 @@ router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: any, 
  * Use Case: User plans week of meals, clicks "Generate Shopping List",
  *           and gets exactly what they need to buy (excluding pantry items)
  */
-router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (req: any, res: Response) => {
+router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
-    const { startDate, endDate } = req.body;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const { startDate, endDate  } = req.body || {};
     
     if (!startDate || !endDate) {
       return res.status(400).json({ error: "Start date and end date are required" });

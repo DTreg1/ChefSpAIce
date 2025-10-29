@@ -1,5 +1,4 @@
-import { Router } from "express";
-import type { Response } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
 import { isAuthenticated } from "../replitAuth";
 import { extractNutrition } from "../utils/nutritionCalculator";
@@ -16,9 +15,10 @@ const daysQuerySchema = z.object({
 router.get(
   "/nutrition/stats",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const { days } = daysQuerySchema.parse(req.query);
       
       // Get food items for the user
@@ -68,9 +68,10 @@ router.get(
 router.get(
   "/nutrition/items",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const { category, minCalories, maxCalories, sortBy = "name" } = req.query;
       
       // Get food items with nutrition data
@@ -141,9 +142,10 @@ router.get(
 router.get(
   "/nutrition/daily",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const { date = new Date().toISOString().split("T")[0] } = req.query;
       
       // Get meal plans for the date

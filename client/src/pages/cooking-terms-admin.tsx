@@ -52,7 +52,7 @@ export default function CookingTermsAdmin() {
       setIsAddDialogOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
         description: error.message || "Failed to create cooking term",
@@ -74,7 +74,7 @@ export default function CookingTermsAdmin() {
       setEditingTerm(null);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update cooking term",
@@ -94,7 +94,7 @@ export default function CookingTermsAdmin() {
         description: "Cooking term deleted successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete cooking term",
@@ -116,7 +116,7 @@ export default function CookingTermsAdmin() {
         description: `Seeded ${data.count} cooking terms successfully`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Info",
         description: "Cooking terms already exist in the database",

@@ -474,7 +474,7 @@ export async function searchUSDAFoods(
         pageSize: typeof options === 'string' ? 25 : (options.pageSize || 25),
       },
     };
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     if (error instanceof ApiError) {
       throw error;
     }
@@ -515,7 +515,7 @@ export async function searchUSDAFoods(
  * @example
  * const food = await getFoodByFdcId(123456);
  * if (food) {
- *   console.log(food.description, food.foodNutrients);
+ *   // console.log(food.description, food.foodNutrients);
  * }
  */
 export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null> {
@@ -552,7 +552,7 @@ export async function getFoodByFdcId(fdcId: number): Promise<USDAFoodItem | null
 
     const food: FDCFood = await response.json();
     return mapFDCFoodToUSDAItem(food);
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     if (error instanceof ApiError) {
       throw error;
     }

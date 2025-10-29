@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db";
 import { pushTokens } from "@shared/schema";
@@ -9,14 +9,15 @@ import PushStatusService from "../services/push-status.service";
 const router = Router();
 
 // Register a push token
-router.post("/api/push-tokens/register", isAuthenticated, async (req: any, res) => {
+router.post("/api/push-tokens/register", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { token, subscription, platform, deviceInfo } = req.body;
+    const { token, subscription, platform, deviceInfo  } = req.body || {};
 
     // Accept either 'token' (for native) or 'subscription' (for web)
     const tokenData = token || subscription;
@@ -76,14 +77,15 @@ router.post("/api/push-tokens/register", isAuthenticated, async (req: any, res) 
 });
 
 // Unregister a push token
-router.delete("/api/push-tokens/unregister", isAuthenticated, async (req: any, res) => {
+router.delete("/api/push-tokens/unregister", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { platform } = req.body;
+    const { platform  } = req.body || {};
 
     if (!platform) {
       return res.status(400).json({ error: "Platform is required" });
@@ -106,15 +108,16 @@ router.delete("/api/push-tokens/unregister", isAuthenticated, async (req: any, r
 });
 
 // Update push token status
-router.put("/api/push-tokens/:id/status", isAuthenticated, async (req: any, res) => {
+router.put("/api/push-tokens/:id/status", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const { id } = req.params;
-    const { isActive } = req.body;
+    const { isActive  } = req.body || {};
 
     if (typeof isActive !== "boolean") {
       return res.status(400).json({ error: "isActive must be a boolean" });
@@ -142,9 +145,10 @@ router.put("/api/push-tokens/:id/status", isAuthenticated, async (req: any, res)
 });
 
 // Get user's push tokens
-router.get("/api/push-tokens", isAuthenticated, async (req: any, res) => {
+router.get("/api/push-tokens", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -163,9 +167,10 @@ router.get("/api/push-tokens", isAuthenticated, async (req: any, res) => {
 });
 
 // Test push notification
-router.post("/api/push-tokens/test", isAuthenticated, async (req: any, res) => {
+router.post("/api/push-tokens/test", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -186,11 +191,12 @@ router.post("/api/push-tokens/test", isAuthenticated, async (req: any, res) => {
 });
 
 // Trigger expiring food notifications (admin only, for testing)
-router.post("/api/push-tokens/trigger-expiring", isAuthenticated, async (req: any, res) => {
+router.post("/api/push-tokens/trigger-expiring", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
     // For testing purposes, allow any authenticated user
     // In production, you'd check for admin rights
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -210,9 +216,10 @@ router.post("/api/push-tokens/trigger-expiring", isAuthenticated, async (req: an
 });
 
 // Trigger recipe suggestions (admin only, for testing)
-router.post("/api/push-tokens/trigger-recipes", isAuthenticated, async (req: any, res) => {
+router.post("/api/push-tokens/trigger-recipes", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -232,7 +239,7 @@ router.post("/api/push-tokens/trigger-recipes", isAuthenticated, async (req: any
 });
 
 // Get push notification services status
-router.get("/api/push-tokens/status", isAuthenticated, async (req: any, res) => {
+router.get("/api/push-tokens/status", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
   try {
     const status = PushStatusService.getStatus();
     res.json(status);

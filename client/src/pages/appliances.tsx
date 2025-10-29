@@ -89,7 +89,7 @@ export default function Appliances() {
 
   // Add appliance mutation
   const addMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: unknown) => {
       return apiRequest("POST", "/api/appliances", data);
     },
     onSuccess: () => {
@@ -165,10 +165,10 @@ export default function Appliances() {
         description: "Appliance added from barcode",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to add appliance from barcode",
+        description: (error instanceof Error ? error.message : String(error)) || "Failed to add appliance from barcode",
         variant: "destructive",
       });
     },

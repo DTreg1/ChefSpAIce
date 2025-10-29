@@ -42,7 +42,7 @@ export async function searchUSDAFoodsCached(
     const cachedSearch = apiCache.get<SearchCacheEntry>(cacheKey);
     
     if (cachedSearch && cachedSearch.foods) {
-      console.log(`[USDA Cache] Hit for query: "${searchOptions.query}"`);
+      // console.log(`[USDA Cache] Hit for query: "${searchOptions.query}"`);
       
       // Return cached response directly if we have the foods
       return {
@@ -61,7 +61,7 @@ export async function searchUSDAFoodsCached(
     
     // If we have cached fdcIds but not the full foods, try to get them from storage
     if (cachedSearch && cachedSearch.fdcIds) {
-      console.log(`[USDA Cache] Partial hit for query: "${searchOptions.query}" - fetching foods from storage`);
+      // console.log(`[USDA Cache] Partial hit for query: "${searchOptions.query}" - fetching foods from storage`);
       
       // Get cached food items from fdcCache
       const foodPromises = cachedSearch.fdcIds.map(async (fdcId: string) => {
@@ -107,7 +107,7 @@ export async function searchUSDAFoodsCached(
     }
     
     // Cache miss - fetch from USDA API
-    console.log(`[USDA Cache] Miss for query: "${searchOptions.query}" - fetching from API`);
+    // console.log(`[USDA Cache] Miss for query: "${searchOptions.query}" - fetching from API`);
     const response = await originalSearchUSDAFoods(searchOptions);
     
     // Cache the search results
@@ -143,7 +143,7 @@ export async function searchUSDAFoodsCached(
       };
       
       apiCache.set(cacheKey, cacheEntry, undefined, 'usda.search');
-      console.log(`[USDA Cache] Cached ${response.foods.length} foods for query: "${searchOptions.query}"`);
+      // console.log(`[USDA Cache] Cached ${response.foods.length} foods for query: "${searchOptions.query}"`);
     }
     
     return response;
@@ -162,21 +162,21 @@ export async function getCachedFoodById(fdcId: number): Promise<any | null> {
     const cachedFood = apiCache.get<USDAFoodItem>(cacheKey);
     
     if (cachedFood) {
-      console.log(`[USDA Cache] Memory hit for FDC ID: ${fdcId}`);
+      // console.log(`[USDA Cache] Memory hit for FDC ID: ${fdcId}`);
       return cachedFood;
     }
     
     // Fall back to database cache
     const dbCached = await storage.getCachedFood(String(fdcId));
     if (dbCached && dbCached.fullData) {
-      console.log(`[USDA Cache] Database hit for FDC ID: ${fdcId}`);
+      // console.log(`[USDA Cache] Database hit for FDC ID: ${fdcId}`);
       const foodData = dbCached.fullData;
       // Cache in memory for faster access
       apiCache.set(cacheKey, foodData, undefined, dbCached.brandOwner ? 'usda.branded' : 'usda.food');
       return foodData;
     }
     
-    console.log(`[USDA Cache] Miss for FDC ID: ${fdcId}`);
+    // console.log(`[USDA Cache] Miss for FDC ID: ${fdcId}`);
     return null;
   } catch (error) {
     console.error(`[USDA Cache] Error getting cached food ${fdcId}:`, error);
@@ -191,7 +191,7 @@ export async function preloadCommonSearches(): Promise<void> {
     'milk', 'eggs', 'cheese', 'tomato', 'potato'
   ];
   
-  console.log('[USDA Cache] Preloading common searches...');
+  // console.log('[USDA Cache] Preloading common searches...');
   
   for (const query of commonSearches) {
     try {
@@ -209,7 +209,7 @@ export async function preloadCommonSearches(): Promise<void> {
     }
   }
   
-  console.log('[USDA Cache] Preloading complete');
+  // console.log('[USDA Cache] Preloading complete');
 }
 
 // Clear old cache entries
@@ -218,7 +218,7 @@ export async function cleanupCache(): Promise<void> {
     // The ApiCacheService handles its own cleanup automatically
     // Just clear old database cache entries
     await storage.clearOldCache(30); // Clear database cache older than 30 days
-    console.log('[USDA Cache] Database cleanup completed');
+    // console.log('[USDA Cache] Database cleanup completed');
   } catch (error) {
     console.error('[USDA Cache] Cleanup failed:', error);
   }

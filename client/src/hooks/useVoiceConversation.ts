@@ -258,7 +258,7 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
               try {
                 recognitionRef.current.start();
               } catch (e) {
-                console.log('Recognition already started');
+                // console.log('Recognition already started');
               }
             }
           }, 100);
@@ -293,7 +293,7 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
             try {
               recognitionRef.current.start();
             } catch (e) {
-              console.log('Recognition already started');
+              // console.log('Recognition already started');
             }
           }
         }, 100);
@@ -428,7 +428,7 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
             try {
               recognitionRef.current.start();
             } catch (e) {
-              console.log('Recognition already started');
+              // console.log('Recognition already started');
             }
           }
         }, 500);
@@ -479,7 +479,7 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
           recognitionRef.current.onend = null;
           recognitionRef.current = null;
         } catch (e) {
-          console.log('Error cleaning up recognition:', e);
+          // console.log('Error cleaning up recognition:', e);
         }
       }
       

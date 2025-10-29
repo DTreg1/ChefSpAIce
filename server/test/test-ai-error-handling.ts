@@ -25,7 +25,7 @@ const colors = {
 };
 
 function log(message: string, color: string = colors.reset) {
-  console.log(`${color}${message}${colors.reset}`);
+  // console.log(`${color}${message}${colors.reset}`);
 }
 
 function logTest(testName: string) {
@@ -121,7 +121,7 @@ async function testCircuitBreaker() {
       return 'This should not execute';
     });
     logError('Circuit should have prevented execution');
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     if (error.code === AIErrorCode.CIRCUIT_OPEN) {
       logSuccess('Circuit correctly prevented execution while open');
     }
@@ -239,7 +239,7 @@ async function testAPIEndpoints() {
           logWarning(`${testCase.name}: Error ${errorData.code || response.status} - ${errorData.error || errorData.message}`);
         }
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       logError(`${testCase.name}: ${error.message}`);
     }
   }
@@ -266,7 +266,7 @@ async function testErrorMetrics() {
     } else {
       logError(`Unexpected health status: ${response.status}`);
     }
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     logError(`Health check failed: ${error.message}`);
   }
 }
@@ -357,7 +357,7 @@ async function runTests() {
     log('\n' + '='.repeat(50), colors.bright);
     log('✨ Test suite completed', colors.green);
     log('='.repeat(50), colors.bright);
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     log('\n' + '='.repeat(50), colors.bright);
     logError(`Test suite failed: ${error.message}`);
     log('='.repeat(50), colors.bright);

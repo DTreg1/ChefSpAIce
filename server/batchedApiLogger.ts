@@ -362,7 +362,7 @@ class BatchedApiLogger {
    * 
    * @private
    */
-  private isRetryableError(error: any): boolean {
+  private isRetryableError(error: Error | unknown): boolean {
     // Network errors and temporary failures are retryable
     if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
       return true;
@@ -404,8 +404,8 @@ class BatchedApiLogger {
    * 
    * @example
    * const stats = batchedApiLogger.getStats();
-   * console.log(`Queue: ${stats.queueSize}/${stats.maxQueueSize}`);
-   * console.log(`Oldest log: ${stats.oldestLogAge}ms ago`);
+   * // console.log(`Queue: ${stats.queueSize}/${stats.maxQueueSize}`);
+   * // console.log(`Oldest log: ${stats.oldestLogAge}ms ago`);
    */
   getStats() {
     return {
@@ -442,7 +442,7 @@ class BatchedApiLogger {
    * await batchedApiLogger.shutdown();
    */
   async shutdown() {
-    console.log('[BatchedApiLogger] Shutting down...');
+    // console.log('[BatchedApiLogger] Shutting down...');
     
     if (this.flushTimer) {
       clearInterval(this.flushTimer);
@@ -464,7 +464,7 @@ class BatchedApiLogger {
         `[BatchedApiLogger] Shutdown flush timeout - ${this.queue.length} logs may be lost`
       );
     } else {
-      console.log('[BatchedApiLogger] Shutdown complete');
+      // console.log('[BatchedApiLogger] Shutdown complete');
     }
   }
 }

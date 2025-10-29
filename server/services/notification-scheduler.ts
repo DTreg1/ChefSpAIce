@@ -13,7 +13,7 @@ export class NotificationScheduler {
    * Start all notification schedulers
    */
   static async start() {
-    console.log("Starting notification schedulers...");
+    // console.log("Starting notification schedulers...");
     
     // Schedule expiring food notifications (daily at 9 AM)
     this.scheduleExpiringFoodNotifications();
@@ -24,7 +24,7 @@ export class NotificationScheduler {
     // Schedule meal reminders based on user preferences
     await this.scheduleMealReminders();
     
-    console.log("Notification schedulers started successfully");
+    // console.log("Notification schedulers started successfully");
   }
 
   /**
@@ -45,7 +45,7 @@ export class NotificationScheduler {
     this.mealReminderTasks.forEach(task => task.stop());
     this.mealReminderTasks.clear();
     
-    console.log("Notification schedulers stopped");
+    // console.log("Notification schedulers stopped");
   }
 
   /**
@@ -60,10 +60,10 @@ export class NotificationScheduler {
     }
     
     this.expiringFoodTask = cron.schedule(cronExpression, async () => {
-      console.log("Running expiring food notifications...");
+      // console.log("Running expiring food notifications...");
       try {
         const result = await PushNotificationService.sendExpiringFoodNotifications();
-        console.log(`Sent ${result.totalSent} expiring food notifications to ${result.usersNotified} users`);
+        // console.log(`Sent ${result.totalSent} expiring food notifications to ${result.usersNotified} users`);
       } catch (error) {
         console.error("Error in expiring food notification scheduler:", error);
       }
@@ -82,10 +82,10 @@ export class NotificationScheduler {
     }
     
     this.dailyRecipeTask = cron.schedule(cronExpression, async () => {
-      console.log("Running daily recipe suggestions...");
+      // console.log("Running daily recipe suggestions...");
       try {
         const result = await PushNotificationService.sendRecipeSuggestions();
-        console.log(`Sent ${result.totalSent} recipe suggestions to ${result.usersNotified} users`);
+        // console.log(`Sent ${result.totalSent} recipe suggestions to ${result.usersNotified} users`);
       } catch (error) {
         console.error("Error in recipe suggestion scheduler:", error);
       }
@@ -148,7 +148,7 @@ export class NotificationScheduler {
             
             // Schedule the reminder
             const task = cron.schedule(cronExpression, async () => {
-              console.log(`Sending meal reminder for ${mealType} to user ${user.id}`);
+              // console.log(`Sending meal reminder for ${mealType} to user ${user.id}`);
               try {
                 await PushNotificationService.sendMealReminder(
                   user.id,
@@ -165,7 +165,7 @@ export class NotificationScheduler {
         }
       }
       
-      console.log(`Scheduled ${this.mealReminderTasks.size} meal reminders`);
+      // console.log(`Scheduled ${this.mealReminderTasks.size} meal reminders`);
     } catch (error) {
       console.error("Error scheduling meal reminders:", error);
     }
@@ -175,7 +175,7 @@ export class NotificationScheduler {
    * Manually trigger expiring food notifications (for testing)
    */
   static async triggerExpiringFoodNotifications() {
-    console.log("Manually triggering expiring food notifications...");
+    // console.log("Manually triggering expiring food notifications...");
     try {
       const result = await PushNotificationService.sendExpiringFoodNotifications();
       return result;
@@ -189,7 +189,7 @@ export class NotificationScheduler {
    * Manually trigger recipe suggestions (for testing)
    */
   static async triggerRecipeSuggestions() {
-    console.log("Manually triggering recipe suggestions...");
+    // console.log("Manually triggering recipe suggestions...");
     try {
       const result = await PushNotificationService.sendRecipeSuggestions();
       return result;

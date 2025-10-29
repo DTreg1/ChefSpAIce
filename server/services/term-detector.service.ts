@@ -84,7 +84,7 @@ export class TermDetector {
       this.initialized = true;
       this.lastInitialized = now;
       
-      console.log(`✓ Term detector initialized with ${allTerms.length} terms and ${this.patterns.length} patterns`);
+      // console.log(`✓ Term detector initialized with ${allTerms.length} terms and ${this.patterns.length} patterns`);
     } catch (error) {
       console.error("Error initializing term detector:", error);
       throw error;

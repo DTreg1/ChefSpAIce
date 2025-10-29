@@ -209,7 +209,7 @@ export default function Onboarding() {
 
       window.location.href = "/";
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
         description:

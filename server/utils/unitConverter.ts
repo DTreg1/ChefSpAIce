@@ -762,19 +762,19 @@ export function matchIngredientWithInventory(
 ): IngredientMatch {
   const parsed = parseIngredient(recipeIngredient);
   
-  console.log(`[DEBUG] Matching "${recipeIngredient}" -> parsed name: "${parsed.name}", unit: "${parsed.unit}", qty: ${parsed.quantity}`);
+  // console.log(`[DEBUG] Matching "${recipeIngredient}" -> parsed name: "${parsed.name}", unit: "${parsed.unit}", qty: ${parsed.quantity}`);
   
   // Find ALL matching inventory items
   const allMatches = inventoryItems.filter(item => {
     const matches = ingredientNamesMatch(parsed.name, item.name);
     if (matches) {
-      console.log(`  ✓ MATCHED with inventory: "${item.name}" (qty: ${item.quantity} ${item.unit}, weight: ${item.weightInGrams || 'N/A'}g)`);
+      // console.log(`  ✓ MATCHED with inventory: "${item.name}" (qty: ${item.quantity} ${item.unit}, weight: ${item.weightInGrams || 'N/A'}g)`);
     }
     return matches;
   });
   
   if (allMatches.length === 0) {
-    console.log(`  ✗ NO MATCH FOUND for "${parsed.name}"`);
+    // console.log(`  ✗ NO MATCH FOUND for "${parsed.name}"`);
   }
   
   // Smart item selection: If recipe needs weight unit, prioritize items WITH weight data
@@ -785,10 +785,10 @@ export function matchIngredientWithInventory(
     // Prioritize items with valid weight data
     matchingItem = allMatches.find(item => item.weightInGrams && item.weightInGrams > 0);
     if (matchingItem) {
-      console.log(`  → Selected item WITH weight data: ${matchingItem.quantity} ${matchingItem.unit} (${matchingItem.weightInGrams}g)`);
+      // console.log(`  → Selected item WITH weight data: ${matchingItem.quantity} ${matchingItem.unit} (${matchingItem.weightInGrams}g)`);
     } else {
       matchingItem = allMatches[0];
-      console.log(`  → No weight data available, using first match`);
+      // console.log(`  → No weight data available, using first match`);
     }
   } else {
     // For non-weight units, just use the first match
@@ -814,7 +814,7 @@ export function matchIngredientWithInventory(
   // Parse inventory quantity - handle both simple numbers and fractional strings
   let inventoryQuantity = parseFloat(matchingItem.quantity);
   if (isNaN(inventoryQuantity) || inventoryQuantity <= 0) {
-    console.log(`  ⚠ Invalid quantity: "${matchingItem.quantity}" - treating as 0`);
+    // console.log(`  ⚠ Invalid quantity: "${matchingItem.quantity}" - treating as 0`);
     inventoryQuantity = 0;
   }
   
@@ -832,9 +832,9 @@ export function matchIngredientWithInventory(
       const hasEnough = convertedQuantity >= parsed.quantity;
       const percentageAvailable = Math.min(100, (convertedQuantity / parsed.quantity) * 100);
       
-      console.log(`  → Using weight data: ${inventoryQuantity} ${matchingItem.unit} × ${matchingItem.weightInGrams}g = ${totalGrams}g`);
-      console.log(`  → Converted: ${totalGrams}g = ${convertedQuantity} ${parsed.unit}`);
-      console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${convertedQuantity})`);
+      // console.log(`  → Using weight data: ${inventoryQuantity} ${matchingItem.unit} × ${matchingItem.weightInGrams}g = ${totalGrams}g`);
+      // console.log(`  → Converted: ${totalGrams}g = ${convertedQuantity} ${parsed.unit}`);
+      // console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${convertedQuantity})`);
       
       return {
         ingredientName: parsed.name,
@@ -864,8 +864,8 @@ export function matchIngredientWithInventory(
     const hasEnough = convertedQuantity >= parsed.quantity;
     const percentageAvailable = Math.min(100, (convertedQuantity / parsed.quantity) * 100);
     
-    console.log(`  → Converted: ${inventoryQuantity} ${matchingItem.unit} = ${convertedQuantity} ${parsed.unit}`);
-    console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${convertedQuantity})`);
+    // console.log(`  → Converted: ${inventoryQuantity} ${matchingItem.unit} = ${convertedQuantity} ${parsed.unit}`);
+    // console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${convertedQuantity})`);
     
     return {
       ingredientName: parsed.name,
@@ -898,8 +898,8 @@ export function matchIngredientWithInventory(
     const hasEnough = foodConvertedQuantity >= parsed.quantity;
     const percentageAvailable = Math.min(100, (foodConvertedQuantity / parsed.quantity) * 100);
     
-    console.log(`  → Food-specific conversion: ${inventoryQuantity} ${matchingItem.unit} ${inventoryFood} = ${foodConvertedQuantity} ${parsed.unit}`);
-    console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${foodConvertedQuantity})`);
+    // console.log(`  → Food-specific conversion: ${inventoryQuantity} ${matchingItem.unit} ${inventoryFood} = ${foodConvertedQuantity} ${parsed.unit}`);
+    // console.log(`  → Has enough: ${hasEnough} (need ${parsed.quantity}, have ${foodConvertedQuantity})`);
     
     return {
       ingredientName: parsed.name,

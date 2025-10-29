@@ -5,7 +5,7 @@
  * Includes user timelines, admin views, statistics, and data export.
  */
 
-import { Router } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { adminOnly } from "../middleware/auth.middleware";
@@ -30,7 +30,7 @@ const router = Router();
 router.get(
   "/activity-logs",
   isAuthenticated,
-  asyncHandler(async (req: any, res) => {
+  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
@@ -77,7 +77,7 @@ router.get(
 router.get(
   "/activity-logs/timeline",
   isAuthenticated,
-  asyncHandler(async (req: any, res) => {
+  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
@@ -106,7 +106,7 @@ router.get(
 router.get(
   "/activity-logs/stats",
   isAuthenticated,
-  asyncHandler(async (req: any, res) => {
+  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
@@ -134,7 +134,7 @@ router.get(
 router.get(
   "/activity-logs/export",
   isAuthenticated,
-  asyncHandler(async (req: any, res) => {
+  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
@@ -297,7 +297,7 @@ router.post(
   isAuthenticated,
   adminOnly,
   asyncHandler(async (req, res) => {
-    const { retentionDays = 90, excludeActions = [] } = req.body;
+    const { retentionDays = 90, excludeActions = []  } = req.body || {};
     
     // Validate retention days
     if (retentionDays < 7) {
@@ -362,7 +362,7 @@ router.get(
 router.delete(
   "/activity-logs",
   isAuthenticated,
-  asyncHandler(async (req: any, res) => {
+  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     const userId = req.user?.claims?.sub;
     if (!userId) {
       throw new ApiError("User not authenticated", 401);

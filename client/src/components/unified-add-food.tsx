@@ -227,7 +227,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
         // Handle text search response
         setSearchResults(data.foods || []);
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Search error:", error);
       toast({
         title: "Search failed",
@@ -255,7 +255,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   
   // Barcode scanner handlers
   const handleScan = useCallback(async (barcode: string) => {
-    console.log("Scanned barcode:", barcode);
+    // console.log("Scanned barcode:", barcode);
     setShowScanner(false);
     setActiveTab("search");
     setSearchQuery(barcode);
@@ -301,7 +301,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   
   // Add food mutation
   const addFoodMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: unknown) => {
       const response = await apiRequest("POST", "/api/food-items", data);
       return response.json();
     },
@@ -320,7 +320,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
         description: `${selectedFood?.description} has been added to your inventory.`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Failed to add food",
         description: error.message || "Something went wrong. Please try again.",

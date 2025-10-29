@@ -68,7 +68,7 @@
  *     
  *     // Look up product by barcode
  *     const product = await fetch(`/api/barcode/${barcode}`).then(r => r.json());
- *     console.log('Product found:', product);
+ *     // console.log('Product found:', product);
  *   },
  *   onError: (error) => {
  *     console.error('Scanner error:', error);
@@ -146,7 +146,7 @@ export function useBarcodeScanner({ onScan, onError }: UseBarcodeScannerOptions)
           // Silent error for continuous scanning attempts
         }
       );
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       console.error("Scanner start error:", err);
       isInitializedRef.current = false;
       scannerRef.current = null;

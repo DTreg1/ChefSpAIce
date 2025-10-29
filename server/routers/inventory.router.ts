@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
@@ -29,9 +29,10 @@ const router = Router();
  * - pagination: { page, limit, total, totalPages }
  * - type: "items"
  */
-router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
+router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { location, category, view, page = 1, limit = 50 } = req.query;
     
     // Fetch items from storage with database-level location and category filtering
@@ -85,9 +86,10 @@ router.get("/inventory", isAuthenticated, async (req: any, res: Response) => {
  * 
  * Returns: Array of storage locations with { id, name, icon }
  */
-router.get("/storage-locations", isAuthenticated, async (req: any, res: Response) => {
+router.get("/storage-locations", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const locations = await storage.getStorageLocations(userId);
     res.json(locations);
   } catch (error) {
@@ -105,9 +107,10 @@ router.post(
   "/storage-locations",
   isAuthenticated,
   validateBody(storageLocationSchema),
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const newLocation = await storage.createStorageLocation(userId, req.body);
       res.json(newLocation);
     } catch (error) {
@@ -118,9 +121,10 @@ router.post(
 );
 
 // Food items CRUD
-router.get("/food-items", isAuthenticated, async (req: any, res: Response) => {
+router.get("/food-items", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const items = await storage.getFoodItems(userId);
     res.json(items);
   } catch (error) {
@@ -153,10 +157,11 @@ router.get("/food-items", isAuthenticated, async (req: any, res: Response) => {
 router.post(
   "/food-items",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
-      const validation = insertUserInventorySchema.safeParse(req.body);
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const validation = insertUserInventorySchema.safeParse(req.body as any);
       
       if (!validation.success) {
         return res.status(400).json({ 
@@ -243,9 +248,10 @@ router.post(
 router.put(
   "/food-items/:id",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const itemId = req.params.id;
 
       // Security check: Verify item belongs to authenticated user
@@ -276,9 +282,10 @@ router.put(
   }
 );
 
-router.delete("/food-items/:id", isAuthenticated, async (req: any, res: Response) => {
+router.delete("/food-items/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const itemId = req.params.id;
 
     // Verify item belongs to user before deleting
@@ -298,7 +305,7 @@ router.delete("/food-items/:id", isAuthenticated, async (req: any, res: Response
 });
 
 // Food categories
-router.get("/food-categories", isAuthenticated, async (_req: any, res: Response) => {
+router.get("/food-categories", isAuthenticated, async (_req: any, res: ExpressResponse) => {
   const categories = [
     "Dairy",
     "Meat",
@@ -318,7 +325,7 @@ router.get("/food-categories", isAuthenticated, async (_req: any, res: Response)
 const fdcCache = new Map<string, { data: any; timestamp: number }>();
 const FDC_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-router.get("/fdc/search", async (req: Request, res: Response) => {
+router.get("/fdc/search", async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
     const query = req.query.query as string;
     if (!query) {
@@ -369,7 +376,7 @@ router.get("/fdc/search", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/fdc/food/:fdcId", async (req: Request, res: Response) => {
+router.get("/fdc/food/:fdcId", async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
     const fdcId = req.params.fdcId;
     
@@ -413,7 +420,7 @@ router.get("/fdc/food/:fdcId", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/fdc/cache/clear", async (_req: Request, res: Response) => {
+router.post("/fdc/cache/clear", async (_req: Request, res: ExpressResponse) => {
   fdcCache.clear();
   res.json({ message: "FDC cache cleared successfully" });
 });
@@ -422,9 +429,10 @@ router.post("/fdc/cache/clear", async (_req: Request, res: Response) => {
 const barcodeCache = new Map<string, { data: any; timestamp: number }>();
 const BARCODE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middleware(), async (req: any, res: Response) => {
+router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middleware(), async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const barcode = req.query.barcode as string;
     
     if (!barcode) {
@@ -460,7 +468,7 @@ router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middle
     barcodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
 
     res.json(result);
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     if (error.response?.status === 404) {
       return res.status(404).json({ error: "Product not found" });
     }
@@ -492,9 +500,9 @@ router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middle
  * 
  * Returns: Enriched food data with AI-generated insights
  */
-router.post("/food/enrich", isAuthenticated, async (req: any, res: Response) => {
+router.post("/food/enrich", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const { name, barcode, fdcData } = req.body;
+    const { name, barcode, fdcData  } = req.body || {};
     
     if (!name) {
       return res.status(400).json({ error: "Food name is required" });
@@ -557,7 +565,7 @@ Response must be valid JSON only, no additional text.`;
 });
 
 // Onboarding common items
-router.get("/onboarding/common-items", async (_req: Request, res: Response) => {
+router.get("/onboarding/common-items", async (_req: Request, res: ExpressResponse) => {
   const commonItems = [
     { name: "Milk", foodCategory: "dairy", icon: "🥛" },
     { name: "Eggs", foodCategory: "dairy", icon: "🥚" },
@@ -576,10 +584,11 @@ router.get("/onboarding/common-items", async (_req: Request, res: Response) => {
 });
 
 // Image upload endpoint
-router.put("/food-images", isAuthenticated, async (req: any, res: Response) => {
+router.put("/food-images", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
-    const { itemId, imageUrl } = req.body;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const { itemId, imageUrl  } = req.body || {};
     
     if (!itemId || !imageUrl) {
       return res.status(400).json({ error: "Item ID and image URL required" });

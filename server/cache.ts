@@ -105,7 +105,7 @@ export async function saveToCache(productInfo: ProductInfo, lookupFailed: boolea
     
     barcodeCache.set(productInfo.code, cachedProduct);
     
-    console.log(`Cached ${lookupFailed ? 'failed lookup' : 'product'} for barcode ${productInfo.code}`);
+    // console.log(`Cached ${lookupFailed ? 'failed lookup' : 'product'} for barcode ${productInfo.code}`);
   } catch (error) {
     console.error('Cache save error:', error);
   }

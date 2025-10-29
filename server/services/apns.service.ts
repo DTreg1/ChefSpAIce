@@ -139,8 +139,8 @@ export class ApnsService {
       this.provider = new apn.Provider(options);
       this.isInitialized = true;
       
-      console.log(`✅ APNs initialized for ${apnsProduction ? 'production' : 'development'} environment`);
-      console.log(`   Bundle ID: ${this.bundleId}`);
+      // console.log(`✅ APNs initialized for ${apnsProduction ? 'production' : 'development'} environment`);
+      // console.log(`   Bundle ID: ${this.bundleId}`);
     } catch (error) {
       console.error('❌ Failed to initialize APNs:', error);
     }
@@ -252,8 +252,8 @@ export class ApnsService {
         throw new Error(failure.response?.reason || 'UNKNOWN_ERROR');
       }
 
-      console.log('✅ APNs notification sent successfully');
-    } catch (error: any) {
+      // console.log('✅ APNs notification sent successfully');
+    } catch (error: Error | unknown) {
       console.error('❌ APNs notification error:', error);
       throw error;
     }
@@ -306,7 +306,7 @@ export class ApnsService {
         throw new Error(result.failed[0].response?.reason || 'Silent notification failed');
       }
       
-      console.log('✅ APNs silent notification sent');
+      // console.log('✅ APNs silent notification sent');
     } catch (error) {
       console.error('❌ APNs silent notification error:', error);
       throw error;
@@ -336,7 +336,7 @@ export class ApnsService {
       try {
         await this.sendNotification(token, payload);
         sent.push(token);
-      } catch (error: any) {
+      } catch (error: Error | unknown) {
         failed.push({
           token,
           error: error.message || 'Unknown error',
@@ -356,7 +356,7 @@ export class ApnsService {
       await this.provider.shutdown();
       this.provider = null;
       this.isInitialized = false;
-      console.log('APNs provider shutdown complete');
+      // console.log('APNs provider shutdown complete');
     }
   }
 

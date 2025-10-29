@@ -993,7 +993,7 @@ export class DatabaseStorage implements IStorage {
 
         if (userCount === 0) {
           isAdmin = true;
-          console.log(`Auto-promoting ${userData.email} to admin (first user)`);
+          // console.log(`Auto-promoting ${userData.email} to admin (first user)`);
         }
       }
 
@@ -1016,7 +1016,7 @@ export class DatabaseStorage implements IStorage {
         })
         .returning();
       return user;
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Error upserting user:", error);
       throw new Error("Failed to save user");
     }
@@ -2718,7 +2718,7 @@ export class DatabaseStorage implements IStorage {
       // This is done outside the transaction since it's an in-memory operation
       this.userInitialized.delete(userId);
 
-      console.log(`Successfully reset all data for user ${userId}`);
+      // console.log(`Successfully reset all data for user ${userId}`);
     } catch (error) {
       console.error(`Error resetting user data for ${userId}:`, error);
       throw new Error("Failed to reset user data - transaction rolled back");

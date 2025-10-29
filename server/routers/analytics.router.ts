@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
 import { analyticsRateLimit } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
@@ -7,7 +7,7 @@ import { insertWebVitalSchema, insertAnalyticsEventSchema } from "@shared/schema
 const router = Router();
 
 // Web Vitals Analytics endpoint
-router.post("/", analyticsRateLimit, asyncHandler(async (req: any, res) => {
+router.post("/", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   // Get user ID if authenticated, otherwise null for anonymous tracking
   const userId = req.user?.claims?.sub || null;
 
@@ -69,9 +69,9 @@ router.post("/", analyticsRateLimit, asyncHandler(async (req: any, res) => {
 }));
 
 // Analytics Events endpoint - batch processing
-router.post("/events", analyticsRateLimit, asyncHandler(async (req: any, res) => {
+router.post("/events", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const userId = req.user?.claims?.sub || null;
-  const { events } = req.body;
+  const { events  } = req.body || {};
   
   if (!events || !Array.isArray(events)) {
     return res.status(400).json({ error: "Invalid events format" });
@@ -115,7 +115,7 @@ router.post("/events", analyticsRateLimit, asyncHandler(async (req: any, res) =>
 }));
 
 // Session start endpoint
-router.post("/sessions/start", asyncHandler(async (req: any, res) => {
+router.post("/sessions/start", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const userId = req.user?.claims?.sub || null;
   const sessionData = {
     ...req.body,
@@ -132,9 +132,9 @@ router.post("/sessions/start", asyncHandler(async (req: any, res) => {
 }));
 
 // Session end endpoint
-router.post("/sessions/end", asyncHandler(async (req: any, res) => {
+router.post("/sessions/end", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const userId = req.user?.claims?.sub || null;
-  const { sessionId, exitPage } = req.body;
+  const { sessionId, exitPage  } = req.body || {};
   
   if (!sessionId) {
     return res.status(400).json({ error: "Missing sessionId" });
@@ -171,7 +171,7 @@ router.post("/sessions/end", asyncHandler(async (req: any, res) => {
 }));
 
 // Get Analytics Dashboard Stats
-router.get("/dashboard", asyncHandler(async (req: any, res) => {
+router.get("/dashboard", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const { startDate, endDate } = req.query;
   
   const start = startDate ? new Date(startDate as string) : undefined;
@@ -189,7 +189,7 @@ router.get("/dashboard", asyncHandler(async (req: any, res) => {
 // Get Web Vitals statistics
 router.get(
   "/stats",
-  asyncHandler(async (req: any, res) => {
+  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     const { metric, days } = req.query;
     
     // Validate days parameter
@@ -212,7 +212,7 @@ router.get(
 // Get API Health Metrics
 router.get(
   "/api-health",
-  asyncHandler(async (req: any, res) => {
+  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     const userId = req.user?.claims?.sub;
     const { days } = req.query;
     

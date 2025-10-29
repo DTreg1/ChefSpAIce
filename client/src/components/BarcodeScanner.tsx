@@ -47,7 +47,7 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
       );
 
       setIsScanning(true);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       console.error("Scanner start error:", err);
       // Only try to clear if scanner was actually created
       if (scannerRef.current) {

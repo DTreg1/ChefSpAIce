@@ -81,7 +81,7 @@ export default function CameraTest() {
       const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
       setCameraPermission(result.state as 'granted' | 'denied');
       addError(`Permission state: ${result.state}`);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       addError(`Permission check failed: ${err.message}`);
       // Fallback: try to access camera directly
       try {
@@ -89,7 +89,7 @@ export default function CameraTest() {
         stream.getTracks().forEach(track => track.stop());
         setCameraPermission('granted');
         addError('Camera access granted (fallback check)');
-      } catch (mediaErr: any) {
+      } catch (mediaErr: Error | unknown) {
         setCameraPermission('denied');
         addError(`Camera access denied: ${mediaErr.message}`);
       }
@@ -107,7 +107,7 @@ export default function CameraTest() {
         }));
       setCameraList(cameras);
       addError(`Found ${cameras.length} camera(s)`);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       addError(`Failed to enumerate devices: ${err.message}`);
     }
   };
@@ -128,11 +128,11 @@ export default function CameraTest() {
         setVideoStream(stream);
         addError('Camera stream started successfully');
       }
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       addError(`Camera stream failed: ${err.message}`);
       toast({
         title: "Camera Error",
-        description: err.message,
+        description: (err instanceof Error ? err.message : String(err)),
         variant: "destructive"
       });
     }
@@ -175,11 +175,11 @@ export default function CameraTest() {
 
       setIsScanning(true);
       addError('Barcode scanner started');
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       addError(`Scanner start error: ${err.message}`);
       toast({
         title: "Scanner Error",
-        description: err.message,
+        description: (err instanceof Error ? err.message : String(err)),
         variant: "destructive"
       });
     }
@@ -193,7 +193,7 @@ export default function CameraTest() {
         scannerRef.current = null;
         setIsScanning(false);
         addError('Barcode scanner stopped');
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         addError(`Scanner stop error: ${err.message}`);
       }
     }
@@ -223,8 +223,8 @@ export default function CameraTest() {
         title: "API Call Successful",
         description: `Found: ${data.name || 'Unknown Product'}`,
       });
-    } catch (error: any) {
-      const errorMsg = error.message || 'Unknown error';
+    } catch (error: Error | unknown) {
+      const errorMsg = (error instanceof Error ? error.message : String(error)) || 'Unknown error';
       addError(`Single API call failed: ${errorMsg}`);
       toast({
         title: "API Call Failed",
@@ -261,8 +261,8 @@ export default function CameraTest() {
         title: "Batch API Call Successful",
         description: `Found ${data.count} products. Saved ${data.apiCallsSaved} API calls!`,
       });
-    } catch (error: any) {
-      const errorMsg = error.message || 'Unknown error';
+    } catch (error: Error | unknown) {
+      const errorMsg = (error instanceof Error ? error.message : String(error)) || 'Unknown error';
       addError(`Batch API call failed: ${errorMsg}`);
       toast({
         title: "Batch API Call Failed",

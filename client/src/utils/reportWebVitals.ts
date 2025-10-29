@@ -36,10 +36,10 @@ function sendToAnalytics(metric: Metric) {
   // Log to console if configured
   if (ANALYTICS_CONFIG.logToConsole) {
     console.group(`Web Vital: ${metric.name}`);
-    console.log('Value:', metric.value);
-    console.log('Rating:', metric.rating);
-    console.log('Delta:', metric.delta);
-    console.log('ID:', metric.id);
+    // console.log('Value:', metric.value);
+    // console.log('Rating:', metric.rating);
+    // console.log('Delta:', metric.delta);
+    // console.log('ID:', metric.id);
     console.groupEnd();
   }
 
@@ -91,10 +91,10 @@ export function reportWebVitals(onPerfEntry?: (metric: Metric) => void) {
 export function logWebVitalsToConsole() {
   reportWebVitals((metric) => {
     console.group(`Web Vital: ${metric.name}`);
-    console.log('Value:', metric.value);
-    console.log('Rating:', metric.rating);
-    console.log('Delta:', metric.delta);
-    console.log('ID:', metric.id);
+    // console.log('Value:', metric.value);
+    // console.log('Rating:', metric.rating);
+    // console.log('Delta:', metric.delta);
+    // console.log('ID:', metric.id);
     console.groupEnd();
   });
 }

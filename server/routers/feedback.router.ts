@@ -1,5 +1,4 @@
-import { Router } from "express";
-import type { Response } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { insertFeedbackSchema, type Feedback } from "@shared/schema";
@@ -12,10 +11,11 @@ const router = Router();
 router.post(
   "/feedback",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
-      const validation = insertFeedbackSchema.safeParse(req.body);
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const validation = insertFeedbackSchema.safeParse(req.body as any);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -42,9 +42,10 @@ router.get(
     category: z.string().optional(),
     status: z.string().optional(),
   })),
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const { page = 1, limit = 10, category, status } = req.query;
       
       let feedbacks = await storage.getUserFeedback(userId, limit * 10); // Get more for filtering
@@ -83,9 +84,10 @@ router.get(
 router.patch(
   "/feedback/:id/upvote",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const feedbackId = req.params.id;
       
       await storage.upvoteFeedback(userId, feedbackId);

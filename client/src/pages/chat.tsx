@@ -59,7 +59,7 @@ export default function Chat() {
   } = useStreamedContent({
     batchInterval: 100, // Update UI every 100ms
     onComplete: (content) => {
-      console.log("Streaming completed with content length:", content.length);
+      // console.log("Streaming completed with content length:", content.length);
     }
   });
   const { user } = useAuth();
@@ -280,9 +280,9 @@ export default function Chat() {
           }
         }
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       if (error.name === "AbortError") {
-        console.log("Chat stream aborted");
+        // console.log("Chat stream aborted");
         abortControllerRef.current = null;
         return;
       }

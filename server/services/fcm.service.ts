@@ -55,13 +55,13 @@ export class FcmService {
           credential: admin.credential.cert(serviceAccount),
         });
         this.isInitialized = true;
-        console.log('✅ FCM initialized with service account from environment');
+        // console.log('✅ FCM initialized with service account from environment');
       } else if (fcmServiceAccountPath) {
         this.app = admin.initializeApp({
           credential: admin.credential.cert(fcmServiceAccountPath),
         });
         this.isInitialized = true;
-        console.log('✅ FCM initialized with service account from file');
+        // console.log('✅ FCM initialized with service account from file');
       } else if (fcmServerKey) {
         // Legacy initialization with server key (deprecated but still supported)
         // Server key alone isn't sufficient - need service account
@@ -137,9 +137,9 @@ export class FcmService {
 
       // Send the message
       const response = await admin.messaging(this.app).send(message);
-      console.log('✅ FCM notification sent successfully:', response);
+      // console.log('✅ FCM notification sent successfully:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('❌ FCM notification failed:', error);
       
       // Handle specific FCM error codes
@@ -187,7 +187,7 @@ export class FcmService {
       // Use dryRun option to validate without sending
       await admin.messaging(this.app).send(message, true);
       return true;
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('FCM token validation failed:', error.code);
       return false;
     }
@@ -252,7 +252,7 @@ export class FcmService {
    * Convert data object to string values
    * FCM requires all data values to be strings
    */
-  private static convertDataToStrings(data: any): Record<string, string> {
+  private static convertDataToStrings(data: unknown): Record<string, string> {
     const result: Record<string, string> = {};
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {

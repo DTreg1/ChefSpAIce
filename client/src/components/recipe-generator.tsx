@@ -58,7 +58,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
       
       onRecipeGenerated?.(updatedRecipe || recipe);
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
         description: error.message || "Failed to generate recipe",

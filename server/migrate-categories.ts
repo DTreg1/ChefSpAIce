@@ -9,7 +9,7 @@ import { normalizeCategory } from './category-mapping';
 import { eq, sql } from 'drizzle-orm';
 
 async function migrateCategories() {
-  console.log('Starting category migration to 5 major food groups...\n');
+  // console.log('Starting category migration to 5 major food groups...\n');
   
   try {
     // Get all unique categories currently in the database
@@ -18,7 +18,7 @@ async function migrateCategories() {
       .from(userInventory)
       .execute();
     
-    console.log('Current categories in database:');
+    // console.log('Current categories in database:');
     const categoryCounts: Record<string, number> = {};
     
     for (const row of currentCategories) {
@@ -31,10 +31,10 @@ async function migrateCategories() {
         .then(r => r[0]?.count || 0);
       
       categoryCounts[row.category || 'null'] = count;
-      console.log(`  - ${row.category || 'null'}: ${count} items`);
+      // console.log(`  - ${row.category || 'null'}: ${count} items`);
     }
     
-    console.log('\nMigrating categories to 5 major food groups...');
+    // console.log('\nMigrating categories to 5 major food groups...');
     
     // Get all items and update their categories
     const allItems = await db.select().from(userInventory);
@@ -59,17 +59,17 @@ async function migrateCategories() {
       }
     }
     
-    console.log(`\nMigration complete! Updated ${updateCount} items.`);
+    // console.log(`\nMigration complete! Updated ${updateCount} items.`);
     
     if (Object.keys(migrationMap).length > 0) {
-      console.log('\nMigration details:');
+      // console.log('\nMigration details:');
       for (const [mapping, count] of Object.entries(migrationMap)) {
-        console.log(`  - ${mapping}: ${count} items`);
+        // console.log(`  - ${mapping}: ${count} items`);
       }
     }
     
     // Show final category distribution
-    console.log('\nFinal category distribution:');
+    // console.log('\nFinal category distribution:');
     const finalCategories = await db
       .selectDistinct({ category: userInventory.foodCategory })
       .from(userInventory)
@@ -84,10 +84,10 @@ async function migrateCategories() {
           : eq(userInventory.foodCategory, row.category))
         .then(r => r[0]?.count || 0);
       
-      console.log(`  - ${row.category}: ${count} items`);
+      // console.log(`  - ${row.category}: ${count} items`);
     }
     
-    console.log('\n✅ Category migration successful!');
+    // console.log('\n✅ Category migration successful!');
     process.exit(0);
   } catch (error) {
     console.error('❌ Migration failed:', error);

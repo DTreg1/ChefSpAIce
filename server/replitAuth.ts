@@ -232,12 +232,12 @@ export async function setupAuth(app: Express) {
       );
       passport.use(strategy);
       registeredDomains.add(trimmedDomain);
-      console.log(`[Auth] Registered strategy for domain: ${trimmedDomain}`);
+      // console.log(`[Auth] Registered strategy for domain: ${trimmedDomain}`);
     }
   }
 
   // Middleware to dynamically register strategy for unrecognized domains
-  const ensureStrategyExists = (req: any, res: any, next: any) => {
+  const ensureStrategyExists = (req: Request, res: any, next: any) => {
     const hostname = req.hostname;
     
     // Check if strategy already exists for this hostname
@@ -260,7 +260,7 @@ export async function setupAuth(app: Express) {
         });
       }
       
-      console.log(`[Auth] Dynamically registering strategy for new domain: ${hostname}`);
+      // console.log(`[Auth] Dynamically registering strategy for new domain: ${hostname}`);
       
       // Register a new strategy for this domain
       const strategy = new Strategy(
@@ -276,7 +276,7 @@ export async function setupAuth(app: Express) {
       try {
         passport.use(strategy);
         registeredDomains.add(hostname);
-        console.log(`[Auth] Successfully registered strategy for: ${hostname}`);
+        // console.log(`[Auth] Successfully registered strategy for: ${hostname}`);
       } catch (error) {
         console.error(`[Auth] Failed to register strategy for ${hostname}:`, error);
         return res.status(500).json({
@@ -293,7 +293,7 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/login", ensureStrategyExists, (req, res, next) => {
     const strategyName = `replitauth:${req.hostname}`;
-    console.log(`[Auth] Login attempt using strategy: ${strategyName}`);
+    // console.log(`[Auth] Login attempt using strategy: ${strategyName}`);
     
     // Store original URL for redirect after auth - validate it's a safe relative path
     if (req.query.redirect_to) {
@@ -323,7 +323,7 @@ export async function setupAuth(app: Express) {
         // Fallback to first available strategy if current one fails
         const fallbackDomain = Array.from(registeredDomains)[0];
         if (fallbackDomain && fallbackDomain !== req.hostname) {
-          console.log(`[Auth] Attempting fallback to ${fallbackDomain}`);
+          // console.log(`[Auth] Attempting fallback to ${fallbackDomain}`);
           return passport.authenticate(`replitauth:${fallbackDomain}`, {
             prompt: "login consent",
             scope: ["openid", "email", "profile", "offline_access"],
@@ -347,7 +347,7 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/callback", ensureStrategyExists, (req, res, next) => {
     const strategyName = `replitauth:${req.hostname}`;
-    console.log(`[Auth] Callback attempt using strategy: ${strategyName}`);
+    // console.log(`[Auth] Callback attempt using strategy: ${strategyName}`);
     
     passport.authenticate(strategyName, {
       successReturnToOrRedirect: (req.session as any)?.returnTo || "/",
@@ -379,7 +379,7 @@ export async function setupAuth(app: Express) {
         const returnTo = (req.session as any)?.returnTo || '/';
         delete (req.session as any).returnTo;
         
-        console.log(`[Auth] Successful authentication for user ${user.claims?.sub}, redirecting to ${returnTo}`);
+        // console.log(`[Auth] Successful authentication for user ${user.claims?.sub}, redirecting to ${returnTo}`);
         return res.redirect(returnTo);
       });
     })(req, res, next);
@@ -522,7 +522,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     const tokenResponse = await tokenResponsePromise;
     updateUserSession(user, tokenResponse);
     return next();
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Token refresh failed:', error);
     
     // If the refresh token is invalid, we need to clear the session

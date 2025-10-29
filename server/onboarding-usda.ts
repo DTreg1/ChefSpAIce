@@ -22,30 +22,30 @@ export async function fetchOnboardingItemUsdaData(itemName: string): Promise<USD
   try {
     // Try UPC search if available
     if (mapping.upc) {
-      console.log(`Searching for ${itemName} by UPC: ${mapping.upc}`);
+      // console.log(`Searching for ${itemName} by UPC: ${mapping.upc}`);
       const searchResults = await searchUSDAFoods(mapping.upc);
       if (searchResults && searchResults.foods && searchResults.foods.length > 0) {
         const firstResult = searchResults.foods[0];
         usdaDataCache.set(cacheKey, firstResult);
         return firstResult;
       }
-      console.log(`UPC search failed for ${itemName}`);
+      // console.log(`UPC search failed for ${itemName}`);
     }
     
     // Try FDC ID if available (cast to any to access fdcId)
     const mappingWithFdc = mapping as any;
     if (mappingWithFdc.fdcId) {
-      console.log(`Searching for ${itemName} by FDC ID: ${mappingWithFdc.fdcId}`);
+      // console.log(`Searching for ${itemName} by FDC ID: ${mappingWithFdc.fdcId}`);
       const fdcData = await getFoodByFdcId(parseInt(mappingWithFdc.fdcId));
       if (fdcData) {
         usdaDataCache.set(cacheKey, fdcData);
         return fdcData;
       }
-      console.log(`FDC ID search failed for ${itemName}`);
+      // console.log(`FDC ID search failed for ${itemName}`);
     }
 
     // Final fallback: search by name
-    console.log(`Searching for ${itemName} by name...`);
+    // console.log(`Searching for ${itemName} by name...`);
     const nameSearchResults = await searchUSDAFoods(mapping.description || itemName);
     if (nameSearchResults && nameSearchResults.foods && nameSearchResults.foods.length > 0) {
       const firstResult = nameSearchResults.foods[0];

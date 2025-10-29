@@ -15,7 +15,7 @@ interface BatchRequest {
 interface BatchQueueItem {
   request: BatchRequest;
   resolve: (value: any) => void;
-  reject: (error: any) => void;
+  reject: (error: Error | unknown) => void;
 }
 
 class BatchManager {

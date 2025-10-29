@@ -9,7 +9,7 @@
  * - Retry logic for transient failures
  */
 
-import { Router } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import type { Request, Response } from "express";
 import { isAuthenticated } from "../replitAuth";
 import { openai } from "../openai";
@@ -80,7 +80,7 @@ router.post(
   "/stream",
   isAuthenticated,
   rateLimiters.openai.middleware(),
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     // Set up SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -95,8 +95,9 @@ router.post(
     let accumulatedContent = '';
     
     try {
-      const userId = req.user.claims.sub;
-      const { message, includeInventory, streamingEnabled = true } = req.body;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const { message, includeInventory, streamingEnabled = true  } = req.body || {};
 
       if (!message) {
         writeSSEError(res, new AIError(
@@ -279,7 +280,7 @@ router.post(
         });
       });
       
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       // Log the error
       console.error('[Chat Stream] Error:', formatErrorForLogging(error));
       
@@ -314,7 +315,7 @@ router.post(
  * Health check endpoint for streaming chat service.
  * Returns circuit breaker status and service health.
  */
-router.get("/health", isAuthenticated, (req: Request, res: Response) => {
+router.get("/health", isAuthenticated, (req: ExpressRequest, res: ExpressResponse) => {
   const stats = chatCircuitBreaker.getStats();
   const isHealthy = stats.state === 'closed';
   
@@ -341,10 +342,11 @@ router.get("/health", isAuthenticated, (req: Request, res: Response) => {
  * Admin endpoint to reset circuit breaker.
  * Useful for manual intervention when service is recovered.
  */
-router.post("/reset", isAuthenticated, async (req: any, res: Response) => {
+router.post("/reset", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
     // Check if user is admin (you may want to implement proper admin check)
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     // Reset circuit breaker
     chatCircuitBreaker.reset();

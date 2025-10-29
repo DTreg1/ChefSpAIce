@@ -64,7 +64,7 @@ export async function getOpenFoodFactsProduct(barcode: string): Promise<OpenFood
     }
     
     return null;
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Open Food Facts API error:', error.message);
     return null;
   }

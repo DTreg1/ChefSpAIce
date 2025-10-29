@@ -263,7 +263,7 @@ export default function Settings() {
         title: "Success",
         description: "Custom storage area added.",
       });
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       const errorMsg = error?.message?.includes("already exists") || error?.status === 409
         ? "This storage area already exists."
         : "Failed to add custom storage area.";
@@ -1074,10 +1074,10 @@ function AdminManagementSection() {
       });
       setUserToToggleAdmin(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update admin status.",
+        description: (error instanceof Error ? error.message : String(error)) || "Failed to update admin status.",
         variant: "destructive",
       });
       setUserToToggleAdmin(null);
@@ -1097,10 +1097,10 @@ function AdminManagementSection() {
       });
       setUserToDelete(null);
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete user.",
+        description: (error instanceof Error ? error.message : String(error)) || "Failed to delete user.",
         variant: "destructive",
       });
       setUserToDelete(null);

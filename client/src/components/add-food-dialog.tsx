@@ -421,7 +421,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         });
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Analysis Error",
         description: error.message || "Failed to analyze the image",
@@ -789,7 +789,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       foodCategory: selectedFood.foodCategory || null,
     };
 
-    console.log("Submitting mutation with data:", mutationData);
+    // console.log("Submitting mutation with data:", mutationData);
 
     addItemMutation.mutate(mutationData);
   };

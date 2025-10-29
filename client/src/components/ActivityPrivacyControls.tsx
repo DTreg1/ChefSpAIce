@@ -71,7 +71,7 @@ export default function ActivityPrivacyControls() {
         description: "Your activity logs have been exported successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
         description: error.message || "Failed to export activity logs.",
@@ -100,7 +100,7 @@ export default function ActivityPrivacyControls() {
         description: `${data.deletedCount} activity logs have been permanently deleted.`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete activity logs.",
@@ -124,7 +124,7 @@ export default function ActivityPrivacyControls() {
         description: "Privacy settings updated successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update privacy settings.",

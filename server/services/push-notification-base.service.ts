@@ -87,7 +87,7 @@ export abstract class BasePushNotificationService {
         deviceInfo: metadata,
       });
       
-      console.log(`[${this.serviceName}] Token registered for user ${userId}`);
+      // console.log(`[${this.serviceName}] Token registered for user ${userId}`);
     } catch (error) {
       console.error(`[${this.serviceName}] Error registering token:`, error);
       throw error;
@@ -100,7 +100,7 @@ export abstract class BasePushNotificationService {
   async removeInvalidToken(userId: string, token: string): Promise<void> {
     try {
       await storage.deletePushToken(userId, token);
-      console.log(`[${this.serviceName}] Removed invalid token for user ${userId}`);
+      // console.log(`[${this.serviceName}] Removed invalid token for user ${userId}`);
     } catch (error) {
       console.error(`[${this.serviceName}] Error removing invalid token:`, error);
     }
@@ -120,7 +120,7 @@ export abstract class BasePushNotificationService {
     const tokens = await this.getUserTokens(userId);
     
     if (tokens.length === 0) {
-      console.log(`[${this.serviceName}] No tokens found for user ${userId}`);
+      // console.log(`[${this.serviceName}] No tokens found for user ${userId}`);
       return {
         successCount: 0,
         failureCount: 0,
@@ -226,7 +226,7 @@ export abstract class BasePushNotificationService {
     }
     
     if (allTargets.length === 0) {
-      console.log(`[${this.serviceName}] No tokens found for any users`);
+      // console.log(`[${this.serviceName}] No tokens found for any users`);
       return {
         successCount: 0,
         failureCount: 0,
@@ -263,7 +263,7 @@ export abstract class BasePushNotificationService {
   /**
    * Common error handling logic
    */
-  protected handleSendError(error: any): PushNotificationResult {
+  protected handleSendError(error: Error | unknown): PushNotificationResult {
     const errorMessage = error?.message || error?.toString() || 'Unknown error';
     
     // Common patterns for invalid tokens across services

@@ -53,7 +53,7 @@ export function PushNotificationHandler() {
       const customEvent = event as CustomEvent;
       const { notification, actionId } = customEvent.detail;
       
-      console.log('Notification action handled in React:', actionId, notification);
+      // console.log('Notification action handled in React:', actionId, notification);
       
       // Navigation is handled by the push notification service
       // This event is mainly for tracking and UI updates

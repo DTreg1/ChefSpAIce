@@ -21,14 +21,14 @@ class PushNotificationService {
 
     // Check if on native platform (iOS/Android) or web
     if (!Capacitor.isNativePlatform()) {
-      console.log('Initializing web push notifications');
+      // console.log('Initializing web push notifications');
       await this.initializeWebPush();
       return;
     }
 
     try {
       // Native platform push notification setup
-      console.log('Initializing native push notifications');
+      // console.log('Initializing native push notifications');
       const permStatus = await PushNotifications.requestPermissions();
 
       if (permStatus.receive === 'granted') {
@@ -37,14 +37,14 @@ class PushNotificationService {
 
         // Listen for registration
         await PushNotifications.addListener('registration', (token: Token) => {
-          console.log('Push registration success, token:', token.value);
+          // console.log('Push registration success, token:', token.value);
           this.pushToken = token.value;
           // TODO: Send token to backend to store for this user
           this.sendTokenToBackend(token.value);
         });
 
         // Listen for registration errors
-        await PushNotifications.addListener('registrationError', (error: any) => {
+        await PushNotifications.addListener('registrationError', (error: Error | unknown) => {
           console.error('Push registration error:', error);
         });
 
@@ -52,7 +52,7 @@ class PushNotificationService {
         await PushNotifications.addListener(
           'pushNotificationReceived',
           (notification: PushNotificationSchema) => {
-            console.log('Push received:', notification);
+            // console.log('Push received:', notification);
             // Handle notification received while app is in foreground
             this.handleNotificationReceived(notification);
           }
@@ -62,16 +62,16 @@ class PushNotificationService {
         await PushNotifications.addListener(
           'pushNotificationActionPerformed',
           (notification: ActionPerformed) => {
-            console.log('Push action performed:', notification);
+            // console.log('Push action performed:', notification);
             // Handle notification tap
             this.handleNotificationAction(notification);
           }
         );
 
         this.isInitialized = true;
-        console.log('Push notifications initialized successfully');
+        // console.log('Push notifications initialized successfully');
       } else {
-        console.log('Push notification permission not granted');
+        // console.log('Push notification permission not granted');
       }
     } catch (error) {
       console.error('Error initializing push notifications:', error);
@@ -97,7 +97,7 @@ class PushNotificationService {
         const message = permission === 'denied' 
           ? 'You have denied notification permissions. You can enable them in your browser settings.'
           : 'Notification permission is required to receive updates.';
-        console.log('Notification permission not granted:', permission);
+        // console.log('Notification permission not granted:', permission);
         this.dispatchPermissionEvent(permission as any, message);
         return;
       }
@@ -106,7 +106,7 @@ class PushNotificationService {
       let registration = await navigator.serviceWorker.getRegistration();
       if (!registration) {
         registration = await navigator.serviceWorker.register('/sw.js');
-        console.log('Service worker registered');
+        // console.log('Service worker registered');
       }
 
       // Wait for service worker to be ready
@@ -125,14 +125,14 @@ class PushNotificationService {
         applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey),
       });
 
-      console.log('Web push subscription created:', subscription);
+      // console.log('Web push subscription created:', subscription);
 
       // Send subscription to backend
       await this.sendWebSubscriptionToBackend(subscription);
 
       this.isInitialized = true;
       this.dispatchPermissionEvent('granted', 'Notifications enabled successfully');
-      console.log('Web push notifications initialized successfully');
+      // console.log('Web push notifications initialized successfully');
     } catch (error) {
       const err = error as Error;
       this.initializationError = err;
@@ -173,7 +173,7 @@ class PushNotificationService {
       }
 
       const data = await response.json();
-      console.log('Web subscription sent to backend successfully:', data.message);
+      // console.log('Web subscription sent to backend successfully:', data.message);
     } catch (error) {
       console.error('Error sending web subscription to backend:', error);
     }
@@ -210,7 +210,7 @@ class PushNotificationService {
       }
 
       const data = await response.json();
-      console.log('Push token sent to backend successfully:', data.message);
+      // console.log('Push token sent to backend successfully:', data.message);
     } catch (error) {
       console.error('Error sending push token to backend:', error);
       // Don't throw - allow app to continue even if token registration fails
@@ -219,7 +219,7 @@ class PushNotificationService {
 
 
   private handleNotificationReceived(notification: PushNotificationSchema): void {
-    console.log('Notification received while app is in foreground:', notification);
+    // console.log('Notification received while app is in foreground:', notification);
     
     // Dispatch custom event for React components to handle
     const event = new CustomEvent('push-notification-received', {
@@ -237,7 +237,7 @@ class PushNotificationService {
   }
 
   private handleNotificationAction(action: ActionPerformed): void {
-    console.log('Notification action performed:', action);
+    // console.log('Notification action performed:', action);
     
     // Dispatch custom event for React components to handle navigation
     const event = new CustomEvent('push-notification-action', {
@@ -379,5 +379,5 @@ export async function scheduleExpirationNotification(
 ): Promise<void> {
   // This would typically be handled by the backend
   // For now, we'll just log it
-  console.log(`Scheduling notification for ${itemName} expiring in ${daysUntilExpiration} days at ${location}`);
+  // console.log(`Scheduling notification for ${itemName} expiring in ${daysUntilExpiration} days at ${location}`);
 }

@@ -111,7 +111,7 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
       );
 
       setIsScanning(true);
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       console.error("Scanner start error:", err);
       if (scannerRef.current) {
         try {

@@ -6,7 +6,7 @@ export async function registerServiceWorker() {
         scope: '/'
       });
 
-      console.log('Service Worker registered successfully:', registration.scope);
+      // console.log('Service Worker registered successfully:', registration.scope);
 
 
       // Listen for controller change and reload
@@ -28,7 +28,7 @@ export async function unregisterServiceWorker() {
     for (const registration of registrations) {
       await registration.unregister();
     }
-    console.log('Service Worker unregistered');
+    // console.log('Service Worker unregistered');
   }
 }
 
@@ -43,12 +43,12 @@ export function setupConnectivityListener(
   onOffline?: () => void
 ) {
   window.addEventListener('online', () => {
-    console.log('App is online');
+    // console.log('App is online');
     onOnline?.();
   });
 
   window.addEventListener('offline', () => {
-    console.log('App is offline');
+    // console.log('App is offline');
     onOffline?.();
   });
 }

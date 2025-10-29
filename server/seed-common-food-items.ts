@@ -10,7 +10,7 @@ import type { InsertOnboardingInventory } from "@shared/schema";
  * This should be run once during initial setup and can be re-run to update data.
  */
 export async function seedCommonFoodItems(forceUpdate = false) {
-  console.log("Starting to seed common food items...");
+  // console.log("Starting to seed common food items...");
   
   const startTime = Date.now();
   const itemsByCategory = getItemsByCategory();
@@ -43,7 +43,7 @@ export async function seedCommonFoodItems(forceUpdate = false) {
     }
   });
   
-  console.log(`Processing ${allItems.size} common food items...`);
+  // console.log(`Processing ${allItems.size} common food items...`);
   
   let successCount = 0;
   let errorCount = 0;
@@ -63,13 +63,13 @@ export async function seedCommonFoodItems(forceUpdate = false) {
         if (!forceUpdate) {
           const existing = await storage.getOnboardingInventoryByName(displayName);
           if (existing) {
-            console.log(`Skipping ${displayName} - already exists`);
+            // console.log(`Skipping ${displayName} - already exists`);
             return { success: true, skipped: true };
           }
         }
         
         // Fetch USDA data for the item
-        console.log(`Processing ${displayName}...`);
+        // console.log(`Processing ${displayName}...`);
         const usdaData = await fetchOnboardingItemUsdaData(displayName);
         
         // Prepare the common food item data
@@ -110,9 +110,9 @@ export async function seedCommonFoodItems(forceUpdate = false) {
         
         // Save to database
         await storage.upsertCommonFoodItem(commonItem);
-        console.log(`✓ Saved ${displayName}`);
+        // console.log(`✓ Saved ${displayName}`);
         return { success: true, skipped: false };
-      } catch (error: any) {
+      } catch (error: Error | unknown) {
         console.error(`✗ Error processing ${displayName}:`, error.message);
         return { 
           success: false, 
@@ -135,7 +135,7 @@ export async function seedCommonFoodItems(forceUpdate = false) {
     });
     
     // Log progress
-    console.log(`Progress: ${i + batch.length}/${itemsArray.length} items processed`);
+    // console.log(`Progress: ${i + batch.length}/${itemsArray.length} items processed`);
     
     // Add a small delay between batches to avoid rate limiting
     if (i + batchSize < itemsArray.length) {
@@ -145,16 +145,16 @@ export async function seedCommonFoodItems(forceUpdate = false) {
   
   const elapsedTime = (Date.now() - startTime) / 1000;
   
-  console.log("\n=== Seeding Complete ===");
-  console.log(`Total items processed: ${itemsArray.length}`);
-  console.log(`Successfully saved: ${successCount}`);
-  console.log(`Errors: ${errorCount}`);
-  console.log(`Time elapsed: ${elapsedTime.toFixed(2)} seconds`);
+  // console.log("\n=== Seeding Complete ===");
+  // console.log(`Total items processed: ${itemsArray.length}`);
+  // console.log(`Successfully saved: ${successCount}`);
+  // console.log(`Errors: ${errorCount}`);
+  // console.log(`Time elapsed: ${elapsedTime.toFixed(2)} seconds`);
   
   if (errors.length > 0) {
-    console.log("\n=== Errors ===");
+    // console.log("\n=== Errors ===");
     errors.forEach(({ item, error }) => {
-      console.log(`- ${item}: ${error}`);
+      // console.log(`- ${item}: ${error}`);
     });
   }
   
@@ -175,11 +175,11 @@ if (isMainModule) {
   
   seedCommonFoodItems(forceUpdate)
     .then(() => {
-      console.log("\n✓ Seeding completed successfully");
+      // console.log("\n✓ Seeding completed successfully");
       process.exit(0);
     })
     .catch(error => {
-      console.error("\n✗ Seeding failed:", error);
+      console.error("\n✗ Seeding failed:", error instanceof Error ? error.message : String(error));
       process.exit(1);
     });
 }

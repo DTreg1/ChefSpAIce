@@ -488,14 +488,14 @@ export class ActivityLogger {
       // Insert batch into database
       await db.insert(activityLogs).values(batch);
       
-      console.log(`[ActivityLogger] Processed batch of ${batch.length} logs`);
+      // console.log(`[ActivityLogger] Processed batch of ${batch.length} logs`);
     } catch (error) {
       console.error('[ActivityLogger] Error processing batch:', error);
       
       // Retry logic with exponential backoff
       if (retryCount < this.MAX_RETRY_ATTEMPTS) {
         const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
-        console.log(`[ActivityLogger] Retrying batch in ${delay}ms (attempt ${retryCount + 1})`);
+        // console.log(`[ActivityLogger] Retrying batch in ${delay}ms (attempt ${retryCount + 1})`);
         
         setTimeout(() => {
           this.processBatch(retryCount + 1).catch(err => {

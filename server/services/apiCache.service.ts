@@ -23,7 +23,7 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
     if (cached) {
       const age = Date.now() - cached.timestamp;
       if (age < CACHE_TTL.BARCODE_PRODUCT) {
-        console.log(`[Barcode Cache] Hit for barcode: ${barcode}`);
+        // console.log(`[Barcode Cache] Hit for barcode: ${barcode}`);
         return cached.data;
       } else {
         // Cache expired, remove it
@@ -32,7 +32,7 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
     }
     
     // Cache miss - fetch from API
-    console.log(`[Barcode Cache] Miss for barcode: ${barcode} - fetching from API`);
+    // console.log(`[Barcode Cache] Miss for barcode: ${barcode} - fetching from API`);
     const product = await originalGetBarcodeLookupProduct(barcode);
     
     if (product) {
@@ -41,7 +41,7 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
         data: product,
         timestamp: Date.now(),
       });
-      console.log(`[Barcode Cache] Cached product for barcode: ${barcode}`);
+      // console.log(`[Barcode Cache] Cached product for barcode: ${barcode}`);
       return product;
     }
     
@@ -64,7 +64,7 @@ export async function cleanupAllCaches(): Promise<void> {
   try {
     // Clean USDA cache
     await storage.clearOldCache(30);
-    console.log('[Cache Cleanup] USDA cache cleaned');
+    // console.log('[Cache Cleanup] USDA cache cleaned');
     
     // Clean in-memory barcode cache
     const now = Date.now();
@@ -74,9 +74,9 @@ export async function cleanupAllCaches(): Promise<void> {
         barcodeCache.delete(key);
       }
     });
-    console.log('[Cache Cleanup] Barcode cache cleaned');
+    // console.log('[Cache Cleanup] Barcode cache cleaned');
     
-    console.log('[Cache Cleanup] All caches cleaned successfully');
+    // console.log('[Cache Cleanup] All caches cleaned successfully');
   } catch (error) {
     console.error('[Cache Cleanup] Failed:', error);
   }

@@ -5,13 +5,13 @@ import { applianceLibraryData } from "./appliance-library-data";
 
 export async function initializeApplianceLibrary() {
   try {
-    console.log("Initializing appliance library...");
+    // console.log("Initializing appliance library...");
     
     // Check if library is already populated
     const existingCount = await db.$count(applianceLibrary);
     
     if (existingCount > 0) {
-      console.log(`Appliance library already has ${existingCount} items`);
+      // console.log(`Appliance library already has ${existingCount} items`);
       return;
     }
     
@@ -30,7 +30,7 @@ export async function initializeApplianceLibrary() {
     
     await db.insert(applianceLibrary).values(insertData);
     
-    console.log(`Successfully initialized appliance library with ${insertData.length} items`);
+    // console.log(`Successfully initialized appliance library with ${insertData.length} items`);
   } catch (error) {
     console.error("Error initializing appliance library:", error);
   }

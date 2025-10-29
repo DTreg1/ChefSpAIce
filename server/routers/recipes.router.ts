@@ -1,5 +1,4 @@
-import { Router } from "express";
-import type { Response } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
 import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 import { isAuthenticated } from "../replitAuth";
@@ -42,9 +41,10 @@ const recipeCircuitBreaker = getCircuitBreaker('openai-recipe-generation', {
  * 
  * Returns: Array of chat messages (user and assistant) in chronological order
  */
-router.get("/chat/messages", isAuthenticated, async (req: any, res: Response) => {
+router.get("/chat/messages", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const limit = parseInt(req.query.limit as string) || 50;
 
     const messages = await storage.getChatMessages(userId, limit);
@@ -60,10 +60,11 @@ router.get("/chat/messages", isAuthenticated, async (req: any, res: Response) =>
 router.post(
   "/chat/messages",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
-      const validation = insertChatMessageSchema.safeParse(req.body);
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const validation = insertChatMessageSchema.safeParse(req.body as any);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -82,9 +83,10 @@ router.post(
   }
 );
 
-router.delete("/chat/messages", isAuthenticated, async (req: any, res: Response) => {
+router.delete("/chat/messages", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     await storage.clearChatMessages(userId);
     res.json({ message: "Chat history cleared" });
   } catch (error) {
@@ -119,12 +121,13 @@ router.post(
   "/chat",
   isAuthenticated,
   rateLimiters.openai.middleware(),
-  async (req: any, res: Response) => {
-    const userId = req.user.claims.sub;
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     let assistantMessage = "";
     
     try {
-      const { message, includeInventory } = req.body;
+      const { message, includeInventory  } = req.body || {};
 
       if (!message) {
         const error = new AIError(
@@ -230,7 +233,7 @@ router.post(
         message: assistantMessage,
         saved,
       });
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       // Log the error details
       console.error("Error in chat:", formatErrorForLogging(error));
       
@@ -289,19 +292,19 @@ router.post(
   "/recipes/generate",
   isAuthenticated,
   rateLimiters.openai.middleware(),
-  async (req: any, res: Response) => {
-    const userId = req.user.claims.sub;
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     try {
-      const { 
-        prompt, 
+      const { prompt, 
         useInventory, 
         dietaryRestrictions = [],
         cuisine,
         mealType,
         difficulty = "medium",
         maxCookTime
-      } = req.body;
+       } = req.body || {};
 
       if (!openai) {
         const error = new AIError(
@@ -454,7 +457,7 @@ Return a JSON object with the following structure:
       });
 
       res.json(saved);
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       // Log the error details
       console.error("Error generating recipe:", formatErrorForLogging(error));
       
@@ -496,9 +499,10 @@ Return a JSON object with the following structure:
  * 
  * Returns: Created recipe object with ID
  */
-router.post("/recipes", isAuthenticated, async (req: any, res: Response) => {
+router.post("/recipes", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const recipeData = req.body;
     
     // Create the recipe
@@ -530,9 +534,10 @@ router.post("/recipes", isAuthenticated, async (req: any, res: Response) => {
  * 
  * Returns: Array of recipe objects matching the filters
  */
-router.get("/recipes", isAuthenticated, async (req: any, res: Response) => {
+router.get("/recipes", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { 
       saved, 
       cuisine, 
@@ -578,9 +583,10 @@ router.get("/recipes", isAuthenticated, async (req: any, res: Response) => {
 router.patch(
   "/recipes/:id",
   isAuthenticated,
-  async (req: any, res: Response) => {
+  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const recipeId = req.params.id;
 
       // Verify recipe belongs to user - optimized to fetch only the specific recipe
@@ -599,9 +605,10 @@ router.patch(
   }
 );
 
-router.delete("/recipes/:id", isAuthenticated, async (req: any, res: Response) => {
+router.delete("/recipes/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user.claims.sub;
+    const userId = req.user?.claims.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const recipeId = req.params.id;
 
     // Verify recipe belongs to user - optimized to fetch only the specific recipe

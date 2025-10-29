@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { db } from "../db";
 import { cookingTerms } from "@shared/schema";
 import CookingTermsService from "../services/cooking-terms.service";
@@ -46,7 +46,7 @@ router.get("/api/cooking-terms-categories", asyncHandler(async (req, res) => {
 
 // Detect cooking terms in text
 router.post("/api/cooking-terms/detect", asyncHandler(async (req, res) => {
-  const { text } = req.body;
+  const { text  } = req.body || {};
   
   if (!text || typeof text !== "string") {
     return res.status(400).json({ error: "Text is required" });
@@ -58,7 +58,7 @@ router.post("/api/cooking-terms/detect", asyncHandler(async (req, res) => {
 
 // Format recipe instructions with cooking terms
 router.post("/api/cooking-terms/format", asyncHandler(async (req, res) => {
-  const { instructions } = req.body;
+  const { instructions  } = req.body || {};
   
   if (!instructions || typeof instructions !== "string") {
     return res.status(400).json({ error: "Instructions are required" });
@@ -90,7 +90,7 @@ router.get("/api/cooking-terms/search/:query", asyncHandler(async (req, res) => 
 
 // Enhanced term detection - detect terms with variations
 router.post("/api/cooking-terms/detect-enhanced", asyncHandler(async (req, res) => {
-  const { text, excludeCategories, maxMatches, contextAware } = req.body;
+  const { text, excludeCategories, maxMatches, contextAware  } = req.body || {};
   
   if (!text || typeof text !== "string") {
     return res.status(400).json({ error: "Text is required" });
@@ -111,7 +111,7 @@ router.post("/api/cooking-terms/detect-enhanced", asyncHandler(async (req, res) 
 
 // Enrich text with HTML markup for terms
 router.post("/api/cooking-terms/enrich", asyncHandler(async (req, res) => {
-  const { text, excludeCategories, linkToGlossary, includeTooltip } = req.body;
+  const { text, excludeCategories, linkToGlossary, includeTooltip  } = req.body || {};
   
   if (!text || typeof text !== "string") {
     return res.status(400).json({ error: "Text is required" });
@@ -132,7 +132,7 @@ router.post("/api/cooking-terms/enrich", asyncHandler(async (req, res) => {
 
 // Get detection statistics for text
 router.post("/api/cooking-terms/stats", asyncHandler(async (req, res) => {
-  const { text } = req.body;
+  const { text  } = req.body || {};
   
   if (!text || typeof text !== "string") {
     return res.status(400).json({ error: "Text is required" });

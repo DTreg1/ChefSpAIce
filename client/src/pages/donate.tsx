@@ -75,7 +75,7 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
           variant: "destructive",
         });
       }
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       toast({
         title: "Payment Error",
         description: "An unexpected error occurred. Please try again.",
@@ -279,7 +279,7 @@ export default function DonatePage() {
       } else {
         throw new Error(data.error || "Failed to create payment intent");
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       toast({
         title: "Error",
         description: error.message || "Failed to initialize donation",

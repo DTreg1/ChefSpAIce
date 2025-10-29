@@ -86,7 +86,7 @@ export class PushNotificationService {
         .where(and(eq(pushTokens.userId, userId), eq(pushTokens.isActive, true)));
 
       if (tokens.length === 0) {
-        console.log(`No active push tokens found for user ${userId}`);
+        // console.log(`No active push tokens found for user ${userId}`);
         return { sent: 0, failed: 0 };
       }
 
@@ -136,7 +136,7 @@ export class PushNotificationService {
             .update(pushTokens)
             .set({ updatedAt: new Date() })
             .where(eq(pushTokens.id, token.id));
-        } catch (error: any) {
+        } catch (error: Error | unknown) {
           console.error(`Failed to send notification to token ${token.id}:`, error);
           failed++;
           
