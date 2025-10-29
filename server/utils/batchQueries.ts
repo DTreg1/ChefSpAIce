@@ -26,7 +26,7 @@ export class BatchQueryBuilder {
   async execute() {
     if (this.queries.length === 0) return [];
 
-    return await db.transaction(async (tx) => {
+    return await db.transaction(async () => {
       const results = [];
       for (const { query, params } of this.queries) {
         const result = await (params ? query(...params) : query);
@@ -91,7 +91,7 @@ export async function batchUpdate<T extends { id: string | number }>(
   // Execute batch updates for each group
   await db.transaction(async (tx) => {
     const entries = Array.from(updateGroups.entries());
-    for (const [_, items] of entries) {
+    for (const [, items] of entries) {
       const ids = items.map(item => item.id);
       const updateData: any = {};
       updateFields.forEach(field => {

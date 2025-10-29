@@ -52,8 +52,6 @@ export function handleOpenAIError(error: any): AIError {
   const headers = error?.response?.headers || error?.headers;
   const errorInfo = data?.error || data;
   const message = errorInfo?.message || error?.message || 'Unknown error';
-  const errorType = errorInfo?.type;
-  const errorCode = errorInfo?.code;
 
   // Handle OpenAI API errors
   if (status) {
@@ -110,7 +108,7 @@ export function handleOpenAIError(error: any): AIError {
       }
 
       // Context length exceeded
-      if (errorCode === 'context_length_exceeded' || lowerMessage.includes('context') || lowerMessage.includes('token') || lowerMessage.includes('length')) {
+      if (lowerMessage.includes('context_length_exceeded') || lowerMessage.includes('context') || lowerMessage.includes('token') || lowerMessage.includes('length')) {
         return new AIError(
           'Context length exceeded',
           AIErrorCode.CONTEXT_LENGTH_EXCEEDED,

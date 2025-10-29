@@ -5,9 +5,8 @@
  * Run this file to simulate different error conditions and verify handling
  */
 
-import { AIError, handleOpenAIError, AIErrorCode, retryWithBackoff } from '../utils/ai-error-handler';
-import { CircuitBreaker, getCircuitBreaker } from '../utils/circuit-breaker';
-import { OpenAI } from 'openai';
+import { handleOpenAIError, AIErrorCode, retryWithBackoff } from '../utils/ai-error-handler';
+import { getCircuitBreaker } from '../utils/circuit-breaker';
 import axios from 'axios';
 
 // Test configuration
@@ -134,11 +133,11 @@ async function testCircuitBreaker() {
 
   // Circuit should transition to half-open
   try {
-    const result = await breaker.execute(async () => {
+    await breaker.execute(async () => {
       return 'Recovery attempt successful';
     });
     logSuccess('Circuit allowed test execution in half-open state');
-  } catch (error) {
+  } catch {
     logError('Circuit should allow test in half-open state');
   }
 }
@@ -151,7 +150,7 @@ async function testRetryLogic() {
   const startTime = Date.now();
   
   try {
-    const result = await retryWithBackoff(async () => {
+    await retryWithBackoff(async () => {
       attemptCount++;
       logInfo(`Attempt ${attemptCount}`);
       

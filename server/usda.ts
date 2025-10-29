@@ -56,20 +56,6 @@ const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
 /** API key from environment (required for all requests) */
 const API_KEY = process.env.USDA_FDC_API_KEY;
 
-interface FDCNutrient {
-  nutrientId?: number;
-  nutrientNumber?: string;
-  nutrientName?: string;
-  number?: string;
-  name?: string;
-  amount?: number;
-  unitName?: string;
-  nutrient?: {
-    number: string;
-    name: string;
-    unitName: string;
-  };
-}
 
 interface FDCFoodNutrient {
   nutrientNumber?: string;

@@ -498,7 +498,6 @@ export function parseIngredient(ingredientStr: string): {
         // Format: "5-oz can tomatoes"
         const weight = parseFloat(match[1]);
         const weightUnit = match[2];
-        const container = match[3];
         const ingredientName = match[4];
         
         // Check if the weight unit is valid

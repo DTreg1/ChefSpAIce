@@ -32,7 +32,7 @@
  */
 
 // Referenced from blueprint:javascript_log_in_with_replit - Added user operations and user-scoped data
-import { parallelQueries, batchInsert, QueryCache } from "./utils/batchQueries";
+import { parallelQueries } from "./utils/batchQueries";
 import {
   type User,
   type UpsertUser,
@@ -64,7 +64,6 @@ import {
   type CookingTerm,
   type InsertCookingTerm,
   type ApplianceLibrary,
-  type InsertApplianceLibrary,
   type UserAppliance,
   type InsertUserAppliance,
   type InsertAnalyticsEvent,
@@ -74,7 +73,6 @@ import {
   type ActivityLog,
   type InsertActivityLog,
   type UserStorage,
-  type InsertUserStorage,
   type InsertUserInventory,
   type UserInventory,
   insertAnalyticsEventSchema,

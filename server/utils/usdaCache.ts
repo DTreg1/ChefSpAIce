@@ -193,9 +193,6 @@ export async function preloadCommonSearches(): Promise<void> {
   
   console.log('[USDA Cache] Preloading common searches...');
   
-  // Create warmup data for ApiCacheService
-  const warmupData = [];
-  
   for (const query of commonSearches) {
     try {
       const cacheKey = generateCacheKey(query);

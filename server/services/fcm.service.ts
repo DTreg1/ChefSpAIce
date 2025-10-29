@@ -1,33 +1,6 @@
 import * as admin from 'firebase-admin';
 import { NotificationPayload } from './push-notification.service';
 
-interface FcmPayload {
-  token: string;
-  notification: {
-    title: string;
-    body: string;
-    icon?: string;
-  };
-  data?: Record<string, string>;
-  android?: {
-    priority: 'high' | 'normal';
-    notification?: {
-      sound?: string;
-      clickAction?: string;
-      color?: string;
-      icon?: string;
-    };
-  };
-  apns?: {
-    payload?: {
-      aps: {
-        sound?: string;
-        badge?: number;
-      };
-    };
-  };
-}
-
 /**
  * Firebase Cloud Messaging (FCM) Service for Android Push Notifications
  * 

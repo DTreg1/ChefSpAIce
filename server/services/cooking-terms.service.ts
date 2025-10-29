@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { cookingTerms, type CookingTerm } from "@shared/schema";
-import { like, or, sql } from "drizzle-orm";
+import { like, or } from "drizzle-orm";
 import { storage } from "../storage";
 
 export interface DetectedTerm {
@@ -93,7 +93,6 @@ export class CookingTermsService {
     
     const terms = await this.getTerms();
     const detectedTerms: DetectedTerm[] = [];
-    const textLower = text.toLowerCase();
     
     // Scan for each term using whole-word regex matching
     // \\b ensures we match "sauté" but not "sautéed" as "sauté"
@@ -280,7 +279,6 @@ export class CookingTermsService {
     }
     
     let formattedText = instructions;
-    const offset = 0;
     
     // Work backwards through the terms to maintain correct indices
     for (let i = detectedTerms.length - 1; i >= 0; i--) {

@@ -1,6 +1,5 @@
 import { db } from "../db";
 import { cookingTerms, type CookingTerm } from "@shared/schema";
-import { or, sql } from "drizzle-orm";
 
 interface TermMatch {
   term: string;
