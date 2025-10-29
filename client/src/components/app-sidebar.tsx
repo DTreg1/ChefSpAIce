@@ -21,6 +21,7 @@ import {
   ScrollText,
   LogOut,
   Activity,
+  Brain,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -259,6 +260,21 @@ export function AppSidebar() {
                     >
                       <BookOpen className="w-4 h-4" />
                       <span className="flex-1">Cooking Terms</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/smart-search"}
+                  >
+                    <Link
+                      href="/smart-search"
+                      data-testid="link-smart-search"
+                      onClick={handleLinkClick}
+                    >
+                      <Brain className="w-4 h-4" />
+                      <span className="flex-1">Smart Search</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
