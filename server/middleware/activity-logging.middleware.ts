@@ -107,7 +107,7 @@ const excludedRoutes = [
 ];
 
 // Extract entity ID from request path
-function extractEntityId(path: string, method: string): string | null {
+function extractEntityId(path: string, _method: string): string | null {
   // Match patterns like /api/food-items/:id
   const patterns = [
     /\/api\/food-items\/([a-zA-Z0-9-]+)/,

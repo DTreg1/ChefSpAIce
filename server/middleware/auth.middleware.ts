@@ -29,7 +29,7 @@
  * @module server/middleware/auth.middleware
  */
 
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 
 /**
  * Verify user authentication

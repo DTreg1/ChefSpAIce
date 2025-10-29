@@ -180,11 +180,6 @@ class BatchedApiLogger {
    * });
    */
   async logApiUsage(userId: string, log: Omit<InsertApiUsageLog, 'userId'>) {
-    // Create unique key for each API call to prevent duplicate drops
-    // Include timestamp or a unique ID to ensure each call is tracked
-    const callId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const logKey = `${userId}-${log.apiName}-${log.endpoint}-${callId}`;
-    
     // Note: We're not checking queuedLogKeys here anymore since each call should be unique
     // The deduplication was too aggressive and was dropping legitimate logs
 
@@ -314,7 +309,7 @@ class BatchedApiLogger {
       // Separate successful and failed logs
       const toRetry: QueuedLog[] = [];
       
-      results.forEach((result, index) => {
+      results.forEach((result) => {
         if (result.status === 'fulfilled') {
           const { success, item, retry } = result.value as any;
           
