@@ -196,7 +196,7 @@ export default function ActivityPrivacyControls() {
                   Exclude from Analytics
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Your activity won't be included in system analytics
+                  Your activity won&apos;t be included in system analytics
                 </p>
               </div>
               <Switch

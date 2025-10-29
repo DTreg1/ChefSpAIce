@@ -68,20 +68,20 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
         <ScrollArea className="h-[calc(90vh-120px)]">
           <div className="space-y-6 p-1">
             {/* Brand and Category Info */}
-            {(brand || foodCategory || dataType) && (
+            {(!!brand || !!foodCategory || !!dataType) && (
               <div className="flex flex-wrap gap-2">
-                {brand && (
+                {!!brand && (
                   <Badge variant="outline">
                     <Package2 className="w-3 h-3 mr-1" />
                     {brand}
                   </Badge>
                 )}
-                {foodCategory && (
+                {!!foodCategory && (
                   <Badge variant="secondary">
                     {foodCategory}
                   </Badge>
                 )}
-                {dataType && (
+                {!!dataType && (
                   <Badge variant="outline" className="text-xs">
                     <Info className="w-3 h-3 mr-1" />
                     {dataType} Data
@@ -96,7 +96,7 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
             </div>
             
             {/* Ingredients List */}
-            {ingredients && (
+            {!!ingredients && (
               <div className="space-y-2 border-t border-border pt-4">
                 <h3 className="font-semibold text-sm">Ingredients</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -108,7 +108,7 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
             {/* Additional Information */}
             <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
               <p>* Percent Daily Values are based on a 2,000 calorie diet.</p>
-              {(item as any).usdaData?.fdcId && (
+              {!!(item as any).usdaData?.fdcId && (
                 <p>USDA FoodData Central ID: {(item as any).usdaData.fdcId}</p>
               )}
             </div>

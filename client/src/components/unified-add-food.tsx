@@ -595,7 +595,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
                         <CardContent className="py-8 text-center">
                           <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                           <p className="text-sm text-muted-foreground">
-                            No results found for "{searchQuery}"
+                            No results found for &quot;{searchQuery}&quot;
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Try a different search term or scan a barcode

@@ -173,7 +173,7 @@ export function CookingTermTooltip({
                 <Badge variant={categoryConfig.color as any} className="text-xs">
                   {formatCategory(termData.category)}
                 </Badge>
-                {termData.difficulty && difficultyConfig.label && (
+                {!!termData.difficulty && !!difficultyConfig.label && (
                   <div className="flex items-center gap-1">
                     <span className={`text-xs font-medium ${difficultyConfig.color}`}>
                       {difficultyConfig.icon} {difficultyConfig.label}
@@ -191,7 +191,7 @@ export function CookingTermTooltip({
             {termData.shortDefinition}
           </p>
           
-          {termData.longDefinition && (
+          {!!termData.longDefinition && (
             <>
               {!showFullDefinition ? (
                 <Button
@@ -216,7 +216,7 @@ export function CookingTermTooltip({
         </div>
 
         {/* Tips section */}
-        {termData.tips && termData.tips.length > 0 && (
+        {termData.tips?.length > 0 && (
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs font-medium">
               <Lightbulb className="w-3 h-3" />
@@ -234,7 +234,7 @@ export function CookingTermTooltip({
         )}
 
         {/* Tools section */}
-        {termData.tools && termData.tools.length > 0 && (
+        {termData.tools?.length > 0 && (
           <div className="space-y-1">
             <div className="flex items-center gap-1 text-xs font-medium">
               <Wrench className="w-3 h-3" />
@@ -251,7 +251,7 @@ export function CookingTermTooltip({
         )}
 
         {/* Related terms section */}
-        {termData.relatedTerms && termData.relatedTerms.length > 0 && (
+        {termData.relatedTerms?.length > 0 && (
           <div className="pt-2 border-t">
             <div className="text-xs font-medium mb-1">Related terms:</div>
             <div className="flex flex-wrap gap-1">
@@ -271,7 +271,7 @@ export function CookingTermTooltip({
         )}
 
         {/* Footer with glossary link */}
-        {showGlossaryLink && (
+        {!!showGlossaryLink && (
           <div className="pt-2 border-t">
             <Link href="/glossary">
               <Button

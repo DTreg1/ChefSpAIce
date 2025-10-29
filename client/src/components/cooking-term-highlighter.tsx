@@ -175,13 +175,13 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
               
               {/* Metadata badges */}
               <div className="flex gap-2 flex-wrap">
-                {data.difficulty && (
+                {!!data.difficulty && (
                   <Badge variant="outline" className="text-xs">
                     <ChefHat className="w-3 h-3 mr-1" />
                     {data.difficulty}
                   </Badge>
                 )}
-                {data.timeEstimate && (
+                {!!data.timeEstimate && (
                   <Badge variant="outline" className="text-xs">
                     <Clock className="w-3 h-3 mr-1" />
                     {data.timeEstimate}
@@ -199,7 +199,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             </div>
 
             {/* Tools needed */}
-            {data.tools && data.tools.length > 0 && (
+            {data.tools?.length > 0 && (
               <>
                 <Separator />
                 <div>
@@ -220,7 +220,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             )}
 
             {/* Tips */}
-            {data.tips && data.tips.length > 0 && (
+            {data.tips?.length > 0 && (
               <>
                 <Separator />
                 <div>
@@ -241,7 +241,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             )}
 
             {/* Related terms */}
-            {data.relatedTerms && data.relatedTerms.length > 0 && (
+            {data.relatedTerms?.length > 0 && (
               <>
                 <Separator />
                 <div>
