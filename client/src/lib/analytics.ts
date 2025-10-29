@@ -122,7 +122,7 @@ export const trackEvent = (
   
   // Flush if batch size reached
   if (eventQueue.length >= BATCH_SIZE) {
-    flushEvents();
+    void flushEvents();
   } else {
     scheduleFlush();
   }
@@ -164,13 +164,13 @@ export const trackGoal = (goalName: string, value?: number) => {
 
 // Flush events on page unload
 window.addEventListener('beforeunload', () => {
-  flushEvents();
+  void flushEvents();
 });
 
 // Also flush when visibility changes (mobile browsers)
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    flushEvents();
+    void flushEvents();
   }
 });
 
@@ -209,7 +209,7 @@ export const endSession = () => {
     const sessionId = getOrCreateSessionId();
     
     // Flush any remaining events
-    flushEvents();
+    void flushEvents();
     
     // Send session end event
     navigator.sendBeacon?.('/api/analytics/sessions/end', 

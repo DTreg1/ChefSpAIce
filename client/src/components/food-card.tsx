@@ -239,9 +239,9 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
       setLocalQuantity(newQuantity);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
     },
   });
 
@@ -257,7 +257,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
     },
     onSuccess: () => {
       setIsEditingExpiry(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       toast({
         title: "Expiration date updated",
         description: "The expiration date has been successfully updated",
@@ -285,8 +285,8 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
     },
     onSuccess: (data, newStorageId) => {
       const newLocation = storageLocations?.find(loc => loc.id === newStorageId);
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
       toast({
         title: "Location updated",
         description: `Moved to ${newLocation?.name || 'new location'}`,
@@ -306,10 +306,10 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
       return await apiRequest("DELETE", `/api/food-items/${item.id}`, null);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
       toast({
         title: "Item deleted",
         description: "Food item removed from inventory",

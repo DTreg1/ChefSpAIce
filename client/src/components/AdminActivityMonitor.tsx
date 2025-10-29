@@ -242,8 +242,8 @@ export default function AdminActivityMonitor() {
       
       const result = await response.json();
       alert(`Cleanup complete: ${result.deletedCount} logs removed`);
-      refetchLogs();
-      refetchStats();
+      void refetchLogs();
+      void refetchStats();
     } catch (error) {
       console.error("Error cleaning up logs:", error);
     }

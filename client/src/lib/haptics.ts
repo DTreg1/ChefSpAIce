@@ -90,33 +90,33 @@ export function hasHapticSupport(): boolean {
  * Haptic feedback for button press
  */
 export function hapticButton(): void {
-  triggerHaptic(HapticPattern.LIGHT);
+  void triggerHaptic(HapticPattern.LIGHT);
 }
 
 /**
  * Haptic feedback for selection/toggle
  */
 export function hapticSelection(): void {
-  triggerHaptic(HapticPattern.SELECTION);
+  void triggerHaptic(HapticPattern.SELECTION);
 }
 
 /**
  * Haptic feedback for successful action
  */
 export function hapticSuccess(): void {
-  triggerHaptic(HapticPattern.SUCCESS);
+  void triggerHaptic(HapticPattern.SUCCESS);
 }
 
 /**
  * Haptic feedback for error/failure
  */
 export function hapticError(): void {
-  triggerHaptic(HapticPattern.ERROR);
+  void triggerHaptic(HapticPattern.ERROR);
 }
 
 /**
  * Haptic feedback for swipe gesture
  */
 export function hapticSwipe(): void {
-  triggerHaptic(HapticPattern.SWIPE);
+  void triggerHaptic(HapticPattern.SWIPE);
 }

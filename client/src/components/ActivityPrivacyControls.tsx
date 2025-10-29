@@ -93,7 +93,7 @@ export default function ActivityPrivacyControls() {
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });
       toast({
         title: "Success",
         description: `${data.deletedCount} activity logs have been permanently deleted.`,

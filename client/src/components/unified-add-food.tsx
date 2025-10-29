@@ -243,14 +243,14 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   // Handle search input change
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    performSearch(value);
+    void performSearch(value);
   };
   
   // Handle category click
   const handleCategoryClick = (query: string) => {
     setActiveTab("search");
     setSearchQuery(query);
-    performSearch(query);
+    void performSearch(query);
   };
   
   // Barcode scanner handlers
@@ -259,7 +259,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
     setShowScanner(false);
     setActiveTab("search");
     setSearchQuery(barcode);
-    performSearch(barcode);
+    void performSearch(barcode);
   }, [performSearch]);
   
   const handleScanError = useCallback((error: string) => {
@@ -279,13 +279,13 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   // Start/stop scanner based on state
   useEffect(() => {
     if (showScanner && activeTab === "scan") {
-      startScanning("unified-barcode-reader");
+      void startScanning("unified-barcode-reader");
     } else {
-      stopScanning();
+      void stopScanning();
     }
     
     return () => {
-      stopScanning();
+      void stopScanning();
     };
   }, [showScanner, activeTab, startScanning, stopScanning]);
   
@@ -306,7 +306,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
       setShowSuccess(true);
       
       setTimeout(() => {
@@ -369,7 +369,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   // Handle dialog close
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      stopScanning();
+      void stopScanning();
       resetForm();
     }
     onOpenChange(newOpen);

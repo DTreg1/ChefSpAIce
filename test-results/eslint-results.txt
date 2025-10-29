@@ -3,8 +3,7 @@
   121:72  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /home/runner/workspace/client/src/components/ActivityPrivacyControls.tsx
-   96:7   error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  199:36  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                     react/no-unescaped-entities
+  199:36  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
 
 /home/runner/workspace/client/src/components/ActivityTimeline.tsx
    47:28  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
@@ -15,8 +14,6 @@
 
 /home/runner/workspace/client/src/components/AdminActivityMonitor.tsx
    52:28  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  245:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  246:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
   313:19  error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
   314:19  error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
   342:8   error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
@@ -472,28 +469,18 @@ Calling setState synchronously within an effect body causes cascading renders th
   270:10  error  Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
 
 /home/runner/workspace/client/src/components/food-card.tsx
-  121:10  error    'Badge' is defined but never used. Allowed unused vars must match /^_/u                                                                                             @typescript-eslint/no-unused-vars
-  132:10  error    'useSwipe' is defined but never used. Allowed unused vars must match /^_/u                                                                                          @typescript-eslint/no-unused-vars
-  136:10  error    'format' is defined but never used. Allowed unused vars must match /^_/u                                                                                            @typescript-eslint/no-unused-vars
-  161:20  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  162:25  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  216:59  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  242:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  243:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  244:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  260:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  288:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  289:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  309:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  310:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  311:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  312:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  497:16  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  579:16  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  593:24  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  612:20  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  650:18  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  713:8   error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
+  121:10  error    'Badge' is defined but never used. Allowed unused vars must match /^_/u                       @typescript-eslint/no-unused-vars
+  132:10  error    'useSwipe' is defined but never used. Allowed unused vars must match /^_/u                    @typescript-eslint/no-unused-vars
+  136:10  error    'format' is defined but never used. Allowed unused vars must match /^_/u                      @typescript-eslint/no-unused-vars
+  161:20  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  162:25  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  216:59  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  497:16  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  579:16  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  593:24  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  612:20  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  650:18  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  713:8   error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
 
 /home/runner/workspace/client/src/components/liquid-glass.tsx
   178:10  error  Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
@@ -709,34 +696,26 @@ Calling setState synchronously within an effect body causes cascading renders th
   21:16  error  Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
 
 /home/runner/workspace/client/src/components/unified-add-food.tsx
-    1:31  error    'useRef' is defined but never used. Allowed unused vars must match /^_/u                                                                                            @typescript-eslint/no-unused-vars
-   31:10  error    'getCategoryIcon' is defined but never used. Allowed unused vars must match /^_/u                                                                                   @typescript-eslint/no-unused-vars
-   53:3   error    'Package' is defined but never used. Allowed unused vars must match /^_/u                                                                                           @typescript-eslint/no-unused-vars
-   61:3   error    'StorageLocation' is defined but never used. Allowed unused vars must match /^_/u                                                                                   @typescript-eslint/no-unused-vars
-   63:26  error    'InsertFoodItem' is defined but never used. Allowed unused vars must match /^_/u                                                                                    @typescript-eslint/no-unused-vars
-   91:51  error    'dataType' is defined but never used. Allowed unused args must match /^_/u                                                                                          @typescript-eslint/no-unused-vars
-  246:5   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  253:5   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  262:5   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  282:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  284:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  288:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  309:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  349:33  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  353:40  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  372:7   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  402:26  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  405:26  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  408:26  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  499:77  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  523:22  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  550:22  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  573:38  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  578:38  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  593:22  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
-  598:50  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                     react/no-unescaped-entities
-  598:64  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                     react/no-unescaped-entities
-  683:24  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes                                                                        react/jsx-no-leaked-render
+    1:31  error    'useRef' is defined but never used. Allowed unused vars must match /^_/u                      @typescript-eslint/no-unused-vars
+   31:10  error    'getCategoryIcon' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+   53:3   error    'Package' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+   61:3   error    'StorageLocation' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+   63:26  error    'InsertFoodItem' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+   91:51  error    'dataType' is defined but never used. Allowed unused args must match /^_/u                    @typescript-eslint/no-unused-vars
+  349:33  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  353:40  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  402:26  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  405:26  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  408:26  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  499:77  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
+  523:22  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  550:22  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  573:38  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  578:38  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  593:22  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
+  598:50  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                               react/no-unescaped-entities
+  598:64  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                               react/no-unescaped-entities
+  683:24  error    Potential leaked value that might cause unintentionally rendered values or rendering crashes  react/jsx-no-leaked-render
 
 /home/runner/workspace/client/src/components/unified-food-search.tsx
   140:30  warning  Unexpected any. Specify a different type                                                      @typescript-eslint/no-explicit-any
@@ -1038,13 +1017,9 @@ React refs are values that are not needed for rendering. Refs should only be acc
   481:18  error    'e' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
 
 /home/runner/workspace/client/src/lib/analytics.ts
-  102:31  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  125:5   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  136:91  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  148:94  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
-  167:3   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  173:5   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  212:5   error    Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  102:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  136:91  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  148:94  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /home/runner/workspace/client/src/lib/batchManager.ts
     6:10  error    'queryClient' is defined but never used. Allowed unused vars must match /^_/u                                                                                       @typescript-eslint/no-unused-vars
@@ -1081,13 +1056,6 @@ Expected the dependency list for useCallback to be an array literal.
   56 |   useEffect(() => {  react-hooks/use-memo
   53:6   error    React Hook useCallback has a missing dependency: 'callback'. Either include it or remove the dependency array. If 'callback' changes too often, find the parent component that defines it and wrap that definition in useCallback                                                                                                                                                                                                                                react-hooks/exhaustive-deps
   53:7   error    React Hook useCallback has a spread element in its dependency array. This means we can't statically verify whether you've passed the correct dependencies                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
-
-/home/runner/workspace/client/src/lib/haptics.ts
-   93:3  error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  100:3  error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  107:3  error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  114:3  error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
-  121:3  error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
 
 /home/runner/workspace/client/src/lib/logger.ts
    19:10  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
@@ -2457,6 +2425,6 @@ This API returns functions which cannot be memoized without leading to stale UI.
   2016:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   2810:52  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-✖ 1384 problems (644 errors, 740 warnings)
+✖ 1354 problems (614 errors, 740 warnings)
   227 errors and 0 warnings potentially fixable with the `--fix` option.
 
