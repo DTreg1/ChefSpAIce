@@ -5,3 +5,4 @@ node_modules
 drizzle.config.ts
 vite.config.ts
 tailwind.config.ts
+.eslintrc.json
