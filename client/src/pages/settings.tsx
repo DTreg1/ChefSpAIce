@@ -263,8 +263,8 @@ export default function Settings() {
         title: "Success",
         description: "Custom storage area added.",
       });
-    } catch (error: Error | unknown) {
-      const errorMsg = error?.message?.includes("already exists") || error?.status === 409
+    } catch (error: unknown) {
+      const errorMsg = (error as any)?.message?.includes("already exists") || (error as any)?.status === 409
         ? "This storage area already exists."
         : "Failed to add custom storage area.";
       

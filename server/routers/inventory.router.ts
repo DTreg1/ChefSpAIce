@@ -468,11 +468,11 @@ router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middle
     barcodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
 
     res.json(result);
-  } catch (error: Error | unknown) {
-    if (error.response?.status === 404) {
+  } catch (error: unknown) {
+    if ((error as any).response?.status === 404) {
       return res.status(404).json({ error: "Product not found" });
     }
-    console.error("Barcode search error:", error);
+    console.error("Barcode search error:", error instanceof Error ? error.message : String(error));
     res.status(500).json({ error: "Failed to search barcode" });
   }
 });

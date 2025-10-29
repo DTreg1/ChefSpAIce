@@ -112,11 +112,11 @@ export async function seedCommonFoodItems(forceUpdate = false) {
         await storage.upsertCommonFoodItem(commonItem);
         // console.log(`✓ Saved ${displayName}`);
         return { success: true, skipped: false };
-      } catch (error: Error | unknown) {
-        console.error(`✗ Error processing ${displayName}:`, error.message);
+      } catch (error: unknown) {
+        console.error(`✗ Error processing ${displayName}:`, error instanceof Error ? error.message : String(error));
         return { 
           success: false, 
-          error: { item: displayName, error: error.message }
+          error: { item: displayName, error: error instanceof Error ? error.message : String(error) }
         };
       }
     });

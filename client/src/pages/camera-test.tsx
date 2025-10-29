@@ -81,17 +81,17 @@ export default function CameraTest() {
       const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
       setCameraPermission(result.state as 'granted' | 'denied');
       addError(`Permission state: ${result.state}`);
-    } catch (err: Error | unknown) {
-      addError(`Permission check failed: ${err.message}`);
+    } catch (err: unknown) {
+      addError(`Permission check failed: ${err instanceof Error ? err.message : String(err)}`);
       // Fallback: try to access camera directly
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         stream.getTracks().forEach(track => track.stop());
         setCameraPermission('granted');
         addError('Camera access granted (fallback check)');
-      } catch (mediaErr: Error | unknown) {
+      } catch (mediaErr: unknown) {
         setCameraPermission('denied');
-        addError(`Camera access denied: ${mediaErr.message}`);
+        addError(`Camera access denied: ${mediaErr instanceof Error ? mediaErr.message : String(mediaErr)}`);
       }
     }
   };
@@ -107,8 +107,8 @@ export default function CameraTest() {
         }));
       setCameraList(cameras);
       addError(`Found ${cameras.length} camera(s)`);
-    } catch (err: Error | unknown) {
-      addError(`Failed to enumerate devices: ${err.message}`);
+    } catch (err: unknown) {
+      addError(`Failed to enumerate devices: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -128,8 +128,8 @@ export default function CameraTest() {
         setVideoStream(stream);
         addError('Camera stream started successfully');
       }
-    } catch (err: Error | unknown) {
-      addError(`Camera stream failed: ${err.message}`);
+    } catch (err: unknown) {
+      addError(`Camera stream failed: ${err instanceof Error ? err.message : String(err)}`);
       toast({
         title: "Camera Error",
         description: (err instanceof Error ? err.message : String(err)),
@@ -175,8 +175,8 @@ export default function CameraTest() {
 
       setIsScanning(true);
       addError('Barcode scanner started');
-    } catch (err: Error | unknown) {
-      addError(`Scanner start error: ${err.message}`);
+    } catch (err: unknown) {
+      addError(`Scanner start error: ${err instanceof Error ? err.message : String(err)}`);
       toast({
         title: "Scanner Error",
         description: (err instanceof Error ? err.message : String(err)),
@@ -193,8 +193,8 @@ export default function CameraTest() {
         scannerRef.current = null;
         setIsScanning(false);
         addError('Barcode scanner stopped');
-      } catch (err: Error | unknown) {
-        addError(`Scanner stop error: ${err.message}`);
+      } catch (err: unknown) {
+        addError(`Scanner stop error: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
   };

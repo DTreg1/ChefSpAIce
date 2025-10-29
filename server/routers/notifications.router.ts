@@ -8,7 +8,7 @@ import { storage } from "../storage";
 const router = Router();
 
 // Track notification delivery/status
-router.post("/api/notifications/track", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/api/notifications/track", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.claims.sub;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -34,7 +34,7 @@ router.post("/api/notifications/track", isAuthenticated, async (req: ExpressRequ
 });
 
 // Get notification history for the current user
-router.get("/api/notifications/history", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/api/notifications/history", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.claims.sub;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -80,7 +80,7 @@ router.get("/api/notifications/history", isAuthenticated, async (req: ExpressReq
 });
 
 // Get unread notification count
-router.get("/api/notifications/unread-count", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/api/notifications/unread-count", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.claims.sub;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -106,7 +106,7 @@ router.get("/api/notifications/unread-count", isAuthenticated, async (req: Expre
 });
 
 // Mark notification as read
-router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.claims.sub;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -142,7 +142,7 @@ router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req: Exp
 });
 
 // Dismiss a notification
-router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.claims.sub;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -156,9 +156,9 @@ router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req: Expre
     await storage.dismissNotification(userId, id, dismissedBy);
 
     res.json({ message: "Notification dismissed successfully" });
-  } catch (error: Error | unknown) {
+  } catch (error: unknown) {
     console.error("Error dismissing notification:", error);
-    if (error.message === "Notification not found") {
+    if (error instanceof Error && error.message === "Notification not found") {
       return res.status(404).json({ error: "Notification not found" });
     }
     res.status(500).json({ error: "Failed to dismiss notification" });
@@ -166,7 +166,7 @@ router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req: Expre
 });
 
 // Clear all notifications
-router.delete("/api/notifications/clear", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res) => {
+router.delete("/api/notifications/clear", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.claims.sub;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
