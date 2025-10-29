@@ -12,7 +12,6 @@ import {
   CalendarDays,
   ShoppingCart,
   Settings,
-  Database,
   LayoutGrid,
   ChevronRight,
   BarChart3,
@@ -21,7 +20,6 @@ import {
   Shield,
   ScrollText,
   LogOut,
-  BrainCircuit,
   Activity,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -41,7 +39,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -54,7 +51,6 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getCategoryIcon } from "@/lib/categoryIcons";
-import { Logo } from "@/components/Logo";
 import type { StorageLocation, UserInventory as FoodItem } from "@shared/schema";
 
 const iconMap: Record<string, any> = {
@@ -117,7 +113,7 @@ export function AppSidebar() {
     queryClient.invalidateQueries({ queryKey: ['/api/storage-locations'] });
   }, []);
 
-  const { data: storageLocations, refetch: refetchStorageLocations } = useStorageLocations();
+  const { data: storageLocations, refetch: _refetchStorageLocations } = useStorageLocations();
 
   const { data: foodItems } = useQuery<FoodItem[]>({
     queryKey: ["/api/food-items"],

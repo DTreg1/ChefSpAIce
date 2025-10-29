@@ -20,9 +20,7 @@ import { RouteLoading } from "@/components/route-loading";
 import { PushNotificationHandler } from "@/components/PushNotificationHandler";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
-import { useToast } from "@/hooks/use-toast";
 import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { apiRequest } from "@/lib/queryClient";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Eagerly loaded pages (critical path)
@@ -116,7 +114,6 @@ function AppContent() {
   const [scrolled, setScrolled] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [location] = useLocation();
-  const { toast } = useToast();
 
   // Initialize global keyboard shortcuts
   useGlobalKeyboardShortcuts();

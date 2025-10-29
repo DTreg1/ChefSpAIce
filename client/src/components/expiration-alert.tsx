@@ -1,8 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AlertTriangle, X, Lightbulb, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Lightbulb, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,28 +42,6 @@ export function ExpirationAlert() {
 
   const { data: suggestions } = useQuery<WasteReductionSuggestion>({
     queryKey: ["/api/suggestions/waste-reduction"],
-  });
-
-  const dismissMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest("POST", `/api/notifications/${id}/dismiss`, {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/notifications/expiration"],
-      });
-      toast({
-        title: "Notification dismissed",
-      });
-    },
-    onError: (error: Error | unknown) => {
-      console.error("Failed to dismiss notification:", error);
-      toast({
-        title: "Error dismissing notification",
-        description: "Unable to dismiss the notification. Please try again.",
-        variant: "destructive",
-      });
-    },
   });
 
   const refreshSuggestions = async () => {

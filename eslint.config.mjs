@@ -24,14 +24,11 @@ export default defineConfig([globalIgnores([
     "**/node_modules",
     "**/*.config.ts",
     "**/*.config.js",
-    "**/dist",
-    "**/node_modules",
-    "**/*.config.ts",
-    "**/*.config.js",
     "**/drizzle.config.ts",
     "**/vite.config.ts",
     "**/tailwind.config.ts",
     "**/postcss.config.ts",
+    "**/client/public/**/*.js",
 ]), {
     extends: fixupConfigRules(compat.extends(
         "eslint:recommended",

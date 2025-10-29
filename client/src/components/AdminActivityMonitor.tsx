@@ -7,22 +7,18 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Clock,
-  Filter,
   Download,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
   Search,
   Shield,
-  BarChart3,
-  Calendar
+  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,7 +42,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 interface ActivityLog {
   id: string;
@@ -85,7 +80,7 @@ interface ActivityStats {
 export default function AdminActivityMonitor() {
   const [selectedTab, setSelectedTab] = useState("overview");
   const [page, setPage] = useState(1);
-  const [userFilter, setUserFilter] = useState("");
+  const [userFilter, _setUserFilter] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("today");
   const [searchQuery, setSearchQuery] = useState("");
@@ -173,7 +168,7 @@ export default function AdminActivityMonitor() {
   });
   
   // Fetch system events (activities with no user)
-  const { data: systemEvents, isLoading: systemLoading } = useQuery<{
+  const { data: systemEvents, isLoading: _systemLoading } = useQuery<{
     data: ActivityLog[];
     total: number;
   }>({

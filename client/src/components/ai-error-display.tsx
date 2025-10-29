@@ -4,13 +4,13 @@
  * Displays AI error messages with retry functionality
  */
 
-import { AlertCircle, RefreshCw, Clock, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, RefreshCw, Clock, WifiOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useEffect, useState } from 'react';
-import { errorCodeToIcon, getErrorTitle, formatRetryTime, type AIErrorInfo } from '@/hooks/use-ai-error-handler';
+import { errorCodeToIcon, getErrorTitle, type AIErrorInfo } from '@/hooks/use-ai-error-handler';
 
 interface AIErrorDisplayProps {
   error: AIErrorInfo | null;

@@ -11,7 +11,7 @@ export function PushNotificationHandler() {
     // Listen for foreground notifications
     const handleNotificationReceived = (event: Event) => {
       const customEvent = event as CustomEvent;
-      const { title, body, data, notificationId } = customEvent.detail;
+      const { title, body, data } = customEvent.detail;
 
       // Determine emoji/prefix based on notification type
       const getPrefix = (type: string) => {
@@ -50,10 +50,7 @@ export function PushNotificationHandler() {
 
     // Listen for notification actions (when user taps notification)
     const handleNotificationAction = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { notification, actionId } = customEvent.detail;
-      
-      // console.log('Notification action handled in React:', actionId, notification);
+      // console.log('Notification action handled in React');
       
       // Navigation is handled by the push notification service
       // This event is mainly for tracking and UI updates

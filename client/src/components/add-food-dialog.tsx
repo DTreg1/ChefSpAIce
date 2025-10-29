@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import {
@@ -31,7 +31,7 @@ interface AddFoodDialogProps {
 }
 
 // Helper function to suggest shelf life based on food category
-function getSuggestedShelfLife(category?: string, dataType?: string): number {
+function getSuggestedShelfLife(category?: string, _dataType?: string): number {
   if (!category) return 7; // Default 7 days for unknown items
 
   const cat = category.toLowerCase();
@@ -203,13 +203,13 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const [isSearching, setIsSearching] = useState(false);
 
   // Advanced search parameters
-  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [_showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("relevance");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
-  const [brandOwner, setBrandOwner] = useState("");
+  const [_brandOwner, setBrandOwner] = useState("");
   const [debouncedBrandOwner, setDebouncedBrandOwner] = useState("");
 
   // Image analysis state
@@ -309,7 +309,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   const {
     data: searchResults,
     isFetching: searchLoading,
-    refetch: refetchSearch,
+    refetch: _refetchSearch,
   } = useQuery<USDASearchResponse>({
     queryKey: [`/api/usda/search?${buildQueryString()}`],
     enabled: debouncedSearchQuery.length > 0,
