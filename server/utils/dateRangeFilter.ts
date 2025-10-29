@@ -150,6 +150,9 @@ export function formatDateRange(filter: DateRangeFilter): string {
 export function getPresetDateRange(preset: 'today' | 'week' | 'month' | 'quarter' | 'year'): DateRangeFilter {
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(startOfDay);
+  const quarter = Math.floor(now.getMonth() / 3);
+
   
   switch (preset) {
     case 'today':
@@ -159,7 +162,6 @@ export function getPresetDateRange(preset: 'today' | 'week' | 'month' | 'quarter
       };
       
     case 'week':
-      const startOfWeek = new Date(startOfDay);
       startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
       return {
         startDate: startOfWeek,
@@ -173,7 +175,6 @@ export function getPresetDateRange(preset: 'today' | 'week' | 'month' | 'quarter
       };
       
     case 'quarter':
-      const quarter = Math.floor(now.getMonth() / 3);
       return {
         startDate: new Date(now.getFullYear(), quarter * 3, 1),
         endDate: now

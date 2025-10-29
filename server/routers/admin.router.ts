@@ -10,7 +10,7 @@ import { getCacheStats, invalidateCache, clearAllCache } from "../utils/usdaCach
 const router = Router();
 
 // Admin middleware - checks if user is admin
-const isAdmin = async (req: any, res: Response, next: Function) => {
+const isAdmin = async (req: any, res: Response, next: (...args: any[]) => any) => {
   try {
     const userId = req.user?.claims?.sub;
     if (!userId) {

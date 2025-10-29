@@ -100,7 +100,7 @@ export class ObjectStorageService {
     }
     
     // Additional validation: ensure entityId only contains alphanumeric, dash, underscore, and forward slash
-    const isValidPath = /^[a-zA-Z0-9\-_\/]+$/.test(entityId);
+    const isValidPath = /^[a-zA-Z0-9\-_]+$/.test(entityId);
     if (!isValidPath) {
       console.error("Invalid characters in path:", objectPath);
       throw new ObjectNotFoundError();

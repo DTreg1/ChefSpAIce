@@ -416,7 +416,7 @@ router.post(
 
     const failedItems: string[] = [];
     let successCount = 0;
-    let createdStorageLocations: StorageLocation[] = [];
+    const createdStorageLocations: StorageLocation[] = [];
 
     // Step 1: Save user preferences
     const savedPreferences = await storage.updateUserPreferences(userId, {

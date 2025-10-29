@@ -590,8 +590,8 @@ export function parseIngredient(ingredientStr: string): {
       // Need to handle both single-word ("large") and multi-word ("extra large") descriptors
       // Also normalize hyphens to spaces for comparison (e.g., "extra-large" → "extra large")
       const trimmedUnit = unit.trim().toLowerCase().replace(/-/g, ' ');
-      let trimmedName = name.trim();
-      let nameWords = trimmedName.split(/\s+/);
+      const trimmedName = name.trim();
+      const nameWords = trimmedName.split(/\s+/);
       
       // Check if unit is a descriptor AND first word of name is a valid unit (e.g., "large cloves garlic")
       if (SIZE_DESCRIPTORS.includes(trimmedUnit) && nameWords.length > 0 && isValidUnit(nameWords[0])) {

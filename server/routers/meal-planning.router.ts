@@ -378,7 +378,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
         // Removes quantities (e.g., "2 cups") and units for better matching
         // Example: "2 cups flour" → "flour"
         const cleanIngredient = ingredient
-          .replace(/^\d+[\s\/\d]*/, '') // Remove leading numbers and fractions
+          .replace(/^\d+[\s\d]*/, '') // Remove leading numbers and fractions
           .replace(/^(cup|cups|tbsp|tablespoon|tsp|teaspoon|oz|ounce|lb|pound|g|gram|kg|ml|l|liter)s?\s+/i, '') // Remove common units
           .trim();
         

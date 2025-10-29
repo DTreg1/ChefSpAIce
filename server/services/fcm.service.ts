@@ -282,7 +282,7 @@ export class FcmService {
   private static convertDataToStrings(data: any): Record<string, string> {
     const result: Record<string, string> = {};
     for (const key in data) {
-      if (data.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
         result[key] = typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]);
       }
     }

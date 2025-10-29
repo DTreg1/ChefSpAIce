@@ -31,6 +31,7 @@ export default defineConfig([globalIgnores([
     "**/drizzle.config.ts",
     "**/vite.config.ts",
     "**/tailwind.config.ts",
+    "**/postcss.config.ts",
 ]), {
     extends: fixupConfigRules(compat.extends(
         "eslint:recommended",
@@ -73,11 +74,11 @@ export default defineConfig([globalIgnores([
         "react/react-in-jsx-scope": "off",
         "react/prop-types": "off",
 
-        "@typescript-eslint/no-unused-vars": ["warn", {
+        "@typescript-eslint/no-unused-vars": ["error", {
             argsIgnorePattern: "^_",
         }],
 
-        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/no-explicit-any": "off",
 
         "react-refresh/only-export-components": ["warn", {
             allowConstantExport: true,
@@ -87,7 +88,7 @@ export default defineConfig([globalIgnores([
         "react-hooks/exhaustive-deps": "warn",
     },
     ignores: [
-        "temp.js", 
-        "config/*"
+        "temp.js",
+        "config/*",
     ],
 }]);

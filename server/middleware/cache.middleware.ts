@@ -37,6 +37,7 @@
  */
 
 import { Request, Response, NextFunction } from "express";
+import * as crypto from "crypto";
 
 /**
  * Cache control configuration options
@@ -200,7 +201,6 @@ export const cacheStrategies = {
  * @private
  */
 export function addETag(data: any): string {
-  const crypto = require('crypto');
   const hash = crypto.createHash('md5');
   hash.update(JSON.stringify(data));
   return `"${hash.digest('hex')}"`;

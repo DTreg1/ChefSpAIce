@@ -280,7 +280,7 @@ export class CookingTermsService {
     }
     
     let formattedText = instructions;
-    let offset = 0;
+    const offset = 0;
     
     // Work backwards through the terms to maintain correct indices
     for (let i = detectedTerms.length - 1; i >= 0; i--) {
