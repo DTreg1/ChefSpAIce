@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../db";
 import { notificationHistory } from "@shared/schema";
@@ -27,7 +27,7 @@ router.post("/api/notifications/track", isAuthenticated, async (req: ExpressRequ
     // console.log(`Notification tracking: User ${userId}, Status: ${status}, ID: ${notificationId}`);
 
     res.json({ message: "Notification tracked successfully" });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error tracking notification:", error);
     res.status(500).json({ error: "Failed to track notification" });
   }
@@ -73,7 +73,7 @@ router.get("/api/notifications/history", isAuthenticated, async (req: ExpressReq
     const history = await query;
 
     res.json(history);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching notification history:", error);
     res.status(500).json({ error: "Failed to fetch notification history" });
   }
@@ -99,7 +99,7 @@ router.get("/api/notifications/unread-count", isAuthenticated, async (req: Expre
       );
 
     res.json({ count: unreadNotifications.length });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error fetching unread count:", error);
     res.status(500).json({ error: "Failed to fetch unread count" });
   }
@@ -135,7 +135,7 @@ router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req: Exp
     }
 
     res.json({ message: "Notification marked as read", notification: updated });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error marking notification as read:", error);
     res.status(500).json({ error: "Failed to mark notification as read" });
   }
@@ -179,7 +179,7 @@ router.delete("/api/notifications/clear", isAuthenticated, async (req: ExpressRe
       .where(eq(notificationHistory.userId, userId));
 
     res.json({ message: "All notifications cleared" });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error clearing notifications:", error);
     res.status(500).json({ error: "Failed to clear notifications" });
   }
