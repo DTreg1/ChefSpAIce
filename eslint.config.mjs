@@ -61,6 +61,8 @@ export default defineConfig([globalIgnores([
             ecmaFeatures: {
                 jsx: true,
             },
+            project: true,  // This tells it to find the nearest tsconfig.json
+            tsconfigRootDir: __dirname,
         },
     },
 
@@ -71,43 +73,33 @@ export default defineConfig([globalIgnores([
     },
 
     rules: {
+        // React specific
         "react/react-in-jsx-scope": "off",
         "react/prop-types": "off",
+        "react/jsx-no-leaked-render": "error",
+        "react/jsx-curly-brace-presence": ["warn", { props: "never", children: "never" }],
 
+        // TypeScript
         "@typescript-eslint/no-unused-vars": ["error", {
             argsIgnorePattern: "^_",
+            varsIgnorePattern: "^_",
+            caughtErrorsIgnorePattern: "^_"
         }],
+        "@typescript-eslint/no-explicit-any": "warn", // Changed from "off" to "warn"
+        "@typescript-eslint/no-floating-promises": "error",
+        "@typescript-eslint/await-thenable": "error",
 
-        "@typescript-eslint/no-explicit-any": "off",
+        // Code quality
+        "no-console": ["warn", { allow: ["warn", "error"] }],
+        "prefer-const": "error",
+        "no-debugger": process.env.NODE_ENV === "production" ? "error" : "warn",
 
-        "react-refresh/only-export-components": ["warn", {
-            allowConstantExport: true,
-        }],
-
+        // React Hooks
         "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "warn",
+        "react-hooks/exhaustive-deps": "error", // Upgraded from "warn"
     },
     ignores: [
         "temp.js",
         "config/*",
     ],
-}, 
-// Service worker specific configuration
-{
-    files: ["**/service-worker.js", "**/sw.js"],
-    languageOptions: {
-        globals: {
-            ...globals.browser,
-            self: "readonly",
-            clients: "readonly",
-            caches: "readonly",
-            ServiceWorkerGlobalScope: "readonly",
-            FetchEvent: "readonly",
-            PushEvent: "readonly",
-            NotificationEvent: "readonly",
-            ExtendableEvent: "readonly",
-            ExtendableMessageEvent: "readonly",
-            event: "readonly",
-        },
-    },
 }]);
