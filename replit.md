@@ -12,7 +12,7 @@ ChefSpAIce is an AI-powered, chat-based kitchen assistant designed to manage hom
 - Schema-first approach for type consistency
 
 ## System Architecture
-The ChefSpAIce application features a React frontend with TypeScript, Tailwind CSS, and Shadcn UI for a modern, responsive user interface. The backend is built with Express.js and Node.js, interacting with a PostgreSQL database (Neon-backed) via Drizzle ORM for persistent storage and schema management. OpenAI GPT-5 is integrated for real-time, streaming conversational AI, while the USDA FoodData Central API provides comprehensive nutritional data.
+The ChefSpAIce application features a React frontend with TypeScript, Tailwind CSS, and Shadcn UI for a modern, responsive user interface. The backend is built with Express.js and Node.js, interacting with a PostgreSQL database (Neon-backed) via Drizzle ORM for persistent storage and schema management. OpenAI GPT-5 is integrated for real-time, streaming conversational AI and ML-powered features, while the USDA FoodData Central API provides comprehensive nutritional data.
 
 **Recent Optimizations (October 2025)**:
 - **Reduced database schema from 24 to ~18 tables** through strategic consolidation
@@ -41,6 +41,13 @@ Key architectural decisions include:
     - **USDA Food Search**: Comprehensive search interface with always-visible filters (Brand Owners, UPC/GTIN Code, Sort By, Sort Order, Results Per Page) for easy access to nutritional data. Supports searching by UPC/GTIN barcodes to find specific branded products.
     - **Push Notifications**: Browser-based push notification system with Web Push API. Includes service worker registration, notification scheduler for expiring food items and meal reminders, user preference toggles in settings, and VAPID key configuration for secure delivery.
     - **Cooking Terms Integration**: Smart detection and display of culinary terminology in recipes. Features automatic term detection during recipe generation, interactive tooltips with definitions in recipe instructions, comprehensive glossary page at `/glossary` with search and filtering, and database with 23 pre-seeded cooking terms across categories (Technique, Ingredient, Tool).
+    - **ML-Powered Smart Search & Discovery** (October 2025):
+        - **Semantic Smart Search**: Uses OpenAI embeddings to find content by meaning, not just keywords. Available at `/smart-search` with support for natural language queries.
+        - **Auto-Categorization**: Automatically categorizes recipes and inventory items using GPT analysis with confidence scoring.
+        - **Auto-Tagging with NLP**: Generates relevant tags for content using natural language processing. Includes relevance scoring and trending tags.
+        - **Duplicate Detection**: Identifies similar recipes and ingredients using semantic similarity analysis. Features merge and ignore capabilities.
+        - **Related Content Discovery**: Recommends related recipes and ingredients based on semantic relationships and user behavior patterns.
+        - **Natural Language Query**: Converts natural language questions to structured database queries. Examples: "What can I make with chicken?" or "Show me healthy dinner recipes".
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon-backed)
