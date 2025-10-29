@@ -2219,12 +2219,37 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     foodItemId: string,
   ): Promise<void> {
-    // TODO: Implement notification dismissal tracking
-    // The notificationDismissed and lastNotifiedAt columns don't exist in userInventory
-    // This would need to be tracked in a separate table or added to the schema
-    console.log(
-      `Dismissing notification for food item ${foodItemId} for user ${userId}`,
-    );
+    try {
+      // Find the most recent notification for this food item
+      const notifications = await db
+        .select()
+        .from(notificationHistory)
+        .where(
+          and(
+            eq(notificationHistory.userId, userId),
+            eq(notificationHistory.type, 'expiring-food'),
+            sql`${notificationHistory.data}->>'foodItemId' = ${foodItemId}`,
+            isNull(notificationHistory.dismissedAt)
+          )
+        )
+        .orderBy(desc(notificationHistory.sentAt))
+        .limit(1);
+      
+      if (notifications.length > 0) {
+        // Dismiss the notification
+        await db
+          .update(notificationHistory)
+          .set({
+            status: "dismissed",
+            dismissedAt: new Date(),
+            dismissedBy: "food-item-action"
+          })
+          .where(eq(notificationHistory.id, notifications[0].id));
+      }
+    } catch (error) {
+      console.error(`Error dismissing notification for food item ${foodItemId}:`, error);
+      throw new Error("Failed to dismiss food item notification");
+    }
   }
 
   async getExpiringItems(
