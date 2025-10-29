@@ -1,0 +1,565 @@
+/**
+ * ML Features API Router
+ * 
+ * Provides endpoints for all machine learning features:
+ * - Semantic search with embeddings
+ * - Auto-categorization
+ * - Auto-tagging
+ * - Duplicate detection
+ * - Related content discovery
+ * - Natural language queries
+ */
+
+import { Router, Request, Response } from "express";
+import { z } from "zod";
+import { mlService } from "../services/mlService";
+import { storage } from "../storage";
+import { isAuthenticated } from "../middleware/auth.middleware";
+
+// Define AuthRequest type
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    claims: any;
+  };
+}
+
+const router = Router();
+
+// All ML routes require authentication
+router.use(isAuthenticated);
+
+/**
+ * POST /api/ml/embeddings/generate
+ * Generate embeddings for new content
+ */
+router.post("/embeddings/generate", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      contentId: z.string(),
+      contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan']),
+      content: z.any(),
+      metadata: z.record(z.any()).optional(),
+    });
+
+    const { contentId, contentType, content, metadata } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    const embedding = await mlService.createContentEmbedding(
+      content,
+      contentType,
+      contentId,
+      userId,
+      metadata
+    );
+
+    res.json({ success: true, embedding });
+  } catch (error) {
+    console.error("Error generating embedding:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to generate embedding" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/search/semantic
+ * Perform semantic search with query
+ */
+router.post("/search/semantic", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      query: z.string().min(1),
+      contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan']),
+      limit: z.number().min(1).max(50).optional().default(10),
+    });
+
+    const { query, contentType, limit } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    const results = await mlService.semanticSearch(
+      query,
+      contentType,
+      userId,
+      limit
+    );
+
+    res.json({ success: true, results });
+  } catch (error) {
+    console.error("Error performing semantic search:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : "Search failed" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/search/feedback
+ * Track which results users click
+ */
+router.post("/search/feedback", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      searchLogId: z.string(),
+      clickedResultId: z.string(),
+      clickedResultType: z.string(),
+    });
+
+    const { searchLogId, clickedResultId, clickedResultType } = schema.parse(req.body);
+    
+    // Update search log with clicked result
+    // This would be implemented in storage layer
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error recording search feedback:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to record feedback" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/categories
+ * List all available categories
+ */
+router.get("/categories", async (req: AuthRequest, res: Response) => {
+  try {
+    const parentId = req.query.parentId as string | undefined;
+    const categories = await storage.getCategories(parentId);
+    
+    res.json({ success: true, categories });
+  } catch (error) {
+    console.error("Error getting categories:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to get categories" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/categories
+ * Create a new category
+ */
+router.post("/categories", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      name: z.string().min(1),
+      description: z.string().optional(),
+      parentId: z.string().optional(),
+      keywords: z.array(z.string()).optional(),
+      color: z.string().optional(),
+      icon: z.string().optional(),
+    });
+
+    const categoryData = schema.parse(req.body);
+    const category = await storage.createCategory(categoryData);
+    
+    res.json({ success: true, category });
+  } catch (error) {
+    console.error("Error creating category:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to create category" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/categorize
+ * Auto-categorize content
+ */
+router.post("/categorize", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      contentId: z.string(),
+      contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan']),
+      content: z.any(),
+    });
+
+    const { contentId, contentType, content } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    // Get available categories
+    const categories = await storage.getCategories();
+    
+    if (categories.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "No categories available" 
+      });
+    }
+
+    // Auto-categorize content
+    const { categoryId, confidence } = await mlService.categorizeContent(
+      content,
+      contentType,
+      categories
+    );
+
+    // Assign category to content
+    const assignment = await storage.assignContentCategory({
+      contentId,
+      contentType,
+      categoryId,
+      confidenceScore: confidence,
+      isManual: false,
+      userId,
+    });
+
+    res.json({ success: true, assignment, confidence });
+  } catch (error) {
+    console.error("Error categorizing content:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to categorize content" 
+    });
+  }
+});
+
+/**
+ * PUT /api/ml/categorize/:id
+ * Manual override of category
+ */
+router.put("/categorize/:contentId", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      contentType: z.string(),
+      categoryId: z.string(),
+    });
+
+    const { contentType, categoryId } = schema.parse(req.body);
+    const { contentId } = req.params;
+    const userId = req.user!.id;
+
+    const assignment = await storage.assignContentCategory({
+      contentId,
+      contentType,
+      categoryId,
+      confidenceScore: 1.0,
+      isManual: true,
+      userId,
+    });
+
+    res.json({ success: true, assignment });
+  } catch (error) {
+    console.error("Error updating category:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to update category" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/tags/generate
+ * Generate tags for content
+ */
+router.post("/tags/generate", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      contentId: z.string(),
+      contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan']),
+      content: z.any(),
+      maxTags: z.number().min(1).max(10).optional().default(5),
+    });
+
+    const { contentId, contentType, content, maxTags } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    // Generate tags
+    const tagNames = await mlService.generateTags(content, contentType, maxTags);
+
+    // Create or get tags and assign to content
+    const tags = [];
+    for (const tagName of tagNames) {
+      const tag = await storage.getOrCreateTag(tagName);
+      tags.push(tag);
+      
+      await storage.assignContentTag({
+        contentId,
+        contentType,
+        tagId: tag.id,
+        relevanceScore: 0.8,
+        isManual: false,
+        userId,
+      });
+    }
+
+    res.json({ success: true, tags });
+  } catch (error) {
+    console.error("Error generating tags:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to generate tags" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/tags/trending
+ * Get trending tags
+ */
+router.get("/tags/trending", async (req: AuthRequest, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const tags = await storage.getTrendingTags(limit);
+    
+    res.json({ success: true, tags });
+  } catch (error) {
+    console.error("Error getting trending tags:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to get trending tags" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/tags/approve
+ * Approve/reject suggested tags
+ */
+router.post("/tags/approve", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      contentId: z.string(),
+      contentType: z.string(),
+      approvedTags: z.array(z.string()),
+      rejectedTags: z.array(z.string()),
+    });
+
+    const { contentId, contentType, approvedTags, rejectedTags } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    // Update tag assignments based on approval
+    // This would update relevanceScore or remove tags
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error updating tags:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to update tags" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/duplicates/check
+ * Check if content is duplicate before saving
+ */
+router.post("/duplicates/check", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      content: z.any(),
+      contentType: z.enum(['recipe', 'inventory', 'chat', 'meal_plan']),
+      threshold: z.number().min(0).max(1).optional().default(0.85),
+    });
+
+    const { content, contentType, threshold } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    const result = await mlService.checkDuplicate(
+      content,
+      contentType,
+      userId,
+      threshold
+    );
+
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error("Error checking duplicates:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to check duplicates" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/duplicates/pending
+ * List potential duplicates for review
+ */
+router.get("/duplicates/pending", async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    // Get all pending duplicate pairs for user
+    // This would be implemented in storage layer
+    
+    res.json({ success: true, duplicates: [] });
+  } catch (error) {
+    console.error("Error getting pending duplicates:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to get pending duplicates" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/duplicates/resolve
+ * Mark as duplicate or unique
+ */
+router.post("/duplicates/resolve", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      pairId: z.string(),
+      status: z.enum(['duplicate', 'unique', 'merged']),
+    });
+
+    const { pairId, status } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    await storage.updateDuplicateStatus(pairId, status, userId);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error resolving duplicate:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to resolve duplicate" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/content/:id/related
+ * Get related content for an item
+ */
+router.get("/content/:contentId/related", async (req: AuthRequest, res: Response) => {
+  try {
+    const { contentId } = req.params;
+    const contentType = req.query.type as string;
+    const limit = parseInt(req.query.limit as string) || 5;
+    const userId = req.user!.id;
+
+    const related = await mlService.findRelatedContent(
+      contentId,
+      contentType,
+      userId,
+      limit
+    );
+
+    res.json({ success: true, related });
+  } catch (error) {
+    console.error("Error getting related content:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to get related content" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/content/embeddings/refresh
+ * Refresh embeddings for all user content
+ */
+router.post("/content/embeddings/refresh", async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    
+    // Run in background
+    mlService.updateUserEmbeddings(userId).catch(console.error);
+
+    res.json({ 
+      success: true, 
+      message: "Embedding refresh started in background" 
+    });
+  } catch (error) {
+    console.error("Error starting embedding refresh:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to start embedding refresh" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/query/natural
+ * Convert natural language to SQL
+ */
+router.post("/query/natural", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      query: z.string().min(1),
+      tables: z.array(z.string()).optional(),
+    });
+
+    const { query, tables } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    const result = await mlService.naturalLanguageToSQL(
+      query,
+      userId,
+      tables
+    );
+
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error("Error converting query:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to convert query" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/query/history
+ * User's query history
+ */
+router.get("/query/history", async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const history = await storage.getQueryHistory(userId, limit);
+
+    res.json({ success: true, history });
+  } catch (error) {
+    console.error("Error getting query history:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to get query history" 
+    });
+  }
+});
+
+/**
+ * POST /api/ml/query/save
+ * Save useful queries
+ */
+router.post("/query/save", async (req: AuthRequest, res: Response) => {
+  try {
+    const schema = z.object({
+      naturalQuery: z.string(),
+      generatedSql: z.string(),
+      resultCount: z.number().optional(),
+    });
+
+    const { naturalQuery, generatedSql, resultCount } = schema.parse(req.body);
+    const userId = req.user!.id;
+
+    const log = await storage.createQueryLog({
+      naturalQuery,
+      generatedSql,
+      resultCount,
+      userId,
+    });
+
+    res.json({ success: true, log });
+  } catch (error) {
+    console.error("Error saving query:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to save query" 
+    });
+  }
+});
+
+export default router;

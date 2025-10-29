@@ -76,6 +76,25 @@ import {
   type InsertUserInventory,
   type UserInventory,
   insertAnalyticsEventSchema,
+  // ML Feature types and tables
+  type ContentEmbedding,
+  type InsertContentEmbedding,
+  type SearchLog,
+  type InsertSearchLog,
+  type Category,
+  type InsertCategory,
+  type ContentCategory,
+  type InsertContentCategory,
+  type Tag,
+  type InsertTag,
+  type ContentTag,
+  type InsertContentTag,
+  type DuplicatePair,
+  type InsertDuplicatePair,
+  type RelatedContentCache,
+  type InsertRelatedContentCache,
+  type QueryLog,
+  type InsertQueryLog,
   users,
   pushTokens,
   notificationHistory,
@@ -97,6 +116,16 @@ import {
   userSessions,
   applianceLibrary,
   activityLogs,
+  // ML Feature tables
+  contentEmbeddings,
+  searchLogs,
+  categories,
+  contentCategories,
+  tags,
+  contentTags,
+  duplicatePairs,
+  relatedContentCache,
+  queryLogs,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull } from "drizzle-orm";
@@ -711,6 +740,137 @@ export interface IStorage {
    * @returns Number of deleted logs
    */
   deleteUserActivityLogs(userId: string): Promise<number>;
+
+  // ==================== ML Features ====================
+
+  /**
+   * Create or update content embedding
+   * @param embedding - Embedding data
+   */
+  upsertContentEmbedding(embedding: InsertContentEmbedding): Promise<ContentEmbedding>;
+
+  /**
+   * Get embeddings for content
+   * @param contentId - Content ID
+   * @param contentType - Type of content
+   * @param userId - User ID
+   */
+  getContentEmbedding(contentId: string, contentType: string, userId: string): Promise<ContentEmbedding | undefined>;
+
+  /**
+   * Search by embedding similarity
+   * @param queryEmbedding - Query embedding vector
+   * @param contentType - Filter by content type
+   * @param userId - User ID
+   * @param limit - Max results
+   */
+  searchByEmbedding(queryEmbedding: number[], contentType: string, userId: string, limit?: number): Promise<Array<ContentEmbedding & { similarity: number }>>;
+
+  /**
+   * Log search query
+   * @param log - Search log data
+   */
+  createSearchLog(log: InsertSearchLog): Promise<SearchLog>;
+
+  /**
+   * Get all categories
+   * @param parentId - Filter by parent category
+   */
+  getCategories(parentId?: string | null): Promise<Category[]>;
+
+  /**
+   * Create category
+   * @param category - Category data
+   */
+  createCategory(category: InsertCategory): Promise<Category>;
+
+  /**
+   * Get content categories
+   * @param contentId - Content ID
+   * @param contentType - Content type
+   * @param userId - User ID
+   */
+  getContentCategories(contentId: string, contentType: string, userId: string): Promise<ContentCategory[]>;
+
+  /**
+   * Assign category to content
+   * @param assignment - Category assignment data
+   */
+  assignContentCategory(assignment: InsertContentCategory): Promise<ContentCategory>;
+
+  /**
+   * Get or create tag
+   * @param name - Tag name
+   */
+  getOrCreateTag(name: string): Promise<Tag>;
+
+  /**
+   * Get trending tags
+   * @param limit - Max results
+   */
+  getTrendingTags(limit?: number): Promise<Tag[]>;
+
+  /**
+   * Get content tags
+   * @param contentId - Content ID
+   * @param contentType - Content type
+   * @param userId - User ID
+   */
+  getContentTags(contentId: string, contentType: string, userId: string): Promise<Array<ContentTag & { tag: Tag }>>;
+
+  /**
+   * Assign tag to content
+   * @param assignment - Tag assignment data
+   */
+  assignContentTag(assignment: InsertContentTag): Promise<ContentTag>;
+
+  /**
+   * Check for duplicate content
+   * @param contentId - Content ID
+   * @param userId - User ID
+   */
+  getDuplicates(contentId: string, userId: string): Promise<DuplicatePair[]>;
+
+  /**
+   * Create duplicate pair
+   * @param pair - Duplicate pair data
+   */
+  createDuplicatePair(pair: InsertDuplicatePair): Promise<DuplicatePair>;
+
+  /**
+   * Update duplicate status
+   * @param pairId - Duplicate pair ID
+   * @param status - New status
+   * @param reviewedBy - Reviewer user ID
+   */
+  updateDuplicateStatus(pairId: string, status: string, reviewedBy: string): Promise<void>;
+
+  /**
+   * Get related content from cache
+   * @param contentId - Content ID
+   * @param contentType - Content type
+   * @param userId - User ID
+   */
+  getRelatedContent(contentId: string, contentType: string, userId: string): Promise<RelatedContentCache | undefined>;
+
+  /**
+   * Cache related content
+   * @param cache - Related content cache data
+   */
+  cacheRelatedContent(cache: InsertRelatedContentCache): Promise<RelatedContentCache>;
+
+  /**
+   * Create natural language query log
+   * @param log - Query log data
+   */
+  createQueryLog(log: InsertQueryLog): Promise<QueryLog>;
+
+  /**
+   * Get user's query history
+   * @param userId - User ID
+   * @param limit - Max results
+   */
+  getQueryHistory(userId: string, limit?: number): Promise<QueryLog[]>;
 }
 
 /**
@@ -4511,6 +4671,393 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting user activity logs:", error);
       throw new Error("Failed to delete user activity logs");
+    }
+  }
+
+  // ==================== ML Feature Implementations ====================
+
+  async upsertContentEmbedding(embedding: InsertContentEmbedding): Promise<ContentEmbedding> {
+    try {
+      const [result] = await db
+        .insert(contentEmbeddings)
+        .values(embedding)
+        .onConflictDoUpdate({
+          target: [contentEmbeddings.contentId, contentEmbeddings.contentType, contentEmbeddings.userId],
+          set: {
+            embedding: embedding.embedding,
+            embeddingModel: embedding.embeddingModel,
+            contentText: embedding.contentText,
+            metadata: embedding.metadata,
+            updatedAt: sql`now()`,
+          },
+        })
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error("Error upserting content embedding:", error);
+      throw new Error("Failed to upsert content embedding");
+    }
+  }
+
+  async getContentEmbedding(contentId: string, contentType: string, userId: string): Promise<ContentEmbedding | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(contentEmbeddings)
+        .where(
+          and(
+            eq(contentEmbeddings.contentId, contentId),
+            eq(contentEmbeddings.contentType, contentType),
+            eq(contentEmbeddings.userId, userId)
+          )
+        );
+
+      return result;
+    } catch (error) {
+      console.error("Error getting content embedding:", error);
+      throw new Error("Failed to get content embedding");
+    }
+  }
+
+  async searchByEmbedding(queryEmbedding: number[], contentType: string, userId: string, limit: number = 10): Promise<Array<ContentEmbedding & { similarity: number }>> {
+    try {
+      // Calculate cosine similarity in PostgreSQL
+      // This is a simplified version - in production you'd use pgvector extension
+      const results = await db.execute(sql`
+        WITH query_embedding AS (
+          SELECT ARRAY[${sql.raw(queryEmbedding.join(','))}]::float8[] as embedding
+        )
+        SELECT 
+          ce.*,
+          (
+            SELECT SUM(a * b) / (SQRT(SUM(a * a)) * SQRT(SUM(b * b)))
+            FROM (
+              SELECT 
+                unnest(ce.embedding::float8[]) AS a,
+                unnest(qe.embedding) AS b
+              FROM query_embedding qe
+            ) AS dot_product
+          ) AS similarity
+        FROM ${contentEmbeddings} ce, query_embedding qe
+        WHERE ce.content_type = ${contentType}
+          AND ce.user_id = ${userId}
+        ORDER BY similarity DESC
+        LIMIT ${limit}
+      `);
+
+      return results.rows as Array<ContentEmbedding & { similarity: number }>;
+    } catch (error) {
+      console.error("Error searching by embedding:", error);
+      throw new Error("Failed to search by embedding");
+    }
+  }
+
+  async createSearchLog(log: InsertSearchLog): Promise<SearchLog> {
+    try {
+      const [result] = await db
+        .insert(searchLogs)
+        .values(log)
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error("Error creating search log:", error);
+      throw new Error("Failed to create search log");
+    }
+  }
+
+  async getCategories(parentId?: string | null): Promise<Category[]> {
+    try {
+      let query = db.select().from(categories).where(eq(categories.isActive, true));
+
+      if (parentId === null) {
+        query = query.where(isNull(categories.parentId));
+      } else if (parentId !== undefined) {
+        query = query.where(eq(categories.parentId, parentId));
+      }
+
+      return await query.orderBy(categories.sortOrder, categories.name);
+    } catch (error) {
+      console.error("Error getting categories:", error);
+      throw new Error("Failed to get categories");
+    }
+  }
+
+  async createCategory(category: InsertCategory): Promise<Category> {
+    try {
+      const [result] = await db
+        .insert(categories)
+        .values(category)
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error("Error creating category:", error);
+      throw new Error("Failed to create category");
+    }
+  }
+
+  async getContentCategories(contentId: string, contentType: string, userId: string): Promise<ContentCategory[]> {
+    try {
+      return await db
+        .select()
+        .from(contentCategories)
+        .where(
+          and(
+            eq(contentCategories.contentId, contentId),
+            eq(contentCategories.contentType, contentType),
+            eq(contentCategories.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error("Error getting content categories:", error);
+      throw new Error("Failed to get content categories");
+    }
+  }
+
+  async assignContentCategory(assignment: InsertContentCategory): Promise<ContentCategory> {
+    try {
+      const [result] = await db
+        .insert(contentCategories)
+        .values(assignment)
+        .onConflictDoUpdate({
+          target: [contentCategories.contentId, contentCategories.contentType, contentCategories.categoryId, contentCategories.userId],
+          set: {
+            confidenceScore: assignment.confidenceScore,
+            isManual: assignment.isManual,
+          },
+        })
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error("Error assigning content category:", error);
+      throw new Error("Failed to assign content category");
+    }
+  }
+
+  async getOrCreateTag(name: string): Promise<Tag> {
+    try {
+      const normalizedName = name.toLowerCase().replace(/\s+/g, '-');
+      const slug = normalizedName;
+
+      // Try to get existing tag
+      const [existing] = await db
+        .select()
+        .from(tags)
+        .where(eq(tags.name, normalizedName));
+
+      if (existing) {
+        // Increment usage count
+        await db
+          .update(tags)
+          .set({ usageCount: sql`${tags.usageCount} + 1` })
+          .where(eq(tags.id, existing.id));
+        return existing;
+      }
+
+      // Create new tag
+      const [newTag] = await db
+        .insert(tags)
+        .values({
+          name: normalizedName,
+          slug: slug,
+          usageCount: 1,
+        })
+        .returning();
+
+      return newTag;
+    } catch (error) {
+      console.error("Error getting or creating tag:", error);
+      throw new Error("Failed to get or create tag");
+    }
+  }
+
+  async getTrendingTags(limit: number = 10): Promise<Tag[]> {
+    try {
+      return await db
+        .select()
+        .from(tags)
+        .orderBy(desc(tags.usageCount))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error getting trending tags:", error);
+      throw new Error("Failed to get trending tags");
+    }
+  }
+
+  async getContentTags(contentId: string, contentType: string, userId: string): Promise<Array<ContentTag & { tag: Tag }>> {
+    try {
+      const results = await db
+        .select({
+          contentTag: contentTags,
+          tag: tags,
+        })
+        .from(contentTags)
+        .innerJoin(tags, eq(contentTags.tagId, tags.id))
+        .where(
+          and(
+            eq(contentTags.contentId, contentId),
+            eq(contentTags.contentType, contentType),
+            eq(contentTags.userId, userId)
+          )
+        );
+
+      return results.map(r => ({
+        ...r.contentTag,
+        tag: r.tag,
+      }));
+    } catch (error) {
+      console.error("Error getting content tags:", error);
+      throw new Error("Failed to get content tags");
+    }
+  }
+
+  async assignContentTag(assignment: InsertContentTag): Promise<ContentTag> {
+    try {
+      const [result] = await db
+        .insert(contentTags)
+        .values(assignment)
+        .onConflictDoUpdate({
+          target: [contentTags.contentId, contentTags.contentType, contentTags.tagId, contentTags.userId],
+          set: {
+            relevanceScore: assignment.relevanceScore,
+            isManual: assignment.isManual,
+          },
+        })
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error("Error assigning content tag:", error);
+      throw new Error("Failed to assign content tag");
+    }
+  }
+
+  async getDuplicates(contentId: string, userId: string): Promise<DuplicatePair[]> {
+    try {
+      return await db
+        .select()
+        .from(duplicatePairs)
+        .where(
+          and(
+            eq(duplicatePairs.userId, userId),
+            or(
+              eq(duplicatePairs.contentId1, contentId),
+              eq(duplicatePairs.contentId2, contentId)
+            )
+          )
+        )
+        .orderBy(desc(duplicatePairs.similarityScore));
+    } catch (error) {
+      console.error("Error getting duplicates:", error);
+      throw new Error("Failed to get duplicates");
+    }
+  }
+
+  async createDuplicatePair(pair: InsertDuplicatePair): Promise<DuplicatePair> {
+    try {
+      const [result] = await db
+        .insert(duplicatePairs)
+        .values(pair)
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error("Error creating duplicate pair:", error);
+      throw new Error("Failed to create duplicate pair");
+    }
+  }
+
+  async updateDuplicateStatus(pairId: string, status: string, reviewedBy: string): Promise<void> {
+    try {
+      await db
+        .update(duplicatePairs)
+        .set({
+          status,
+          reviewedBy,
+          reviewedAt: sql`now()`,
+        })
+        .where(eq(duplicatePairs.id, pairId));
+    } catch (error) {
+      console.error("Error updating duplicate status:", error);
+      throw new Error("Failed to update duplicate status");
+    }
+  }
+
+  async getRelatedContent(contentId: string, contentType: string, userId: string): Promise<RelatedContentCache | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(relatedContentCache)
+        .where(
+          and(
+            eq(relatedContentCache.contentId, contentId),
+            eq(relatedContentCache.contentType, contentType),
+            eq(relatedContentCache.userId, userId),
+            gte(relatedContentCache.expiresAt, sql`now()`)
+          )
+        );
+
+      return result;
+    } catch (error) {
+      console.error("Error getting related content:", error);
+      throw new Error("Failed to get related content");
+    }
+  }
+
+  async cacheRelatedContent(cache: InsertRelatedContentCache): Promise<RelatedContentCache> {
+    try {
+      // Delete old cache entries for this content
+      await db
+        .delete(relatedContentCache)
+        .where(
+          and(
+            eq(relatedContentCache.contentId, cache.contentId),
+            eq(relatedContentCache.contentType, cache.contentType),
+            eq(relatedContentCache.userId, cache.userId)
+          )
+        );
+
+      // Insert new cache entry
+      const [result] = await db
+        .insert(relatedContentCache)
+        .values(cache)
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error("Error caching related content:", error);
+      throw new Error("Failed to cache related content");
+    }
+  }
+
+  async createQueryLog(log: InsertQueryLog): Promise<QueryLog> {
+    try {
+      const [result] = await db
+        .insert(queryLogs)
+        .values(log)
+        .returning();
+
+      return result;
+    } catch (error) {
+      console.error("Error creating query log:", error);
+      throw new Error("Failed to create query log");
+    }
+  }
+
+  async getQueryHistory(userId: string, limit: number = 20): Promise<QueryLog[]> {
+    try {
+      return await db
+        .select()
+        .from(queryLogs)
+        .where(eq(queryLogs.userId, userId))
+        .orderBy(desc(queryLogs.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error getting query history:", error);
+      throw new Error("Failed to get query history");
     }
   }
 }

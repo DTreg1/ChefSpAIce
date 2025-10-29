@@ -18,6 +18,7 @@ import pushTokensRouter from "./push-tokens.router";
 import notificationsRouter from "./notifications.router";
 import cookingTermsRouter from "./cooking-terms.router";
 import activityLogsRouter from "./activity-logs.router";
+import mlRouter from "./mlRouter";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -50,6 +51,7 @@ export async function registerModularRoutes(app: Express): Promise<Server> {
   app.use(pushTokensRouter);          // Push tokens endpoints
   app.use(notificationsRouter);       // Notification tracking and history endpoints
   app.use(cookingTermsRouter);        // Cooking terms endpoints
+  app.use("/api/ml", mlRouter);       // ML features endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);

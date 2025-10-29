@@ -1868,6 +1868,391 @@ export type InsertWebVital = z.infer<typeof insertWebVitalSchema>;
 export type WebVital = typeof webVitals.$inferSelect;
 
 /**
+ * Content Embeddings Table
+ * 
+ * Stores vector embeddings for semantic search and similarity matching.
+ * Enables ML-powered content discovery across recipes, inventory, and chats.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - contentId: ID of the content (recipe, ingredient, chat message)
+ * - contentType: Type of content (recipe, inventory, chat, meal_plan)
+ * - embedding: Vector embedding as JSONB array (1536 dimensions for ada-002)
+ * - embeddingModel: Model used (text-embedding-ada-002)
+ * - contentText: Original text that was embedded
+ * - metadata: Additional context (title, category, tags)
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - createdAt: Embedding creation timestamp
+ * - updatedAt: Last update timestamp
+ * 
+ * Business Rules:
+ * - One embedding per content item
+ * - Regenerate on content update
+ * - Used for semantic search and similarity
+ * 
+ * Indexes:
+ * - content_embeddings_user_id_idx: User's embeddings
+ * - content_embeddings_content_idx: Unique per content item
+ */
+export const contentEmbeddings = pgTable("content_embeddings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  contentType: text("content_type").notNull(), // 'recipe', 'inventory', 'chat', 'meal_plan'
+  embedding: jsonb("embedding").notNull().$type<number[]>(), // Vector array
+  embeddingModel: text("embedding_model").notNull().default('text-embedding-ada-002'),
+  contentText: text("content_text").notNull(),
+  metadata: jsonb("metadata").$type<{
+    title?: string;
+    category?: string;
+    tags?: string[];
+    description?: string;
+  }>(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("content_embeddings_user_id_idx").on(table.userId),
+  uniqueIndex("content_embeddings_content_idx").on(table.contentId, table.contentType, table.userId),
+]);
+
+export const insertContentEmbeddingSchema = createInsertSchema(contentEmbeddings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertContentEmbedding = z.infer<typeof insertContentEmbeddingSchema>;
+export type ContentEmbedding = typeof contentEmbeddings.$inferSelect;
+
+/**
+ * Search Logs Table
+ * 
+ * Tracks search queries and user interactions for analytics.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - query: Original search query text
+ * - searchType: 'semantic' | 'keyword' | 'natural_language'
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - resultsCount: Number of results returned
+ * - clickedResultId: ID of result user clicked (if any)
+ * - clickedResultType: Type of clicked result
+ * - searchLatency: Time to execute search in ms
+ * - timestamp: When search was performed
+ * 
+ * Analytics:
+ * - Click-through rate by query type
+ * - Popular search terms
+ * - Search performance metrics
+ */
+export const searchLogs = pgTable("search_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  query: text("query").notNull(),
+  searchType: text("search_type").notNull().default('semantic'),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  resultsCount: integer("results_count").notNull(),
+  clickedResultId: varchar("clicked_result_id"),
+  clickedResultType: text("clicked_result_type"),
+  searchLatency: integer("search_latency"), // milliseconds
+  timestamp: timestamp("timestamp").defaultNow(),
+}, (table) => [
+  index("search_logs_user_id_idx").on(table.userId),
+  index("search_logs_timestamp_idx").on(table.timestamp),
+]);
+
+export const insertSearchLogSchema = createInsertSchema(searchLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertSearchLog = z.infer<typeof insertSearchLogSchema>;
+export type SearchLog = typeof searchLogs.$inferSelect;
+
+/**
+ * Categories Table
+ * 
+ * Hierarchical categories for content organization.
+ * Supports both manual and AI-powered categorization.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - name: Category name (e.g., "Italian", "Breakfast", "Vegan")
+ * - description: Category description
+ * - parentId: Parent category for hierarchy (self-referential)
+ * - keywords: Keywords for classification
+ * - color: UI color for category badges
+ * - icon: Icon name for display
+ * - sortOrder: Display order
+ * - isActive: Soft delete flag
+ * - createdAt: Creation timestamp
+ * 
+ * Hierarchy Example:
+ * - Cuisine > Italian > Pasta
+ * - Diet > Vegan > Raw
+ * - Meal > Breakfast > Quick
+ */
+export const categories = pgTable("categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  parentId: varchar("parent_id"),
+  keywords: text("keywords").array(),
+  color: text("color").default('#3B82F6'),
+  icon: text("icon").default('folder'),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("categories_parent_id_idx").on(table.parentId),
+  uniqueIndex("categories_name_idx").on(table.name),
+]);
+
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Category = typeof categories.$inferSelect;
+
+/**
+ * Content Categories Table
+ * 
+ * Many-to-many relationship between content and categories.
+ * Tracks both manual and AI assignments with confidence scores.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - contentId: ID of categorized content
+ * - contentType: Type of content
+ * - categoryId: Foreign key to categories.id
+ * - confidenceScore: AI confidence (0-1)
+ * - isManual: Whether manually assigned
+ * - userId: Who categorized it
+ * - createdAt: Assignment timestamp
+ */
+export const contentCategories = pgTable("content_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  contentType: text("content_type").notNull(),
+  categoryId: varchar("category_id").notNull().references(() => categories.id, { onDelete: "cascade" }),
+  confidenceScore: real("confidence_score").default(1.0),
+  isManual: boolean("is_manual").default(false),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("content_categories_content_idx").on(table.contentId, table.contentType),
+  index("content_categories_category_idx").on(table.categoryId),
+  index("content_categories_user_idx").on(table.userId),
+  uniqueIndex("content_categories_unique_idx").on(table.contentId, table.contentType, table.categoryId, table.userId),
+]);
+
+export const insertContentCategorySchema = createInsertSchema(contentCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertContentCategory = z.infer<typeof insertContentCategorySchema>;
+export type ContentCategory = typeof contentCategories.$inferSelect;
+
+/**
+ * Tags Table
+ * 
+ * Flexible tagging system for all content types.
+ * Generated automatically via NLP or added manually.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - name: Tag name (lowercase, no spaces)
+ * - slug: URL-friendly version
+ * - usageCount: Times used across content
+ * - createdAt: First use timestamp
+ * 
+ * Examples:
+ * - quick-meals, gluten-free, budget-friendly
+ * - summer-recipes, kid-approved, meal-prep
+ */
+export const tags = pgTable("tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  usageCount: integer("usage_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("tags_name_idx").on(table.name),
+  uniqueIndex("tags_slug_idx").on(table.slug),
+]);
+
+export const insertTagSchema = createInsertSchema(tags).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTag = z.infer<typeof insertTagSchema>;
+export type Tag = typeof tags.$inferSelect;
+
+/**
+ * Content Tags Table
+ * 
+ * Many-to-many relationship between content and tags.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - contentId: Tagged content ID
+ * - contentType: Type of content
+ * - tagId: Foreign key to tags.id
+ * - relevanceScore: AI-assigned relevance (0-1)
+ * - isManual: Manual vs auto-generated
+ * - userId: Who added the tag
+ * - createdAt: Tag assignment timestamp
+ */
+export const contentTags = pgTable("content_tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  contentType: text("content_type").notNull(),
+  tagId: varchar("tag_id").notNull().references(() => tags.id, { onDelete: "cascade" }),
+  relevanceScore: real("relevance_score").default(1.0),
+  isManual: boolean("is_manual").default(false),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("content_tags_content_idx").on(table.contentId, table.contentType),
+  index("content_tags_tag_idx").on(table.tagId),
+  index("content_tags_user_idx").on(table.userId),
+  uniqueIndex("content_tags_unique_idx").on(table.contentId, table.contentType, table.tagId, table.userId),
+]);
+
+export const insertContentTagSchema = createInsertSchema(contentTags).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertContentTag = z.infer<typeof insertContentTagSchema>;
+export type ContentTag = typeof contentTags.$inferSelect;
+
+/**
+ * Duplicate Pairs Table
+ * 
+ * Tracks potential duplicate content for deduplication.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - contentId1: First content item
+ * - contentType1: Type of first item
+ * - contentId2: Second content item
+ * - contentType2: Type of second item
+ * - similarityScore: Cosine similarity (0-1)
+ * - status: 'pending' | 'duplicate' | 'unique' | 'merged'
+ * - reviewedBy: User who reviewed
+ * - reviewedAt: Review timestamp
+ * - userId: Owner of content
+ * - createdAt: Detection timestamp
+ */
+export const duplicatePairs = pgTable("duplicate_pairs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId1: varchar("content_id_1").notNull(),
+  contentType1: text("content_type_1").notNull(),
+  contentId2: varchar("content_id_2").notNull(),
+  contentType2: text("content_type_2").notNull(),
+  similarityScore: real("similarity_score").notNull(),
+  status: text("status").notNull().default('pending'),
+  reviewedBy: varchar("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+  reviewedAt: timestamp("reviewed_at"),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("duplicate_pairs_user_idx").on(table.userId),
+  index("duplicate_pairs_status_idx").on(table.status),
+  index("duplicate_pairs_score_idx").on(table.similarityScore),
+]);
+
+export const insertDuplicatePairSchema = createInsertSchema(duplicatePairs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDuplicatePair = z.infer<typeof insertDuplicatePairSchema>;
+export type DuplicatePair = typeof duplicatePairs.$inferSelect;
+
+/**
+ * Related Content Cache Table
+ * 
+ * Caches related content recommendations for performance.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - contentId: Source content ID
+ * - contentType: Type of content
+ * - relatedItems: Array of related content with scores
+ * - userId: Content owner
+ * - expiresAt: Cache expiration
+ * - createdAt: Cache creation
+ */
+export const relatedContentCache = pgTable("related_content_cache", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  contentType: text("content_type").notNull(),
+  relatedItems: jsonb("related_items").notNull().$type<Array<{
+    id: string;
+    type: string;
+    title: string;
+    score: number;
+  }>>(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("related_content_cache_content_idx").on(table.contentId, table.contentType),
+  index("related_content_cache_user_idx").on(table.userId),
+  index("related_content_cache_expires_idx").on(table.expiresAt),
+]);
+
+export const insertRelatedContentCacheSchema = createInsertSchema(relatedContentCache).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertRelatedContentCache = z.infer<typeof insertRelatedContentCacheSchema>;
+export type RelatedContentCache = typeof relatedContentCache.$inferSelect;
+
+/**
+ * Natural Query Logs Table
+ * 
+ * Logs natural language queries and their SQL translations.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - naturalQuery: User's question in plain English
+ * - generatedSql: Translated SQL query
+ * - resultCount: Number of results returned
+ * - executionTime: Query execution time in ms
+ * - error: Error message if failed
+ * - userId: Who ran the query
+ * - createdAt: Query timestamp
+ */
+export const queryLogs = pgTable("query_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  naturalQuery: text("natural_query").notNull(),
+  generatedSql: text("generated_sql"),
+  resultCount: integer("result_count"),
+  executionTime: integer("execution_time"), // milliseconds
+  error: text("error"),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("query_logs_user_idx").on(table.userId),
+  index("query_logs_created_idx").on(table.createdAt),
+]);
+
+export const insertQueryLogSchema = createInsertSchema(queryLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertQueryLog = z.infer<typeof insertQueryLogSchema>;
+export type QueryLog = typeof queryLogs.$inferSelect;
+
+/**
  * Analytics Events Table
  * 
  * Tracks user interactions and behaviors throughout the application.
