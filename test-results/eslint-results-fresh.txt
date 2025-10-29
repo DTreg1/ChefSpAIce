@@ -1,4 +1,0 @@
-
-> rest-express@1.0.0 lint
-> npx eslint client server shared --ext .ts,.tsx > test-results/eslint-results.txt
-
