@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import * as fs from 'fs';
 import { NotificationPayload } from './push-notification.service';
 
 /**
@@ -50,18 +51,39 @@ export class FcmService {
 
       // Initialize with service account (preferred method)
       if (fcmServiceAccount) {
-        const serviceAccount = JSON.parse(fcmServiceAccount);
-        this.app = admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-        this.isInitialized = true;
-        // console.log('✅ FCM initialized with service account from environment');
+        try {
+          // Parse the service account JSON, handling potential errors
+          const serviceAccount = typeof fcmServiceAccount === 'string' 
+            ? JSON.parse(fcmServiceAccount) 
+            : fcmServiceAccount;
+          
+          this.app = admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+          });
+          this.isInitialized = true;
+          // console.log('✅ FCM initialized with service account from environment');
+        } catch (parseError) {
+          console.error('❌ Failed to parse FCM service account JSON:', parseError);
+          console.warn('   FCM service account must be a valid JSON string');
+          return;
+        }
       } else if (fcmServiceAccountPath) {
-        this.app = admin.initializeApp({
-          credential: admin.credential.cert(fcmServiceAccountPath),
-        });
-        this.isInitialized = true;
-        // console.log('✅ FCM initialized with service account from file');
+        try {
+          // Verify file exists before trying to use it
+          if (!fs.existsSync(fcmServiceAccountPath)) {
+            console.error(`❌ FCM service account file not found: ${fcmServiceAccountPath}`);
+            return;
+          }
+          
+          this.app = admin.initializeApp({
+            credential: admin.credential.cert(fcmServiceAccountPath),
+          });
+          this.isInitialized = true;
+          // console.log('✅ FCM initialized with service account from file');
+        } catch (fileError) {
+          console.error('❌ Failed to read FCM service account file:', fileError);
+          return;
+        }
       } else if (fcmServerKey) {
         // Legacy initialization with server key (deprecated but still supported)
         // Server key alone isn't sufficient - need service account

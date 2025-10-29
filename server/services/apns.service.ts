@@ -87,26 +87,52 @@ export class ApnsService {
 
       // P8 Key authentication (recommended)
       if (apnsKeyId && apnsTeamId) {
-        options.token = {
-          key: apnsKeyContent ? Buffer.from(apnsKeyContent, 'base64').toString('utf-8') : apnsKeyFile!,
-          keyId: apnsKeyId,
-          teamId: apnsTeamId,
-        };
-        
-        // If key content is provided, write it to a temp file (node-apn requires file path)
-        if (apnsKeyContent) {
-          const tempKeyPath = path.join('/tmp', `apns-key-${Date.now()}.p8`);
-          fs.writeFileSync(tempKeyPath, Buffer.from(apnsKeyContent, 'base64').toString('utf-8'));
-          options.token.key = tempKeyPath;
-          
-          // Clean up temp file after a delay
-          setTimeout(() => {
-            try {
-              fs.unlinkSync(tempKeyPath);
-            } catch {
-              // Ignore cleanup errors
+        try {
+          if (apnsKeyContent) {
+            // If key content is provided, write it to a temp file (node-apn requires file path)
+            const tempKeyPath = path.join('/tmp', `apns-key-${Date.now()}.p8`);
+            const keyData = Buffer.from(apnsKeyContent, 'base64').toString('utf-8');
+            
+            // Validate that the key looks like a P8 key
+            if (!keyData.includes('BEGIN PRIVATE KEY')) {
+              console.error('❌ APNs key content does not appear to be a valid P8 key');
+              return;
             }
-          }, 60000);
+            
+            fs.writeFileSync(tempKeyPath, keyData);
+            options.token = {
+              key: tempKeyPath,
+              keyId: apnsKeyId,
+              teamId: apnsTeamId,
+            };
+            
+            // Clean up temp file after a delay
+            setTimeout(() => {
+              try {
+                fs.unlinkSync(tempKeyPath);
+              } catch {
+                // Ignore cleanup errors
+              }
+            }, 60000);
+          } else if (apnsKeyFile) {
+            // Verify file exists
+            if (!fs.existsSync(apnsKeyFile)) {
+              console.error(`❌ APNs key file not found: ${apnsKeyFile}`);
+              return;
+            }
+            
+            options.token = {
+              key: apnsKeyFile,
+              keyId: apnsKeyId,
+              teamId: apnsTeamId,
+            };
+          } else {
+            console.error('❌ APNs key ID and team ID provided but no key file or content');
+            return;
+          }
+        } catch (keyError) {
+          console.error('❌ Failed to process APNs P8 key:', keyError);
+          return;
         }
       }
       // P12 Certificate authentication (legacy)
