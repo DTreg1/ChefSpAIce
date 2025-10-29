@@ -208,7 +208,7 @@ export default function Storage() {
     }
   }, [itemsError, toast]);
 
-  const handleRecipeGenerated = (recipe: Recipe) => {
+  const handleRecipeGenerated = (_recipe: Recipe) => {
     // Navigate to chat to see the recipe
     setLocation("/");
   };

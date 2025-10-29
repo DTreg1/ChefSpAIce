@@ -118,7 +118,7 @@ class ShareService {
   private formatShoppingListText(items: string[]): string {
     let text = '🛒 Shopping List\n\n';
     
-    items.forEach((item, i) => {
+    items.forEach((item, _i) => {
       text += `☐ ${item}\n`;
     });
     

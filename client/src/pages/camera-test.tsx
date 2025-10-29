@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Camera, CheckCircle, XCircle, AlertCircle, ScanLine, Package, Loader2, Image, ShoppingCart } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useToast } from "@/hooks/use-toast";
@@ -50,7 +49,6 @@ export default function CameraTest() {
   const [singleBarcode, setSingleBarcode] = useState<string>('');
   const [singleApiLoading, setSingleApiLoading] = useState(false);
   const [singleApiResult, setSingleApiResult] = useState<any>(null);
-  const [batchBarcodes, setBatchBarcodes] = useState<string[]>([]);
   const [batchApiLoading, setBatchApiLoading] = useState(false);
   const [batchApiResult, setBatchApiResult] = useState<any>(null);
 
@@ -61,15 +59,17 @@ export default function CameraTest() {
     // Get browser info
     setBrowserInfo(navigator.userAgent);
 
-    // Auto-check camera permission on load
-    checkCameraPermission();
-
     // Cleanup on unmount
     return () => {
       if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
       }
     };
+  }, [videoStream]);
+
+  useEffect(() => {
+    // Auto-check camera permission on load
+    checkCameraPermission();
   }, []);
 
   const addError = (error: string) => {

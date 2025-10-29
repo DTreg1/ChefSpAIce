@@ -19,7 +19,7 @@ type ShoppingListItem = {
   servings: number;
 };
 
-type ShoppingListResponse = {
+type _ShoppingListResponse = {
   items: ShoppingListItem[];
   totalItems: number;
   plannedMeals: number;
@@ -56,7 +56,10 @@ export default function ShoppingList() {
 
   // Reset checked items when date range changes
   useEffect(() => {
-    setCheckedItems(new Set());
+    const resetItems = () => setCheckedItems(new Set());
+    // Using a small timeout to avoid synchronous setState
+    const timeoutId = setTimeout(resetItems, 0);
+    return () => clearTimeout(timeoutId);
   }, [normalizedStartDate, normalizedEndDate]);
 
   const handleCheckItem = (ingredient: string) => {

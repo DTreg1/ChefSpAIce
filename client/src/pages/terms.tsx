@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollText, Scale, Ban, AlertTriangle, CheckCircle, Info, Gavel, Users } from "lucide-react";
 import { PageTransition } from "@/components/page-transition";
 import { AnimatedCard } from "@/components/animated-card";
@@ -114,8 +114,8 @@ export default function Terms() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            These Terms of Service ("Terms") govern your use of ChefSpAIce, including our website, mobile 
-            applications, and all related services (collectively, the "Service"). This is a legal agreement 
+            These Terms of Service (&quot;Terms&quot;) govern your use of ChefSpAIce, including our website, mobile 
+            applications, and all related services (collectively, the &quot;Service&quot;). This is a legal agreement 
             between you and ChefSpAIce.
           </p>
           <p className="text-muted-foreground leading-relaxed">

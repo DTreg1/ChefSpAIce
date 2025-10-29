@@ -117,7 +117,7 @@ class Logger {
       if (!response.ok) {
         // Log failed silently
       }
-    } catch (error) {
+    } catch (_error) {
       // Silently fail to avoid infinite loop
     }
   }
@@ -195,12 +195,11 @@ class Logger {
 
   // Create a child logger with context
   createContext(context: string) {
-    const parent = this;
     return {
-      debug: (message: string, data?: any) => parent.debug(message, data, context),
-      info: (message: string, data?: any) => parent.info(message, data, context),
-      warn: (message: string, data?: any) => parent.warn(message, data, context),
-      error: (message: string, data?: any) => parent.error(message, data, context)
+      debug: (message: string, data?: any) => this.debug(message, data, context),
+      info: (message: string, data?: any) => this.info(message, data, context),
+      warn: (message: string, data?: any) => this.warn(message, data, context),
+      error: (message: string, data?: any) => this.error(message, data, context)
     };
   }
 }

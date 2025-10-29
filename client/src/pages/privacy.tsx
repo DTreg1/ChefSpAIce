@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, Eye, Database, Globe, Mail, AlertCircle, UserCheck } from "lucide-react";
 import { PageTransition } from "@/components/page-transition";
 import { AnimatedCard } from "@/components/animated-card";
@@ -184,7 +184,7 @@ export default function Privacy() {
 
       <AnimatedCard>
         <CardHeader>
-          <CardTitle>Children's Privacy</CardTitle>
+          <CardTitle>Children&apos;s Privacy</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
@@ -215,7 +215,7 @@ export default function Privacy() {
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
             We may update our Privacy Policy from time to time. We will notify you of any changes by posting 
-            the new Privacy Policy on this page and updating the "Last updated" date. Continued use of the 
+            the new Privacy Policy on this page and updating the &quot;Last updated&quot; date. Continued use of the 
             service after changes indicates acceptance of the updated policy.
           </p>
         </CardContent>

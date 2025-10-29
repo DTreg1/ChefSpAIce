@@ -13,7 +13,7 @@ async function throwIfResNotOk(res: Response) {
           window.location.href = '/';
           return;
         }
-      } catch (e) {
+      } catch (_e) {
         // If parsing fails, continue with normal error handling
       }
     }

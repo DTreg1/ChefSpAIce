@@ -37,9 +37,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { 
   Microwave, 
-  ChefHat, 
-  Utensils, 
-  Package, 
   Plus, 
   Scan, 
   Trash2,
@@ -49,7 +46,6 @@ import {
   Grid,
   List,
   Loader2,
-  UtensilsCrossed,
   Layers
 } from "lucide-react";
 import type { UserAppliance } from "@shared/schema";

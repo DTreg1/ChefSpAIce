@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ChefHat, Heart, Code2, Database, Shield, Sparkles } from "lucide-react";
@@ -104,9 +104,9 @@ export default function About() {
             and make meal planning effortless.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Whether you're a beginner cook or a seasoned chef, our application adapts to your needs, dietary 
+            Whether you&apos;re a beginner cook or a seasoned chef, our application adapts to your needs, dietary 
             preferences, and cooking style. Track your inventory, get recipe suggestions based on what you have, 
-            and never forget what's in your fridge again.
+            and never forget what&apos;s in your fridge again.
           </p>
         </CardContent>
       </AnimatedCard>

@@ -91,4 +91,23 @@ export default defineConfig([globalIgnores([
         "temp.js",
         "config/*",
     ],
+}, 
+// Service worker specific configuration
+{
+    files: ["**/service-worker.js", "**/sw.js"],
+    languageOptions: {
+        globals: {
+            ...globals.browser,
+            self: "readonly",
+            clients: "readonly",
+            caches: "readonly",
+            ServiceWorkerGlobalScope: "readonly",
+            FetchEvent: "readonly",
+            PushEvent: "readonly",
+            NotificationEvent: "readonly",
+            ExtendableEvent: "readonly",
+            ExtendableMessageEvent: "readonly",
+            event: "readonly",
+        },
+    },
 }]);

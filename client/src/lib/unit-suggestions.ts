@@ -126,7 +126,7 @@ export function getSmartUnitSuggestion(
   foodName: string,
   foodCategory?: string | null,
   servingSizeUnit?: string | null,
-  usdaData?: any
+  _usdaData?: any
 ): UnitSuggestion {
   const lowercaseName = foodName.toLowerCase();
   

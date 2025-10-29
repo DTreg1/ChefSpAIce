@@ -9,7 +9,6 @@ import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { CacheStorage } from "@/lib/cacheStorage";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,13 +17,13 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, BellOff, Clock } from "lucide-react";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import ActivityTimeline from "@/components/ActivityTimeline";
 import ActivityPrivacyControls from "@/components/ActivityPrivacyControls";
-import type { User, StorageLocation } from "@shared/schema";
+import type { User } from "@shared/schema";
 
 const storageAreaOptions = [
   { name: "Refrigerator", icon: Refrigerator },
@@ -860,7 +859,7 @@ export default function Settings() {
                 <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                   <h4 className="font-medium mb-2">Reset Account Data</h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    This will permanently delete all your data including food items, recipes, chat history, meal plans, and preferences. You'll be able to start fresh with the onboarding process.
+                    This will permanently delete all your data including food items, recipes, chat history, meal plans, and preferences. You&apos;ll be able to start fresh with the onboarding process.
                   </p>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -934,7 +933,6 @@ interface UsageLog {
 }
 
 function ApiUsageSection() {
-  const { toast } = useToast();
   
   const { data: rateLimits, isLoading: limitsLoading } = useQuery<RateLimits>({
     queryKey: ["/api/barcodelookup/rate-limits"],
@@ -944,7 +942,7 @@ function ApiUsageSection() {
     queryKey: ["/api/barcodelookup/usage/stats"],
   });
 
-  const { data: logs, isLoading: logsLoading } = useQuery<UsageLog[]>({
+  const { data: logs } = useQuery<UsageLog[]>({
     queryKey: ["/api/barcodelookup/usage/logs"],
   });
 
@@ -966,7 +964,7 @@ function ApiUsageSection() {
           <div className="flex-1">
             <p className="text-sm font-medium text-destructive">API Quota Warning</p>
             <p className="text-sm text-destructive/80">
-              You've used {usagePercentage.toFixed(0)}% of your monthly API quota. Consider upgrading your plan or reducing usage.
+              You&apos;ve used {usagePercentage.toFixed(0)}% of your monthly API quota. Consider upgrading your plan or reducing usage.
             </p>
           </div>
         </div>
@@ -1267,7 +1265,7 @@ function AdminManagementSection() {
             <AlertDialogTitle>Delete User Account</AlertDialogTitle>
             <AlertDialogDescription>
               Are you absolutely sure you want to delete{" "}
-              <span className="font-medium">{userToDelete && getUserDisplayName(userToDelete)}</span>'s account?
+              <span className="font-medium">{userToDelete && getUserDisplayName(userToDelete)}</span>&apos;s account?
               <br /><br />
               This action cannot be undone. This will permanently delete:
               <ul className="list-disc list-inside mt-2 space-y-1">

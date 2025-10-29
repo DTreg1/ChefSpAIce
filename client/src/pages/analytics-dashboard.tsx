@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
@@ -20,8 +20,6 @@ import {
   Tooltip, 
   Legend, 
   ResponsiveContainer,
-  Area,
-  AreaChart,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
@@ -33,28 +31,21 @@ import {
   TrendingDown, 
   Gauge,
   Timer,
-  Globe,
-  Smartphone,
-  Monitor,
   AlertCircle,
   Activity,
   Zap,
   Eye,
   Clock,
   RefreshCw,
-  BarChart3,
-  Calendar,
   Server,
   CheckCircle,
   XCircle,
   Wifi,
   MessageSquare,
   Star,
-  ThumbsUp,
-  PieChartIcon
+  ThumbsUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { WebVital } from "@shared/schema";
 
 const COLORS = {
   good: "#10b981",
@@ -134,7 +125,7 @@ export default function AnalyticsDashboard() {
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
   // Fetch all metrics stats
-  const { data: allStats, isLoading: allStatsLoading, refetch: refetchAllStats } = useQuery<any>({
+  const { data: allStats, isLoading: allStatsLoading } = useQuery<any>({
     queryKey: ["/api/analytics/stats", { days: timeRange }],
     refetchInterval: autoRefresh ? 30000 : false, // Auto-refresh every 30 seconds if enabled
   });
@@ -227,7 +218,7 @@ export default function AnalyticsDashboard() {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Analytics Dashboard</h2>
-            <p className="text-sm text-muted-foreground">Monitor your app's performance and user experience</p>
+            <p className="text-sm text-muted-foreground">Monitor your app&apos;s performance and user experience</p>
           </div>
           <div className="flex gap-2">
             <Button
