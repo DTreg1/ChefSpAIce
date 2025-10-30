@@ -7,7 +7,7 @@
 
 import { Router } from "express";
 import { storage } from "../storage";
-import { requireAuth } from "../middleware/auth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { z } from "zod";
 import {
   generateSummary,
@@ -49,7 +49,7 @@ const updateSummaryRequestSchema = z.object({
  * POST /api/summarize
  * Generate a summary of content
  */
-router.post("/summarize", requireAuth, async (req, res) => {
+router.post("/summarize", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session?.passport?.user?.id;
     if (!userId) {
@@ -147,7 +147,7 @@ router.post("/summarize", requireAuth, async (req, res) => {
  * GET /api/content/:contentId/summary
  * Get cached summary for content
  */
-router.get("/content/:contentId/summary", requireAuth, async (req, res) => {
+router.get("/content/:contentId/summary", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session?.passport?.user?.id;
     if (!userId) {
@@ -189,7 +189,7 @@ router.get("/content/:contentId/summary", requireAuth, async (req, res) => {
  * POST /api/summarize/batch
  * Bulk summarize multiple items
  */
-router.post("/summarize/batch", requireAuth, async (req, res) => {
+router.post("/summarize/batch", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session?.passport?.user?.id;
     if (!userId) {
@@ -296,7 +296,7 @@ router.post("/summarize/batch", requireAuth, async (req, res) => {
  * PUT /api/summarize/:id
  * Edit/improve a summary
  */
-router.put("/summarize/:id", requireAuth, async (req, res) => {
+router.put("/summarize/:id", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session?.passport?.user?.id;
     if (!userId) {
@@ -342,7 +342,7 @@ router.put("/summarize/:id", requireAuth, async (req, res) => {
  * GET /api/summaries
  * Get user's summary history
  */
-router.get("/summaries", requireAuth, async (req, res) => {
+router.get("/summaries", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session?.passport?.user?.id;
     if (!userId) {
@@ -387,7 +387,7 @@ router.get("/summaries", requireAuth, async (req, res) => {
  * DELETE /api/summarize/:id
  * Delete a summary
  */
-router.delete("/summarize/:id", requireAuth, async (req, res) => {
+router.delete("/summarize/:id", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session?.passport?.user?.id;
     if (!userId) {
