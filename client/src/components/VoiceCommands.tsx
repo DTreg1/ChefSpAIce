@@ -129,10 +129,7 @@ export function VoiceCommands() {
   // Process voice command
   const processCommandMutation = useMutation({
     mutationFn: async (text: string) => {
-      return apiRequest("/api/voice/process-text", {
-        method: "POST",
-        body: JSON.stringify({ text })
-      });
+      return apiRequest("POST", "/api/voice/process-text", { text });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/voice/history"] });

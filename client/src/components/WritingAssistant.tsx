@@ -106,14 +106,11 @@ export function WritingAssistant() {
         .filter(([_, enabled]) => enabled)
         .map(([key, _]) => key);
 
-      return apiRequest("/api/writing/analyze", {
-        method: "POST",
-        body: JSON.stringify({
-          text,
-          type: textType,
-          targetTone,
-          checkFor
-        })
+      return apiRequest("POST", "/api/writing/analyze", {
+        text,
+        type: textType,
+        targetTone,
+        checkFor
       });
     },
     onSuccess: (data) => {
@@ -142,12 +139,9 @@ export function WritingAssistant() {
         index => analysisResult?.suggestions[index]?.suggestionType || ""
       );
 
-      return apiRequest("/api/writing/improve", {
-        method: "POST",
-        body: JSON.stringify({
-          sessionId: currentSessionId,
-          suggestionIds
-        })
+      return apiRequest("POST", "/api/writing/improve", {
+        sessionId: currentSessionId,
+        suggestionIds
       });
     },
     onSuccess: (data) => {
@@ -163,13 +157,10 @@ export function WritingAssistant() {
   // Adjust tone
   const adjustToneMutation = useMutation({
     mutationFn: async (newTone: string) => {
-      return apiRequest("/api/writing/adjust-tone", {
-        method: "POST",
-        body: JSON.stringify({
-          text,
-          currentTone: analysisResult?.metrics.tone,
-          targetTone: newTone
-        })
+      return apiRequest("POST", "/api/writing/adjust-tone", {
+        text,
+        currentTone: analysisResult?.metrics.tone,
+        targetTone: newTone
       });
     },
     onSuccess: (data) => {
