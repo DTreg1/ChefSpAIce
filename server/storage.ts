@@ -112,8 +112,11 @@ import {
   type InsertWritingSession,
   type WritingSuggestion,
   type InsertWritingSuggestion,
+  type Summary,
+  type InsertSummary,
   users,
   pushTokens,
+  summaries,
   notificationHistory,
   userAppliances,
   userInventory,
@@ -1064,6 +1067,51 @@ export interface IStorage {
     totalSuggestions: number;
     commonIssues: Array<{ type: string; count: number }>;
   }>;
+
+  // ==================== Summarization ====================
+  
+  /**
+   * Get a summary by content ID
+   * @param userId - User ID
+   * @param contentId - Unique identifier for the content
+   */
+  getSummary(userId: string, contentId: string): Promise<Summary | undefined>;
+  
+  /**
+   * Get all summaries for a user
+   * @param userId - User ID
+   * @param limit - Max results
+   */
+  getSummaries(userId: string, limit?: number): Promise<Summary[]>;
+  
+  /**
+   * Create a new summary
+   * @param userId - User ID
+   * @param summary - Summary data
+   */
+  createSummary(userId: string, summary: Omit<InsertSummary, "userId">): Promise<Summary>;
+  
+  /**
+   * Update an existing summary (for editing)
+   * @param userId - User ID
+   * @param summaryId - Summary ID
+   * @param updates - Partial summary updates
+   */
+  updateSummary(userId: string, summaryId: string, updates: Partial<Omit<InsertSummary, "userId" | "id">>): Promise<Summary>;
+  
+  /**
+   * Delete a summary
+   * @param userId - User ID
+   * @param summaryId - Summary ID
+   */
+  deleteSummary(userId: string, summaryId: string): Promise<void>;
+  
+  /**
+   * Get summaries by type
+   * @param userId - User ID
+   * @param type - Summary type (tldr, bullet, paragraph)
+   */
+  getSummariesByType(userId: string, type: 'tldr' | 'bullet' | 'paragraph'): Promise<Summary[]>;
 
   /**
    * Get user's query history
@@ -5654,6 +5702,97 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting writing stats:", error);
       throw new Error("Failed to get writing stats");
+    }
+  }
+
+  // ==================== Summarization Operations ====================
+  
+  async getSummary(userId: string, contentId: string): Promise<Summary | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(summaries)
+        .where(and(eq(summaries.userId, userId), eq(summaries.contentId, contentId)))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting summary:", error);
+      throw new Error("Failed to get summary");
+    }
+  }
+  
+  async getSummaries(userId: string, limit?: number): Promise<Summary[]> {
+    try {
+      let query = db
+        .select()
+        .from(summaries)
+        .where(eq(summaries.userId, userId))
+        .orderBy(desc(summaries.createdAt));
+      
+      if (limit) {
+        query = query.limit(limit);
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting summaries:", error);
+      throw new Error("Failed to get summaries");
+    }
+  }
+  
+  async createSummary(userId: string, summary: Omit<InsertSummary, "userId">): Promise<Summary> {
+    try {
+      const [result] = await db
+        .insert(summaries)
+        .values({ ...summary, userId })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating summary:", error);
+      throw new Error("Failed to create summary");
+    }
+  }
+  
+  async updateSummary(userId: string, summaryId: string, updates: Partial<Omit<InsertSummary, "userId" | "id">>): Promise<Summary> {
+    try {
+      const [result] = await db
+        .update(summaries)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(and(eq(summaries.userId, userId), eq(summaries.id, summaryId)))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Summary not found");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error updating summary:", error);
+      throw new Error("Failed to update summary");
+    }
+  }
+  
+  async deleteSummary(userId: string, summaryId: string): Promise<void> {
+    try {
+      await db
+        .delete(summaries)
+        .where(and(eq(summaries.userId, userId), eq(summaries.id, summaryId)));
+    } catch (error) {
+      console.error("Error deleting summary:", error);
+      throw new Error("Failed to delete summary");
+    }
+  }
+  
+  async getSummariesByType(userId: string, type: 'tldr' | 'bullet' | 'paragraph'): Promise<Summary[]> {
+    try {
+      return await db
+        .select()
+        .from(summaries)
+        .where(and(eq(summaries.userId, userId), eq(summaries.summaryType, type)))
+        .orderBy(desc(summaries.createdAt));
+    } catch (error) {
+      console.error("Error getting summaries by type:", error);
+      throw new Error("Failed to get summaries by type");
     }
   }
 }
