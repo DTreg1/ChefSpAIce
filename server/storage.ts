@@ -5723,14 +5723,14 @@ export class DatabaseStorage implements IStorage {
   
   async getSummaries(userId: string, limit?: number): Promise<Summary[]> {
     try {
-      let query = db
+      const query = db
         .select()
         .from(summaries)
         .where(eq(summaries.userId, userId))
         .orderBy(desc(summaries.createdAt));
       
       if (limit) {
-        query = query.limit(limit);
+        return await query.limit(limit);
       }
       
       return await query;
