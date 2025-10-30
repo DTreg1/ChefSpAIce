@@ -59,11 +59,21 @@ export class FcmService {
             ? JSON.parse(fcmServiceAccount) 
             : fcmServiceAccount;
           
+          // Check if this is a dummy credential
+          if (serviceAccount.project_id === 'dummy-project' || 
+              serviceAccount.private_key_id === 'dummy-key-id') {
+            console.warn('⚠️  FCM using dummy credentials. Push notifications will NOT work.');
+            console.warn('   To enable real push notifications, replace with actual Firebase credentials.');
+            // Mark as initialized even though it's dummy, to prevent errors
+            this.isInitialized = true;
+            return;
+          }
+          
           this.app = admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
           });
           this.isInitialized = true;
-          // console.log('✅ FCM initialized with service account from environment');
+          console.log('✅ FCM initialized with service account from environment');
         } catch (parseError) {
           console.error('❌ Failed to parse FCM service account JSON:', parseError);
           console.warn('   FCM service account must be a valid JSON string');
@@ -81,7 +91,7 @@ export class FcmService {
             credential: admin.credential.cert(fcmServiceAccountPath),
           });
           this.isInitialized = true;
-          // console.log('✅ FCM initialized with service account from file');
+          console.log('✅ FCM initialized with service account from file');
         } catch (fileError) {
           console.error('❌ Failed to read FCM service account file:', fileError);
           return;
@@ -163,22 +173,22 @@ export class FcmService {
       const response = await admin.messaging(this.app).send(message);
       // console.log('✅ FCM notification sent successfully:', response);
       return response;
-    } catch (error: Error | unknown) {
+    } catch (error: any) {
       console.error('❌ FCM notification failed:', error);
       
       // Handle specific FCM error codes
-      if (error.code === 'messaging/invalid-registration-token' ||
-          error.code === 'messaging/registration-token-not-registered') {
+      if (error?.code === 'messaging/invalid-registration-token' ||
+          error?.code === 'messaging/registration-token-not-registered') {
         throw new Error('INVALID_TOKEN');
-      } else if (error.code === 'messaging/message-rate-exceeded') {
+      } else if (error?.code === 'messaging/message-rate-exceeded') {
         throw new Error('RATE_LIMIT_EXCEEDED');
-      } else if (error.code === 'messaging/device-message-rate-exceeded') {
+      } else if (error?.code === 'messaging/device-message-rate-exceeded') {
         throw new Error('DEVICE_RATE_LIMIT_EXCEEDED');
-      } else if (error.code === 'messaging/topics-message-rate-exceeded') {
+      } else if (error?.code === 'messaging/topics-message-rate-exceeded') {
         throw new Error('TOPIC_RATE_LIMIT_EXCEEDED');
-      } else if (error.code === 'messaging/too-many-topics') {
+      } else if (error?.code === 'messaging/too-many-topics') {
         throw new Error('TOO_MANY_TOPICS');
-      } else if (error.code === 'messaging/invalid-argument') {
+      } else if (error?.code === 'messaging/invalid-argument') {
         throw new Error('INVALID_PAYLOAD');
       }
       
@@ -211,8 +221,8 @@ export class FcmService {
       // Use dryRun option to validate without sending
       await admin.messaging(this.app).send(message, true);
       return true;
-    } catch (error: Error | unknown) {
-      console.error('FCM token validation failed:', error.code);
+    } catch (error: any) {
+      console.error('FCM token validation failed:', error?.code);
       return false;
     }
   }
@@ -276,11 +286,13 @@ export class FcmService {
    * Convert data object to string values
    * FCM requires all data values to be strings
    */
-  private static convertDataToStrings(data: unknown): Record<string, string> {
+  private static convertDataToStrings(data: any): Record<string, string> {
     const result: Record<string, string> = {};
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-        result[key] = typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]);
+    if (data && typeof data === 'object') {
+      for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+          result[key] = typeof data[key] === 'string' ? data[key] : JSON.stringify(data[key]);
+        }
       }
     }
     return result;
