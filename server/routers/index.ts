@@ -23,6 +23,7 @@ import aiAssistantRouter from "./ai-assistant.router";
 import voiceCommandsRouter from "./voice-commands.router";
 import emailDraftingRouter from "./email-drafting.router";
 import writingAssistantRouter from "./writing-assistant.router";
+import summarizationRouter from "./summarization.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -60,6 +61,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/voice", voiceCommandsRouter);   // Voice Commands endpoints
   app.use("/api/drafts", emailDraftingRouter);  // Email/Message Drafting endpoints
   app.use("/api/writing", writingAssistantRouter); // Writing Assistant endpoints
+  app.use("/api", summarizationRouter);         // Summarization endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);
