@@ -75,7 +75,7 @@ router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, a
       context: z.object({
         recipient: z.string().optional(),
         subject: z.string().optional(),
-        purpose: z.string(),
+        purpose: z.string().optional(),
         tone: z.enum(['formal', 'casual', 'friendly', 'professional']).optional(),
         keyPoints: z.array(z.string()).optional(),
         previousMessage: z.string().optional()
@@ -115,7 +115,7 @@ async function generateDraftVariations(
     
     Context:
     - Recipient: ${context.recipient || "General"}
-    - Purpose: ${context.purpose}
+    - Purpose: ${context.purpose || context.subject || "General message"}
     - Tone: ${context.tone || "professional"}
     - Key Points: ${context.keyPoints?.join(", ") || "None specified"}
     ${context.previousMessage ? `- Replying to: "${context.previousMessage}"` : ""}
@@ -141,7 +141,7 @@ async function generateDraftVariations(
       },
       {
         role: "user",
-        content: `Generate ${numberOfVariations} ${contextType} drafts for: ${context.purpose}`
+        content: `Generate ${numberOfVariations} ${contextType} drafts for: ${context.purpose || context.subject || "the specified context"}`
       }
     ],
     response_format: { type: "json_object" },

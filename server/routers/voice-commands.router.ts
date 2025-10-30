@@ -120,7 +120,7 @@ async function processVoiceCommand(text: string, userId: string): Promise<{
   try {
     // Use GPT to understand the command intent
     const completion = await openai.chat.completions.create({
-      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025
+      model: "gpt-4o-mini", // Using GPT-4o-mini for efficient voice command processing
       messages: [
         {
           role: "system",

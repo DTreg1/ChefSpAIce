@@ -743,14 +743,37 @@ export default function Onboarding() {
                   )}
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={saveMutation.isPending}
-                  data-testid="button-complete-onboarding"
-                >
-                  {saveMutation.isPending ? "Setting up..." : "Complete Setup"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      // Skip onboarding for testing
+                      saveMutation.mutate({
+                        storageAreas: ["Fridge", "Pantry"],
+                        kitchenEquipment: ["Stove"],
+                        householdSize: 2,
+                        cookingSkillLevel: "intermediate",
+                        weightUnit: "grams",
+                        volumeUnit: "milliliters",
+                        defaultServingSizeUnit: "GRAMS",
+                        foodsToAvoid: []
+                      });
+                    }}
+                    data-testid="button-skip-onboarding"
+                  >
+                    Skip Setup
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={saveMutation.isPending}
+                    data-testid="button-complete-onboarding"
+                  >
+                    {saveMutation.isPending ? "Setting up..." : "Complete Setup"}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>

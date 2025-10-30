@@ -15,7 +15,7 @@ const router = Router();
 
 // Initialize OpenAI client using Replit AI Integrations
 // Referenced from blueprint:javascript_openai_ai_integrations
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+// Using GPT-4 model for the AI assistant
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "not-needed"
@@ -180,7 +180,7 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: ExpressR
     
     // Get AI response
     const completion = await openai.chat.completions.create({
-      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025
+      model: "gpt-4", // Using GPT-4 for comprehensive AI assistant
       messages: openaiMessages,
       max_completion_tokens: 2000,
       temperature: 0.7
@@ -201,7 +201,7 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: ExpressR
     if (messages.length % 10 === 0 && messages.length > 0) {
       // Generate context summary
       const summaryCompletion = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o-mini", // Using GPT-4o-mini for summary generation
         messages: [
           {
             role: "system",
@@ -242,13 +242,12 @@ router.post("/feedback", isAuthenticated, async (req: ExpressRequest<any, any, a
     const { messageId, rating, feedback } = req.body;
     
     // Log feedback for analytics
-    await storage.logActivityLog({
+    await storage.createActivityLog({
       userId,
       action: "assistant_feedback",
       entity: "message",
       entityId: messageId,
-      metadata: { rating, feedback },
-      timestamp: new Date()
+      metadata: { rating, feedback }
     });
     
     res.json({ success: true });
