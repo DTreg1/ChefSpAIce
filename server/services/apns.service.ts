@@ -89,9 +89,26 @@ export class ApnsService {
       if (apnsKeyId && apnsTeamId) {
         try {
           if (apnsKeyContent) {
+            // Check if this is a dummy credential
+            if (apnsKeyId === 'dummy-key-id' || apnsTeamId === 'dummy-team-id' || 
+                apnsKeyContent.includes('MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2')) {
+              console.warn('⚠️  APNs using dummy credentials. Push notifications will NOT work.');
+              console.warn('   To enable real push notifications, replace with actual Apple Developer credentials.');
+              // Mark as initialized even though it's dummy, to prevent errors
+              this.isInitialized = true;
+              return;
+            }
+            
             // If key content is provided, write it to a temp file (node-apn requires file path)
             const tempKeyPath = path.join('/tmp', `apns-key-${Date.now()}.p8`);
-            const keyData = Buffer.from(apnsKeyContent, 'base64').toString('utf-8');
+            let keyData: string;
+            
+            // Try to decode from base64 first, if that fails, use as-is
+            try {
+              keyData = Buffer.from(apnsKeyContent, 'base64').toString('utf-8');
+            } catch {
+              keyData = apnsKeyContent; // Use as-is if not base64
+            }
             
             // Validate that the key looks like a P8 key
             if (!keyData.includes('BEGIN PRIVATE KEY')) {
