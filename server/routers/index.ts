@@ -19,6 +19,10 @@ import notificationsRouter from "./notifications.router";
 import cookingTermsRouter from "./cooking-terms.router";
 import activityLogsRouter from "./activity-logs.router";
 import mlRouter from "./mlRouter";
+import aiAssistantRouter from "./ai-assistant.router";
+import voiceCommandsRouter from "./voice-commands.router";
+import emailDraftingRouter from "./email-drafting.router";
+import writingAssistantRouter from "./writing-assistant.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -27,7 +31,7 @@ import { storage } from "../storage";
 // Import activity logging middleware
 import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";
 
-export async function registerModularRoutes(app: Express): Promise<Server> {
+export async function registerModularRoutes(app: any): Promise<Server> {
   // Setup authentication middleware first
   await setupAuth(app);
   
@@ -52,13 +56,17 @@ export async function registerModularRoutes(app: Express): Promise<Server> {
   app.use(notificationsRouter);       // Notification tracking and history endpoints
   app.use(cookingTermsRouter);        // Cooking terms endpoints
   app.use("/api/ml", mlRouter);       // ML features endpoints
+  app.use("/api/assistant", aiAssistantRouter); // AI Assistant endpoints
+  app.use("/api/voice", voiceCommandsRouter);   // Voice Commands endpoints
+  app.use("/api/drafts", emailDraftingRouter);  // Email/Message Drafting endpoints
+  app.use("/api/writing", writingAssistantRouter); // Writing Assistant endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);
   app.use("/api", seedEndpoint);
   
   // Health check endpoint
-  app.get("/api/health", (_req, res) => {
+  app.get("/api/health", (_req: any, res: any) => {
     res.json({ 
       status: "healthy",
       timestamp: new Date().toISOString(),

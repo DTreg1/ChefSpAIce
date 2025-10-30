@@ -95,6 +95,23 @@ import {
   type InsertRelatedContentCache,
   type QueryLog,
   type InsertQueryLog,
+  // Task 7-10 types
+  type Conversation,
+  type InsertConversation,
+  type Message,
+  type InsertMessage,
+  type ConversationContext,
+  type InsertConversationContext,
+  type VoiceCommand,
+  type InsertVoiceCommand,
+  type DraftTemplate,
+  type InsertDraftTemplate,
+  type GeneratedDraft,
+  type InsertGeneratedDraft,
+  type WritingSession,
+  type InsertWritingSession,
+  type WritingSuggestion,
+  type InsertWritingSuggestion,
   users,
   pushTokens,
   notificationHistory,
@@ -126,6 +143,15 @@ import {
   duplicatePairs,
   relatedContentCache,
   queryLogs,
+  // Task 7-10 tables
+  conversations,
+  messages,
+  conversationContext,
+  voiceCommands,
+  draftTemplates,
+  generatedDrafts,
+  writingSessions,
+  writingSuggestions,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull } from "drizzle-orm";
@@ -864,6 +890,180 @@ export interface IStorage {
    * @param log - Query log data
    */
   createQueryLog(log: InsertQueryLog): Promise<QueryLog>;
+
+  // ==================== Task 7: AI Chat Assistant ====================
+  
+  /**
+   * Get all conversations for a user
+   * @param userId - User ID
+   */
+  getConversations(userId: string): Promise<Conversation[]>;
+  
+  /**
+   * Get a specific conversation
+   * @param userId - User ID
+   * @param conversationId - Conversation ID
+   */
+  getConversation(userId: string, conversationId: string): Promise<Conversation | undefined>;
+  
+  /**
+   * Create a new conversation
+   * @param userId - User ID
+   * @param title - Conversation title
+   */
+  createConversation(userId: string, title: string): Promise<Conversation>;
+  
+  /**
+   * Update conversation (e.g., title, updatedAt)
+   * @param userId - User ID
+   * @param conversationId - Conversation ID
+   * @param updates - Fields to update
+   */
+  updateConversation(userId: string, conversationId: string, updates: Partial<Conversation>): Promise<Conversation>;
+  
+  /**
+   * Delete a conversation and all its messages
+   * @param userId - User ID
+   * @param conversationId - Conversation ID
+   */
+  deleteConversation(userId: string, conversationId: string): Promise<void>;
+  
+  /**
+   * Get messages for a conversation
+   * @param conversationId - Conversation ID
+   * @param limit - Max messages to return
+   */
+  getMessages(conversationId: string, limit?: number): Promise<Message[]>;
+  
+  /**
+   * Create a new message in a conversation
+   * @param message - Message data
+   */
+  createMessage(message: InsertMessage): Promise<Message>;
+  
+  /**
+   * Get or create conversation context
+   * @param conversationId - Conversation ID
+   */
+  getConversationContext(conversationId: string): Promise<ConversationContext | undefined>;
+  
+  /**
+   * Update conversation context
+   * @param conversationId - Conversation ID
+   * @param context - Context data
+   */
+  updateConversationContext(conversationId: string, context: Partial<ConversationContext>): Promise<ConversationContext>;
+
+  // ==================== Task 8: Voice Commands ====================
+  
+  /**
+   * Log a voice command
+   * @param command - Voice command data
+   */
+  createVoiceCommand(command: InsertVoiceCommand): Promise<VoiceCommand>;
+  
+  /**
+   * Get voice command history for a user
+   * @param userId - User ID
+   * @param limit - Max commands to return
+   */
+  getVoiceCommands(userId: string, limit?: number): Promise<VoiceCommand[]>;
+  
+  /**
+   * Get available voice commands (for help/documentation)
+   */
+  getAvailableVoiceCommands(): Promise<Array<{ command: string; description: string; example: string }>>;
+
+  // ==================== Task 9: Smart Email/Message Drafting ====================
+  
+  /**
+   * Get draft templates
+   * @param contextType - Filter by context type
+   */
+  getDraftTemplates(contextType?: string): Promise<DraftTemplate[]>;
+  
+  /**
+   * Create a draft template
+   * @param template - Template data
+   */
+  createDraftTemplate(template: InsertDraftTemplate): Promise<DraftTemplate>;
+  
+  /**
+   * Increment template usage count
+   * @param templateId - Template ID
+   */
+  incrementTemplateUsage(templateId: string): Promise<void>;
+  
+  /**
+   * Generate and save message drafts
+   * @param userId - User ID
+   * @param drafts - Array of generated drafts
+   */
+  saveGeneratedDrafts(userId: string, drafts: Omit<InsertGeneratedDraft, "userId">[]): Promise<GeneratedDraft[]>;
+  
+  /**
+   * Mark a draft as selected
+   * @param userId - User ID
+   * @param draftId - Draft ID
+   * @param edited - Whether the draft was edited before sending
+   */
+  markDraftSelected(userId: string, draftId: string, edited: boolean): Promise<void>;
+  
+  /**
+   * Get draft generation history
+   * @param userId - User ID
+   * @param limit - Max drafts to return
+   */
+  getDraftHistory(userId: string, limit?: number): Promise<GeneratedDraft[]>;
+
+  // ==================== Task 10: Writing Assistant ====================
+  
+  /**
+   * Create a writing session
+   * @param session - Writing session data
+   */
+  createWritingSession(session: InsertWritingSession): Promise<WritingSession>;
+  
+  /**
+   * Get writing session
+   * @param userId - User ID
+   * @param sessionId - Session ID
+   */
+  getWritingSession(userId: string, sessionId: string): Promise<WritingSession | undefined>;
+  
+  /**
+   * Update writing session with improvements
+   * @param userId - User ID
+   * @param sessionId - Session ID
+   * @param improvedText - Improved text
+   * @param improvements - Applied improvements
+   */
+  updateWritingSession(userId: string, sessionId: string, improvedText: string, improvements: string[]): Promise<WritingSession>;
+  
+  /**
+   * Add writing suggestions to a session
+   * @param sessionId - Session ID
+   * @param suggestions - Array of suggestions
+   */
+  addWritingSuggestions(sessionId: string, suggestions: Omit<InsertWritingSuggestion, "sessionId">[]): Promise<WritingSuggestion[]>;
+  
+  /**
+   * Mark suggestion as accepted/rejected
+   * @param suggestionId - Suggestion ID
+   * @param accepted - Whether suggestion was accepted
+   */
+  updateSuggestionStatus(suggestionId: string, accepted: boolean): Promise<void>;
+  
+  /**
+   * Get writing statistics for a user
+   * @param userId - User ID
+   */
+  getWritingStats(userId: string): Promise<{
+    totalSessions: number;
+    acceptedSuggestions: number;
+    totalSuggestions: number;
+    commonIssues: Array<{ type: string; count: number }>;
+  }>;
 
   /**
    * Get user's query history
@@ -5058,6 +5258,402 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting query history:", error);
       throw new Error("Failed to get query history");
+    }
+  }
+
+  // ==================== Task 7: AI Chat Assistant Implementations ====================
+  
+  async getConversations(userId: string): Promise<Conversation[]> {
+    try {
+      const result = await db
+        .select()
+        .from(conversations)
+        .where(eq(conversations.userId, userId))
+        .orderBy(desc(conversations.updatedAt));
+      return result;
+    } catch (error) {
+      console.error("Error getting conversations:", error);
+      throw new Error("Failed to get conversations");
+    }
+  }
+  
+  async getConversation(userId: string, conversationId: string): Promise<Conversation | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(conversations)
+        .where(and(eq(conversations.userId, userId), eq(conversations.id, conversationId)))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting conversation:", error);
+      throw new Error("Failed to get conversation");
+    }
+  }
+  
+  async createConversation(userId: string, title: string): Promise<Conversation> {
+    try {
+      const [result] = await db
+        .insert(conversations)
+        .values({ userId, title })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      throw new Error("Failed to create conversation");
+    }
+  }
+  
+  async updateConversation(userId: string, conversationId: string, updates: Partial<Conversation>): Promise<Conversation> {
+    try {
+      const [result] = await db
+        .update(conversations)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(and(eq(conversations.userId, userId), eq(conversations.id, conversationId)))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error updating conversation:", error);
+      throw new Error("Failed to update conversation");
+    }
+  }
+  
+  async deleteConversation(userId: string, conversationId: string): Promise<void> {
+    try {
+      await db
+        .delete(conversations)
+        .where(and(eq(conversations.userId, userId), eq(conversations.id, conversationId)));
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      throw new Error("Failed to delete conversation");
+    }
+  }
+  
+  async getMessages(conversationId: string, limit: number = 100): Promise<Message[]> {
+    try {
+      const result = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.conversationId, conversationId))
+        .orderBy(desc(messages.timestamp))
+        .limit(limit);
+      return result.reverse(); // Return in chronological order
+    } catch (error) {
+      console.error("Error getting messages:", error);
+      throw new Error("Failed to get messages");
+    }
+  }
+  
+  async createMessage(message: InsertMessage): Promise<Message> {
+    try {
+      const [result] = await db
+        .insert(messages)
+        .values(message)
+        .returning();
+      
+      // Update conversation's updatedAt
+      await db
+        .update(conversations)
+        .set({ updatedAt: new Date() })
+        .where(eq(conversations.id, message.conversationId));
+      
+      return result;
+    } catch (error) {
+      console.error("Error creating message:", error);
+      throw new Error("Failed to create message");
+    }
+  }
+  
+  async getConversationContext(conversationId: string): Promise<ConversationContext | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(conversationContext)
+        .where(eq(conversationContext.conversationId, conversationId))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting conversation context:", error);
+      throw new Error("Failed to get conversation context");
+    }
+  }
+  
+  async updateConversationContext(conversationId: string, context: Partial<ConversationContext>): Promise<ConversationContext> {
+    try {
+      const [result] = await db
+        .insert(conversationContext)
+        .values({ conversationId, ...context })
+        .onConflictDoUpdate({
+          target: conversationContext.conversationId,
+          set: { ...context, updatedAt: new Date() }
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error updating conversation context:", error);
+      throw new Error("Failed to update conversation context");
+    }
+  }
+
+  // ==================== Task 8: Voice Commands Implementations ====================
+  
+  async createVoiceCommand(command: InsertVoiceCommand): Promise<VoiceCommand> {
+    try {
+      const [result] = await db
+        .insert(voiceCommands)
+        .values(command)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating voice command:", error);
+      throw new Error("Failed to create voice command");
+    }
+  }
+  
+  async getVoiceCommands(userId: string, limit: number = 50): Promise<VoiceCommand[]> {
+    try {
+      const result = await db
+        .select()
+        .from(voiceCommands)
+        .where(eq(voiceCommands.userId, userId))
+        .orderBy(desc(voiceCommands.timestamp))
+        .limit(limit);
+      return result;
+    } catch (error) {
+      console.error("Error getting voice commands:", error);
+      throw new Error("Failed to get voice commands");
+    }
+  }
+  
+  async getAvailableVoiceCommands(): Promise<Array<{ command: string; description: string; example: string }>> {
+    // Static list of available commands - could be moved to a config file
+    return [
+      {
+        command: "navigate",
+        description: "Navigate to a page in the app",
+        example: "Show me my recipes"
+      },
+      {
+        command: "search",
+        description: "Search for items",
+        example: "Search for chicken recipes"
+      },
+      {
+        command: "add",
+        description: "Add items to lists",
+        example: "Add milk to shopping list"
+      },
+      {
+        command: "show",
+        description: "Display specific information",
+        example: "Show expiring items"
+      },
+      {
+        command: "create",
+        description: "Create new items",
+        example: "Create a new meal plan"
+      }
+    ];
+  }
+
+  // ==================== Task 9: Smart Email/Message Drafting Implementations ====================
+  
+  async getDraftTemplates(contextType?: string): Promise<DraftTemplate[]> {
+    try {
+      let query = db.select().from(draftTemplates);
+      if (contextType) {
+        return await query.where(eq(draftTemplates.contextType, contextType)).orderBy(desc(draftTemplates.usageCount));
+      }
+      return await query.orderBy(desc(draftTemplates.usageCount));
+    } catch (error) {
+      console.error("Error getting draft templates:", error);
+      throw new Error("Failed to get draft templates");
+    }
+  }
+  
+  async createDraftTemplate(template: InsertDraftTemplate): Promise<DraftTemplate> {
+    try {
+      const [result] = await db
+        .insert(draftTemplates)
+        .values(template)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating draft template:", error);
+      throw new Error("Failed to create draft template");
+    }
+  }
+  
+  async incrementTemplateUsage(templateId: string): Promise<void> {
+    try {
+      await db
+        .update(draftTemplates)
+        .set({ usageCount: sql`${draftTemplates.usageCount} + 1` })
+        .where(eq(draftTemplates.id, templateId));
+    } catch (error) {
+      console.error("Error incrementing template usage:", error);
+      throw new Error("Failed to increment template usage");
+    }
+  }
+  
+  async saveGeneratedDrafts(userId: string, drafts: Omit<InsertGeneratedDraft, "userId">[]): Promise<GeneratedDraft[]> {
+    try {
+      const draftsWithUserId = drafts.map(draft => ({ ...draft, userId }));
+      const result = await db
+        .insert(generatedDrafts)
+        .values(draftsWithUserId)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error saving generated drafts:", error);
+      throw new Error("Failed to save generated drafts");
+    }
+  }
+  
+  async markDraftSelected(userId: string, draftId: string, edited: boolean): Promise<void> {
+    try {
+      await db
+        .update(generatedDrafts)
+        .set({ selected: true, edited })
+        .where(and(eq(generatedDrafts.userId, userId), eq(generatedDrafts.id, draftId)));
+    } catch (error) {
+      console.error("Error marking draft as selected:", error);
+      throw new Error("Failed to mark draft as selected");
+    }
+  }
+  
+  async getDraftHistory(userId: string, limit: number = 50): Promise<GeneratedDraft[]> {
+    try {
+      const result = await db
+        .select()
+        .from(generatedDrafts)
+        .where(eq(generatedDrafts.userId, userId))
+        .orderBy(desc(generatedDrafts.createdAt))
+        .limit(limit);
+      return result;
+    } catch (error) {
+      console.error("Error getting draft history:", error);
+      throw new Error("Failed to get draft history");
+    }
+  }
+
+  // ==================== Task 10: Writing Assistant Implementations ====================
+  
+  async createWritingSession(session: InsertWritingSession): Promise<WritingSession> {
+    try {
+      const [result] = await db
+        .insert(writingSessions)
+        .values(session)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating writing session:", error);
+      throw new Error("Failed to create writing session");
+    }
+  }
+  
+  async getWritingSession(userId: string, sessionId: string): Promise<WritingSession | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(writingSessions)
+        .where(and(eq(writingSessions.userId, userId), eq(writingSessions.id, sessionId)))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting writing session:", error);
+      throw new Error("Failed to get writing session");
+    }
+  }
+  
+  async updateWritingSession(userId: string, sessionId: string, improvedText: string, improvements: string[]): Promise<WritingSession> {
+    try {
+      const [result] = await db
+        .update(writingSessions)
+        .set({ improvedText, improvementsApplied: improvements })
+        .where(and(eq(writingSessions.userId, userId), eq(writingSessions.id, sessionId)))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error updating writing session:", error);
+      throw new Error("Failed to update writing session");
+    }
+  }
+  
+  async addWritingSuggestions(sessionId: string, suggestions: Omit<InsertWritingSuggestion, "sessionId">[]): Promise<WritingSuggestion[]> {
+    try {
+      const suggestionsWithSessionId = suggestions.map(s => ({ ...s, sessionId }));
+      const result = await db
+        .insert(writingSuggestions)
+        .values(suggestionsWithSessionId)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error adding writing suggestions:", error);
+      throw new Error("Failed to add writing suggestions");
+    }
+  }
+  
+  async updateSuggestionStatus(suggestionId: string, accepted: boolean): Promise<void> {
+    try {
+      await db
+        .update(writingSuggestions)
+        .set({ accepted })
+        .where(eq(writingSuggestions.id, suggestionId));
+    } catch (error) {
+      console.error("Error updating suggestion status:", error);
+      throw new Error("Failed to update suggestion status");
+    }
+  }
+  
+  async getWritingStats(userId: string): Promise<{
+    totalSessions: number;
+    acceptedSuggestions: number;
+    totalSuggestions: number;
+    commonIssues: Array<{ type: string; count: number }>;
+  }> {
+    try {
+      // Get total sessions
+      const sessionsCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(writingSessions)
+        .where(eq(writingSessions.userId, userId));
+      
+      // Get suggestions stats
+      const suggestionsStats = await db
+        .select({
+          accepted: sql<number>`count(*) filter (where ${writingSuggestions.accepted} = true)`,
+          total: sql<number>`count(*)`
+        })
+        .from(writingSuggestions)
+        .innerJoin(writingSessions, eq(writingSessions.id, writingSuggestions.sessionId))
+        .where(eq(writingSessions.userId, userId));
+      
+      // Get common issues
+      const commonIssues = await db
+        .select({
+          type: writingSuggestions.suggestionType,
+          count: sql<number>`count(*)`
+        })
+        .from(writingSuggestions)
+        .innerJoin(writingSessions, eq(writingSessions.id, writingSuggestions.sessionId))
+        .where(eq(writingSessions.userId, userId))
+        .groupBy(writingSuggestions.suggestionType)
+        .orderBy(desc(sql`count(*)`))
+        .limit(5);
+      
+      return {
+        totalSessions: Number(sessionsCount[0]?.count || 0),
+        acceptedSuggestions: Number(suggestionsStats[0]?.accepted || 0),
+        totalSuggestions: Number(suggestionsStats[0]?.total || 0),
+        commonIssues: commonIssues.map(ci => ({
+          type: ci.type,
+          count: Number(ci.count)
+        }))
+      };
+    } catch (error) {
+      console.error("Error getting writing stats:", error);
+      throw new Error("Failed to get writing stats");
     }
   }
 }

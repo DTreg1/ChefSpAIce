@@ -3058,6 +3058,394 @@ export type InsertApplianceLibrary = z.infer<typeof insertApplianceLibrarySchema
 export type ApplianceLibrary = typeof applianceLibrary.$inferSelect;
 
 /**
+ * Conversations Table (Task 7 - AI Chat Assistant)
+ * 
+ * Manages AI chat conversations with context tracking.
+ * Each conversation is a separate thread of messages.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - title: Conversation title (auto-generated or user-defined)
+ * - createdAt: When conversation started
+ * - updatedAt: Last activity in conversation
+ * 
+ * Business Rules:
+ * - Title auto-generated from first message if not provided
+ * - Updated timestamp refreshed on new messages
+ * - Conversations ordered by updatedAt for recency
+ * 
+ * Indexes:
+ * - conversations_user_id_idx: User's conversation list
+ * - conversations_updated_at_idx: Recent conversations first
+ * 
+ * Relationships:
+ * - users → conversations: CASCADE
+ * - conversations ← messages: Referenced by conversationId
+ * - conversations ← conversationContext: One-to-one context
+ */
+export const conversations = pgTable("conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("conversations_user_id_idx").on(table.userId),
+  index("conversations_updated_at_idx").on(table.updatedAt),
+]);
+
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+
+/**
+ * Messages Table (Task 7 - AI Chat Assistant)
+ * 
+ * Individual messages within conversations.
+ * Tracks token usage for cost monitoring.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - conversationId: Foreign key to conversations.id (CASCADE delete)
+ * - role: Message sender ('user' | 'assistant' | 'system')
+ * - content: Message text content
+ * - tokensUsed: OpenAI tokens consumed (for cost tracking)
+ * - timestamp: When message was sent
+ * 
+ * Token Tracking:
+ * - User messages: Input tokens
+ * - Assistant messages: Completion tokens
+ * - Used for billing and rate limiting
+ * 
+ * Indexes:
+ * - messages_conversation_id_idx: Messages in conversation
+ * - messages_timestamp_idx: Chronological ordering
+ * 
+ * Relationships:
+ * - conversations → messages: CASCADE
+ */
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  role: text("role").notNull(), // 'user', 'assistant', 'system'
+  content: text("content").notNull(),
+  tokensUsed: integer("tokens_used"),
+  timestamp: timestamp("timestamp").defaultNow(),
+}, (table) => [
+  index("messages_conversation_id_idx").on(table.conversationId),
+  index("messages_timestamp_idx").on(table.timestamp),
+]);
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
+
+/**
+ * Conversation Context Table (Task 7 - AI Chat Assistant)
+ * 
+ * Stores summarized context and key facts for conversations.
+ * Enables efficient context management for long conversations.
+ * 
+ * Fields:
+ * - conversationId: Foreign key to conversations.id (PRIMARY KEY)
+ * - contextSummary: AI-generated summary of conversation
+ * - keyFacts: JSONB array of important facts extracted
+ * - updatedAt: When context was last updated
+ * 
+ * Context Management:
+ * - Summary regenerated periodically (every N messages)
+ * - Key facts extracted for quick reference
+ * - Reduces token usage for context window
+ * 
+ * Relationships:
+ * - conversations → conversationContext: ONE-TO-ONE
+ */
+export const conversationContext = pgTable("conversation_context", {
+  conversationId: varchar("conversation_id").primaryKey().references(() => conversations.id, { onDelete: "cascade" }),
+  contextSummary: text("context_summary"),
+  keyFacts: jsonb("key_facts").$type<string[]>(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertConversationContextSchema = createInsertSchema(conversationContext).omit({
+  updatedAt: true,
+});
+
+export type InsertConversationContext = z.infer<typeof insertConversationContextSchema>;
+export type ConversationContext = typeof conversationContext.$inferSelect;
+
+/**
+ * Voice Commands Table (Task 8 - Voice Commands)
+ * 
+ * Tracks voice command usage and success rates.
+ * Enables voice-controlled app navigation.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - transcript: Speech-to-text result
+ * - commandType: Interpreted command category
+ * - actionTaken: What action was executed
+ * - success: Whether command executed successfully
+ * - timestamp: When command was issued
+ * 
+ * Command Types:
+ * - navigation: "Show me X page"
+ * - action: "Add X to cart"
+ * - query: "What is X?"
+ * - settings: "Change X setting"
+ * 
+ * Analytics:
+ * - Success rate by command type
+ * - Most common voice commands
+ * - Failed command patterns for improvement
+ * 
+ * Indexes:
+ * - voice_commands_user_id_idx: User's command history
+ * - voice_commands_timestamp_idx: Recent commands
+ * - voice_commands_success_idx: Success/failure analysis
+ * 
+ * Relationships:
+ * - users → voiceCommands: CASCADE
+ */
+export const voiceCommands = pgTable("voice_commands", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  transcript: text("transcript").notNull(),
+  commandType: text("command_type"),
+  actionTaken: text("action_taken"),
+  success: boolean("success").notNull().default(false),
+  timestamp: timestamp("timestamp").defaultNow(),
+}, (table) => [
+  index("voice_commands_user_id_idx").on(table.userId),
+  index("voice_commands_timestamp_idx").on(table.timestamp),
+  index("voice_commands_success_idx").on(table.success),
+]);
+
+export const insertVoiceCommandSchema = createInsertSchema(voiceCommands).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertVoiceCommand = z.infer<typeof insertVoiceCommandSchema>;
+export type VoiceCommand = typeof voiceCommands.$inferSelect;
+
+/**
+ * Draft Templates Table (Task 9 - Smart Email/Message Drafting)
+ * 
+ * Reusable templates for message drafting.
+ * Tracks usage for popularity metrics.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - contextType: Type of message context
+ * - templatePrompt: Template for AI generation
+ * - usageCount: Times template has been used
+ * - createdAt: When template was created
+ * 
+ * Context Types:
+ * - customer_complaint: Response to complaints
+ * - inquiry: Response to questions
+ * - follow_up: Follow-up messages
+ * - thank_you: Thank you messages
+ * - apology: Apology messages
+ * 
+ * Indexes:
+ * - draft_templates_context_type_idx: Filter by type
+ * - draft_templates_usage_count_idx: Popular templates
+ */
+export const draftTemplates = pgTable("draft_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contextType: text("context_type").notNull(),
+  templatePrompt: text("template_prompt").notNull(),
+  usageCount: integer("usage_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("draft_templates_context_type_idx").on(table.contextType),
+  index("draft_templates_usage_count_idx").on(table.usageCount),
+]);
+
+export const insertDraftTemplateSchema = createInsertSchema(draftTemplates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDraftTemplate = z.infer<typeof insertDraftTemplateSchema>;
+export type DraftTemplate = typeof draftTemplates.$inferSelect;
+
+/**
+ * Generated Drafts Table (Task 9 - Smart Email/Message Drafting)
+ * 
+ * AI-generated message drafts with tracking.
+ * Records which drafts were selected and edited.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - originalMessageId: ID of message being responded to
+ * - draftContent: Generated draft text
+ * - selected: Whether user selected this draft
+ * - edited: Whether user edited before sending
+ * - tone: Tone of the draft (formal, casual, friendly)
+ * - createdAt: When draft was generated
+ * 
+ * Analytics:
+ * - Selection rate by tone
+ * - Edit frequency (quality metric)
+ * - Most effective draft styles
+ * 
+ * Indexes:
+ * - generated_drafts_user_id_idx: User's draft history
+ * - generated_drafts_selected_idx: Selected drafts analysis
+ * 
+ * Relationships:
+ * - users → generatedDrafts: CASCADE
+ */
+export const generatedDrafts = pgTable("generated_drafts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  originalMessageId: text("original_message_id"),
+  draftContent: text("draft_content").notNull(),
+  selected: boolean("selected").notNull().default(false),
+  edited: boolean("edited").notNull().default(false),
+  tone: text("tone"), // 'formal', 'casual', 'friendly', 'apologetic', 'solution-focused'
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("generated_drafts_user_id_idx").on(table.userId),
+  index("generated_drafts_selected_idx").on(table.selected),
+]);
+
+export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertGeneratedDraft = z.infer<typeof insertGeneratedDraftSchema>;
+export type GeneratedDraft = typeof generatedDrafts.$inferSelect;
+
+/**
+ * Writing Sessions Table (Task 10 - Writing Assistant)
+ * 
+ * Tracks writing improvement sessions.
+ * Stores original and improved versions.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - documentId: Optional document identifier
+ * - originalText: User's original text
+ * - improvedText: AI-improved version
+ * - improvementsApplied: JSONB array of applied improvements
+ * - createdAt: When session started
+ * 
+ * Improvement Types:
+ * - grammar: Grammar corrections
+ * - spelling: Spelling fixes
+ * - style: Style improvements
+ * - tone: Tone adjustments
+ * - clarity: Clarity enhancements
+ * 
+ * Indexes:
+ * - writing_sessions_user_id_idx: User's writing history
+ * - writing_sessions_document_id_idx: Document-specific sessions
+ * 
+ * Relationships:
+ * - users → writingSessions: CASCADE
+ * - writingSessions ← writingSuggestions: Referenced by sessionId
+ */
+export const writingSessions = pgTable("writing_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  documentId: text("document_id"),
+  originalText: text("original_text").notNull(),
+  improvedText: text("improved_text"),
+  improvementsApplied: jsonb("improvements_applied").$type<string[]>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("writing_sessions_user_id_idx").on(table.userId),
+  index("writing_sessions_document_id_idx").on(table.documentId),
+]);
+
+export const insertWritingSessionSchema = createInsertSchema(writingSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWritingSession = z.infer<typeof insertWritingSessionSchema>;
+export type WritingSession = typeof writingSessions.$inferSelect;
+
+/**
+ * Writing Suggestions Table (Task 10 - Writing Assistant)
+ * 
+ * Individual suggestions within writing sessions.
+ * Tracks acceptance rate for quality metrics.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - sessionId: Foreign key to writingSessions.id (CASCADE delete)
+ * - suggestionType: Type of suggestion
+ * - originalSnippet: Original text snippet
+ * - suggestedSnippet: Suggested replacement
+ * - accepted: Whether user accepted suggestion
+ * - reason: Explanation for the suggestion
+ * - createdAt: When suggestion was made
+ * 
+ * Suggestion Types:
+ * - grammar: Grammar correction
+ * - spelling: Spelling correction
+ * - style: Style improvement
+ * - tone: Tone adjustment
+ * - clarity: Clarity improvement
+ * - conciseness: Make more concise
+ * - vocabulary: Better word choice
+ * 
+ * Analytics:
+ * - Acceptance rate by type
+ * - Most common corrections
+ * - User writing patterns
+ * 
+ * Indexes:
+ * - writing_suggestions_session_id_idx: Suggestions for session
+ * - writing_suggestions_type_idx: Filter by suggestion type
+ * - writing_suggestions_accepted_idx: Acceptance analysis
+ * 
+ * Relationships:
+ * - writingSessions → writingSuggestions: CASCADE
+ */
+export const writingSuggestions = pgTable("writing_suggestions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => writingSessions.id, { onDelete: "cascade" }),
+  suggestionType: text("suggestion_type").notNull(),
+  originalSnippet: text("original_snippet").notNull(),
+  suggestedSnippet: text("suggested_snippet").notNull(),
+  accepted: boolean("accepted").notNull().default(false),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("writing_suggestions_session_id_idx").on(table.sessionId),
+  index("writing_suggestions_type_idx").on(table.suggestionType),
+  index("writing_suggestions_accepted_idx").on(table.accepted),
+]);
+
+export const insertWritingSuggestionSchema = createInsertSchema(writingSuggestions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWritingSuggestion = z.infer<typeof insertWritingSuggestionSchema>;
+export type WritingSuggestion = typeof writingSuggestions.$inferSelect;
+
+/**
  * Activity Logs Table
  * 
  * Comprehensive audit trail for all user actions and system events.

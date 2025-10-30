@@ -52,6 +52,7 @@ const CookingTermsAdmin = lazy(() => import("@/pages/cooking-terms-admin"));
 const Glossary = lazy(() => import("@/pages/glossary"));
 const Notifications = lazy(() => import("@/pages/notifications"));
 const SmartSearch = lazy(() => import("@/pages/smart-search"));
+const AIFeatures = lazy(() => import("@/pages/AIFeatures"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function AuthenticatedRouter() {
@@ -86,6 +87,7 @@ function AuthenticatedRouter() {
         <Route path="/glossary" component={Glossary} />
         <Route path="/notifications" component={Notifications} />
         <Route path="/smart-search" component={SmartSearch} />
+        <Route path="/ai-features" component={AIFeatures} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
