@@ -3600,3 +3600,83 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
 
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+
+/**
+ * Summaries Table
+ * 
+ * Stores AI-generated summaries of long content, articles, or documents.
+ * Supports multiple summary formats and caching for performance.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - contentId: Unique identifier for the original content
+ * - originalContent: The full text that was summarized (for reference)
+ * - summaryText: The generated summary text
+ * - summaryType: Format of summary ('tldr', 'bullet', 'paragraph')
+ * - wordCount: Number of words in the summary
+ * - originalWordCount: Number of words in the original content
+ * 
+ * Additional Fields:
+ * - summaryLength: User preference for summary length (1-3 sentences or bullet count)
+ * - keyPoints: Array of extracted key points from the content
+ * - metadata: JSONB for additional data (model used, temperature, etc.)
+ * - isEdited: Flag indicating if user manually edited the summary
+ * - editedText: User-edited version of the summary (if edited)
+ * - createdAt: When summary was generated
+ * - updatedAt: Last modification timestamp
+ * 
+ * Summary Types:
+ * - 'tldr': 2-3 sentence ultra-concise summary
+ * - 'bullet': Bullet point format with key takeaways
+ * - 'paragraph': Single paragraph summary (3-5 sentences)
+ * 
+ * Business Rules:
+ * - Cache summaries to avoid redundant API calls
+ * - Allow users to edit/improve generated summaries
+ * - Track word count reduction for analytics
+ * - Support batch summarization for multiple items
+ * 
+ * Indexes:
+ * - summaries_user_id_idx: User's summaries lookup
+ * - summaries_content_id_idx: Fast content-based retrieval
+ * - summaries_user_content_idx: Unique constraint on userId + contentId
+ * 
+ * Relationships:
+ * - users → summaries: CASCADE (delete summaries when user deleted)
+ */
+export const summaries = pgTable("summaries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  contentId: varchar("content_id").notNull(), // Unique identifier for the content
+  originalContent: text("original_content"), // Store the original text for reference
+  summaryText: text("summary_text").notNull(), // The generated summary
+  summaryType: varchar("summary_type", { length: 20 }).notNull().default('tldr'), // 'tldr', 'bullet', 'paragraph'
+  wordCount: integer("word_count").notNull(), // Word count of the summary
+  originalWordCount: integer("original_word_count"), // Word count of original content
+  summaryLength: integer("summary_length").default(2), // 1-3 for sentences, or bullet count
+  keyPoints: text("key_points").array(), // Extracted key points
+  metadata: jsonb("metadata").$type<{
+    model?: string;
+    temperature?: number;
+    tokensUsed?: number;
+    processingTime?: number;
+  }>(), // Additional metadata about generation
+  isEdited: boolean("is_edited").notNull().default(false), // Has user edited this summary
+  editedText: text("edited_text"), // User-edited version if edited
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("summaries_user_id_idx").on(table.userId),
+  index("summaries_content_id_idx").on(table.contentId),
+  uniqueIndex("summaries_user_content_idx").on(table.userId, table.contentId),
+]);
+
+export const insertSummarySchema = createInsertSchema(summaries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSummary = z.infer<typeof insertSummarySchema>;
+export type Summary = typeof summaries.$inferSelect;
