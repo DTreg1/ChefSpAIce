@@ -77,6 +77,7 @@
 
 import { storage } from './storage';
 import type { InsertApiUsageLog } from '@shared/schema';
+import { calculateRetryDelay, isRetryableError } from './utils/retry-handler';
 
 /**
  * Queued log entry with metadata
@@ -276,23 +277,26 @@ class BatchedApiLogger {
       // Process batch with exponential backoff for retries
       const results = await Promise.allSettled(
         batch.map(async (item) => {
-          const backoffDelay = Math.min(1000 * Math.pow(2, item.retryCount), 10000);
-          
-          // Add jitter to avoid thundering herd
+          // Calculate delay using the consolidated retry handler
           if (item.retryCount > 0) {
-            await new Promise(resolve => 
-              setTimeout(resolve, backoffDelay + Math.random() * 1000)
-            );
+            const delay = calculateRetryDelay(item.retryCount - 1, {
+              initialDelay: 1000,
+              maxDelay: 10000,
+              jitter: true,
+              jitterRange: 1000
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
           
           try {
             await storage.logApiUsage(item.userId, item.log);
             return { success: true, item };
           } catch (error) {
-            // Check if error is retryable
-            const isRetryable = this.isRetryableError(error);
+            // Check if error is retryable using consolidated function
+            const retryable = isRetryableError(error);
             
-            if (isRetryable && item.retryCount < this.config.maxRetries) {
+            if (retryable && item.retryCount < this.config.maxRetries) {
               return { success: false, item, retry: true };
             } else {
               const logKey = `${item.userId}-${item.log.apiName}-${item.log.endpoint}`;
@@ -339,52 +343,6 @@ class BatchedApiLogger {
     } finally {
       this.isFlushInProgress = false;
     }
-  }
-
-  /**
-   * Determine if error is retryable
-   * 
-   * Classifies errors as transient (retry) or permanent (drop).
-   * Retryable errors are typically network or temporary database issues.
-   * 
-   * @param error - Error object from database write attempt
-   * @returns true if error should be retried
-   * 
-   * Retryable Errors:
-   * - Network: ECONNREFUSED, ETIMEDOUT
-   * - Database: connection errors, timeouts
-   * - HTTP: 5xx server errors, 429 rate limit
-   * 
-   * Non-Retryable:
-   * - 4xx client errors (except 429)
-   * - Validation errors
-   * - Unknown errors (dropped to be safe)
-   * 
-   * @private
-   */
-  private isRetryableError(error: Error | unknown): boolean {
-    // Network errors and temporary failures are retryable
-    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-      return true;
-    }
-    
-    // Database connection errors are retryable
-    if (error.message?.includes('connection') || 
-        error.message?.includes('timeout')) {
-      return true;
-    }
-    
-    // 5xx errors are retryable
-    if (error.statusCode >= 500 && error.statusCode < 600) {
-      return true;
-    }
-    
-    // 429 (rate limit) is retryable
-    if (error.statusCode === 429) {
-      return true;
-    }
-    
-    return false;
   }
 
   /**

@@ -175,89 +175,51 @@ export function handleOpenAIError(error: Error | unknown): AIError {
   );
 }
 
+import { 
+  retryWithBackoff as genericRetryWithBackoff,
+  type RetryConfig as BaseRetryConfig 
+} from './retry-handler';
+
 /**
- * Retry configuration
+ * AI-specific retry configuration
  */
-export interface RetryConfig {
-  maxRetries?: number;
-  initialDelay?: number;
-  maxDelay?: number;
-  backoffMultiplier?: number;
-  jitter?: boolean;
-}
+export interface RetryConfig extends BaseRetryConfig {}
 
 /**
- * Calculate delay for exponential backoff with optional jitter
- */
-export function calculateRetryDelay(
-  attempt: number,
-  config: RetryConfig = {}
-): number {
-  const {
-    initialDelay = 1000,
-    maxDelay = 30000,
-    backoffMultiplier = 2,
-    jitter = true
-  } = config;
-
-  // Calculate base delay with exponential backoff
-  let delay = Math.min(initialDelay * Math.pow(backoffMultiplier, attempt), maxDelay);
-
-  // Add jitter to prevent thundering herd
-  if (jitter) {
-    const jitterAmount = Math.random() * 1000; // 0-1000ms random jitter
-    delay += jitterAmount;
-  }
-
-  return Math.floor(delay);
-}
-
-/**
- * Retry a function with exponential backoff
+ * Retry a function with exponential backoff (AI-specific)
+ * 
+ * Wraps the generic retry function with AI-specific error handling.
+ * Converts errors to AIError and checks retryability.
  */
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   config: RetryConfig = {}
 ): Promise<T> {
-  const { maxRetries = 3 } = config;
-  let lastError: AIError | undefined;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
+  // Use AI-specific retry condition
+  const aiRetryConfig: RetryConfig = {
+    ...config,
+    retryCondition: (error) => {
       const aiError = error instanceof AIError ? error : handleOpenAIError(error);
-      lastError = aiError;
-
-      // Don't retry if not retryable
-      if (!aiError.retryable) {
-        // console.log(`[AI Retry] Error is not retryable: ${aiError.code}`);
-        throw aiError;
-      }
-
-      // Check if this was the last attempt
-      if (attempt === maxRetries - 1) {
-        console.log(
-          `[AI Retry] All ${maxRetries} attempts exhausted. Final error: ${aiError.code}`
-        );
-        throw aiError;
-      }
-
-      // Calculate delay for next retry
-      const delay = aiError.retryAfter || calculateRetryDelay(attempt, config);
-      
+      return aiError.retryable;
+    },
+    onRetry: (attempt, error, delay) => {
+      const aiError = error instanceof AIError ? error : handleOpenAIError(error);
       console.log(
-        `[AI Retry] Attempt ${attempt + 1}/${maxRetries} failed. ` +
+        `[AI Retry] Attempt ${attempt}/${config.maxRetries || 3} failed. ` +
         `Retrying in ${delay}ms. Error: ${aiError.code}`
       );
-
-      // Wait before next retry
-      await new Promise(resolve => setTimeout(resolve, delay));
     }
-  }
+  };
 
-  // Should never reach here, but throw last error if it does
-  throw lastError || new Error('Retry failed');
+  try {
+    return await genericRetryWithBackoff(fn, aiRetryConfig);
+  } catch (error) {
+    // Ensure we always throw an AIError
+    if (error instanceof AIError) {
+      throw error;
+    }
+    throw handleOpenAIError(error);
+  }
 }
 
 /**
