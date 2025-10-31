@@ -54,6 +54,7 @@ const Notifications = lazy(() => import("@/pages/notifications"));
 const SmartSearch = lazy(() => import("@/pages/smart-search"));
 const AIFeatures = lazy(() => import("@/pages/AIFeatures"));
 const SummarizationDemo = lazy(() => import("@/pages/summarization-demo"));
+const SemanticSearchDemo = lazy(() => import("@/pages/SemanticSearchDemo"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 function AuthenticatedRouter() {
@@ -90,6 +91,7 @@ function AuthenticatedRouter() {
         <Route path="/smart-search" component={SmartSearch} />
         <Route path="/ai-features" component={AIFeatures} />
         <Route path="/summarization-demo" component={SummarizationDemo} />
+        <Route path="/semantic-search" component={SemanticSearchDemo} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
