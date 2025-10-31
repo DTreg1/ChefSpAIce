@@ -493,11 +493,9 @@ export class ActivityLogger {
         },
         {
           maxRetries: this.MAX_RETRY_ATTEMPTS,
-          onRetry: (attempt, delay, error) => {
-            console.log(`[ActivityLogger] Retrying batch after ${delay}ms (attempt ${attempt + 1}/${this.MAX_RETRY_ATTEMPTS + 1})`);
-          },
-          onError: (error) => {
+          onRetry: (attempt, error, delay) => {
             console.error('[ActivityLogger] Error processing batch:', error);
+            console.log(`[ActivityLogger] Retrying batch after ${delay}ms (attempt ${attempt + 1}/${this.MAX_RETRY_ATTEMPTS + 1})`);
           }
         }
       );

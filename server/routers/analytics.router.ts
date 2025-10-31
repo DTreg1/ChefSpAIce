@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { analyticsRateLimit } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { insertWebVitalSchema, insertAnalyticsEventSchema } from "@shared/schema";
+import { retryWithBackoff } from "../utils/retry-handler";
 
 const router = Router();
 
@@ -36,25 +37,21 @@ router.post("/", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any
       url,
     });
 
-    // Record with retry logic
-    let retries = 3;
-    let lastError;
-    
-    while (retries > 0) {
-      try {
-        await storage.recordWebVital(validated);
-        break; // Success, exit retry loop
-      } catch (error) {
-        lastError = error;
-        retries--;
-        if (retries > 0) {
-          // Wait before retry (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, 3 - retries) * 100));
+    // Record with consolidated retry logic
+    try {
+      await retryWithBackoff(
+        async () => {
+          await storage.recordWebVital(validated);
+        },
+        {
+          maxRetries: 3,
+          initialDelay: 100, // Start with 100ms to match original logic
+          onRetry: (attempt, error, delay) => {
+            console.log(`[Analytics] Retrying web vital recording after ${delay}ms (attempt ${attempt + 1}/4)`);
+          }
         }
-      }
-    }
-    
-    if (retries === 0 && lastError) {
+      );
+    } catch (lastError) {
       // Log error but don't fail the request
       console.error("Failed to record web vital after retries:", lastError);
     }
