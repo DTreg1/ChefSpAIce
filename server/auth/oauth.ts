@@ -245,10 +245,10 @@ export function configureAppleStrategy(hostname: string) {
           clientID: oauthConfig.apple.clientID,
           teamID: oauthConfig.apple.teamID,
           keyID: oauthConfig.apple.keyID,
-          privateKey: oauthConfig.apple.privateKey,
+          key: oauthConfig.apple.privateKey,
           callbackURL: getCallbackURL("apple", hostname),
           scope: ["email", "name"],
-        },
+        } as any, // Type assertion to fix mismatch between runtime and type definitions
         async (accessToken: string, refreshToken: string, idToken: any, profile: any, done: any) => {
           try {
             // Apple provides limited profile info
