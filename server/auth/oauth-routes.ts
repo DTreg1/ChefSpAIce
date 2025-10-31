@@ -103,6 +103,24 @@ router.post("/auth/apple/callback", checkOAuthConfig("apple"),
   }
 );
 
+// Replit OIDC
+router.get("/auth/replit/login", checkOAuthConfig("replit"), (req, res, next) => {
+  if (req.query.redirect_to) {
+    req.session.returnTo = req.query.redirect_to as string;
+  }
+  
+  passport.authenticate("replit")(req, res, next);
+});
+
+router.get("/auth/replit/callback", checkOAuthConfig("replit"),
+  passport.authenticate("replit", { failureRedirect: "/login?error=oauth_failed" }),
+  (req, res) => {
+    const redirectTo = req.session.returnTo || "/";
+    delete req.session.returnTo;
+    res.redirect(redirectTo);
+  }
+);
+
 // Email/Password Authentication
 router.post("/auth/email/register", async (req, res) => {
   try {
@@ -226,6 +244,7 @@ router.get("/auth/config-status", (req, res) => {
     github: isOAuthConfigured("github"),
     twitter: isOAuthConfigured("twitter"),
     apple: isOAuthConfigured("apple"),
+    replit: isOAuthConfigured("replit"),
     email: true, // Email is always available
   };
   
