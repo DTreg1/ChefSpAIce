@@ -78,13 +78,34 @@ describe('Retry Handler Utilities', () => {
 
   describe('isRetryableError', () => {
     it('should identify network errors as retryable', () => {
-      const networkError = new Error('ECONNREFUSED');
+      const networkError: any = new Error('Connection refused');
+      networkError.code = 'ECONNREFUSED';
       expect(isRetryableError(networkError)).toBe(true);
+      
+      const notFoundError: any = new Error('Not found');
+      notFoundError.code = 'ENOTFOUND';
+      expect(isRetryableError(notFoundError)).toBe(true);
+      
+      const resetError: any = new Error('Connection reset');
+      resetError.code = 'ECONNRESET';
+      expect(isRetryableError(resetError)).toBe(true);
     });
 
     it('should identify timeout errors as retryable', () => {
-      const timeoutError = new Error('ETIMEDOUT: Request timed out');
+      // By error code
+      const timeoutError: any = new Error('Request timeout');
+      timeoutError.code = 'ETIMEDOUT';
       expect(isRetryableError(timeoutError)).toBe(true);
+      
+      // By message content
+      const messageTimeout = new Error('Request timeout occurred');
+      expect(isRetryableError(messageTimeout)).toBe(true);
+      
+      const connectionError = new Error('Connection failed');
+      expect(isRetryableError(connectionError)).toBe(true);
+      
+      const networkError = new Error('Network error');
+      expect(isRetryableError(networkError)).toBe(true);
     });
 
     it('should identify 5xx status codes as retryable', () => {
@@ -99,6 +120,16 @@ describe('Retry Handler Utilities', () => {
       const error503: any = new Error('Service Unavailable');
       error503.status = 503;
       expect(isRetryableError(error503)).toBe(true);
+      
+      // Test response.status variant
+      const errorWithResponse: any = new Error('Server Error');
+      errorWithResponse.response = { status: 504 };
+      expect(isRetryableError(errorWithResponse)).toBe(true);
+      
+      // Test statusCode variant
+      const errorWithStatusCode: any = new Error('Server Error');
+      errorWithStatusCode.statusCode = 505;
+      expect(isRetryableError(errorWithStatusCode)).toBe(true);
     });
 
     it('should identify 429 (rate limit) as retryable', () => {
@@ -120,6 +151,15 @@ describe('Retry Handler Utilities', () => {
       error404.status = 404;
       expect(isRetryableError(error404)).toBe(false);
     });
+    
+    it('should not retry unrecognized errors', () => {
+      const regularError = new Error('Some random error');
+      expect(isRetryableError(regularError)).toBe(false);
+      
+      const customError: any = new Error('Custom error');
+      customError.customProperty = 'value';
+      expect(isRetryableError(customError)).toBe(false);
+    });
   });
 
   describe('retryWithBackoff', () => {
@@ -133,9 +173,15 @@ describe('Retry Handler Utilities', () => {
     });
 
     it('should retry on failure and eventually succeed', async () => {
+      // Create retryable errors with network error codes
+      const error1: any = new Error('Connection failed');
+      error1.code = 'ECONNRESET';
+      const error2: any = new Error('Connection timeout');
+      error2.code = 'ETIMEDOUT';
+      
       const mockOperation = jest.fn()
-        .mockRejectedValueOnce(new Error('First failure'))
-        .mockRejectedValueOnce(new Error('Second failure'))
+        .mockRejectedValueOnce(error1)
+        .mockRejectedValueOnce(error2)
         .mockResolvedValueOnce('success');
       
       const promise = retryWithBackoff(mockOperation, { 
@@ -154,8 +200,12 @@ describe('Retry Handler Utilities', () => {
     });
 
     it('should respect maxRetries and throw after max attempts', async () => {
+      // Create a retryable error
+      const retryableError: any = new Error('Network timeout');
+      retryableError.code = 'ETIMEDOUT';
+      
       const mockOperation = jest.fn()
-        .mockRejectedValue(new Error('Persistent failure'));
+        .mockRejectedValue(retryableError);
       
       const promise = retryWithBackoff(mockOperation, { 
         maxRetries: 2,
@@ -166,13 +216,17 @@ describe('Retry Handler Utilities', () => {
       // Fast-forward through all timers
       await jest.runAllTimersAsync();
       
-      await expect(promise).rejects.toThrow('Persistent failure');
+      await expect(promise).rejects.toThrow('Network timeout');
       expect(mockOperation).toHaveBeenCalledTimes(3); // Initial + 2 retries
     });
 
     it('should call onRetry callback on each retry', async () => {
+      // Create a retryable error
+      const retryableError: any = new Error('Connection refused');
+      retryableError.code = 'ECONNREFUSED';
+      
       const mockOperation = jest.fn()
-        .mockRejectedValueOnce(new Error('First failure'))
+        .mockRejectedValueOnce(retryableError)
         .mockResolvedValueOnce('success');
       
       const onRetry = jest.fn();
@@ -188,7 +242,7 @@ describe('Retry Handler Utilities', () => {
       await promise;
       
       expect(onRetry).toHaveBeenCalledTimes(1);
-      expect(onRetry).toHaveBeenCalledWith(0, expect.any(Error), 100);
+      expect(onRetry).toHaveBeenCalledWith(1, retryableError, 100);
     });
 
     it('should use custom retryCondition', async () => {
@@ -223,53 +277,81 @@ describe('Retry Handler Utilities', () => {
       const tracker = new RetryTracker();
       const key = 'test-operation';
       
-      expect(tracker.shouldRetry(key)).toBe(true);
-      expect(tracker.getAttempt(key)).toBe(0);
+      expect(tracker.getAttempts(key)).toBe(0);
       
-      tracker.recordAttempt(key);
-      expect(tracker.getAttempt(key)).toBe(1);
+      tracker.trackAttempt(key);
+      expect(tracker.getAttempts(key)).toBe(1);
       
-      tracker.recordAttempt(key);
-      expect(tracker.getAttempt(key)).toBe(2);
+      tracker.trackAttempt(key);
+      expect(tracker.getAttempts(key)).toBe(2);
     });
 
-    it('should respect maxRetries limit', () => {
-      const tracker = new RetryTracker(2); // Max 2 retries
-      const key = 'test-operation';
-      
-      expect(tracker.shouldRetry(key)).toBe(true);
-      tracker.recordAttempt(key);
-      
-      expect(tracker.shouldRetry(key)).toBe(true);
-      tracker.recordAttempt(key);
-      
-      expect(tracker.shouldRetry(key)).toBe(false); // Should not retry after 2 attempts
-    });
-
-    it('should reset attempts', () => {
+    it('should track failures correctly', () => {
       const tracker = new RetryTracker();
       const key = 'test-operation';
+      const error1 = new Error('First failure');
+      const error2 = new Error('Second failure');
       
-      tracker.recordAttempt(key);
-      tracker.recordAttempt(key);
-      expect(tracker.getAttempt(key)).toBe(2);
+      expect(tracker.getFailures(key)).toEqual([]);
+      
+      tracker.trackFailure(key, error1);
+      expect(tracker.getFailures(key)).toEqual([error1]);
+      
+      tracker.trackFailure(key, error2);
+      expect(tracker.getFailures(key)).toEqual([error1, error2]);
+    });
+
+    it('should reset tracking for a key', () => {
+      const tracker = new RetryTracker();
+      const key = 'test-operation';
+      const error = new Error('Test error');
+      
+      tracker.trackAttempt(key);
+      tracker.trackAttempt(key);
+      tracker.trackFailure(key, error);
+      
+      expect(tracker.getAttempts(key)).toBe(2);
+      expect(tracker.getFailures(key)).toEqual([error]);
       
       tracker.reset(key);
-      expect(tracker.getAttempt(key)).toBe(0);
-      expect(tracker.shouldRetry(key)).toBe(true);
+      expect(tracker.getAttempts(key)).toBe(0);
+      expect(tracker.getFailures(key)).toEqual([]);
     });
 
     it('should track multiple operations independently', () => {
       const tracker = new RetryTracker();
+      const error1 = new Error('Error 1');
+      const error2 = new Error('Error 2');
       
-      tracker.recordAttempt('operation1');
-      tracker.recordAttempt('operation1');
+      tracker.trackAttempt('operation1');
+      tracker.trackAttempt('operation1');
+      tracker.trackFailure('operation1', error1);
       
-      tracker.recordAttempt('operation2');
+      tracker.trackAttempt('operation2');
+      tracker.trackFailure('operation2', error2);
       
-      expect(tracker.getAttempt('operation1')).toBe(2);
-      expect(tracker.getAttempt('operation2')).toBe(1);
-      expect(tracker.getAttempt('operation3')).toBe(0);
+      expect(tracker.getAttempts('operation1')).toBe(2);
+      expect(tracker.getAttempts('operation2')).toBe(1);
+      expect(tracker.getAttempts('operation3')).toBe(0);
+      
+      expect(tracker.getFailures('operation1')).toEqual([error1]);
+      expect(tracker.getFailures('operation2')).toEqual([error2]);
+      expect(tracker.getFailures('operation3')).toEqual([]);
+    });
+
+    it('should clear all tracking', () => {
+      const tracker = new RetryTracker();
+      const error = new Error('Test error');
+      
+      tracker.trackAttempt('operation1');
+      tracker.trackAttempt('operation2');
+      tracker.trackFailure('operation1', error);
+      
+      tracker.clear();
+      
+      expect(tracker.getAttempts('operation1')).toBe(0);
+      expect(tracker.getAttempts('operation2')).toBe(0);
+      expect(tracker.getFailures('operation1')).toEqual([]);
     });
   });
 });
