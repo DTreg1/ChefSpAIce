@@ -7,7 +7,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import passport from "passport";
 import { isOAuthConfigured } from "./oauth-config";
-import { registerEmailUser, isAuthenticated } from "./oauth";
+import { registerEmailUser, isAuthenticated, registeredStrategies } from "./oauth";
 import { storage } from "../storage";
 
 const router = Router();
@@ -239,13 +239,14 @@ router.post("/auth/link/:provider", isAuthenticated, (req, res, next) => {
 
 // Check OAuth configuration status
 router.get("/auth/config-status", (req, res) => {
+  // Check both configured and actually registered strategies
   const providers = {
-    google: isOAuthConfigured("google"),
-    github: isOAuthConfigured("github"),
-    twitter: isOAuthConfigured("twitter"),
-    apple: isOAuthConfigured("apple"),
-    replit: isOAuthConfigured("replit"),
-    email: true, // Email is always available
+    google: isOAuthConfigured("google") && registeredStrategies.has("google"),
+    github: isOAuthConfigured("github") && registeredStrategies.has("github"),
+    twitter: isOAuthConfigured("twitter") && registeredStrategies.has("twitter"),
+    apple: isOAuthConfigured("apple") && registeredStrategies.has("apple"),
+    replit: isOAuthConfigured("replit") && registeredStrategies.has("replit"),
+    email: registeredStrategies.has("email"), // Email is registered if strategy was set up
   };
   
   res.json({

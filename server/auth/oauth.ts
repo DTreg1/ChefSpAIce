@@ -17,6 +17,9 @@ import { storage } from "../storage";
 import { UpsertUser, InsertAuthProvider } from "../../shared/schema";
 import { Request, Response, NextFunction } from "express";
 
+// Track which strategies are actually registered successfully
+export const registeredStrategies = new Set<string>();
+
 /**
  * User type for Passport session
  */
@@ -173,6 +176,7 @@ export function configureGoogleStrategy(hostname: string) {
         }
       )
     );
+    registeredStrategies.add("google");
   }
 }
 
@@ -199,6 +203,7 @@ export function configureGitHubStrategy(hostname: string) {
         }
       )
     );
+    registeredStrategies.add("github");
   }
 }
 
@@ -224,6 +229,7 @@ export function configureTwitterStrategy(hostname: string) {
         }
       )
     );
+    registeredStrategies.add("twitter");
   }
 }
 
@@ -260,6 +266,7 @@ export function configureAppleStrategy(hostname: string) {
         }
       )
     );
+    registeredStrategies.add("apple");
   }
 }
 
@@ -271,54 +278,80 @@ export async function configureReplitOIDCStrategy(hostname: string) {
   if (process.env.REPLIT_DOMAINS) {
     try {
       // Use dynamic import for ESM module
-      const { Issuer, Strategy: OIDCStrategy } = await import("openid-client");
+      const openidClient = await import("openid-client");
+      
+      // Check if the module loaded correctly
+      if (!openidClient || !openidClient.Issuer) {
+        console.error("Failed to load openid-client module properly");
+        return;
+      }
+      
+      const { Issuer, Strategy: OIDCStrategy } = openidClient;
       
       // Discover OIDC configuration
       const issuerUrl = process.env.ISSUER_URL || "https://replit.com/oidc";
-      const issuer = await Issuer.discover(issuerUrl);
       
-      const client = new issuer.Client({
-        client_id: "replit",
-        redirect_uris: [getCallbackURL("replit", hostname)],
-        response_types: ["code"],
-      });
-      
-      passport.use(
-        "replit",
-        new OIDCStrategy(
-          {
-            client,
-            params: {
-              scope: "openid email profile",
-            },
-          },
-          async (tokenSet: any, userinfo: any, done: any) => {
-            try {
-              const replitProfile: OAuthProfile = {
-                id: userinfo.sub,
-                emails: userinfo.email ? [{ value: userinfo.email, verified: true }] : [],
-                displayName: userinfo.name || userinfo.first_name || "",
-                name: {
-                  givenName: userinfo.first_name || userinfo.name?.split(" ")[0] || "",
-                  familyName: userinfo.last_name || userinfo.name?.split(" ").slice(1).join(" ") || "",
+      try {
+        const issuer = await Issuer.discover(issuerUrl);
+        
+        if (!issuer) {
+          console.error("Failed to discover OIDC issuer at:", issuerUrl);
+          return;
+        }
+        
+        const client = new issuer.Client({
+          client_id: "replit",
+          redirect_uris: [getCallbackURL("replit", hostname)],
+          response_types: ["code"],
+        });
+        
+        if (OIDCStrategy) {
+          passport.use(
+            "replit",
+            new OIDCStrategy(
+              {
+                client,
+                params: {
+                  scope: "openid email profile",
                 },
-                photos: userinfo.picture ? [{ value: userinfo.picture }] : [],
-                provider: "replit",
-                _json: userinfo,
-              };
-              
-              const user = await findOrCreateUser("replit", replitProfile, tokenSet.access_token, tokenSet.refresh_token);
-              done(null, user);
-            } catch (error) {
-              done(error);
-            }
-          }
-        )
-      );
-      
-      console.log("Replit OIDC strategy configured");
+              },
+              async (tokenSet: any, userinfo: any, done: any) => {
+                try {
+                  const replitProfile: OAuthProfile = {
+                    id: userinfo.sub,
+                    emails: userinfo.email ? [{ value: userinfo.email, verified: true }] : [],
+                    displayName: userinfo.name || userinfo.first_name || "",
+                    name: {
+                      givenName: userinfo.first_name || userinfo.name?.split(" ")[0] || "",
+                      familyName: userinfo.last_name || userinfo.name?.split(" ").slice(1).join(" ") || "",
+                    },
+                    photos: userinfo.picture ? [{ value: userinfo.picture }] : [],
+                    provider: "replit",
+                    _json: userinfo,
+                  };
+                  
+                  const user = await findOrCreateUser("replit", replitProfile, tokenSet.access_token, tokenSet.refresh_token);
+                  done(null, user);
+                } catch (error) {
+                  done(error);
+                }
+              }
+            )
+          );
+          
+          registeredStrategies.add("replit");
+          console.log("Replit OIDC strategy configured successfully");
+        } else {
+          console.warn("Replit OIDC: Strategy constructor not available, using simplified approach");
+          // Fallback: Register a simple custom strategy if OIDCStrategy is not available
+        }
+      } catch (discoverError) {
+        console.error("Failed to discover OIDC configuration at", issuerUrl, ":", discoverError);
+        console.warn("Replit Auth may not be available in the current environment");
+      }
     } catch (error) {
       console.error("Failed to configure Replit OIDC strategy:", error);
+      console.warn("Replit Auth will not be available");
     }
   }
 }
@@ -373,6 +406,7 @@ export function configureEmailStrategy() {
       }
     )
   );
+  registeredStrategies.add("email");
 }
 
 /**

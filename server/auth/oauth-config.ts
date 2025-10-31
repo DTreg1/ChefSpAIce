@@ -53,7 +53,17 @@ export const oauthConfig = {
     privateKey: process.env.APPLE_PRIVATE_KEY || "placeholder_apple_private_key",
   },
   session: {
-    secret: process.env.SESSION_SECRET || process.env.SESSION_SECRET || "placeholder_session_secret_please_change_in_production",
+    secret: process.env.SESSION_SECRET || (() => {
+      // Generate a random secret for development/testing
+      // In production, SESSION_SECRET must be explicitly set
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("SESSION_SECRET environment variable is required in production");
+      }
+      const crypto = require("crypto");
+      const secret = crypto.randomBytes(32).toString("hex");
+      console.warn("⚠️  Using auto-generated session secret. Set SESSION_SECRET environment variable for production.");
+      return secret;
+    })(),
   },
 };
 
