@@ -25,7 +25,7 @@ export async function setupOAuth(app: Express) {
   const hostname = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim() || "localhost";
   
   // Initialize all OAuth strategies
-  initializeOAuthStrategies(hostname);
+  await initializeOAuthStrategies(hostname);
   
   // Register OAuth routes
   app.use("/api", oauthRoutes);
@@ -36,5 +36,6 @@ export async function setupOAuth(app: Express) {
   console.log("- GitHub:", process.env.GITHUB_CLIENT_ID ? "✓ Configured" : "✗ Needs configuration");
   console.log("- Twitter:", process.env.TWITTER_CONSUMER_KEY ? "✓ Configured" : "✗ Needs configuration");
   console.log("- Apple:", process.env.APPLE_CLIENT_ID ? "✓ Configured" : "✗ Needs configuration");
+  console.log("- Replit:", process.env.REPLIT_DOMAINS ? "✓ Configured" : "✗ Not on Replit");
   console.log("- Email/Password: ✓ Always available");
 }

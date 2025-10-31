@@ -11,6 +11,7 @@ import { Strategy as GitHubStrategy } from "passport-github2";
 import { Strategy as TwitterStrategy } from "passport-twitter";
 import AppleStrategy from "@nicokaiser/passport-apple";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Issuer, Strategy as OIDCStrategy } from "openid-client";
 import bcrypt from "bcryptjs";
 import { oauthConfig, isOAuthConfigured, getCallbackURL } from "./oauth-config";
 import { storage } from "../storage";
@@ -264,6 +265,63 @@ export function configureAppleStrategy(hostname: string) {
 }
 
 /**
+ * Configure Replit OIDC Strategy
+ */
+export async function configureReplitOIDCStrategy(hostname: string) {
+  // Only configure if running on Replit
+  if (process.env.REPLIT_DOMAINS) {
+    try {
+      // Discover OIDC configuration
+      const issuerUrl = process.env.ISSUER_URL || "https://replit.com/oidc";
+      const issuer = await Issuer.discover(issuerUrl);
+      
+      const client = new issuer.Client({
+        client_id: "replit",
+        redirect_uris: [getCallbackURL("replit", hostname)],
+        response_types: ["code"],
+      });
+      
+      passport.use(
+        "replit",
+        new OIDCStrategy(
+          {
+            client,
+            params: {
+              scope: "openid email profile",
+            },
+          },
+          async (tokenSet: any, userinfo: any, done: any) => {
+            try {
+              const replitProfile: OAuthProfile = {
+                id: userinfo.sub,
+                emails: userinfo.email ? [{ value: userinfo.email, verified: true }] : [],
+                displayName: userinfo.name || userinfo.first_name || "",
+                name: {
+                  givenName: userinfo.first_name || userinfo.name?.split(" ")[0] || "",
+                  familyName: userinfo.last_name || userinfo.name?.split(" ").slice(1).join(" ") || "",
+                },
+                photos: userinfo.picture ? [{ value: userinfo.picture }] : [],
+                provider: "replit",
+                _json: userinfo,
+              };
+              
+              const user = await findOrCreateUser("replit", replitProfile, tokenSet.access_token, tokenSet.refresh_token);
+              done(null, user);
+            } catch (error) {
+              done(error);
+            }
+          }
+        )
+      );
+      
+      console.log("Replit OIDC strategy configured");
+    } catch (error) {
+      console.error("Failed to configure Replit OIDC strategy:", error);
+    }
+  }
+}
+
+/**
  * Configure Email/Password Strategy
  */
 export function configureEmailStrategy() {
@@ -371,12 +429,13 @@ export async function registerEmailUser(
 /**
  * Initialize all OAuth strategies
  */
-export function initializeOAuthStrategies(hostname: string) {
+export async function initializeOAuthStrategies(hostname: string) {
   configurePassport();
   configureGoogleStrategy(hostname);
   configureGitHubStrategy(hostname);
   configureTwitterStrategy(hostname);
   configureAppleStrategy(hostname);
+  await configureReplitOIDCStrategy(hostname);
   configureEmailStrategy();
 }
 

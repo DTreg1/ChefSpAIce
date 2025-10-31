@@ -74,6 +74,9 @@ export function isOAuthConfigured(provider: string): boolean {
     case "apple":
       return !oauthConfig.apple.clientID.includes("placeholder") && 
              !oauthConfig.apple.teamID.includes("placeholder");
+    case "replit":
+      // Replit is configured automatically when running on Replit
+      return !!process.env.REPLIT_DOMAINS;
     default:
       return false;
   }
