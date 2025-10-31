@@ -105,19 +105,26 @@ router.post("/search/feedback", async (req: AuthRequest, res: Response) => {
       searchLogId: z.string(),
       clickedResultId: z.string(),
       clickedResultType: z.string(),
+      clickPosition: z.number(),
+      timeToClick: z.number(),
     });
 
-    const { searchLogId, clickedResultId, clickedResultType } = schema.parse(req.body);
+    const { searchLogId, clickedResultId, clickedResultType, clickPosition, timeToClick } = schema.parse(req.body);
     
     // Update search log with clicked result
-    // This would be implemented in storage layer
+    const updatedLog = await storage.updateSearchLogFeedback(searchLogId, {
+      clickedResultId,
+      clickedResultType,
+      clickPosition,
+      timeToClick,
+    });
     
-    res.json({ success: true });
+    res.json({ success: true, searchLog: updatedLog });
   } catch (error) {
     console.error("Error recording search feedback:", error);
     res.status(500).json({ 
       success: false, 
-      error: "Failed to record feedback" 
+      error: error instanceof Error ? error.message : "Failed to record feedback" 
     });
   }
 });
