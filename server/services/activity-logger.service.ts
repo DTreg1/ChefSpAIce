@@ -8,6 +8,7 @@
 import { db } from "../db";
 import { activityLogs, type InsertActivityLog, type ActivityLog } from "@shared/schema";
 import { eq, sql, and, desc, gte, lte, inArray, isNull } from "drizzle-orm";
+import { retryWithBackoff } from "../utils/retry-handler";
 
 // Define all tracked action types as constants for consistency
 export const ActivityActions = {
@@ -470,7 +471,7 @@ export class ActivityLogger {
     }, this.BATCH_DELAY_MS);
   }
 
-  private async processBatch(retryCount: number = 0): Promise<void> {
+  private async processBatch(): Promise<void> {
     if (this.isProcessing || this.logQueue.length === 0) {
       return;
     }
@@ -485,27 +486,26 @@ export class ActivityLogger {
         return;
       }
 
-      // Insert batch into database
-      await db.insert(activityLogs).values(batch);
+      // Use consolidated retry utility for database insertion
+      await retryWithBackoff(
+        async () => {
+          await db.insert(activityLogs).values(batch);
+        },
+        {
+          maxRetries: this.MAX_RETRY_ATTEMPTS,
+          onRetry: (attempt, delay, error) => {
+            console.log(`[ActivityLogger] Retrying batch after ${delay}ms (attempt ${attempt + 1}/${this.MAX_RETRY_ATTEMPTS + 1})`);
+          },
+          onError: (error) => {
+            console.error('[ActivityLogger] Error processing batch:', error);
+          }
+        }
+      );
       
       // console.log(`[ActivityLogger] Processed batch of ${batch.length} logs`);
     } catch (error) {
-      console.error('[ActivityLogger] Error processing batch:', error);
-      
-      // Retry logic with exponential backoff
-      if (retryCount < this.MAX_RETRY_ATTEMPTS) {
-        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
-        // console.log(`[ActivityLogger] Retrying batch in ${delay}ms (attempt ${retryCount + 1})`);
-        
-        setTimeout(() => {
-          this.processBatch(retryCount + 1).catch(err => {
-            console.error('[ActivityLogger] Retry failed:', err);
-          });
-        }, delay);
-      } else {
-        console.error('[ActivityLogger] Max retry attempts reached. Discarding batch.');
-        // In production, you might want to save these to a file or alternate storage
-      }
+      console.error('[ActivityLogger] Max retry attempts reached. Discarding batch.');
+      // In production, you might want to save these to a file or alternate storage
     } finally {
       this.isProcessing = false;
     }
