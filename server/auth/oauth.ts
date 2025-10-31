@@ -143,6 +143,13 @@ export function configurePassport() {
   });
 }
 
+// Extend Express user type
+declare global {
+  namespace Express {
+    interface User extends SessionUser {}
+  }
+}
+
 /**
  * Configure Google OAuth Strategy
  */
@@ -159,7 +166,7 @@ export function configureGoogleStrategy(hostname: string) {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const user = await findOrCreateUser("google", profile as OAuthProfile, accessToken, refreshToken);
-            done(null, user);
+            done(null, user as any);
           } catch (error) {
             done(error as Error);
           }
@@ -278,11 +285,12 @@ export function configureEmailStrategy() {
           // Check if user has a password (email auth provider)
           const authProvider = await storage.getAuthProviderByProviderAndUserId("email", user.id);
           
-          if (!authProvider || !authProvider.metadata?.password) {
+          const passwordMetadata = authProvider?.metadata as { password?: string } | null;
+          if (!authProvider || !passwordMetadata?.password) {
             return done(null, false, { message: "Please sign in with your OAuth provider" });
           }
           
-          const isValid = await bcrypt.compare(password, authProvider.metadata.password);
+          const isValid = await bcrypt.compare(password, passwordMetadata.password);
           
           if (!isValid) {
             return done(null, false, { message: "Invalid email or password" });
@@ -298,7 +306,7 @@ export function configureEmailStrategy() {
             providerId: user.id,
           };
           
-          done(null, sessionUser);
+          done(null, sessionUser as any);
         } catch (error) {
           done(error);
         }
