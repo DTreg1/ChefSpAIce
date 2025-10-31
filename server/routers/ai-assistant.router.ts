@@ -27,7 +27,7 @@ const openai = new OpenAI({
  */
 router.get("/conversations", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const conversations = await storage.getConversations(userId);
@@ -44,7 +44,7 @@ router.get("/conversations", isAuthenticated, async (req: ExpressRequest<any, an
  */
 router.post("/conversations", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { title } = req.body;
@@ -64,7 +64,7 @@ router.post("/conversations", isAuthenticated, async (req: ExpressRequest<any, a
  */
 router.get("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -94,7 +94,7 @@ router.get("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any
  */
 router.put("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -114,7 +114,7 @@ router.put("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any
  */
 router.delete("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -133,7 +133,7 @@ router.delete("/conversations/:id", isAuthenticated, async (req: ExpressRequest<
  */
 router.post("/conversations/:id/messages", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id: conversationId } = req.params;
@@ -236,7 +236,7 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: ExpressR
  */
 router.post("/feedback", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { messageId, rating, feedback } = req.body;

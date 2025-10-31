@@ -2,7 +2,8 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { z } from "zod";
 import { storage } from "../storage";
 import { insertFeedbackSchema, type Feedback } from "@shared/schema";
-import { isAuthenticated } from "../replitAuth";
+// Use OAuth authentication middleware
+import { isAuthenticated } from "../auth/oauth";
 import { validateQuery, paginationQuerySchema } from "../middleware";
 
 const router = Router();
@@ -13,7 +14,7 @@ router.post(
   isAuthenticated,
   async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user?.claims.sub;
+      const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const validation = insertFeedbackSchema.safeParse(req.body as any);
       
@@ -44,7 +45,7 @@ router.get(
   })),
   async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user?.claims.sub;
+      const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const { page = 1, limit = 10, category, status } = req.query;
       
@@ -86,7 +87,7 @@ router.patch(
   isAuthenticated,
   async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user?.claims.sub;
+      const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const feedbackId = req.params.id;
       

@@ -41,7 +41,7 @@ router.get("/templates", isAuthenticated, async (req: ExpressRequest<any, any, a
  */
 router.post("/templates", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const schema = z.object({
@@ -67,7 +67,7 @@ router.post("/templates", isAuthenticated, async (req: ExpressRequest<any, any, 
  */
 router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const schema = z.object({
@@ -169,7 +169,7 @@ async function generateDraftVariations(
  */
 router.post("/:id/select", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -199,7 +199,7 @@ router.post("/:id/select", isAuthenticated, async (req: ExpressRequest<any, any,
  */
 router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const limit = parseInt(req.query.limit as string) || 50;
@@ -217,7 +217,7 @@ router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any
  */
 router.post("/quick-reply", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { message, sentiment } = req.body;

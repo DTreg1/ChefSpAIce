@@ -1,5 +1,6 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
-import { isAuthenticated } from "../replitAuth";
+// Use OAuth authentication middleware
+import { isAuthenticated } from "../auth/oauth";
 import { validateBody } from "../middleware";
 import { storage } from "../storage";
 import { insertUserInventorySchema, insertShoppingListItemSchema } from "@shared/schema";
@@ -12,7 +13,7 @@ const router = Router();
 
 router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { type = "items", location, category, status, page = 1, limit = 50 } = req.query;
     
@@ -116,7 +117,7 @@ const inventoryItemSchema = z.discriminatedUnion("type", [
 
 router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { type, data  } = req.body || {};
     
@@ -179,7 +180,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
 // POST /api/inventory/batch
 router.post("/inventory/batch", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { operation, type, items  } = req.body || {};
     
@@ -241,7 +242,7 @@ router.post("/inventory/batch", isAuthenticated, async (req: ExpressRequest<any,
 // PUT /api/inventory/:id
 router.put("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const itemId = req.params.id;
     const { type } = req.query;
@@ -292,7 +293,7 @@ router.put("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any, an
 // DELETE /api/inventory/:id
 router.delete("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const itemId = req.params.id;
     const { type } = req.query;
@@ -339,7 +340,7 @@ router.delete("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any,
 // POST /api/inventory/shopping-list/add-missing
 router.post("/inventory/shopping-list/add-missing", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { recipeId, ingredients  } = req.body || {};
     

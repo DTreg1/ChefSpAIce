@@ -3,7 +3,8 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { insertUserInventorySchema, type UserInventory as FoodItem } from "@shared/schema";
-import { isAuthenticated } from "../replitAuth";
+// Use OAuth authentication middleware
+import { isAuthenticated } from "../auth/oauth";
 import { batchedApiLogger } from "../batchedApiLogger";
 import { validateBody } from "../middleware";
 import axios from "axios";
@@ -31,7 +32,7 @@ const router = Router();
  */
 router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { location, category, view, page = 1, limit = 50 } = req.query;
     
@@ -88,7 +89,7 @@ router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, a
  */
 router.get("/storage-locations", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const locations = await storage.getStorageLocations(userId);
     res.json(locations);
@@ -109,7 +110,7 @@ router.post(
   validateBody(storageLocationSchema),
   async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user?.claims.sub;
+      const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const newLocation = await storage.createStorageLocation(userId, req.body);
       res.json(newLocation);
@@ -123,7 +124,7 @@ router.post(
 // Food items CRUD
 router.get("/food-items", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const items = await storage.getFoodItems(userId);
     res.json(items);
@@ -159,7 +160,7 @@ router.post(
   isAuthenticated,
   async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user?.claims.sub;
+      const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const validation = insertUserInventorySchema.safeParse(req.body as any);
       
@@ -250,7 +251,7 @@ router.put(
   isAuthenticated,
   async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
-      const userId = req.user?.claims.sub;
+      const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const itemId = req.params.id;
 
@@ -284,7 +285,7 @@ router.put(
 
 router.delete("/food-items/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const itemId = req.params.id;
 
@@ -431,7 +432,7 @@ const BARCODE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middleware(), async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const barcode = req.query.barcode as string;
     
@@ -586,7 +587,7 @@ router.get("/onboarding/common-items", async (_req: Request, res: ExpressRespons
 // Image upload endpoint
 router.put("/food-images", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { itemId, imageUrl  } = req.body || {};
     

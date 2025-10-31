@@ -10,7 +10,7 @@ const router = Router();
 // Track notification delivery/status
 router.post("/api/notifications/track", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -36,7 +36,7 @@ router.post("/api/notifications/track", isAuthenticated, async (req, res) => {
 // Get notification history for the current user
 router.get("/api/notifications/history", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -82,7 +82,7 @@ router.get("/api/notifications/history", isAuthenticated, async (req, res) => {
 // Get unread notification count
 router.get("/api/notifications/unread-count", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -108,7 +108,7 @@ router.get("/api/notifications/unread-count", isAuthenticated, async (req, res) 
 // Mark notification as read
 router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -144,7 +144,7 @@ router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req, res
 // Dismiss a notification
 router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -168,7 +168,7 @@ router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req, res) 
 // Clear all notifications
 router.delete("/api/notifications/clear", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });

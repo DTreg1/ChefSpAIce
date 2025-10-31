@@ -26,7 +26,7 @@ const openai = new OpenAI({
  */
 router.post("/analyze", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const schema = z.object({
@@ -151,7 +151,7 @@ async function analyzeText(
  */
 router.post("/improve", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { sessionId, suggestionIds } = req.body;
@@ -293,7 +293,7 @@ router.post("/paraphrase", isAuthenticated, async (req: ExpressRequest<any, any,
  */
 router.get("/stats", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const stats = await storage.getWritingStats(userId);
@@ -353,7 +353,7 @@ router.post("/check-plagiarism", isAuthenticated, async (req: ExpressRequest<any
  */
 router.get("/sessions/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;

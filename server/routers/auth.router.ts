@@ -138,7 +138,7 @@ router.get("/health", asyncHandler(async (req: ExpressRequest<any, any, any, any
 
 // Session diagnostics
 router.get("/diagnostics", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = req.user?.claims.sub;
+  const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const user = req.user as any;
 
@@ -415,7 +415,7 @@ router.post(
   isAuthenticated,
   validateBody(onboardingCompleteSchema),
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { preferences, customStorageAreas, selectedCommonItems  } = req.body || {};
 
