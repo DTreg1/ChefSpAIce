@@ -2,7 +2,8 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse, NextFun
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { isAuthenticated } from "../replitAuth";
+// Use OAuth authentication middleware
+import { isAuthenticated } from "../auth/oauth";
 import { validateBody, validateQuery, paginationQuerySchema } from "../middleware";
 import { apiCache } from "../utils/ApiCacheService";
 import { getCacheStats, invalidateCache, clearAllCache } from "../utils/usdaCache";
@@ -12,7 +13,7 @@ const router = Router();
 // Admin middleware - checks if user is admin
 const isAdmin = async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse, next: (...args: any[]) => any) => {
   try {
-    const userId = req.user?.claims?.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }

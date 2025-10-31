@@ -1,18 +1,18 @@
 /**
  * Authentication Middleware
  * 
- * Provides authentication verification for protected routes using Replit Auth OIDC.
- * Integrates with Passport.js session-based authentication configured in replitAuth.ts.
+ * Provides authentication verification for protected routes using OAuth.
+ * Integrates with Passport.js session-based authentication configured in auth/oauth.ts.
  * 
  * Middleware Functions:
  * - isAuthenticated: Requires valid authentication (401 if not authenticated)
  * - optionalAuth: Allows both authenticated and unauthenticated access
- * - adminOnly: Requires authentication + admin email verification (403 if not admin)
+ * - adminOnly: Requires authentication + admin verification (403 if not admin)
  * 
  * Authentication State:
  * - req.isAuthenticated(): Passport.js method indicating session validity
- * - req.user.claims: OIDC token claims (sub, email, first_name, last_name, etc.)
- * - Session configured by replitAuth.ts (token refresh requires replitAuth.ts middleware)
+ * - req.user: OAuth user object with id, email, firstName, lastName, etc.
+ * - Session managed by OAuth module with PostgreSQL storage
  * 
  * Usage Pattern:
  * - Protected routes: Apply isAuthenticated middleware
@@ -22,9 +22,6 @@
  * Error Responses:
  * - 401 Unauthorized: User not authenticated (missing/invalid session)
  * - 403 Forbidden: User authenticated but lacks admin privileges
- * 
- * Environment Variables:
- * - ADMIN_EMAILS: Comma-separated list of admin email addresses
  * 
  * @module server/middleware/auth.middleware
  */
@@ -43,26 +40,20 @@ import type { Request, Response, NextFunction } from "express";
  * 
  * Authentication Check:
  * - Verifies req.isAuthenticated() returns true (Passport.js method)
- * - Session must contain valid OIDC tokens (configured by replitAuth.ts)
- * - Does NOT handle token refresh (use replitAuth.ts isAuthenticated for that)
+ * - Session must contain valid OAuth session data (configured by auth/oauth.ts)
  * 
  * Side Effects:
  * - None (read-only check)
- * - User data available in req.user.claims for downstream handlers
+ * - User data available in req.user for downstream handlers
  * 
  * Error Cases:
  * - Missing session: 401 "Authentication required"
  * - Invalid session: 401 "Authentication required"
  * 
- * Token Refresh:
- * - This middleware does NOT handle token refresh
- * - Use replitAuth.ts isAuthenticated middleware for automatic token refresh
- * - This is a simpler alternative for routes that don't need refresh logic
- * 
  * @example
  * // Protect a route
  * router.get('/api/user/profile', isAuthenticated, async (req, res) => {
- *   const userId = req.user.claims.sub;
+ *   const userId = req.user.id;
  *   const user = await storage.getUser(userId);
  *   res.json(user);
  * });
@@ -101,7 +92,7 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
  *   const recipes = await storage.getPopularRecipes();
  *   if (req.isAuthenticated()) {
  *     // Personalize based on user preferences
- *     const userId = req.user.claims.sub;
+ *     const userId = req.user.id;
  *     const preferences = await storage.getUserPreferences(userId);
  *     // Filter or rank recipes based on preferences
  *   }
@@ -126,7 +117,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
  * 
  * Admin Verification:
  * 1. Check authentication (req.isAuthenticated())
- * 2. Extract userId from req.user.claims.sub
+ * 2. Extract userId from req.user.id
  * 3. Query database to check isAdmin field
  * 
  * Error Cases:

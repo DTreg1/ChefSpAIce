@@ -1,7 +1,8 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { asyncHandler } from "../middleware/error.middleware";
 import { storage } from "../storage";
-import { isAuthenticated } from "../replitAuth";
+// Use OAuth authentication middleware
+import { isAuthenticated } from "../auth/oauth";
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const router = Router();
  */
 router.post("/batch", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const { requests  } = req.body || {};
-  const userId = req.user?.claims?.sub;
+  const userId = (req.user as any)?.id;
   
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
