@@ -7,7 +7,8 @@
 import { Router, Request, Response, NextFunction } from "express";
 import passport from "passport";
 import { isOAuthConfigured } from "./oauth-config";
-import { registerEmailUser, isAuthenticated, registeredStrategies } from "./oauth";
+import { registerEmailUser, registeredStrategies } from "./oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { storage } from "../storage";
 
 const router = Router();
