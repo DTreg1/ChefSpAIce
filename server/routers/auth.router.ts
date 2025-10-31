@@ -74,8 +74,7 @@ router.get("/health", asyncHandler(async (req: ExpressRequest<any, any, any, any
       hasSessionSecret: !!process.env.SESSION_SECRET,
       hasReplitDomains: !!process.env.REPLIT_DOMAINS,
       hasDatabaseUrl: !!process.env.DATABASE_URL,
-      hasIssuerUrl: !!process.env.ISSUER_URL,
-      defaultIssuerUrl: process.env.ISSUER_URL || "https://replit.com/oidc",
+      hasOAuthConfigured: !!process.env.GOOGLE_CLIENT_ID || !!process.env.GITHUB_CLIENT_ID || !!process.env.TWITTER_CONSUMER_KEY || !!process.env.APPLE_CLIENT_ID,
       replId: !!process.env.REPL_ID,
     },
   };
