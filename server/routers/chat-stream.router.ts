@@ -12,7 +12,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import type { Request, Response } from "express";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { openai } from "../openai";
 import { storage } from "../storage";
 import { batchedApiLogger } from "../batchedApiLogger";

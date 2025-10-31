@@ -1,7 +1,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { extractNutrition } from "../utils/nutritionCalculator";
 import { z } from "zod";
 

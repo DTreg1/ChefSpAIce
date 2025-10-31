@@ -2,7 +2,7 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { z } from "zod";
 import { storage } from "../storage";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateBody } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import type { StorageLocation } from "@shared/schema";

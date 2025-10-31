@@ -2,7 +2,7 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { storage } from "../storage";
 import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { openai } from "../openai";
 import { batchedApiLogger } from "../batchedApiLogger";
 import { cleanupOldMessagesForUser } from "../chatCleanup";

@@ -1,6 +1,6 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateBody } from "../middleware";
 import { storage } from "../storage";
 import { insertUserInventorySchema, insertShoppingListItemSchema } from "@shared/schema";

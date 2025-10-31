@@ -3,7 +3,7 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { insertFeedbackSchema, type Feedback } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateQuery, paginationQuerySchema } from "../middleware";
 
 const router = Router();

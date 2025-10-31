@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateBody, validateQuery, paginationQuerySchema } from "../middleware";
 import { apiCache } from "../utils/ApiCacheService";
 import { getCacheStats, invalidateCache, clearAllCache } from "../utils/usdaCache";

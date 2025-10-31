@@ -447,17 +447,8 @@ export async function initializeOAuthStrategies(hostname: string) {
 }
 
 /**
- * Authentication middleware
- */
-export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ error: "Unauthorized" });
-};
-
-/**
  * Admin-only middleware
+ * @deprecated Use adminOnly from middleware/auth.middleware.ts instead
  */
 export const adminOnly = async (req: Request, res: Response, next: NextFunction) => {
   if (!req.isAuthenticated()) {

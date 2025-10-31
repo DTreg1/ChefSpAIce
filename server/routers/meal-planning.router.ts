@@ -7,7 +7,7 @@ import {
   type ShoppingListItem 
 } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 
 const router = Router();
 
