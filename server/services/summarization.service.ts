@@ -5,13 +5,7 @@
  * Supports multiple summary formats: TL;DR, bullet points, and paragraph.
  */
 
-import OpenAI from "openai";
-
-// Initialize OpenAI client using Replit AI Integrations
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "not-needed"
-});
+import { openai } from "../openai";
 
 export interface SummarizationOptions {
   content: string;

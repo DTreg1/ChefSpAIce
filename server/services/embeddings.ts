@@ -1,11 +1,5 @@
-import OpenAI from "openai";
+import { openai } from "../openai";
 import type { ContentEmbedding, InsertContentEmbedding } from "@shared/schema";
-
-// Referenced from: blueprint:javascript_openai
-// Initialize OpenAI client with API key
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY 
-});
 
 /**
  * Embeddings Service
