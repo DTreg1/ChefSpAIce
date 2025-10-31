@@ -21,6 +21,7 @@ import {
   Github,
   Twitter,
   Apple,
+  Code2,
   Loader2
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ export default function AuthUI() {
       "GitHub": "/api/auth/github/login",
       "X": "/api/auth/twitter/login",
       "Apple": "/api/auth/apple/login",
+      "Replit": "/api/auth/replit/login",
       "Email": "/api/auth/email/login"
     };
     
@@ -97,6 +99,7 @@ export default function AuthUI() {
     { name: "GitHub", icon: Github, color: "hover:bg-gray-50 dark:hover:bg-gray-950", iconColor: "text-gray-700 dark:text-gray-300" },
     { name: "X", icon: Twitter, color: "hover:bg-sky-50 dark:hover:bg-sky-950", iconColor: "text-sky-500" },
     { name: "Apple", icon: Apple, color: "hover:bg-gray-50 dark:hover:bg-gray-950", iconColor: "text-gray-900 dark:text-gray-100" },
+    { name: "Replit", icon: Code2, color: "hover:bg-orange-50 dark:hover:bg-orange-950", iconColor: "text-orange-500" },
     { name: "Email", icon: Mail, color: "hover:bg-green-50 dark:hover:bg-green-950", iconColor: "text-green-600" }
   ];
 

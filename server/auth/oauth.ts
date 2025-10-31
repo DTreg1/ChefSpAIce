@@ -11,7 +11,6 @@ import { Strategy as GitHubStrategy } from "passport-github2";
 import { Strategy as TwitterStrategy } from "passport-twitter";
 import AppleStrategy from "@nicokaiser/passport-apple";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Issuer, Strategy as OIDCStrategy } from "openid-client";
 import bcrypt from "bcryptjs";
 import { oauthConfig, isOAuthConfigured, getCallbackURL } from "./oauth-config";
 import { storage } from "../storage";
@@ -271,6 +270,9 @@ export async function configureReplitOIDCStrategy(hostname: string) {
   // Only configure if running on Replit
   if (process.env.REPLIT_DOMAINS) {
     try {
+      // Use dynamic import for ESM module
+      const { Issuer, Strategy: OIDCStrategy } = await import("openid-client");
+      
       // Discover OIDC configuration
       const issuerUrl = process.env.ISSUER_URL || "https://replit.com/oidc";
       const issuer = await Issuer.discover(issuerUrl);
