@@ -28,12 +28,53 @@ export default function AuthUI() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string>("");
 
-  const handleAuth = (provider?: string) => {
+  const handleAuth = async (provider?: string) => {
+    if (!provider) return;
+    
     setIsLoading(true);
-    if (provider) {
-      setSelectedProvider(provider);
+    setSelectedProvider(provider);
+    
+    // Map provider names to OAuth endpoints
+    const providerEndpoints: Record<string, string> = {
+      "Google": "/api/auth/google/login",
+      "GitHub": "/api/auth/github/login",
+      "X": "/api/auth/twitter/login",
+      "Apple": "/api/auth/apple/login",
+      "Email": "/api/auth/email/login"
+    };
+    
+    const endpoint = providerEndpoints[provider];
+    
+    if (endpoint) {
+      // For email, we'll need to handle it differently with a form
+      if (provider === "Email") {
+        // TODO: Show email/password form instead of redirecting
+        console.log("Email authentication needs a form implementation");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check if OAuth is configured for this provider
+      try {
+        const response = await fetch("/api/auth/config-status");
+        const config = await response.json();
+        
+        if (!config.providers[provider.toLowerCase()]) {
+          console.error(`${provider} OAuth is not configured. Please add valid OAuth credentials.`);
+          alert(`${provider} authentication is not configured yet. Please set up OAuth credentials.`);
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to check OAuth configuration:", error);
+      }
+      
+      // Redirect to OAuth provider
+      window.location.href = endpoint;
+    } else {
+      console.error("Unknown provider:", provider);
+      setIsLoading(false);
     }
-    window.location.href = "/api/login";
   };
 
   const features = [

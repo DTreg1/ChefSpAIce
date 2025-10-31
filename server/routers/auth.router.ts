@@ -1,7 +1,9 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { isAuthenticated, validateBody } from "../middleware";
+// Use OAuth authentication middleware
+import { isAuthenticated } from "../auth/oauth";
+import { validateBody } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import type { StorageLocation } from "@shared/schema";
 
@@ -9,16 +11,16 @@ const router = Router();
 
 // Get authenticated user
 router.get("/user", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = req.user?.claims.sub;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const userId = (req.user as any)?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const user = await storage.getUser(userId);
   res.json(user);
 }));
 
 // Get user preferences  
 router.get("/user/preferences", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = req.user?.claims.sub;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const userId = (req.user as any)?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const preferences = await storage.getUserPreferences(userId);
   res.json(preferences);
 }));
@@ -48,7 +50,7 @@ router.put(
   isAuthenticated,
   validateBody(userPreferencesUpdateSchema),
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims.sub;
+    const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const preferences = await storage.updateUserPreferences(userId, req.body);
     res.json(preferences);
@@ -57,8 +59,8 @@ router.put(
 
 // Reset user data
 router.post("/user/reset", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = req.user?.claims.sub;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const userId = (req.user as any)?.id;
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
   await storage.resetUserData(userId);
   res.json({ success: true, message: "Account data reset successfully" });
 }));

@@ -76,6 +76,9 @@ import {
   type InsertUserInventory,
   type UserInventory,
   insertAnalyticsEventSchema,
+  type AuthProvider,
+  type InsertAuthProvider,
+  authProviders,
   // ML Feature types and tables
   type ContentEmbedding,
   type InsertContentEmbedding,
@@ -239,6 +242,38 @@ export interface IStorage {
    * - Existing users retain their admin status
    */
   upsertUser(user: UpsertUser): Promise<User>;
+  
+  /**
+   * Get user by email address
+   */
+  getUserByEmail(email: string): Promise<User | undefined>;
+  
+  /**
+   * Create a new user
+   */
+  createUser(user: UpsertUser): Promise<User>;
+  
+  // ==================== OAuth Authentication ====================
+  
+  /**
+   * Get auth provider by provider and provider ID
+   */
+  getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<AuthProvider | undefined>;
+  
+  /**
+   * Get auth provider by provider and user ID
+   */
+  getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<AuthProvider | undefined>;
+  
+  /**
+   * Create a new auth provider
+   */
+  createAuthProvider(authProvider: InsertAuthProvider): Promise<AuthProvider>;
+  
+  /**
+   * Update auth provider
+   */
+  updateAuthProvider(id: string, data: Partial<AuthProvider>): Promise<void>;
 
   // User Preferences (merged into users table)
   getUserPreferences(userId: string): Promise<User | undefined>;
@@ -1367,6 +1402,89 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error getting user ${id}:`, error);
       throw new Error("Failed to retrieve user");
+    }
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user;
+    } catch (error) {
+      console.error(`Error getting user by email ${email}:`, error);
+      throw new Error("Failed to retrieve user by email");
+    }
+  }
+  
+  async createUser(userData: UpsertUser): Promise<User> {
+    try {
+      const [user] = await db.insert(users).values(userData).returning();
+      return user;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw new Error("Failed to create user");
+    }
+  }
+  
+  // OAuth Authentication Methods
+  
+  async getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<AuthProvider | undefined> {
+    try {
+      const [authProvider] = await db
+        .select()
+        .from(authProviders)
+        .where(
+          and(
+            eq(authProviders.provider, provider),
+            eq(authProviders.providerId, providerId)
+          )
+        );
+      return authProvider;
+    } catch (error) {
+      console.error(`Error getting auth provider ${provider}/${providerId}:`, error);
+      throw new Error("Failed to retrieve auth provider");
+    }
+  }
+  
+  async getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<AuthProvider | undefined> {
+    try {
+      const [authProvider] = await db
+        .select()
+        .from(authProviders)
+        .where(
+          and(
+            eq(authProviders.provider, provider),
+            eq(authProviders.userId, userId)
+          )
+        );
+      return authProvider;
+    } catch (error) {
+      console.error(`Error getting auth provider ${provider} for user ${userId}:`, error);
+      throw new Error("Failed to retrieve auth provider");
+    }
+  }
+  
+  async createAuthProvider(authProviderData: InsertAuthProvider): Promise<AuthProvider> {
+    try {
+      const [authProvider] = await db
+        .insert(authProviders)
+        .values(authProviderData)
+        .returning();
+      return authProvider;
+    } catch (error) {
+      console.error("Error creating auth provider:", error);
+      throw new Error("Failed to create auth provider");
+    }
+  }
+  
+  async updateAuthProvider(id: string, data: Partial<AuthProvider>): Promise<void> {
+    try {
+      await db
+        .update(authProviders)
+        .set(data)
+        .where(eq(authProviders.id, id));
+    } catch (error) {
+      console.error(`Error updating auth provider ${id}:`, error);
+      throw new Error("Failed to update auth provider");
     }
   }
 

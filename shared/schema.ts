@@ -173,6 +173,10 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   
+  // OAuth provider information
+  primaryProvider: varchar("primary_provider"), // 'google', 'github', 'twitter', 'apple', 'email', 'replit'
+  primaryProviderId: varchar("primary_provider_id"), // Provider's unique user ID
+  
   // Preferences (previously in userPreferences table)
   dietaryRestrictions: text("dietary_restrictions").array(),
   allergens: text("allergens").array(),
@@ -201,6 +205,63 @@ export const users = pgTable("users", {
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+/**
+ * Auth Providers Table
+ * 
+ * Tracks all authentication methods linked to a user account.
+ * Allows users to sign in with multiple OAuth providers.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - provider: OAuth provider name (google, github, twitter, apple, email)
+ * - providerId: Provider's unique user ID
+ * - providerEmail: Email from the provider (may differ from primary email)
+ * - accessToken: OAuth access token (encrypted in production)
+ * - refreshToken: OAuth refresh token for token renewal
+ * - tokenExpiry: Access token expiration timestamp
+ * - isPrimary: Flag for primary authentication method
+ * - metadata: Additional provider-specific data as JSONB
+ * - createdAt: When the provider was linked
+ * - updatedAt: Last authentication with this provider
+ * 
+ * Business Rules:
+ * - Each user can have multiple auth providers
+ * - Only one provider can be marked as primary
+ * - Provider + providerId combination must be unique
+ * - Tokens should be encrypted before storage in production
+ * 
+ * Indexes:
+ * - userId: Fast user-specific queries
+ * - provider + providerId: Unique constraint for provider accounts
+ */
+export const authProviders = pgTable("auth_providers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  provider: varchar("provider").notNull(), // 'google', 'github', 'twitter', 'apple', 'email'
+  providerId: varchar("provider_id").notNull(),
+  providerEmail: varchar("provider_email"),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  tokenExpiry: timestamp("token_expiry"),
+  isPrimary: boolean("is_primary").default(false),
+  metadata: jsonb("metadata"), // Provider-specific additional data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("auth_providers_user_id_idx").on(table.userId),
+  uniqueIndex("auth_providers_provider_id_idx").on(table.provider, table.providerId),
+]);
+
+export const insertAuthProviderSchema = createInsertSchema(authProviders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAuthProvider = z.infer<typeof insertAuthProviderSchema>;
+export type AuthProvider = typeof authProviders.$inferSelect;
 
 /**
  * User Storage Locations Table
