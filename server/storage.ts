@@ -800,6 +800,18 @@ export interface IStorage {
    * @param log - Search log data
    */
   createSearchLog(log: InsertSearchLog): Promise<SearchLog>;
+  
+  /**
+   * Update search log with click feedback
+   * @param searchLogId - Search log ID
+   * @param feedback - Click feedback data
+   */
+  updateSearchLogFeedback(searchLogId: string, feedback: {
+    clickedResultId: string;
+    clickedResultType: string;
+    clickPosition: number;
+    timeToClick: number;
+  }): Promise<SearchLog>;
 
   /**
    * Get all categories
@@ -5012,6 +5024,35 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error creating search log:", error);
       throw new Error("Failed to create search log");
+    }
+  }
+  
+  async updateSearchLogFeedback(searchLogId: string, feedback: {
+    clickedResultId: string;
+    clickedResultType: string;
+    clickPosition: number;
+    timeToClick: number;
+  }): Promise<SearchLog> {
+    try {
+      const [result] = await db
+        .update(searchLogs)
+        .set({
+          clickedResultId: feedback.clickedResultId,
+          clickedResultType: feedback.clickedResultType,
+          clickPosition: feedback.clickPosition,
+          timeToClick: feedback.timeToClick,
+        })
+        .where(eq(searchLogs.id, searchLogId))
+        .returning();
+
+      if (!result) {
+        throw new Error("Search log not found");
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error updating search log feedback:", error);
+      throw new Error("Failed to update search log feedback");
     }
   }
 
