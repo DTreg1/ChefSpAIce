@@ -245,7 +245,7 @@ export function configureAppleStrategy(hostname: string) {
           clientID: oauthConfig.apple.clientID,
           teamID: oauthConfig.apple.teamID,
           keyID: oauthConfig.apple.keyID,
-          key: oauthConfig.apple.privateKey,
+          privateKey: oauthConfig.apple.privateKey,
           callbackURL: getCallbackURL("apple", hostname),
           scope: ["email", "name"],
         },
