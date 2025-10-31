@@ -86,8 +86,11 @@ export function calculateRetryDelay(
  * - Connection/timeout errors
  */
 export function isRetryableError(error: Error | unknown): boolean {
+  // Type guard to safely access error properties
+  const err = error as any;
+  
   // Check for network errors
-  if (error?.code) {
+  if (err?.code) {
     const networkErrorCodes = [
       'ECONNREFUSED',
       'ENOTFOUND',
@@ -95,14 +98,14 @@ export function isRetryableError(error: Error | unknown): boolean {
       'ETIMEDOUT',
       'ECONNABORTED'
     ];
-    if (networkErrorCodes.includes(error.code)) {
+    if (networkErrorCodes.includes(err.code)) {
       return true;
     }
   }
 
   // Check for timeout in message
-  if (error?.message) {
-    const message = error.message.toLowerCase();
+  if (err?.message) {
+    const message = err.message.toLowerCase();
     if (message.includes('timeout') || 
         message.includes('connection') ||
         message.includes('network')) {
@@ -111,7 +114,7 @@ export function isRetryableError(error: Error | unknown): boolean {
   }
 
   // Check for HTTP status codes
-  const status = error?.response?.status || error?.status || error?.statusCode;
+  const status = err?.response?.status || err?.status || err?.statusCode;
   if (status) {
     // 5xx server errors are retryable
     if (status >= 500 && status < 600) {
