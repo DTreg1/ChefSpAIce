@@ -749,15 +749,15 @@ export default function Onboarding() {
                     variant="outline"
                     className="flex-1"
                     onClick={() => {
-                      // Skip onboarding for testing
+                      // Skip onboarding for testing - set equipment state first
+                      setSelectedEquipment(["Stove"]);
+                      // Then submit with correct preferences schema
                       saveMutation.mutate({
                         storageAreasEnabled: ["Fridge", "Pantry"],
-                        kitchenEquipment: ["Stove"],
                         householdSize: 2,
                         cookingSkillLevel: "intermediate",
-                        weightUnit: "grams",
-                        volumeUnit: "milliliters",
-                        defaultServingSizeUnit: "GRAMS",
+                        preferredUnits: "metric",
+                        expirationAlertDays: 3,
                         foodsToAvoid: []
                       });
                     }}
