@@ -199,7 +199,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             </div>
 
             {/* Tools needed */}
-            {data.tools?.length > 0 && (
+            {data.tools && data.tools.length > 0 && (
               <>
                 <Separator />
                 <div>
@@ -220,7 +220,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             )}
 
             {/* Tips */}
-            {data.tips?.length > 0 && (
+            {data.tips && data.tips.length > 0 && (
               <>
                 <Separator />
                 <div>
@@ -241,7 +241,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             )}
 
             {/* Related terms */}
-            {data.relatedTerms?.length > 0 && (
+            {data.relatedTerms && data.relatedTerms.length > 0 && (
               <>
                 <Separator />
                 <div>
