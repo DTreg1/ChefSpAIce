@@ -19,6 +19,7 @@ import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { RouteLoading } from "@/components/route-loading";
 import { PushNotificationHandler } from "@/components/PushNotificationHandler";
+import { VoiceControl } from "@/components/voice/VoiceControl";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -39,6 +40,7 @@ const ShoppingList = lazy(() => import("@/pages/shopping-list"));
 const Appliances = lazy(() => import("@/pages/appliances"));
 const Equipment = lazy(() => import("@/pages/equipment"));
 const Settings = lazy(() => import("@/pages/settings"));
+const Orders = lazy(() => import("@/pages/orders"));
 const FoodGroups = lazy(() => import("@/pages/food-groups"));
 const FeedbackAnalytics = lazy(() => import("@/pages/feedback-analytics"));
 const FeedbackBoard = lazy(() => import("@/pages/feedback-board"));
@@ -77,6 +79,7 @@ function AuthenticatedRouter() {
         <Route path="/shopping-list" component={ShoppingList} />
         <Route path="/appliances" component={Appliances} />
         <Route path="/equipment" component={Equipment} />
+        <Route path="/orders" component={Orders} />
         <Route path="/inventory" component={Storage} />
         <Route path="/storage/all" component={Storage} />
         <Route path="/storage/:location" component={Storage} />
@@ -261,7 +264,8 @@ function AppContent() {
               </div>
             </div>
             {!showOnboarding && (
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-2">
+                <VoiceControl />
                 <QuickActionsBar
                   onAddFood={() => setAddFoodOpen(true)}
                   onGenerateRecipe={() => setRecipeDialogOpen(true)}
