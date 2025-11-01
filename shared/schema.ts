@@ -676,91 +676,181 @@ export type InsertUserInventory = z.infer<typeof insertUserInventorySchema>;
 export type UserInventory = typeof userInventory.$inferSelect;
 
 /**
- * User Chats Table
+ * Conversations Table
  * 
- * Conversation history with AI recipe assistant.
- * Stores message context for multi-turn conversations.
+ * Represents individual chat conversations between users and AI assistant.
+ * Enables conversation management with titles and context preservation.
  * 
  * Fields:
  * - id: UUID primary key
  * - userId: Foreign key to users.id (CASCADE delete)
- * - role: Message sender ('user' | 'assistant')
- * - content: Message text content
- * - createdAt: Message timestamp (conversation chronology)
- * 
- * Message Roles:
- * - 'user': Messages from the user
- * - 'assistant': AI-generated responses
- * 
- * Conversation Flow:
- * 1. User sends message → role: 'user'
- * 2. Send conversation history to OpenAI API
- * 3. Receive AI response → role: 'assistant'
- * 4. Both stored for context in future turns
- * 5. Repeat for multi-turn dialog
- * 
- * Context Management:
- * - Recent N messages sent to AI for context (e.g., last 20)
- * - Older messages preserved for history/analytics
- * - System prompt (not stored) defines AI behavior
- * - User inventory context injected into prompts
+ * - title: Conversation title (auto-generated from first message or user-defined)
+ * - createdAt: When conversation started
+ * - updatedAt: Last activity in conversation
  * 
  * Business Rules:
- * - Messages ordered by createdAt for chronology
- * - Full history preserved for user reference
- * - Context window limited to prevent token overflow
- * - Deleted when user account deleted (CASCADE)
- * 
- * Privacy:
- * - User-specific conversations isolated by userId
- * - No cross-user data leakage
- * - Chat history cleared on user deletion
+ * - New conversation created when user starts fresh chat
+ * - Title auto-generated from first user message or AI summary
+ * - Users can rename conversations
+ * - Deleting conversation cascades to all messages
+ * - Conversations preserved across sessions
  * 
  * Indexes:
- * - user_chats_user_id_idx: User's chat history
- * - user_chats_created_at_idx: Chronological ordering
+ * - conversations_user_id_idx: User's conversation list
+ * - conversations_updated_at_idx: Sort by recent activity
  * 
  * Relationships:
- * - users → userChats: CASCADE
+ * - users → conversations: CASCADE (delete conversations when user deleted)
+ * - conversations → messages: CASCADE (delete messages when conversation deleted)
+ * - conversations → conversationContext: CASCADE (delete context when conversation deleted)
+ */
+export const conversations = pgTable("conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("New Conversation"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("conversations_user_id_idx").on(table.userId),
+  index("conversations_updated_at_idx").on(table.updatedAt),
+]);
+
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+
+/**
+ * Messages Table
+ * 
+ * Individual messages within a conversation.
+ * Stores both user queries and assistant responses.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - conversationId: Foreign key to conversations.id (CASCADE delete)
+ * - role: 'user' | 'assistant' | 'system' - Message sender
+ * - content: Message text content
+ * - tokensUsed: Token count for this message (for usage tracking)
+ * - timestamp: When message was sent
+ * - metadata: JSONB for additional data (function calls, etc.)
+ *   - functionCall: If message triggered a function
+ *   - citedSources: Referenced documentation or features
+ *   - sentiment: Message sentiment analysis
+ *   - feedback: User feedback on this response
+ * 
+ * AI Integration:
+ * - Messages sent to OpenAI API with conversation context
+ * - Token usage tracked for billing/quota management
+ * - Assistant responses may include structured data in metadata
+ * 
+ * Business Rules:
+ * - Messages immutable once created (no edits)
+ * - Order preserved by timestamp
+ * - System messages used for context injection
+ * - Token limits enforced per conversation
+ * 
+ * Indexes:
+ * - messages_conversation_id_idx: Conversation's messages
+ * - messages_timestamp_idx: Chronological ordering
+ * 
+ * Relationships:
+ * - conversations → messages: CASCADE
+ */
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  role: text("role").notNull(), // 'user', 'assistant', 'system'
+  content: text("content").notNull(),
+  tokensUsed: integer("tokens_used").default(0),
+  timestamp: timestamp("timestamp").defaultNow(),
+  metadata: jsonb("metadata").$type<{
+    functionCall?: string;
+    citedSources?: string[];
+    sentiment?: string;
+    feedback?: { rating: number; comment?: string };
+  }>(),
+}, (table) => [
+  index("messages_conversation_id_idx").on(table.conversationId),
+  index("messages_timestamp_idx").on(table.timestamp),
+]);
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
+
+/**
+ * Conversation Context Table
+ * 
+ * Stores summarized context and key facts for long conversations.
+ * Enables efficient context retrieval without loading all messages.
+ * 
+ * Fields:
+ * - conversationId: Foreign key to conversations.id (PRIMARY KEY & CASCADE delete)
+ * - contextSummary: AI-generated summary of conversation
+ * - keyFacts: JSONB array of important facts/preferences mentioned
+ *   - fact: The key information
+ *   - category: Type of fact (preference, requirement, context)
+ *   - timestamp: When fact was mentioned
+ * - lastSummarized: When context was last updated
+ * - messageCount: Number of messages summarized
+ * 
+ * Context Management:
+ * - Updated periodically (every 20-30 messages)
+ * - Preserves important user preferences and requirements
+ * - Used to provide context for new sessions
+ * - Reduces token usage by summarizing old messages
+ * 
+ * Business Rules:
+ * - One context record per conversation
+ * - Updated when conversation grows significantly
+ * - Key facts extracted automatically or manually flagged
+ * - Summary regenerated if messages deleted
+ * 
+ * Relationships:
+ * - conversations → conversationContext: CASCADE
  * 
  * Usage Example:
  * ```typescript
- * // Fetch recent conversation context
- * const recentMessages = await db
+ * // Load context for conversation continuation
+ * const context = await db
  *   .select()
- *   .from(userChats)
- *   .where(eq(userChats.userId, userId))
- *   .orderBy(desc(userChats.createdAt))
- *   .limit(20);
+ *   .from(conversationContext)
+ *   .where(eq(conversationContext.conversationId, conversationId))
+ *   .limit(1);
  * 
- * // Send to OpenAI with context
- * const response = await openai.chat.completions.create({
- *   messages: [
- *     { role: 'system', content: systemPrompt },
- *     ...recentMessages.reverse(), // Chronological order
- *   ]
- * });
+ * // Include in AI prompt
+ * const systemPrompt = `Previous context: ${context.contextSummary}
+ * Key facts: ${JSON.stringify(context.keyFacts)}`;
  * ```
  */
-export const userChats = pgTable("user_chats", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  role: text("role").notNull(), // 'user' or 'assistant'
-  content: text("content").notNull(),
-  similarityHash: text("similarity_hash"), // Hash for duplicate detection using embeddings
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("user_chats_user_id_idx").on(table.userId),
-  index("user_chats_created_at_idx").on(table.createdAt),
-]);
-
-export const insertChatMessageSchema = createInsertSchema(userChats).omit({
-  id: true,
-  createdAt: true,
+export const conversationContext = pgTable("conversation_context", {
+  conversationId: varchar("conversation_id").primaryKey()
+    .references(() => conversations.id, { onDelete: "cascade" }),
+  contextSummary: text("context_summary"),
+  keyFacts: jsonb("key_facts").$type<Array<{
+    fact: string;
+    category: string;
+    timestamp: string;
+  }>>().default([]),
+  lastSummarized: timestamp("last_summarized").defaultNow(),
+  messageCount: integer("message_count").default(0),
 });
 
-export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
-export type ChatMessage = typeof userChats.$inferSelect;
+export const insertConversationContextSchema = createInsertSchema(conversationContext).omit({
+  lastSummarized: true,
+});
+
+export type InsertConversationContext = z.infer<typeof insertConversationContextSchema>;
+export type ConversationContext = typeof conversationContext.$inferSelect;
 
 /**
  * User Recipes Table
