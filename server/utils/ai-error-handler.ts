@@ -46,12 +46,15 @@ export function handleOpenAIError(error: Error | unknown): AIError {
   // Log the full error for debugging
   // console.log('[AI Error Handler] Raw error:', error);
 
+  // Cast error to any to safely access properties
+  const err = error as any;
+
   // First check for axios-style error responses
-  const status = error?.response?.status || error?.status;
-  const data = error?.response?.data || error?.data;
-  const headers = error?.response?.headers || error?.headers;
+  const status = err?.response?.status || err?.status;
+  const data = err?.response?.data || err?.data;
+  const headers = err?.response?.headers || err?.headers;
   const errorInfo = data?.error || data;
-  const message = errorInfo?.message || error?.message || 'Unknown error';
+  const message = errorInfo?.message || err?.message || 'Unknown error';
 
   // Handle OpenAI API errors
   if (status) {
@@ -132,9 +135,9 @@ export function handleOpenAIError(error: Error | unknown): AIError {
   }
 
   // Network errors
-  if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ECONNRESET') {
+  if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ECONNRESET') {
     return new AIError(
-      `Network error: ${error.code}`,
+      `Network error: ${err.code}`,
       AIErrorCode.NETWORK_ERROR,
       503,
       true,
@@ -143,8 +146,8 @@ export function handleOpenAIError(error: Error | unknown): AIError {
   }
 
   // Timeout errors
-  if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED' || 
-      (error.message && error.message.toLowerCase().includes('timeout'))) {
+  if (err.code === 'ETIMEDOUT' || err.code === 'ECONNABORTED' || 
+      (err.message && err.message.toLowerCase().includes('timeout'))) {
     return new AIError(
       'Request timeout',
       AIErrorCode.TIMEOUT,
@@ -155,7 +158,7 @@ export function handleOpenAIError(error: Error | unknown): AIError {
   }
 
   // Invalid response format
-  if (error.message && error.message.includes('JSON')) {
+  if (err.message && err.message.includes('JSON')) {
     return new AIError(
       'Invalid response format',
       AIErrorCode.INVALID_RESPONSE,
@@ -167,7 +170,7 @@ export function handleOpenAIError(error: Error | unknown): AIError {
 
   // Default unknown error
   return new AIError(
-    error.message || 'Unknown error occurred',
+    err.message || 'Unknown error occurred',
     AIErrorCode.UNKNOWN,
     500,
     false,
@@ -251,12 +254,15 @@ export function formatErrorForLogging(error: Error | unknown): object {
     };
   }
 
+  // Cast error to any to safely access properties
+  const err = error as any;
+  
   return {
-    type: error.constructor?.name || 'Unknown',
-    message: error.message || 'Unknown error',
-    code: error.code,
-    status: error.status,
-    stack: error.stack
+    type: err?.constructor?.name || 'Unknown',
+    message: err?.message || 'Unknown error',
+    code: err?.code,
+    status: err?.status,
+    stack: err?.stack
   };
 }
 
