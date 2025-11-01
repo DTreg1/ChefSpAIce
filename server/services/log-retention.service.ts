@@ -156,7 +156,7 @@ class LogRetentionService {
           results.push({ 
             policy: policy.name, 
             deleted: 0, 
-            error: error.message 
+            error: error instanceof Error ? error.message : String(error)
           });
         }
       }
@@ -277,7 +277,7 @@ class LogRetentionService {
     } catch (error: Error | unknown) {
       return { 
         success: false, 
-        error: error.message || "Cleanup failed" 
+        error: error instanceof Error ? error.message : "Cleanup failed" 
       };
     }
   }

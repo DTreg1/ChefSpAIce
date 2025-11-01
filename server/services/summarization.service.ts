@@ -6,6 +6,7 @@
  */
 
 import { openai } from "../openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export interface SummarizationOptions {
   content: string;
@@ -75,7 +76,7 @@ export async function generateSummary(options: SummarizationOptions): Promise<Su
 
   try {
     // Prepare the messages for the API
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+    const messages: ChatCompletionMessageParam[] = [
       {
         role: "system",
         content: getSystemPrompt(type, length)

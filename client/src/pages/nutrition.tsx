@@ -70,7 +70,7 @@ export default function Nutrition() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Failed to refresh nutrition",
-        description: error.message || "Could not fetch nutrition data for this item",
+        description: error instanceof Error ? error.message : "Could not fetch nutrition data for this item",
         variant: "destructive",
       });
     },

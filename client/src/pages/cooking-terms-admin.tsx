@@ -55,7 +55,7 @@ export default function CookingTermsAdmin() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create cooking term",
+        description: error instanceof Error ? error.message : "Failed to create cooking term",
         variant: "destructive",
       });
     },
@@ -77,7 +77,7 @@ export default function CookingTermsAdmin() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update cooking term",
+        description: error instanceof Error ? error.message : "Failed to update cooking term",
         variant: "destructive",
       });
     },
@@ -97,7 +97,7 @@ export default function CookingTermsAdmin() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete cooking term",
+        description: error instanceof Error ? error.message : "Failed to delete cooking term",
         variant: "destructive",
       });
     },

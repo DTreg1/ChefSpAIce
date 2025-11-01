@@ -282,7 +282,7 @@ export default function DonatePage() {
     } catch (error: Error | unknown) {
       toast({
         title: "Error",
-        description: error.message || "Failed to initialize donation",
+        description: error instanceof Error ? error.message : "Failed to initialize donation",
         variant: "destructive",
       });
     } finally {

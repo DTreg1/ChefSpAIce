@@ -1,0 +1,163 @@
+> tsc
+
+client/src/pages/cooking-terms-admin.tsx:58:22 - error TS18046: 'error' is of type 'unknown'.
+
+58         description: error.message || "Failed to create cooking term",
+                        ~~~~~
+
+client/src/pages/cooking-terms-admin.tsx:80:22 - error TS18046: 'error' is of type 'unknown'.
+
+80         description: error.message || "Failed to update cooking term",
+                        ~~~~~
+
+client/src/pages/cooking-terms-admin.tsx:100:22 - error TS18046: 'error' is of type 'unknown'.
+
+100         description: error.message || "Failed to delete cooking term",
+                         ~~~~~
+
+client/src/pages/donate.tsx:285:22 - error TS18046: 'error' is of type 'unknown'.
+
+285         description: error.message || "Failed to initialize donation",
+                         ~~~~~
+
+client/src/pages/nutrition.tsx:73:22 - error TS18046: 'error' is of type 'unknown'.
+
+73         description: error.message || "Could not fetch nutrition data for this item",
+                        ~~~~~
+
+client/src/pages/onboarding.tsx:216:11 - error TS18046: 'error' is of type 'unknown'.
+
+216           error.message || "Failed to save preferences. Please try again.",
+              ~~~~~
+
+client/src/pages/onboarding.tsx:754:25 - error TS2353: Object literal may only specify known properties, and 'storageAreas' does not exist in type '{ expirationAlertDays: number; storageAreasEnabled: string[]; householdSize: number; cookingSkillLevel: "beginner" | "intermediate" | "advanced"; preferredUnits: "imperial" | "metric"; dietaryRestrictions?: string[] | undefined; allergens?: string[] | undefined; foodsToAvoid?: string[] | undefined; }'.
+
+754                         storageAreas: ["Fridge", "Pantry"],
+                            ~~~~~~~~~~~~
+
+client/src/pages/summarization-demo.tsx:68:49 - error TS2345: Argument of type '{ method: string; body: string; }' is not assignable to parameter of type 'string'.
+
+68       return await apiRequest('/api/summarize', {
+                                                   ~
+69         method: 'POST',
+   ~~~~~~~~~~~~~~~~~~~~~~~
+70         body: JSON.stringify(data)
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+71       });
+   ~~~~~~~
+
+client/src/pages/summarization-demo.tsx:78:38 - error TS2339: Property 'wordCount' does not exist on type 'Response'.
+
+78         description: `Created ${data.wordCount} word summary (${data.compressionRatio}% reduction)`,
+                                        ~~~~~~~~~
+
+client/src/pages/summarization-demo.tsx:78:70 - error TS2339: Property 'compressionRatio' does not exist on type 'Response'.
+
+78         description: `Created ${data.wordCount} word summary (${data.compressionRatio}% reduction)`,
+                                                                        ~~~~~~~~~~~~~~~~
+
+server/middleware/auth.middleware.ts:149:13 - error TS2339: Property 'default' does not exist on type 'typeof import("/home/runner/workspace/server/storage")'.
+
+149     const { default: storage } = await import("../storage");
+                ~~~~~~~
+
+server/openfoodfacts.ts:68:49 - error TS18046: 'error' is of type 'unknown'.
+
+68     console.error('Open Food Facts API error:', error.message);
+                                                   ~~~~~
+
+server/routers/batch.router.ts:35:23 - error TS18046: 'error' is of type 'unknown'.
+
+35       return { error: error.message || "Request failed" };
+                         ~~~~~
+
+server/services/apns.service.ts:385:18 - error TS18046: 'error' is of type 'unknown'.
+
+385           error: error.message || 'Unknown error',
+                     ~~~~~
+
+server/services/log-retention.service.ts:159:20 - error TS18046: 'error' is of type 'unknown'.
+
+159             error: error.message
+                       ~~~~~
+
+server/services/log-retention.service.ts:280:16 - error TS18046: 'error' is of type 'unknown'.
+
+280         error: error.message || "Cleanup failed"
+                   ~~~~~
+
+server/services/push-notification-base.service.ts:267:33 - error TS2339: Property 'message' does not exist on type '{}'.
+
+267     const errorMessage = error?.message || error?.toString() || 'Unknown error';
+                                    ~~~~~~~
+
+server/services/push-notification.service.ts:157:15 - error TS18046: 'error' is of type 'unknown'.
+
+157           if (error.statusCode === 410) {
+                  ~~~~~
+
+server/services/summarization.service.ts:78:21 - error TS2503: Cannot find namespace 'OpenAI'.
+
+78     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+                       ~~~~~~
+
+server/storage.ts:5451:17 - error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; contentType: string | SQL<unknown> | Placeholder<...>; relatedItems: SQL<...> | ... 1 more ... | Placeholder<...>; expiresAt: Date | ... 1 more ... | Placeholder<...>; id?: string | ... 2 more ... | undefined; createdAt?: Date | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ userId: string; contentId: string; contentType: string; relatedItems: { [x: number]: { id: string; type: string; title: string; score: number; }; length: number; toString: () => string; toLocaleString: { ...; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }; expiresAt: Date; }' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; contentType: string | SQL<unknown> | Placeholder<...>; relatedItems: SQL<...> | ... 1 more ... | Placeholder<...>; expiresAt: Date | ... 1 more ... | Placeholder<...>; id?: string | ... 2 more ......'.
+      Types of property 'relatedItems' are incompatible.
+        Type '{ [x: number]: { id: string; type: string; title: string; score: number; }; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'SQL<unknown> | { id: string; type: string; title: string; score: number; }[] | Placeholder<string, any>'.
+          Type '{ [x: number]: { id: string; type: string; title: string; score: number; }; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type '{ id: string; type: string; title: string; score: number; }[]'.
+            The types returned by 'pop()' are incompatible between these types.
+              Type 'unknown' is not assignable to type '{ id: string; type: string; title: string; score: number; } | undefined'.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; contentType: string | SQL<unknown> | Placeholder<...>; relatedItems: SQL<...> | ... 1 more ... | Placeholder<...>; expiresAt: Date | ... 1 more ... | Placeholder<...>; id?: string | ... 2 more ... | undefined; createdAt?: Date | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type '{ userId: string; contentId: string; contentType: string; relatedItems: { [x: number]: { id: string; type: string; title: string; score: number; }; length: number; toString: () => string; toLocaleString: { ...; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }; expiresAt: Date; }' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; contentType: string | SQL<unknown> | Placeholder<...>; relatedItems: SQL<...> | ... 1 more ... | Placeholder<...>; expiresAt: Date | ... 1 more ... | Placeholder<...>; id?: string | ... 2 more ......'.
+      Type '{ userId: string; contentId: string; contentType: string; relatedItems: { [x: number]: { id: string; type: string; title: string; score: number; }; length: number; toString: () => string; toLocaleString: { ...; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }; expiresAt: Date; }' is missing the following properties from type '{ userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; contentType: string | SQL<unknown> | Placeholder<...>; relatedItems: SQL<...> | ... 1 more ... | Placeholder<...>; expiresAt: Date | ... 1 more ... | Placeholder<...>; id?: string | ... 2 more ......': length, pop, push, concat, and 35 more.
+
+5451         .values(cache)
+                     ~~~~~
+
+
+server/storage.ts:5771:17 - error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; originalText: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; createdAt?: Date | ... 3 more ... | undefined; documentId?: string | ... 3 more ... | undefined; improvedText?: string | ... 3 more ... | undefined; improvementsApplied?: string[] | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ userId: string; originalText: string; documentId?: string | null | undefined; improvedText?: string | null | undefined; improvementsApplied?: { [x: number]: string; length: number; toString: () => string; ... 38 more ...; readonly [Symbol.unscopables]: { ...; }; } | null | undefined; }' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; originalText: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; createdAt?: Date | ... 3 more ... | undefined; documentId?: string | ... 3 more ... | undefined; improvedText?: string | ... 3 more .....'.
+      Types of property 'improvementsApplied' are incompatible.
+        Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; } | null | undefined' is not assignable to type 'string[] | SQL<unknown> | Placeholder<string, any> | null | undefined'.
+          Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[] | SQL<unknown> | Placeholder<string, any> | null | undefined'.
+            Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[]'.
+              The types returned by 'pop()' are incompatible between these types.
+                Type 'unknown' is not assignable to type 'string | undefined'.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; originalText: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; createdAt?: Date | ... 3 more ... | undefined; documentId?: string | ... 3 more ... | undefined; improvedText?: string | ... 3 more ... | undefined; improvementsApplied?: string[] | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type '{ userId: string; originalText: string; documentId?: string | null | undefined; improvedText?: string | null | undefined; improvementsApplied?: { [x: number]: string; length: number; toString: () => string; ... 38 more ...; readonly [Symbol.unscopables]: { ...; }; } | null | undefined; }' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; originalText: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; createdAt?: Date | ... 3 more ... | undefined; documentId?: string | ... 3 more ... | undefined; improvedText?: string | ... 3 more .....'.
+      Type '{ userId: string; originalText: string; documentId?: string | null | undefined; improvedText?: string | null | undefined; improvementsApplied?: { [x: number]: string; length: number; toString: () => string; ... 38 more ...; readonly [Symbol.unscopables]: { ...; }; } | null | undefined; }' is missing the following properties from type '{ userId: string | SQL<unknown> | Placeholder<string, any>; originalText: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; createdAt?: Date | ... 3 more ... | undefined; documentId?: string | ... 3 more ... | undefined; improvedText?: string | ... 3 more .....': length, pop, push, concat, and 35 more.
+
+5771         .values(session)
+                     ~~~~~~~
+
+
+server/storage.ts:5924:10 - error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; summaryText: string | SQL<unknown> | Placeholder<...>; ... 11 more ...; editedText?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ userId: string; metadata?: { model?: unknown; tokensUsed?: unknown; temperature?: unknown; processingTime?: unknown; } | null | undefined; contentId: string; originalContent?: string | null | undefined; summaryText: string; ... 6 more ...; editedText?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; summaryText: string | SQL<unknown> | Placeholder<...>; ... 11 more ...; editedText?: string | ... 3 more ... | undefined; }'.
+      Types of property 'metadata' are incompatible.
+        Type '{ model?: unknown; tokensUsed?: unknown; temperature?: unknown; processingTime?: unknown; } | null | undefined' is not assignable to type 'SQL<unknown> | { model?: string | undefined; temperature?: number | undefined; tokensUsed?: number | undefined; processingTime?: number | undefined; } | Placeholder<string, any> | null | undefined'.
+          Type '{ model?: unknown; tokensUsed?: unknown; temperature?: unknown; processingTime?: unknown; }' is not assignable to type 'SQL<unknown> | { model?: string | undefined; temperature?: number | undefined; tokensUsed?: number | undefined; processingTime?: number | undefined; } | Placeholder<string, any> | null | undefined'.
+            Type '{ model?: unknown; tokensUsed?: unknown; temperature?: unknown; processingTime?: unknown; }' is not assignable to type '{ model?: string | undefined; temperature?: number | undefined; tokensUsed?: number | undefined; processingTime?: number | undefined; }'.
+              Types of property 'model' are incompatible.
+                Type 'unknown' is not assignable to type 'string | undefined'.
+  Overload 2 of 2, '(values: { userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; summaryText: string | SQL<unknown> | Placeholder<...>; ... 11 more ...; editedText?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'userId' does not exist in type '{ userId: string | SQL<unknown> | Placeholder<string, any>; contentId: string | SQL<unknown> | Placeholder<string, any>; summaryText: string | SQL<unknown> | Placeholder<...>; ... 11 more ...; editedText?: string | ... 3 more ... | undefined; }[]'.
+
+5924         .values({ ...summary, userId })
+              ~~~~~~
+
+
+server/storage.ts:5937:14 - error TS2345: Argument of type '{ updatedAt: Date; metadata?: { model?: unknown; tokensUsed?: unknown; temperature?: unknown; processingTime?: unknown; } | null | undefined; contentId?: string | undefined; originalContent?: string | null | undefined; ... 7 more ...; editedText?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ userId?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; contentId?: string | SQL<...> | PgColumn<...> | undefined; ... 12 more ...; editedText?: string | ... 3 more ... | undefined; }'.
+  Types of property 'metadata' are incompatible.
+    Type '{ model?: unknown; tokensUsed?: unknown; temperature?: unknown; processingTime?: unknown; } | null | undefined' is not assignable to type 'SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | { model?: string | undefined; temperature?: number | undefined; tokensUsed?: number | undefined; processingTime?: number | undefined; } | null | undefined'.
+      Type '{ model?: unknown; tokensUsed?: unknown; temperature?: unknown; processingTime?: unknown; }' is not assignable to type 'SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | { model?: string | undefined; temperature?: number | undefined; tokensUsed?: number | undefined; processingTime?: number | undefined; } | null | undefined'.
+        Type '{ model?: unknown; tokensUsed?: unknown; temperature?: unknown; processingTime?: unknown; }' is not assignable to type '{ model?: string | undefined; temperature?: number | undefined; tokensUsed?: number | undefined; processingTime?: number | undefined; }'.
+          Types of property 'model' are incompatible.
+            Type 'unknown' is not assignable to type 'string | undefined'.
+
+5937         .set({ ...updates, updatedAt: new Date() })
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+

@@ -213,7 +213,7 @@ export default function Onboarding() {
       toast({
         title: "Error",
         description:
-          error.message || "Failed to save preferences. Please try again.",
+          error instanceof Error ? error.message : "Failed to save preferences. Please try again.",
         variant: "destructive",
       });
     },
@@ -751,7 +751,7 @@ export default function Onboarding() {
                     onClick={() => {
                       // Skip onboarding for testing
                       saveMutation.mutate({
-                        storageAreas: ["Fridge", "Pantry"],
+                        storageAreasEnabled: ["Fridge", "Pantry"],
                         kitchenEquipment: ["Stove"],
                         householdSize: 2,
                         cookingSkillLevel: "intermediate",

@@ -264,7 +264,7 @@ export abstract class BasePushNotificationService {
    * Common error handling logic
    */
   protected handleSendError(error: Error | unknown): PushNotificationResult {
-    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : (error ? String(error) : 'Unknown error');
     
     // Common patterns for invalid tokens across services
     const invalidTokenPatterns = [

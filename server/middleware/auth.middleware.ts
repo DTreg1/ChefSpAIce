@@ -146,7 +146,7 @@ export async function adminOnly(req: Request, res: Response, next: NextFunction)
     }
     
     // Import storage dynamically to avoid circular dependencies
-    const { default: storage } = await import("../storage");
+    const { storage } = await import("../storage");
     
     try {
       // Check if user is admin in database

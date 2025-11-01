@@ -65,10 +65,8 @@ export default function SummarizationDemo() {
 
   const summarizeMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('/api/summarize', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      const response = await apiRequest('POST', '/api/summarize', data);
+      return await response.json();
     },
     onSuccess: (data) => {
       setSummaryResult(data);
@@ -78,10 +76,10 @@ export default function SummarizationDemo() {
         description: `Created ${data.wordCount} word summary (${data.compressionRatio}% reduction)`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to generate summary",
+        description: error instanceof Error ? error.message : "Failed to generate summary",
         variant: "destructive",
       });
     }

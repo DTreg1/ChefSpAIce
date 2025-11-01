@@ -382,7 +382,7 @@ export class ApnsService {
       } catch (error: Error | unknown) {
         failed.push({
           token,
-          error: error.message || 'Unknown error',
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }

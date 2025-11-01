@@ -32,7 +32,7 @@ router.post("/batch", isAuthenticated, asyncHandler(async (req: ExpressRequest<a
       const result = await processRequest(request, userId);
       return { data: result };
     } catch (error: Error | unknown) {
-      return { error: error.message || "Request failed" };
+      return { error: error instanceof Error ? error.message : "Request failed" };
     }
   });
   

@@ -5448,7 +5448,10 @@ export class DatabaseStorage implements IStorage {
       // Insert new cache entry
       const [result] = await db
         .insert(relatedContentCache)
-        .values(cache)
+        .values({
+          ...cache,
+          relatedItems: cache.relatedItems as any // Cast array properly for jsonb
+        })
         .returning();
 
       return result;
@@ -5768,7 +5771,10 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(writingSessions)
-        .values(session)
+        .values({
+          ...session,
+          improvementsApplied: session.improvementsApplied as any // Cast array properly for jsonb
+        })
         .returning();
       return result;
     } catch (error) {
@@ -5921,7 +5927,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(summaries)
-        .values({ ...summary, userId })
+        .values({
+          ...summary,
+          userId,
+          keyPoints: summary.keyPoints as any, // Cast array properly
+          metadata: summary.metadata as any // Cast metadata properly
+        })
         .returning();
       return result;
     } catch (error) {
@@ -5934,7 +5945,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .update(summaries)
-        .set({ ...updates, updatedAt: new Date() })
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+          keyPoints: updates.keyPoints as any, // Cast array properly  
+          metadata: updates.metadata as any // Cast metadata properly
+        })
         .where(and(eq(summaries.userId, userId), eq(summaries.id, summaryId)))
         .returning();
       
