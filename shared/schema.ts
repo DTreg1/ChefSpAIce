@@ -3691,3 +3691,136 @@ export const insertSummarySchema = createInsertSchema(summaries).omit({
 
 export type InsertSummary = z.infer<typeof insertSummarySchema>;
 export type Summary = typeof summaries.$inferSelect;
+
+/**
+ * Draft Templates Table
+ * 
+ * Stores reusable templates and prompts for generating draft responses.
+ * Supports different context types (email, comment, message) with usage tracking.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - contextType: Type of content ('email', 'message', 'comment', 'general')
+ * - templatePrompt: The prompt template used for generating responses
+ * - usageCount: Number of times this template has been used
+ * - isActive: Flag to enable/disable templates
+ * - createdAt: When template was created
+ * - updatedAt: Last modification timestamp
+ * 
+ * Context Types:
+ * - 'email': Professional email responses
+ * - 'message': Instant messages or chat responses
+ * - 'comment': Social media or forum comments
+ * - 'general': General purpose responses
+ * 
+ * Business Rules:
+ * - Templates can be system-provided or user-created
+ * - Track usage for analytics and optimization
+ * - Support variables in templates for customization
+ * - Active templates only shown in UI
+ * 
+ * Indexes:
+ * - draft_templates_context_type_idx: Filter by context type
+ * - draft_templates_is_active_idx: Active templates lookup
+ */
+export const draftTemplates = pgTable("draft_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contextType: varchar("context_type", { length: 50 }).notNull(), // 'email', 'message', 'comment', 'general'
+  templatePrompt: text("template_prompt").notNull(), // The prompt template for this context
+  usageCount: integer("usage_count").notNull().default(0), // Track template popularity
+  isActive: boolean("is_active").notNull().default(true), // Enable/disable templates
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("draft_templates_context_type_idx").on(table.contextType),
+  index("draft_templates_is_active_idx").on(table.isActive),
+]);
+
+export const insertDraftTemplateSchema = createInsertSchema(draftTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDraftTemplate = z.infer<typeof insertDraftTemplateSchema>;
+export type DraftTemplate = typeof draftTemplates.$inferSelect;
+
+/**
+ * Generated Drafts Table
+ * 
+ * Stores all generated draft responses with tracking for user interaction.
+ * Supports multiple draft options per message and feedback collection.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - originalMessageId: Identifier for the original message being responded to
+ * - originalMessage: The message content being responded to
+ * - draftContent: The generated draft response text
+ * - tone: Tone of the draft ('formal', 'casual', 'friendly', 'apologetic', 'solution-focused', 'empathetic')
+ * - selected: Whether this draft was selected by the user
+ * - edited: Whether the user edited this draft before using
+ * - editedContent: The edited version of the draft (if edited)
+ * - contextType: Type of content being drafted ('email', 'message', 'comment')
+ * - metadata: Additional generation metadata (model, temperature, etc.)
+ * - createdAt: When draft was generated
+ * - updatedAt: Last modification timestamp
+ * 
+ * Tone Options:
+ * - 'formal': Professional and businesslike
+ * - 'casual': Relaxed and informal
+ * - 'friendly': Warm and approachable
+ * - 'apologetic': Expressing regret or apology
+ * - 'solution-focused': Emphasizing problem resolution
+ * - 'empathetic': Understanding and compassionate
+ * 
+ * Business Rules:
+ * - Generate multiple draft options per request (typically 3)
+ * - Track which drafts are selected for learning
+ * - Allow editing and track changes
+ * - Store generation metadata for optimization
+ * 
+ * Indexes:
+ * - generated_drafts_user_id_idx: User's draft history
+ * - generated_drafts_original_message_id_idx: Group drafts by original message
+ * - generated_drafts_selected_idx: Analytics on selected drafts
+ * - generated_drafts_created_at_idx: Time-based queries
+ * 
+ * Relationships:
+ * - users → generatedDrafts: CASCADE (delete drafts when user deleted)
+ */
+export const generatedDrafts = pgTable("generated_drafts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  originalMessageId: varchar("original_message_id"), // ID of the message being responded to
+  originalMessage: text("original_message"), // The content being responded to
+  draftContent: text("draft_content").notNull(), // The generated draft text
+  tone: varchar("tone", { length: 30 }), // 'formal', 'casual', 'friendly', etc.
+  selected: boolean("selected").notNull().default(false), // Was this draft chosen?
+  edited: boolean("edited").notNull().default(false), // Was the draft edited?
+  editedContent: text("edited_content"), // The edited version if edited
+  contextType: varchar("context_type", { length: 50 }), // 'email', 'message', 'comment'
+  metadata: jsonb("metadata").$type<{
+    model?: string;
+    temperature?: number;
+    tokensUsed?: number;
+    processingTime?: number;
+    templateId?: string;
+  }>(), // Generation metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("generated_drafts_user_id_idx").on(table.userId),
+  index("generated_drafts_original_message_id_idx").on(table.originalMessageId),
+  index("generated_drafts_selected_idx").on(table.selected),
+  index("generated_drafts_created_at_idx").on(table.createdAt),
+]);
+
+export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertGeneratedDraft = z.infer<typeof insertGeneratedDraftSchema>;
+export type GeneratedDraft = typeof generatedDrafts.$inferSelect;
