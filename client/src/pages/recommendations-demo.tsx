@@ -274,7 +274,13 @@ export default function RecommendationsDemo() {
                       type: "article",
                       title: customTitle,
                       text: customContent,
-                      metadata: { category: "Custom" }
+                      metadata: { 
+                        category: "Custom",
+                        prepTime: 0,
+                        cookTime: 0,
+                        servings: 0,
+                        tags: []
+                      }
                     });
                     generateEmbeddings.mutate();
                   } else {

@@ -163,7 +163,7 @@ export const ContentCard = ({
               <Star
                 key={i}
                 className={`h-3 w-3 ${
-                  i < Math.floor(metadata.rating) 
+                  i < Math.floor(metadata.rating || 0) 
                     ? "fill-yellow-400 text-yellow-400" 
                     : "text-gray-300"
                 }`}
