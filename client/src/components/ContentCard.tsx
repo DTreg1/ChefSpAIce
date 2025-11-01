@@ -183,7 +183,7 @@ export const ContentCard = ({
               <span className="font-medium">{formatScore(similarityScore)}</span>
             </div>
             <Progress 
-              value={similarityScore * 100} 
+              value={(similarityScore || 0) * 100} 
               className="h-1.5"
             />
           </div>
