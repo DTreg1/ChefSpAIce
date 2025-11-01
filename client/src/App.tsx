@@ -11,6 +11,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ProgressiveDisclosureProvider } from "@/contexts/ProgressiveDisclosureContext";
 import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
+import { ChatWidget } from "@/components/ChatWidget";
 import { UnifiedAddFood } from "@/components/unified-add-food";
 import { UnifiedRecipeDialog } from "@/components/unified-recipe-dialog";
 import { FeedbackWidget } from "@/components/feedback-widget";
@@ -32,6 +33,7 @@ import Chat from "@/pages/chat"; // Keep Chat eager since it's the default route
 const Storage = lazy(() => import("@/pages/storage"));
 const Cookbook = lazy(() => import("@/pages/cookbook"));
 const Nutrition = lazy(() => import("@/pages/nutrition"));
+const AIAssistant = lazy(() => import("@/pages/ai-assistant"));
 const MealPlanner = lazy(() => import("@/pages/meal-planner"));
 const ShoppingList = lazy(() => import("@/pages/shopping-list"));
 const Appliances = lazy(() => import("@/pages/appliances"));
@@ -67,6 +69,7 @@ function AuthenticatedRouter() {
       <Switch>
         <Route path="/" component={Chat} />
         <Route path="/chat" component={Chat} />
+        <Route path="/ai-assistant" component={AIAssistant} />
         <Route path="/cookbook" component={Cookbook} />
         <Route path="/tag-demo" component={TagDemo} />
         <Route path="/nutrition" component={Nutrition} />
@@ -223,6 +226,9 @@ function AppContent() {
       />
       {/* Only show floating FeedbackWidget on non-chat pages */}
       {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
+      
+      {/* Add ChatWidget for global AI assistant access */}
+      <ChatWidget />
       
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">

@@ -1,14 +1,16 @@
 import OpenAI from 'openai';
 import { db } from '../db';
 import { 
+  userChats,
+  type ChatMessage
+} from '../../shared/chat-compatibility';
+import { 
   contentEmbeddings, 
   duplicatePairs, 
   userRecipes,
-  userChats,
   type InsertContentEmbedding,
   type InsertDuplicatePair,
-  type Recipe,
-  type ChatMessage
+  type Recipe
 } from '../../shared/schema';
 import { eq, and, or, gte, desc } from 'drizzle-orm';
 import crypto from 'crypto';

@@ -22,6 +22,7 @@ import {
   LogOut,
   Activity,
   Brain,
+  Bot,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -165,6 +166,23 @@ export function AppSidebar() {
                     >
                       <chatItem.icon className="w-4 h-4 transition-morph" />
                       <span className="flex-1">{chatItem.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/ai-assistant"}
+                    className="transition-morph hover:pl-1"
+                  >
+                    <Link
+                      href="/ai-assistant"
+                      data-testid="link-ai-assistant"
+                      onClick={handleLinkClick}
+                    >
+                      <Bot className="w-4 h-4 transition-morph" />
+                      <span className="flex-1">AI Assistant</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

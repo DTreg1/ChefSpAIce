@@ -1,6 +1,6 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
-import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
+import { insertChatMessageSchema, type ChatMessage } from "@shared/chat-compatibility";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { openai } from "../openai";
