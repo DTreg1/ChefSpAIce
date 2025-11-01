@@ -106,12 +106,13 @@ export function WritingAssistant() {
         .filter(([_, enabled]) => enabled)
         .map(([key, _]) => key);
 
-      return apiRequest("POST", "/api/writing/analyze", {
+      const response = await apiRequest("POST", "/api/writing/analyze", {
         text,
         type: textType,
         targetTone,
         checkFor
       });
+      return response.json();
     },
     onSuccess: (data) => {
       setCurrentSessionId(data.sessionId);
@@ -139,29 +140,33 @@ export function WritingAssistant() {
         index => analysisResult?.suggestions[index]?.suggestionType || ""
       );
 
-      return apiRequest("POST", "/api/writing/improve", {
+      const response = await apiRequest("POST", "/api/writing/improve", {
         sessionId: currentSessionId,
         suggestionIds
       });
+      return response.json();
     },
     onSuccess: (data) => {
-      setText(data.improvedText || text);
-      setSelectedSuggestions(new Set());
-      toast({
-        title: "Text Improved",
-        description: "Applied selected improvements"
-      });
+      if (data) {
+        setText(data.improvedText || text);
+        setSelectedSuggestions(new Set());
+        toast({
+          title: "Text Improved",
+          description: "Applied selected improvements"
+        });
+      }
     }
   });
 
   // Adjust tone
   const adjustToneMutation = useMutation({
     mutationFn: async (newTone: string) => {
-      return apiRequest("POST", "/api/writing/adjust-tone", {
+      const response = await apiRequest("POST", "/api/writing/adjust-tone", {
         text,
         currentTone: analysisResult?.metrics.tone,
         targetTone: newTone
       });
+      return response.json();
     },
     onSuccess: (data) => {
       setText(data.adjustedText);
@@ -175,13 +180,11 @@ export function WritingAssistant() {
   // Paraphrase text
   const paraphraseMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/writing/paraphrase", {
-        method: "POST",
-        body: JSON.stringify({
-          text,
-          style: textType
-        })
+      const response = await apiRequest("POST", "/api/writing/paraphrase", {
+        text,
+        style: textType
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -194,10 +197,10 @@ export function WritingAssistant() {
   // Check plagiarism
   const plagiarismMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/writing/check-plagiarism", {
-        method: "POST",
-        body: JSON.stringify({ text })
+      const response = await apiRequest("POST", "/api/writing/check-plagiarism", { 
+        text 
       });
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
