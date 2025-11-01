@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { db } from "../db";
 import { queryLogs, InsertQueryLog } from "@shared/schema";
 import * as schema from "@shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 // Referenced from: blueprint:javascript_openai_ai_integrations
 // This is using Replit's AI Integrations service, which provides OpenAI-compatible API access
@@ -197,7 +198,7 @@ export async function executeValidatedQuery(
         }
       };
       
-      await db.insert(queryLogs).values(queryLog);
+      await db.insert(queryLogs).values([queryLog]);
     }
 
     return {
@@ -225,7 +226,7 @@ export async function executeValidatedQuery(
         }
       };
       
-      await db.insert(queryLogs).values(queryLog);
+      await db.insert(queryLogs).values([queryLog]);
     }
 
     throw error;
@@ -239,8 +240,7 @@ export async function getSavedQueries(userId: string) {
   const savedQueries = await db
     .select()
     .from(queryLogs)
-    .where(eq(queryLogs.userId, userId))
-    .where(eq(queryLogs.isSaved, true))
+    .where(and(eq(queryLogs.userId, userId), eq(queryLogs.isSaved, true)))
     .orderBy(desc(queryLogs.createdAt));
     
   return savedQueries;
@@ -256,9 +256,6 @@ export async function saveQuery(queryId: string, savedName: string, userId: stri
       isSaved: true,
       savedName
     })
-    .where(eq(queryLogs.id, queryId))
-    .where(eq(queryLogs.userId, userId));
+    .where(and(eq(queryLogs.id, queryId), eq(queryLogs.userId, userId)));
 }
 
-// Import necessary functions for queries
-import { eq, desc } from "drizzle-orm";

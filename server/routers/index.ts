@@ -28,6 +28,7 @@ import writingAssistantRouter from "./writing-assistant.router";
 import summarizationRouter from "./summarization.router";
 import duplicatesRouter from "./duplicates.router";
 import recommendationsRouter from "./recommendations.router";
+import naturalQueryRouter from "./natural-query.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -69,6 +70,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api", summarizationRouter);         // Summarization endpoints
   app.use("/api/duplicates", duplicatesRouter);  // Duplicate detection endpoints
   app.use("/api", recommendationsRouter);       // Content recommendations endpoints
+  app.use("/api/query", naturalQueryRouter);    // Natural language query endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);
