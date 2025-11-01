@@ -37,10 +37,11 @@ export default function SmartSearch() {
   // Semantic search mutation
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      return apiRequest('/api/ml/search/semantic', {
-        method: 'POST',
-        body: JSON.stringify({ query, contentType: 'all' }),
+      const response = await apiRequest('POST', '/api/ml/search/semantic', { 
+        query, 
+        contentType: 'all' 
       });
+      return response.json();
     },
     onError: (error: any) => {
       toast({
@@ -54,10 +55,10 @@ export default function SmartSearch() {
   // Natural language query mutation
   const nlQueryMutation = useMutation({
     mutationFn: async (query: string) => {
-      return apiRequest('/api/ml/natural-query', {
-        method: 'POST',
-        body: JSON.stringify({ query }),
+      const response = await apiRequest('POST', '/api/ml/natural-query', { 
+        query 
       });
+      return response.json();
     },
     onError: (error: any) => {
       toast({
@@ -72,19 +73,20 @@ export default function SmartSearch() {
   const { data: relatedContent, isLoading: loadingRelated } = useQuery<RelatedContent[]>({
     queryKey: ['/api/ml/related', selectedContentId, selectedContentType],
     enabled: !!selectedContentId && !!selectedContentType,
-    queryFn: () => {
-      return apiRequest(`/api/ml/related?contentId=${selectedContentId}&contentType=${selectedContentType}`, {
-        method: 'GET',
-      });
+    queryFn: async () => {
+      const response = await apiRequest(
+        'GET',
+        `/api/ml/related?contentId=${selectedContentId}&contentType=${selectedContentType}`
+      );
+      return response.json();
     },
   });
 
   // Update embeddings mutation
   const updateEmbeddingsMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/ml/embeddings/update', {
-        method: 'POST',
-      });
+      const response = await apiRequest('POST', '/api/ml/embeddings/update');
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -174,7 +176,7 @@ export default function SmartSearch() {
           </div>
           {isRecipe && content?.id && (
             <Link href={`/recipes/${content.id}`}>
-              <Button variant="link" className="mt-2 p-0" data-testid={`button-view-recipe-${content.id}`}>
+              <Button variant="ghost" className="mt-2 p-0 h-auto" data-testid={`button-view-recipe-${content.id}`}>
                 View Recipe →
               </Button>
             </Link>
