@@ -682,6 +682,54 @@ export interface IStorage {
     conversionRate: number;
   }>;
 
+  // ==================== Natural Language Query Operations ====================
+
+  /**
+   * Log a natural language query and its SQL translation
+   */
+  createQueryLog(
+    userId: string,
+    log: Omit<InsertQueryLog, "userId">
+  ): Promise<QueryLog>;
+
+  /**
+   * Get query history for a user
+   */
+  getQueryLogs(
+    userId: string,
+    limit?: number
+  ): Promise<QueryLog[]>;
+
+  /**
+   * Get saved queries for a user
+   */
+  getSavedQueries(userId: string): Promise<QueryLog[]>;
+
+  /**
+   * Save a query for future use
+   */
+  saveQuery(
+    userId: string,
+    queryId: string,
+    savedName: string
+  ): Promise<QueryLog>;
+
+  /**
+   * Update query log with execution results
+   */
+  updateQueryLog(
+    queryId: string,
+    updates: Partial<QueryLog>
+  ): Promise<QueryLog>;
+
+  /**
+   * Get query by ID
+   */
+  getQueryLog(
+    userId: string,
+    queryId: string
+  ): Promise<QueryLog | undefined>;
+
   // ==================== Activity Logging ====================
 
   /**
@@ -6167,6 +6215,128 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting summaries by type:", error);
       throw new Error("Failed to get summaries by type");
+    }
+  }
+
+  // ==================== Natural Language Query Operations ====================
+
+  async createQueryLog(
+    userId: string,
+    log: Omit<InsertQueryLog, "userId">
+  ): Promise<QueryLog> {
+    try {
+      const [result] = await db
+        .insert(queryLogs)
+        .values({
+          ...log,
+          userId,
+          metadata: log.metadata as any // Cast metadata properly
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating query log:", error);
+      throw new Error("Failed to create query log");
+    }
+  }
+
+  async getQueryLogs(
+    userId: string,
+    limit?: number
+  ): Promise<QueryLog[]> {
+    try {
+      const query = db
+        .select()
+        .from(queryLogs)
+        .where(eq(queryLogs.userId, userId))
+        .orderBy(desc(queryLogs.createdAt));
+      
+      if (limit) {
+        return await query.limit(limit);
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting query logs:", error);
+      throw new Error("Failed to get query logs");
+    }
+  }
+
+  async getSavedQueries(userId: string): Promise<QueryLog[]> {
+    try {
+      return await db
+        .select()
+        .from(queryLogs)
+        .where(and(eq(queryLogs.userId, userId), eq(queryLogs.isSaved, true)))
+        .orderBy(desc(queryLogs.createdAt));
+    } catch (error) {
+      console.error("Error getting saved queries:", error);
+      throw new Error("Failed to get saved queries");
+    }
+  }
+
+  async saveQuery(
+    userId: string,
+    queryId: string,
+    savedName: string
+  ): Promise<QueryLog> {
+    try {
+      const [result] = await db
+        .update(queryLogs)
+        .set({
+          isSaved: true,
+          savedName
+        })
+        .where(and(eq(queryLogs.id, queryId), eq(queryLogs.userId, userId)))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Query not found");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error saving query:", error);
+      throw new Error("Failed to save query");
+    }
+  }
+
+  async updateQueryLog(
+    queryId: string,
+    updates: Partial<QueryLog>
+  ): Promise<QueryLog> {
+    try {
+      const [result] = await db
+        .update(queryLogs)
+        .set(updates)
+        .where(eq(queryLogs.id, queryId))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Query log not found");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error updating query log:", error);
+      throw new Error("Failed to update query log");
+    }
+  }
+
+  async getQueryLog(
+    userId: string,
+    queryId: string
+  ): Promise<QueryLog | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(queryLogs)
+        .where(and(eq(queryLogs.id, queryId), eq(queryLogs.userId, userId)))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting query log:", error);
+      throw new Error("Failed to get query log");
     }
   }
 }
