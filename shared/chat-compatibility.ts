@@ -3,6 +3,8 @@
  * These types provide backward compatibility while transitioning to the new conversation system
  */
 
+import { z } from "zod";
+
 // Legacy chat message type for backward compatibility
 export type ChatMessage = {
   id: string;
@@ -19,6 +21,14 @@ export type InsertChatMessage = {
   content: string;
   similarityHash?: string | null;
 };
+
+// Legacy chat message schema for backward compatibility
+export const insertChatMessageSchema = z.object({
+  userId: z.string().optional(),
+  role: z.string(),
+  content: z.string(),
+  similarityHash: z.string().nullable().optional(),
+});
 
 // Legacy userChats table stub - not actually in database
 // This is a compatibility shim to prevent import errors
