@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useLocation } from "wouter";
 import { VoiceButton } from "./VoiceButton";
 import { VoicePermissionModal } from "./VoicePermissionModal";
 import { TranscriptDisplay } from "./TranscriptDisplay";
@@ -18,6 +19,7 @@ export function VoiceControl({ className, showHelper = false }: VoiceControlProp
   const [transcript, setTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [showHelperPanel, setShowHelperPanel] = useState(showHelper);
+  const [, navigate] = useLocation();
   const { feedbackState, showFeedback, VoiceFeedbackComponent } = useVoiceFeedback();
 
   const handleTranscript = useCallback((text: string) => {
@@ -30,10 +32,15 @@ export function VoiceControl({ className, showHelper = false }: VoiceControlProp
     if (command.interpretation?.success) {
       showFeedback("success", command.interpretation.response || command.interpretation.actionTaken);
       
-      // Handle navigation
+      // Handle navigation using Wouter
       if (command.interpretation.navigationPath) {
         setTimeout(() => {
-          window.location.href = command.interpretation.navigationPath;
+          // Add filter parameters if present
+          let path = command.interpretation.navigationPath;
+          if (command.interpretation.parameters?.filter) {
+            path += `?filter=${command.interpretation.parameters.filter}`;
+          }
+          navigate(path);
         }, 1000);
       }
     } else {
@@ -44,7 +51,7 @@ export function VoiceControl({ className, showHelper = false }: VoiceControlProp
     setTimeout(() => {
       setTranscript("");
     }, 3000);
-  }, [showFeedback]);
+  }, [showFeedback, navigate]);
 
   const handleRecordingStateChange = useCallback((recording: boolean) => {
     setIsListening(recording);
@@ -134,6 +141,7 @@ export function VoiceControl({ className, showHelper = false }: VoiceControlProp
 // Standalone Voice Bar for integration in headers
 export function VoiceBar({ className }: { className?: string }) {
   const [transcript, setTranscript] = useState("");
+  const [, navigate] = useLocation();
   const { showFeedback, VoiceFeedbackComponent } = useVoiceFeedback();
 
   const handleTranscript = useCallback((text: string) => {
@@ -145,13 +153,18 @@ export function VoiceBar({ className }: { className?: string }) {
     if (command.interpretation?.success) {
       showFeedback("success", command.interpretation.response);
       if (command.interpretation.navigationPath) {
-        window.location.href = command.interpretation.navigationPath;
+        // Add filter parameters if present
+        let path = command.interpretation.navigationPath;
+        if (command.interpretation.parameters?.filter) {
+          path += `?filter=${command.interpretation.parameters.filter}`;
+        }
+        navigate(path);
       }
     } else {
       showFeedback("error");
     }
     setTimeout(() => setTranscript(""), 3000);
-  }, [showFeedback]);
+  }, [showFeedback, navigate]);
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
