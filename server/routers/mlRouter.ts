@@ -16,14 +16,6 @@ import { mlService } from "../services/mlService";
 import { storage } from "../storage";
 import { isAuthenticated } from "../middleware/auth.middleware";
 
-// Define AuthRequest type
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    claims: any;
-  };
-}
-
 const router = Router();
 
 // All ML routes require authentication
@@ -33,7 +25,7 @@ router.use(isAuthenticated);
  * POST /api/ml/embeddings/generate
  * Generate embeddings for new content
  */
-router.post("/embeddings/generate", async (req: AuthRequest, res: Response) => {
+router.post("/embeddings/generate", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       contentId: z.string(),
@@ -67,7 +59,7 @@ router.post("/embeddings/generate", async (req: AuthRequest, res: Response) => {
  * POST /api/ml/search/semantic
  * Perform semantic search with query
  */
-router.post("/search/semantic", async (req: AuthRequest, res: Response) => {
+router.post("/search/semantic", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       query: z.string().min(1),
@@ -99,7 +91,7 @@ router.post("/search/semantic", async (req: AuthRequest, res: Response) => {
  * POST /api/ml/search/feedback
  * Track which results users click
  */
-router.post("/search/feedback", async (req: AuthRequest, res: Response) => {
+router.post("/search/feedback", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       searchLogId: z.string(),
@@ -133,7 +125,7 @@ router.post("/search/feedback", async (req: AuthRequest, res: Response) => {
  * GET /api/ml/categories
  * List all available categories
  */
-router.get("/categories", async (req: AuthRequest, res: Response) => {
+router.get("/categories", async (req: Request, res: Response) => {
   try {
     const parentId = req.query.parentId as string | undefined;
     const categories = await storage.getCategories(parentId);
@@ -152,7 +144,7 @@ router.get("/categories", async (req: AuthRequest, res: Response) => {
  * POST /api/ml/categories
  * Create a new category
  */
-router.post("/categories", async (req: AuthRequest, res: Response) => {
+router.post("/categories", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       name: z.string().min(1),
@@ -180,7 +172,7 @@ router.post("/categories", async (req: AuthRequest, res: Response) => {
  * POST /api/ml/categorize
  * Auto-categorize content
  */
-router.post("/categorize", async (req: AuthRequest, res: Response) => {
+router.post("/categorize", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       contentId: z.string(),
@@ -249,7 +241,7 @@ router.post("/categorize", async (req: AuthRequest, res: Response) => {
  * PUT /api/ml/categorize/:id
  * Manual override of category
  */
-router.put("/categorize/:contentId", async (req: AuthRequest, res: Response) => {
+router.put("/categorize/:contentId", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       contentType: z.string(),
@@ -283,7 +275,7 @@ router.put("/categorize/:contentId", async (req: AuthRequest, res: Response) => 
  * POST /api/ml/tags/generate
  * Generate tags for content
  */
-router.post("/tags/generate", async (req: AuthRequest, res: Response) => {
+router.post("/tags/generate", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       contentId: z.string(),
@@ -345,7 +337,7 @@ router.post("/tags/generate", async (req: AuthRequest, res: Response) => {
  * GET /api/ml/tags/trending
  * Get trending tags
  */
-router.get("/tags/trending", async (req: AuthRequest, res: Response) => {
+router.get("/tags/trending", async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
     const tags = await storage.getTrendingTags(limit);
@@ -364,7 +356,7 @@ router.get("/tags/trending", async (req: AuthRequest, res: Response) => {
  * POST /api/ml/tags/approve
  * Approve/reject suggested tags
  */
-router.post("/tags/approve", async (req: AuthRequest, res: Response) => {
+router.post("/tags/approve", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       contentId: z.string(),
@@ -393,7 +385,7 @@ router.post("/tags/approve", async (req: AuthRequest, res: Response) => {
  * POST /api/ml/duplicates/check
  * Check if content is duplicate before saving
  */
-router.post("/duplicates/check", async (req: AuthRequest, res: Response) => {
+router.post("/duplicates/check", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       content: z.any(),
@@ -425,7 +417,7 @@ router.post("/duplicates/check", async (req: AuthRequest, res: Response) => {
  * GET /api/ml/duplicates/pending
  * List potential duplicates for review
  */
-router.get("/duplicates/pending", async (req: AuthRequest, res: Response) => {
+router.get("/duplicates/pending", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     
@@ -446,7 +438,7 @@ router.get("/duplicates/pending", async (req: AuthRequest, res: Response) => {
  * POST /api/ml/duplicates/resolve
  * Mark as duplicate or unique
  */
-router.post("/duplicates/resolve", async (req: AuthRequest, res: Response) => {
+router.post("/duplicates/resolve", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       pairId: z.string(),
@@ -472,7 +464,7 @@ router.post("/duplicates/resolve", async (req: AuthRequest, res: Response) => {
  * GET /api/ml/content/:id/related
  * Get related content for an item
  */
-router.get("/content/:contentId/related", async (req: AuthRequest, res: Response) => {
+router.get("/content/:contentId/related", async (req: Request, res: Response) => {
   try {
     const { contentId } = req.params;
     const contentType = req.query.type as string;
@@ -500,7 +492,7 @@ router.get("/content/:contentId/related", async (req: AuthRequest, res: Response
  * POST /api/ml/content/embeddings/refresh
  * Refresh embeddings for all user content
  */
-router.post("/content/embeddings/refresh", async (req: AuthRequest, res: Response) => {
+router.post("/content/embeddings/refresh", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     
@@ -524,7 +516,7 @@ router.post("/content/embeddings/refresh", async (req: AuthRequest, res: Respons
  * POST /api/ml/query/natural
  * Convert natural language to SQL
  */
-router.post("/query/natural", async (req: AuthRequest, res: Response) => {
+router.post("/query/natural", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       query: z.string().min(1),
@@ -554,7 +546,7 @@ router.post("/query/natural", async (req: AuthRequest, res: Response) => {
  * GET /api/ml/query/history
  * User's query history
  */
-router.get("/query/history", async (req: AuthRequest, res: Response) => {
+router.get("/query/history", async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -575,7 +567,7 @@ router.get("/query/history", async (req: AuthRequest, res: Response) => {
  * POST /api/ml/query/save
  * Save useful queries
  */
-router.post("/query/save", async (req: AuthRequest, res: Response) => {
+router.post("/query/save", async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       naturalQuery: z.string(),
