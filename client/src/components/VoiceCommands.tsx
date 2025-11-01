@@ -112,24 +112,41 @@ export function VoiceCommands() {
 
   // Fetch available commands
   const { data: availableCommands = [] } = useQuery<CommandInfo[]>({
-    queryKey: ["/api/voice/commands"]
+    queryKey: ["/api/voice/commands"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/voice/commands");
+      return response.json();
+    }
   });
 
   // Fetch command history
   const { data: commandHistory = [], isLoading: historyLoading } = useQuery<VoiceCommand[]>({
     queryKey: ["/api/voice/history"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/voice/history");
+      return response.json();
+    },
     enabled: showHistory
   });
 
   // Fetch usage statistics
-  const { data: stats } = useQuery({
-    queryKey: ["/api/voice/stats"]
+  const { data: stats } = useQuery<{
+    totalCommands: number;
+    successRate: number;
+    commandBreakdown: Record<string, number>;
+  }>({
+    queryKey: ["/api/voice/stats"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/voice/stats");
+      return response.json();
+    }
   });
 
   // Process voice command
   const processCommandMutation = useMutation({
     mutationFn: async (text: string) => {
-      return apiRequest("POST", "/api/voice/process-text", { text });
+      const response = await apiRequest("POST", "/api/voice/process-text", { text });
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/voice/history"] });
