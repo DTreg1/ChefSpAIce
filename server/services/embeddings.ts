@@ -1,36 +1,227 @@
 import { openai } from "../openai";
-import type { ContentEmbedding, InsertContentEmbedding } from "@shared/schema";
+import type { ContentEmbedding, InsertContentEmbedding, RelatedContentCache, InsertRelatedContentCache } from "@shared/schema";
+import type { IStorage } from '../storage';
 
 /**
  * Embeddings Service
  * 
- * Provides semantic search capabilities using OpenAI's text-embedding-ada-002 model.
- * Converts text to vector embeddings for similarity-based search.
+ * Provides semantic search and content recommendation capabilities using OpenAI's embeddings.
+ * Supports both text-embedding-ada-002 and text-embedding-3-small models.
  */
+
+// Model configuration
+const EMBEDDING_MODEL = 'text-embedding-3-small'; // Newer, more efficient model
+const EMBEDDING_DIMENSIONS = 1536; // Dimensions for text-embedding-3-small
+const MAX_TEXT_LENGTH = 8000; // Max text length to avoid token limits
 
 /**
- * Generate embeddings for a given text using OpenAI
+ * Service class for managing content embeddings and recommendations
  */
-export async function generateEmbedding(text: string): Promise<number[]> {
-  try {
-    const startTime = Date.now();
+export class EmbeddingsService {
+  constructor(private storage: IStorage) {}
+
+  /**
+   * Generate embedding for text content
+   * @param text - The text to generate embedding for
+   * @returns The embedding vector
+   */
+  async generateEmbedding(text: string): Promise<number[]> {
+    try {
+      const startTime = Date.now();
+      
+      // Clean and prepare text
+      const cleanedText = text.trim().substring(0, MAX_TEXT_LENGTH);
+      
+      const response = await openai.embeddings.create({
+        model: EMBEDDING_MODEL,
+        input: cleanedText,
+      });
+
+      const duration = Date.now() - startTime;
+      console.log(`Generated embedding in ${duration}ms for text length: ${cleanedText.length}`);
+      
+      return response.data[0].embedding;
+    } catch (error) {
+      console.error("Failed to generate embedding:", error);
+      throw new Error(`Embedding generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Create or update embedding for content
+   * @param contentId - ID of the content
+   * @param contentType - Type of content 
+   * @param contentText - Text content to embed
+   * @param metadata - Additional metadata
+   * @param userId - User ID
+   */
+  async createContentEmbedding(
+    contentId: string,
+    contentType: string,
+    contentText: string,
+    metadata: any,
+    userId: string
+  ): Promise<ContentEmbedding> {
+    const embedding = await this.generateEmbedding(contentText);
+
+    const embeddingData: InsertContentEmbedding = {
+      contentId,
+      contentType,
+      embedding,
+      embeddingModel: EMBEDDING_MODEL,
+      contentText,
+      metadata,
+      userId,
+    };
+
+    return await this.storage.upsertContentEmbedding(embeddingData);
+  }
+
+  /**
+   * Find related content based on embedding similarity with caching
+   * @param contentId - ID of the source content
+   * @param contentType - Type of content to search for
+   * @param userId - User ID
+   * @param limit - Maximum number of results
+   * @returns Array of related content with similarity scores
+   */
+  async findRelatedContent(
+    contentId: string,
+    contentType: string,
+    userId: string,
+    limit: number = 10
+  ): Promise<Array<{ id: string; type: string; title: string; score: number; metadata?: any }>> {
+    // Check cache first
+    const cached = await this.storage.getRelatedContent(contentId, contentType, userId);
     
-    // Clean and prepare text (max 8191 tokens for ada-002)
-    const cleanedText = text.trim().substring(0, 30000); // Rough limit to stay under token limit
+    if (cached && new Date(cached.expiresAt) > new Date()) {
+      console.log(`Using cached related content for ${contentId}`);
+      return cached.relatedItems;
+    }
+
+    // Get the embedding for the source content
+    const sourceEmbedding = await this.storage.getContentEmbedding(contentId, contentType, userId);
     
-    const response = await openai.embeddings.create({
-      model: "text-embedding-ada-002",
-      input: cleanedText,
+    if (!sourceEmbedding) {
+      throw new Error('Source content embedding not found');
+    }
+
+    // Search for similar embeddings
+    const results = await this.storage.searchByEmbedding(
+      sourceEmbedding.embedding,
+      contentType,
+      userId,
+      limit + 1 // Get one extra to exclude the source content
+    );
+
+    // Filter out the source content and format results
+    const relatedItems = results
+      .filter(result => result.contentId !== contentId)
+      .slice(0, limit)
+      .map(result => ({
+        id: result.contentId,
+        type: result.contentType,
+        title: result.metadata?.title || 'Untitled',
+        score: result.similarity,
+        metadata: result.metadata
+      }));
+
+    // Cache the results for 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await this.storage.cacheRelatedContent({
+      contentId,
+      contentType,
+      relatedItems,
+      userId,
+      expiresAt,
     });
 
-    const duration = Date.now() - startTime;
-    console.log(`Generated embedding in ${duration}ms for text length: ${cleanedText.length}`);
-    
-    return response.data[0].embedding;
-  } catch (error) {
-    console.error("Failed to generate embedding:", error);
-    throw new Error(`Embedding generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return relatedItems;
   }
+
+  /**
+   * Get personalized recommendations for a user
+   * @param userId - User ID
+   * @param contentType - Type of content to recommend
+   * @param limit - Maximum number of recommendations
+   * @returns Array of recommended content with scores
+   */
+  async getPersonalizedRecommendations(
+    userId: string,
+    contentType: string,
+    limit: number = 10
+  ): Promise<Array<{ id: string; type: string; title: string; score: number; metadata?: any }>> {
+    // For personalized recommendations, we can aggregate user's recent interactions
+    // and find content similar to their interests
+    // This is a placeholder implementation that returns recent content
+    
+    const recentEmbeddings = await this.storage.searchByEmbedding(
+      new Array(EMBEDDING_DIMENSIONS).fill(0).map(() => Math.random() * 0.1),
+      contentType,
+      userId,
+      limit
+    );
+
+    return recentEmbeddings.map(result => ({
+      id: result.contentId,
+      type: result.contentType,
+      title: result.metadata?.title || 'Untitled',
+      score: result.similarity,
+      metadata: result.metadata
+    }));
+  }
+
+  /**
+   * Refresh embeddings for multiple content items
+   * @param contentType - Type of content to refresh
+   * @param userId - User ID
+   * @param contents - Array of content items
+   */
+  async refreshEmbeddings(
+    contentType: string,
+    userId: string,
+    contents: Array<{ id: string; text: string; metadata?: any }>
+  ): Promise<{ processed: number; failed: number }> {
+    let processed = 0;
+    let failed = 0;
+
+    // Process in batches to avoid rate limits
+    const batchSize = 10;
+    for (let i = 0; i < contents.length; i += batchSize) {
+      const batch = contents.slice(i, i + batchSize);
+      
+      await Promise.all(
+        batch.map(async (content) => {
+          try {
+            await this.createContentEmbedding(
+              content.id,
+              contentType,
+              content.text,
+              content.metadata,
+              userId
+            );
+            processed++;
+          } catch (error) {
+            console.error(`Failed to refresh embedding for ${content.id}:`, error);
+            failed++;
+          }
+        })
+      );
+
+      // Small delay between batches to avoid rate limits
+      if (i + batchSize < contents.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    return { processed, failed };
+  }
+}
+
+// Export standalone functions for backward compatibility
+export async function generateEmbedding(text: string): Promise<number[]> {
+  const service = new EmbeddingsService(null as any);
+  return service.generateEmbedding(text);
 }
 
 /**
