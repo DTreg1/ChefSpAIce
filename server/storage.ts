@@ -5189,15 +5189,20 @@ export class DatabaseStorage implements IStorage {
 
   async getCategories(parentId?: string | null): Promise<Category[]> {
     try {
-      let query = db.select().from(categories).where(eq(categories.isActive, true));
-
+      // Build the where conditions based on parentId
+      const conditions = [eq(categories.isActive, true)];
+      
       if (parentId === null) {
-        query = query.where(isNull(categories.parentId));
+        conditions.push(isNull(categories.parentId));
       } else if (parentId !== undefined) {
-        query = query.where(eq(categories.parentId, parentId));
+        conditions.push(eq(categories.parentId, parentId));
       }
 
-      return await query.orderBy(categories.sortOrder, categories.name);
+      return await db
+        .select()
+        .from(categories)
+        .where(and(...conditions))
+        .orderBy(categories.sortOrder, categories.name);
     } catch (error) {
       console.error("Error getting categories:", error);
       throw new Error("Failed to get categories");
