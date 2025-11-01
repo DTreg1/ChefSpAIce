@@ -59,21 +59,30 @@ export function AIChatAssistant() {
   // Fetch conversations
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
     queryKey: ["/api/assistant/conversations"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/assistant/conversations");
+      return response.json();
+    },
     enabled: true
   });
 
   // Fetch messages for selected conversation
   const { data: conversationData, isLoading: messagesLoading } = useQuery({
     queryKey: ["/api/assistant/conversations", selectedConversation],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/assistant/conversations/${selectedConversation}`);
+      return response.json();
+    },
     enabled: !!selectedConversation
   });
 
-  const messages = conversationData?.messages || [];
+  const messages = (conversationData as any)?.messages || [];
 
   // Create new conversation
   const createConversationMutation = useMutation({
     mutationFn: async (title: string) => {
-      return apiRequest("POST", "/api/assistant/conversations", { title });
+      const response = await apiRequest("POST", "/api/assistant/conversations", { title });
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/assistant/conversations"] });
@@ -96,7 +105,8 @@ export function AIChatAssistant() {
   // Send message
   const sendMessageMutation = useMutation({
     mutationFn: async ({ conversationId, content }: { conversationId: string; content: string }) => {
-      return apiRequest("POST", `/api/assistant/conversations/${conversationId}/messages`, { content });
+      const response = await apiRequest("POST", `/api/assistant/conversations/${conversationId}/messages`, { content });
+      return response.json();
     },
     onSuccess: (_, { conversationId }) => {
       queryClient.invalidateQueries({ 
@@ -116,7 +126,8 @@ export function AIChatAssistant() {
   // Delete conversation
   const deleteConversationMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/assistant/conversations/${id}`);
+      const response = await apiRequest("DELETE", `/api/assistant/conversations/${id}`);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/assistant/conversations"] });
@@ -131,7 +142,8 @@ export function AIChatAssistant() {
   // Rename conversation
   const renameConversationMutation = useMutation({
     mutationFn: async ({ id, title }: { id: string; title: string }) => {
-      return apiRequest("PUT", `/api/assistant/conversations/${id}`, { title });
+      const response = await apiRequest("PUT", `/api/assistant/conversations/${id}`, { title });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/assistant/conversations"] });
