@@ -2015,6 +2015,8 @@ export const searchLogs = pgTable("search_logs", {
   resultsCount: integer("results_count").notNull(),
   clickedResultId: varchar("clicked_result_id"),
   clickedResultType: text("clicked_result_type"),
+  clickPosition: integer("click_position"), // Position of the clicked result in the list
+  timeToClick: integer("time_to_click"), // Time in milliseconds from search to click
   searchLatency: integer("search_latency"), // milliseconds
   timestamp: timestamp("timestamp").defaultNow(),
 }, (table) => [

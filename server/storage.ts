@@ -5170,9 +5170,9 @@ export class DatabaseStorage implements IStorage {
         .set({
           clickedResultId: feedback.clickedResultId,
           clickedResultType: feedback.clickedResultType,
-          clickPosition: feedback.clickPosition,
-          timeToClick: feedback.timeToClick,
-        })
+          click_position: feedback.clickPosition,
+          time_to_click: feedback.timeToClick,
+        } as any)
         .where(eq(searchLogs.id, searchLogId))
         .returning();
 
