@@ -57,6 +57,7 @@ const SummarizationDemo = lazy(() => import("@/pages/summarization-demo"));
 const SemanticSearchDemo = lazy(() => import("@/pages/SemanticSearchDemo"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const TagDemo = lazy(() => import("@/pages/TagDemo"));
+const RecommendationsDemo = lazy(() => import("@/pages/recommendations-demo"));
 
 function AuthenticatedRouter() {
   return (
@@ -94,6 +95,7 @@ function AuthenticatedRouter() {
         <Route path="/ai-features" component={AIFeatures} />
         <Route path="/summarization-demo" component={SummarizationDemo} />
         <Route path="/semantic-search" component={SemanticSearchDemo} />
+        <Route path="/recommendations-demo" component={RecommendationsDemo} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
