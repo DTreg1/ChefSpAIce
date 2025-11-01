@@ -71,25 +71,36 @@ router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, a
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const schema = z.object({
-      contextType: z.string(),
-      context: z.object({
-        recipient: z.string().optional(),
-        subject: z.string().optional(),
-        purpose: z.string().optional(),
-        tone: z.enum(['formal', 'casual', 'friendly', 'professional']).optional(),
-        keyPoints: z.array(z.string()).optional(),
-        previousMessage: z.string().optional()
-      }),
-      numberOfVariations: z.number().min(1).max(5).default(3)
+      originalMessage: z.string(),
+      contextType: z.enum(['email', 'message', 'comment', 'customer_complaint']).default('email'),
+      tones: z.array(z.enum(['formal', 'casual', 'friendly', 'apologetic', 'solution-focused', 'empathetic'])).optional()
     });
     
-    const { contextType, context, numberOfVariations } = schema.parse(req.body);
+    const { originalMessage, contextType, tones } = schema.parse(req.body);
+    
+    // Default tones based on context
+    const selectedTones = tones || (contextType === 'customer_complaint' 
+      ? ['apologetic', 'solution-focused', 'empathetic']
+      : ['formal', 'casual', 'friendly']);
     
     // Generate drafts using AI
-    const drafts = await generateDraftVariations(contextType, context, numberOfVariations);
+    const drafts = await generateDraftVariations(originalMessage, contextType, selectedTones);
     
-    // Save generated drafts
-    const savedDrafts = await storage.saveGeneratedDrafts(userId, drafts);
+    // Save generated drafts with unique message ID
+    const messageId = `msg_${Date.now()}`;
+    const savedDrafts = await Promise.all(
+      drafts.map(draft => storage.createGeneratedDraft(userId, {
+        originalMessageId: messageId,
+        originalMessage,
+        draftContent: draft.content,
+        tone: draft.tone,
+        contextType,
+        metadata: {
+          model: 'gpt-4o-mini',
+          temperature: 0.8,
+        }
+      }))
+    );
     
     res.json(savedDrafts);
   } catch (error) {
@@ -102,38 +113,41 @@ router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, a
  * Helper function to generate draft variations
  */
 async function generateDraftVariations(
-  contextType: string, 
-  context: any, 
-  numberOfVariations: number
+  originalMessage: string,
+  contextType: string,
+  tones: string[]
 ): Promise<Array<{
-  contextType: string;
-  draftContent: string;
+  content: string;
   tone: string;
-  variations: any;
 }>> {
-  const systemPrompt = `You are an expert email/message writer. Generate ${numberOfVariations} different versions of a ${contextType} message.
+  const contextInstructions = {
+    'customer_complaint': 'You are responding to a customer complaint. Be professional, acknowledge their concerns, and offer solutions.',
+    'email': 'You are drafting a professional email response.',
+    'message': 'You are drafting a conversational message response.',
+    'comment': 'You are drafting a comment or forum response.'
+  };
+
+  const toneDescriptions = {
+    'formal': 'Use formal language with proper business etiquette',
+    'casual': 'Use relaxed, conversational language',
+    'friendly': 'Use warm, approachable language with a positive tone',
+    'apologetic': 'Express sincere regret and take responsibility',
+    'solution-focused': 'Emphasize practical solutions and next steps',
+    'empathetic': 'Show understanding and compassion for their situation'
+  };
+
+  const systemPrompt = `You are an expert at crafting contextual responses. ${contextInstructions[contextType as keyof typeof contextInstructions] || contextInstructions.email}
     
-    Context:
-    - Recipient: ${context.recipient || "General"}
-    - Purpose: ${context.purpose || context.subject || "General message"}
-    - Tone: ${context.tone || "professional"}
-    - Key Points: ${context.keyPoints?.join(", ") || "None specified"}
-    ${context.previousMessage ? `- Replying to: "${context.previousMessage}"` : ""}
-    
-    Generate ${numberOfVariations} variations with different approaches but same core message.
-    
-    Return JSON array with this structure:
-    [
-      {
-        "content": "Full message text",
-        "tone": "actual tone used",
-        "approach": "brief description of approach",
-        "subject": "suggested subject line if email"
-      }
-    ]`;
+Generate ${tones.length} different response drafts to the following message, each with a different tone.
+
+Tones to use:
+${tones.map(tone => `- ${tone}: ${toneDescriptions[tone as keyof typeof toneDescriptions] || tone}`).join('\n')}
+
+Return a JSON object with a "drafts" array containing objects with "content" and "tone" fields.
+Each draft should be complete and ready to send.`;
   
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini", // Using GPT-3.5-turbo equivalent for efficiency
+    model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
@@ -141,55 +155,63 @@ async function generateDraftVariations(
       },
       {
         role: "user",
-        content: `Generate ${numberOfVariations} ${contextType} drafts for: ${context.purpose || context.subject || "the specified context"}`
+        content: `Original message to respond to:\n"${originalMessage}"`
       }
     ],
     response_format: { type: "json_object" },
     max_completion_tokens: 2000,
-    temperature: 0.8 // Higher temperature for more variation
+    temperature: 0.8
   });
   
-  const result = JSON.parse(completion.choices[0]?.message?.content || "[]");
-  const variations = Array.isArray(result) ? result : (result.variations || []);
+  const result = JSON.parse(completion.choices[0]?.message?.content || '{"drafts":[]}');
+  const drafts = result.drafts || [];
   
-  return variations.map((v: any) => ({
-    contextType,
-    draftContent: v.content,
-    tone: v.tone || context.tone || "professional",
-    variations: {
-      approach: v.approach,
-      subject: v.subject
-    }
+  // Ensure we have the right number of drafts
+  return tones.map((tone, index) => ({
+    content: drafts[index]?.content || `[Draft generation failed for ${tone} tone]`,
+    tone: tone
   }));
 }
 
 /**
- * POST /api/drafts/:id/select
- * Mark a draft as selected/used
+ * POST /api/drafts/feedback
+ * Track if draft was used/edited
  */
-router.post("/:id/select", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/feedback", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const { id } = req.params;
-    const { edited } = req.body;
+    const schema = z.object({
+      draftId: z.string(),
+      selected: z.boolean(),
+      edited: z.boolean().optional(),
+      editedContent: z.string().optional()
+    });
     
-    await storage.markDraftSelected(userId, id, edited || false);
+    const { draftId, selected, edited, editedContent } = schema.parse(req.body);
+    
+    if (selected) {
+      await storage.markDraftSelected(userId, draftId);
+    }
+    
+    if (edited && editedContent) {
+      await storage.markDraftEdited(userId, draftId, editedContent);
+    }
     
     // Log activity
     await storage.createActivityLog({
       userId,
-      action: "draft_selected",
+      action: selected ? "draft_selected" : "draft_viewed",
       entity: "draft",
-      entityId: id,
-      metadata: { edited }
+      entityId: draftId,
+      metadata: { edited, selected }
     });
     
     res.json({ success: true });
   } catch (error) {
-    console.error("Error selecting draft:", error);
-    res.status(500).json({ error: "Failed to select draft" });
+    console.error("Error submitting draft feedback:", error);
+    res.status(500).json({ error: "Failed to submit draft feedback" });
   }
 });
 
@@ -202,8 +224,8 @@ router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const limit = parseInt(req.query.limit as string) || 50;
-    const history = await storage.getDraftHistory(userId, limit);
+    const originalMessageId = req.query.messageId as string | undefined;
+    const history = await storage.getGeneratedDrafts(userId, originalMessageId);
     res.json(history);
   } catch (error) {
     console.error("Error fetching draft history:", error);
