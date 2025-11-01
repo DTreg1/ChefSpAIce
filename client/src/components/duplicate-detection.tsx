@@ -30,17 +30,18 @@ export function DuplicateDetection() {
   // Get duplicate pairs
   const { data: duplicates, isLoading, refetch } = useQuery<DuplicatePair[]>({
     queryKey: ['/api/ml/duplicates'],
-    queryFn: () => apiRequest('/api/ml/duplicates', { method: 'GET' }),
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/ml/duplicates');
+      return response.json();
+    },
   });
 
   // Scan for duplicates mutation
   const scanMutation = useMutation({
     mutationFn: async () => {
       setIsScanning(true);
-      const response = await apiRequest('/api/ml/duplicates/scan', {
-        method: 'POST',
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/ml/duplicates/scan');
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -67,10 +68,12 @@ export function DuplicateDetection() {
       action: 'merge' | 'keep_both' | 'delete';
       keepId?: string;
     }) => {
-      return apiRequest('/api/ml/duplicates/resolve', {
-        method: 'POST',
-        body: JSON.stringify({ duplicateId, action, keepId }),
+      const response = await apiRequest('POST', '/api/ml/duplicates/resolve', { 
+        duplicateId, 
+        action, 
+        keepId 
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({
