@@ -676,183 +676,6 @@ export type InsertUserInventory = z.infer<typeof insertUserInventorySchema>;
 export type UserInventory = typeof userInventory.$inferSelect;
 
 /**
- * Conversations Table
- * 
- * Represents individual chat conversations between users and AI assistant.
- * Enables conversation management with titles and context preservation.
- * 
- * Fields:
- * - id: UUID primary key
- * - userId: Foreign key to users.id (CASCADE delete)
- * - title: Conversation title (auto-generated from first message or user-defined)
- * - createdAt: When conversation started
- * - updatedAt: Last activity in conversation
- * 
- * Business Rules:
- * - New conversation created when user starts fresh chat
- * - Title auto-generated from first user message or AI summary
- * - Users can rename conversations
- * - Deleting conversation cascades to all messages
- * - Conversations preserved across sessions
- * 
- * Indexes:
- * - conversations_user_id_idx: User's conversation list
- * - conversations_updated_at_idx: Sort by recent activity
- * 
- * Relationships:
- * - users → conversations: CASCADE (delete conversations when user deleted)
- * - conversations → messages: CASCADE (delete messages when conversation deleted)
- * - conversations → conversationContext: CASCADE (delete context when conversation deleted)
- */
-export const conversations = pgTable("conversations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  title: text("title").notNull().default("New Conversation"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("conversations_user_id_idx").on(table.userId),
-  index("conversations_updated_at_idx").on(table.updatedAt),
-]);
-
-export const insertConversationSchema = createInsertSchema(conversations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertConversation = z.infer<typeof insertConversationSchema>;
-export type Conversation = typeof conversations.$inferSelect;
-
-/**
- * Messages Table
- * 
- * Individual messages within a conversation.
- * Stores both user queries and assistant responses.
- * 
- * Fields:
- * - id: UUID primary key
- * - conversationId: Foreign key to conversations.id (CASCADE delete)
- * - role: 'user' | 'assistant' | 'system' - Message sender
- * - content: Message text content
- * - tokensUsed: Token count for this message (for usage tracking)
- * - timestamp: When message was sent
- * - metadata: JSONB for additional data (function calls, etc.)
- *   - functionCall: If message triggered a function
- *   - citedSources: Referenced documentation or features
- *   - sentiment: Message sentiment analysis
- *   - feedback: User feedback on this response
- * 
- * AI Integration:
- * - Messages sent to OpenAI API with conversation context
- * - Token usage tracked for billing/quota management
- * - Assistant responses may include structured data in metadata
- * 
- * Business Rules:
- * - Messages immutable once created (no edits)
- * - Order preserved by timestamp
- * - System messages used for context injection
- * - Token limits enforced per conversation
- * 
- * Indexes:
- * - messages_conversation_id_idx: Conversation's messages
- * - messages_timestamp_idx: Chronological ordering
- * 
- * Relationships:
- * - conversations → messages: CASCADE
- */
-export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
-  role: text("role").notNull(), // 'user', 'assistant', 'system'
-  content: text("content").notNull(),
-  tokensUsed: integer("tokens_used").default(0),
-  timestamp: timestamp("timestamp").defaultNow(),
-  metadata: jsonb("metadata").$type<{
-    functionCall?: string;
-    citedSources?: string[];
-    sentiment?: string;
-    feedback?: { rating: number; comment?: string };
-  }>(),
-}, (table) => [
-  index("messages_conversation_id_idx").on(table.conversationId),
-  index("messages_timestamp_idx").on(table.timestamp),
-]);
-
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  timestamp: true,
-});
-
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
-
-/**
- * Conversation Context Table
- * 
- * Stores summarized context and key facts for long conversations.
- * Enables efficient context retrieval without loading all messages.
- * 
- * Fields:
- * - conversationId: Foreign key to conversations.id (PRIMARY KEY & CASCADE delete)
- * - contextSummary: AI-generated summary of conversation
- * - keyFacts: JSONB array of important facts/preferences mentioned
- *   - fact: The key information
- *   - category: Type of fact (preference, requirement, context)
- *   - timestamp: When fact was mentioned
- * - lastSummarized: When context was last updated
- * - messageCount: Number of messages summarized
- * 
- * Context Management:
- * - Updated periodically (every 20-30 messages)
- * - Preserves important user preferences and requirements
- * - Used to provide context for new sessions
- * - Reduces token usage by summarizing old messages
- * 
- * Business Rules:
- * - One context record per conversation
- * - Updated when conversation grows significantly
- * - Key facts extracted automatically or manually flagged
- * - Summary regenerated if messages deleted
- * 
- * Relationships:
- * - conversations → conversationContext: CASCADE
- * 
- * Usage Example:
- * ```typescript
- * // Load context for conversation continuation
- * const context = await db
- *   .select()
- *   .from(conversationContext)
- *   .where(eq(conversationContext.conversationId, conversationId))
- *   .limit(1);
- * 
- * // Include in AI prompt
- * const systemPrompt = `Previous context: ${context.contextSummary}
- * Key facts: ${JSON.stringify(context.keyFacts)}`;
- * ```
- */
-export const conversationContext = pgTable("conversation_context", {
-  conversationId: varchar("conversation_id").primaryKey()
-    .references(() => conversations.id, { onDelete: "cascade" }),
-  contextSummary: text("context_summary"),
-  keyFacts: jsonb("key_facts").$type<Array<{
-    fact: string;
-    category: string;
-    timestamp: string;
-  }>>().default([]),
-  lastSummarized: timestamp("last_summarized").defaultNow(),
-  messageCount: integer("message_count").default(0),
-});
-
-export const insertConversationContextSchema = createInsertSchema(conversationContext).omit({
-  lastSummarized: true,
-});
-
-export type InsertConversationContext = z.infer<typeof insertConversationContextSchema>;
-export type ConversationContext = typeof conversationContext.$inferSelect;
-
-/**
  * User Recipes Table
  * 
  * User-saved recipes from manual entry, AI generation, or imports.
@@ -3264,7 +3087,7 @@ export type ApplianceLibrary = typeof applianceLibrary.$inferSelect;
 export const conversations = pgTable("conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
+  title: text("title").notNull().default("New Conversation"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -3312,8 +3135,14 @@ export const messages = pgTable("messages", {
   conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
   role: text("role").notNull(), // 'user', 'assistant', 'system'
   content: text("content").notNull(),
-  tokensUsed: integer("tokens_used"),
+  tokensUsed: integer("tokens_used").default(0),
   timestamp: timestamp("timestamp").defaultNow(),
+  metadata: jsonb("metadata").$type<{
+    functionCall?: string;
+    citedSources?: string[];
+    sentiment?: string;
+    feedback?: { rating: number; comment?: string };
+  }>(),
 }, (table) => [
   index("messages_conversation_id_idx").on(table.conversationId),
   index("messages_timestamp_idx").on(table.timestamp),
@@ -3350,12 +3179,17 @@ export type Message = typeof messages.$inferSelect;
 export const conversationContext = pgTable("conversation_context", {
   conversationId: varchar("conversation_id").primaryKey().references(() => conversations.id, { onDelete: "cascade" }),
   contextSummary: text("context_summary"),
-  keyFacts: jsonb("key_facts").$type<string[]>(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  keyFacts: jsonb("key_facts").$type<Array<{
+    fact: string;
+    category: string;
+    timestamp: string;
+  }>>().default([]),
+  lastSummarized: timestamp("last_summarized").defaultNow(),
+  messageCount: integer("message_count").default(0),
 });
 
 export const insertConversationContextSchema = createInsertSchema(conversationContext).omit({
-  updatedAt: true,
+  lastSummarized: true,
 });
 
 export type InsertConversationContext = z.infer<typeof insertConversationContextSchema>;
