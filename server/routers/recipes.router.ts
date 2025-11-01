@@ -506,10 +506,76 @@ router.post("/recipes", isAuthenticated, async (req: ExpressRequest<any, any, an
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const recipeData = req.body;
     
+    // Convert query params to proper booleans
+    const checkDuplicate = req.query.checkDuplicate !== 'false';
+    const forceSave = req.query.forceSave === 'true';
+    
+    let similarityHash: string | undefined;
+    let duplicateWarning: any = null;
+    
+    // Check for duplicates if requested (default: true)
+    if (checkDuplicate && !forceSave) {
+      try {
+        const { DuplicateDetectionService } = await import("../services/duplicate-detection.service");
+        const contentText = `${recipeData.title} ${recipeData.description || ''} ${recipeData.ingredients?.join(' ') || ''} ${recipeData.instructions?.join(' ') || ''}`;
+        
+        const duplicateCheck = await DuplicateDetectionService.checkForDuplicates(
+          contentText,
+          'recipe',
+          userId
+        );
+        
+        similarityHash = duplicateCheck.similarityHash;
+        
+        // If duplicates found with high similarity, return warning
+        if (duplicateCheck.isDuplicate && !forceSave) {
+          return res.status(409).json({
+            isDuplicate: true,
+            duplicates: duplicateCheck.duplicates,
+            similarityHash: duplicateCheck.similarityHash,
+            message: "Potential duplicate recipe detected. Review the similar recipes or force save with ?forceSave=true"
+          });
+        }
+        
+        // Store warning for response if duplicates found but under threshold
+        if (duplicateCheck.duplicates.length > 0) {
+          duplicateWarning = {
+            count: duplicateCheck.duplicates.length,
+            highestSimilarity: Math.max(...duplicateCheck.duplicates.map(d => d.similarity))
+          };
+        }
+      } catch (error) {
+        console.error("Failed to check for duplicates, continuing with save:", error);
+        // Continue saving the recipe even if duplicate check fails
+      }
+    }
+    
+    // Add similarity hash to recipe data if generated
+    if (similarityHash) {
+      recipeData.similarityHash = similarityHash;
+    }
+    
     // Create the recipe
     const saved = await storage.createRecipe(userId, recipeData);
     
-    res.json(saved);
+    // Store embedding for future duplicate detection (async, don't wait)
+    if (saved.id) {
+      const { DuplicateDetectionService } = await import("../services/duplicate-detection.service");
+      DuplicateDetectionService.updateContentEmbedding(
+        saved.id,
+        'recipe',
+        saved,
+        userId
+      ).catch(err => console.error("Failed to update recipe embedding:", err));
+    }
+    
+    // Include duplicate warning in response if applicable
+    const response: any = saved;
+    if (duplicateWarning) {
+      response.duplicateWarning = duplicateWarning;
+    }
+    
+    res.json(response);
   } catch (error) {
     console.error("Error creating recipe:", error);
     res.status(500).json({ error: "Failed to create recipe" });

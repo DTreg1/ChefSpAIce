@@ -747,6 +747,7 @@ export const userChats = pgTable("user_chats", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
+  similarityHash: text("similarity_hash"), // Hash for duplicate detection using embeddings
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("user_chats_user_id_idx").on(table.userId),
@@ -871,6 +872,7 @@ export const userRecipes = pgTable("user_recipes", {
   tags: jsonb("tags").$type<string[]>(),
   neededEquipment: jsonb("needed_equipment").$type<string[]>(), // Required appliances, cookware, bakeware
   isFavorite: boolean("is_favorite").notNull().default(false),
+  similarityHash: text("similarity_hash"), // Hash for duplicate detection using embeddings
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
