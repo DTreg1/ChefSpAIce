@@ -150,7 +150,7 @@ export function useBarcodeScanner({ onScan, onError }: UseBarcodeScannerOptions)
       console.error("Scanner start error:", err);
       isInitializedRef.current = false;
       scannerRef.current = null;
-      onError?.(err.message || "Failed to access camera. Please check permissions.");
+      onError?.(err instanceof Error ? err.message : "Failed to access camera. Please check permissions.");
     }
   }, [onScan, onError]);
 

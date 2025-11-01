@@ -42,7 +42,7 @@ export function RecipeUpload() {
     onError: (error: Error | unknown) => {
       toast({
         title: "Extraction Failed",
-        description: error.message || "Could not extract recipe from image. Please try a clearer photo.",
+        description: error instanceof Error ? error.message : "Could not extract recipe from image. Please try a clearer photo.",
         variant: "destructive",
       });
     },

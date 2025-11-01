@@ -231,7 +231,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
       console.error("Search error:", error);
       toast({
         title: "Search failed",
-        description: error.message || "Failed to search. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to search. Please try again.",
         variant: "destructive",
       });
       setSearchResults([]);
@@ -323,7 +323,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
     onError: (error: Error | unknown) => {
       toast({
         title: "Failed to add food",
-        description: error.message || "Something went wrong. Please try again.",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     },

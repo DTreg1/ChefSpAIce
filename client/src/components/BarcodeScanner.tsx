@@ -61,7 +61,7 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
       toast({
         title: "Camera error",
         description:
-          err.message || "Failed to access camera. Please check permissions.",
+          err instanceof Error ? err.message : "Failed to access camera. Please check permissions.",
         variant: "destructive",
       });
       setIsOpen(false);

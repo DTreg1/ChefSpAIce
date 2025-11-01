@@ -424,7 +424,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     onError: (error: Error | unknown) => {
       toast({
         title: "Analysis Error",
-        description: error.message || "Failed to analyze the image",
+        description: error instanceof Error ? error.message : "Failed to analyze the image",
         variant: "destructive",
       });
     },

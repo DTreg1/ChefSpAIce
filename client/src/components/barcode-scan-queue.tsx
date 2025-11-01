@@ -123,7 +123,7 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
       }
       toast({
         title: "Camera error",
-        description: err.message || "Failed to access camera. Please check permissions.",
+        description: err instanceof Error ? err.message : "Failed to access camera. Please check permissions.",
         variant: "destructive",
       });
     }

@@ -1,0 +1,235 @@
+
+client/src/components/ActivityPrivacyControls.tsx:76:22 - error TS18046: 'error' is of type 'unknown'.
+
+76         description: error.message || "Failed to export activity logs.",
+                        ~~~~~
+
+client/src/components/ActivityPrivacyControls.tsx:105:22 - error TS18046: 'error' is of type 'unknown'.
+
+105         description: error.message || "Failed to delete activity logs.",
+                         ~~~~~
+
+client/src/components/ActivityPrivacyControls.tsx:129:22 - error TS18046: 'error' is of type 'unknown'.
+
+129         description: error.message || "Failed to update privacy settings.",
+                         ~~~~~
+
+client/src/components/BarcodeScanner.tsx:64:11 - error TS18046: 'err' is of type 'unknown'.
+
+64           err.message || "Failed to access camera. Please check permissions.",
+             ~~~
+
+client/src/components/EmailDrafting.tsx:114:30 - error TS2339: Property 'length' does not exist on type 'Response'.
+
+114         description: `${data.length} draft variations created successfully.`
+                                 ~~~~~~
+
+client/src/components/EmailDrafting.tsx:429:121 - error TS2339: Property 'length' does not exist on type 'Response'.
+
+429                   <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${generateDraftsMutation.data.length}, 1fr)` }}>
+                                                                                                                            ~~~~~~
+
+client/src/components/EmailDrafting.tsx:430:50 - error TS2339: Property 'map' does not exist on type 'Response'.
+
+430                     {generateDraftsMutation.data.map((_: any, index: number) => (
+                                                     ~~~
+
+client/src/components/EmailDrafting.tsx:436:48 - error TS2339: Property 'map' does not exist on type 'Response'.
+
+436                   {generateDraftsMutation.data.map((draft: GeneratedDraft, index: number) => (
+                                                   ~~~
+
+client/src/components/EmailDrafting.tsx:525:79 - error TS2339: Property 'improved' does not exist on type 'Response'.
+
+525                             <p className="text-sm">{improveDraftMutation.data.improved}</p>
+                                                                                  ~~~~~~~~
+
+client/src/components/EmailDrafting.tsx:527:58 - error TS2339: Property 'changes' does not exist on type 'Response'.
+
+527                               {improveDraftMutation.data.changes?.map((change: string, i: number) => (
+                                                             ~~~~~~~
+
+client/src/components/EmailDrafting.tsx:554:46 - error TS2339: Property 'map' does not exist on type 'Response'.
+
+554                     {quickReplyMutation.data.map((reply: string, index: number) => (
+                                                 ~~~
+
+client/src/components/VoiceCommands.tsx:139:16 - error TS2339: Property 'processedCommand' does not exist on type 'Response'.
+
+139       if (data.processedCommand?.response && 'speechSynthesis' in window) {
+                   ~~~~~~~~~~~~~~~~
+
+client/src/components/VoiceCommands.tsx:140:61 - error TS2339: Property 'processedCommand' does not exist on type 'Response'.
+
+140         const utterance = new SpeechSynthesisUtterance(data.processedCommand.response);
+                                                                ~~~~~~~~~~~~~~~~
+
+client/src/components/VoiceCommands.tsx:146:27 - error TS2339: Property 'processedCommand' does not exist on type 'Response'.
+
+146         description: data.processedCommand?.actionTaken || "Action completed"
+                              ~~~~~~~~~~~~~~~~
+
+client/src/components/VoiceCommands.tsx:311:11 - error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
+
+311           {/* Statistics */}
+              ~~~~~~~~~~~~~~~~~~
+
+client/src/components/VoiceCommands.tsx:320:56 - error TS2339: Property 'totalCommands' does not exist on type '{}'.
+
+320                   <span className="font-medium">{stats.totalCommands}</span>
+                                                           ~~~~~~~~~~~~~
+
+client/src/components/VoiceCommands.tsx:324:41 - error TS2339: Property 'successRate' does not exist on type '{}'.
+
+324                   <Badge variant={stats.successRate > 0.8 ? "default" : "secondary"}>
+                                            ~~~~~~~~~~~
+
+client/src/components/VoiceCommands.tsx:325:39 - error TS2339: Property 'successRate' does not exist on type '{}'.
+
+325                     {Math.round(stats.successRate * 100)}%
+                                          ~~~~~~~~~~~
+
+client/src/components/VoiceCommands.tsx:330:41 - error TS2339: Property 'commandBreakdown' does not exist on type '{}'.
+
+330                   {Object.entries(stats.commandBreakdown || {}).map(([cmd, count]) => (
+                                            ~~~~~~~~~~~~~~~~
+
+client/src/components/add-food-dialog.tsx:427:22 - error TS18046: 'error' is of type 'unknown'.
+
+427         description: error.message || "Failed to analyze the image",
+                         ~~~~~
+
+client/src/components/barcode-scan-queue.tsx:126:22 - error TS18046: 'err' is of type 'unknown'.
+
+126         description: err.message || "Failed to access camera. Please check permissions.",
+                         ~~~
+
+client/src/components/cooking-term-highlighter.tsx:202:14 - error TS18048: 'data.tools.length' is possibly 'undefined'.
+
+202             {data.tools?.length > 0 && (
+                 ~~~~~~~~~~~~~~~~~~
+
+client/src/components/cooking-term-highlighter.tsx:211:22 - error TS18047: 'data.tools' is possibly 'null'.
+
+211                     {data.tools.map((tool, idx) => (
+                         ~~~~~~~~~~
+
+client/src/components/cooking-term-highlighter.tsx:223:14 - error TS18048: 'data.tips.length' is possibly 'undefined'.
+
+223             {data.tips?.length > 0 && (
+                 ~~~~~~~~~~~~~~~~~
+
+client/src/components/cooking-term-highlighter.tsx:232:22 - error TS18047: 'data.tips' is possibly 'null'.
+
+232                     {data.tips.map((tip, idx) => (
+                         ~~~~~~~~~
+
+client/src/components/cooking-term-highlighter.tsx:244:14 - error TS18048: 'data.relatedTerms.length' is possibly 'undefined'.
+
+244             {data.relatedTerms?.length > 0 && (
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+client/src/components/cooking-term-highlighter.tsx:250:22 - error TS18047: 'data.relatedTerms' is possibly 'null'.
+
+250                     {data.relatedTerms.map((relatedTerm, idx) => (
+                         ~~~~~~~~~~~~~~~~~
+
+client/src/components/cooking-term-tooltip.tsx:219:10 - error TS18048: 'termData.tips.length' is possibly 'undefined'.
+
+219         {termData.tips?.length > 0 && (
+             ~~~~~~~~~~~~~~~~~~~~~
+
+client/src/components/cooking-term-tooltip.tsx:226:16 - error TS18047: 'termData.tips' is possibly 'null'.
+
+226               {termData.tips.map((tip, index) => (
+                   ~~~~~~~~~~~~~
+
+client/src/components/cooking-term-tooltip.tsx:237:10 - error TS18048: 'termData.tools.length' is possibly 'undefined'.
+
+237         {termData.tools?.length > 0 && (
+             ~~~~~~~~~~~~~~~~~~~~~~
+
+client/src/components/cooking-term-tooltip.tsx:244:16 - error TS18047: 'termData.tools' is possibly 'null'.
+
+244               {termData.tools.map((tool, index) => (
+                   ~~~~~~~~~~~~~~
+
+client/src/components/cooking-term-tooltip.tsx:254:10 - error TS18048: 'termData.relatedTerms.length' is possibly 'undefined'.
+
+254         {termData.relatedTerms?.length > 0 && (
+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+client/src/components/cooking-term-tooltip.tsx:258:16 - error TS18047: 'termData.relatedTerms' is possibly 'null'.
+
+258               {termData.relatedTerms.map((relatedTerm, index) => (
+                   ~~~~~~~~~~~~~~~~~~~~~
+
+client/src/components/recipe-customization-dialog.tsx:172:22 - error TS18046: 'error' is of type 'unknown'.
+
+172         description: error.message || "Failed to generate recipe",
+                         ~~~~~
+
+client/src/components/recipe-generator.tsx:64:22 - error TS18046: 'error' is of type 'unknown'.
+
+64         description: error.message || "Failed to generate recipe",
+                        ~~~~~
+
+client/src/components/recipe-upload.tsx:45:22 - error TS18046: 'error' is of type 'unknown'.
+
+45         description: error.message || "Could not extract recipe from image. Please try a clearer photo.",
+                        ~~~~~
+
+client/src/components/smart-recipe-generator.tsx:264:22 - error TS18046: 'error' is of type 'unknown'.
+
+264         description: error.message || "Could not generate smart recipe",
+                         ~~~~~
+
+client/src/components/summaries/SummaryToggle.tsx:30:7 - error TS2322: Type '"link" | "default" | "destructive" | "secondary" | "outline" | "ghost"' is not assignable to type '"default" | "destructive" | "secondary" | "outline" | "ghost" | null | undefined'.
+  Type '"link"' is not assignable to type '"default" | "destructive" | "secondary" | "outline" | "ghost" | null | undefined'.
+
+30       variant={variant}
+         ~~~~~~~
+
+  client/src/components/ui/button.tsx:12:7
+     12       variant: {
+              ~~~~~~~~~~
+     13         default:
+        ~~~~~~~~~~~~~~~~
+    ... 
+     23         ghost: "border border-transparent",
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     24       },
+        ~~~~~~~
+    The expected type comes from property 'variant' which is declared here on type 'IntrinsicAttributes & ButtonProps & RefAttributes<HTMLButtonElement>'
+
+client/src/components/unified-add-food.tsx:234:22 - error TS18046: 'error' is of type 'unknown'.
+
+234         description: error.message || "Failed to search. Please try again.",
+                         ~~~~~
+
+client/src/components/unified-add-food.tsx:326:22 - error TS18046: 'error' is of type 'unknown'.
+
+326         description: error.message || "Something went wrong. Please try again.",
+                         ~~~~~
+
+client/src/hooks/use-streaming-chat.ts:197:18 - error TS18046: 'err' is of type 'unknown'.
+
+197         message: err.message || 'Failed to connect to chat service',
+                     ~~~
+
+client/src/hooks/useBarcodescanner.ts:153:17 - error TS18046: 'err' is of type 'unknown'.
+
+153       onError?.(err.message || "Failed to access camera. Please check permissions.");
+                    ~~~
+
+client/src/pages/SemanticSearchDemo.tsx:61:56 - error TS2345: Argument of type '{ method: string; body: string; }' is not assignable to parameter of type 'string'.
+
+ 61       return apiRequest("/api/ml/embeddings/generate", {
+                                                           ~
+ 62         method: "POST",
+    ~~~~~~~~~~~~~~~~~~~~~~~
+... 
+ 76         }),
+    ~~~~~~~~~~~
+ 77       });
+    ~~~~~~~

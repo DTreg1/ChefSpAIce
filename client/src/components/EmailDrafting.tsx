@@ -101,13 +101,14 @@ export function EmailDrafting() {
         previousMessage: previousMessage || undefined
       };
 
-      return apiRequest("POST", "/api/drafts/generate", {
+      const response = await apiRequest("POST", "/api/drafts/generate", {
         contextType,
         context,
         numberOfVariations
       });
+      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any[]) => {
       queryClient.invalidateQueries({ queryKey: ["/api/drafts/history"] });
       toast({
         title: "Drafts Generated",
@@ -140,9 +141,10 @@ export function EmailDrafting() {
   // Improve draft
   const improveDraftMutation = useMutation({
     mutationFn: async (draft: string) => {
-      return apiRequest("POST", "/api/drafts/improve", { draft });
+      const response = await apiRequest("POST", "/api/drafts/improve", { draft });
+      return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Draft Improved",
         description: "Your draft has been polished."
@@ -153,10 +155,11 @@ export function EmailDrafting() {
   // Generate quick replies
   const quickReplyMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/drafts/quick-reply", {
+      const response = await apiRequest("POST", "/api/drafts/quick-reply", {
         message: previousMessage,
         sentiment: "positive"
       });
+      return response.json();
     },
     onSuccess: () => {
       toast({

@@ -9,7 +9,7 @@ interface SummaryToggleProps {
   disabled?: boolean;
   className?: string;
   size?: "sm" | "default" | "lg" | "icon";
-  variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
+  variant?: "default" | "outline" | "secondary" | "ghost" | "destructive";
 }
 
 export const SummaryToggle = memo(function SummaryToggle({

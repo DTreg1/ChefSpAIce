@@ -261,7 +261,7 @@ export function SmartRecipeGenerator({
     onError: (error: Error | unknown) => {
       toast({
         title: "Generation Failed",
-        description: error.message || "Could not generate smart recipe",
+        description: error instanceof Error ? error.message : "Could not generate smart recipe",
         variant: "destructive",
       });
     },

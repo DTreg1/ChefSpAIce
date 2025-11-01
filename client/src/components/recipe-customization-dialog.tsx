@@ -169,7 +169,7 @@ export function RecipeCustomizationDialog({
     onError: (error: Error | unknown) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to generate recipe",
+        description: error instanceof Error ? error.message : "Failed to generate recipe",
         variant: "destructive",
       });
     },

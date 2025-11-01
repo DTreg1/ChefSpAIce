@@ -194,7 +194,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
     } catch (err: Error | unknown) {
       // Handle network or other errors
       const errorInfo: AIErrorInfo = {
-        message: err.message || 'Failed to connect to chat service',
+        message: err instanceof Error ? err.message : 'Failed to connect to chat service',
         code: 'NETWORK_ERROR',
         retryable: true,
         retryAfter: undefined
