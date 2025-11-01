@@ -5056,16 +5056,29 @@ export class DatabaseStorage implements IStorage {
 
   async upsertContentEmbedding(embedding: InsertContentEmbedding): Promise<ContentEmbedding> {
     try {
+      // Ensure embedding is a regular array for database compatibility
+      const embeddingArray: number[] = Array.isArray(embedding.embedding) 
+        ? Array.from(embedding.embedding as ArrayLike<number>) 
+        : embedding.embedding as number[];
+      
       const [result] = await db
         .insert(contentEmbeddings)
-        .values(embedding)
+        .values({
+          userId: embedding.userId,
+          contentId: embedding.contentId,
+          contentType: embedding.contentType,
+          embedding: embeddingArray,
+          embeddingModel: embedding.embeddingModel || 'text-embedding-ada-002',
+          contentText: embedding.contentText,
+          metadata: embedding.metadata as any,
+        })
         .onConflictDoUpdate({
           target: [contentEmbeddings.contentId, contentEmbeddings.contentType, contentEmbeddings.userId],
           set: {
-            embedding: embedding.embedding,
-            embeddingModel: embedding.embeddingModel,
+            embedding: embeddingArray,
+            embeddingModel: embedding.embeddingModel || 'text-embedding-ada-002',
             contentText: embedding.contentText,
-            metadata: embedding.metadata,
+            metadata: embedding.metadata as any,
             updatedAt: sql`now()`,
           },
         })
