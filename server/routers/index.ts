@@ -8,6 +8,7 @@ import { setupOAuth } from "../auth/setup-oauth";
 import authRouter from "./auth.router";
 import inventoryRouter from "./inventory.router";
 import recipesRouter from "./recipes.router";
+import chatRouter from "./chat.router";
 import chatStreamRouter from "./chat-stream.router";
 import mealPlanningRouter from "./meal-planning.router";
 import appliancesRouter from "./appliances.router";
@@ -50,6 +51,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/auth", authRouter);
   app.use("/api", inventoryRouter);  // Handles food-items, storage-locations, barcode, fdc
   app.use("/api", recipesRouter);     // Handles chat and recipes
+  app.use("/api/chat", chatRouter);   // Handles comprehensive chat with conversation management
   app.use("/api/chat", chatStreamRouter); // Handles streaming chat with SSE
   app.use("/api", mealPlanningRouter); // Handles meal-plans and shopping-list
   app.use("/api", appliancesRouter);  // Handles appliances

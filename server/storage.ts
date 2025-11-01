@@ -33,11 +33,14 @@
 
 // Referenced from blueprint:javascript_log_in_with_replit - Added user operations and user-scoped data
 import { parallelQueries } from "./utils/batchQueries";
+import { 
+  type ChatMessage, 
+  type InsertChatMessage,
+  userChats 
+} from "@shared/chat-compatibility";
 import {
   type User,
   type UpsertUser,
-  type ChatMessage,
-  type InsertChatMessage,
   type Recipe,
   type InsertRecipe,
   type MealPlan,
@@ -123,7 +126,6 @@ import {
   notificationHistory,
   userAppliances,
   userInventory,
-  userChats,
   userRecipes,
   userStorage,
   mealPlans,
