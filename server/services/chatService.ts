@@ -58,7 +58,7 @@ export class ChatService {
     };
 
     const [created] = await db.insert(conversations)
-      .values(newConversation)
+      .values([newConversation])
       .returning();
 
     return created.id;
@@ -224,7 +224,7 @@ export class ChatService {
     };
 
     const [savedUserMessage] = await db.insert(messages)
-      .values(userMessage)
+      .values([userMessage])
       .returning();
 
     // Generate title for new conversations
@@ -262,7 +262,7 @@ export class ChatService {
       };
 
       const [savedAssistantMessage] = await db.insert(messages)
-        .values(assistantMessage)
+        .values([assistantMessage])
         .returning();
 
       // Update conversation timestamp
@@ -291,11 +291,11 @@ export class ChatService {
         role: 'assistant',
         content: 'I apologize, but I encountered an error processing your request. Please try again.',
         tokensUsed: 0,
-        metadata: { error: String(error) }
+        metadata: { functionCall: `Error: ${String(error)}` }
       };
 
       const [savedErrorMessage] = await db.insert(messages)
-        .values(errorMessage)
+        .values([errorMessage])
         .returning();
 
       throw error;
