@@ -100,7 +100,9 @@ export class MLService {
         input: text,
       });
       
-      return response.data[0].embedding;
+      // Convert typed array to regular array for database compatibility
+      const embedding = response.data[0].embedding;
+      return Array.from(embedding);
     } catch (error) {
       console.error("Error generating embedding:", error);
       throw new Error("Failed to generate embedding");
