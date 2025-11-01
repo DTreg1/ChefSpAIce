@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Sparkles, Plus, RefreshCw, TrendingUp, BookOpen, Package } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,6 +71,7 @@ const sampleContent = [
 
 export default function RecommendationsDemo() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedContent, setSelectedContent] = useState(sampleContent[0]);
   const [customContent, setCustomContent] = useState("");
   const [customTitle, setCustomTitle] = useState("");
@@ -172,7 +174,7 @@ export default function RecommendationsDemo() {
 
       {/* Personalized Recommendations Carousel */}
       <RecommendationCarousel
-        userId={(window as any).user?.id}
+        userId={user?.id}
         contentType="article"
         title="Personalized Recommendations"
         subtitle="Content tailored to your interests"
