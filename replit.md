@@ -44,7 +44,15 @@ Key architectural decisions include:
     - **ML-Powered Smart Search & Discovery** (October 2025):
         - **Semantic Smart Search**: Uses OpenAI embeddings to find content by meaning, not just keywords. Available at `/smart-search` with support for natural language queries.
         - **Auto-Categorization**: Automatically categorizes recipes and inventory items using GPT analysis with confidence scoring.
-        - **Auto-Tagging with NLP**: Generates relevant tags for content using natural language processing. Includes relevance scoring and trending tags.
+        - **Auto-Tagging with NLP**: Generates relevant hashtags for content using OpenAI GPT-3.5-turbo combined with TensorFlow.js keyword extraction. Features include:
+            - Multi-source tag generation (AI-generated, keyword extraction, entity recognition)
+            - Hashtag formatting (#sustainability, #agriculture, #farming)  
+            - Relevance scoring (0-1) for tag quality
+            - Tag approval/rejection workflow
+            - Trending tags analytics
+            - Complete UI suite: TagInput with auto-complete, TagCloud visualization, TagSuggestions panel, TagEditor management
+            - Demo page at `/tag-demo` showcasing sustainable farming article generating relevant hashtags
+            - API endpoints: `/api/ml/tags/generate`, `/api/ml/tags/trending`, `/api/ml/tags/approve`
         - **Duplicate Detection**: Identifies similar recipes and ingredients using semantic similarity analysis. Features merge and ignore capabilities.
         - **Related Content Discovery**: Recommends related recipes and ingredients based on semantic relationships and user behavior patterns.
         - **Natural Language Query**: Converts natural language questions to structured database queries. Examples: "What can I make with chicken?" or "Show me healthy dinner recipes".
