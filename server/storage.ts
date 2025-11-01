@@ -123,6 +123,8 @@ import {
   users,
   pushTokens,
   summaries,
+  draftTemplates,
+  generatedDrafts,
   notificationHistory,
   userAppliances,
   userInventory,
@@ -156,8 +158,6 @@ import {
   messages,
   conversationContext,
   voiceCommands,
-  draftTemplates,
-  generatedDrafts,
   writingSessions,
   writingSuggestions,
 } from "@shared/schema";
@@ -6217,6 +6217,195 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting summaries by type:", error);
       throw new Error("Failed to get summaries by type");
+    }
+  }
+
+  // ==================== Draft Operations ====================
+  
+  async getDraftTemplates(contextType?: string): Promise<DraftTemplate[]> {
+    try {
+      const query = db
+        .select()
+        .from(draftTemplates)
+        .where(eq(draftTemplates.isActive, true));
+      
+      if (contextType) {
+        return await query.where(and(
+          eq(draftTemplates.isActive, true),
+          eq(draftTemplates.contextType, contextType)
+        ));
+      }
+      
+      return await query.orderBy(desc(draftTemplates.usageCount));
+    } catch (error) {
+      console.error("Error getting draft templates:", error);
+      throw new Error("Failed to get draft templates");
+    }
+  }
+  
+  async createDraftTemplate(template: InsertDraftTemplate): Promise<DraftTemplate> {
+    try {
+      const [result] = await db
+        .insert(draftTemplates)
+        .values(template)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating draft template:", error);
+      throw new Error("Failed to create draft template");
+    }
+  }
+  
+  async incrementTemplateUsage(templateId: string): Promise<void> {
+    try {
+      await db
+        .update(draftTemplates)
+        .set({ 
+          usageCount: sql`${draftTemplates.usageCount} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(draftTemplates.id, templateId));
+    } catch (error) {
+      console.error("Error incrementing template usage:", error);
+      throw new Error("Failed to increment template usage");
+    }
+  }
+  
+  async createGeneratedDraft(userId: string, draft: Omit<InsertGeneratedDraft, "userId">): Promise<GeneratedDraft> {
+    try {
+      const [result] = await db
+        .insert(generatedDrafts)
+        .values({
+          ...draft,
+          userId,
+          metadata: draft.metadata as any
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating generated draft:", error);
+      throw new Error("Failed to create generated draft");
+    }
+  }
+  
+  async getGeneratedDrafts(userId: string, originalMessageId?: string): Promise<GeneratedDraft[]> {
+    try {
+      const query = db
+        .select()
+        .from(generatedDrafts)
+        .where(eq(generatedDrafts.userId, userId));
+      
+      if (originalMessageId) {
+        return await query.where(and(
+          eq(generatedDrafts.userId, userId),
+          eq(generatedDrafts.originalMessageId, originalMessageId)
+        )).orderBy(desc(generatedDrafts.createdAt));
+      }
+      
+      return await query.orderBy(desc(generatedDrafts.createdAt));
+    } catch (error) {
+      console.error("Error getting generated drafts:", error);
+      throw new Error("Failed to get generated drafts");
+    }
+  }
+  
+  async updateGeneratedDraft(userId: string, draftId: string, updates: Partial<Omit<InsertGeneratedDraft, "userId" | "id">>): Promise<GeneratedDraft> {
+    try {
+      const [result] = await db
+        .update(generatedDrafts)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+          metadata: updates.metadata as any
+        })
+        .where(and(
+          eq(generatedDrafts.userId, userId),
+          eq(generatedDrafts.id, draftId)
+        ))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Draft not found");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error updating generated draft:", error);
+      throw new Error("Failed to update generated draft");
+    }
+  }
+  
+  async markDraftSelected(userId: string, draftId: string): Promise<void> {
+    try {
+      await db
+        .update(generatedDrafts)
+        .set({ 
+          selected: true,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(generatedDrafts.userId, userId),
+          eq(generatedDrafts.id, draftId)
+        ));
+    } catch (error) {
+      console.error("Error marking draft as selected:", error);
+      throw new Error("Failed to mark draft as selected");
+    }
+  }
+  
+  async markDraftEdited(userId: string, draftId: string, editedContent: string): Promise<void> {
+    try {
+      await db
+        .update(generatedDrafts)
+        .set({ 
+          edited: true,
+          editedContent,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(generatedDrafts.userId, userId),
+          eq(generatedDrafts.id, draftId)
+        ));
+    } catch (error) {
+      console.error("Error marking draft as edited:", error);
+      throw new Error("Failed to mark draft as edited");
+    }
+  }
+  
+  async getUserDraftAnalytics(userId: string): Promise<{
+    totalDrafts: number;
+    selectedCount: number;
+    editedCount: number;
+    toneDistribution: { tone: string; count: number }[];
+  }> {
+    try {
+      const drafts = await db
+        .select()
+        .from(generatedDrafts)
+        .where(eq(generatedDrafts.userId, userId));
+      
+      const toneDistribution = await db
+        .select({
+          tone: generatedDrafts.tone,
+          count: sql<number>`count(*)`
+        })
+        .from(generatedDrafts)
+        .where(eq(generatedDrafts.userId, userId))
+        .groupBy(generatedDrafts.tone)
+        .orderBy(desc(sql`count(*)`));
+      
+      return {
+        totalDrafts: drafts.length,
+        selectedCount: drafts.filter(d => d.selected).length,
+        editedCount: drafts.filter(d => d.edited).length,
+        toneDistribution: toneDistribution.map(td => ({
+          tone: td.tone || 'unknown',
+          count: Number(td.count)
+        }))
+      };
+    } catch (error) {
+      console.error("Error getting draft analytics:", error);
+      throw new Error("Failed to get draft analytics");
     }
   }
 
