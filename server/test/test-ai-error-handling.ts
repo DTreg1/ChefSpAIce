@@ -5,7 +5,7 @@
  * Run this file to simulate different error conditions and verify handling
  */
 
-import { handleOpenAIError, AIErrorCode, retryWithBackoff } from '../utils/ai-error-handler';
+import { handleOpenAIError, AIError, AIErrorCode, retryWithBackoff } from '../utils/ai-error-handler';
 import { getCircuitBreaker } from '../utils/circuit-breaker';
 import axios from 'axios';
 
@@ -121,9 +121,11 @@ async function testCircuitBreaker() {
       return 'This should not execute';
     });
     logError('Circuit should have prevented execution');
-  } catch (error: Error | unknown) {
-    if (error.code === AIErrorCode.CIRCUIT_OPEN) {
+  } catch (error) {
+    if (error instanceof AIError && error.code === AIErrorCode.CIRCUIT_OPEN) {
       logSuccess('Circuit correctly prevented execution while open');
+    } else {
+      logError('Unexpected error type or code');
     }
   }
 
@@ -239,8 +241,9 @@ async function testAPIEndpoints() {
           logWarning(`${testCase.name}: Error ${errorData.code || response.status} - ${errorData.error || errorData.message}`);
         }
       }
-    } catch (error: Error | unknown) {
-      logError(`${testCase.name}: ${error.message}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logError(`${testCase.name}: ${errorMessage}`);
     }
   }
 }
@@ -266,8 +269,9 @@ async function testErrorMetrics() {
     } else {
       logError(`Unexpected health status: ${response.status}`);
     }
-  } catch (error: Error | unknown) {
-    logError(`Health check failed: ${error.message}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logError(`Health check failed: ${errorMessage}`);
   }
 }
 
@@ -357,9 +361,10 @@ async function runTests() {
     log('\n' + '='.repeat(50), colors.bright);
     log('✨ Test suite completed', colors.green);
     log('='.repeat(50), colors.bright);
-  } catch (error: Error | unknown) {
+  } catch (error) {
     log('\n' + '='.repeat(50), colors.bright);
-    logError(`Test suite failed: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logError(`Test suite failed: ${errorMessage}`);
     log('='.repeat(50), colors.bright);
     process.exit(1);
   }
