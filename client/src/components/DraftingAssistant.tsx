@@ -31,6 +31,7 @@ const QUICK_REPLIES = [
 export function DraftingAssistant() {
   const [originalMessage, setOriginalMessage] = useState("");
   const [contextType, setContextType] = useState<string>("email");
+  const [subject, setSubject] = useState("");
   const [selectedTones, setSelectedTones] = useState<string[]>(["formal", "casual", "friendly"]);
   const [generatedDrafts, setGeneratedDrafts] = useState<GeneratedDraft[]>([]);
   const [editingDraft, setEditingDraft] = useState<GeneratedDraft | null>(null);
@@ -38,7 +39,7 @@ export function DraftingAssistant() {
 
   // Generate drafts mutation
   const generateDraftsMutation = useMutation({
-    mutationFn: async (data: { originalMessage: string; contextType: string; tones: string[] }) =>
+    mutationFn: async (data: { originalMessage: string; contextType: string; tones: string[]; subject?: string; approach?: string }) =>
       apiRequest<GeneratedDraft[]>("/api/drafts/generate", {
         method: "POST",
         body: JSON.stringify(data),
@@ -101,7 +102,12 @@ export function DraftingAssistant() {
       ? ["apologetic", "solution-focused", "empathetic"]
       : selectedTones;
 
-    generateDraftsMutation.mutate({ originalMessage, contextType, tones });
+    generateDraftsMutation.mutate({ 
+      originalMessage, 
+      contextType, 
+      tones,
+      subject: subject.trim() || undefined
+    });
   };
 
   const handleSelectDraft = (draft: GeneratedDraft) => {
@@ -143,6 +149,7 @@ export function DraftingAssistant() {
 
   const handleReset = () => {
     setOriginalMessage("");
+    setSubject("");
     setGeneratedDrafts([]);
     setEditingDraft(null);
   };
@@ -188,6 +195,19 @@ export function DraftingAssistant() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject/Topic (Optional)</Label>
+            <input
+              id="subject"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="e.g., Order Issue, Meeting Request, Product Feedback..."
+              className="w-full px-3 py-2 border rounded-md bg-background"
+              data-testid="input-subject"
+            />
           </div>
 
           <div className="space-y-2">

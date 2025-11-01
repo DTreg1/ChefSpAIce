@@ -73,10 +73,12 @@ router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, a
     const schema = z.object({
       originalMessage: z.string(),
       contextType: z.enum(['email', 'message', 'comment', 'customer_complaint']).default('email'),
-      tones: z.array(z.enum(['formal', 'casual', 'friendly', 'apologetic', 'solution-focused', 'empathetic'])).optional()
+      tones: z.array(z.enum(['formal', 'casual', 'friendly', 'apologetic', 'solution-focused', 'empathetic'])).optional(),
+      subject: z.string().optional(),
+      approach: z.string().optional()
     });
     
-    const { originalMessage, contextType, tones } = schema.parse(req.body);
+    const { originalMessage, contextType, tones, subject, approach } = schema.parse(req.body);
     
     // Default tones based on context
     const selectedTones = tones || (contextType === 'customer_complaint' 
@@ -86,10 +88,10 @@ router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, a
     // Generate drafts using AI
     const drafts = await generateDraftVariations(originalMessage, contextType, selectedTones);
     
-    // Save generated drafts with unique message ID
+    // Save generated drafts with unique message ID and analytics metadata
     const messageId = `msg_${Date.now()}`;
     const savedDrafts = await Promise.all(
-      drafts.map(draft => storage.createGeneratedDraft(userId, {
+      drafts.map((draft, index) => storage.createGeneratedDraft(userId, {
         originalMessageId: messageId,
         originalMessage,
         draftContent: draft.content,
@@ -98,6 +100,10 @@ router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, a
         metadata: {
           model: 'gpt-4o-mini',
           temperature: 0.8,
+          subject: subject || 'General response',
+          approach: approach || (index === 0 ? 'Direct' : index === 1 ? 'Detailed' : 'Concise'),
+          variationNumber: index + 1,
+          contextType
         }
       }))
     );
