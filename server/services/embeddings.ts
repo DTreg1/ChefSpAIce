@@ -6,12 +6,12 @@ import type { IStorage } from '../storage';
  * Embeddings Service
  * 
  * Provides semantic search and content recommendation capabilities using OpenAI's embeddings.
- * Supports both text-embedding-ada-002 and text-embedding-3-small models.
+ * Uses the text-embedding-ada-002 model to generate 1536-dimensional vectors.
  */
 
 // Model configuration
-const EMBEDDING_MODEL = 'text-embedding-3-small'; // Newer, more efficient model
-const EMBEDDING_DIMENSIONS = 1536; // Dimensions for text-embedding-3-small
+const EMBEDDING_MODEL = 'text-embedding-ada-002'; // Required model per specifications
+const EMBEDDING_DIMENSIONS = 1536; // Dimensions for text-embedding-ada-002
 const MAX_TEXT_LENGTH = 8000; // Max text length to avoid token limits
 
 /**

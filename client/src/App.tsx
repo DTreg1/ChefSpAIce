@@ -58,6 +58,7 @@ const SemanticSearchDemo = lazy(() => import("@/pages/SemanticSearchDemo"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const TagDemo = lazy(() => import("@/pages/TagDemo"));
 const RecommendationsDemo = lazy(() => import("@/pages/recommendations-demo"));
+const RecommendationsPublicDemo = lazy(() => import("@/pages/recommendations-public-demo"));
 
 function AuthenticatedRouter() {
   return (
@@ -110,6 +111,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/recommendations-public-demo" component={RecommendationsPublicDemo} />
         <Route component={Landing} />
       </Switch>
     );
