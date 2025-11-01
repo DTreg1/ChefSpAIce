@@ -14,9 +14,16 @@ import type { Message } from '@shared/schema';
 interface ChatInterfaceProps {
   conversationId?: string;
   onNewConversation?: (conversationId: string) => void;
+  initialMessage?: string;
+  onInitialMessageSent?: () => void;
 }
 
-export function ChatInterface({ conversationId, onNewConversation }: ChatInterfaceProps) {
+export function ChatInterface({ 
+  conversationId, 
+  onNewConversation, 
+  initialMessage, 
+  onInitialMessageSent 
+}: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -35,6 +42,23 @@ export function ChatInterface({ conversationId, onNewConversation }: ChatInterfa
   });
 
   const messages = conversationData?.messages || [];
+
+  // Handle initial message from QuickActions
+  useEffect(() => {
+    if (initialMessage) {
+      setInput(initialMessage);
+      // Auto-send after a brief delay to show the user what's happening
+      const timer = setTimeout(() => {
+        if (initialMessage.trim()) {
+          sendMessageMutation.mutate(initialMessage.trim());
+          if (onInitialMessageSent) {
+            onInitialMessageSent();
+          }
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [initialMessage]);
 
   // Send message mutation
   const sendMessageMutation = useMutation({

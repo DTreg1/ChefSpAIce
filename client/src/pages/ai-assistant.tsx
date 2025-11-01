@@ -10,12 +10,19 @@ export default function AIAssistant() {
   const [inputPrompt, setInputPrompt] = useState('');
 
   const handleQuickAction = (prompt: string) => {
-    // This will be passed to ChatInterface through a ref
+    // Pass the prompt to ChatInterface
     setInputPrompt(prompt);
   };
 
   const handleConversationSelect = (conversationId: string | undefined) => {
     setCurrentConversationId(conversationId);
+    // Clear the prompt when switching conversations
+    setInputPrompt('');
+  };
+
+  const handleInitialMessageSent = () => {
+    // Clear the prompt after it's been sent
+    setInputPrompt('');
   };
 
   return (
@@ -55,6 +62,8 @@ export default function AIAssistant() {
           <ChatInterface 
             conversationId={currentConversationId}
             onNewConversation={handleConversationSelect}
+            initialMessage={inputPrompt}
+            onInitialMessageSent={handleInitialMessageSent}
           />
         </div>
       </div>
