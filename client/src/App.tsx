@@ -56,6 +56,7 @@ const AIFeatures = lazy(() => import("@/pages/AIFeatures"));
 const SummarizationDemo = lazy(() => import("@/pages/summarization-demo"));
 const SemanticSearchDemo = lazy(() => import("@/pages/SemanticSearchDemo"));
 const NotFound = lazy(() => import("@/pages/not-found"));
+const TagDemo = lazy(() => import("@/pages/TagDemo"));
 
 function AuthenticatedRouter() {
   return (
@@ -64,6 +65,7 @@ function AuthenticatedRouter() {
         <Route path="/" component={Chat} />
         <Route path="/chat" component={Chat} />
         <Route path="/cookbook" component={Cookbook} />
+        <Route path="/tag-demo" component={TagDemo} />
         <Route path="/nutrition" component={Nutrition} />
         <Route path="/meal-planner" component={MealPlanner} />
         <Route path="/shopping-list" component={ShoppingList} />

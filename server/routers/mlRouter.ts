@@ -305,19 +305,23 @@ router.post("/tags/generate", async (req: Request, res: Response) => {
     }
 
     // Generate tags
-    const tagNames = await mlService.generateTags(content, contentType, maxTags);
+    const generatedTags = await mlService.generateTags(content, contentType, maxTags);
 
     // Create or get tags and assign to content
     const tags = [];
-    for (const tagName of tagNames) {
-      const tag = await storage.getOrCreateTag(tagName);
-      tags.push(tag);
+    for (const tagInfo of generatedTags) {
+      const tag = await storage.getOrCreateTag(tagInfo.name);
+      tags.push({
+        ...tag,
+        relevanceScore: tagInfo.relevanceScore,
+        source: tagInfo.source
+      });
       
       await storage.assignContentTag({
         contentId,
         contentType,
         tagId: tag.id,
-        relevanceScore: 0.8,
+        relevanceScore: tagInfo.relevanceScore,
         isManual: false,
         userId,
       });
@@ -368,8 +372,15 @@ router.post("/tags/approve", async (req: Request, res: Response) => {
     const { contentId, contentType, approvedTags, rejectedTags } = schema.parse(req.body);
     const userId = req.user!.id;
 
-    // Update tag assignments based on approval
-    // This would update relevanceScore or remove tags
+    // Process approved tags
+    for (const tagId of approvedTags) {
+      await storage.updateTagRelevanceScore(contentId, tagId, userId, 1.0);
+    }
+    
+    // Remove rejected tags
+    for (const tagId of rejectedTags) {
+      await storage.removeContentTag(contentId, tagId, userId);
+    }
     
     res.json({ success: true });
   } catch (error) {
@@ -377,6 +388,124 @@ router.post("/tags/approve", async (req: Request, res: Response) => {
     res.status(500).json({ 
       success: false, 
       error: "Failed to update tags" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/tags/related/:tag
+ * Find related tags
+ */
+router.get("/tags/related/:tagId", async (req: Request, res: Response) => {
+  try {
+    const { tagId } = req.params;
+    const limit = parseInt(req.query.limit as string) || 5;
+    
+    const relatedTags = await storage.getRelatedTags(tagId, limit);
+    
+    res.json({ success: true, tags: relatedTags });
+  } catch (error) {
+    console.error("Error getting related tags:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to get related tags" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/tags/search
+ * Search tags by query
+ */
+router.get("/tags/search", async (req: Request, res: Response) => {
+  try {
+    const query = req.query.q as string;
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    if (!query) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Search query is required" 
+      });
+    }
+    
+    const tags = await storage.searchTags(query, limit);
+    
+    res.json({ success: true, tags });
+  } catch (error) {
+    console.error("Error searching tags:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to search tags" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/tags/all
+ * Get all tags (optionally filtered by user)
+ */
+router.get("/tags/all", async (req: Request, res: Response) => {
+  try {
+    const userId = req.query.userOnly === 'true' ? req.user!.id : undefined;
+    const tags = await storage.getAllTags(userId);
+    
+    res.json({ success: true, tags });
+  } catch (error) {
+    console.error("Error getting all tags:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to get tags" 
+    });
+  }
+});
+
+/**
+ * GET /api/ml/content/:id/tags
+ * Get tags for specific content
+ */
+router.get("/content/:contentId/tags", async (req: Request, res: Response) => {
+  try {
+    const { contentId } = req.params;
+    const contentType = req.query.type as string;
+    const userId = req.user!.id;
+    
+    if (!contentType) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Content type is required" 
+      });
+    }
+    
+    const tags = await storage.getContentTags(contentId, contentType, userId);
+    
+    res.json({ success: true, tags });
+  } catch (error) {
+    console.error("Error getting content tags:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to get content tags" 
+    });
+  }
+});
+
+/**
+ * DELETE /api/ml/content/:id/tags/:tagId
+ * Remove tag from content
+ */
+router.delete("/content/:contentId/tags/:tagId", async (req: Request, res: Response) => {
+  try {
+    const { contentId, tagId } = req.params;
+    const userId = req.user!.id;
+    
+    await storage.removeContentTag(contentId, tagId, userId);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error removing tag:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to remove tag" 
     });
   }
 });

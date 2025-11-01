@@ -22,6 +22,7 @@ import type {
   Tag,
   Category,
 } from "@shared/schema";
+import * as natural from "natural";
 
 /**
  * Calculate cosine similarity between two vectors
@@ -261,21 +262,127 @@ Return only the category name and confidence score (0-1) in JSON format:
   }
 
   /**
-   * Auto-generate tags for content
+   * Extract keywords using TensorFlow.js and NLP libraries
+   */
+  private async extractKeywords(text: string, limit: number = 10): Promise<string[]> {
+    // Dynamically import keyword-extractor (CommonJS module)
+    const keywordExtractor = await import("keyword-extractor");
+    
+    // Extract keywords using keyword-extractor
+    const extractedKeywords = keywordExtractor.default ? 
+      keywordExtractor.default.extract(text, {
+        language: "english",
+        remove_digits: true,
+        return_changed_case: true,
+        remove_duplicates: true
+      }) :
+      (keywordExtractor as any).extract(text, {
+        language: "english",
+        remove_digits: true,
+        return_changed_case: true,
+        remove_duplicates: true
+      });
+    
+    // Use TF-IDF for more sophisticated keyword scoring
+    const tfidf = new natural.TfIdf();
+    tfidf.addDocument(text);
+    
+    const tfidfKeywords: { term: string; score: number }[] = [];
+    tfidf.listTerms(0).forEach((item: any) => {
+      if (item.tfidf > 0.1 && item.term.length > 2) {
+        tfidfKeywords.push({ term: item.term, score: item.tfidf });
+      }
+    });
+    
+    // Combine and deduplicate keywords
+    const combinedKeywords = new Set([
+      ...extractedKeywords.slice(0, limit),
+      ...tfidfKeywords.sort((a, b) => b.score - a.score).slice(0, limit).map(k => k.term)
+    ]);
+    
+    return Array.from(combinedKeywords).slice(0, limit);
+  }
+  
+  /**
+   * Identify entities and themes in content
+   */
+  private identifyEntitiesAndThemes(content: any, contentType: string): string[] {
+    const themes: string[] = [];
+    
+    // Content-type specific theme extraction
+    switch (contentType) {
+      case 'recipe':
+        if (content.mealType) themes.push(content.mealType);
+        if (content.cuisine) themes.push(content.cuisine);
+        if (content.difficulty) themes.push(content.difficulty);
+        if (content.prepTime && content.prepTime < 30) themes.push('quick-meals');
+        if (content.ingredients?.some((i: string) => i.toLowerCase().includes('vegan'))) themes.push('vegan');
+        if (content.ingredients?.some((i: string) => i.toLowerCase().includes('gluten'))) themes.push('gluten-free');
+        break;
+        
+      case 'article':
+        // Extract themes from article metadata
+        if (content.category) themes.push(content.category);
+        if (content.subject) themes.push(content.subject);
+        break;
+    }
+    
+    return themes;
+  }
+
+  /**
+   * Auto-generate tags for content using NLP and AI
    */
   async generateTags(
     content: any,
     contentType: string,
-    maxTags: number = 5
-  ): Promise<string[]> {
+    maxTags: number = 8
+  ): Promise<Array<{
+    name: string;
+    relevanceScore: number;
+    source: 'keyword-extraction' | 'entity-recognition' | 'ai-generated';
+  }>> {
     const text = prepareTextForEmbedding(content, contentType);
+    const results: Array<{
+      name: string;
+      relevanceScore: number;
+      source: 'keyword-extraction' | 'entity-recognition' | 'ai-generated';
+    }> = [];
     
-    const prompt = `Generate ${maxTags} relevant tags for the following ${contentType}:
+    // Step 1: Extract keywords using TensorFlow.js/Natural
+    const keywords = await this.extractKeywords(text, Math.floor(maxTags / 2));
+    keywords.forEach(keyword => {
+      results.push({
+        name: keyword.toLowerCase().replace(/\s+/g, '-'),
+        relevanceScore: 0.8,
+        source: 'keyword-extraction'
+      });
+    });
+    
+    // Step 2: Identify entities and themes
+    const themes = this.identifyEntitiesAndThemes(content, contentType);
+    themes.forEach(theme => {
+      results.push({
+        name: theme.toLowerCase().replace(/\s+/g, '-'),
+        relevanceScore: 0.9,
+        source: 'entity-recognition'
+      });
+    });
+    
+    // Step 3: Use GPT-3.5-turbo for additional context-aware tags
+    const prompt = `Analyze the following ${contentType} and generate relevant tags that capture its key topics, entities, and themes:
 
 ${text}
 
-Return only tag names as a JSON array of lowercase, hyphenated strings:
-["tag-one", "tag-two", "tag-three"]`;
+Consider:
+1. Main topics and subjects
+2. Key entities (people, places, technologies, concepts)
+3. Themes and categories
+4. Target audience or use cases
+5. Unique characteristics
+
+Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of objects with 'name' (lowercase, hyphenated) and 'relevance' (0-1) fields:
+[{"name": "tag-name", "relevance": 0.95}]`;
 
     try {
       const response = await openai.chat.completions.create({
@@ -283,23 +390,46 @@ Return only tag names as a JSON array of lowercase, hyphenated strings:
         messages: [
           {
             role: "system",
-            content: "You are a tagging assistant. Generate relevant, specific tags. Respond only with a JSON array."
+            content: "You are an expert content analyzer specializing in identifying key topics, entities, and themes. Generate specific, relevant tags that would help users discover and categorize this content. Focus on actionable and searchable terms."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        temperature: 0.5,
-        max_tokens: 100,
+        temperature: 0.4,
+        max_tokens: 200,
       });
       
-      const tags = JSON.parse(response.choices[0]?.message?.content || '[]');
-      return Array.isArray(tags) ? tags : [];
+      const aiTags = JSON.parse(response.choices[0]?.message?.content || '[]');
+      if (Array.isArray(aiTags)) {
+        aiTags.forEach((tag: any) => {
+          if (tag.name && typeof tag.name === 'string') {
+            results.push({
+              name: tag.name.toLowerCase().replace(/\s+/g, '-'),
+              relevanceScore: tag.relevance || 0.7,
+              source: 'ai-generated'
+            });
+          }
+        });
+      }
     } catch (error) {
-      console.error("Error generating tags:", error);
-      throw new Error("Failed to generate tags");
+      console.error("Error generating AI tags:", error);
+      // Continue without AI tags if there's an error
     }
+    
+    // Deduplicate and sort by relevance
+    const uniqueTags = new Map<string, typeof results[0]>();
+    results.forEach(tag => {
+      const existing = uniqueTags.get(tag.name);
+      if (!existing || existing.relevanceScore < tag.relevanceScore) {
+        uniqueTags.set(tag.name, tag);
+      }
+    });
+    
+    return Array.from(uniqueTags.values())
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, maxTags);
   }
 
   /**

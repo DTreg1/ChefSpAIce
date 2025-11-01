@@ -160,7 +160,7 @@ import {
   writingSuggestions,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and, or, desc, gte, lte, isNull } from "drizzle-orm";
+import { eq, sql, and, or, desc, gte, lte, isNull, ne } from "drizzle-orm";
 import {
   matchIngredientWithInventory,
   type IngredientMatch,
@@ -899,6 +899,49 @@ export interface IStorage {
    * @param assignment - Tag assignment data
    */
   assignContentTag(assignment: InsertContentTag): Promise<ContentTag>;
+  
+  /**
+   * Create or get tag by name
+   * @param name - Tag name
+   */
+  createOrGetTag(name: string): Promise<Tag>;
+  
+  /**
+   * Get all tags
+   * @param userId - Optional user filter
+   */
+  getAllTags(userId?: string): Promise<Tag[]>;
+  
+  /**
+   * Get related tags
+   * @param tagId - Tag ID
+   * @param limit - Max results
+   */
+  getRelatedTags(tagId: string, limit?: number): Promise<Tag[]>;
+  
+  /**
+   * Remove tag from content
+   * @param contentId - Content ID
+   * @param tagId - Tag ID
+   * @param userId - User ID
+   */
+  removeContentTag(contentId: string, tagId: string, userId: string): Promise<void>;
+  
+  /**
+   * Update tag relevance score
+   * @param contentId - Content ID
+   * @param tagId - Tag ID
+   * @param userId - User ID
+   * @param relevanceScore - New relevance score
+   */
+  updateTagRelevanceScore(contentId: string, tagId: string, userId: string, relevanceScore: number): Promise<void>;
+  
+  /**
+   * Search tags by query
+   * @param query - Search query
+   * @param limit - Max results
+   */
+  searchTags(query: string, limit?: number): Promise<Tag[]>;
 
   /**
    * Check for duplicate content
@@ -5357,6 +5400,144 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error assigning content tag:", error);
       throw new Error("Failed to assign content tag");
+    }
+  }
+  
+  async createOrGetTag(name: string): Promise<Tag> {
+    return this.getOrCreateTag(name);
+  }
+  
+  async getAllTags(userId?: string): Promise<Tag[]> {
+    try {
+      if (userId) {
+        // Get tags used by this user
+        const results = await db
+          .selectDistinct({ tag: tags })
+          .from(tags)
+          .innerJoin(contentTags, eq(tags.id, contentTags.tagId))
+          .where(eq(contentTags.userId, userId))
+          .orderBy(desc(tags.usageCount));
+        
+        return results.map(r => r.tag);
+      } else {
+        // Get all tags
+        return await db
+          .select()
+          .from(tags)
+          .orderBy(desc(tags.usageCount));
+      }
+    } catch (error) {
+      console.error("Error getting all tags:", error);
+      throw new Error("Failed to get all tags");
+    }
+  }
+  
+  async getRelatedTags(tagId: string, limit: number = 5): Promise<Tag[]> {
+    try {
+      // Find content with this tag
+      const contentWithTag = await db
+        .select({ contentId: contentTags.contentId, contentType: contentTags.contentType })
+        .from(contentTags)
+        .where(eq(contentTags.tagId, tagId))
+        .limit(10);
+      
+      if (contentWithTag.length === 0) {
+        return [];
+      }
+      
+      // Find other tags on the same content
+      const relatedTagIds = await db
+        .selectDistinct({ tagId: contentTags.tagId })
+        .from(contentTags)
+        .where(
+          and(
+            or(
+              ...contentWithTag.map(c => 
+                and(
+                  eq(contentTags.contentId, c.contentId),
+                  eq(contentTags.contentType, c.contentType)
+                )
+              )
+            ),
+            ne(contentTags.tagId, tagId)
+          )
+        )
+        .limit(limit * 2);
+      
+      if (relatedTagIds.length === 0) {
+        return [];
+      }
+      
+      // Get tag details
+      const relatedTags = await db
+        .select()
+        .from(tags)
+        .where(
+          or(...relatedTagIds.map(r => eq(tags.id, r.tagId)))
+        )
+        .orderBy(desc(tags.usageCount))
+        .limit(limit);
+      
+      return relatedTags;
+    } catch (error) {
+      console.error("Error getting related tags:", error);
+      throw new Error("Failed to get related tags");
+    }
+  }
+  
+  async removeContentTag(contentId: string, tagId: string, userId: string): Promise<void> {
+    try {
+      await db
+        .delete(contentTags)
+        .where(
+          and(
+            eq(contentTags.contentId, contentId),
+            eq(contentTags.tagId, tagId),
+            eq(contentTags.userId, userId)
+          )
+        );
+      
+      // Decrement usage count
+      await db
+        .update(tags)
+        .set({ usageCount: sql`GREATEST(0, ${tags.usageCount} - 1)` })
+        .where(eq(tags.id, tagId));
+    } catch (error) {
+      console.error("Error removing content tag:", error);
+      throw new Error("Failed to remove content tag");
+    }
+  }
+  
+  async updateTagRelevanceScore(contentId: string, tagId: string, userId: string, relevanceScore: number): Promise<void> {
+    try {
+      await db
+        .update(contentTags)
+        .set({ relevanceScore })
+        .where(
+          and(
+            eq(contentTags.contentId, contentId),
+            eq(contentTags.tagId, tagId),
+            eq(contentTags.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error("Error updating tag relevance score:", error);
+      throw new Error("Failed to update tag relevance score");
+    }
+  }
+  
+  async searchTags(query: string, limit: number = 10): Promise<Tag[]> {
+    try {
+      const searchQuery = `%${query.toLowerCase()}%`;
+      return await db
+        .select()
+        .from(tags)
+        .where(sql`LOWER(${tags.name}) LIKE ${searchQuery}`)
+        .orderBy(desc(tags.usageCount))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error searching tags:", error);
+      throw new Error("Failed to search tags");
     }
   }
 
