@@ -7,6 +7,17 @@ declare module 'express-session' {
     returnTo?: string;
     linkingProvider?: string;
     linkingUserId?: string;
+    passport?: {
+      user?: {
+        id: string;
+        email?: string;
+        firstName?: string;
+        lastName?: string;
+        profileImageUrl?: string;
+        provider?: string;
+        providerId?: string;
+      };
+    };
   }
 }
 
