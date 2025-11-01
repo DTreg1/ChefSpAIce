@@ -199,8 +199,9 @@ export function dateRangeMiddleware(options: DateRangeOptions = {}) {
     try {
       (req as any).dateRange = parseDateRange(req, options);
       next();
-    } catch (error: Error | unknown) {
-      next(new Error(`Date range error: ${error.message}`));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      next(new Error(`Date range error: ${errorMessage}`));
     }
   };
 }
