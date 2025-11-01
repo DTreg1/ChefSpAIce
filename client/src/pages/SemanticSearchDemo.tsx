@@ -58,23 +58,21 @@ export default function SemanticSearchDemo() {
   // Generate embeddings for demo content
   const generateEmbeddingsMutation = useMutation({
     mutationFn: async (content: typeof DEMO_CONTENT[0]) => {
-      return apiRequest("/api/ml/embeddings/generate", {
-        method: "POST",
-        body: JSON.stringify({
-          contentId: content.id,
-          contentType: content.type,
-          content: {
-            name: content.title,
-            title: content.title,
-            content: content.content,
-            text: content.content,
-          },
-          metadata: {
-            title: content.title,
-            isDemo: true,
-          }
-        }),
+      const response = await apiRequest("POST", "/api/ml/embeddings/generate", {
+        contentId: content.id,
+        contentType: content.type,
+        content: {
+          name: content.title,
+          title: content.title,
+          content: content.content,
+          text: content.content,
+        },
+        metadata: {
+          title: content.title,
+          isDemo: true,
+        }
       });
+      return response.json();
     },
     onSuccess: (_, content) => {
       console.log(`Generated embedding for: ${content.title}`);
@@ -92,15 +90,12 @@ export default function SemanticSearchDemo() {
   // Semantic search mutation
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      const response = await apiRequest("/api/ml/search/semantic", {
-        method: "POST",
-        body: JSON.stringify({
-          query,
-          contentType: "all",
-          limit: 10,
-        }),
+      const response = await apiRequest("POST", "/api/ml/search/semantic", {
+        query,
+        contentType: "all",
+        limit: 10,
       });
-      return response;
+      return response.json();
     },
     onSuccess: (data) => {
       if (data.results && Array.isArray(data.results)) {
@@ -142,10 +137,8 @@ export default function SemanticSearchDemo() {
       clickPosition: number;
       timeToClick: number;
     }) => {
-      return apiRequest("/api/ml/search/feedback", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/ml/search/feedback", data);
+      return response.json();
     },
     onSuccess: () => {
       console.log("Search feedback recorded");
