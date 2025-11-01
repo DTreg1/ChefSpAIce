@@ -32,11 +32,11 @@ export function AutoCategorization({
   // Categorization mutation
   const categorizeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('/api/ml/categorize', {
-        method: 'POST',
-        body: JSON.stringify({ contentId, contentType }),
+      const response = await apiRequest('POST', '/api/ml/categorize', {
+        contentId,
+        contentType
       });
-      return response;
+      return response.json();
     },
     onSuccess: (data) => {
       if (data.category && onCategoryUpdate) {
@@ -60,11 +60,11 @@ export function AutoCategorization({
   // Auto-tagging mutation
   const autoTagMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('/api/ml/tags/generate', {
-        method: 'POST',
-        body: JSON.stringify({ contentId, contentType }),
+      const response = await apiRequest('POST', '/api/ml/tags/generate', {
+        contentId,
+        contentType
       });
-      return response;
+      return response.json();
     },
     onSuccess: (data) => {
       if (data.tags && onTagsUpdate) {
@@ -89,11 +89,10 @@ export function AutoCategorization({
   const batchCategorizeMutation = useMutation({
     mutationFn: async () => {
       setIsProcessing(true);
-      const response = await apiRequest('/api/ml/categorize/batch', {
-        method: 'POST',
-      });
+      const response = await apiRequest('POST', '/api/ml/categorize/batch');
+      const data = await response.json();
       setIsProcessing(false);
-      return response;
+      return data;
     },
     onSuccess: (data) => {
       toast({
@@ -191,7 +190,10 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
   // Get uncategorized items stats
   const { data: stats } = useQuery({
     queryKey: ['/api/ml/stats/uncategorized'],
-    queryFn: () => apiRequest('/api/ml/stats/uncategorized', { method: 'GET' }),
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/ml/stats/uncategorized');
+      return response.json();
+    },
   });
 
   // Batch categorization mutation
@@ -206,12 +208,11 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
       }, 1000);
       
       try {
-        const response = await apiRequest('/api/ml/categorize/batch', {
-          method: 'POST',
-        });
+        const response = await apiRequest('POST', '/api/ml/categorize/batch');
+        const data = await response.json();
         clearInterval(progressInterval);
         setProgress(100);
-        return response;
+        return data;
       } catch (error) {
         clearInterval(progressInterval);
         throw error;
