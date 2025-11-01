@@ -61,6 +61,70 @@ function detectQueryType(sql: string): string {
   return 'SELECT';
 }
 
+/**
+ * Validate that a SQL query is safe to execute
+ * Enforces strict validation rules to prevent SQL injection and unauthorized access
+ */
+function validateSQLQuery(sql: string): { isValid: boolean; error?: string } {
+  if (!sql || typeof sql !== 'string') {
+    return { isValid: false, error: 'Invalid SQL query provided' };
+  }
+
+  const normalizedSQL = sql.trim();
+  const upperSQL = normalizedSQL.toUpperCase();
+  
+  // STRICT: Only allow SELECT statements for safety
+  if (!upperSQL.startsWith('SELECT')) {
+    return { isValid: false, error: 'Only SELECT queries are allowed' };
+  }
+  
+  // Check for dangerous keywords even in SELECT statements
+  const dangerousKeywords = [
+    'INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 
+    'TRUNCATE', 'EXEC', 'EXECUTE', 'GRANT', 'REVOKE', 'CALL',
+    'BEGIN', 'COMMIT', 'ROLLBACK', 'SAVEPOINT', 'LOCK', 'UNLOCK'
+  ];
+  
+  for (const keyword of dangerousKeywords) {
+    // Skip if it's part of a column name or string literal
+    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+    if (regex.test(upperSQL)) {
+      return { isValid: false, error: `Query contains forbidden keyword: ${keyword}` };
+    }
+  }
+  
+  // Check for SQL injection patterns
+  const injectionPatterns = [
+    /;\s*SELECT/i,  // Multiple statements
+    /;\s*$/,        // Semicolon at end (potential for multiple statements)
+    /--/,           // SQL comments
+    /\/\*/,         // Multi-line comments
+    /\bUNION\b.*\bSELECT\b/i,  // UNION attacks
+    /\bINTO\b\s+OUTFILE\b/i,   // File operations
+    /\bLOAD_FILE\b/i,           // File loading
+  ];
+  
+  for (const pattern of injectionPatterns) {
+    if (pattern.test(sql)) {
+      return { isValid: false, error: 'Query contains potential SQL injection pattern' };
+    }
+  }
+  
+  // Validate that query doesn't try to access system tables
+  const systemTables = [
+    'pg_', 'information_schema', 'pg_catalog',
+    'pg_user', 'pg_shadow', 'pg_group', 'pg_database'
+  ];
+  
+  for (const sysTable of systemTables) {
+    if (normalizedSQL.toLowerCase().includes(sysTable)) {
+      return { isValid: false, error: 'Access to system tables is not allowed' };
+    }
+  }
+  
+  return { isValid: true };
+}
+
 export interface NaturalQueryResult {
   sql: string;
   explanation: string[];
@@ -130,6 +194,12 @@ Remember to filter by userId = '${userId}' for user-specific data.`;
       throw new Error("No SQL query generated");
     }
 
+    // CRITICAL: Validate SQL query for security
+    const validation = validateSQLQuery(result.sql);
+    if (!validation.isValid) {
+      throw new Error(`Security validation failed: ${validation.error}`);
+    }
+
     // Extract tables if not provided
     if (!result.tablesAccessed || result.tablesAccessed.length === 0) {
       result.tablesAccessed = extractTableNames(result.sql);
@@ -153,25 +223,17 @@ Remember to filter by userId = '${userId}' for user-specific data.`;
 }
 
 /**
- * Execute a validated SQL query safely
+ * Execute a validated SQL query safely with proper security checks
  */
 export async function executeValidatedQuery(
   sql: string,
   userId: string,
   naturalQuery?: string
 ): Promise<{ results: any[]; executionTime: number; rowCount: number }> {
-  // Basic SQL injection prevention - only allow SELECT queries by default
-  const trimmedSql = sql.trim().toUpperCase();
-  if (!trimmedSql.startsWith('SELECT')) {
-    throw new Error("Only SELECT queries are allowed for safety");
-  }
-
-  // Additional safety checks
-  const dangerousKeywords = ['DROP', 'TRUNCATE', 'ALTER', 'GRANT', 'REVOKE', 'CREATE', 'EXEC', 'EXECUTE'];
-  for (const keyword of dangerousKeywords) {
-    if (trimmedSql.includes(keyword)) {
-      throw new Error(`Query contains forbidden keyword: ${keyword}`);
-    }
+  // CRITICAL: Validate SQL query for security using our strict validation function
+  const validation = validateSQLQuery(sql);
+  if (!validation.isValid) {
+    throw new Error(`Security validation failed: ${validation.error}`);
   }
 
   const startTime = Date.now();
