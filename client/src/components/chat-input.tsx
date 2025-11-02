@@ -481,6 +481,7 @@ export function ChatInput({
               </PopoverContent>
             </Popover>
           )}
+          </div>
         </div>
       </div>
       
