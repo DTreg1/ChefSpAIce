@@ -62,7 +62,7 @@ router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
     });
 
     // If high risk, create suspicious activity
-    if (analysisResult.fraudScore > 0.75 || analysisResult.action === 'block') {
+    if (analysisResult.fraudScore > 0.75 || analysisResult.shouldBlock) {
       await storage.createSuspiciousActivity({
         userId,
         activityType: 'transaction',
