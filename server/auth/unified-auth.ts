@@ -49,8 +49,8 @@ export async function setupUnifiedAuth(app: Express) {
     // Use custom OAuth for production
     await setupCustomOAuth(app);
     
-    // Register OAuth routes
-    app.use("/api", authRouter);
+    // Register OAuth routes at correct path
+    app.use("/api/auth", authRouter);
     
     // Add Replit Auth compatibility endpoints that redirect to OAuth
     app.get("/api/login", (req, res) => {
