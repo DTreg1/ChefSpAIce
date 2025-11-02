@@ -1,8 +1,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { createServer, type Server } from "http";
-// Comment out Replit Auth - replaced with OAuth
-// import { setupAuth } from "../replitAuth";
-import { setupOAuth } from "../auth/setup-oauth";
+// Unified authentication - supports both Replit Auth and OAuth
+import { setupUnifiedAuth } from "../auth/unified-auth";
 
 // Import all routers
 import authRouter from "./auth.router";
@@ -47,8 +46,8 @@ import { activityLoggingMiddleware } from "../middleware/activity-logging.middle
 
 export async function registerModularRoutes(app: any): Promise<Server> {
   // Setup authentication middleware first
-  // Using OAuth instead of Replit Auth
-  await setupOAuth(app);
+  // Using unified auth that supports both Replit Auth and OAuth
+  await setupUnifiedAuth(app);
   
   // Setup activity logging middleware after authentication
   // This ensures we have user context when logging activities
