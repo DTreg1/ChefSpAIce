@@ -89,7 +89,7 @@ export async function generateSummary(options: SummarizationOptions): Promise<Su
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-5-mini", // Using GPT-5 mini for efficient summarization
       messages,
       temperature: 0.3, // Lower temperature for more consistent summaries
       max_tokens: type === 'bullet' ? 300 : 200, // More tokens for bullet points
@@ -112,7 +112,7 @@ export async function generateSummary(options: SummarizationOptions): Promise<Su
       originalWordCount,
       keyPoints,
       metadata: {
-        model: "gpt-3.5-turbo",
+        model: "gpt-5-mini",
         temperature: 0.3,
         tokensUsed: completion.usage?.total_tokens,
         processingTime
@@ -130,7 +130,7 @@ export async function generateSummary(options: SummarizationOptions): Promise<Su
 async function extractKeyPointsFromContent(content: string): Promise<string[]> {
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-5-mini", // Using GPT-5 mini for efficient key point extraction
       messages: [
         {
           role: "system",
