@@ -4497,7 +4497,7 @@ export type ModerationAppeal = typeof moderationAppeals.$inferSelect;
 export const fraudScores = pgTable("fraud_scores", {
   id: varchar("id", { length: 50 })
     .primaryKey()
-    .$defaultFn(() => createId()),
+    .default(sql`gen_random_uuid()`),
   userId: varchar("user_id", { length: 50 })
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -4532,7 +4532,7 @@ export const fraudScores = pgTable("fraud_scores", {
 export const suspiciousActivities = pgTable("suspicious_activities", {
   id: varchar("id", { length: 50 })
     .primaryKey()
-    .$defaultFn(() => createId()),
+    .default(sql`gen_random_uuid()`),
   userId: varchar("user_id", { length: 50 })
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -4576,7 +4576,7 @@ export const suspiciousActivities = pgTable("suspicious_activities", {
 export const fraudReviews = pgTable("fraud_reviews", {
   id: varchar("id", { length: 50 })
     .primaryKey()
-    .$defaultFn(() => createId()),
+    .default(sql`gen_random_uuid()`),
   userId: varchar("user_id", { length: 50 })
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
