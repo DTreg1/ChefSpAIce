@@ -71,6 +71,7 @@ const ExcerptGenerator = lazy(() => import("@/pages/excerpt-generator"));
 const TranslationDemo = lazy(() => import("@/pages/TranslationDemo"));
 const AltTextManagement = lazy(() => import("@/pages/alt-text-management"));
 const ModerationDashboard = lazy(() => import("@/pages/moderation"));
+const ModerationTest = lazy(() => import("@/pages/moderation-test"));
 
 function AuthenticatedRouter() {
   return (
@@ -119,6 +120,7 @@ function AuthenticatedRouter() {
         <Route path="/translation-demo" component={TranslationDemo} />
         <Route path="/alt-text" component={AltTextManagement} />
         <Route path="/moderation" component={ModerationDashboard} />
+        <Route path="/moderation-test" component={ModerationTest} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

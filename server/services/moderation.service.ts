@@ -1,11 +1,11 @@
 /**
  * Content Moderation Service
  * 
- * AI-powered content moderation using TensorFlow.js Toxicity model and OpenAI Moderation API.
+ * AI-powered content moderation using OpenAI Moderation API.
  * Provides real-time content filtering, toxicity scoring, and policy violation detection.
  * 
  * Features:
- * - Dual-model approach: TensorFlow.js for client-side + OpenAI for server-side
+ * - OpenAI Moderation API for comprehensive content analysis
  * - Multi-category toxicity detection (profanity, threats, harassment, etc.)
  * - Severity scoring and confidence levels
  * - Content filtering and sanitization
