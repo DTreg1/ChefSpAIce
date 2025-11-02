@@ -10,7 +10,7 @@ import { z } from "zod";
 import { storage } from "../storage";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { ExpressRequest } from "../types/express-types";
+import { Request as ExpressRequest } from "express";
 import { sentimentService } from "../services/sentimentService";
 
 const router = Router();
@@ -273,6 +273,277 @@ router.get(
       console.error("Failed to get sentiment analysis:", error);
       res.status(500).json({
         error: "Failed to retrieve sentiment analysis",
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/sentiment/dashboard
+ * Get main metrics dashboard data
+ */
+router.get(
+  "/dashboard",
+  isAuthenticated,
+  asyncHandler(async (req: ExpressRequest, res) => {
+    const userId = req.user?.claims?.sub;
+    if (!userId && !req.user?.isAdmin) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { period, periodType } = req.query;
+
+    try {
+      // Get latest metrics or for specific period
+      let metrics;
+      if (period && periodType) {
+        const [result] = await storage.getSentimentMetrics(
+          period as string,
+          periodType as "day" | "week" | "month"
+        );
+        metrics = result;
+      } else {
+        metrics = await storage.getLatestSentimentMetrics();
+      }
+
+      if (!metrics) {
+        return res.status(404).json({
+          error: "No sentiment metrics found",
+        });
+      }
+
+      // Get active alerts
+      const alerts = await storage.getSentimentAlerts("active", 5);
+
+      // Get segment breakdown if available
+      const segments = period
+        ? await storage.getSentimentSegments(period as string)
+        : [];
+
+      res.json({
+        success: true,
+        metrics,
+        alerts,
+        segments,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Failed to get sentiment dashboard:", error);
+      res.status(500).json({
+        error: "Failed to retrieve dashboard data",
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/sentiment/alerts/active
+ * Get active sentiment alerts
+ */
+router.get(
+  "/alerts/active",
+  isAuthenticated,
+  asyncHandler(async (req: ExpressRequest, res) => {
+    const userId = req.user?.claims?.sub;
+    if (!userId && !req.user?.isAdmin) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    try {
+      const alerts = await storage.getSentimentAlerts("active", limit);
+
+      res.json({
+        success: true,
+        alerts,
+        count: alerts.length,
+      });
+    } catch (error) {
+      console.error("Failed to get active alerts:", error);
+      res.status(500).json({
+        error: "Failed to retrieve active alerts",
+      });
+    }
+  })
+);
+
+/**
+ * POST /api/sentiment/alerts/config
+ * Configure alert thresholds
+ */
+router.post(
+  "/alerts/config",
+  isAuthenticated,
+  asyncHandler(async (req: ExpressRequest, res) => {
+    const userId = req.user?.claims?.sub;
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const { alertType, threshold, severity } = req.body;
+
+    if (!alertType || !threshold || !severity) {
+      return res.status(400).json({
+        error: "Missing required fields: alertType, threshold, severity",
+      });
+    }
+
+    try {
+      // Create new alert configuration
+      const alert = await storage.createSentimentAlert({
+        alertType,
+        threshold,
+        currentValue: threshold, // Will be updated when triggered
+        severity,
+        message: `Alert configured for ${alertType} with threshold ${threshold}`,
+        status: "active",
+        metadata: {
+          configuredBy: userId,
+          configuredAt: new Date().toISOString(),
+        },
+      });
+
+      res.json({
+        success: true,
+        alert,
+        message: "Alert threshold configured successfully",
+      });
+    } catch (error) {
+      console.error("Failed to configure alert:", error);
+      res.status(500).json({
+        error: "Failed to configure alert threshold",
+      });
+    }
+  })
+);
+
+/**
+ * PATCH /api/sentiment/alerts/:alertId
+ * Update alert status (acknowledge or resolve)
+ */
+router.patch(
+  "/alerts/:alertId",
+  isAuthenticated,
+  asyncHandler(async (req: ExpressRequest, res) => {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { alertId } = req.params;
+    const { status } = req.body;
+
+    if (!status || !["acknowledged", "resolved"].includes(status)) {
+      return res.status(400).json({
+        error: "Invalid status. Must be 'acknowledged' or 'resolved'",
+      });
+    }
+
+    try {
+      const update: any = { status };
+      
+      if (status === "acknowledged") {
+        update.acknowledgedBy = userId;
+        update.acknowledgedAt = new Date();
+      } else if (status === "resolved") {
+        update.resolvedAt = new Date();
+      }
+
+      const updatedAlert = await storage.updateSentimentAlert(alertId, update);
+
+      res.json({
+        success: true,
+        alert: updatedAlert,
+        message: `Alert ${status} successfully`,
+      });
+    } catch (error) {
+      console.error("Failed to update alert:", error);
+      res.status(500).json({
+        error: "Failed to update alert status",
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/sentiment/breakdown
+ * Get sentiment breakdown by category/feature
+ */
+router.get(
+  "/breakdown",
+  isAuthenticated,
+  asyncHandler(async (req: ExpressRequest, res) => {
+    const userId = req.user?.claims?.sub;
+    if (!userId && !req.user?.isAdmin) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { period, periodType } = req.query;
+
+    if (!period || !periodType) {
+      return res.status(400).json({
+        error: "Period and periodType are required",
+      });
+    }
+
+    try {
+      const breakdown = await storage.getSentimentBreakdown(
+        period as string,
+        periodType as "day" | "week" | "month"
+      );
+
+      res.json({
+        success: true,
+        breakdown,
+        period,
+        periodType,
+      });
+    } catch (error) {
+      console.error("Failed to get sentiment breakdown:", error);
+      res.status(500).json({
+        error: "Failed to retrieve sentiment breakdown",
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/sentiment/report
+ * Generate sentiment report with insights
+ */
+router.get(
+  "/report",
+  isAuthenticated,
+  asyncHandler(async (req: ExpressRequest, res) => {
+    const userId = req.user?.claims?.sub;
+    if (!userId && !req.user?.isAdmin) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { period, periodType } = req.query;
+
+    if (!period || !periodType) {
+      return res.status(400).json({
+        error: "Period and periodType are required",
+      });
+    }
+
+    try {
+      const report = await storage.generateSentimentReport(
+        period as string,
+        periodType as "day" | "week" | "month"
+      );
+
+      res.json({
+        success: true,
+        report,
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Failed to generate sentiment report:", error);
+      res.status(500).json({
+        error: "Failed to generate sentiment report",
       });
     }
   })
