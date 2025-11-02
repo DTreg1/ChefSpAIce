@@ -65,6 +65,7 @@ const RecommendationsDemo = lazy(() => import("@/pages/recommendations-demo"));
 const RecommendationsPublicDemo = lazy(() => import("@/pages/recommendations-public-demo"));
 const QueryBuilder = lazy(() => import("@/pages/QueryBuilder"));
 const Drafts = lazy(() => import("@/pages/Drafts"));
+const WritingAssistant = lazy(() => import("@/pages/writing-assistant"));
 
 function AuthenticatedRouter() {
   return (
@@ -107,6 +108,7 @@ function AuthenticatedRouter() {
         <Route path="/recommendations-demo" component={RecommendationsDemo} />
         <Route path="/query-builder" component={QueryBuilder} />
         <Route path="/drafts" component={Drafts} />
+        <Route path="/writing-assistant" component={WritingAssistant} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

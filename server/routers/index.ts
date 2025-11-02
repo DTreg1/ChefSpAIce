@@ -25,7 +25,7 @@ import mlRouter from "./mlRouter";
 import aiAssistantRouter from "./ai-assistant.router";
 import voiceCommandsRouter from "./voice-commands.router";
 import emailDraftingRouter from "./email-drafting.router";
-import writingAssistantRouter from "./writing-assistant.router";
+import writingAssistantRouter from "./writing.router";
 import summarizationRouter from "./summarization.router";
 import duplicatesRouter from "./duplicates.router";
 import recommendationsRouter from "./recommendations.router";
