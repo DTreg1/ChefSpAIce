@@ -4641,3 +4641,233 @@ export type SuspiciousActivity = typeof suspiciousActivities.$inferSelect;
 
 export type InsertFraudReview = z.infer<typeof insertFraudReviewSchema>;
 export type FraudReview = typeof fraudReviews.$inferSelect;
+
+// ============================================================================
+// Sentiment Analysis Tables
+// ============================================================================
+
+/**
+ * Sentiment Analysis Table
+ * 
+ * Stores sentiment analysis results for user-generated content using AI.
+ * Combines TensorFlow.js for basic sentiment and OpenAI for nuanced emotion detection.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - contentId: Unique identifier for the analyzed content
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - contentType: Type of content analyzed (review, comment, feedback, etc.)
+ * - content: The actual text analyzed
+ * - sentiment: Overall sentiment classification
+ *   - 'positive': Positive emotional tone
+ *   - 'negative': Negative emotional tone  
+ *   - 'neutral': Neither positive nor negative
+ *   - 'mixed': Contains both positive and negative elements
+ * - confidence: Confidence score for sentiment (0.0 to 1.0)
+ * - sentimentScores: Detailed sentiment probability scores
+ *   - positive: Probability of positive sentiment (0-1)
+ *   - negative: Probability of negative sentiment (0-1)
+ *   - neutral: Probability of neutral sentiment (0-1)
+ * - emotions: JSONB with detected emotions and intensities
+ *   - happy: Intensity score (0-1)
+ *   - sad: Intensity score (0-1)
+ *   - angry: Intensity score (0-1)
+ *   - fearful: Intensity score (0-1)
+ *   - surprised: Intensity score (0-1)
+ *   - disgusted: Intensity score (0-1)
+ *   - excited: Intensity score (0-1)
+ *   - frustrated: Intensity score (0-1)
+ *   - satisfied: Intensity score (0-1)
+ *   - disappointed: Intensity score (0-1)
+ * - topics: Array of identified topics/themes in the content
+ * - keywords: Array of significant keywords extracted
+ * - aspectSentiments: JSONB with aspect-based sentiment analysis
+ *   - e.g., {delivery: "negative", quality: "positive", price: "neutral"}
+ * - modelVersion: Version of the analysis model used
+ * - metadata: Additional analysis metadata
+ * - analyzedAt: Timestamp of when analysis was performed
+ * 
+ * Use Cases:
+ * - Customer feedback analysis
+ * - Review sentiment tracking
+ * - User mood monitoring
+ * - Content moderation support
+ * - Product/service improvement insights
+ * 
+ * Business Rules:
+ * - Each content piece analyzed once (unique contentId)
+ * - Reanalysis creates new record with same contentId
+ * - Confidence threshold of 0.6 for reliable classification
+ * - Mixed sentiment when positive and negative both > 0.3
+ * 
+ * Indexes:
+ * - sentiment_analysis_user_id_idx: User's sentiment history
+ * - sentiment_analysis_content_id_idx: Lookup by content
+ * - sentiment_analysis_sentiment_idx: Filter by sentiment
+ * - sentiment_analysis_analyzed_at_idx: Time-based queries
+ * 
+ * Relationships:
+ * - users → sentimentAnalysis: CASCADE
+ */
+export const sentimentAnalysis = pgTable("sentiment_analysis", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  contentType: text("content_type"), // 'review', 'comment', 'feedback', 'chat', etc.
+  content: text("content").notNull(),
+  
+  // Core sentiment
+  sentiment: text("sentiment").notNull().$type<"positive" | "negative" | "neutral" | "mixed">(),
+  confidence: real("confidence").notNull(),
+  
+  // Detailed scores
+  sentimentScores: jsonb("sentiment_scores").$type<{
+    positive: number;
+    negative: number;
+    neutral: number;
+  }>(),
+  
+  // Emotion detection
+  emotions: jsonb("emotions").$type<{
+    happy?: number;
+    sad?: number;
+    angry?: number;
+    fearful?: number;
+    surprised?: number;
+    disgusted?: number;
+    excited?: number;
+    frustrated?: number;
+    satisfied?: number;
+    disappointed?: number;
+  }>(),
+  
+  // Content analysis
+  topics: text("topics").array(),
+  keywords: text("keywords").array(),
+  
+  // Aspect-based sentiment (e.g., for product reviews)
+  aspectSentiments: jsonb("aspect_sentiments").$type<Record<string, string>>(),
+  
+  // Metadata
+  modelVersion: text("model_version").notNull().default("v1.0"),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  
+  analyzedAt: timestamp("analyzed_at").notNull().defaultNow(),
+}, (table) => [
+  index("sentiment_analysis_user_id_idx").on(table.userId),
+  index("sentiment_analysis_content_id_idx").on(table.contentId),
+  index("sentiment_analysis_sentiment_idx").on(table.sentiment),
+  index("sentiment_analysis_analyzed_at_idx").on(table.analyzedAt),
+]);
+
+/**
+ * Sentiment Trends Table
+ * 
+ * Aggregated sentiment statistics over time periods.
+ * Pre-computed trends for dashboard visualization.
+ * 
+ * Fields:
+ * - id: UUID primary key  
+ * - userId: Foreign key to users.id (NULL for global trends)
+ * - timePeriod: Period identifier (e.g., "2024-01", "2024-W01", "2024-Q1")
+ * - periodType: Type of period aggregation
+ *   - 'hour': Hourly aggregation
+ *   - 'day': Daily aggregation
+ *   - 'week': Weekly aggregation
+ *   - 'month': Monthly aggregation
+ *   - 'quarter': Quarterly aggregation
+ *   - 'year': Yearly aggregation
+ * - avgSentiment: Average sentiment score (-1 to 1)
+ * - totalAnalyzed: Total items analyzed in period
+ * - sentimentCounts: Count by sentiment type
+ *   - positive: Number of positive items
+ *   - negative: Number of negative items
+ *   - neutral: Number of neutral items
+ *   - mixed: Number of mixed sentiment items
+ * - dominantEmotions: Top emotions for the period
+ * - topTopics: Most discussed topics
+ * - contentTypes: Breakdown by content type
+ * - metadata: Additional trend data
+ * - createdAt: When trend was calculated
+ * 
+ * Aggregation Strategy:
+ * - Calculate hourly for last 24 hours
+ * - Calculate daily for last 30 days
+ * - Calculate weekly for last 12 weeks
+ * - Calculate monthly for all time
+ * - Run aggregation job every hour
+ * 
+ * Business Rules:
+ * - Global trends have userId = NULL
+ * - User trends specific to userId
+ * - Recalculate on new analysis
+ * - Retain for historical comparison
+ * 
+ * Indexes:
+ * - sentiment_trends_user_id_idx: User-specific trends
+ * - sentiment_trends_period_idx: Time period lookup
+ * - sentiment_trends_type_idx: Filter by period type
+ * 
+ * Relationships:
+ * - users → sentimentTrends: CASCADE (for user trends)
+ */
+export const sentimentTrends = pgTable("sentiment_trends", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }), // NULL for global
+  
+  timePeriod: text("time_period").notNull(), // "2024-01", "2024-W01", etc.
+  periodType: text("period_type").notNull().$type<"hour" | "day" | "week" | "month" | "quarter" | "year">(),
+  
+  // Aggregated metrics
+  avgSentiment: real("avg_sentiment").notNull(), // -1 (negative) to 1 (positive)
+  totalAnalyzed: integer("total_analyzed").notNull(),
+  
+  sentimentCounts: jsonb("sentiment_counts").notNull().$type<{
+    positive: number;
+    negative: number;
+    neutral: number;
+    mixed: number;
+  }>(),
+  
+  // Top insights
+  dominantEmotions: jsonb("dominant_emotions").$type<Array<{
+    emotion: string;
+    count: number;
+    avgIntensity: number;
+  }>>(),
+  
+  topTopics: text("top_topics").array(),
+  
+  // Breakdown by content type
+  contentTypes: jsonb("content_types").$type<Record<string, {
+    count: number;
+    avgSentiment: number;
+  }>>(),
+  
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("sentiment_trends_user_id_idx").on(table.userId),
+  index("sentiment_trends_period_idx").on(table.timePeriod),
+  index("sentiment_trends_type_idx").on(table.periodType),
+  uniqueIndex("sentiment_trends_unique_idx").on(table.userId, table.timePeriod, table.periodType),
+]);
+
+// Schema types for sentiment analysis
+export const insertSentimentAnalysisSchema = createInsertSchema(sentimentAnalysis).omit({
+  id: true,
+  analyzedAt: true,
+  modelVersion: true,
+});
+
+export const insertSentimentTrendSchema = createInsertSchema(sentimentTrends).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSentimentAnalysis = z.infer<typeof insertSentimentAnalysisSchema>;
+export type SentimentAnalysis = typeof sentimentAnalysis.$inferSelect;
+
+export type InsertSentimentTrend = z.infer<typeof insertSentimentTrendSchema>;
+export type SentimentTrend = typeof sentimentTrends.$inferSelect;

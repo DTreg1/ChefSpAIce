@@ -199,6 +199,13 @@ import {
   fraudScores,
   suspiciousActivities,
   fraudReviews,
+  // Sentiment Analysis types
+  type SentimentAnalysis,
+  type InsertSentimentAnalysis,
+  type SentimentTrend,
+  type InsertSentimentTrend,
+  sentimentAnalysis,
+  sentimentTrends,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -1726,6 +1733,92 @@ export interface IStorage {
     autoBlockedCount: number;
     topActivityTypes: { type: string; count: number }[];
     riskDistribution: { level: string; count: number }[];
+  }>;
+
+  // ============================================================================
+  // Sentiment Analysis Methods
+  // ============================================================================
+  
+  /**
+   * Create sentiment analysis entry
+   * @param analysis - Sentiment analysis data
+   */
+  createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis>;
+  
+  /**
+   * Get sentiment analysis by content ID
+   * @param contentId - Content ID
+   */
+  getSentimentAnalysis(contentId: string): Promise<SentimentAnalysis | undefined>;
+  
+  /**
+   * Get sentiment analyses for user
+   * @param userId - User ID
+   * @param limit - Number of analyses to return
+   */
+  getUserSentimentAnalyses(userId: string, limit?: number): Promise<SentimentAnalysis[]>;
+  
+  /**
+   * Update sentiment analysis
+   * @param id - Analysis ID
+   * @param data - Updated analysis data
+   */
+  updateSentimentAnalysis(id: string, data: Partial<InsertSentimentAnalysis>): Promise<void>;
+  
+  /**
+   * Get sentiment analyses by type
+   * @param contentType - Type of content
+   * @param limit - Number of analyses to return
+   */
+  getSentimentAnalysesByType(contentType: string, limit?: number): Promise<SentimentAnalysis[]>;
+  
+  /**
+   * Create sentiment trend
+   * @param trend - Sentiment trend data
+   */
+  createSentimentTrend(trend: InsertSentimentTrend): Promise<SentimentTrend>;
+  
+  /**
+   * Get sentiment trends for user
+   * @param userId - User ID (null for global trends)
+   * @param periodType - Type of period
+   * @param limit - Number of trends to return
+   */
+  getSentimentTrends(
+    userId: string | null,
+    periodType?: 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year',
+    limit?: number
+  ): Promise<SentimentTrend[]>;
+  
+  /**
+   * Get sentiment insights
+   * @param userId - User ID (optional)
+   * @param startDate - Start date for analysis
+   * @param endDate - End date for analysis
+   */
+  getSentimentInsights(
+    userId?: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    overallSentiment: number;
+    sentimentDistribution: {
+      positive: number;
+      negative: number;
+      neutral: number;
+      mixed: number;
+    };
+    topEmotions: Array<{
+      emotion: string;
+      count: number;
+      avgIntensity: number;
+    }>;
+    topTopics: string[];
+    trendsOverTime: Array<{
+      period: string;
+      avgSentiment: number;
+      count: number;
+    }>;
   }>;
 }
 
@@ -8273,6 +8366,265 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting query log:", error);
       throw new Error("Failed to get query log");
+    }
+  }
+
+  // ============================================================================
+  // Sentiment Analysis Implementations
+  // ============================================================================
+  
+  async createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis> {
+    try {
+      const [result] = await db
+        .insert(sentimentAnalysis)
+        .values(analysis)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating sentiment analysis:", error);
+      throw new Error("Failed to create sentiment analysis");
+    }
+  }
+  
+  async getSentimentAnalysis(contentId: string): Promise<SentimentAnalysis | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(sentimentAnalysis)
+        .where(eq(sentimentAnalysis.contentId, contentId))
+        .orderBy(desc(sentimentAnalysis.analyzedAt))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting sentiment analysis:", error);
+      throw new Error("Failed to get sentiment analysis");
+    }
+  }
+  
+  async getUserSentimentAnalyses(userId: string, limit: number = 50): Promise<SentimentAnalysis[]> {
+    try {
+      const analyses = await db
+        .select()
+        .from(sentimentAnalysis)
+        .where(eq(sentimentAnalysis.userId, userId))
+        .orderBy(desc(sentimentAnalysis.analyzedAt))
+        .limit(limit);
+      return analyses;
+    } catch (error) {
+      console.error("Error getting user sentiment analyses:", error);
+      throw new Error("Failed to get user sentiment analyses");
+    }
+  }
+  
+  async updateSentimentAnalysis(id: string, data: Partial<InsertSentimentAnalysis>): Promise<void> {
+    try {
+      await db
+        .update(sentimentAnalysis)
+        .set(data)
+        .where(eq(sentimentAnalysis.id, id));
+    } catch (error) {
+      console.error("Error updating sentiment analysis:", error);
+      throw new Error("Failed to update sentiment analysis");
+    }
+  }
+  
+  async getSentimentAnalysesByType(contentType: string, limit: number = 50): Promise<SentimentAnalysis[]> {
+    try {
+      const analyses = await db
+        .select()
+        .from(sentimentAnalysis)
+        .where(eq(sentimentAnalysis.contentType, contentType))
+        .orderBy(desc(sentimentAnalysis.analyzedAt))
+        .limit(limit);
+      return analyses;
+    } catch (error) {
+      console.error("Error getting sentiment analyses by type:", error);
+      throw new Error("Failed to get sentiment analyses by type");
+    }
+  }
+  
+  async createSentimentTrend(trend: InsertSentimentTrend): Promise<SentimentTrend> {
+    try {
+      const [result] = await db
+        .insert(sentimentTrends)
+        .values(trend)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating sentiment trend:", error);
+      throw new Error("Failed to create sentiment trend");
+    }
+  }
+  
+  async getSentimentTrends(
+    userId: string | null,
+    periodType?: 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year',
+    limit: number = 30
+  ): Promise<SentimentTrend[]> {
+    try {
+      let query = db.select().from(sentimentTrends);
+      
+      // Filter by userId (null for global trends)
+      if (userId !== null) {
+        query = query.where(eq(sentimentTrends.userId, userId));
+      } else {
+        query = query.where(isNull(sentimentTrends.userId));
+      }
+      
+      // Filter by period type if specified
+      if (periodType) {
+        query = query.where(eq(sentimentTrends.periodType, periodType));
+      }
+      
+      const trends = await query
+        .orderBy(desc(sentimentTrends.timePeriod))
+        .limit(limit);
+      
+      return trends;
+    } catch (error) {
+      console.error("Error getting sentiment trends:", error);
+      throw new Error("Failed to get sentiment trends");
+    }
+  }
+  
+  async getSentimentInsights(
+    userId?: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    overallSentiment: number;
+    sentimentDistribution: {
+      positive: number;
+      negative: number;
+      neutral: number;
+      mixed: number;
+    };
+    topEmotions: Array<{
+      emotion: string;
+      count: number;
+      avgIntensity: number;
+    }>;
+    topTopics: string[];
+    trendsOverTime: Array<{
+      period: string;
+      avgSentiment: number;
+      count: number;
+    }>;
+  }> {
+    try {
+      // Build base query
+      let query = db.select().from(sentimentAnalysis);
+      
+      // Apply filters
+      const conditions = [];
+      if (userId) {
+        conditions.push(eq(sentimentAnalysis.userId, userId));
+      }
+      if (startDate) {
+        conditions.push(gte(sentimentAnalysis.analyzedAt, startDate));
+      }
+      if (endDate) {
+        conditions.push(lte(sentimentAnalysis.analyzedAt, endDate));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      const analyses = await query;
+      
+      // Calculate overall sentiment (-1 to 1 scale)
+      let sentimentSum = 0;
+      const sentimentCounts = {
+        positive: 0,
+        negative: 0,
+        neutral: 0,
+        mixed: 0
+      };
+      
+      // Track emotions
+      const emotionData: { [key: string]: { count: number; totalIntensity: number } } = {};
+      
+      // Track topics
+      const topicCounts: { [key: string]: number } = {};
+      
+      // Process each analysis
+      analyses.forEach((analysis: any) => {
+        // Count sentiments
+        sentimentCounts[analysis.sentiment as keyof typeof sentimentCounts]++;
+        
+        // Calculate sentiment score
+        if (analysis.sentiment === 'positive') sentimentSum += 1;
+        else if (analysis.sentiment === 'negative') sentimentSum -= 1;
+        else if (analysis.sentiment === 'mixed') sentimentSum += 0;
+        
+        // Process emotions
+        if (analysis.emotions) {
+          Object.entries(analysis.emotions).forEach(([emotion, intensity]) => {
+            if (typeof intensity === 'number' && intensity > 0) {
+              if (!emotionData[emotion]) {
+                emotionData[emotion] = { count: 0, totalIntensity: 0 };
+              }
+              emotionData[emotion].count++;
+              emotionData[emotion].totalIntensity += intensity;
+            }
+          });
+        }
+        
+        // Process topics
+        if (analysis.topics && Array.isArray(analysis.topics)) {
+          analysis.topics.forEach((topic: string) => {
+            topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+          });
+        }
+      });
+      
+      // Calculate overall sentiment
+      const overallSentiment = analyses.length > 0 ? sentimentSum / analyses.length : 0;
+      
+      // Calculate sentiment distribution percentages
+      const total = analyses.length || 1;
+      const sentimentDistribution = {
+        positive: (sentimentCounts.positive / total) * 100,
+        negative: (sentimentCounts.negative / total) * 100,
+        neutral: (sentimentCounts.neutral / total) * 100,
+        mixed: (sentimentCounts.mixed / total) * 100
+      };
+      
+      // Calculate top emotions
+      const topEmotions = Object.entries(emotionData)
+        .map(([emotion, data]) => ({
+          emotion,
+          count: data.count,
+          avgIntensity: data.totalIntensity / data.count
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+      
+      // Get top topics
+      const topTopics = Object.entries(topicCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([topic]) => topic);
+      
+      // Get trends over time (simplified - in production, would aggregate by period)
+      const recentTrends = await this.getSentimentTrends(userId || null, 'day', 7);
+      const trendsOverTime = recentTrends.map(trend => ({
+        period: trend.timePeriod,
+        avgSentiment: trend.avgSentiment,
+        count: trend.totalAnalyzed
+      }));
+      
+      return {
+        overallSentiment,
+        sentimentDistribution,
+        topEmotions,
+        topTopics,
+        trendsOverTime
+      };
+    } catch (error) {
+      console.error("Error getting sentiment insights:", error);
+      throw new Error("Failed to get sentiment insights");
     }
   }
 }
