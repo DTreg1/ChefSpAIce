@@ -21,6 +21,7 @@ import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, A
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { IntelligentNotificationSettings } from "@/components/IntelligentNotificationSettings";
 import ActivityTimeline from "@/components/ActivityTimeline";
 import ActivityPrivacyControls from "@/components/ActivityPrivacyControls";
 import type { User } from "@shared/schema";
@@ -776,8 +777,9 @@ export default function Settings() {
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6">
-              <div className="space-y-4 pt-4">
+              <div className="space-y-6 pt-4">
                 <NotificationSettings />
+                <IntelligentNotificationSettings />
               </div>
             </AccordionContent>
           </AccordionItem>

@@ -14,6 +14,52 @@ import { insertNotificationPreferencesSchema } from '@shared/schema';
 
 const router = Router();
 
+// ==================== Test Endpoint (Development Only) ====================
+
+/**
+ * GET /api/notifications/test
+ * Test endpoint to verify intelligent notification service is working
+ */
+router.get('/test', async (_req: Request, res: Response) => {
+  try {
+    // Test that the service is initialized
+    const testNotification = {
+      userId: 'test-user',
+      type: 'expiringFood' as const,
+      title: 'Test Notification',
+      content: 'This is a test of the intelligent notification system',
+      data: { foodItemId: 'test-item' },
+    };
+    
+    // Score the test notification
+    const score = await intelligentNotificationService.scoreNotificationRelevance(
+      testNotification.userId,
+      testNotification
+    );
+    
+    res.json({
+      status: 'healthy',
+      message: 'Intelligent notification service is running',
+      test: {
+        notification: testNotification,
+        relevanceScore: score,
+        scheduler: {
+          queueProcessing: 'Every 5 minutes',
+          modelTraining: 'Every 6 hours', 
+          cleanup: 'Daily at 3am',
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error in test endpoint:', error);
+    res.status(500).json({ 
+      status: 'error',
+      error: 'Service test failed',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 // ==================== Preferences Management ====================
 
 /**
