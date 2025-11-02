@@ -27,6 +27,7 @@ import voiceCommandsRouter from "./voice-commands.router";
 import emailDraftingRouter from "./email-drafting.router";
 import writingAssistantRouter from "./writing.router";
 import summarizationRouter from "./summarization.router";
+import { createExcerptRouter } from "./excerpt.router";
 import duplicatesRouter from "./duplicates.router";
 import recommendationsRouter from "./recommendations.router";
 import naturalQueryRouter from "./natural-query.router";
@@ -70,6 +71,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/drafts", emailDraftingRouter);  // Email/Message Drafting endpoints
   app.use("/api/writing", writingAssistantRouter); // Writing Assistant endpoints
   app.use("/api", summarizationRouter);         // Summarization endpoints
+  app.use("/api/excerpts", createExcerptRouter(storage)); // Excerpt generation endpoints
   app.use("/api/duplicates", duplicatesRouter);  // Duplicate detection endpoints
   app.use("/api", recommendationsRouter);       // Content recommendations endpoints
   app.use("/api/query", naturalQueryRouter);    // Natural language query endpoints
