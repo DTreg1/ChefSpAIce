@@ -4485,3 +4485,159 @@ export const insertModerationAppealSchema = createInsertSchema(moderationAppeals
 
 export type InsertModerationAppeal = z.infer<typeof insertModerationAppealSchema>;
 export type ModerationAppeal = typeof moderationAppeals.$inferSelect;
+
+// ============================================================================
+// Fraud Detection Tables
+// ============================================================================
+
+/**
+ * Fraud scores table
+ * Stores real-time fraud risk scores for users based on behavior analysis
+ */
+export const fraudScores = pgTable("fraud_scores", {
+  id: varchar("id", { length: 50 })
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  userId: varchar("user_id", { length: 50 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  
+  // Risk score (0.0 = safe, 1.0 = definite fraud)
+  score: real("score").notNull(),
+  
+  // Detailed scoring factors
+  factors: jsonb("factors").notNull().$type<{
+    behaviorScore: number;      // Based on user behavior patterns
+    accountAgeScore: number;     // New accounts are higher risk
+    transactionVelocityScore: number; // Rapid transactions are suspicious
+    contentPatternScore: number; // Spam or bot-like content
+    networkScore: number;        // IP/device reputation
+    deviceScore: number;         // Device fingerprint analysis
+    geoScore: number;           // Geographic anomalies
+    details: { [key: string]: any };
+  }>(),
+  
+  modelVersion: varchar("model_version", { length: 20 }).notNull().default("v1.0"),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow()
+}, (table) => [
+  index("fraud_scores_user_id_idx").on(table.userId),
+  index("fraud_scores_timestamp_idx").on(table.timestamp),
+  index("fraud_scores_score_idx").on(table.score)
+]);
+
+/**
+ * Suspicious activities table
+ * Logs detected suspicious activities and patterns
+ */
+export const suspiciousActivities = pgTable("suspicious_activities", {
+  id: varchar("id", { length: 50 })
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  userId: varchar("user_id", { length: 50 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  
+  // Type of suspicious activity
+  activityType: varchar("activity_type", { length: 50 }).notNull(), 
+  // Types: 'rapid_transactions', 'unusual_pattern', 'fake_profile', 'bot_behavior', 'account_takeover'
+  
+  // Detailed information about the activity
+  details: jsonb("details").notNull().$type<{
+    description: string;
+    evidence: string[];
+    relatedActivities?: string[];
+    ipAddress?: string;
+    userAgent?: string;
+    location?: { lat: number; lng: number; country: string };
+    metadata?: { [key: string]: any };
+  }>(),
+  
+  riskLevel: varchar("risk_level", { length: 20 }).notNull().$type<"low" | "medium" | "high" | "critical">(),
+  status: varchar("status", { length: 20 })
+    .notNull()
+    .default("pending")
+    .$type<"pending" | "reviewing" | "confirmed" | "dismissed" | "escalated">(),
+  
+  detectedAt: timestamp("detected_at", { withTimezone: true }).notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  autoBlocked: boolean("auto_blocked").notNull().default(false)
+}, (table) => [
+  index("suspicious_activities_user_id_idx").on(table.userId),
+  index("suspicious_activities_type_idx").on(table.activityType),
+  index("suspicious_activities_risk_idx").on(table.riskLevel),
+  index("suspicious_activities_status_idx").on(table.status),
+  index("suspicious_activities_detected_idx").on(table.detectedAt)
+]);
+
+/**
+ * Fraud reviews table
+ * Manual review decisions for suspected fraud cases
+ */
+export const fraudReviews = pgTable("fraud_reviews", {
+  id: varchar("id", { length: 50 })
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  userId: varchar("user_id", { length: 50 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  reviewerId: varchar("reviewer_id", { length: 50 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  
+  // Link to specific suspicious activity
+  activityId: varchar("activity_id", { length: 50 })
+    .references(() => suspiciousActivities.id, { onDelete: "cascade" }),
+  
+  // Review decision
+  decision: varchar("decision", { length: 20 })
+    .notNull()
+    .$type<"cleared" | "flagged" | "banned" | "restricted" | "monitor">(),
+  
+  notes: text("notes"),
+  
+  // Restrictions applied (if any)
+  restrictions: jsonb("restrictions").$type<{
+    canPost?: boolean;
+    canMessage?: boolean;
+    canTransaction?: boolean;
+    dailyLimit?: number;
+    requiresVerification?: boolean;
+  }>(),
+  
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true })
+}, (table) => [
+  index("fraud_reviews_user_id_idx").on(table.userId),
+  index("fraud_reviews_reviewer_id_idx").on(table.reviewerId),
+  index("fraud_reviews_activity_id_idx").on(table.activityId),
+  index("fraud_reviews_decision_idx").on(table.decision),
+  index("fraud_reviews_reviewed_at_idx").on(table.reviewedAt)
+]);
+
+// Schema types for fraud detection
+export const insertFraudScoreSchema = createInsertSchema(fraudScores).omit({
+  id: true,
+  timestamp: true,
+  modelVersion: true
+});
+
+export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActivities).omit({
+  id: true,
+  detectedAt: true,
+  status: true,
+  autoBlocked: true
+});
+
+export const insertFraudReviewSchema = createInsertSchema(fraudReviews).omit({
+  id: true,
+  reviewedAt: true
+});
+
+export type InsertFraudScore = z.infer<typeof insertFraudScoreSchema>;
+export type FraudScore = typeof fraudScores.$inferSelect;
+
+export type InsertSuspiciousActivity = z.infer<typeof insertSuspiciousActivitySchema>;
+export type SuspiciousActivity = typeof suspiciousActivities.$inferSelect;
+
+export type InsertFraudReview = z.infer<typeof insertFraudReviewSchema>;
+export type FraudReview = typeof fraudReviews.$inferSelect;
