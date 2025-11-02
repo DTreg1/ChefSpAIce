@@ -120,9 +120,15 @@ import {
   type InsertWritingSuggestion,
   type Summary,
   type InsertSummary,
+  type Excerpt,
+  type InsertExcerpt,
+  type ExcerptPerformance,
+  type InsertExcerptPerformance,
   users,
   pushTokens,
   summaries,
+  excerpts,
+  excerptPerformance,
   draftTemplates,
   generatedDrafts,
   notificationHistory,
@@ -1252,6 +1258,78 @@ export interface IStorage {
    * @param type - Summary type (tldr, bullet, paragraph)
    */
   getSummariesByType(userId: string, type: 'tldr' | 'bullet' | 'paragraph'): Promise<Summary[]>;
+  
+  /**
+   * Get excerpt by content ID
+   * @param userId - User ID
+   * @param contentId - Content ID
+   * @param variant - Optional variant (A, B, C, etc.)
+   */
+  getExcerpt(userId: string, contentId: string, variant?: string): Promise<Excerpt | undefined>;
+  
+  /**
+   * Get all excerpts for a content ID
+   * @param userId - User ID
+   * @param contentId - Content ID
+   */
+  getExcerptsByContent(userId: string, contentId: string): Promise<Excerpt[]>;
+  
+  /**
+   * Create a new excerpt
+   * @param userId - User ID
+   * @param excerpt - Excerpt data
+   */
+  createExcerpt(userId: string, excerpt: Omit<InsertExcerpt, "userId">): Promise<Excerpt>;
+  
+  /**
+   * Update an excerpt
+   * @param userId - User ID
+   * @param excerptId - Excerpt ID
+   * @param updates - Partial excerpt updates
+   */
+  updateExcerpt(userId: string, excerptId: string, updates: Partial<Omit<InsertExcerpt, "userId" | "id">>): Promise<Excerpt>;
+  
+  /**
+   * Delete an excerpt
+   * @param userId - User ID
+   * @param excerptId - Excerpt ID
+   */
+  deleteExcerpt(userId: string, excerptId: string): Promise<void>;
+  
+  /**
+   * Mark excerpt as active
+   * @param userId - User ID
+   * @param contentId - Content ID
+   * @param excerptId - Excerpt ID to activate
+   */
+  setActiveExcerpt(userId: string, contentId: string, excerptId: string): Promise<void>;
+  
+  /**
+   * Record excerpt performance
+   * @param performance - Performance data
+   */
+  recordExcerptPerformance(performance: InsertExcerptPerformance): Promise<ExcerptPerformance>;
+  
+  /**
+   * Get excerpt performance metrics
+   * @param excerptId - Excerpt ID
+   * @param startDate - Optional start date
+   * @param endDate - Optional end date
+   */
+  getExcerptPerformance(excerptId: string, startDate?: Date, endDate?: Date): Promise<ExcerptPerformance[]>;
+  
+  /**
+   * Update excerpt CTR based on performance
+   * @param excerptId - Excerpt ID
+   */
+  updateExcerptCTR(excerptId: string): Promise<void>;
+  
+  /**
+   * Get best performing excerpt for content
+   * @param userId - User ID
+   * @param contentId - Content ID
+   */
+  getBestExcerpt(userId: string, contentId: string): Promise<Excerpt | undefined>;
 
   /**
    * Get user's query history
@@ -6217,6 +6295,219 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting summaries by type:", error);
       throw new Error("Failed to get summaries by type");
+    }
+  }
+
+  async getExcerpt(userId: string, contentId: string, variant?: string): Promise<Excerpt | undefined> {
+    try {
+      const conditions = [
+        eq(excerpts.userId, userId),
+        eq(excerpts.contentId, contentId)
+      ];
+      if (variant) {
+        conditions.push(eq(excerpts.variant, variant));
+      }
+      
+      const [result] = await db
+        .select()
+        .from(excerpts)
+        .where(and(...conditions))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting excerpt:", error);
+      throw new Error("Failed to get excerpt");
+    }
+  }
+
+  async getExcerptsByContent(userId: string, contentId: string): Promise<Excerpt[]> {
+    try {
+      return await db
+        .select()
+        .from(excerpts)
+        .where(and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)))
+        .orderBy(desc(excerpts.clickThroughRate), desc(excerpts.createdAt));
+    } catch (error) {
+      console.error("Error getting excerpts by content:", error);
+      throw new Error("Failed to get excerpts");
+    }
+  }
+
+  async createExcerpt(userId: string, excerpt: Omit<InsertExcerpt, "userId">): Promise<Excerpt> {
+    try {
+      const [result] = await db
+        .insert(excerpts)
+        .values({
+          ...excerpt,
+          userId,
+          generationParams: excerpt.generationParams as any,
+          socialMetadata: excerpt.socialMetadata as any,
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating excerpt:", error);
+      throw new Error("Failed to create excerpt");
+    }
+  }
+
+  async updateExcerpt(userId: string, excerptId: string, updates: Partial<Omit<InsertExcerpt, "userId" | "id">>): Promise<Excerpt> {
+    try {
+      const [result] = await db
+        .update(excerpts)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+          generationParams: updates.generationParams as any,
+          socialMetadata: updates.socialMetadata as any,
+        })
+        .where(and(eq(excerpts.userId, userId), eq(excerpts.id, excerptId)))
+        .returning();
+      
+      if (!result) {
+        throw new Error("Excerpt not found");
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error updating excerpt:", error);
+      throw new Error("Failed to update excerpt");
+    }
+  }
+
+  async deleteExcerpt(userId: string, excerptId: string): Promise<void> {
+    try {
+      await db
+        .delete(excerpts)
+        .where(and(eq(excerpts.userId, userId), eq(excerpts.id, excerptId)));
+    } catch (error) {
+      console.error("Error deleting excerpt:", error);
+      throw new Error("Failed to delete excerpt");
+    }
+  }
+
+  async setActiveExcerpt(userId: string, contentId: string, excerptId: string): Promise<void> {
+    try {
+      // First, deactivate all excerpts for this content
+      await db
+        .update(excerpts)
+        .set({ isActive: false })
+        .where(and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)));
+      
+      // Then activate the selected excerpt
+      await db
+        .update(excerpts)
+        .set({ isActive: true, updatedAt: new Date() })
+        .where(and(eq(excerpts.userId, userId), eq(excerpts.id, excerptId)));
+    } catch (error) {
+      console.error("Error setting active excerpt:", error);
+      throw new Error("Failed to set active excerpt");
+    }
+  }
+
+  async recordExcerptPerformance(performance: InsertExcerptPerformance): Promise<ExcerptPerformance> {
+    try {
+      // Calculate derived metrics
+      const ctr = performance.views && performance.views > 0 
+        ? performance.clicks! / performance.views : 0;
+      const shareRate = performance.views && performance.views > 0 
+        ? (performance.shares || 0) / performance.views : 0;
+      const engagementRate = performance.views && performance.views > 0 
+        ? (performance.engagements || 0) / performance.views : 0;
+
+      const [result] = await db
+        .insert(excerptPerformance)
+        .values({
+          ...performance,
+          ctr,
+          shareRate,
+          engagementRate,
+          platformMetrics: performance.platformMetrics as any,
+        })
+        .onConflictDoUpdate({
+          target: [excerptPerformance.excerptId, excerptPerformance.date],
+          set: {
+            views: sql`${excerptPerformance.views} + ${performance.views}`,
+            clicks: sql`${excerptPerformance.clicks} + ${performance.clicks}`,
+            shares: sql`${excerptPerformance.shares} + ${performance.shares || 0}`,
+            engagements: sql`${excerptPerformance.engagements} + ${performance.engagements || 0}`,
+            conversions: sql`${excerptPerformance.conversions} + ${performance.conversions || 0}`,
+            bounces: sql`${excerptPerformance.bounces} + ${performance.bounces || 0}`,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      // Update excerpt's overall CTR
+      await this.updateExcerptCTR(performance.excerptId);
+
+      return result;
+    } catch (error) {
+      console.error("Error recording excerpt performance:", error);
+      throw new Error("Failed to record performance");
+    }
+  }
+
+  async getExcerptPerformance(excerptId: string, startDate?: Date, endDate?: Date): Promise<ExcerptPerformance[]> {
+    try {
+      const conditions = [eq(excerptPerformance.excerptId, excerptId)];
+      
+      if (startDate) {
+        conditions.push(gte(excerptPerformance.date, startDate.toISOString().split('T')[0]));
+      }
+      if (endDate) {
+        conditions.push(lte(excerptPerformance.date, endDate.toISOString().split('T')[0]));
+      }
+
+      return await db
+        .select()
+        .from(excerptPerformance)
+        .where(and(...conditions))
+        .orderBy(desc(excerptPerformance.date));
+    } catch (error) {
+      console.error("Error getting excerpt performance:", error);
+      throw new Error("Failed to get performance metrics");
+    }
+  }
+
+  async updateExcerptCTR(excerptId: string): Promise<void> {
+    try {
+      // Calculate overall CTR from all performance records
+      const performance = await db
+        .select({
+          totalViews: sql<number>`SUM(${excerptPerformance.views})`,
+          totalClicks: sql<number>`SUM(${excerptPerformance.clicks})`,
+        })
+        .from(excerptPerformance)
+        .where(eq(excerptPerformance.excerptId, excerptId));
+
+      const totalViews = performance[0]?.totalViews || 0;
+      const totalClicks = performance[0]?.totalClicks || 0;
+      const ctr = totalViews > 0 ? totalClicks / totalViews : 0;
+
+      // Update excerpt with calculated CTR
+      await db
+        .update(excerpts)
+        .set({ clickThroughRate: ctr, updatedAt: new Date() })
+        .where(eq(excerpts.id, excerptId));
+    } catch (error) {
+      console.error("Error updating excerpt CTR:", error);
+      throw new Error("Failed to update CTR");
+    }
+  }
+
+  async getBestExcerpt(userId: string, contentId: string): Promise<Excerpt | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(excerpts)
+        .where(and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)))
+        .orderBy(desc(excerpts.clickThroughRate), desc(excerpts.isActive))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting best excerpt:", error);
+      throw new Error("Failed to get best performing excerpt");
     }
   }
 

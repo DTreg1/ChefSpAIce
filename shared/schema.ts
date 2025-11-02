@@ -3719,3 +3719,162 @@ export const insertSummarySchema = createInsertSchema(summaries).omit({
 
 export type InsertSummary = z.infer<typeof insertSummarySchema>;
 export type Summary = typeof summaries.$inferSelect;
+
+/**
+ * Excerpts Table
+ * 
+ * Stores compelling preview snippets for content, optimized for sharing
+ * and preview cards across different platforms.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - contentId: Unique identifier for the source content
+ * - originalContent: The full original text (for reference)
+ * - excerptText: The generated excerpt/snippet
+ * - excerptType: Type of excerpt (social, email, card, meta)
+ * - targetPlatform: Platform optimization (twitter, linkedin, facebook, generic)
+ * - characterCount: Length of the excerpt
+ * - clickThroughRate: Calculated CTR (clicks/views)
+ * - isActive: Whether this excerpt is currently in use
+ * - variant: A/B test variant identifier (A, B, C, etc.)
+ * 
+ * Metadata:
+ * - generationParams: JSON with generation parameters (tone, style, etc.)
+ * - socialMetadata: Open Graph and Twitter Card metadata
+ * - createdAt: When the excerpt was created
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Multiple excerpts can exist for same contentId (A/B testing)
+ * - CTR automatically calculated from performance data
+ * - Platform-specific character limits enforced
+ * - Best performing excerpt marked as isActive
+ * 
+ * Indexes:
+ * - excerpts_user_id_idx: User's excerpts lookup
+ * - excerpts_content_id_idx: Fast content-based retrieval
+ * - excerpts_active_idx: Quick active excerpt lookup
+ * 
+ * Relationships:
+ * - users → excerpts: CASCADE (delete excerpts when user deleted)
+ * - excerpts → excerpt_performance: CASCADE
+ */
+export const excerpts = pgTable("excerpts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  contentId: varchar("content_id").notNull(),
+  originalContent: text("original_content"),
+  excerptText: text("excerpt_text").notNull(),
+  excerptType: varchar("excerpt_type", { length: 20 }).notNull().default('social'), // 'social', 'email', 'card', 'meta', 'summary'
+  targetPlatform: varchar("target_platform", { length: 20 }).default('generic'), // 'twitter', 'linkedin', 'facebook', 'instagram', 'generic'
+  characterCount: integer("character_count").notNull(),
+  wordCount: integer("word_count"),
+  clickThroughRate: real("click_through_rate").default(0), // Calculated from performance data
+  isActive: boolean("is_active").notNull().default(false),
+  variant: varchar("variant", { length: 10 }).default('A'), // For A/B testing
+  generationParams: jsonb("generation_params").$type<{
+    tone?: string;
+    style?: string;
+    targetAudience?: string;
+    callToAction?: boolean;
+    hashtags?: boolean;
+    emojis?: boolean;
+    temperature?: number;
+    model?: string;
+  }>(),
+  socialMetadata: jsonb("social_metadata").$type<{
+    title?: string;
+    description?: string;
+    imageUrl?: string;
+    twitterCard?: 'summary' | 'summary_large_image';
+    ogType?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("excerpts_user_id_idx").on(table.userId),
+  index("excerpts_content_id_idx").on(table.contentId),
+  index("excerpts_active_idx").on(table.isActive, table.contentId),
+]);
+
+export const insertExcerptSchema = createInsertSchema(excerpts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertExcerpt = z.infer<typeof insertExcerptSchema>;
+export type Excerpt = typeof excerpts.$inferSelect;
+
+/**
+ * Excerpt Performance Table
+ * 
+ * Tracks performance metrics for each excerpt to optimize for engagement.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - excerptId: Foreign key to excerpts.id (CASCADE delete)
+ * - date: Date of the metrics (for daily tracking)
+ * - views: Number of times the excerpt was displayed
+ * - clicks: Number of clicks on the excerpt
+ * - shares: Number of times shared on social media
+ * - engagements: Total interactions (likes, comments, etc.)
+ * 
+ * Platform-Specific Metrics:
+ * - platformMetrics: JSON with platform-specific data
+ * 
+ * Calculated Fields:
+ * - ctr: Click-through rate (clicks/views)
+ * - shareRate: Share rate (shares/views)
+ * - engagementRate: Engagement rate (engagements/views)
+ * 
+ * Business Rules:
+ * - One record per excerpt per day
+ * - Metrics aggregated daily
+ * - Used to calculate overall excerpt CTR
+ * - Drives A/B testing decisions
+ * 
+ * Indexes:
+ * - excerpt_performance_excerpt_id_idx: Excerpt's performance lookup
+ * - excerpt_performance_date_idx: Date-based queries
+ * 
+ * Relationships:
+ * - excerpts → excerpt_performance: CASCADE
+ */
+export const excerptPerformance = pgTable("excerpt_performance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  excerptId: varchar("excerpt_id").notNull().references(() => excerpts.id, { onDelete: "cascade" }),
+  date: date("date").notNull().defaultNow(),
+  views: integer("views").notNull().default(0),
+  clicks: integer("clicks").notNull().default(0),
+  shares: integer("shares").notNull().default(0),
+  engagements: integer("engagements").default(0), // likes, comments, reactions
+  conversions: integer("conversions").default(0), // goal completions
+  bounces: integer("bounces").default(0), // immediate exits
+  timeOnPage: real("time_on_page"), // average time in seconds
+  platformMetrics: jsonb("platform_metrics").$type<{
+    twitter?: { impressions?: number; retweets?: number; likes?: number; replies?: number };
+    linkedin?: { impressions?: number; reactions?: number; comments?: number; reposts?: number };
+    facebook?: { reach?: number; reactions?: number; comments?: number; shares?: number };
+    email?: { opens?: number; clicks?: number; forwards?: number };
+  }>(),
+  ctr: real("ctr"), // Calculated: clicks/views
+  shareRate: real("share_rate"), // Calculated: shares/views
+  engagementRate: real("engagement_rate"), // Calculated: engagements/views
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("excerpt_performance_excerpt_id_idx").on(table.excerptId),
+  index("excerpt_performance_date_idx").on(table.date),
+  uniqueIndex("excerpt_performance_unique_idx").on(table.excerptId, table.date),
+]);
+
+export const insertExcerptPerformanceSchema = createInsertSchema(excerptPerformance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertExcerptPerformance = z.infer<typeof insertExcerptPerformanceSchema>;
+export type ExcerptPerformance = typeof excerptPerformance.$inferSelect;
