@@ -56,6 +56,14 @@ Key architectural decisions include:
         - **Duplicate Detection**: Identifies similar recipes and ingredients using semantic similarity analysis. Features merge and ignore capabilities.
         - **Related Content Discovery**: Recommends related recipes and ingredients based on semantic relationships and user behavior patterns.
         - **Natural Language Query**: Converts natural language questions to structured database queries. Examples: "What can I make with chicken?" or "Show me healthy dinner recipes".
+        - **Smart Form Auto-Completion** (November 2025):
+            - ML-powered predictive text for form inputs using TensorFlow.js and OpenAI
+            - Context-aware suggestions based on field type and surrounding data
+            - User-specific learning that adapts to individual patterns
+            - Privacy controls to enable/disable learning per form
+            - Features email completion, address prediction, and contextual suggestions
+            - Demo available at `/form-completion-demo`
+            - Database tracks form_completions, user_form_history, and completion_feedback
 
 ## Authentication System (Updated November 2025)
 The application features a **dual-mode authentication system** that automatically adapts to the environment:
