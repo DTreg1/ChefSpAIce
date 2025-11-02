@@ -55,6 +55,10 @@ import {
   type InsertFeedback,
   type FeedbackResponse,
   type FeedbackAnalytics,
+  type AnalyticsInsight,
+  type InsertAnalyticsInsight,
+  type InsightFeedback,
+  type InsertInsightFeedback,
   type Donation,
   type InsertDonation,
   type PushToken,
@@ -155,6 +159,8 @@ import {
   userFeedback,
   donations,
   webVitals,
+  analyticsInsights,
+  insightFeedback,
   onboardingInventory,
   cookingTerms,
   analyticsEvents,
@@ -2106,6 +2112,110 @@ export interface IStorage {
    * @param fieldName - Field name
    */
   getFormCompletion(fieldName: string): Promise<FormCompletion | null>;
+
+  // ==================== Analytics Insights Operations ====================
+  
+  /**
+   * Create a new analytics insight
+   * @param insight - Insight data
+   */
+  createAnalyticsInsight(insight: InsertAnalyticsInsight): Promise<AnalyticsInsight>;
+  
+  /**
+   * Get analytics insights for a user
+   * @param userId - User ID
+   * @param filters - Optional filters
+   */
+  getAnalyticsInsights(
+    userId: string,
+    filters?: {
+      metricName?: string;
+      period?: string;
+      category?: string;
+      importance?: number;
+      isRead?: boolean;
+      limit?: number;
+    }
+  ): Promise<AnalyticsInsight[]>;
+  
+  /**
+   * Get daily insight summary for a user
+   * @param userId - User ID
+   * @param date - Date for summary (defaults to today)
+   */
+  getDailyInsightSummary(userId: string, date?: string): Promise<AnalyticsInsight[]>;
+  
+  /**
+   * Mark an insight as read
+   * @param userId - User ID
+   * @param insightId - Insight ID
+   */
+  markInsightAsRead(userId: string, insightId: string): Promise<void>;
+  
+  /**
+   * Generate insights from data
+   * @param userId - User ID
+   * @param metricData - Metric data to analyze
+   */
+  generateInsightsFromData(
+    userId: string,
+    metricData: {
+      metricName: string;
+      dataPoints: Array<{ date: string; value: number }>;
+      period: string;
+    }
+  ): Promise<AnalyticsInsight>;
+  
+  /**
+   * Explain a specific metric
+   * @param userId - User ID
+   * @param metricName - Metric name
+   * @param context - Additional context
+   */
+  explainMetric(
+    userId: string,
+    metricName: string,
+    context?: Record<string, any>
+  ): Promise<string>;
+  
+  /**
+   * Create insight feedback
+   * @param feedback - Feedback data
+   */
+  createInsightFeedback(feedback: InsertInsightFeedback): Promise<InsightFeedback>;
+  
+  /**
+   * Get insight feedback
+   * @param insightId - Insight ID
+   */
+  getInsightFeedback(insightId: string): Promise<InsightFeedback[]>;
+  
+  /**
+   * Get user's feedback on insights
+   * @param userId - User ID
+   */
+  getUserInsightFeedback(userId: string): Promise<InsightFeedback[]>;
+  
+  /**
+   * Subscribe user to insights
+   * @param userId - User ID
+   * @param subscriptionType - Type of subscription
+   */
+  subscribeToInsights(
+    userId: string,
+    subscriptionType: string
+  ): Promise<void>;
+  
+  /**
+   * Get analytics statistics
+   * @param userId - User ID
+   */
+  getAnalyticsStats(userId: string): Promise<{
+    totalInsights: number;
+    unreadInsights: number;
+    averageImportance: number;
+    insightsByCategory: Record<string, number>;
+  }>;
 }
 
 /**
@@ -9983,6 +10093,225 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting form completion:", error);
       return null;
+    }
+  }
+
+  // ==================== Analytics Insights Implementation ====================
+  
+  async createAnalyticsInsight(insight: InsertAnalyticsInsight): Promise<AnalyticsInsight> {
+    try {
+      const [newInsight] = await db
+        .insert(analyticsInsights)
+        .values(insight)
+        .returning();
+      return newInsight;
+    } catch (error) {
+      console.error("Error creating analytics insight:", error);
+      throw error;
+    }
+  }
+  
+  async getAnalyticsInsights(
+    userId: string,
+    filters?: {
+      metricName?: string;
+      period?: string;
+      category?: string;
+      importance?: number;
+      isRead?: boolean;
+      limit?: number;
+    }
+  ): Promise<AnalyticsInsight[]> {
+    try {
+      let query = db
+        .select()
+        .from(analyticsInsights)
+        .where(eq(analyticsInsights.userId, userId))
+        .$dynamic();
+      
+      if (filters?.metricName) {
+        query = query.where(eq(analyticsInsights.metricName, filters.metricName));
+      }
+      if (filters?.period) {
+        query = query.where(eq(analyticsInsights.period, filters.period));
+      }
+      if (filters?.category) {
+        query = query.where(eq(analyticsInsights.category, filters.category));
+      }
+      if (filters?.importance !== undefined) {
+        query = query.where(eq(analyticsInsights.importance, filters.importance));
+      }
+      if (filters?.isRead !== undefined) {
+        query = query.where(eq(analyticsInsights.isRead, filters.isRead));
+      }
+      
+      query = query.orderBy(desc(analyticsInsights.createdAt));
+      
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting analytics insights:", error);
+      throw error;
+    }
+  }
+  
+  async getDailyInsightSummary(userId: string, date?: string): Promise<AnalyticsInsight[]> {
+    try {
+      const targetDate = date || new Date().toISOString().split('T')[0];
+      const startOfDay = new Date(targetDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(targetDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      return await db
+        .select()
+        .from(analyticsInsights)
+        .where(
+          and(
+            eq(analyticsInsights.userId, userId),
+            gte(analyticsInsights.createdAt, startOfDay),
+            lte(analyticsInsights.createdAt, endOfDay)
+          )
+        )
+        .orderBy(desc(analyticsInsights.importance));
+    } catch (error) {
+      console.error("Error getting daily insight summary:", error);
+      throw error;
+    }
+  }
+  
+  async markInsightAsRead(userId: string, insightId: string): Promise<void> {
+    try {
+      await db
+        .update(analyticsInsights)
+        .set({ isRead: true })
+        .where(
+          and(
+            eq(analyticsInsights.id, insightId),
+            eq(analyticsInsights.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error("Error marking insight as read:", error);
+      throw error;
+    }
+  }
+  
+  async generateInsightsFromData(
+    userId: string,
+    metricData: {
+      metricName: string;
+      dataPoints: Array<{ date: string; value: number }>;
+      period: string;
+    }
+  ): Promise<AnalyticsInsight> {
+    // This method will use OpenAI to generate insights
+    // For now, returning a placeholder implementation
+    // The actual implementation will be in the service layer
+    throw new Error("generateInsightsFromData should be implemented in the service layer");
+  }
+  
+  async explainMetric(
+    userId: string,
+    metricName: string,
+    context?: Record<string, any>
+  ): Promise<string> {
+    // This method will use OpenAI to explain metrics
+    // For now, returning a placeholder implementation
+    // The actual implementation will be in the service layer
+    throw new Error("explainMetric should be implemented in the service layer");
+  }
+  
+  async createInsightFeedback(feedback: InsertInsightFeedback): Promise<InsightFeedback> {
+    try {
+      const [newFeedback] = await db
+        .insert(insightFeedback)
+        .values(feedback)
+        .returning();
+      return newFeedback;
+    } catch (error) {
+      console.error("Error creating insight feedback:", error);
+      throw error;
+    }
+  }
+  
+  async getInsightFeedback(insightId: string): Promise<InsightFeedback[]> {
+    try {
+      return await db
+        .select()
+        .from(insightFeedback)
+        .where(eq(insightFeedback.insightId, insightId))
+        .orderBy(desc(insightFeedback.createdAt));
+    } catch (error) {
+      console.error("Error getting insight feedback:", error);
+      throw error;
+    }
+  }
+  
+  async getUserInsightFeedback(userId: string): Promise<InsightFeedback[]> {
+    try {
+      return await db
+        .select()
+        .from(insightFeedback)
+        .where(eq(insightFeedback.userId, userId))
+        .orderBy(desc(insightFeedback.createdAt));
+    } catch (error) {
+      console.error("Error getting user insight feedback:", error);
+      throw error;
+    }
+  }
+  
+  async subscribeToInsights(userId: string, subscriptionType: string): Promise<void> {
+    try {
+      // Update user preferences for insight subscriptions
+      await db
+        .update(users)
+        .set({
+          notifyRecipeSuggestions: subscriptionType === 'all' || subscriptionType === 'important',
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+    } catch (error) {
+      console.error("Error subscribing to insights:", error);
+      throw error;
+    }
+  }
+  
+  async getAnalyticsStats(userId: string): Promise<{
+    totalInsights: number;
+    unreadInsights: number;
+    averageImportance: number;
+    insightsByCategory: Record<string, number>;
+  }> {
+    try {
+      const insights = await db
+        .select()
+        .from(analyticsInsights)
+        .where(eq(analyticsInsights.userId, userId));
+      
+      const totalInsights = insights.length;
+      const unreadInsights = insights.filter(i => !i.isRead).length;
+      const averageImportance = insights.length > 0
+        ? insights.reduce((sum, i) => sum + i.importance, 0) / insights.length
+        : 0;
+      
+      const insightsByCategory: Record<string, number> = {};
+      insights.forEach(i => {
+        insightsByCategory[i.category] = (insightsByCategory[i.category] || 0) + 1;
+      });
+      
+      return {
+        totalInsights,
+        unreadInsights,
+        averageImportance,
+        insightsByCategory
+      };
+    } catch (error) {
+      console.error("Error getting analytics stats:", error);
+      throw error;
     }
   }
 }
