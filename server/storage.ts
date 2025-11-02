@@ -124,11 +124,17 @@ import {
   type InsertExcerpt,
   type ExcerptPerformance,
   type InsertExcerptPerformance,
+  type Translation,
+  type InsertTranslation,
+  type LanguagePreference,
+  type InsertLanguagePreference,
   users,
   pushTokens,
   summaries,
   excerpts,
   excerptPerformance,
+  translations,
+  languagePreferences,
   draftTemplates,
   generatedDrafts,
   notificationHistory,
@@ -1337,6 +1343,86 @@ export interface IStorage {
    * @param limit - Max results
    */
   getQueryHistory(userId: string, limit?: number): Promise<QueryLog[]>;
+
+  // ==================== Translation System ====================
+  
+  /**
+   * Translate content using AI
+   * @param contentId - Content identifier
+   * @param targetLanguage - Target language code (e.g., 'es', 'fr', 'de')
+   * @param originalText - Original text to translate
+   * @param contentType - Type of content (optional for context)
+   * @param context - Additional context for better translation
+   */
+  translateContent(
+    contentId: string,
+    targetLanguage: string,
+    originalText: string,
+    contentType?: string,
+    context?: string
+  ): Promise<Translation>;
+  
+  /**
+   * Get translations for content
+   * @param contentId - Content identifier
+   * @param languageCode - Optional language code filter
+   */
+  getTranslations(contentId: string, languageCode?: string): Promise<Translation[]>;
+  
+  /**
+   * Get translation by content and language
+   * @param contentId - Content identifier
+   * @param languageCode - Language code
+   */
+  getTranslation(contentId: string, languageCode: string): Promise<Translation | undefined>;
+  
+  /**
+   * Verify a translation
+   * @param translationId - Translation ID
+   * @param translatorId - User ID of verifier
+   */
+  verifyTranslation(translationId: string, translatorId: string): Promise<Translation>;
+  
+  /**
+   * Delete translation
+   * @param translationId - Translation ID
+   */
+  deleteTranslation(translationId: string): Promise<void>;
+  
+  /**
+   * Detect language of text
+   * @param text - Text to analyze
+   */
+  detectLanguage(text: string): Promise<string>;
+  
+  /**
+   * Get supported languages
+   */
+  getSupportedLanguages(): Promise<Array<{ code: string; name: string; nativeName: string }>>;
+  
+  // Language Preferences
+  
+  /**
+   * Get user language preferences
+   * @param userId - User ID
+   */
+  getLanguagePreferences(userId: string): Promise<LanguagePreference | undefined>;
+  
+  /**
+   * Create or update language preferences
+   * @param userId - User ID
+   * @param preferences - Language preferences
+   */
+  upsertLanguagePreferences(
+    userId: string,
+    preferences: Omit<InsertLanguagePreference, "userId">
+  ): Promise<LanguagePreference>;
+  
+  /**
+   * Get users with auto-translate enabled for a language
+   * @param languageCode - Language code
+   */
+  getUsersWithAutoTranslate(languageCode: string): Promise<string[]>;
 }
 
 /**
@@ -5795,6 +5881,227 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting query history:", error);
       throw new Error("Failed to get query history");
+    }
+  }
+
+  // ==================== Translation System Implementations ====================
+
+  async translateContent(
+    contentId: string,
+    targetLanguage: string,
+    originalText: string,
+    contentType?: string,
+    context?: string
+  ): Promise<Translation> {
+    // Note: This method is not used by the API route, which handles translation directly
+    // Keeping for interface compatibility but the router handles the actual translation
+    try {
+      const [translation] = await db
+        .insert(translations)
+        .values({
+          contentId,
+          languageCode: targetLanguage,
+          translatedText: originalText, // Placeholder - actual translation handled by router
+          originalText,
+          contentType,
+          isVerified: false,
+          translationMetadata: {
+            context,
+            sourceLanguage: 'en'
+          }
+        })
+        .onConflictDoUpdate({
+          target: [translations.contentId, translations.languageCode],
+          set: {
+            translatedText: sql`EXCLUDED.translated_text`,
+            originalText: sql`EXCLUDED.original_text`,
+            contentType: sql`EXCLUDED.content_type`,
+            translationMetadata: sql`EXCLUDED.translation_metadata`,
+            updatedAt: new Date()
+          }
+        })
+        .returning();
+      
+      return translation;
+    } catch (error) {
+      console.error("Error creating translation:", error);
+      throw new Error("Failed to create translation");
+    }
+  }
+
+  async getTranslations(contentId: string, languageCode?: string): Promise<Translation[]> {
+    try {
+      const query = db.select().from(translations).where(eq(translations.contentId, contentId));
+      
+      if (languageCode) {
+        return await query.where(and(
+          eq(translations.contentId, contentId),
+          eq(translations.languageCode, languageCode)
+        ));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting translations:", error);
+      throw new Error("Failed to get translations");
+    }
+  }
+
+  async getTranslation(contentId: string, languageCode: string): Promise<Translation | undefined> {
+    try {
+      const [translation] = await db
+        .select()
+        .from(translations)
+        .where(and(
+          eq(translations.contentId, contentId),
+          eq(translations.languageCode, languageCode)
+        ))
+        .limit(1);
+      
+      return translation;
+    } catch (error) {
+      console.error("Error getting translation:", error);
+      throw new Error("Failed to get translation");
+    }
+  }
+
+  async verifyTranslation(translationId: string, translatorId: string): Promise<Translation> {
+    try {
+      const [translation] = await db
+        .update(translations)
+        .set({
+          isVerified: true,
+          translatorId,
+          updatedAt: new Date()
+        })
+        .where(eq(translations.id, translationId))
+        .returning();
+      
+      return translation;
+    } catch (error) {
+      console.error("Error verifying translation:", error);
+      throw new Error("Failed to verify translation");
+    }
+  }
+
+  async deleteTranslation(translationId: string): Promise<void> {
+    try {
+      await db.delete(translations).where(eq(translations.id, translationId));
+    } catch (error) {
+      console.error("Error deleting translation:", error);
+      throw new Error("Failed to delete translation");
+    }
+  }
+
+  async detectLanguage(text: string): Promise<string> {
+    // Simple language detection based on common patterns
+    // In production, this would use an ML model or external service
+    const patterns = {
+      es: /\b(el|la|los|las|un|una|es|está|son|que|de|en|y|por|para)\b/gi,
+      fr: /\b(le|la|les|un|une|est|sont|que|de|et|pour|avec|dans)\b/gi,
+      de: /\b(der|die|das|ein|eine|ist|sind|und|von|zu|mit|für|auf)\b/gi,
+      it: /\b(il|lo|la|i|gli|le|un|uno|una|è|sono|che|di|e|per|con)\b/gi,
+      pt: /\b(o|a|os|as|um|uma|é|são|que|de|e|para|com|em|por)\b/gi,
+      ja: /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/,
+      ko: /[\uAC00-\uD7AF\u1100-\u11FF]/,
+      zh: /[\u4E00-\u9FFF\u3400-\u4DBF]/,
+      ar: /[\u0600-\u06FF\u0750-\u077F]/,
+      ru: /[\u0400-\u04FF]/
+    };
+
+    const scores: Record<string, number> = {};
+    
+    for (const [lang, pattern] of Object.entries(patterns)) {
+      const matches = text.match(pattern);
+      if (matches) {
+        scores[lang] = matches.length;
+      }
+    }
+
+    // Return the language with the highest score
+    const detectedLang = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+    return detectedLang ? detectedLang[0] : 'en';
+  }
+
+  async getSupportedLanguages(): Promise<Array<{ code: string; name: string; nativeName: string }>> {
+    return [
+      { code: 'en', name: 'English', nativeName: 'English' },
+      { code: 'es', name: 'Spanish', nativeName: 'Español' },
+      { code: 'fr', name: 'French', nativeName: 'Français' },
+      { code: 'de', name: 'German', nativeName: 'Deutsch' },
+      { code: 'it', name: 'Italian', nativeName: 'Italiano' },
+      { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
+      { code: 'ru', name: 'Russian', nativeName: 'Русский' },
+      { code: 'ja', name: 'Japanese', nativeName: '日本語' },
+      { code: 'ko', name: 'Korean', nativeName: '한국어' },
+      { code: 'zh', name: 'Chinese', nativeName: '中文' },
+      { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
+      { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
+      { code: 'nl', name: 'Dutch', nativeName: 'Nederlands' },
+      { code: 'sv', name: 'Swedish', nativeName: 'Svenska' },
+      { code: 'pl', name: 'Polish', nativeName: 'Polski' }
+    ];
+  }
+
+  async getLanguagePreferences(userId: string): Promise<LanguagePreference | undefined> {
+    try {
+      const [prefs] = await db
+        .select()
+        .from(languagePreferences)
+        .where(eq(languagePreferences.userId, userId))
+        .limit(1);
+      
+      return prefs;
+    } catch (error) {
+      console.error("Error getting language preferences:", error);
+      throw new Error("Failed to get language preferences");
+    }
+  }
+
+  async upsertLanguagePreferences(
+    userId: string,
+    preferences: Omit<InsertLanguagePreference, "userId">
+  ): Promise<LanguagePreference> {
+    try {
+      const [result] = await db
+        .insert(languagePreferences)
+        .values({
+          ...preferences,
+          userId
+        })
+        .onConflictDoUpdate({
+          target: languagePreferences.userId,
+          set: {
+            ...preferences,
+            updatedAt: new Date()
+          }
+        })
+        .returning();
+      
+      // Clear cache
+      this.invalidateCache(`lang-prefs:${userId}`);
+      
+      return result;
+    } catch (error) {
+      console.error("Error upserting language preferences:", error);
+      throw new Error("Failed to upsert language preferences");
+    }
+  }
+
+  async getUsersWithAutoTranslate(languageCode: string): Promise<string[]> {
+    try {
+      const users = await db
+        .select({ userId: languagePreferences.userId })
+        .from(languagePreferences)
+        .where(and(
+          eq(languagePreferences.autoTranslate, true),
+          sql`${languagePreferences.preferredLanguages} @> ARRAY[${languageCode}]::text[]`
+        ));
+      
+      return users.map(u => u.userId);
+    } catch (error) {
+      console.error("Error getting users with auto-translate:", error);
+      throw new Error("Failed to get users with auto-translate");
     }
   }
 

@@ -3878,3 +3878,126 @@ export const insertExcerptPerformanceSchema = createInsertSchema(excerptPerforma
 
 export type InsertExcerptPerformance = z.infer<typeof insertExcerptPerformanceSchema>;
 export type ExcerptPerformance = typeof excerptPerformance.$inferSelect;
+
+/**
+ * Translations Table
+ * 
+ * Stores translated content with context-aware translations using AI.
+ * Supports multiple languages and verification status.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - contentId: Identifier for the content being translated
+ * - languageCode: ISO 639-1 language code (e.g., 'es', 'fr', 'de')
+ * - translatedText: The translated content
+ * - isVerified: Whether translation has been reviewed/verified
+ * - translatorId: User ID of who verified the translation
+ * 
+ * Metadata:
+ * - originalText: Original text before translation (for reference)
+ * - contentType: Type of content (post, recipe, message, etc.)
+ * - translationMetadata: JSON with translation details
+ *   - model: AI model used for translation
+ *   - confidence: Translation confidence score
+ *   - context: Additional context provided for translation
+ *   - preservedFormatting: Formatting preservation details
+ * 
+ * Business Rules:
+ * - Each content+language combination should be unique
+ * - Verified translations preferred over unverified
+ * - Context-aware translations maintain meaning not just words
+ * - Formatting preserved in translation (bold, links, etc.)
+ * 
+ * Indexes:
+ * - translations_content_id_idx: Fast content lookup
+ * - translations_language_code_idx: Language filtering
+ * - translations_unique_idx: Unique content+language combinations
+ * 
+ * Relationships:
+ * - users → translations (translator): SET NULL on user delete
+ */
+export const translations = pgTable("translations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  languageCode: varchar("language_code", { length: 10 }).notNull(),
+  translatedText: text("translated_text").notNull(),
+  originalText: text("original_text"),
+  contentType: varchar("content_type", { length: 50 }), // 'post', 'recipe', 'message', etc.
+  isVerified: boolean("is_verified").notNull().default(false),
+  translatorId: varchar("translator_id").references(() => users.id, { onDelete: "set null" }),
+  translationMetadata: jsonb("translation_metadata").$type<{
+    model?: string;
+    confidence?: number;
+    context?: string;
+    preservedFormatting?: any;
+    sourceLanguage?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("translations_content_id_idx").on(table.contentId),
+  index("translations_language_code_idx").on(table.languageCode),
+  uniqueIndex("translations_unique_idx").on(table.contentId, table.languageCode),
+]);
+
+export const insertTranslationSchema = createInsertSchema(translations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
+export type Translation = typeof translations.$inferSelect;
+
+/**
+ * Language Preferences Table
+ * 
+ * User-specific language preferences and auto-translation settings.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - preferredLanguages: Array of ISO language codes in preference order
+ * - autoTranslate: Whether to automatically translate content
+ * 
+ * Settings:
+ * - nativeLanguage: User's primary language
+ * - showOriginalText: Display original text alongside translation
+ * - translationQuality: Preferred quality level (fast/balanced/high)
+ * - excludedContentTypes: Content types to exclude from auto-translation
+ * 
+ * Business Rules:
+ * - Each user has one language preference record
+ * - First language in preferredLanguages is primary
+ * - Auto-translate respects user's notification preferences
+ * - Quality setting affects translation speed vs accuracy
+ * 
+ * Indexes:
+ * - language_preferences_user_id_idx: Unique user lookup
+ * 
+ * Relationships:
+ * - users → languagePreferences: CASCADE delete
+ */
+export const languagePreferences = pgTable("language_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  preferredLanguages: text("preferred_languages").array().notNull().default(sql`ARRAY['en']::text[]`),
+  autoTranslate: boolean("auto_translate").notNull().default(true),
+  nativeLanguage: varchar("native_language", { length: 10 }).default('en'),
+  showOriginalText: boolean("show_original_text").notNull().default(false),
+  translationQuality: varchar("translation_quality", { length: 20 }).notNull().default('balanced'), // 'fast', 'balanced', 'high'
+  excludedContentTypes: text("excluded_content_types").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("language_preferences_user_id_idx").on(table.userId),
+]);
+
+export const insertLanguagePreferenceSchema = createInsertSchema(languagePreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertLanguagePreference = z.infer<typeof insertLanguagePreferenceSchema>;
+export type LanguagePreference = typeof languagePreferences.$inferSelect;
