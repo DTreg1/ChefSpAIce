@@ -84,7 +84,7 @@ export function ExcerptEditor({
   const [hashtags, setHashtags] = useState(false);
   const [emojis, setEmojis] = useState(false);
   const [temperature, setTemperature] = useState([0.7]);
-  const [variantCount, setVariantCount] = useState([3]);
+  const [variantCount, setVariantCount] = useState([5]); // Changed default to 5
 
   const characterCount = excerptText.length;
   const wordCount = excerptText.split(/\s+/).filter((word: string) => word.length > 0).length;

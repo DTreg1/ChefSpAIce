@@ -105,7 +105,7 @@ export class ExcerptService {
       emojis = false,
       maxCharacters = PLATFORM_LIMITS[targetPlatform] || PLATFORM_LIMITS.generic,
       temperature = 0.7,
-      variantCount = 3,
+      variantCount = 5, // Changed default to 5
     } = options;
 
     // Truncate content if too long (keep first 3000 chars for context)
