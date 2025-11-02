@@ -4196,3 +4196,292 @@ export const insertAltTextQualitySchema = createInsertSchema(altTextQuality).omi
 
 export type InsertAltTextQuality = z.infer<typeof insertAltTextQualitySchema>;
 export type AltTextQuality = typeof altTextQuality.$inferSelect;
+
+/**
+ * Moderation Logs Table
+ * 
+ * Tracks all content moderation activities and decisions.
+ * Records toxicity scores, actions taken, and moderator reviews.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - contentId: ID of the content being moderated (recipe, chat, etc.)
+ * - contentType: Type of content (chat, recipe, comment, etc.)
+ * - userId: Foreign key to users.id (CASCADE delete) - user who created content
+ * - content: The actual text/content that was moderated
+ * - toxicityScores: JSONB with detailed toxicity analysis
+ * - actionTaken: Moderation action (approved, blocked, flagged, warning)
+ * - reviewedBy: User ID of moderator who reviewed (if manual review)
+ * 
+ * Analysis Fields:
+ * - modelUsed: AI model used for analysis (tensorflow, openai, both)
+ * - confidence: Confidence score of the moderation decision (0-1)
+ * - categories: Array of detected violation categories
+ * - severity: Overall severity level (low, medium, high, critical)
+ * 
+ * Review Fields:
+ * - manualReview: Whether content was manually reviewed
+ * - reviewNotes: Notes from manual review
+ * - overrideReason: Reason for overriding automatic decision
+ * - reviewedAt: Timestamp of manual review
+ * 
+ * Business Rules:
+ * - All moderated content must be logged
+ * - Toxicity scores include multiple dimensions (toxicity, threat, insult, etc.)
+ * - Manual reviews can override automatic decisions
+ * - Content can be re-evaluated if user edits
+ * 
+ * Indexes:
+ * - moderation_logs_user_id_idx: User's moderation history
+ * - moderation_logs_content_id_idx: Content lookup
+ * - moderation_logs_action_idx: Filter by action taken
+ * - moderation_logs_severity_idx: Find high-severity content
+ * - moderation_logs_created_at_idx: Chronological queries
+ * 
+ * Relationships:
+ * - users → moderationLogs: CASCADE delete
+ * - users → moderationLogs (reviewedBy): SET NULL
+ */
+export const moderationLogs = pgTable("moderation_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  contentType: varchar("content_type", { length: 50 }).notNull(), // 'chat', 'recipe', 'comment', 'feedback'
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  
+  // Toxicity analysis
+  toxicityScores: jsonb("toxicity_scores").$type<{
+    toxicity?: number;
+    severeToxicity?: number;
+    identityAttack?: number;
+    insult?: number;
+    profanity?: number;
+    threat?: number;
+    sexuallyExplicit?: number;
+    obscene?: number;
+    // OpenAI specific scores
+    harassment?: number;
+    harassmentThreatening?: number;
+    hate?: number;
+    hateThreatening?: number;
+    selfHarm?: number;
+    selfHarmIntent?: number;
+    selfHarmInstruction?: number;
+    sexual?: number;
+    sexualMinors?: number;
+    violence?: number;
+    violenceGraphic?: number;
+  }>().notNull(),
+  
+  // Moderation decision
+  actionTaken: varchar("action_taken", { length: 20 }).notNull(), // 'approved', 'blocked', 'flagged', 'warning'
+  modelUsed: varchar("model_used", { length: 50 }).notNull(), // 'tensorflow', 'openai', 'both'
+  confidence: real("confidence").notNull().default(0),
+  categories: text("categories").array(),
+  severity: varchar("severity", { length: 20 }).notNull(), // 'low', 'medium', 'high', 'critical'
+  
+  // Manual review
+  manualReview: boolean("manual_review").notNull().default(false),
+  reviewedBy: varchar("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+  reviewNotes: text("review_notes"),
+  overrideReason: text("override_reason"),
+  reviewedAt: timestamp("reviewed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("moderation_logs_user_id_idx").on(table.userId),
+  index("moderation_logs_content_id_idx").on(table.contentId),
+  index("moderation_logs_action_idx").on(table.actionTaken),
+  index("moderation_logs_severity_idx").on(table.severity),
+  index("moderation_logs_created_at_idx").on(table.createdAt),
+]);
+
+export const insertModerationLogSchema = createInsertSchema(moderationLogs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertModerationLog = z.infer<typeof insertModerationLogSchema>;
+export type ModerationLog = typeof moderationLogs.$inferSelect;
+
+/**
+ * Blocked Content Table
+ * 
+ * Stores content that was blocked by moderation system.
+ * Preserves blocked content for review and appeals.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - content: The blocked content text
+ * - originalContentId: ID of the original content (if applicable)
+ * - contentType: Type of content that was blocked
+ * - reason: Reason for blocking (profanity, harassment, spam, etc.)
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * 
+ * Blocking Details:
+ * - blockedCategories: Specific violation categories detected
+ * - toxicityLevel: Overall toxicity score that triggered block
+ * - metadata: Additional context about the block
+ * - autoBlocked: Whether blocked automatically or manually
+ * 
+ * Resolution:
+ * - status: Current status (blocked, appealed, restored, deleted)
+ * - appealId: Foreign key to moderation_appeals if appealed
+ * - restoredAt: When content was restored (if applicable)
+ * - restoredBy: Who restored the content
+ * 
+ * Business Rules:
+ * - Blocked content preserved for 30 days minimum
+ * - Users can view their own blocked content
+ * - Admins can review all blocked content
+ * - Restored content returns to original location
+ * 
+ * Indexes:
+ * - blocked_content_user_id_idx: User's blocked content
+ * - blocked_content_status_idx: Filter by status
+ * - blocked_content_timestamp_idx: Chronological queries
+ * 
+ * Relationships:
+ * - users → blockedContent: CASCADE delete
+ * - moderationAppeals → blockedContent: Referenced by appealId
+ */
+export const blockedContent = pgTable("blocked_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  content: text("content").notNull(),
+  originalContentId: varchar("original_content_id"),
+  contentType: varchar("content_type", { length: 50 }).notNull(),
+  reason: text("reason").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Blocking details
+  blockedCategories: text("blocked_categories").array(),
+  toxicityLevel: real("toxicity_level"),
+  metadata: jsonb("metadata").$type<{
+    originalLocation?: string;
+    targetUsers?: string[];
+    context?: string;
+    previousViolations?: number;
+  }>(),
+  autoBlocked: boolean("auto_blocked").notNull().default(true),
+  
+  // Resolution
+  status: varchar("status", { length: 20 }).notNull().default('blocked'), // 'blocked', 'appealed', 'restored', 'deleted'
+  appealId: varchar("appeal_id"),
+  restoredAt: timestamp("restored_at"),
+  restoredBy: varchar("restored_by").references(() => users.id, { onDelete: "set null" }),
+  
+  timestamp: timestamp("timestamp").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("blocked_content_user_id_idx").on(table.userId),
+  index("blocked_content_status_idx").on(table.status),
+  index("blocked_content_timestamp_idx").on(table.timestamp),
+]);
+
+export const insertBlockedContentSchema = createInsertSchema(blockedContent).omit({
+  id: true,
+  timestamp: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertBlockedContent = z.infer<typeof insertBlockedContentSchema>;
+export type BlockedContent = typeof blockedContent.$inferSelect;
+
+/**
+ * Moderation Appeals Table
+ * 
+ * Manages user appeals against moderation decisions.
+ * Tracks appeal process from submission to resolution.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - contentId: ID of the content being appealed
+ * - blockedContentId: Foreign key to blocked_content.id
+ * - userId: Foreign key to users.id (user who filed appeal)
+ * - appealReason: User's explanation for appeal
+ * - status: Appeal status (pending, reviewing, approved, rejected, withdrawn)
+ * 
+ * Appeal Details:
+ * - appealType: Type of appeal (false_positive, context_needed, etc.)
+ * - supportingEvidence: Additional evidence provided by user
+ * - originalAction: The moderation action being appealed
+ * - originalSeverity: Severity level of original decision
+ * 
+ * Review Process:
+ * - assignedTo: Moderator assigned to review
+ * - reviewStartedAt: When review began
+ * - decision: Final decision on appeal
+ * - decisionReason: Explanation of decision
+ * - decidedBy: Moderator who made decision
+ * - decidedAt: When decision was made
+ * 
+ * Outcome:
+ * - actionTaken: Action taken after appeal (content_restored, warning_removed, etc.)
+ * - userNotified: Whether user was notified of decision
+ * - notifiedAt: When notification sent
+ * 
+ * Business Rules:
+ * - Users can appeal within 30 days of moderation
+ * - Each content can have one active appeal
+ * - Appeals must be reviewed within 72 hours
+ * - Approved appeals restore content and clear violations
+ * 
+ * Indexes:
+ * - moderation_appeals_user_id_idx: User's appeals
+ * - moderation_appeals_content_id_idx: Content appeal lookup
+ * - moderation_appeals_status_idx: Filter by status
+ * - moderation_appeals_assigned_idx: Moderator workload
+ * 
+ * Relationships:
+ * - users → moderationAppeals: CASCADE delete
+ * - users → moderationAppeals (assignedTo, decidedBy): SET NULL
+ * - blockedContent → moderationAppeals: Referenced
+ */
+export const moderationAppeals = pgTable("moderation_appeals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contentId: varchar("content_id").notNull(),
+  blockedContentId: varchar("blocked_content_id").references(() => blockedContent.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  appealReason: text("appeal_reason").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default('pending'), // 'pending', 'reviewing', 'approved', 'rejected', 'withdrawn'
+  
+  // Appeal details
+  appealType: varchar("appeal_type", { length: 50 }), // 'false_positive', 'context_needed', 'technical_error', 'other'
+  supportingEvidence: text("supporting_evidence"),
+  originalAction: varchar("original_action", { length: 20 }),
+  originalSeverity: varchar("original_severity", { length: 20 }),
+  
+  // Review process
+  assignedTo: varchar("assigned_to").references(() => users.id, { onDelete: "set null" }),
+  reviewStartedAt: timestamp("review_started_at"),
+  decision: varchar("decision", { length: 20 }), // 'approved', 'rejected', 'partially_approved'
+  decisionReason: text("decision_reason"),
+  decidedBy: varchar("decided_by").references(() => users.id, { onDelete: "set null" }),
+  decidedAt: timestamp("decided_at"),
+  
+  // Outcome
+  actionTaken: text("action_taken"),
+  userNotified: boolean("user_notified").notNull().default(false),
+  notifiedAt: timestamp("notified_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("moderation_appeals_user_id_idx").on(table.userId),
+  index("moderation_appeals_content_id_idx").on(table.contentId),
+  index("moderation_appeals_status_idx").on(table.status),
+  index("moderation_appeals_assigned_idx").on(table.assignedTo),
+]);
+
+export const insertModerationAppealSchema = createInsertSchema(moderationAppeals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertModerationAppeal = z.infer<typeof insertModerationAppealSchema>;
+export type ModerationAppeal = typeof moderationAppeals.$inferSelect;
