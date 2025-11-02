@@ -715,6 +715,119 @@ export class FraudDetectionService {
       return { stats: {}, insights: 'Unable to analyze patterns', period };
     }
   }
+  
+  /**
+   * Analyze a transaction for fraud risk
+   */
+  async analyzeTransaction(
+    userId: string,
+    amount: number,
+    paymentMethod: string,
+    recipientId?: string,
+    metadata?: any
+  ): Promise<{
+    fraudScore: number;
+    riskLevel: 'low' | 'medium' | 'high' | 'critical';
+    factors: any;
+    action: 'allow' | 'review' | 'block';
+    message: string;
+  }> {
+    try {
+      // Create user behavior object for analysis
+      const userBehavior: UserBehavior = {
+        userId,
+        activities: [{
+          timestamp: new Date(),
+          type: 'transaction',
+          details: {
+            amount,
+            paymentMethod,
+            recipientId,
+            ...metadata
+          },
+          ipAddress: metadata?.ipAddress,
+          userAgent: metadata?.userAgent
+        }],
+        accountAge: 24, // Default to 24 hours if not available
+        transactionCount: 1,
+        failedAttempts: 0,
+        deviceFingerprint: metadata?.deviceFingerprint
+      };
+      
+      // Analyze using existing behavior analysis
+      const analysis = await this.analyzeUserBehavior(userBehavior);
+      
+      // Calculate transaction-specific risk factors
+      const transactionRisk = this.calculateTransactionRisk(amount, paymentMethod);
+      
+      // Combine with behavior analysis
+      const combinedScore = (analysis.fraudScore + transactionRisk) / 2;
+      
+      // Determine action based on score
+      let action: 'allow' | 'review' | 'block' = 'allow';
+      let message = 'Transaction approved';
+      
+      if (combinedScore > 0.9) {
+        action = 'block';
+        message = 'Transaction blocked due to high fraud risk';
+      } else if (combinedScore > 0.7) {
+        action = 'review';
+        message = 'Transaction flagged for manual review';
+      }
+      
+      return {
+        fraudScore: combinedScore,
+        riskLevel: this.getRiskLevel(combinedScore),
+        factors: {
+          ...analysis.factors,
+          transactionRisk,
+          amount,
+          paymentMethod
+        },
+        action,
+        message
+      };
+    } catch (error) {
+      console.error('Error analyzing transaction:', error);
+      // Default to cautious approach on error
+      return {
+        fraudScore: 0.5,
+        riskLevel: 'medium',
+        factors: { error: 'Analysis error occurred' },
+        action: 'review',
+        message: 'Transaction requires review due to analysis error'
+      };
+    }
+  }
+  
+  /**
+   * Calculate transaction-specific risk
+   */
+  private calculateTransactionRisk(amount: number, paymentMethod: string): number {
+    let risk = 0;
+    
+    // High amount transactions
+    if (amount > 1000) {
+      risk += 0.3;
+    } else if (amount > 500) {
+      risk += 0.2;
+    } else if (amount > 100) {
+      risk += 0.1;
+    }
+    
+    // Risky payment methods
+    const riskyMethods = ['cryptocurrency', 'wire_transfer', 'gift_card'];
+    if (riskyMethods.includes(paymentMethod.toLowerCase())) {
+      risk += 0.3;
+    }
+    
+    // Unusual amounts (e.g., very specific cents amounts)
+    if (amount % 1 !== 0 && (amount * 100) % 10 !== 0) {
+      risk += 0.1; // Unusual cent amounts might indicate testing
+    }
+    
+    return Math.min(risk, 1.0);
+  }
 }
 
 // Export singleton instance
