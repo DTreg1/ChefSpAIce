@@ -231,6 +231,16 @@ import {
   type InsertSavePattern,
   autoSaveDrafts,
   savePatterns,
+  // Form Completion types
+  type FormCompletion,
+  type InsertFormCompletion,
+  type UserFormHistory,
+  type InsertUserFormHistory,
+  type CompletionFeedback,
+  type InsertCompletionFeedback,
+  formCompletions,
+  userFormHistory,
+  completionFeedback,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -2036,6 +2046,66 @@ export interface IStorage {
     hasConflict: boolean;
     latestVersion?: AutoSaveDraft;
   }>;
+
+  // ==================== Form Completion Operations ====================
+  
+  /**
+   * Get field suggestions based on query and user history
+   * @param fieldName - Name of the field (e.g., "email", "city")
+   * @param query - Current user input
+   * @param userId - Optional user ID for personalized suggestions
+   * @returns Array of suggested values
+   */
+  getFieldSuggestions(fieldName: string, query: string, userId?: string): Promise<string[]>;
+  
+  /**
+   * Get contextual suggestions based on other form fields
+   * @param fieldName - Name of the field to get suggestions for
+   * @param context - Other form field values
+   * @param userId - Optional user ID for personalized suggestions
+   * @returns Array of contextual suggestions
+   */
+  getContextualSuggestions(fieldName: string, context: Record<string, any>, userId?: string): Promise<string[]>;
+  
+  /**
+   * Record a form input for learning
+   * @param userId - User ID
+   * @param fieldName - Field name
+   * @param value - Value entered
+   * @param context - Optional context
+   */
+  recordFormInput(userId: string, fieldName: string, value: string, context?: Record<string, any>): Promise<void>;
+  
+  /**
+   * Record feedback on a suggestion
+   * @param feedback - Feedback data
+   */
+  recordCompletionFeedback(feedback: InsertCompletionFeedback): Promise<CompletionFeedback>;
+  
+  /**
+   * Get user's form history
+   * @param userId - User ID
+   * @param fieldName - Optional field name filter
+   */
+  getUserFormHistory(userId: string, fieldName?: string): Promise<UserFormHistory[]>;
+  
+  /**
+   * Clear user's form history
+   * @param userId - User ID
+   */
+  clearUserFormHistory(userId: string): Promise<void>;
+  
+  /**
+   * Update global form completion statistics
+   * @param fieldName - Field name to update stats for
+   */
+  updateFormCompletionStats(fieldName: string): Promise<void>;
+  
+  /**
+   * Get form completion data for a field
+   * @param fieldName - Field name
+   */
+  getFormCompletion(fieldName: string): Promise<FormCompletion | null>;
 }
 
 /**
@@ -9621,6 +9691,298 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error checking for conflicts:", error);
       throw new Error("Failed to check for conflicts");
+    }
+  }
+
+  // ==================== Form Completion Implementation ====================
+  
+  async getFieldSuggestions(
+    fieldName: string,
+    query: string,
+    userId?: string
+  ): Promise<string[]> {
+    try {
+      const suggestions: string[] = [];
+      const normalizedQuery = query.toLowerCase();
+      
+      // First, get user's personal history if userId provided
+      if (userId) {
+        const userHistory = await db
+          .select()
+          .from(userFormHistory)
+          .where(
+            and(
+              eq(userFormHistory.userId, userId),
+              eq(userFormHistory.fieldName, fieldName)
+            )
+          )
+          .limit(1);
+          
+        if (userHistory.length > 0 && userHistory[0].valuesUsed) {
+          const sortedValues = (userHistory[0].valuesUsed as Array<{value: string; count: number}>)
+            .filter(v => v.value.toLowerCase().startsWith(normalizedQuery))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5)
+            .map(v => v.value);
+          suggestions.push(...sortedValues);
+        }
+      }
+      
+      // Then add global suggestions
+      const globalCompletions = await db
+        .select()
+        .from(formCompletions)
+        .where(eq(formCompletions.fieldName, fieldName))
+        .limit(1);
+        
+      if (globalCompletions.length > 0 && globalCompletions[0].commonValues) {
+        const globalValues = (globalCompletions[0].commonValues as Array<{value: string; count: number}>)
+          .filter(v => !suggestions.includes(v.value) && v.value.toLowerCase().startsWith(normalizedQuery))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10 - suggestions.length)
+          .map(v => v.value);
+        suggestions.push(...globalValues);
+      }
+      
+      return suggestions;
+    } catch (error) {
+      console.error("Error getting field suggestions:", error);
+      return [];
+    }
+  }
+  
+  async getContextualSuggestions(
+    fieldName: string,
+    context: Record<string, any>,
+    userId?: string
+  ): Promise<string[]> {
+    try {
+      const suggestions: string[] = [];
+      
+      // Get form completion data
+      const completion = await this.getFormCompletion(fieldName);
+      
+      if (completion?.contextRules) {
+        const rules = completion.contextRules as Array<{
+          condition: string;
+          suggestions: string[];
+          priority: number;
+        }>;
+        
+        // Evaluate context rules
+        for (const rule of rules.sort((a, b) => b.priority - a.priority)) {
+          // Simple condition evaluation (e.g., "if field:country = 'USA'")
+          const match = rule.condition.match(/if field:(\w+) = '(.+)'/);
+          if (match) {
+            const [_, contextField, value] = match;
+            if (context[contextField] === value) {
+              suggestions.push(...rule.suggestions);
+              if (suggestions.length >= 10) break;
+            }
+          }
+        }
+      }
+      
+      // Add user history if available
+      if (userId && suggestions.length < 10) {
+        const personalSuggestions = await this.getFieldSuggestions(fieldName, '', userId);
+        suggestions.push(...personalSuggestions.slice(0, 10 - suggestions.length));
+      }
+      
+      return suggestions;
+    } catch (error) {
+      console.error("Error getting contextual suggestions:", error);
+      return [];
+    }
+  }
+  
+  async recordFormInput(
+    userId: string,
+    fieldName: string,
+    value: string,
+    context?: Record<string, any>
+  ): Promise<void> {
+    try {
+      // Update user's personal history
+      const existingHistory = await db
+        .select()
+        .from(userFormHistory)
+        .where(
+          and(
+            eq(userFormHistory.userId, userId),
+            eq(userFormHistory.fieldName, fieldName)
+          )
+        )
+        .limit(1);
+        
+      const now = new Date().toISOString();
+      
+      if (existingHistory.length > 0) {
+        const history = existingHistory[0];
+        let valuesUsed = (history.valuesUsed || []) as Array<{value: string; count: number; lastUsed: string; context?: any}>;
+        
+        const existingValueIndex = valuesUsed.findIndex(v => v.value === value);
+        
+        if (existingValueIndex >= 0) {
+          valuesUsed[existingValueIndex].count++;
+          valuesUsed[existingValueIndex].lastUsed = now;
+          valuesUsed[existingValueIndex].context = context;
+        } else {
+          valuesUsed.push({
+            value,
+            count: 1,
+            lastUsed: now,
+            context
+          });
+        }
+        
+        // Keep only top 50 values
+        valuesUsed = valuesUsed
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 50);
+          
+        // Update frequency map
+        const frequencyMap: Record<string, number> = {};
+        for (const v of valuesUsed) {
+          frequencyMap[v.value] = v.count;
+        }
+        
+        await db
+          .update(userFormHistory)
+          .set({
+            valuesUsed,
+            frequencyMap,
+            updatedAt: new Date()
+          })
+          .where(eq(userFormHistory.id, history.id));
+      } else {
+        // Create new history
+        await db
+          .insert(userFormHistory)
+          .values({
+            userId,
+            fieldName,
+            valuesUsed: [{
+              value,
+              count: 1,
+              lastUsed: now,
+              context
+            }],
+            frequencyMap: { [value]: 1 },
+            preferences: {
+              autoFillEnabled: true,
+              rememberValues: true,
+              suggestSimilar: true
+            }
+          });
+      }
+      
+      // Update global statistics (async, don't await)
+      this.updateFormCompletionStats(fieldName).catch(console.error);
+      
+    } catch (error) {
+      console.error("Error recording form input:", error);
+      // Don't throw - this is a background operation
+    }
+  }
+  
+  async recordCompletionFeedback(
+    feedback: InsertCompletionFeedback
+  ): Promise<CompletionFeedback> {
+    try {
+      const result = await db
+        .insert(completionFeedback)
+        .values(feedback)
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error recording completion feedback:", error);
+      throw error;
+    }
+  }
+  
+  async getUserFormHistory(
+    userId: string,
+    fieldName?: string
+  ): Promise<UserFormHistory[]> {
+    try {
+      const conditions = [eq(userFormHistory.userId, userId)];
+      
+      if (fieldName) {
+        conditions.push(eq(userFormHistory.fieldName, fieldName));
+      }
+      
+      return await db
+        .select()
+        .from(userFormHistory)
+        .where(and(...conditions))
+        .orderBy(desc(userFormHistory.updatedAt));
+    } catch (error) {
+      console.error("Error getting user form history:", error);
+      throw error;
+    }
+  }
+  
+  async clearUserFormHistory(userId: string): Promise<void> {
+    try {
+      await db
+        .delete(userFormHistory)
+        .where(eq(userFormHistory.userId, userId));
+    } catch (error) {
+      console.error("Error clearing user form history:", error);
+      throw error;
+    }
+  }
+  
+  async updateFormCompletionStats(fieldName: string): Promise<void> {
+    try {
+      // Get existing completion data
+      const existing = await db
+        .select()
+        .from(formCompletions)
+        .where(eq(formCompletions.fieldName, fieldName))
+        .limit(1);
+        
+      if (existing.length > 0) {
+        // Update usage count
+        await db
+          .update(formCompletions)
+          .set({
+            globalUsageCount: sql`${formCompletions.globalUsageCount} + 1`,
+            lastUpdated: new Date()
+          })
+          .where(eq(formCompletions.fieldName, fieldName));
+      } else {
+        // Create new entry
+        await db
+          .insert(formCompletions)
+          .values({
+            fieldName,
+            fieldType: fieldName.includes('email') ? 'email' : 
+                       fieldName.includes('phone') ? 'tel' :
+                       fieldName.includes('address') ? 'address' : 'text',
+            globalUsageCount: 1
+          });
+      }
+    } catch (error) {
+      console.error("Error updating form completion stats:", error);
+      // Don't throw - this is a background operation
+    }
+  }
+  
+  async getFormCompletion(fieldName: string): Promise<FormCompletion | null> {
+    try {
+      const result = await db
+        .select()
+        .from(formCompletions)
+        .where(eq(formCompletions.fieldName, fieldName))
+        .limit(1);
+        
+      return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error("Error getting form completion:", error);
+      return null;
     }
   }
 }

@@ -5413,3 +5413,229 @@ export type AutoSaveDraft = typeof autoSaveDrafts.$inferSelect;
 
 export type InsertSavePattern = z.infer<typeof insertSavePatternSchema>;
 export type SavePattern = typeof savePatterns.$inferSelect;
+
+/**
+ * Form Completions Table
+ * 
+ * Stores common values and patterns for form fields across all users.
+ * Used to provide intelligent suggestions based on aggregated data.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - fieldName: Name/identifier of the form field (email, city, etc.)
+ * - fieldType: HTML input type or semantic type
+ * - commonValues: Array of common values with usage counts
+ * - patterns: Regex patterns that match valid inputs
+ * - contextRules: Rules for context-aware suggestions
+ * - globalUsageCount: Total times this field has been filled
+ * - lastUpdated: When the statistics were last updated
+ * 
+ * Business Rules:
+ * - Update statistics hourly or after 100 new inputs
+ * - Keep top 100 most common values per field
+ * - Privacy: Never store personally identifiable values globally
+ * - Use for fields like: country, state, city, language, timezone
+ * 
+ * Indexes:
+ * - form_completions_field_idx: Field name lookup
+ * - form_completions_updated_idx: Update scheduling
+ * 
+ * Relationships:
+ * - None (global data, not user-specific)
+ */
+export const formCompletions = pgTable("form_completions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fieldName: text("field_name").notNull(),
+  fieldType: text("field_type"), // 'email', 'tel', 'address', 'city', 'state', etc.
+  
+  commonValues: jsonb("common_values").$type<Array<{
+    value: string;
+    count: number;
+    lastUsed: string; // ISO date
+    metadata?: Record<string, any>;
+  }>>(),
+  
+  patterns: jsonb("patterns").$type<Array<{
+    regex: string;
+    description: string;
+    priority: number;
+  }>>(),
+  
+  contextRules: jsonb("context_rules").$type<Array<{
+    condition: string; // e.g., "if field:country = 'USA'"
+    suggestions: string[];
+    priority: number;
+  }>>(),
+  
+  globalUsageCount: integer("global_usage_count").notNull().default(0),
+  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("form_completions_field_idx").on(table.fieldName),
+  index("form_completions_updated_idx").on(table.lastUpdated),
+]);
+
+/**
+ * User Form History Table
+ * 
+ * Tracks individual user's form input history for personalized suggestions.
+ * Learns user preferences and patterns over time.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id
+ * - fieldName: Name/identifier of the form field
+ * - valuesUsed: History of values entered by this user
+ * - frequencyMap: Map of value to usage frequency
+ * - lastSequence: Last sequence of form fills (for pattern detection)
+ * - preferences: User's form preferences (auto-fill settings)
+ * - updatedAt: Last update timestamp
+ * 
+ * ML Features:
+ * - Value frequency analysis
+ * - Sequential pattern detection
+ * - Time-based patterns (e.g., different addresses for work/home)
+ * - Cross-field correlations
+ * 
+ * Business Rules:
+ * - Limit to 50 values per field per user
+ * - Auto-expire values not used in 90 days
+ * - Encrypt sensitive fields (SSN, credit card)
+ * - User can clear history anytime
+ * 
+ * Indexes:
+ * - user_form_history_user_idx: User lookup
+ * - user_form_history_field_idx: Field lookup
+ * - user_form_history_updated_idx: Cleanup scheduling
+ * 
+ * Relationships:
+ * - users → userFormHistory: CASCADE
+ */
+export const userFormHistory = pgTable("user_form_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  fieldName: text("field_name").notNull(),
+  
+  valuesUsed: jsonb("values_used").$type<Array<{
+    value: string;
+    count: number;
+    lastUsed: string; // ISO date
+    context?: Record<string, any>; // Page, time of day, etc.
+  }>>(),
+  
+  frequencyMap: jsonb("frequency_map").$type<Record<string, number>>(),
+  
+  lastSequence: jsonb("last_sequence").$type<Array<{
+    fieldName: string;
+    value: string;
+    timestamp: string;
+  }>>(),
+  
+  preferences: jsonb("preferences").$type<{
+    autoFillEnabled?: boolean;
+    rememberValues?: boolean;
+    suggestSimilar?: boolean;
+    privacyMode?: boolean;
+  }>(),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("user_form_history_unique_idx").on(table.userId, table.fieldName),
+  index("user_form_history_user_idx").on(table.userId),
+  index("user_form_history_field_idx").on(table.fieldName),
+  index("user_form_history_updated_idx").on(table.updatedAt),
+]);
+
+/**
+ * Completion Feedback Table
+ * 
+ * Tracks whether auto-completion suggestions were accepted or modified.
+ * Used to improve ML model accuracy and suggestion relevance.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (optional for anonymous)
+ * - fieldName: Field that received suggestion
+ * - suggestionId: ID of the suggestion shown
+ * - suggestedValue: The value that was suggested
+ * - wasSelected: Whether user selected the suggestion
+ * - finalValue: What the user ultimately entered
+ * - context: Context when suggestion was made
+ * - responseTime: Time taken to accept/reject (ms)
+ * - createdAt: When feedback was recorded
+ * 
+ * ML Training:
+ * - Positive examples: wasSelected = true
+ * - Negative examples: wasSelected = false
+ * - Correction examples: wasSelected = false with finalValue
+ * - Used to retrain suggestion models
+ * 
+ * Business Rules:
+ * - Anonymous feedback allowed (userId can be null)
+ * - Batch process for model retraining daily
+ * - Aggregate statistics for A/B testing
+ * - Clean up after 30 days
+ * 
+ * Indexes:
+ * - completion_feedback_user_idx: User feedback history
+ * - completion_feedback_field_idx: Field performance
+ * - completion_feedback_created_idx: Cleanup scheduling
+ * 
+ * Relationships:
+ * - users → completionFeedback: SET NULL (preserve anonymous feedback)
+ */
+export const completionFeedback = pgTable("completion_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  
+  fieldName: text("field_name").notNull(),
+  suggestionId: varchar("suggestion_id"),
+  suggestedValue: text("suggested_value"),
+  wasSelected: boolean("was_selected").notNull(),
+  finalValue: text("final_value"),
+  
+  context: jsonb("context").$type<{
+    pageUrl?: string;
+    formId?: string;
+    otherFields?: Record<string, string>;
+    deviceType?: string;
+    timestamp?: string;
+  }>(),
+  
+  responseTime: integer("response_time"), // milliseconds
+  confidence: real("confidence"), // Model confidence score (0-1)
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("completion_feedback_user_idx").on(table.userId),
+  index("completion_feedback_field_idx").on(table.fieldName),
+  index("completion_feedback_created_idx").on(table.createdAt),
+]);
+
+// Schema types for form completions
+export const insertFormCompletionSchema = createInsertSchema(formCompletions).omit({
+  id: true,
+  createdAt: true,
+  lastUpdated: true,
+});
+
+export const insertUserFormHistorySchema = createInsertSchema(userFormHistory).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCompletionFeedbackSchema = createInsertSchema(completionFeedback).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertFormCompletion = z.infer<typeof insertFormCompletionSchema>;
+export type FormCompletion = typeof formCompletions.$inferSelect;
+
+export type InsertUserFormHistory = z.infer<typeof insertUserFormHistorySchema>;
+export type UserFormHistory = typeof userFormHistory.$inferSelect;
+
+export type InsertCompletionFeedback = z.infer<typeof insertCompletionFeedbackSchema>;
+export type CompletionFeedback = typeof completionFeedback.$inferSelect;
