@@ -247,6 +247,13 @@ import {
   formCompletions,
   userFormHistory,
   completionFeedback,
+  // Prediction types
+  type UserPrediction,
+  type InsertUserPrediction,
+  type PredictionAccuracy,
+  type InsertPredictionAccuracy,
+  userPredictions,
+  predictionAccuracy,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -2215,6 +2222,73 @@ export interface IStorage {
     unreadInsights: number;
     averageImportance: number;
     insightsByCategory: Record<string, number>;
+  }>;
+  
+  // ==================== Prediction Operations ====================
+  
+  /**
+   * Create a new user prediction
+   * @param prediction - Prediction data
+   */
+  createUserPrediction(prediction: InsertUserPrediction): Promise<UserPrediction>;
+  
+  /**
+   * Get user predictions
+   * @param userId - User ID
+   * @param filters - Optional filters
+   */
+  getUserPredictions(
+    userId: string,
+    filters?: {
+      predictionType?: string;
+      status?: string;
+      minProbability?: number;
+      limit?: number;
+    }
+  ): Promise<UserPrediction[]>;
+  
+  /**
+   * Get a specific prediction
+   * @param predictionId - Prediction ID
+   */
+  getPredictionById(predictionId: string): Promise<UserPrediction | undefined>;
+  
+  /**
+   * Update prediction status
+   * @param predictionId - Prediction ID
+   * @param status - New status
+   * @param interventionTaken - Intervention taken (optional)
+   */
+  updatePredictionStatus(
+    predictionId: string,
+    status: string,
+    interventionTaken?: string
+  ): Promise<void>;
+  
+  /**
+   * Get high-risk churn users
+   * @param threshold - Probability threshold (default 0.7)
+   */
+  getChurnRiskUsers(threshold?: number): Promise<UserPrediction[]>;
+  
+  /**
+   * Create prediction accuracy record
+   * @param accuracy - Accuracy data
+   */
+  createPredictionAccuracy(accuracy: InsertPredictionAccuracy): Promise<PredictionAccuracy>;
+  
+  /**
+   * Get prediction accuracy metrics
+   * @param filters - Optional filters
+   */
+  getPredictionAccuracy(filters?: {
+    dateRange?: { start: Date; end: Date };
+    predictionType?: string;
+  }): Promise<{
+    averageAccuracy: number;
+    totalPredictions: number;
+    correctPredictions: number;
+    accuracyByType: Record<string, number>;
   }>;
 }
 
@@ -10311,6 +10385,214 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Error getting analytics stats:", error);
+      throw error;
+    }
+  }
+  
+  // ==================== Prediction Operations Implementation ====================
+  
+  async createUserPrediction(prediction: InsertUserPrediction): Promise<UserPrediction> {
+    try {
+      const [newPrediction] = await db
+        .insert(userPredictions)
+        .values(prediction)
+        .returning();
+      return newPrediction;
+    } catch (error) {
+      console.error("Error creating user prediction:", error);
+      throw error;
+    }
+  }
+  
+  async getUserPredictions(
+    userId: string,
+    filters?: {
+      predictionType?: string;
+      status?: string;
+      minProbability?: number;
+      limit?: number;
+    }
+  ): Promise<UserPrediction[]> {
+    try {
+      let query = db
+        .select()
+        .from(userPredictions)
+        .where(eq(userPredictions.userId, userId));
+      
+      const conditions: any[] = [eq(userPredictions.userId, userId)];
+      
+      if (filters?.predictionType) {
+        conditions.push(eq(userPredictions.predictionType, filters.predictionType));
+      }
+      
+      if (filters?.status) {
+        conditions.push(eq(userPredictions.status, filters.status));
+      }
+      
+      if (filters?.minProbability !== undefined) {
+        conditions.push(gte(userPredictions.probability, filters.minProbability));
+      }
+      
+      let results = await db
+        .select()
+        .from(userPredictions)
+        .where(and(...conditions))
+        .orderBy(desc(userPredictions.probability), desc(userPredictions.createdAt))
+        .limit(filters?.limit || 100);
+      
+      return results;
+    } catch (error) {
+      console.error("Error getting user predictions:", error);
+      throw error;
+    }
+  }
+  
+  async getPredictionById(predictionId: string): Promise<UserPrediction | undefined> {
+    try {
+      const [prediction] = await db
+        .select()
+        .from(userPredictions)
+        .where(eq(userPredictions.id, predictionId));
+      return prediction;
+    } catch (error) {
+      console.error("Error getting prediction by ID:", error);
+      throw error;
+    }
+  }
+  
+  async updatePredictionStatus(
+    predictionId: string,
+    status: string,
+    interventionTaken?: string
+  ): Promise<void> {
+    try {
+      const updateData: any = {
+        status,
+        ...(status !== 'pending' && { resolvedAt: new Date() })
+      };
+      
+      if (interventionTaken) {
+        updateData.interventionTaken = interventionTaken;
+      }
+      
+      await db
+        .update(userPredictions)
+        .set(updateData)
+        .where(eq(userPredictions.id, predictionId));
+    } catch (error) {
+      console.error("Error updating prediction status:", error);
+      throw error;
+    }
+  }
+  
+  async getChurnRiskUsers(threshold: number = 0.7): Promise<UserPrediction[]> {
+    try {
+      return await db
+        .select()
+        .from(userPredictions)
+        .where(
+          and(
+            eq(userPredictions.predictionType, 'churn_risk'),
+            eq(userPredictions.status, 'pending'),
+            gte(userPredictions.probability, threshold)
+          )
+        )
+        .orderBy(desc(userPredictions.probability));
+    } catch (error) {
+      console.error("Error getting churn risk users:", error);
+      throw error;
+    }
+  }
+  
+  async createPredictionAccuracy(accuracy: InsertPredictionAccuracy): Promise<PredictionAccuracy> {
+    try {
+      const [newAccuracy] = await db
+        .insert(predictionAccuracy)
+        .values(accuracy)
+        .returning();
+      return newAccuracy;
+    } catch (error) {
+      console.error("Error creating prediction accuracy:", error);
+      throw error;
+    }
+  }
+  
+  async getPredictionAccuracy(filters?: {
+    dateRange?: { start: Date; end: Date };
+    predictionType?: string;
+  }): Promise<{
+    averageAccuracy: number;
+    totalPredictions: number;
+    correctPredictions: number;
+    accuracyByType: Record<string, number>;
+  }> {
+    try {
+      const conditions: any[] = [];
+      
+      if (filters?.dateRange) {
+        conditions.push(
+          gte(predictionAccuracy.outcomeDate, filters.dateRange.start),
+          lte(predictionAccuracy.outcomeDate, filters.dateRange.end)
+        );
+      }
+      
+      const accuracyRecords = conditions.length > 0
+        ? await db
+            .select()
+            .from(predictionAccuracy)
+            .where(and(...conditions))
+        : await db.select().from(predictionAccuracy);
+      
+      // Get predictions for type filtering
+      const predictions = filters?.predictionType
+        ? await db
+            .select()
+            .from(userPredictions)
+            .where(eq(userPredictions.predictionType, filters.predictionType))
+        : await db.select().from(userPredictions);
+      
+      const predictionMap = new Map(predictions.map(p => [p.id, p]));
+      
+      // Filter accuracy records by prediction type if needed
+      const filteredAccuracy = filters?.predictionType
+        ? accuracyRecords.filter(a => {
+            const pred = predictionMap.get(a.predictionId);
+            return pred?.predictionType === filters.predictionType;
+          })
+        : accuracyRecords;
+      
+      const totalPredictions = filteredAccuracy.length;
+      const correctPredictions = filteredAccuracy.filter(a => a.accuracyScore >= 0.5).length;
+      const averageAccuracy = totalPredictions > 0
+        ? filteredAccuracy.reduce((sum, a) => sum + a.accuracyScore, 0) / totalPredictions
+        : 0;
+      
+      // Calculate accuracy by type
+      const accuracyByType: Record<string, number> = {};
+      const typeGroups: Record<string, number[]> = {};
+      
+      filteredAccuracy.forEach(a => {
+        const pred = predictionMap.get(a.predictionId);
+        if (pred) {
+          if (!typeGroups[pred.predictionType]) {
+            typeGroups[pred.predictionType] = [];
+          }
+          typeGroups[pred.predictionType].push(a.accuracyScore);
+        }
+      });
+      
+      Object.entries(typeGroups).forEach(([type, scores]) => {
+        accuracyByType[type] = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+      });
+      
+      return {
+        averageAccuracy,
+        totalPredictions,
+        correctPredictions,
+        accuracyByType
+      };
+    } catch (error) {
+      console.error("Error getting prediction accuracy:", error);
       throw error;
     }
   }
