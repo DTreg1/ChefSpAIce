@@ -13,14 +13,11 @@ export function AskAnalytics() {
 
   const explainMutation = useMutation({
     mutationFn: async (metricName: string) => {
-      const response = await apiRequest("/api/insights/explain", {
-        method: "POST",
-        body: JSON.stringify({ metricName }),
-      });
-      return response.explanation;
+      const response = await apiRequest("/api/insights/explain", "POST", { metricName });
+      return response as unknown as { explanation: string };
     },
     onSuccess: (data) => {
-      setExplanation(data);
+      setExplanation(data.explanation);
     }
   });
 

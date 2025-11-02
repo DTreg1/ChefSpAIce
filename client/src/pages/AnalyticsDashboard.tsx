@@ -54,27 +54,28 @@ export default function AnalyticsDashboard() {
       params.append("period", selectedPeriod);
       params.append("limit", "50");
       
-      return apiRequest(`/api/insights?${params.toString()}`);
+      const response = await apiRequest(`/api/insights?${params.toString()}`, "GET");
+      return response as AnalyticsInsight[];
     }
   });
 
   // Fetch daily summary
   const { data: dailySummary = [] } = useQuery({
     queryKey: ["/api/insights/daily"],
-    queryFn: () => apiRequest("/api/insights/daily")
+    queryFn: async () => {
+      const response = await apiRequest("/api/insights/daily", "GET");
+      return response as AnalyticsInsight[];
+    }
   });
 
   // Generate insight mutation
   const generateInsightMutation = useMutation({
     mutationFn: async (metricName: string) => {
       const dataPoints = generateSampleData(metricName, 30);
-      return apiRequest("/api/insights/generate", {
-        method: "POST",
-        body: JSON.stringify({
-          metricName,
-          dataPoints,
-          period: "30 days"
-        }),
+      return apiRequest("/api/insights/generate", "POST", {
+        metricName,
+        dataPoints,
+        period: "30 days"
       });
     },
     onSuccess: () => {
@@ -259,7 +260,7 @@ export default function AnalyticsDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {insights.map((insight: AnalyticsInsight) => (
-                <InsightCard key={insight.insightId} insight={insight} />
+                <InsightCard key={insight.id} insight={insight} />
               ))}
             </div>
           )}

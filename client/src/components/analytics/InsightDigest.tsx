@@ -82,9 +82,9 @@ export function InsightDigest({ insights, date }: InsightDigestProps) {
                 <div className="space-y-2 pl-6">
                   {categoryInsights.slice(0, 3).map((insight) => (
                     <div 
-                      key={insight.insightId} 
+                      key={insight.id} 
                       className="pb-2 border-b last:border-b-0"
-                      data-testid={`digest-item-${insight.insightId}`}
+                      data-testid={`digest-item-${insight.id}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 space-y-1">

@@ -22,26 +22,21 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
   // Mark as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (insightId: string) => {
-      return apiRequest(`/api/insights/${insightId}/read`, {
-        method: "PATCH",
-      });
+      return apiRequest(`/api/insights/${insightId}/read`, "PATCH");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/insights"] });
-      onMarkAsRead?.(insight.insightId);
+      onMarkAsRead?.(insight.id);
     }
   });
 
   // Submit feedback mutation
   const submitFeedbackMutation = useMutation({
     mutationFn: async ({ helpful }: { helpful: boolean }) => {
-      return apiRequest(`/api/insights/${insight.insightId}/feedback`, {
-        method: "POST",
-        body: JSON.stringify({
-          helpfulScore: helpful ? 5 : 2,
-          wasActionable: helpful,
-          comments: helpful ? "This insight was helpful" : "This insight wasn't helpful"
-        }),
+      return apiRequest(`/api/insights/${insight.id}/feedback`, "POST", {
+        helpfulScore: helpful ? 5 : 2,
+        wasActionable: helpful,
+        comments: helpful ? "This insight was helpful" : "This insight wasn't helpful"
       });
     },
     onSuccess: () => {
@@ -88,7 +83,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
   const handleExpand = () => {
     setIsExpanded(!isExpanded);
     if (!isExpanded && !insight.isRead) {
-      markAsReadMutation.mutate(insight.insightId);
+      markAsReadMutation.mutate(insight.id);
     }
   };
 
@@ -98,7 +93,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
         "hover-elevate transition-all duration-200",
         !insight.isRead && "border-primary/50"
       )}
-      data-testid={`card-insight-${insight.insightId}`}
+      data-testid={`card-insight-${insight.id}`}
     >
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-2">
@@ -134,7 +129,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
             {insight.metricData.currentValue !== undefined && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Current</p>
-                <p className="text-sm font-semibold" data-testid={`text-current-${insight.insightId}`}>
+                <p className="text-sm font-semibold" data-testid={`text-current-${insight.id}`}>
                   {insight.metricData.currentValue.toLocaleString()}
                 </p>
               </div>
@@ -146,7 +141,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
                   "text-sm font-semibold",
                   insight.metricData.percentageChange > 0 ? "text-green-600 dark:text-green-400" : 
                   insight.metricData.percentageChange < 0 ? "text-red-600 dark:text-red-400" : ""
-                )} data-testid={`text-change-${insight.insightId}`}>
+                )} data-testid={`text-change-${insight.id}`}>
                   {formatPercentage(insight.metricData.percentageChange)}
                 </p>
               </div>
@@ -154,7 +149,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
             {insight.metricData.average !== undefined && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Average</p>
-                <p className="text-sm font-semibold" data-testid={`text-average-${insight.insightId}`}>
+                <p className="text-sm font-semibold" data-testid={`text-average-${insight.id}`}>
                   {insight.metricData.average.toLocaleString()}
                 </p>
               </div>
@@ -162,7 +157,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
             {insight.period && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Period</p>
-                <p className="text-sm font-semibold" data-testid={`text-period-${insight.insightId}`}>
+                <p className="text-sm font-semibold" data-testid={`text-period-${insight.id}`}>
                   {insight.period}
                 </p>
               </div>
@@ -178,7 +173,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
               size="sm"
               onClick={handleExpand}
               className="w-full justify-between"
-              data-testid={`button-expand-${insight.insightId}`}
+              data-testid={`button-expand-${insight.id}`}
             >
               <span className="text-xs">View Details</span>
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -193,7 +188,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
                       {insight.aiContext.suggestedActions.map((action, idx) => (
                         <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
                           <span className="text-primary mt-0.5">•</span>
-                          <span data-testid={`text-action-${insight.insightId}-${idx}`}>{action}</span>
+                          <span data-testid={`text-action-${insight.id}-${idx}`}>{action}</span>
                         </li>
                       ))}
                     </ul>
@@ -203,7 +198,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
                 {insight.aiContext?.reasoning && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">Technical Details</h4>
-                    <p className="text-sm text-muted-foreground" data-testid={`text-reasoning-${insight.insightId}`}>
+                    <p className="text-sm text-muted-foreground" data-testid={`text-reasoning-${insight.id}`}>
                       {insight.aiContext.reasoning}
                     </p>
                   </div>
@@ -231,7 +226,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
                       size="sm"
                       onClick={() => submitFeedbackMutation.mutate({ helpful: true })}
                       disabled={submitFeedbackMutation.isPending}
-                      data-testid={`button-helpful-${insight.insightId}`}
+                      data-testid={`button-helpful-${insight.id}`}
                     >
                       <ThumbsUp className="w-4 h-4" />
                     </Button>
@@ -240,7 +235,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
                       size="sm"
                       onClick={() => submitFeedbackMutation.mutate({ helpful: false })}
                       disabled={submitFeedbackMutation.isPending}
-                      data-testid={`button-not-helpful-${insight.insightId}`}
+                      data-testid={`button-not-helpful-${insight.id}`}
                     >
                       <ThumbsDown className="w-4 h-4" />
                     </Button>
