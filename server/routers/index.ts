@@ -33,6 +33,7 @@ import recommendationsRouter from "./recommendations.router";
 import naturalQueryRouter from "./natural-query.router";
 import { translationRouter } from "./translation.router";
 import { createAltTextRouter } from "./alt-text.router";
+import moderationRouter from "./moderation.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -79,6 +80,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/query", naturalQueryRouter);    // Natural language query endpoints
   app.use("/api", translationRouter);           // Translation endpoints
   app.use("/api/images", createAltTextRouter(storage)); // Alt text generation endpoints
+  app.use("/api/moderate", moderationRouter);   // Content moderation endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);

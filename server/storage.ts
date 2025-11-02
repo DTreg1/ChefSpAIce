@@ -179,6 +179,16 @@ import {
   type InsertAltTextQuality,
   imageMetadata,
   altTextQuality,
+  // Moderation types
+  type ModerationLog,
+  type InsertModerationLog,
+  type BlockedContent,
+  type InsertBlockedContent,
+  type ModerationAppeal,
+  type InsertModerationAppeal,
+  moderationLogs,
+  blockedContent,
+  moderationAppeals,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -1560,6 +1570,84 @@ export interface IStorage {
     reviewerId: string,
     notes?: string
   ): Promise<AltTextQuality>;
+  
+  // ==================== Moderation Operations ====================
+  
+  /**
+   * Create a moderation log entry
+   * @param log - Moderation log data
+   */
+  createModerationLog(log: InsertModerationLog): Promise<ModerationLog>;
+  
+  /**
+   * Update moderation log
+   * @param id - Log ID
+   * @param updates - Fields to update
+   */
+  updateModerationLog(id: string, updates: Partial<InsertModerationLog>): Promise<void>;
+  
+  /**
+   * Get moderation queue
+   * @param userId - User ID
+   * @param isAdmin - Whether user is admin
+   * @param filters - Optional filters
+   */
+  getModerationQueue(
+    userId: string,
+    isAdmin: boolean,
+    filters?: {
+      status?: string;
+      severity?: string;
+      contentType?: string;
+    }
+  ): Promise<ModerationLog[]>;
+  
+  /**
+   * Create blocked content entry
+   * @param content - Blocked content data
+   */
+  createBlockedContent(content: InsertBlockedContent): Promise<BlockedContent>;
+  
+  /**
+   * Restore blocked content
+   * @param id - Blocked content ID
+   * @param restoredBy - User ID who restored
+   */
+  restoreBlockedContent(id: string, restoredBy: string): Promise<void>;
+  
+  /**
+   * Create moderation appeal
+   * @param appeal - Appeal data
+   */
+  createModerationAppeal(appeal: InsertModerationAppeal): Promise<ModerationAppeal>;
+  
+  /**
+   * Get moderation appeal
+   * @param id - Appeal ID
+   */
+  getModerationAppeal(id: string): Promise<ModerationAppeal | undefined>;
+  
+  /**
+   * Update moderation appeal
+   * @param id - Appeal ID
+   * @param updates - Fields to update
+   */
+  updateModerationAppeal(id: string, updates: Partial<InsertModerationAppeal>): Promise<void>;
+  
+  /**
+   * Get moderation statistics
+   * @param timeRange - Optional time range
+   */
+  getModerationStats(timeRange?: { start: Date; end: Date }): Promise<{
+    totalChecked: number;
+    totalBlocked: number;
+    totalFlagged: number;
+    totalAppeals: number;
+    appealsApproved: number;
+    categoriesBreakdown: { [key: string]: number };
+    severityBreakdown: { [key: string]: number };
+    averageConfidence: number;
+  }>;
 }
 
 /**
@@ -6635,6 +6723,247 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Failed to review alt text quality:", error);
       throw error;
+    }
+  }
+
+  // ==================== Moderation Implementations ====================
+  
+  async createModerationLog(log: InsertModerationLog): Promise<ModerationLog> {
+    try {
+      const [result] = await db
+        .insert(moderationLogs)
+        .values(log)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating moderation log:", error);
+      throw new Error("Failed to create moderation log");
+    }
+  }
+  
+  async updateModerationLog(id: string, updates: Partial<InsertModerationLog>): Promise<void> {
+    try {
+      await db
+        .update(moderationLogs)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(moderationLogs.id, id));
+    } catch (error) {
+      console.error("Error updating moderation log:", error);
+      throw new Error("Failed to update moderation log");
+    }
+  }
+  
+  async getModerationQueue(
+    userId: string,
+    isAdmin: boolean,
+    filters?: {
+      status?: string;
+      severity?: string;
+      contentType?: string;
+    }
+  ): Promise<ModerationLog[]> {
+    try {
+      let query = db.select().from(moderationLogs);
+      
+      // Build where conditions
+      const conditions = [];
+      
+      // Admin can see all logs, non-admin can only see their own
+      if (!isAdmin) {
+        conditions.push(eq(moderationLogs.userId, userId));
+      }
+      
+      // Apply filters
+      if (filters?.status) {
+        conditions.push(eq(moderationLogs.status, filters.status));
+      }
+      if (filters?.severity) {
+        conditions.push(eq(moderationLogs.severity, filters.severity));
+      }
+      if (filters?.contentType) {
+        conditions.push(eq(moderationLogs.contentType, filters.contentType));
+      }
+      
+      // Apply conditions if any
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      // Order by creation date (newest first)
+      const result = await query.orderBy(desc(moderationLogs.createdAt));
+      
+      return result;
+    } catch (error) {
+      console.error("Error getting moderation queue:", error);
+      throw new Error("Failed to get moderation queue");
+    }
+  }
+  
+  async createBlockedContent(content: InsertBlockedContent): Promise<BlockedContent> {
+    try {
+      const [result] = await db
+        .insert(blockedContent)
+        .values(content)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating blocked content:", error);
+      throw new Error("Failed to create blocked content");
+    }
+  }
+  
+  async restoreBlockedContent(id: string, restoredBy: string): Promise<void> {
+    try {
+      await db
+        .update(blockedContent)
+        .set({
+          status: 'restored',
+          restoredBy,
+          restoredAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(blockedContent.id, id));
+    } catch (error) {
+      console.error("Error restoring blocked content:", error);
+      throw new Error("Failed to restore blocked content");
+    }
+  }
+  
+  async createModerationAppeal(appeal: InsertModerationAppeal): Promise<ModerationAppeal> {
+    try {
+      const [result] = await db
+        .insert(moderationAppeals)
+        .values(appeal)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating moderation appeal:", error);
+      throw new Error("Failed to create moderation appeal");
+    }
+  }
+  
+  async getModerationAppeal(id: string): Promise<ModerationAppeal | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(moderationAppeals)
+        .where(eq(moderationAppeals.id, id))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting moderation appeal:", error);
+      throw new Error("Failed to get moderation appeal");
+    }
+  }
+  
+  async updateModerationAppeal(id: string, updates: Partial<InsertModerationAppeal>): Promise<void> {
+    try {
+      await db
+        .update(moderationAppeals)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(moderationAppeals.id, id));
+    } catch (error) {
+      console.error("Error updating moderation appeal:", error);
+      throw new Error("Failed to update moderation appeal");
+    }
+  }
+  
+  async getModerationStats(timeRange?: { start: Date; end: Date }): Promise<{
+    totalChecked: number;
+    totalBlocked: number;
+    totalFlagged: number;
+    totalAppeals: number;
+    appealsApproved: number;
+    categoriesBreakdown: { [key: string]: number };
+    severityBreakdown: { [key: string]: number };
+    averageConfidence: number;
+  }> {
+    try {
+      // Build where conditions for time range
+      const conditions = [];
+      if (timeRange) {
+        conditions.push(
+          gte(moderationLogs.createdAt, timeRange.start),
+          lte(moderationLogs.createdAt, timeRange.end)
+        );
+      }
+      
+      // Get all moderation logs within time range
+      let logsQuery = db.select().from(moderationLogs);
+      if (conditions.length > 0) {
+        logsQuery = logsQuery.where(and(...conditions));
+      }
+      const logs = await logsQuery;
+      
+      // Calculate statistics
+      const totalChecked = logs.length;
+      const totalBlocked = logs.filter(log => log.actionTaken === 'blocked').length;
+      const totalFlagged = logs.filter(log => log.flaggedCategories && log.flaggedCategories.length > 0).length;
+      
+      // Get appeals statistics
+      let appealsQuery = db.select().from(moderationAppeals);
+      if (timeRange) {
+        appealsQuery = appealsQuery.where(
+          and(
+            gte(moderationAppeals.createdAt, timeRange.start),
+            lte(moderationAppeals.createdAt, timeRange.end)
+          )
+        );
+      }
+      const appeals = await appealsQuery;
+      const totalAppeals = appeals.length;
+      const appealsApproved = appeals.filter(appeal => appeal.status === 'approved').length;
+      
+      // Calculate categories breakdown
+      const categoriesBreakdown: { [key: string]: number } = {};
+      logs.forEach(log => {
+        if (log.flaggedCategories) {
+          log.flaggedCategories.forEach(category => {
+            categoriesBreakdown[category] = (categoriesBreakdown[category] || 0) + 1;
+          });
+        }
+      });
+      
+      // Calculate severity breakdown
+      const severityBreakdown: { [key: string]: number } = {
+        low: 0,
+        medium: 0,
+        high: 0,
+        critical: 0
+      };
+      logs.forEach(log => {
+        if (log.severity) {
+          severityBreakdown[log.severity] = (severityBreakdown[log.severity] || 0) + 1;
+        }
+      });
+      
+      // Calculate average confidence
+      const confidenceScores = logs
+        .filter(log => log.confidenceScore !== null)
+        .map(log => log.confidenceScore!);
+      const averageConfidence = confidenceScores.length > 0
+        ? confidenceScores.reduce((sum, score) => sum + score, 0) / confidenceScores.length
+        : 0;
+      
+      return {
+        totalChecked,
+        totalBlocked,
+        totalFlagged,
+        totalAppeals,
+        appealsApproved,
+        categoriesBreakdown,
+        severityBreakdown,
+        averageConfidence
+      };
+    } catch (error) {
+      console.error("Error getting moderation stats:", error);
+      throw new Error("Failed to get moderation statistics");
     }
   }
 
