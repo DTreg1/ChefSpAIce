@@ -19,7 +19,7 @@ import { z } from "zod";
 import OpenAI from "openai";
 // Natural language processing tools
 // Using simple word tokenization without the natural library
-import * as syllableLib from "syllable";
+import syllable from "syllable";
 import Sentiment from "sentiment";
 // @ts-ignore
 import rs from "text-readability";
@@ -98,7 +98,7 @@ function countWords(text: string): number {
 function detectTone(text: string): string {
   const sentimentResult = sentiment.analyze(text);
   const avgWordLength = text.length / countWords(text);
-  const complexWords = text.split(/\s+/).filter(word => (syllableLib as any)(word) >= 3).length;
+  const complexWords = text.split(/\s+/).filter(word => syllable(word) >= 3).length;
   const complexityRatio = complexWords / countWords(text);
   
   if (complexityRatio > 0.3 && avgWordLength > 5) {
