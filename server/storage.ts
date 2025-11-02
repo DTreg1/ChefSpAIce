@@ -172,9 +172,16 @@ import {
   voiceCommands,
   writingSessions,
   writingSuggestions,
+  // Image metadata types
+  type ImageMetadata,
+  type InsertImageMetadata,
+  type AltTextQuality,
+  type InsertAltTextQuality,
+  imageMetadata,
+  altTextQuality,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and, or, desc, gte, lte, isNull, ne } from "drizzle-orm";
+import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
 import {
   matchIngredientWithInventory,
   type IngredientMatch,
@@ -1423,6 +1430,136 @@ export interface IStorage {
    * @param languageCode - Language code
    */
   getUsersWithAutoTranslate(languageCode: string): Promise<string[]>;
+  
+  // ==================== Image Metadata & Alt Text ====================
+  
+  /**
+   * Get image metadata by ID
+   * @param userId - User ID
+   * @param imageId - Image metadata ID
+   */
+  getImageMetadata(userId: string, imageId: string): Promise<ImageMetadata | undefined>;
+  
+  /**
+   * Get image metadata by URL
+   * @param userId - User ID  
+   * @param imageUrl - Image URL
+   */
+  getImageMetadataByUrl(userId: string, imageUrl: string): Promise<ImageMetadata | undefined>;
+  
+  /**
+   * Get all images for user
+   * @param userId - User ID
+   * @param filters - Optional filters
+   */
+  getImagesPaginated(
+    userId: string,
+    page?: number,
+    limit?: number,
+    filters?: {
+      isDecorative?: boolean;
+      hasAltText?: boolean;
+      needsImprovement?: boolean;
+    }
+  ): Promise<PaginatedResponse<ImageMetadata>>;
+  
+  /**
+   * Create image metadata record
+   * @param userId - User ID
+   * @param metadata - Image metadata
+   */
+  createImageMetadata(
+    userId: string,
+    metadata: Omit<InsertImageMetadata, "userId">
+  ): Promise<ImageMetadata>;
+  
+  /**
+   * Update image metadata (including alt text)
+   * @param userId - User ID
+   * @param imageId - Image metadata ID
+   * @param updates - Partial updates
+   */
+  updateImageMetadata(
+    userId: string,
+    imageId: string,
+    updates: Partial<Omit<InsertImageMetadata, "userId">>
+  ): Promise<ImageMetadata>;
+  
+  /**
+   * Delete image metadata
+   * @param userId - User ID
+   * @param imageId - Image metadata ID
+   */
+  deleteImageMetadata(userId: string, imageId: string): Promise<void>;
+  
+  /**
+   * Batch process multiple images
+   * @param userId - User ID
+   * @param imageIds - Array of image IDs
+   * @param processor - Function to process each image
+   */
+  batchProcessImages(
+    userId: string,
+    imageIds: string[],
+    processor: (image: ImageMetadata) => Promise<Partial<InsertImageMetadata>>
+  ): Promise<ImageMetadata[]>;
+  
+  // ==================== Alt Text Quality ====================
+  
+  /**
+   * Get alt text quality for image
+   * @param imageId - Image metadata ID
+   */
+  getAltTextQuality(imageId: string): Promise<AltTextQuality | undefined>;
+  
+  /**
+   * Create or update alt text quality scores
+   * @param imageId - Image metadata ID
+   * @param quality - Quality metrics
+   */
+  upsertAltTextQuality(
+    imageId: string,
+    quality: Omit<InsertAltTextQuality, "imageId">
+  ): Promise<AltTextQuality>;
+  
+  /**
+   * Get accessibility report for user
+   * @param userId - User ID
+   * @param filters - Report filters
+   */
+  getAccessibilityReport(
+    userId: string,
+    filters?: {
+      wcagLevel?: string;
+      minScore?: number;
+      maxScore?: number;
+      dateRange?: { start: Date; end: Date };
+    }
+  ): Promise<{
+    totalImages: number;
+    imagesWithAltText: number;
+    decorativeImages: number;
+    averageQualityScore: number;
+    averageAccessibilityScore: number;
+    wcagCompliance: {
+      A: number;
+      AA: number;
+      AAA: number;
+    };
+    needsImprovement: ImageMetadata[];
+  }>;
+  
+  /**
+   * Mark quality record as reviewed
+   * @param imageId - Image metadata ID
+   * @param reviewerId - User ID of reviewer
+   * @param notes - Review notes
+   */
+  reviewAltTextQuality(
+    imageId: string,
+    reviewerId: string,
+    notes?: string
+  ): Promise<AltTextQuality>;
 }
 
 /**
@@ -6102,6 +6239,402 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting users with auto-translate:", error);
       throw new Error("Failed to get users with auto-translate");
+    }
+  }
+
+  // ==================== Image Metadata & Alt Text Implementation ====================
+
+  async getImageMetadata(userId: string, imageId: string): Promise<ImageMetadata | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(imageMetadata)
+        .where(and(
+          eq(imageMetadata.userId, userId),
+          eq(imageMetadata.id, imageId)
+        ))
+        .limit(1);
+      
+      return result[0];
+    } catch (error) {
+      console.error("Failed to get image metadata:", error);
+      throw error;
+    }
+  }
+
+  async getImageMetadataByUrl(userId: string, imageUrl: string): Promise<ImageMetadata | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(imageMetadata)
+        .where(and(
+          eq(imageMetadata.userId, userId),
+          eq(imageMetadata.imageUrl, imageUrl)
+        ))
+        .limit(1);
+      
+      return result[0];
+    } catch (error) {
+      console.error("Failed to get image metadata by URL:", error);
+      throw error;
+    }
+  }
+
+  async getImagesPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+    filters?: {
+      isDecorative?: boolean;
+      hasAltText?: boolean;
+      needsImprovement?: boolean;
+    }
+  ): Promise<PaginatedResponse<ImageMetadata>> {
+    try {
+      const offset = (page - 1) * limit;
+      
+      // Build filter conditions
+      const conditions = [eq(imageMetadata.userId, userId)];
+      
+      if (filters?.isDecorative !== undefined) {
+        conditions.push(eq(imageMetadata.isDecorative, filters.isDecorative));
+      }
+      
+      if (filters?.hasAltText !== undefined) {
+        if (filters.hasAltText) {
+          conditions.push(isNotNull(imageMetadata.altText));
+        } else {
+          conditions.push(isNull(imageMetadata.altText));
+        }
+      }
+      
+      if (filters?.needsImprovement) {
+        // Images with quality score < 70 need improvement
+        const lowQualityImages = await db
+          .select({ imageId: altTextQuality.imageId })
+          .from(altTextQuality)
+          .where(lte(altTextQuality.qualityScore, 70));
+        
+        const lowQualityIds = lowQualityImages.map(img => img.imageId);
+        if (lowQualityIds.length > 0) {
+          conditions.push(sql`${imageMetadata.id} = ANY(${lowQualityIds})`);
+        }
+      }
+      
+      const [data, totalResult] = await Promise.all([
+        db
+          .select()
+          .from(imageMetadata)
+          .where(and(...conditions))
+          .orderBy(desc(imageMetadata.uploadedAt))
+          .limit(limit)
+          .offset(offset),
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(imageMetadata)
+          .where(and(...conditions))
+      ]);
+      
+      const total = Number(totalResult[0]?.count ?? 0);
+      const totalPages = Math.ceil(total / limit);
+      
+      return {
+        data,
+        total,
+        page,
+        totalPages,
+        limit,
+        offset
+      };
+    } catch (error) {
+      console.error("Failed to get paginated images:", error);
+      throw error;
+    }
+  }
+
+  async createImageMetadata(
+    userId: string,
+    metadata: Omit<InsertImageMetadata, "userId">
+  ): Promise<ImageMetadata> {
+    try {
+      const result = await db
+        .insert(imageMetadata)
+        .values({
+          ...metadata,
+          userId
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error("Failed to create image metadata:", error);
+      throw error;
+    }
+  }
+
+  async updateImageMetadata(
+    userId: string,
+    imageId: string,
+    updates: Partial<Omit<InsertImageMetadata, "userId">>
+  ): Promise<ImageMetadata> {
+    try {
+      const result = await db
+        .update(imageMetadata)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(imageMetadata.userId, userId),
+          eq(imageMetadata.id, imageId)
+        ))
+        .returning();
+      
+      if (!result[0]) {
+        throw new Error("Image metadata not found");
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error("Failed to update image metadata:", error);
+      throw error;
+    }
+  }
+
+  async deleteImageMetadata(userId: string, imageId: string): Promise<void> {
+    try {
+      await db
+        .delete(imageMetadata)
+        .where(and(
+          eq(imageMetadata.userId, userId),
+          eq(imageMetadata.id, imageId)
+        ));
+    } catch (error) {
+      console.error("Failed to delete image metadata:", error);
+      throw error;
+    }
+  }
+
+  async batchProcessImages(
+    userId: string,
+    imageIds: string[],
+    processor: (image: ImageMetadata) => Promise<Partial<InsertImageMetadata>>
+  ): Promise<ImageMetadata[]> {
+    try {
+      // Get all images
+      const images = await db
+        .select()
+        .from(imageMetadata)
+        .where(and(
+          eq(imageMetadata.userId, userId),
+          sql`${imageMetadata.id} = ANY(${imageIds})`
+        ));
+      
+      // Process each image
+      const updates = await Promise.all(
+        images.map(async (image) => {
+          const updateData = await processor(image);
+          return {
+            id: image.id,
+            ...updateData
+          };
+        })
+      );
+      
+      // Update all images
+      const updatedImages = await Promise.all(
+        updates.map((update) =>
+          this.updateImageMetadata(userId, update.id!, update)
+        )
+      );
+      
+      return updatedImages;
+    } catch (error) {
+      console.error("Failed to batch process images:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Alt Text Quality Implementation ====================
+
+  async getAltTextQuality(imageId: string): Promise<AltTextQuality | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(altTextQuality)
+        .where(eq(altTextQuality.imageId, imageId))
+        .limit(1);
+      
+      return result[0];
+    } catch (error) {
+      console.error("Failed to get alt text quality:", error);
+      throw error;
+    }
+  }
+
+  async upsertAltTextQuality(
+    imageId: string,
+    quality: Omit<InsertAltTextQuality, "imageId">
+  ): Promise<AltTextQuality> {
+    try {
+      // Check if quality record exists
+      const existing = await this.getAltTextQuality(imageId);
+      
+      if (existing) {
+        // Update existing
+        const result = await db
+          .update(altTextQuality)
+          .set({
+            ...quality,
+            updatedAt: new Date(),
+            lastAnalyzedAt: new Date()
+          })
+          .where(eq(altTextQuality.imageId, imageId))
+          .returning();
+        
+        return result[0];
+      } else {
+        // Create new
+        const result = await db
+          .insert(altTextQuality)
+          .values({
+            ...quality,
+            imageId
+          })
+          .returning();
+        
+        return result[0];
+      }
+    } catch (error) {
+      console.error("Failed to upsert alt text quality:", error);
+      throw error;
+    }
+  }
+
+  async getAccessibilityReport(
+    userId: string,
+    filters?: {
+      wcagLevel?: string;
+      minScore?: number;
+      maxScore?: number;
+      dateRange?: { start: Date; end: Date };
+    }
+  ): Promise<{
+    totalImages: number;
+    imagesWithAltText: number;
+    decorativeImages: number;
+    averageQualityScore: number;
+    averageAccessibilityScore: number;
+    wcagCompliance: {
+      A: number;
+      AA: number;
+      AAA: number;
+    };
+    needsImprovement: ImageMetadata[];
+  }> {
+    try {
+      // Base conditions for user's images
+      const conditions = [eq(imageMetadata.userId, userId)];
+      
+      if (filters?.dateRange) {
+        conditions.push(
+          gte(imageMetadata.uploadedAt, filters.dateRange.start),
+          lte(imageMetadata.uploadedAt, filters.dateRange.end)
+        );
+      }
+      
+      // Get all user images
+      const allImages = await db
+        .select()
+        .from(imageMetadata)
+        .where(and(...conditions));
+      
+      // Get quality scores
+      const qualityData = await db
+        .select()
+        .from(altTextQuality)
+        .where(sql`${altTextQuality.imageId} = ANY(${allImages.map(img => img.id)})`);
+      
+      // Apply quality filters if needed
+      let filteredQualityData = qualityData;
+      if (filters?.wcagLevel) {
+        filteredQualityData = qualityData.filter(q => q.wcagLevel === filters.wcagLevel);
+      }
+      if (filters?.minScore !== undefined) {
+        filteredQualityData = filteredQualityData.filter(q => q.qualityScore >= filters.minScore!);
+      }
+      if (filters?.maxScore !== undefined) {
+        filteredQualityData = filteredQualityData.filter(q => q.qualityScore <= filters.maxScore!);
+      }
+      
+      // Calculate statistics
+      const totalImages = allImages.length;
+      const imagesWithAltText = allImages.filter(img => img.altText).length;
+      const decorativeImages = allImages.filter(img => img.isDecorative).length;
+      
+      const averageQualityScore = filteredQualityData.length > 0
+        ? filteredQualityData.reduce((sum, q) => sum + q.qualityScore, 0) / filteredQualityData.length
+        : 0;
+      
+      const averageAccessibilityScore = filteredQualityData.length > 0
+        ? filteredQualityData.reduce((sum, q) => sum + q.accessibilityScore, 0) / filteredQualityData.length
+        : 0;
+      
+      const wcagCompliance = {
+        A: qualityData.filter(q => q.wcagLevel === 'A').length,
+        AA: qualityData.filter(q => q.wcagLevel === 'AA').length,
+        AAA: qualityData.filter(q => q.wcagLevel === 'AAA').length
+      };
+      
+      // Find images needing improvement (quality score < 70)
+      const needsImprovementIds = qualityData
+        .filter(q => q.qualityScore < 70)
+        .map(q => q.imageId);
+      
+      const needsImprovement = allImages.filter(img =>
+        needsImprovementIds.includes(img.id)
+      );
+      
+      return {
+        totalImages,
+        imagesWithAltText,
+        decorativeImages,
+        averageQualityScore,
+        averageAccessibilityScore,
+        wcagCompliance,
+        needsImprovement
+      };
+    } catch (error) {
+      console.error("Failed to get accessibility report:", error);
+      throw error;
+    }
+  }
+
+  async reviewAltTextQuality(
+    imageId: string,
+    reviewerId: string,
+    notes?: string
+  ): Promise<AltTextQuality> {
+    try {
+      const result = await db
+        .update(altTextQuality)
+        .set({
+          manuallyReviewed: true,
+          reviewedBy: reviewerId,
+          reviewNotes: notes,
+          updatedAt: new Date()
+        })
+        .where(eq(altTextQuality.imageId, imageId))
+        .returning();
+      
+      if (!result[0]) {
+        throw new Error("Alt text quality record not found");
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error("Failed to review alt text quality:", error);
+      throw error;
     }
   }
 

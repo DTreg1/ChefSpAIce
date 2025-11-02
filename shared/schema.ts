@@ -4001,3 +4001,198 @@ export const insertLanguagePreferenceSchema = createInsertSchema(languagePrefere
 
 export type InsertLanguagePreference = z.infer<typeof insertLanguagePreferenceSchema>;
 export type LanguagePreference = typeof languagePreferences.$inferSelect;
+
+/**
+ * Image Metadata Table
+ * 
+ * Stores metadata for uploaded images including alt text for accessibility and SEO.
+ * Tracks both user-provided and AI-generated alternative text.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - imageUrl: URL of the stored image (object storage or external)
+ * - altText: Final alt text used for the image
+ * - generatedAlt: AI-generated alt text suggestion
+ * - title: Image title for additional context
+ * - isDecorative: Flag for purely decorative images (no alt text needed)
+ * 
+ * Metadata:
+ * - fileName: Original uploaded file name
+ * - mimeType: MIME type of the image (image/jpeg, image/png, etc.)
+ * - fileSize: Size in bytes
+ * - dimensions: Image width and height
+ * - uploadedAt: When the image was uploaded
+ * 
+ * AI Generation:
+ * - aiModel: Model used for alt text generation (e.g., 'gpt-4-vision')
+ * - generatedAt: When alt text was generated
+ * - confidence: AI confidence score for generated text
+ * - objectsDetected: Array of detected objects/entities
+ * 
+ * Business Rules:
+ * - Alt text required for non-decorative images
+ * - Generated alt text can be edited by user
+ * - Decorative images have empty alt attribute
+ * - Track generation model for quality improvements
+ * 
+ * Indexes:
+ * - image_metadata_user_id_idx: User's images
+ * - image_metadata_url_idx: Fast lookup by URL
+ * - image_metadata_uploaded_at_idx: Chronological queries
+ * 
+ * Relationships:
+ * - users → imageMetadata: CASCADE delete
+ * - imageMetadata ← altTextQuality: Quality assessment reference
+ */
+export const imageMetadata = pgTable("image_metadata", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  imageUrl: text("image_url").notNull(),
+  altText: text("alt_text"),
+  generatedAlt: text("generated_alt"),
+  title: text("title"),
+  isDecorative: boolean("is_decorative").notNull().default(false),
+  
+  // File metadata
+  fileName: text("file_name"),
+  mimeType: varchar("mime_type", { length: 50 }),
+  fileSize: integer("file_size"),
+  dimensions: jsonb("dimensions").$type<{
+    width?: number;
+    height?: number;
+  }>(),
+  
+  // AI generation metadata
+  aiModel: varchar("ai_model", { length: 50 }),
+  generatedAt: timestamp("generated_at"),
+  confidence: real("confidence"),
+  objectsDetected: text("objects_detected").array(),
+  
+  // Additional metadata
+  context: text("context"), // Page/section where image is used
+  language: varchar("language", { length: 10 }).default('en'),
+  
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("image_metadata_user_id_idx").on(table.userId),
+  index("image_metadata_url_idx").on(table.imageUrl),
+  index("image_metadata_uploaded_at_idx").on(table.uploadedAt),
+]);
+
+export const insertImageMetadataSchema = createInsertSchema(imageMetadata).omit({
+  id: true,
+  uploadedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertImageMetadata = z.infer<typeof insertImageMetadataSchema>;
+export type ImageMetadata = typeof imageMetadata.$inferSelect;
+
+/**
+ * Alt Text Quality Table
+ * 
+ * Tracks quality metrics and accessibility scores for image alt text.
+ * Used for reporting and identifying images needing improvement.
+ * 
+ * Core Fields:
+ * - id: UUID primary key
+ * - imageId: Foreign key to imageMetadata.id (CASCADE delete)
+ * - qualityScore: Overall quality score (0-100)
+ * - accessibilityScore: WCAG compliance score (0-100)
+ * 
+ * Quality Metrics:
+ * - lengthScore: Appropriate length (not too short/long)
+ * - descriptiveScore: How well it describes the image
+ * - contextScore: Relevance to surrounding content
+ * - keywordScore: SEO keyword inclusion
+ * 
+ * Accessibility Metrics:
+ * - screenReaderScore: How well it works with screen readers
+ * - wcagLevel: WCAG compliance level ('A', 'AA', 'AAA', null)
+ * - hasColorDescription: Includes color info when relevant
+ * - hasTextDescription: Describes text in image
+ * 
+ * Feedback:
+ * - userFeedback: User-provided quality feedback
+ * - manuallyReviewed: Human review flag
+ * - reviewedBy: User who reviewed (admin/moderator)
+ * - reviewNotes: Review comments
+ * 
+ * Analysis:
+ * - issues: Array of identified issues
+ * - suggestions: Array of improvement suggestions
+ * - lastAnalyzedAt: When quality was last assessed
+ * 
+ * Business Rules:
+ * - Quality scores updated when alt text changes
+ * - Low scores trigger improvement suggestions
+ * - Track manual reviews for training data
+ * - Aggregate scores for accessibility reports
+ * 
+ * Indexes:
+ * - alt_text_quality_image_id_idx: Unique image quality record
+ * - alt_text_quality_score_idx: Find low-quality alt text
+ * - alt_text_quality_wcag_idx: WCAG compliance filtering
+ * 
+ * Relationships:
+ * - imageMetadata → altTextQuality: CASCADE delete
+ * - users → altTextQuality (reviewedBy): SET NULL
+ */
+export const altTextQuality = pgTable("alt_text_quality", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  imageId: varchar("image_id").notNull().unique().references(() => imageMetadata.id, { onDelete: "cascade" }),
+  
+  // Overall scores
+  qualityScore: integer("quality_score").notNull().default(0),
+  accessibilityScore: integer("accessibility_score").notNull().default(0),
+  
+  // Quality metrics (0-100 each)
+  lengthScore: integer("length_score"),
+  descriptiveScore: integer("descriptive_score"),
+  contextScore: integer("context_score"),
+  keywordScore: integer("keyword_score"),
+  
+  // Accessibility metrics
+  screenReaderScore: integer("screen_reader_score"),
+  wcagLevel: varchar("wcag_level", { length: 3 }), // 'A', 'AA', 'AAA'
+  hasColorDescription: boolean("has_color_description").default(false),
+  hasTextDescription: boolean("has_text_description").default(false),
+  
+  // Manual review
+  userFeedback: text("user_feedback"),
+  manuallyReviewed: boolean("manually_reviewed").notNull().default(false),
+  reviewedBy: varchar("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+  reviewNotes: text("review_notes"),
+  
+  // Analysis results
+  issues: text("issues").array(),
+  suggestions: text("suggestions").array(),
+  metadata: jsonb("metadata").$type<{
+    wordCount?: number;
+    readabilityScore?: number;
+    sentimentScore?: number;
+    technicalTerms?: string[];
+  }>(),
+  
+  lastAnalyzedAt: timestamp("last_analyzed_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("alt_text_quality_image_id_idx").on(table.imageId),
+  index("alt_text_quality_score_idx").on(table.qualityScore),
+  index("alt_text_quality_wcag_idx").on(table.wcagLevel),
+]);
+
+export const insertAltTextQualitySchema = createInsertSchema(altTextQuality).omit({
+  id: true,
+  lastAnalyzedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAltTextQuality = z.infer<typeof insertAltTextQualitySchema>;
+export type AltTextQuality = typeof altTextQuality.$inferSelect;
