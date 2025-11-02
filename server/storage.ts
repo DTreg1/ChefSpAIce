@@ -224,6 +224,13 @@ import {
   notificationPreferences,
   notificationScores,
   notificationFeedback,
+  // Auto-Save types
+  type AutoSaveDraft,
+  type InsertAutoSaveDraft,
+  type SavePattern,
+  type InsertSavePattern,
+  autoSaveDrafts,
+  savePatterns,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -1937,6 +1944,97 @@ export interface IStorage {
       avgSentiment: number;
       count: number;
     }>;
+  }>;
+  
+  // ==================== Auto-Save Operations ====================
+  
+  /**
+   * Save draft version of content
+   * @param draft - Draft data to save
+   */
+  saveDraft(draft: InsertAutoSaveDraft): Promise<AutoSaveDraft>;
+  
+  /**
+   * Get latest draft for a document
+   * @param userId - User ID
+   * @param documentId - Document ID
+   */
+  getLatestDraft(userId: string, documentId: string): Promise<AutoSaveDraft | undefined>;
+  
+  /**
+   * Get all draft versions for a document
+   * @param userId - User ID  
+   * @param documentId - Document ID
+   * @param limit - Maximum number of versions to return
+   */
+  getDraftVersions(userId: string, documentId: string, limit?: number): Promise<AutoSaveDraft[]>;
+  
+  /**
+   * Delete specific draft version
+   * @param userId - User ID
+   * @param draftId - Draft ID
+   */
+  deleteDraft(userId: string, draftId: string): Promise<void>;
+  
+  /**
+   * Delete all drafts for a document
+   * @param userId - User ID
+   * @param documentId - Document ID
+   */
+  deleteDocumentDrafts(userId: string, documentId: string): Promise<void>;
+  
+  /**
+   * Clean up old drafts (older than 30 days)
+   * @param userId - User ID (optional, cleans all if not provided)
+   */
+  cleanupOldDrafts(userId?: string): Promise<number>;
+  
+  /**
+   * Get or create user's typing patterns
+   * @param userId - User ID
+   */
+  getUserSavePatterns(userId: string): Promise<SavePattern>;
+  
+  /**
+   * Update user's typing patterns
+   * @param userId - User ID
+   * @param patterns - Pattern data to update
+   */
+  updateUserSavePatterns(
+    userId: string,
+    patterns: Partial<InsertSavePattern>
+  ): Promise<SavePattern>;
+  
+  /**
+   * Record typing event for pattern learning
+   * @param userId - User ID
+   * @param event - Typing event data
+   */
+  recordTypingEvent(
+    userId: string,
+    event: {
+      pauseDuration?: number;
+      burstLength?: number;
+      keyInterval?: number;
+      isSentenceEnd?: boolean;
+      isParagraphEnd?: boolean;
+      wasManualSave?: boolean;
+    }
+  ): Promise<void>;
+  
+  /**
+   * Check for conflicting edits
+   * @param userId - User ID
+   * @param documentId - Document ID
+   * @param contentHash - Hash of current content
+   */
+  checkForConflicts(
+    userId: string,
+    documentId: string,
+    contentHash: string
+  ): Promise<{
+    hasConflict: boolean;
+    latestVersion?: AutoSaveDraft;
   }>;
 }
 
@@ -9224,6 +9322,305 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting sentiment insights:", error);
       throw new Error("Failed to get sentiment insights");
+    }
+  }
+  
+  // ============================================================================
+  // Auto-Save Methods
+  // ============================================================================
+  
+  async saveDraft(draft: InsertAutoSaveDraft): Promise<AutoSaveDraft> {
+    try {
+      // Get the latest version for this document to increment
+      const latestDraft = await this.getLatestDraft(draft.userId, draft.documentId);
+      const nextVersion = latestDraft ? (latestDraft.version + 1) : 1;
+      
+      // Calculate content hash for duplicate detection
+      const crypto = await import('crypto');
+      const contentHash = crypto
+        .createHash('sha256')
+        .update(draft.content)
+        .digest('hex');
+      
+      // Skip saving if content hasn't changed
+      if (latestDraft && latestDraft.contentHash === contentHash) {
+        return latestDraft;
+      }
+      
+      // Save the draft with incremented version
+      const [savedDraft] = await db
+        .insert(autoSaveDrafts)
+        .values({
+          ...draft,
+          version: nextVersion,
+          contentHash,
+        })
+        .returning();
+      
+      // Clean up old versions (keep only last 10)
+      const allVersions = await this.getDraftVersions(draft.userId, draft.documentId);
+      if (allVersions.length > 10) {
+        const versionsToDelete = allVersions
+          .slice(10)
+          .map(v => v.id);
+        
+        await db
+          .delete(autoSaveDrafts)
+          .where(
+            and(
+              eq(autoSaveDrafts.userId, draft.userId),
+              sql`${autoSaveDrafts.id} = ANY(${versionsToDelete})`
+            )
+          );
+      }
+      
+      return savedDraft;
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      throw new Error("Failed to save draft");
+    }
+  }
+  
+  async getLatestDraft(userId: string, documentId: string): Promise<AutoSaveDraft | undefined> {
+    try {
+      const [draft] = await db
+        .select()
+        .from(autoSaveDrafts)
+        .where(
+          and(
+            eq(autoSaveDrafts.userId, userId),
+            eq(autoSaveDrafts.documentId, documentId)
+          )
+        )
+        .orderBy(desc(autoSaveDrafts.version))
+        .limit(1);
+      
+      return draft;
+    } catch (error) {
+      console.error("Error getting latest draft:", error);
+      throw new Error("Failed to get latest draft");
+    }
+  }
+  
+  async getDraftVersions(userId: string, documentId: string, limit = 10): Promise<AutoSaveDraft[]> {
+    try {
+      const drafts = await db
+        .select()
+        .from(autoSaveDrafts)
+        .where(
+          and(
+            eq(autoSaveDrafts.userId, userId),
+            eq(autoSaveDrafts.documentId, documentId)
+          )
+        )
+        .orderBy(desc(autoSaveDrafts.version))
+        .limit(limit);
+      
+      return drafts;
+    } catch (error) {
+      console.error("Error getting draft versions:", error);
+      throw new Error("Failed to get draft versions");
+    }
+  }
+  
+  async deleteDraft(userId: string, draftId: string): Promise<void> {
+    try {
+      await db
+        .delete(autoSaveDrafts)
+        .where(
+          and(
+            eq(autoSaveDrafts.id, draftId),
+            eq(autoSaveDrafts.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error("Error deleting draft:", error);
+      throw new Error("Failed to delete draft");
+    }
+  }
+  
+  async deleteDocumentDrafts(userId: string, documentId: string): Promise<void> {
+    try {
+      await db
+        .delete(autoSaveDrafts)
+        .where(
+          and(
+            eq(autoSaveDrafts.userId, userId),
+            eq(autoSaveDrafts.documentId, documentId)
+          )
+        );
+    } catch (error) {
+      console.error("Error deleting document drafts:", error);
+      throw new Error("Failed to delete document drafts");
+    }
+  }
+  
+  async cleanupOldDrafts(userId?: string): Promise<number> {
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const conditions = [
+        lte(autoSaveDrafts.savedAt, thirtyDaysAgo)
+      ];
+      
+      if (userId) {
+        conditions.push(eq(autoSaveDrafts.userId, userId));
+      }
+      
+      const result = await db
+        .delete(autoSaveDrafts)
+        .where(and(...conditions));
+      
+      // Return count of deleted rows (Drizzle doesn't provide this directly)
+      return 0; // TODO: Implement proper row count
+    } catch (error) {
+      console.error("Error cleaning up old drafts:", error);
+      throw new Error("Failed to clean up old drafts");
+    }
+  }
+  
+  async getUserSavePatterns(userId: string): Promise<SavePattern> {
+    try {
+      const [pattern] = await db
+        .select()
+        .from(savePatterns)
+        .where(eq(savePatterns.userId, userId));
+      
+      if (!pattern) {
+        // Create default pattern for new user
+        const [newPattern] = await db
+          .insert(savePatterns)
+          .values({
+            userId,
+            avgPauseDuration: 2000,
+            typingSpeed: 40,
+            saveFrequency: 0.5,
+            sentencePauseDuration: 2500,
+            paragraphPauseDuration: 4000,
+            preferredSaveInterval: 3000,
+            totalSessions: 0,
+          })
+          .returning();
+        
+        return newPattern;
+      }
+      
+      return pattern;
+    } catch (error) {
+      console.error("Error getting user save patterns:", error);
+      throw new Error("Failed to get user save patterns");
+    }
+  }
+  
+  async updateUserSavePatterns(
+    userId: string,
+    patterns: Partial<InsertSavePattern>
+  ): Promise<SavePattern> {
+    try {
+      const [updatedPattern] = await db
+        .update(savePatterns)
+        .set({
+          ...patterns,
+          updatedAt: new Date(),
+        })
+        .where(eq(savePatterns.userId, userId))
+        .returning();
+      
+      return updatedPattern;
+    } catch (error) {
+      console.error("Error updating user save patterns:", error);
+      throw new Error("Failed to update user save patterns");
+    }
+  }
+  
+  async recordTypingEvent(
+    userId: string,
+    event: {
+      pauseDuration?: number;
+      burstLength?: number;
+      keyInterval?: number;
+      isSentenceEnd?: boolean;
+      isParagraphEnd?: boolean;
+      wasManualSave?: boolean;
+    }
+  ): Promise<void> {
+    try {
+      // Get current patterns
+      const patterns = await this.getUserSavePatterns(userId);
+      
+      // Update pattern data with new event
+      const patternData = patterns.patternData || {
+        pauseHistogram: [],
+        keystrokeIntervals: [],
+        burstLengths: [],
+        timeOfDayPreferences: {},
+        contentTypePatterns: {},
+      };
+      
+      // Add event data to pattern history
+      if (event.pauseDuration !== undefined && patternData.pauseHistogram) {
+        patternData.pauseHistogram.push(event.pauseDuration);
+        // Keep only last 1000 samples
+        if (patternData.pauseHistogram.length > 1000) {
+          patternData.pauseHistogram = patternData.pauseHistogram.slice(-1000);
+        }
+      }
+      
+      if (event.keyInterval !== undefined && patternData.keystrokeIntervals) {
+        patternData.keystrokeIntervals.push(event.keyInterval);
+        if (patternData.keystrokeIntervals.length > 1000) {
+          patternData.keystrokeIntervals = patternData.keystrokeIntervals.slice(-1000);
+        }
+      }
+      
+      if (event.burstLength !== undefined && patternData.burstLengths) {
+        patternData.burstLengths.push(event.burstLength);
+        if (patternData.burstLengths.length > 1000) {
+          patternData.burstLengths = patternData.burstLengths.slice(-1000);
+        }
+      }
+      
+      // Update patterns if we have enough data
+      if (patternData.pauseHistogram && patternData.pauseHistogram.length > 100) {
+        const avgPause = patternData.pauseHistogram.reduce((a, b) => a + b, 0) / patternData.pauseHistogram.length;
+        
+        await this.updateUserSavePatterns(userId, {
+          avgPauseDuration: avgPause,
+          patternData,
+          lastAnalyzed: new Date(),
+        });
+      }
+    } catch (error) {
+      console.error("Error recording typing event:", error);
+      // Don't throw - this is a background operation
+    }
+  }
+  
+  async checkForConflicts(
+    userId: string,
+    documentId: string,
+    contentHash: string
+  ): Promise<{
+    hasConflict: boolean;
+    latestVersion?: AutoSaveDraft;
+  }> {
+    try {
+      const latestDraft = await this.getLatestDraft(userId, documentId);
+      
+      if (!latestDraft) {
+        return { hasConflict: false };
+      }
+      
+      const hasConflict = latestDraft.contentHash !== contentHash;
+      
+      return {
+        hasConflict,
+        latestVersion: hasConflict ? latestDraft : undefined,
+      };
+    } catch (error) {
+      console.error("Error checking for conflicts:", error);
+      throw new Error("Failed to check for conflicts");
     }
   }
 }

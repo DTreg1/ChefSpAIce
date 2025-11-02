@@ -5250,3 +5250,166 @@ export type SentimentAnalysis = typeof sentimentAnalysis.$inferSelect;
 
 export type InsertSentimentTrend = z.infer<typeof insertSentimentTrendSchema>;
 export type SentimentTrend = typeof sentimentTrends.$inferSelect;
+
+/**
+ * Auto-Save Drafts Table
+ * 
+ * Stores draft versions of user content with intelligent auto-save.
+ * Maintains version history for recovery and undo functionality.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id
+ * - documentId: Unique identifier for the document being edited
+ * - documentType: Type of content (chat, recipe, note, etc.)
+ * - content: The actual content being saved
+ * - contentHash: Hash of content for duplicate detection
+ * - version: Version number for this draft
+ * - metadata: Additional context (cursor position, scroll position, etc.)
+ * - savedAt: Timestamp when draft was saved
+ * - isAutoSave: Whether this was an automatic save
+ * - conflictResolved: Whether conflicts were resolved in this version
+ * 
+ * Business Rules:
+ * - Keep last 10 versions per document
+ * - Auto-delete drafts older than 30 days
+ * - Detect and merge conflicting edits
+ * - Skip saving if content hash unchanged
+ * 
+ * Indexes:
+ * - auto_save_drafts_user_id_idx: User's drafts
+ * - auto_save_drafts_document_idx: Document versions
+ * - auto_save_drafts_saved_at_idx: Time-based cleanup
+ * 
+ * Relationships:
+ * - users → autoSaveDrafts: CASCADE
+ */
+export const autoSaveDrafts = pgTable("auto_save_drafts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  documentId: varchar("document_id").notNull(),
+  documentType: text("document_type").$type<"chat" | "recipe" | "note" | "meal_plan" | "shopping_list" | "other">(),
+  
+  content: text("content").notNull(),
+  contentHash: varchar("content_hash"),
+  version: integer("version").notNull().default(1),
+  
+  metadata: jsonb("metadata").$type<{
+    cursorPosition?: number;
+    scrollPosition?: number;
+    selectedText?: string;
+    editorState?: any;
+    deviceInfo?: {
+      browser?: string;
+      os?: string;
+      screenSize?: string;
+    };
+  }>(),
+  
+  savedAt: timestamp("saved_at").notNull().defaultNow(),
+  isAutoSave: boolean("is_auto_save").notNull().default(true),
+  conflictResolved: boolean("conflict_resolved").default(false),
+}, (table) => [
+  index("auto_save_drafts_user_id_idx").on(table.userId),
+  index("auto_save_drafts_document_idx").on(table.documentId, table.userId),
+  index("auto_save_drafts_saved_at_idx").on(table.savedAt),
+  uniqueIndex("auto_save_drafts_unique_version_idx").on(table.documentId, table.userId, table.version),
+]);
+
+/**
+ * Save Patterns Table
+ * 
+ * Stores user typing patterns for intelligent pause detection.
+ * Uses TensorFlow.js to learn optimal save timings per user.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id
+ * - avgPauseDuration: Average pause between typing bursts (ms)
+ * - typingSpeed: Average words per minute
+ * - saveFrequency: Average saves per session
+ * - sentencePauseDuration: Average pause after sentences (ms)
+ * - paragraphPauseDuration: Average pause after paragraphs (ms)
+ * - preferredSaveInterval: Learned optimal save interval (ms)
+ * - patternData: Raw typing pattern data for ML model
+ * - modelWeights: TensorFlow.js model weights
+ * - lastAnalyzed: When patterns were last analyzed
+ * - totalSessions: Total editing sessions analyzed
+ * 
+ * ML Features:
+ * - Keystroke timing patterns
+ * - Pause duration clustering
+ * - Natural break detection
+ * - Personalized thresholds
+ * 
+ * Business Rules:
+ * - Update patterns every 10 saves
+ * - Minimum 5 sessions before personalization
+ * - Fall back to defaults for new users
+ * - Respect manual save as training signal
+ * 
+ * Indexes:
+ * - save_patterns_user_id_idx: User pattern lookup
+ * - save_patterns_analyzed_idx: Pattern update scheduling
+ * 
+ * Relationships:
+ * - users → savePatterns: CASCADE
+ */
+export const savePatterns = pgTable("save_patterns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  
+  // Basic typing metrics
+  avgPauseDuration: real("avg_pause_duration").default(2000), // milliseconds
+  typingSpeed: real("typing_speed").default(40), // words per minute
+  saveFrequency: real("save_frequency").default(0.5), // saves per minute
+  
+  // Detailed pause patterns
+  sentencePauseDuration: real("sentence_pause_duration").default(2500),
+  paragraphPauseDuration: real("paragraph_pause_duration").default(4000),
+  preferredSaveInterval: real("preferred_save_interval").default(3000),
+  
+  // ML model data
+  patternData: jsonb("pattern_data").$type<{
+    pauseHistogram?: number[];
+    keystrokeIntervals?: number[];
+    burstLengths?: number[];
+    timeOfDayPreferences?: Record<string, number>;
+    contentTypePatterns?: Record<string, any>;
+  }>(),
+  
+  modelWeights: jsonb("model_weights").$type<{
+    weights?: number[][];
+    bias?: number[];
+    version?: string;
+  }>(),
+  
+  // Metadata
+  lastAnalyzed: timestamp("last_analyzed").defaultNow(),
+  totalSessions: integer("total_sessions").notNull().default(0),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("save_patterns_user_idx").on(table.userId),
+  index("save_patterns_analyzed_idx").on(table.lastAnalyzed),
+]);
+
+// Schema types for auto-save
+export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts).omit({
+  id: true,
+  savedAt: true,
+});
+
+export const insertSavePatternSchema = createInsertSchema(savePatterns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastAnalyzed: true,
+});
+
+export type InsertAutoSaveDraft = z.infer<typeof insertAutoSaveDraftSchema>;
+export type AutoSaveDraft = typeof autoSaveDrafts.$inferSelect;
+
+export type InsertSavePattern = z.infer<typeof insertSavePatternSchema>;
+export type SavePattern = typeof savePatterns.$inferSelect;

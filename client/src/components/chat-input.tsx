@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Paperclip, Camera, X, Mic, MicOff, Volume2, Settings } from "lucide-react";
+import { Send, Paperclip, Camera, X, Mic, MicOff, Volume2, Settings, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { VoiceState } from "@/hooks/useVoiceConversation";
 import {
@@ -18,6 +18,10 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { useAutoSave } from "@/hooks/use-auto-save";
+import { AutoSaveIndicator } from "@/components/auto-save-indicator";
+import { VersionHistory } from "@/components/version-history";
+import { ConflictResolver, type ConflictResolutionStrategy } from "@/components/conflict-resolver";
 
 interface Attachment {
   type: 'image' | 'audio' | 'file';
@@ -62,9 +66,37 @@ export function ChatInput({
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [showConflictResolver, setShowConflictResolver] = useState(false);
+  const [conflictData, setConflictData] = useState<{ local: string; remote: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  
+  // Auto-save integration
+  const {
+    isSaving,
+    lastSaved,
+    hasUnsavedChanges,
+    manualSave,
+  } = useAutoSave(message, {
+    documentId: 'chat-draft',
+    documentType: 'chat',
+    minInterval: 2000,
+    maxInterval: 30000,
+    onRestore: (restoredContent) => {
+      setMessage(restoredContent);
+      toast({
+        title: "Draft restored",
+        description: "Your previous message has been restored.",
+        variant: "default",
+      });
+    },
+    onConflict: (localContent, remoteContent) => {
+      setConflictData({ local: localContent, remote: remoteContent });
+      setShowConflictResolver(true);
+      return localContent; // Default to local content
+    },
+  });
 
   // Update message with voice transcript when in voice mode
   useEffect(() => {
@@ -276,43 +308,70 @@ export function ChatInput({
         </div>
       )}
       
-      <div className="max-w-4xl mx-auto flex gap-2">
-        <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
-          {/* Attachment button */}
-          <Button
-            size="icon"
-            variant="outline"
-            className="flex-shrink-0 rounded-full w-10 h-10"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || isUploading}
-            data-testid="button-attach"
-          >
-            <Paperclip className="w-5 h-5" />
-          </Button>
-          {/* Camera button */}
-          <Button
-            size="icon"
-            variant="outline"
-            className="flex-shrink-0 rounded-full w-10 h-10"
-            onClick={() => cameraInputRef.current?.click()}
-            disabled={disabled || isUploading}
-            data-testid="button-camera"
-          >
-            <Camera className="w-5 h-5" />
-          </Button>
+      <div className="max-w-4xl mx-auto">
+        {/* Auto-save status bar */}
+        <div className="flex items-center justify-between mb-2">
+          <AutoSaveIndicator
+            isSaving={isSaving}
+            lastSaved={lastSaved}
+            hasUnsavedChanges={hasUnsavedChanges}
+          />
+          <div className="flex items-center gap-2">
+            <VersionHistory
+              documentId="chat-draft"
+              currentContent={message}
+              onRestore={setMessage}
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={manualSave}
+              disabled={!hasUnsavedChanges || isSaving}
+              data-testid="button-manual-save"
+            >
+              <Save className="w-4 h-4 mr-1" />
+              Save Draft
+            </Button>
+          </div>
         </div>
         
-        <Textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isVoiceMode ? "Speak or type your message..." : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"}
-          className="resize-y text-sm min-h-[100px] max-h-[300px]"
-          disabled={disabled || isVoiceMode}
-          data-testid="input-chat-message"
-        />
-        
-        <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
+        <div className="flex gap-2">
+          <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
+            {/* Attachment button */}
+            <Button
+              size="icon"
+              variant="outline"
+              className="flex-shrink-0 rounded-full w-10 h-10"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || isUploading}
+              data-testid="button-attach"
+            >
+              <Paperclip className="w-5 h-5" />
+            </Button>
+            {/* Camera button */}
+            <Button
+              size="icon"
+              variant="outline"
+              className="flex-shrink-0 rounded-full w-10 h-10"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={disabled || isUploading}
+              data-testid="button-camera"
+            >
+              <Camera className="w-5 h-5" />
+            </Button>
+          </div>
+          
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isVoiceMode ? "Speak or type your message..." : "Ask your ChefSpAIce anything... (e.g., 'What can I make with chicken?', 'Add eggs to my fridge')"}
+            className="resize-y text-sm min-h-[100px] max-h-[300px]"
+            disabled={disabled || isVoiceMode}
+            data-testid="input-chat-message"
+          />
+          
+          <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
           {/* Send button */}
           <Button
             size="icon"
@@ -424,6 +483,29 @@ export function ChatInput({
           )}
         </div>
       </div>
+      
+      {/* Conflict Resolver Dialog */}
+      {conflictData && (
+        <ConflictResolver
+          isOpen={showConflictResolver}
+          onClose={() => {
+            setShowConflictResolver(false);
+            setConflictData(null);
+          }}
+          localContent={conflictData.local}
+          remoteContent={conflictData.remote}
+          onResolve={(resolvedContent, strategy) => {
+            setMessage(resolvedContent);
+            setShowConflictResolver(false);
+            setConflictData(null);
+            toast({
+              title: "Conflict resolved",
+              description: `Applied ${strategy.replace('-', ' ')} strategy`,
+              variant: "default",
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
