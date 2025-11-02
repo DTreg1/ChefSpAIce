@@ -559,24 +559,44 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 {user?.isAdmin && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location === "/admin-dashboard"}
-                    >
-                      <Link
-                        href="/admin-dashboard"
-                        data-testid="link-admin-dashboard"
-                        onClick={handleLinkClick}
+                  <>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/admin-dashboard"}
                       >
-                        <Shield className="w-4 h-4" />
-                        <span className="flex-1">Admin Dashboard</span>
-                        <Badge variant="default" className="ml-auto">
-                          Admin
-                        </Badge>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                        <Link
+                          href="/admin-dashboard"
+                          data-testid="link-admin-dashboard"
+                          onClick={handleLinkClick}
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span className="flex-1">Admin Dashboard</span>
+                          <Badge variant="default" className="ml-auto">
+                            Admin
+                          </Badge>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location === "/fraud-dashboard"}
+                      >
+                        <Link
+                          href="/fraud-dashboard"
+                          data-testid="link-fraud-dashboard"
+                          onClick={handleLinkClick}
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span className="flex-1">Fraud Detection</span>
+                          <Badge variant="destructive" className="ml-auto">
+                            Security
+                          </Badge>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
                 )}
               </SidebarMenu>
             </SidebarGroupContent>

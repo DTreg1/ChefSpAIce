@@ -72,6 +72,7 @@ const TranslationDemo = lazy(() => import("@/pages/TranslationDemo"));
 const AltTextManagement = lazy(() => import("@/pages/alt-text-management"));
 const ModerationDashboard = lazy(() => import("@/pages/moderation"));
 const ModerationTest = lazy(() => import("@/pages/moderation-test"));
+const FraudDashboard = lazy(() => import("@/pages/fraud-dashboard"));
 
 function AuthenticatedRouter() {
   return (
@@ -121,6 +122,7 @@ function AuthenticatedRouter() {
         <Route path="/alt-text" component={AltTextManagement} />
         <Route path="/moderation" component={ModerationDashboard} />
         <Route path="/moderation-test" component={ModerationTest} />
+        <Route path="/fraud-dashboard" component={FraudDashboard} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
