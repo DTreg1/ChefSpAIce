@@ -1,7 +1,8 @@
 /**
  * Sentiment Analysis Dashboard
  * 
- * Comprehensive dashboard for viewing sentiment trends, insights, and analysis
+ * Comprehensive dashboard for monitoring overall user satisfaction trends, 
+ * identifying pain points, and alerting on significant sentiment changes
  */
 
 import { useState, useEffect } from "react";
@@ -15,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SentimentIndicator, type SentimentData } from "@/components/sentiment/SentimentIndicator";
 import { EmotionTags } from "@/components/sentiment/EmotionTags";
 import { SentimentTrendChart } from "@/components/sentiment/SentimentTrendChart";
@@ -23,14 +24,31 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   BrainIcon, 
   TrendingUpIcon, 
+  TrendingDownIcon,
   BarChartIcon, 
   ActivityIcon,
   RefreshCwIcon,
   SendIcon,
   HistoryIcon,
   GlobeIcon,
-  UserIcon
+  UserIcon,
+  AlertTriangleIcon,
+  BellIcon,
+  FileTextIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  AlertCircleIcon
 } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 
 interface SentimentAnalysis extends SentimentData {
@@ -64,13 +82,102 @@ interface SentimentInsights {
   }>;
 }
 
+interface SentimentMetrics {
+  id: string;
+  period: string;
+  periodType: 'day' | 'week' | 'month';
+  avgSentiment: number;
+  totalItems: number;
+  percentageChange?: number;
+  alertTriggered?: boolean;
+  metadata?: {
+    topEmotions?: Record<string, number>;
+    significantChanges?: string[];
+  };
+  categories?: Record<string, number>;
+  painPoints?: Array<{
+    issue: string;
+    impact: number;
+    category: string;
+  }>;
+  createdAt: string;
+}
+
+interface SentimentAlert {
+  id: string;
+  alertType: 'sentiment_drop' | 'sustained_negative' | 'volume_spike' | 'category_issue';
+  threshold: number;
+  currentValue: number;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+  status: 'active' | 'acknowledged' | 'resolved';
+  metadata?: {
+    percentageChange?: number;
+    previousValue?: number;
+    affectedUsers?: number;
+    relatedIssues?: string[];
+    suggestedActions?: string[];
+  };
+  triggeredAt: string;
+  acknowledgedAt?: string;
+  resolvedAt?: string;
+}
+
+interface SentimentSegment {
+  id: string;
+  period: string;
+  segmentName: string;
+  sentimentScore: number;
+  sampleSize: number;
+  positiveCount: number;
+  negativeCount: number;
+  neutralCount: number;
+  topIssues?: string[];
+  topPraises?: string[];
+  comparisonToPrevious?: number;
+}
+
+interface DashboardData {
+  metrics: SentimentMetrics;
+  alerts: SentimentAlert[];
+  segments: SentimentSegment[];
+  timestamp: string;
+}
+
 export default function SentimentDashboard() {
   const { toast } = useToast();
   const [testText, setTestText] = useState("");
   const [analysisResult, setAnalysisResult] = useState<SentimentAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [periodType, setPeriodType] = useState<'hour' | 'day' | 'week' | 'month'>('day');
-  const [viewMode, setViewMode] = useState<'personal' | 'global'>('personal');
+  const [periodType, setPeriodType] = useState<'day' | 'week' | 'month'>('week');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'personal' | 'global'>('global');
+
+  // Fetch dashboard data with metrics and alerts
+  const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard } = useQuery({
+    queryKey: ['/api/sentiment/dashboard', selectedPeriod, periodType],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedPeriod) {
+        params.append('period', selectedPeriod);
+        params.append('periodType', periodType);
+      }
+      
+      const response = await apiRequest('GET', `/api/sentiment/dashboard?${params}`);
+      const data = await response.json();
+      return data as DashboardData;
+    }
+  });
+
+  // Fetch active alerts
+  const { data: activeAlerts, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery({
+    queryKey: ['/api/sentiment/alerts/active'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/sentiment/alerts/active?limit=10');
+      const data = await response.json();
+      return data.alerts as SentimentAlert[];
+    }
+  });
 
   // Fetch sentiment insights
   const { data: insights, isLoading: insightsLoading, refetch: refetchInsights } = useQuery({
@@ -79,10 +186,9 @@ export default function SentimentDashboard() {
       const params = new URLSearchParams();
       if (viewMode === 'global') params.append('global', 'true');
       
-      const response = await apiRequest(`/api/sentiment/insights?${params}`, {
-        method: 'GET',
-      });
-      return response.insights as SentimentInsights;
+      const response = await apiRequest('GET', `/api/sentiment/insights?${params}`);
+      const data = await response.json();
+      return data.insights as SentimentInsights;
     }
   });
 
@@ -95,10 +201,9 @@ export default function SentimentDashboard() {
       if (viewMode === 'global') params.append('global', 'true');
       params.append('limit', '30');
       
-      const response = await apiRequest(`/api/sentiment/trends?${params}`, {
-        method: 'GET',
-      });
-      return response.trends;
+      const response = await apiRequest('GET', `/api/sentiment/trends?${params}`);
+      const data = await response.json();
+      return data.trends;
     }
   });
 
@@ -106,24 +211,38 @@ export default function SentimentDashboard() {
   const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ['/api/sentiment/user', 'current'],
     queryFn: async () => {
-      const response = await apiRequest('/api/sentiment/user/current', {
-        method: 'GET',
-      });
-      return response.analyses as SentimentAnalysis[];
+      const response = await apiRequest('GET', '/api/sentiment/user/current');
+      const data = await response.json();
+      return data.analyses as SentimentAnalysis[];
     }
+  });
+
+  // Fetch sentiment breakdown
+  const { data: breakdown, isLoading: breakdownLoading } = useQuery({
+    queryKey: ['/api/sentiment/breakdown', selectedPeriod, periodType],
+    queryFn: async () => {
+      if (!selectedPeriod) return null;
+      
+      const params = new URLSearchParams();
+      params.append('period', selectedPeriod);
+      params.append('periodType', periodType);
+      
+      const response = await apiRequest('GET', `/api/sentiment/breakdown?${params}`);
+      const data = await response.json();
+      return data.breakdown;
+    },
+    enabled: !!selectedPeriod
   });
 
   // Mutation for analyzing text
   const analyzeMutation = useMutation({
     mutationFn: async (text: string) => {
-      const response = await apiRequest('/api/sentiment/analyze', {
-        method: 'POST',
-        body: { 
-          content: text,
-          contentType: 'test'
-        },
+      const response = await apiRequest('POST', '/api/sentiment/analyze', { 
+        content: text,
+        contentType: 'test'
       });
-      return response.analysis as SentimentAnalysis;
+      const data = await response.json();
+      return data.analysis as SentimentAnalysis;
     },
     onSuccess: (data) => {
       setAnalysisResult(data);
@@ -138,6 +257,30 @@ export default function SentimentDashboard() {
       toast({
         title: "Analysis failed",
         description: error.message || "Failed to analyze sentiment",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation for acknowledging alerts
+  const acknowledgeAlertMutation = useMutation({
+    mutationFn: async ({ alertId, status }: { alertId: string; status: 'acknowledged' | 'resolved' }) => {
+      const response = await apiRequest('PATCH', `/api/sentiment/alerts/${alertId}`, { status });
+      const data = await response.json();
+      return data.alert;
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: variables.status === 'acknowledged' ? "Alert acknowledged" : "Alert resolved",
+        description: "Alert status updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/sentiment/alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/sentiment/dashboard'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update alert",
+        description: error.message || "Could not update alert status",
         variant: "destructive",
       });
     }
@@ -173,10 +316,10 @@ export default function SentimentDashboard() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2" data-testid="page-title">
             <BrainIcon className="w-8 h-8" />
-            Sentiment Analysis Dashboard
+            Sentiment Tracking Dashboard
           </h1>
           <p className="text-muted-foreground mt-1">
-            Analyze and track emotional sentiment in text content
+            Monitor user satisfaction trends, identify pain points, and track sentiment changes
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -202,7 +345,8 @@ export default function SentimentDashboard() {
             variant="outline"
             size="sm"
             onClick={() => {
-              refetchInsights();
+              refetchDashboard();
+              refetchAlerts();
               toast({ title: "Refreshing data..." });
             }}
             data-testid="refresh-button"
@@ -211,6 +355,178 @@ export default function SentimentDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Active Alerts Section */}
+      {activeAlerts && activeAlerts.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <BellIcon className="w-5 h-5" />
+            Active Alerts ({activeAlerts.length})
+          </h2>
+          <div className="grid gap-3 md:grid-cols-2">
+            {activeAlerts.slice(0, 4).map((alert) => (
+              <Alert 
+                key={alert.id} 
+                className={`border-l-4 ${
+                  alert.severity === 'critical' 
+                    ? 'border-l-red-500' 
+                    : alert.severity === 'high'
+                    ? 'border-l-orange-500'
+                    : alert.severity === 'medium'
+                    ? 'border-l-yellow-500'
+                    : 'border-l-blue-500'
+                }`}
+              >
+                <AlertTriangleIcon className="h-4 w-4" />
+                <div className="flex-1">
+                  <AlertTitle className="flex items-center justify-between">
+                    <span>{alert.message}</span>
+                    <Badge variant={alert.severity === 'critical' ? 'destructive' : 'outline'}>
+                      {alert.severity}
+                    </Badge>
+                  </AlertTitle>
+                  <AlertDescription className="mt-2 space-y-2">
+                    {alert.alertType === 'sentiment_drop' && alert.metadata?.percentageChange && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <TrendingDownIcon className="w-4 h-4 text-red-500" />
+                        <span>{Math.abs(alert.metadata.percentageChange)}% drop detected</span>
+                      </div>
+                    )}
+                    {alert.metadata?.relatedIssues && (
+                      <div className="text-sm">
+                        <span className="font-medium">Related issues:</span> {alert.metadata.relatedIssues.join(', ')}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(alert.triggeredAt), 'MMM dd, HH:mm')}
+                      </span>
+                      {alert.status === 'active' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => acknowledgeAlertMutation.mutate({ 
+                              alertId: alert.id, 
+                              status: 'acknowledged' 
+                            })}
+                            data-testid={`acknowledge-alert-${alert.id}`}
+                          >
+                            <CheckCircleIcon className="w-3 h-3 mr-1" />
+                            Acknowledge
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => acknowledgeAlertMutation.mutate({ 
+                              alertId: alert.id, 
+                              status: 'resolved' 
+                            })}
+                            data-testid={`resolve-alert-${alert.id}`}
+                          >
+                            <XCircleIcon className="w-3 h-3 mr-1" />
+                            Resolve
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </div>
+              </Alert>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Key Metrics Overview */}
+      {dashboardData?.metrics && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Average Sentiment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="text-2xl font-bold">
+                  {dashboardData.metrics.avgSentiment > 0 ? '+' : ''}
+                  {dashboardData.metrics.avgSentiment.toFixed(2)}
+                </div>
+                {dashboardData.metrics.percentageChange !== undefined && (
+                  <div className={`flex items-center text-sm ${
+                    dashboardData.metrics.percentageChange < 0 ? 'text-red-500' : 'text-green-500'
+                  }`}>
+                    {dashboardData.metrics.percentageChange < 0 ? (
+                      <ChevronDownIcon className="w-4 h-4" />
+                    ) : (
+                      <ChevronUpIcon className="w-4 h-4" />
+                    )}
+                    {Math.abs(dashboardData.metrics.percentageChange)}%
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Period: {dashboardData.metrics.period} ({dashboardData.metrics.periodType})
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Total Analyzed</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{dashboardData.metrics.totalItems}</div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Items in period
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Alert Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                {dashboardData.metrics.alertTriggered ? (
+                  <>
+                    <AlertCircleIcon className="w-5 h-5 text-orange-500" />
+                    <span className="text-lg font-semibold text-orange-500">Active</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                    <span className="text-lg font-semibold text-green-500">Normal</span>
+                  </>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {activeAlerts?.length || 0} active alerts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Top Pain Point</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {dashboardData.metrics.painPoints && dashboardData.metrics.painPoints.length > 0 ? (
+                <>
+                  <div className="text-lg font-semibold truncate">
+                    {dashboardData.metrics.painPoints[0].issue}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Impact: {dashboardData.metrics.painPoints[0].impact.toFixed(1)}%
+                  </p>
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground">No issues detected</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Test Analysis Section */}
       <Card>
