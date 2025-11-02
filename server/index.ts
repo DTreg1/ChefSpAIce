@@ -7,6 +7,7 @@ import { logRetentionService } from "./services/log-retention.service";
 import PushStatusService from "./services/push-status.service";
 import { preloadCommonSearches } from "./utils/usdaCache";
 import { termDetector } from "./services/term-detector.service";
+import { notificationScheduler } from "./services/notification-scheduler.service";
 
 const app = express();
 
@@ -123,5 +124,9 @@ app.use((req, res, next) => {
     }).catch(error => {
       console.error("[Term Detector] Failed to initialize:", error);
     });
+    
+    // Start the intelligent notification scheduler
+    notificationScheduler.start();
+    log("✓ Intelligent notification scheduler started");
   });
 })();

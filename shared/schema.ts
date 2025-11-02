@@ -476,6 +476,174 @@ export const notificationHistory = pgTable("notification_history", {
   index("notification_history_sent_at_idx").on(table.sentAt),
 ]);
 
+/**
+ * Intelligent Notification Preferences
+ * Stores user-specific notification preferences and patterns for ML optimization.
+ * 
+ * Fields:
+ * - userId: Foreign key to users.id
+ * - notificationTypes: JSONB with type-specific preferences and weights
+ * - quietHours: User's do-not-disturb periods
+ * - frequencyLimit: Max notifications per 24h period
+ * - enableSmartTiming: Whether to use ML for timing optimization
+ * - enableRelevanceScoring: Whether to use AI for content scoring
+ * - preferredChannels: Ordered list of notification channels
+ * 
+ * Business Rules:
+ * - Default frequency limit: 10 notifications/day
+ * - Quiet hours override all non-urgent notifications
+ * - Smart timing learns from user engagement patterns
+ */
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  notificationTypes: jsonb("notification_types").$type<{
+    expiringFood: { enabled: boolean; weight: number; urgencyThreshold: number };
+    recipeSuggestions: { enabled: boolean; weight: number; maxPerDay: number };
+    mealReminders: { enabled: boolean; weight: number; leadTime: number };
+    shoppingReminders: { enabled: boolean; weight: number };
+    nutritionInsights: { enabled: boolean; weight: number; frequency: string };
+    systemUpdates: { enabled: boolean; weight: number };
+  }>().notNull().default({
+    expiringFood: { enabled: true, weight: 1.0, urgencyThreshold: 2 },
+    recipeSuggestions: { enabled: false, weight: 0.5, maxPerDay: 2 },
+    mealReminders: { enabled: true, weight: 0.8, leadTime: 30 },
+    shoppingReminders: { enabled: false, weight: 0.6 },
+    nutritionInsights: { enabled: false, weight: 0.4, frequency: "weekly" },
+    systemUpdates: { enabled: false, weight: 0.3 }
+  }),
+  quietHours: jsonb("quiet_hours").$type<{
+    enabled: boolean;
+    periods: Array<{ start: string; end: string; days: number[] }>;
+  }>().notNull().default({
+    enabled: false,
+    periods: []
+  }),
+  frequencyLimit: integer("frequency_limit").notNull().default(10),
+  enableSmartTiming: boolean("enable_smart_timing").notNull().default(true),
+  enableRelevanceScoring: boolean("enable_relevance_scoring").notNull().default(true),
+  preferredChannels: text().array().notNull().default(['push', 'in-app']),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => [
+  index("notification_preferences_user_id_idx").on(table.userId),
+  index("notification_preferences_updated_idx").on(table.updatedAt)
+]);
+
+/**
+ * Notification Scores
+ * Stores ML-generated relevance scores and optimal delivery times for notifications.
+ * 
+ * Fields:
+ * - notificationId: Foreign key to notificationHistory
+ * - userId: Foreign key to users.id
+ * - relevanceScore: AI-computed relevance (0-1)
+ * - optimalTime: ML-predicted best delivery time
+ * - urgencyLevel: Computed urgency (0-5)
+ * - features: Feature vector used for scoring
+ * - actualSentAt: When notification was actually sent
+ * - holdUntil: Computed delivery time respecting constraints
+ * 
+ * Business Rules:
+ * - Scores > 0.7 considered high relevance
+ * - Urgent notifications (level >= 4) bypass timing optimization
+ * - Features stored for model retraining
+ */
+export const notificationScores = pgTable("notification_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  notificationId: varchar("notification_id").references(() => notificationHistory.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  relevanceScore: real("relevance_score").notNull().default(0.5),
+  optimalTime: timestamp("optimal_time"),
+  urgencyLevel: integer("urgency_level").notNull().default(2),
+  features: jsonb("features").$type<{
+    dayOfWeek: number;
+    hourOfDay: number;
+    timeSinceLastOpen: number;
+    recentEngagementRate: number;
+    notificationType: string;
+    contentLength: number;
+    hasActionItems: boolean;
+    userContext: any;
+  }>(),
+  actualSentAt: timestamp("actual_sent_at"),
+  holdUntil: timestamp("hold_until"),
+  modelVersion: text("model_version"),
+  createdAt: timestamp("created_at").defaultNow()
+}, (table) => [
+  index("notification_scores_user_id_idx").on(table.userId),
+  index("notification_scores_notification_id_idx").on(table.notificationId),
+  index("notification_scores_hold_until_idx").on(table.holdUntil),
+  index("notification_scores_relevance_idx").on(table.relevanceScore)
+]);
+
+/**
+ * Notification Feedback
+ * Tracks user interactions with notifications for ML model training.
+ * 
+ * Fields:
+ * - notificationId: Foreign key to notificationHistory
+ * - userId: Foreign key to users.id
+ * - action: User's action (clicked, dismissed, disabled)
+ * - actionAt: When action occurred
+ * - engagementTime: Time spent after clicking (ms)
+ * - followupAction: What user did after clicking
+ * - sentiment: Inferred sentiment from action
+ * 
+ * Business Rules:
+ * - Feedback triggers model retraining
+ * - Disabled notifications reduce type weight
+ * - Click-through improves relevance scoring
+ */
+export const notificationFeedback = pgTable("notification_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  notificationId: varchar("notification_id").notNull().references(() => notificationHistory.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(), // 'clicked', 'dismissed', 'disabled', 'snoozed'
+  actionAt: timestamp("action_at").notNull().defaultNow(),
+  engagementTime: integer("engagement_time"), // milliseconds spent after clicking
+  followupAction: text("followup_action"), // 'viewed', 'interacted', 'completed', 'abandoned'
+  sentiment: real("sentiment").default(0), // -1 (negative) to 1 (positive)
+  deviceInfo: jsonb("device_info").$type<{
+    platform: string;
+    deviceType: string;
+    appVersion?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow()
+}, (table) => [
+  index("notification_feedback_user_id_idx").on(table.userId),
+  index("notification_feedback_notification_id_idx").on(table.notificationId),
+  index("notification_feedback_action_idx").on(table.action),
+  index("notification_feedback_action_at_idx").on(table.actionAt),
+  uniqueIndex("notification_feedback_unique_idx").on(table.notificationId, table.userId)
+]);
+
+// Notification Preferences Schemas
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
+export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
+
+// Notification Scores Schemas
+export const insertNotificationScoresSchema = createInsertSchema(notificationScores).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertNotificationScores = z.infer<typeof insertNotificationScoresSchema>;
+export type NotificationScores = typeof notificationScores.$inferSelect;
+
+// Notification Feedback Schemas
+export const insertNotificationFeedbackSchema = createInsertSchema(notificationFeedback).omit({
+  id: true,
+  actionAt: true,
+  createdAt: true
+});
+export type InsertNotificationFeedback = z.infer<typeof insertNotificationFeedbackSchema>;
+export type NotificationFeedback = typeof notificationFeedback.$inferSelect;
+
 export const insertNotificationHistorySchema = createInsertSchema(notificationHistory).omit({
   id: true,
   sentAt: true,

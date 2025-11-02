@@ -73,6 +73,12 @@ import {
   type AnalyticsEvent,
   type InsertUserSession,
   type UserSession,
+  type NotificationPreferences,
+  type InsertNotificationPreferences,
+  type NotificationScores,
+  type InsertNotificationScores,
+  type NotificationFeedback,
+  type InsertNotificationFeedback,
   type ActivityLog,
   type InsertActivityLog,
   type UserStorage,
@@ -215,6 +221,9 @@ import {
   sentimentMetrics,
   sentimentAlerts,
   sentimentSegments,
+  notificationPreferences,
+  notificationScores,
+  notificationFeedback,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -354,6 +363,46 @@ export interface IStorage {
     dismissedBy?: string,
   ): Promise<void>;
   getUndismissedNotifications(userId: string, limit?: number): Promise<any[]>;
+  
+  // Intelligent Notification System
+  getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
+  upsertNotificationPreferences(
+    userId: string,
+    preferences: Omit<InsertNotificationPreferences, "userId">,
+  ): Promise<NotificationPreferences>;
+  
+  createNotificationScore(
+    score: InsertNotificationScores
+  ): Promise<NotificationScores>;
+  getNotificationScores(
+    userId: string,
+    limit?: number
+  ): Promise<NotificationScores[]>;
+  getPendingNotifications(
+    beforeTime: Date
+  ): Promise<NotificationScores[]>;
+  updateNotificationScore(
+    id: string,
+    updates: Partial<NotificationScores>
+  ): Promise<void>;
+  
+  createNotificationFeedback(
+    feedback: InsertNotificationFeedback
+  ): Promise<NotificationFeedback>;
+  getNotificationFeedback(
+    userId: string,
+    notificationId?: string
+  ): Promise<NotificationFeedback[]>;
+  getRecentUserEngagement(
+    userId: string,
+    days?: number
+  ): Promise<{
+    totalSent: number;
+    clicked: number;
+    dismissed: number;
+    clickRate: number;
+    avgEngagementTime?: number;
+  }>;
 
   // Appliances (user-scoped)
   getAppliances(userId: string): Promise<ApplianceWithCategory[]>;
@@ -2454,6 +2503,237 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting undismissed notifications:", error);
       throw new Error("Failed to get undismissed notifications");
+    }
+  }
+
+  // ==================== Intelligent Notification System ====================
+  
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+    const cacheKey = `notif-prefs:${userId}`;
+    const cached = this.getCached<NotificationPreferences>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const [prefs] = await db
+        .select()
+        .from(notificationPreferences)
+        .where(eq(notificationPreferences.userId, userId))
+        .limit(1);
+      
+      if (prefs) {
+        this.setCached(cacheKey, prefs, this.USER_PREFS_TTL);
+      }
+      return prefs;
+    } catch (error) {
+      console.error("Error getting notification preferences:", error);
+      throw new Error("Failed to get notification preferences");
+    }
+  }
+
+  async upsertNotificationPreferences(
+    userId: string,
+    preferences: Omit<InsertNotificationPreferences, "userId">,
+  ): Promise<NotificationPreferences> {
+    try {
+      const [result] = await db
+        .insert(notificationPreferences)
+        .values({
+          ...preferences,
+          userId,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: notificationPreferences.userId,
+          set: {
+            ...preferences,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      
+      // Invalidate cache
+      this.invalidateCache(`notif-prefs:${userId}`);
+      return result;
+    } catch (error) {
+      console.error("Error upserting notification preferences:", error);
+      throw new Error("Failed to update notification preferences");
+    }
+  }
+
+  async createNotificationScore(
+    score: InsertNotificationScores
+  ): Promise<NotificationScores> {
+    try {
+      const [result] = await db
+        .insert(notificationScores)
+        .values(score)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating notification score:", error);
+      throw new Error("Failed to create notification score");
+    }
+  }
+
+  async getNotificationScores(
+    userId: string,
+    limit: number = 50
+  ): Promise<NotificationScores[]> {
+    try {
+      return await db
+        .select()
+        .from(notificationScores)
+        .where(eq(notificationScores.userId, userId))
+        .orderBy(desc(notificationScores.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error getting notification scores:", error);
+      throw new Error("Failed to get notification scores");
+    }
+  }
+
+  async getPendingNotifications(
+    beforeTime: Date
+  ): Promise<NotificationScores[]> {
+    try {
+      return await db
+        .select()
+        .from(notificationScores)
+        .where(
+          and(
+            isNull(notificationScores.actualSentAt),
+            lte(notificationScores.holdUntil, beforeTime),
+          ),
+        )
+        .orderBy(desc(notificationScores.urgencyLevel), desc(notificationScores.relevanceScore));
+    } catch (error) {
+      console.error("Error getting pending notifications:", error);
+      throw new Error("Failed to get pending notifications");
+    }
+  }
+
+  async updateNotificationScore(
+    id: string,
+    updates: Partial<NotificationScores>
+  ): Promise<void> {
+    try {
+      await db
+        .update(notificationScores)
+        .set(updates)
+        .where(eq(notificationScores.id, id));
+    } catch (error) {
+      console.error("Error updating notification score:", error);
+      throw new Error("Failed to update notification score");
+    }
+  }
+
+  async createNotificationFeedback(
+    feedback: InsertNotificationFeedback
+  ): Promise<NotificationFeedback> {
+    try {
+      const [result] = await db
+        .insert(notificationFeedback)
+        .values(feedback)
+        .returning();
+      
+      // Invalidate engagement cache for this user
+      this.invalidateCache(`engagement:${feedback.userId}`);
+      return result;
+    } catch (error) {
+      console.error("Error creating notification feedback:", error);
+      throw new Error("Failed to create notification feedback");
+    }
+  }
+
+  async getNotificationFeedback(
+    userId: string,
+    notificationId?: string
+  ): Promise<NotificationFeedback[]> {
+    try {
+      const conditions = [eq(notificationFeedback.userId, userId)];
+      
+      if (notificationId) {
+        conditions.push(eq(notificationFeedback.notificationId, notificationId));
+      }
+      
+      return await db
+        .select()
+        .from(notificationFeedback)
+        .where(and(...conditions))
+        .orderBy(desc(notificationFeedback.actionAt));
+    } catch (error) {
+      console.error("Error getting notification feedback:", error);
+      throw new Error("Failed to get notification feedback");
+    }
+  }
+
+  async getRecentUserEngagement(
+    userId: string,
+    days: number = 7
+  ): Promise<{
+    totalSent: number;
+    clicked: number;
+    dismissed: number;
+    clickRate: number;
+    avgEngagementTime?: number;
+  }> {
+    const cacheKey = `engagement:${userId}:${days}`;
+    const cached = this.getCached<any>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - days);
+
+      // Get all notifications sent in the period
+      const sentNotifications = await db
+        .select()
+        .from(notificationHistory)
+        .where(
+          and(
+            eq(notificationHistory.userId, userId),
+            gte(notificationHistory.sentAt, since),
+          ),
+        );
+
+      // Get feedback for those notifications
+      const feedbackData = await db
+        .select()
+        .from(notificationFeedback)
+        .where(
+          and(
+            eq(notificationFeedback.userId, userId),
+            gte(notificationFeedback.actionAt, since),
+          ),
+        );
+
+      const totalSent = sentNotifications.length;
+      const clicked = feedbackData.filter(f => f.action === 'clicked').length;
+      const dismissed = feedbackData.filter(f => f.action === 'dismissed').length;
+      const clickRate = totalSent > 0 ? clicked / totalSent : 0;
+
+      // Calculate average engagement time for clicked notifications
+      const engagementTimes = feedbackData
+        .filter(f => f.action === 'clicked' && f.engagementTime)
+        .map(f => f.engagementTime!);
+      
+      const avgEngagementTime = engagementTimes.length > 0
+        ? engagementTimes.reduce((a, b) => a + b, 0) / engagementTimes.length
+        : undefined;
+
+      const result = {
+        totalSent,
+        clicked,
+        dismissed,
+        clickRate,
+        avgEngagementTime,
+      };
+
+      this.setCached(cacheKey, result, 5 * 60 * 1000); // Cache for 5 minutes
+      return result;
+    } catch (error) {
+      console.error("Error getting user engagement:", error);
+      throw new Error("Failed to get user engagement metrics");
     }
   }
 
