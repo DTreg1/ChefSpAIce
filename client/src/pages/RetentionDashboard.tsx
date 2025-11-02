@@ -30,9 +30,14 @@ export default function RetentionDashboard() {
   // Get high-risk churn users
   const { data: churnData, isLoading: churnLoading, refetch: refetchChurn } = useQuery({
     queryKey: ['/api/predict/churn'],
-    queryOptions: {
-      method: 'POST',
-      body: JSON.stringify({ threshold: 0.7, limit: 20 }),
+    queryFn: async () => {
+      const response = await fetch('/api/predict/churn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threshold: 0.7, limit: 20 }),
+      });
+      if (!response.ok) throw new Error('Failed to fetch churn data');
+      return response.json();
     }
   });
 

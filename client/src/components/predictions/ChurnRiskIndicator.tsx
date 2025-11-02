@@ -15,9 +15,16 @@ interface ChurnRiskIndicatorProps {
 export function ChurnRiskIndicator({ userId, onInterventionClick }: ChurnRiskIndicatorProps) {
   const { data, isLoading } = useQuery<{ predictions: UserPrediction[] }>({
     queryKey: ['/api/predict/user', userId],
-    queryOptions: {
-      enabled: !!userId,
-    }
+    queryFn: async () => {
+      if (!userId) return null;
+      const response = await fetch(`/api/predict/user/${userId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to fetch predictions');
+      return response.json();
+    },
+    enabled: !!userId,
   });
 
   if (isLoading) {
