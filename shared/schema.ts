@@ -6130,3 +6130,222 @@ export type UserPrediction = typeof userPredictions.$inferSelect;
 
 export type InsertPredictionAccuracy = z.infer<typeof insertPredictionAccuracySchema>;
 export type PredictionAccuracy = typeof predictionAccuracy.$inferSelect;
+
+/**
+ * Trends Table
+ * 
+ * Stores detected trends, patterns, and emerging behaviors from data analysis.
+ * Uses TensorFlow.js for time series analysis and OpenAI for interpretation.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - trendName: Descriptive name of the trend (e.g., "Sustainable Packaging Interest")
+ * - trendType: Category of trend
+ *   - 'topic': Emerging discussion topics
+ *   - 'behavior': User behavior patterns
+ *   - 'product': Product-related trends
+ *   - 'sentiment': Sentiment shifts
+ *   - 'usage': Platform usage patterns
+ *   - 'seasonal': Seasonal patterns
+ * - strength: Trend strength score (0-1)
+ * - confidence: Detection confidence (0-1)
+ * - growthRate: Percentage growth rate
+ * - startDate: When the trend began
+ * - peakDate: When the trend reached its peak
+ * - endDate: When the trend ended (null if ongoing)
+ * - status: Current trend status
+ *   - 'emerging': Just detected, growing
+ *   - 'active': Currently significant
+ *   - 'peaking': At or near peak
+ *   - 'declining': Losing momentum
+ *   - 'ended': No longer active
+ * - dataPoints: JSONB with trend data
+ *   - timeSeries: Array of {date, value} points
+ *   - keywords: Associated keywords/topics
+ *   - entities: Named entities involved
+ *   - sources: Data sources contributing to trend
+ *   - metrics: Key performance metrics
+ * - interpretation: AI-generated explanation of the trend
+ * - businessImpact: Predicted business impact assessment
+ * - recommendations: AI-suggested actions based on trend
+ * - metadata: Additional trend metadata
+ *   - detectionMethod: Algorithm used for detection
+ *   - modelVersion: TensorFlow model version
+ *   - dataWindow: Time window analyzed
+ *   - sampleSize: Number of data points analyzed
+ * - createdAt: When trend was first detected
+ * - updatedAt: Last trend update
+ * 
+ * Business Rules:
+ * - Trends with strength > 0.7 considered significant
+ * - Emerging trends trigger immediate alerts
+ * - Daily trend analysis and updates
+ * - Historical trends preserved for pattern learning
+ * 
+ * Indexes:
+ * - trends_status_idx: Active trend queries
+ * - trends_type_idx: Filter by trend type
+ * - trends_strength_idx: High-impact trends
+ * - trends_start_date_idx: Time-based queries
+ * - trends_peak_date_idx: Peak trend analysis
+ */
+export const trends = pgTable("trends", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  trendName: text("trend_name").notNull(),
+  trendType: text("trend_type").notNull(), // 'topic', 'behavior', 'product', 'sentiment', 'usage', 'seasonal'
+  strength: real("strength").notNull(), // 0-1 trend strength
+  confidence: real("confidence").notNull(), // 0-1 detection confidence
+  growthRate: real("growth_rate"), // Percentage growth
+  startDate: timestamp("start_date").notNull(),
+  peakDate: timestamp("peak_date"),
+  endDate: timestamp("end_date"),
+  status: text("status").notNull().default('emerging'), // 'emerging', 'active', 'peaking', 'declining', 'ended'
+  dataPoints: jsonb("data_points").$type<{
+    timeSeries?: Array<{ date: string; value: number; label?: string }>;
+    keywords?: string[];
+    entities?: Array<{ name: string; type: string; relevance: number }>;
+    sources?: string[];
+    metrics?: Record<string, any>;
+    volumeData?: Array<{ date: string; count: number }>;
+    sentimentData?: Array<{ date: string; positive: number; negative: number; neutral: number }>;
+  }>().notNull(),
+  interpretation: text("interpretation"), // AI-generated explanation
+  businessImpact: text("business_impact"), // Impact assessment
+  recommendations: jsonb("recommendations").$type<string[]>(), // AI recommendations
+  metadata: jsonb("metadata").$type<{
+    detectionMethod?: string;
+    modelVersion?: string;
+    dataWindow?: { start: string; end: string };
+    sampleSize?: number;
+    correlatedTrends?: string[];
+    categoryDistribution?: Record<string, number>;
+  }>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("trends_status_idx").on(table.status),
+  index("trends_type_idx").on(table.trendType),
+  index("trends_strength_idx").on(table.strength),
+  index("trends_start_date_idx").on(table.startDate),
+  index("trends_peak_date_idx").on(table.peakDate),
+]);
+
+/**
+ * Trend Alerts Table
+ * 
+ * Manages alert configurations and notifications for trend detection.
+ * Enables users to subscribe to specific trend patterns and thresholds.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - trendId: Foreign key to trends.id (CASCADE delete)
+ * - userId: Foreign key to users.id (CASCADE delete) - null for system-wide alerts
+ * - alertType: Type of alert
+ *   - 'threshold': Triggered when trend strength exceeds threshold
+ *   - 'emergence': New trend detected
+ *   - 'acceleration': Rapid growth detected
+ *   - 'peak': Trend reaching peak
+ *   - 'decline': Trend declining
+ *   - 'anomaly': Unusual pattern detected
+ * - threshold: Numeric threshold for triggering (0-1)
+ * - conditions: JSONB with alert conditions
+ *   - minGrowthRate: Minimum growth rate to trigger
+ *   - minConfidence: Minimum confidence level
+ *   - keywords: Keywords that must be present
+ *   - categories: Trend categories to monitor
+ *   - timeWindow: Time window for detection
+ * - priority: Alert priority level
+ *   - 'low': Informational alerts
+ *   - 'medium': Notable trends
+ *   - 'high': Significant business impact
+ *   - 'critical': Immediate action required
+ * - isActive: Whether alert is currently active
+ * - triggeredAt: When alert was triggered
+ * - acknowledgedAt: When alert was acknowledged
+ * - notifiedUsers: Array of user IDs notified
+ * - notificationChannels: Channels used for notification
+ *   - 'email': Email notification
+ *   - 'push': Push notification
+ *   - 'in-app': In-app notification
+ *   - 'webhook': External webhook
+ * - alertMessage: Generated alert message
+ * - actionTaken: Actions taken in response to alert
+ * - metadata: Additional alert metadata
+ *   - triggerValue: Value that triggered the alert
+ *   - comparisonData: Historical comparison data
+ *   - relatedAlerts: Related alert IDs
+ * - createdAt: Alert configuration creation
+ * - updatedAt: Last alert update
+ * 
+ * Business Rules:
+ * - Critical alerts sent immediately via all channels
+ * - User-specific alerts respect notification preferences
+ * - Duplicate alerts suppressed within 24-hour window
+ * - Historical alerts preserved for analytics
+ * 
+ * Indexes:
+ * - trend_alerts_trend_id_idx: Alerts for specific trend
+ * - trend_alerts_user_id_idx: User's alert subscriptions
+ * - trend_alerts_type_idx: Filter by alert type
+ * - trend_alerts_priority_idx: High-priority alerts
+ * - trend_alerts_triggered_at_idx: Recent alerts
+ * - trend_alerts_active_idx: Active alert configurations
+ */
+export const trendAlerts = pgTable("trend_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  trendId: varchar("trend_id").references(() => trends.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }), // null for system-wide
+  alertType: text("alert_type").notNull(), // 'threshold', 'emergence', 'acceleration', 'peak', 'decline', 'anomaly'
+  threshold: real("threshold"), // 0-1 threshold value
+  conditions: jsonb("conditions").$type<{
+    minGrowthRate?: number;
+    minConfidence?: number;
+    keywords?: string[];
+    categories?: string[];
+    timeWindow?: { value: number; unit: string };
+    trendTypes?: string[];
+  }>(),
+  priority: text("priority").notNull().default('medium'), // 'low', 'medium', 'high', 'critical'
+  isActive: boolean("is_active").notNull().default(true),
+  triggeredAt: timestamp("triggered_at"),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  notifiedUsers: text("notified_users").array(), // Array of user IDs
+  notificationChannels: text("notification_channels").array().notNull().default(['in-app']),
+  alertMessage: text("alert_message"),
+  actionTaken: text("action_taken"),
+  metadata: jsonb("metadata").$type<{
+    triggerValue?: number;
+    comparisonData?: Record<string, any>;
+    relatedAlerts?: string[];
+    suppressUntil?: string;
+    escalationLevel?: number;
+  }>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("trend_alerts_trend_id_idx").on(table.trendId),
+  index("trend_alerts_user_id_idx").on(table.userId),
+  index("trend_alerts_type_idx").on(table.alertType),
+  index("trend_alerts_priority_idx").on(table.priority),
+  index("trend_alerts_triggered_at_idx").on(table.triggeredAt),
+  index("trend_alerts_active_idx").on(table.isActive),
+]);
+
+// Insert schemas and types for trends
+export const insertTrendSchema = createInsertSchema(trends).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrendAlertSchema = createInsertSchema(trendAlerts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTrend = z.infer<typeof insertTrendSchema>;
+export type Trend = typeof trends.$inferSelect;
+
+export type InsertTrendAlert = z.infer<typeof insertTrendAlertSchema>;
+export type TrendAlert = typeof trendAlerts.$inferSelect;
