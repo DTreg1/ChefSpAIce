@@ -1,6 +1,6 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
-import { requireAuth } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { insertAnalyticsInsightSchema, insertInsightFeedbackSchema } from "@shared/schema";
 import { AnalyticsService } from "../services/analytics.service";
@@ -9,7 +9,7 @@ const router = Router();
 const analyticsService = new AnalyticsService();
 
 // Generate insights from data
-router.post("/generate", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/generate", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const userId = req.user?.claims?.sub;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -36,7 +36,7 @@ router.post("/generate", requireAuth, asyncHandler(async (req: ExpressRequest<an
 }));
 
 // Get daily insight summary
-router.get("/daily", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/daily", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const userId = req.user?.claims?.sub;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -54,7 +54,7 @@ router.get("/daily", requireAuth, asyncHandler(async (req: ExpressRequest<any, a
 }));
 
 // Explain specific metric
-router.post("/explain", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/explain", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const userId = req.user?.claims?.sub;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -76,7 +76,7 @@ router.post("/explain", requireAuth, asyncHandler(async (req: ExpressRequest<any
 }));
 
 // Get all insights
-router.get("/", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const userId = req.user?.claims?.sub;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -102,7 +102,7 @@ router.get("/", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, a
 }));
 
 // Mark insight as read
-router.patch("/:insightId/read", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.patch("/:insightId/read", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const userId = req.user?.claims?.sub;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -120,7 +120,7 @@ router.patch("/:insightId/read", requireAuth, asyncHandler(async (req: ExpressRe
 }));
 
 // Submit feedback for an insight
-router.post("/:insightId/feedback", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/:insightId/feedback", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const userId = req.user?.claims?.sub;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -151,7 +151,7 @@ router.post("/:insightId/feedback", requireAuth, asyncHandler(async (req: Expres
 }));
 
 // Get feedback for an insight
-router.get("/:insightId/feedback", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/:insightId/feedback", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const { insightId } = req.params;
 
   try {
@@ -164,7 +164,7 @@ router.get("/:insightId/feedback", requireAuth, asyncHandler(async (req: Express
 }));
 
 // Subscribe to insights
-router.post("/subscribe", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/subscribe", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const userId = req.user?.claims?.sub;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -186,7 +186,7 @@ router.post("/subscribe", requireAuth, asyncHandler(async (req: ExpressRequest<a
 }));
 
 // Get analytics statistics
-router.get("/stats", requireAuth, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/stats", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const userId = req.user?.claims?.sub;
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
