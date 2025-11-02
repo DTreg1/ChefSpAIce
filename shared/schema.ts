@@ -5978,3 +5978,155 @@ export type AnalyticsInsight = typeof analyticsInsights.$inferSelect;
 
 export type InsertInsightFeedback = z.infer<typeof insertInsightFeedbackSchema>;
 export type InsightFeedback = typeof insightFeedback.$inferSelect;
+
+/**
+ * User Predictions Table
+ * 
+ * Stores AI-generated predictions about user behavior, churn risk, and future actions.
+ * Enables proactive interventions and personalized retention strategies.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - predictionType: Type of prediction
+ *   - 'churn_risk': User likely to stop using the app
+ *   - 'next_action': Predicted next user action
+ *   - 'engagement_level': Future engagement prediction
+ *   - 'upgrade_likelihood': Probability of upgrading to paid plan
+ *   - 'feature_adoption': Likely to adopt specific features
+ * - probability: Confidence score (0-1) for the prediction
+ * - predictedDate: When the predicted event will occur
+ * - factors: JSONB with contributing factors
+ *   - activityPattern: Recent activity analysis
+ *   - engagementScore: Current engagement level
+ *   - lastActiveDate: Last meaningful interaction
+ *   - featureUsage: Feature adoption patterns
+ *   - sessionFrequency: Session patterns
+ *   - contentInteraction: Content engagement metrics
+ * - interventionSuggested: Recommended intervention type
+ * - interventionTaken: Action actually taken
+ * - status: Prediction lifecycle
+ *   - 'pending': Awaiting predicted date
+ *   - 'correct': Prediction was accurate
+ *   - 'incorrect': Prediction was wrong
+ *   - 'intervened': Intervention changed outcome
+ * - modelVersion: ML model version used
+ * - createdAt: Prediction generation timestamp
+ * - resolvedAt: When prediction outcome was determined
+ * 
+ * Business Rules:
+ * - Predictions above 0.8 probability trigger automatic interventions
+ * - Churn predictions > 0.7 generate retention campaigns
+ * - Daily batch processing for new predictions
+ * - 30-day prediction window for most types
+ * 
+ * Indexes:
+ * - user_predictions_user_id_idx: User's predictions
+ * - user_predictions_type_idx: Filter by prediction type
+ * - user_predictions_probability_idx: High-confidence predictions
+ * - user_predictions_status_idx: Active vs resolved predictions
+ * - user_predictions_predicted_date_idx: Time-based queries
+ */
+export const userPredictions = pgTable("user_predictions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  predictionType: text("prediction_type").notNull(), // 'churn_risk', 'next_action', 'engagement_level', etc.
+  probability: real("probability").notNull(), // 0-1 confidence score
+  predictedDate: timestamp("predicted_date").notNull(),
+  factors: jsonb("factors").$type<{
+    activityPattern?: string;
+    engagementScore?: number;
+    lastActiveDate?: string;
+    featureUsage?: Record<string, number>;
+    sessionFrequency?: number;
+    contentInteraction?: Record<string, any>;
+    historicalBehavior?: any[];
+  }>().notNull(),
+  interventionSuggested: text("intervention_suggested"), // 'email_campaign', 'in_app_message', 'special_offer', etc.
+  interventionTaken: text("intervention_taken"),
+  status: text("status").notNull().default('pending'), // 'pending', 'correct', 'incorrect', 'intervened'
+  modelVersion: text("model_version").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+}, (table) => [
+  index("user_predictions_user_id_idx").on(table.userId),
+  index("user_predictions_type_idx").on(table.predictionType),
+  index("user_predictions_probability_idx").on(table.probability),
+  index("user_predictions_status_idx").on(table.status),
+  index("user_predictions_predicted_date_idx").on(table.predictedDate),
+]);
+
+/**
+ * Prediction Accuracy Table
+ * 
+ * Tracks the accuracy of predictions to improve ML models over time.
+ * Provides metrics for model performance and refinement.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - predictionId: Foreign key to userPredictions.id (CASCADE delete)
+ * - actualOutcome: What actually happened
+ *   - 'churned': User stopped using the app
+ *   - 'retained': User continued engagement
+ *   - 'upgraded': User upgraded plan
+ *   - 'action_taken': Predicted action occurred
+ *   - 'action_not_taken': Predicted action didn't occur
+ * - accuracyScore: Calculated accuracy (0-1)
+ * - outcomeDate: When actual outcome occurred
+ * - interventionImpact: Impact of intervention
+ *   - 'positive': Intervention improved outcome
+ *   - 'negative': Intervention worsened outcome
+ *   - 'neutral': No significant impact
+ *   - 'not_applicable': No intervention taken
+ * - feedbackNotes: Additional context about outcome
+ * - modelFeedback: Data for model improvement
+ * - createdAt: Record creation timestamp
+ * 
+ * Business Rules:
+ * - Accuracy tracked 30 days after prediction
+ * - Scores below 0.6 trigger model retraining
+ * - Monthly accuracy reports generated
+ * - Intervention impact analyzed for ROI
+ * 
+ * Indexes:
+ * - prediction_accuracy_prediction_id_idx: Unique prediction lookup
+ * - prediction_accuracy_score_idx: Performance queries
+ * - prediction_accuracy_outcome_date_idx: Time-based analysis
+ */
+export const predictionAccuracy = pgTable("prediction_accuracy", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  predictionId: varchar("prediction_id").notNull().unique().references(() => userPredictions.id, { onDelete: "cascade" }),
+  actualOutcome: text("actual_outcome").notNull(),
+  accuracyScore: real("accuracy_score").notNull(), // 0-1
+  outcomeDate: timestamp("outcome_date").notNull(),
+  interventionImpact: text("intervention_impact"), // 'positive', 'negative', 'neutral', 'not_applicable'
+  feedbackNotes: text("feedback_notes"),
+  modelFeedback: jsonb("model_feedback").$type<{
+    expectedFeatures?: Record<string, any>;
+    actualFeatures?: Record<string, any>;
+    featureDrift?: Record<string, number>;
+    confidenceCalibration?: number;
+  }>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("prediction_accuracy_prediction_id_idx").on(table.predictionId),
+  index("prediction_accuracy_score_idx").on(table.accuracyScore),
+  index("prediction_accuracy_outcome_date_idx").on(table.outcomeDate),
+]);
+
+// Insert schemas and types for predictions
+export const insertUserPredictionSchema = createInsertSchema(userPredictions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPredictionAccuracySchema = createInsertSchema(predictionAccuracy).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUserPrediction = z.infer<typeof insertUserPredictionSchema>;
+export type UserPrediction = typeof userPredictions.$inferSelect;
+
+export type InsertPredictionAccuracy = z.infer<typeof insertPredictionAccuracySchema>;
+export type PredictionAccuracy = typeof predictionAccuracy.$inferSelect;
