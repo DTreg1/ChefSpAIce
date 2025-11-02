@@ -41,6 +41,7 @@ import autocompleteRouter from "./autocomplete.router";
 import validationRouter from "./validation.router";
 import insightsRouter from "./insights.router";
 import predictionsRouter from "./predictions.router";
+import trendsRouter from "./trends.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -96,6 +97,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/validate", validationRouter);   // Intelligent form validation endpoints
   app.use("/api/insights", insightsRouter);     // AI-powered analytics insights endpoints
   app.use("/api/predict", predictionsRouter);   // Predictive analytics and retention endpoints
+  app.use("/api/trends", trendsRouter);         // Automatic trend detection and alerting endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);

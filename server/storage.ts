@@ -254,6 +254,13 @@ import {
   type InsertPredictionAccuracy,
   userPredictions,
   predictionAccuracy,
+  // Trend types
+  type Trend,
+  type InsertTrend,
+  type TrendAlert,
+  type InsertTrendAlert,
+  trends,
+  trendAlerts,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -2290,6 +2297,113 @@ export interface IStorage {
     correctPredictions: number;
     accuracyByType: Record<string, number>;
   }>;
+
+  // ==================== Trend Detection Operations ====================
+  
+  /**
+   * Create a new trend
+   * @param trend - Trend data
+   */
+  createTrend(trend: InsertTrend): Promise<Trend>;
+  
+  /**
+   * Update an existing trend
+   * @param trendId - Trend ID
+   * @param update - Partial trend update
+   */
+  updateTrend(trendId: string, update: Partial<InsertTrend>): Promise<Trend>;
+  
+  /**
+   * Get trends with filters
+   * @param filters - Optional filters
+   */
+  getTrends(filters?: {
+    status?: string | string[];
+    trendType?: string | string[];
+    minStrength?: number;
+    dateRange?: { start: Date; end: Date };
+    limit?: number;
+  }): Promise<Trend[]>;
+  
+  /**
+   * Get a specific trend by ID
+   * @param trendId - Trend ID
+   */
+  getTrendById(trendId: string): Promise<Trend | undefined>;
+  
+  /**
+   * Get current active trends
+   */
+  getCurrentTrends(): Promise<Trend[]>;
+  
+  /**
+   * Get emerging trends
+   */
+  getEmergingTrends(): Promise<Trend[]>;
+  
+  /**
+   * Get historical trends
+   * @param dateRange - Date range
+   */
+  getHistoricalTrends(dateRange: { start: Date; end: Date }): Promise<Trend[]>;
+  
+  /**
+   * Create a trend alert
+   * @param alert - Alert data
+   */
+  createTrendAlert(alert: InsertTrendAlert): Promise<TrendAlert>;
+  
+  /**
+   * Update a trend alert
+   * @param alertId - Alert ID
+   * @param update - Partial alert update
+   */
+  updateTrendAlert(alertId: string, update: Partial<InsertTrendAlert>): Promise<TrendAlert>;
+  
+  /**
+   * Get trend alerts for a user
+   * @param userId - User ID (null for system-wide alerts)
+   */
+  getTrendAlerts(userId?: string | null): Promise<TrendAlert[]>;
+  
+  /**
+   * Get alerts for a specific trend
+   * @param trendId - Trend ID
+   */
+  getTrendAlertsByTrendId(trendId: string): Promise<TrendAlert[]>;
+  
+  /**
+   * Trigger a trend alert
+   * @param alertId - Alert ID
+   * @param message - Alert message
+   * @param notifiedUsers - Array of user IDs notified
+   */
+  triggerTrendAlert(
+    alertId: string,
+    message: string,
+    notifiedUsers: string[]
+  ): Promise<void>;
+  
+  /**
+   * Acknowledge a trend alert
+   * @param alertId - Alert ID
+   * @param actionTaken - Action taken in response
+   */
+  acknowledgeTrendAlert(
+    alertId: string,
+    actionTaken?: string
+  ): Promise<void>;
+  
+  /**
+   * Subscribe user to trend alerts
+   * @param userId - User ID
+   * @param conditions - Alert conditions
+   */
+  subscribeTrendAlerts(
+    userId: string,
+    conditions: InsertTrendAlert["conditions"],
+    alertType: string
+  ): Promise<TrendAlert>;
 }
 
 /**
@@ -10593,6 +10707,315 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Error getting prediction accuracy:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Trend Detection Implementation ====================
+  
+  async createTrend(trend: InsertTrend): Promise<Trend> {
+    try {
+      const [newTrend] = await db.insert(trends).values(trend).returning();
+      return newTrend;
+    } catch (error) {
+      console.error("Error creating trend:", error);
+      throw error;
+    }
+  }
+  
+  async updateTrend(trendId: string, update: Partial<InsertTrend>): Promise<Trend> {
+    try {
+      const [updatedTrend] = await db
+        .update(trends)
+        .set({
+          ...update,
+          updatedAt: new Date()
+        })
+        .where(eq(trends.id, trendId))
+        .returning();
+      return updatedTrend;
+    } catch (error) {
+      console.error("Error updating trend:", error);
+      throw error;
+    }
+  }
+  
+  async getTrends(filters?: {
+    status?: string | string[];
+    trendType?: string | string[];
+    minStrength?: number;
+    dateRange?: { start: Date; end: Date };
+    limit?: number;
+  }): Promise<Trend[]> {
+    try {
+      const conditions: any[] = [];
+      
+      if (filters?.status) {
+        if (Array.isArray(filters.status)) {
+          conditions.push(sql`${trends.status} = ANY(${filters.status})`);
+        } else {
+          conditions.push(eq(trends.status, filters.status));
+        }
+      }
+      
+      if (filters?.trendType) {
+        if (Array.isArray(filters.trendType)) {
+          conditions.push(sql`${trends.trendType} = ANY(${filters.trendType})`);
+        } else {
+          conditions.push(eq(trends.trendType, filters.trendType));
+        }
+      }
+      
+      if (filters?.minStrength) {
+        conditions.push(gte(trends.strength, filters.minStrength));
+      }
+      
+      if (filters?.dateRange) {
+        conditions.push(
+          gte(trends.startDate, filters.dateRange.start),
+          lte(trends.startDate, filters.dateRange.end)
+        );
+      }
+      
+      let query = db
+        .select()
+        .from(trends)
+        .orderBy(desc(trends.strength), desc(trends.createdAt));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      if (filters?.limit) {
+        query = query.limit(filters.limit);
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting trends:", error);
+      throw error;
+    }
+  }
+  
+  async getTrendById(trendId: string): Promise<Trend | undefined> {
+    try {
+      const [trend] = await db
+        .select()
+        .from(trends)
+        .where(eq(trends.id, trendId));
+      return trend;
+    } catch (error) {
+      console.error("Error getting trend by ID:", error);
+      throw error;
+    }
+  }
+  
+  async getCurrentTrends(): Promise<Trend[]> {
+    try {
+      return await db
+        .select()
+        .from(trends)
+        .where(
+          and(
+            sql`${trends.status} IN ('active', 'emerging', 'peaking')`,
+            gte(trends.strength, 0.3)
+          )
+        )
+        .orderBy(desc(trends.strength));
+    } catch (error) {
+      console.error("Error getting current trends:", error);
+      throw error;
+    }
+  }
+  
+  async getEmergingTrends(): Promise<Trend[]> {
+    try {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      return await db
+        .select()
+        .from(trends)
+        .where(
+          and(
+            eq(trends.status, 'emerging'),
+            gte(trends.startDate, oneWeekAgo),
+            gte(trends.growthRate, 50) // 50% growth rate threshold
+          )
+        )
+        .orderBy(desc(trends.growthRate));
+    } catch (error) {
+      console.error("Error getting emerging trends:", error);
+      throw error;
+    }
+  }
+  
+  async getHistoricalTrends(dateRange: { start: Date; end: Date }): Promise<Trend[]> {
+    try {
+      return await db
+        .select()
+        .from(trends)
+        .where(
+          or(
+            and(
+              gte(trends.startDate, dateRange.start),
+              lte(trends.startDate, dateRange.end)
+            ),
+            and(
+              gte(trends.peakDate, dateRange.start),
+              lte(trends.peakDate, dateRange.end)
+            )
+          )
+        )
+        .orderBy(desc(trends.peakDate));
+    } catch (error) {
+      console.error("Error getting historical trends:", error);
+      throw error;
+    }
+  }
+  
+  async createTrendAlert(alert: InsertTrendAlert): Promise<TrendAlert> {
+    try {
+      const [newAlert] = await db.insert(trendAlerts).values(alert).returning();
+      return newAlert;
+    } catch (error) {
+      console.error("Error creating trend alert:", error);
+      throw error;
+    }
+  }
+  
+  async updateTrendAlert(alertId: string, update: Partial<InsertTrendAlert>): Promise<TrendAlert> {
+    try {
+      const [updatedAlert] = await db
+        .update(trendAlerts)
+        .set({
+          ...update,
+          updatedAt: new Date()
+        })
+        .where(eq(trendAlerts.id, alertId))
+        .returning();
+      return updatedAlert;
+    } catch (error) {
+      console.error("Error updating trend alert:", error);
+      throw error;
+    }
+  }
+  
+  async getTrendAlerts(userId?: string | null): Promise<TrendAlert[]> {
+    try {
+      if (userId === undefined) {
+        // Get all alerts
+        return await db
+          .select()
+          .from(trendAlerts)
+          .where(eq(trendAlerts.isActive, true))
+          .orderBy(desc(trendAlerts.priority), desc(trendAlerts.createdAt));
+      } else if (userId === null) {
+        // Get system-wide alerts
+        return await db
+          .select()
+          .from(trendAlerts)
+          .where(
+            and(
+              isNull(trendAlerts.userId),
+              eq(trendAlerts.isActive, true)
+            )
+          )
+          .orderBy(desc(trendAlerts.priority), desc(trendAlerts.createdAt));
+      } else {
+        // Get user-specific and system-wide alerts
+        return await db
+          .select()
+          .from(trendAlerts)
+          .where(
+            and(
+              or(
+                eq(trendAlerts.userId, userId),
+                isNull(trendAlerts.userId)
+              ),
+              eq(trendAlerts.isActive, true)
+            )
+          )
+          .orderBy(desc(trendAlerts.priority), desc(trendAlerts.createdAt));
+      }
+    } catch (error) {
+      console.error("Error getting trend alerts:", error);
+      throw error;
+    }
+  }
+  
+  async getTrendAlertsByTrendId(trendId: string): Promise<TrendAlert[]> {
+    try {
+      return await db
+        .select()
+        .from(trendAlerts)
+        .where(eq(trendAlerts.trendId, trendId))
+        .orderBy(desc(trendAlerts.triggeredAt));
+    } catch (error) {
+      console.error("Error getting trend alerts by trend ID:", error);
+      throw error;
+    }
+  }
+  
+  async triggerTrendAlert(
+    alertId: string,
+    message: string,
+    notifiedUsers: string[]
+  ): Promise<void> {
+    try {
+      await db
+        .update(trendAlerts)
+        .set({
+          triggeredAt: new Date(),
+          alertMessage: message,
+          notifiedUsers,
+          updatedAt: new Date()
+        })
+        .where(eq(trendAlerts.id, alertId));
+    } catch (error) {
+      console.error("Error triggering trend alert:", error);
+      throw error;
+    }
+  }
+  
+  async acknowledgeTrendAlert(
+    alertId: string,
+    actionTaken?: string
+  ): Promise<void> {
+    try {
+      await db
+        .update(trendAlerts)
+        .set({
+          acknowledgedAt: new Date(),
+          actionTaken,
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(eq(trendAlerts.id, alertId));
+    } catch (error) {
+      console.error("Error acknowledging trend alert:", error);
+      throw error;
+    }
+  }
+  
+  async subscribeTrendAlerts(
+    userId: string,
+    conditions: InsertTrendAlert["conditions"],
+    alertType: string
+  ): Promise<TrendAlert> {
+    try {
+      const alert: InsertTrendAlert = {
+        userId,
+        alertType,
+        conditions,
+        priority: 'medium',
+        isActive: true,
+        notificationChannels: ['in-app', 'email']
+      };
+      
+      return await this.createTrendAlert(alert);
+    } catch (error) {
+      console.error("Error subscribing to trend alerts:", error);
       throw error;
     }
   }
