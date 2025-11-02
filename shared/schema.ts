@@ -4647,6 +4647,217 @@ export type FraudReview = typeof fraudReviews.$inferSelect;
 // ============================================================================
 
 /**
+ * Sentiment Metrics Table
+ * 
+ * Stores aggregated sentiment metrics for dashboard overview.
+ * Pre-calculated metrics for specific time periods.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - period: Time period for the metrics (e.g., "2024-01-15", "2024-W03")
+ * - avgSentiment: Average sentiment score for the period (-1 to 1)
+ * - totalItems: Total number of items analyzed in the period
+ * - alertTriggered: Whether an alert was triggered for this period
+ * - periodType: Type of period (day, week, month)
+ * - percentageChange: Percentage change from previous period
+ * - categories: Breakdown by category/feature
+ * - painPoints: Identified pain points in this period
+ * - metadata: Additional metrics data
+ * - createdAt: When metrics were calculated
+ * 
+ * Business Rules:
+ * - Calculated automatically every hour
+ * - Triggers alert if sentiment drops > 15%
+ * - Retains historical data for trend analysis
+ * 
+ * Indexes:
+ * - sentiment_metrics_period_idx: Period-based queries
+ * - sentiment_metrics_alert_idx: Alert status filtering
+ */
+export const sentimentMetrics = pgTable("sentiment_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  period: text("period").notNull(),
+  avgSentiment: real("avg_sentiment").notNull(),
+  totalItems: integer("total_items").notNull(),
+  alertTriggered: boolean("alert_triggered").notNull().default(false),
+  periodType: text("period_type").notNull().$type<"day" | "week" | "month">(),
+  percentageChange: real("percentage_change"),
+  categories: jsonb("categories").$type<Record<string, {
+    sentiment: number;
+    count: number;
+    issues: string[];
+  }>>(),
+  painPoints: jsonb("pain_points").$type<Array<{
+    category: string;
+    issue: string;
+    impact: number;
+    frequency: number;
+  }>>(),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("sentiment_metrics_period_idx").on(table.period),
+  index("sentiment_metrics_alert_idx").on(table.alertTriggered),
+  uniqueIndex("sentiment_metrics_unique_idx").on(table.period, table.periodType),
+]);
+
+/**
+ * Sentiment Alerts Table
+ * 
+ * Configuration and history of sentiment-based alerts.
+ * Tracks thresholds and triggered alerts.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - alertType: Type of alert (drop, spike, sustained_negative, etc.)
+ * - threshold: Threshold value that triggers the alert
+ * - currentValue: Current value that triggered the alert
+ * - triggeredAt: When the alert was triggered
+ * - status: Alert status (active, acknowledged, resolved)
+ * - severity: Alert severity level (low, medium, high, critical)
+ * - affectedCategory: Category/feature affected (optional)
+ * - message: Alert message for display
+ * - notificationSent: Whether notification was sent
+ * - acknowledgedBy: User who acknowledged the alert
+ * - acknowledgedAt: When alert was acknowledged
+ * - resolvedAt: When alert was resolved
+ * - metadata: Additional alert context
+ * 
+ * Alert Types:
+ * - sentiment_drop: Significant drop in sentiment
+ * - sustained_negative: Prolonged negative sentiment
+ * - volume_spike: Unusual volume of feedback
+ * - category_issue: Specific category problem
+ * 
+ * Business Rules:
+ * - Active alerts shown in dashboard
+ * - Critical alerts trigger immediate notifications
+ * - Auto-resolve after sentiment improves
+ * 
+ * Indexes:
+ * - sentiment_alerts_status_idx: Active alert queries
+ * - sentiment_alerts_type_idx: Filter by alert type
+ * - sentiment_alerts_triggered_idx: Time-based queries
+ */
+export const sentimentAlerts = pgTable("sentiment_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  alertType: text("alert_type").notNull().$type<"sentiment_drop" | "sustained_negative" | "volume_spike" | "category_issue">(),
+  threshold: real("threshold").notNull(),
+  currentValue: real("current_value").notNull(),
+  triggeredAt: timestamp("triggered_at").notNull().defaultNow(),
+  status: text("status").notNull().default("active").$type<"active" | "acknowledged" | "resolved">(),
+  severity: text("severity").notNull().$type<"low" | "medium" | "high" | "critical">(),
+  affectedCategory: text("affected_category"),
+  message: text("message").notNull(),
+  notificationSent: boolean("notification_sent").notNull().default(false),
+  acknowledgedBy: varchar("acknowledged_by"),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  resolvedAt: timestamp("resolved_at"),
+  metadata: jsonb("metadata").$type<{
+    previousValue?: number;
+    percentageChange?: number;
+    affectedUsers?: number;
+    relatedIssues?: string[];
+    suggestedActions?: string[];
+  }>(),
+}, (table) => [
+  index("sentiment_alerts_status_idx").on(table.status),
+  index("sentiment_alerts_type_idx").on(table.alertType),
+  index("sentiment_alerts_triggered_idx").on(table.triggeredAt),
+]);
+
+/**
+ * Sentiment Segments Table
+ * 
+ * Sentiment analysis broken down by segments/categories.
+ * Enables detailed analysis of specific areas.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - segmentName: Name of the segment (e.g., "login", "checkout", "support")
+ * - period: Time period for the segment analysis
+ * - sentimentScore: Average sentiment score for this segment
+ * - periodType: Type of period (day, week, month)
+ * - sampleSize: Number of items analyzed
+ * - positiveCount: Number of positive sentiments
+ * - negativeCount: Number of negative sentiments
+ * - neutralCount: Number of neutral sentiments
+ * - topIssues: Most common issues in this segment
+ * - topPraises: Most common positive feedback
+ * - trendDirection: Trend direction (up, down, stable)
+ * - comparisonToPrevious: Change from previous period
+ * - metadata: Additional segment data
+ * - createdAt: When segment analysis was created
+ * 
+ * Business Rules:
+ * - Updated hourly for active segments
+ * - Identifies segment-specific issues
+ * - Enables targeted improvements
+ * 
+ * Indexes:
+ * - sentiment_segments_name_idx: Segment name queries
+ * - sentiment_segments_period_idx: Period-based queries
+ * - sentiment_segments_score_idx: Score-based filtering
+ */
+export const sentimentSegments = pgTable("sentiment_segments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  segmentName: text("segment_name").notNull(),
+  period: text("period").notNull(),
+  sentimentScore: real("sentiment_score").notNull(),
+  periodType: text("period_type").notNull().$type<"day" | "week" | "month">(),
+  sampleSize: integer("sample_size").notNull(),
+  positiveCount: integer("positive_count").notNull(),
+  negativeCount: integer("negative_count").notNull(),
+  neutralCount: integer("neutral_count").notNull(),
+  topIssues: jsonb("top_issues").$type<Array<{
+    issue: string;
+    count: number;
+    sentiment: number;
+  }>>(),
+  topPraises: jsonb("top_praises").$type<Array<{
+    praise: string;
+    count: number;
+    sentiment: number;
+  }>>(),
+  trendDirection: text("trend_direction").$type<"up" | "down" | "stable">(),
+  comparisonToPrevious: real("comparison_to_previous"),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("sentiment_segments_name_idx").on(table.segmentName),
+  index("sentiment_segments_period_idx").on(table.period),
+  index("sentiment_segments_score_idx").on(table.sentimentScore),
+  uniqueIndex("sentiment_segments_unique_idx").on(table.segmentName, table.period, table.periodType),
+]);
+
+// Schema types for sentiment dashboard
+export const insertSentimentMetricsSchema = createInsertSchema(sentimentMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSentimentAlertsSchema = createInsertSchema(sentimentAlerts).omit({
+  id: true,
+  triggeredAt: true,
+  status: true,
+  notificationSent: true,
+});
+
+export const insertSentimentSegmentsSchema = createInsertSchema(sentimentSegments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSentimentMetrics = z.infer<typeof insertSentimentMetricsSchema>;
+export type SentimentMetrics = typeof sentimentMetrics.$inferSelect;
+
+export type InsertSentimentAlerts = z.infer<typeof insertSentimentAlertsSchema>;
+export type SentimentAlerts = typeof sentimentAlerts.$inferSelect;
+
+export type InsertSentimentSegments = z.infer<typeof insertSentimentSegmentsSchema>;
+export type SentimentSegments = typeof sentimentSegments.$inferSelect;
+
+/**
  * Sentiment Analysis Table
  * 
  * Stores sentiment analysis results for user-generated content using AI.
