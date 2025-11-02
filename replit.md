@@ -57,6 +57,25 @@ Key architectural decisions include:
         - **Related Content Discovery**: Recommends related recipes and ingredients based on semantic relationships and user behavior patterns.
         - **Natural Language Query**: Converts natural language questions to structured database queries. Examples: "What can I make with chicken?" or "Show me healthy dinner recipes".
 
+## Authentication System (Updated November 2025)
+The application features a **dual-mode authentication system** that automatically adapts to the environment:
+
+### Authentication Modes
+1. **Replit Auth Mode**: Used for development/testing, especially for Replit Agent automated testing. Provides simplified OIDC-based authentication without external provider dependencies.
+2. **OAuth Mode**: Used for production with support for Google, GitHub, Twitter, Apple, and email/password authentication.
+
+### Mode Detection
+The system automatically detects the appropriate mode based on:
+- ISSUER_URL override (Agent testing) → Replit Auth
+- OAuth credentials configured → OAuth mode
+- Explicit AUTH_MODE environment variable
+- See AUTH_CONFIG.md for detailed configuration
+
+This dual-mode approach ensures:
+- ✅ Replit Agent can test the application without OAuth setup
+- ✅ Production deployments use full OAuth providers
+- ✅ Seamless switching between modes based on environment
+
 ## External Dependencies
 - **Database**: PostgreSQL (Neon-backed)
 - **AI**: OpenAI GPT-5
