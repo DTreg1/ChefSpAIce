@@ -19,7 +19,7 @@ import { z } from "zod";
 import OpenAI from "openai";
 // Natural language processing tools
 // Using simple word tokenization without the natural library
-import syllable from "syllable";
+import { syllable } from "syllable";
 import Sentiment from "sentiment";
 // @ts-ignore
 import rs from "text-readability";
