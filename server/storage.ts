@@ -186,9 +186,19 @@ import {
   type InsertBlockedContent,
   type ModerationAppeal,
   type InsertModerationAppeal,
+  // Fraud Detection types
+  type FraudScore,
+  type InsertFraudScore,
+  type SuspiciousActivity,
+  type InsertSuspiciousActivity,
+  type FraudReview,
+  type InsertFraudReview,
   moderationLogs,
   blockedContent,
   moderationAppeals,
+  fraudScores,
+  suspiciousActivities,
+  fraudReviews,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -1647,6 +1657,75 @@ export interface IStorage {
     categoriesBreakdown: { [key: string]: number };
     severityBreakdown: { [key: string]: number };
     averageConfidence: number;
+  }>;
+  
+  // ============================================================================
+  // Fraud Detection Methods
+  // ============================================================================
+  
+  /**
+   * Create fraud score entry
+   * @param score - Fraud score data
+   */
+  createFraudScore(score: InsertFraudScore): Promise<FraudScore>;
+  
+  /**
+   * Get fraud scores for user
+   * @param userId - User ID
+   * @param limit - Number of scores to return
+   */
+  getFraudScores(userId: string, limit?: number): Promise<FraudScore[]>;
+  
+  /**
+   * Create suspicious activity log
+   * @param activity - Suspicious activity data
+   */
+  createSuspiciousActivity(activity: InsertSuspiciousActivity): Promise<SuspiciousActivity>;
+  
+  /**
+   * Get suspicious activities
+   * @param userId - Filter by user (optional)
+   * @param isAdmin - Whether requester is admin
+   */
+  getSuspiciousActivities(userId?: string, isAdmin?: boolean): Promise<SuspiciousActivity[]>;
+  
+  /**
+   * Update suspicious activity status
+   * @param activityId - Activity ID
+   * @param status - New status
+   * @param resolvedAt - Resolution timestamp (optional)
+   */
+  updateSuspiciousActivity(
+    activityId: string, 
+    status: 'pending' | 'reviewing' | 'confirmed' | 'dismissed' | 'escalated',
+    resolvedAt?: Date
+  ): Promise<void>;
+  
+  /**
+   * Create fraud review
+   * @param review - Review data
+   */
+  createFraudReview(review: InsertFraudReview): Promise<FraudReview>;
+  
+  /**
+   * Get fraud reviews for user
+   * @param userId - User ID
+   */
+  getFraudReviews(userId: string): Promise<FraudReview[]>;
+  
+  /**
+   * Get fraud statistics
+   * @param period - Time period for stats
+   */
+  getFraudStats(period: 'day' | 'week' | 'month'): Promise<{
+    totalScores: number;
+    averageScore: number;
+    highRiskCount: number;
+    suspiciousActivitiesCount: number;
+    reviewsCount: number;
+    autoBlockedCount: number;
+    topActivityTypes: { type: string; count: number }[];
+    riskDistribution: { level: string; count: number }[];
   }>;
 }
 
@@ -6964,6 +7043,212 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting moderation stats:", error);
       throw new Error("Failed to get moderation statistics");
+    }
+  }
+  
+  // ============================================================================
+  // Fraud Detection Implementations
+  // ============================================================================
+  
+  async createFraudScore(score: InsertFraudScore): Promise<FraudScore> {
+    try {
+      const [result] = await db
+        .insert(fraudScores)
+        .values(score)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating fraud score:", error);
+      throw new Error("Failed to create fraud score");
+    }
+  }
+  
+  async getFraudScores(userId: string, limit: number = 10): Promise<FraudScore[]> {
+    try {
+      const scores = await db
+        .select()
+        .from(fraudScores)
+        .where(eq(fraudScores.userId, userId))
+        .orderBy(desc(fraudScores.timestamp))
+        .limit(limit);
+      return scores;
+    } catch (error) {
+      console.error("Error getting fraud scores:", error);
+      throw new Error("Failed to get fraud scores");
+    }
+  }
+  
+  async createSuspiciousActivity(activity: InsertSuspiciousActivity): Promise<SuspiciousActivity> {
+    try {
+      const [result] = await db
+        .insert(suspiciousActivities)
+        .values(activity)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating suspicious activity:", error);
+      throw new Error("Failed to create suspicious activity");
+    }
+  }
+  
+  async getSuspiciousActivities(userId?: string, isAdmin: boolean = false): Promise<SuspiciousActivity[]> {
+    try {
+      let query = db.select().from(suspiciousActivities);
+      
+      // Filter by userId if provided or if not admin
+      if (userId && !isAdmin) {
+        query = query.where(eq(suspiciousActivities.userId, userId));
+      } else if (!isAdmin) {
+        // Non-admin users with no userId specified should not see any activities
+        return [];
+      }
+      
+      // Order by most recent first
+      const activities = await query.orderBy(desc(suspiciousActivities.detectedAt));
+      return activities;
+    } catch (error) {
+      console.error("Error getting suspicious activities:", error);
+      throw new Error("Failed to get suspicious activities");
+    }
+  }
+  
+  async updateSuspiciousActivity(
+    activityId: string,
+    status: 'pending' | 'reviewing' | 'confirmed' | 'dismissed' | 'escalated',
+    resolvedAt?: Date
+  ): Promise<void> {
+    try {
+      await db
+        .update(suspiciousActivities)
+        .set({ 
+          status,
+          resolvedAt: resolvedAt || null
+        })
+        .where(eq(suspiciousActivities.id, activityId));
+    } catch (error) {
+      console.error("Error updating suspicious activity:", error);
+      throw new Error("Failed to update suspicious activity");
+    }
+  }
+  
+  async createFraudReview(review: InsertFraudReview): Promise<FraudReview> {
+    try {
+      const [result] = await db
+        .insert(fraudReviews)
+        .values(review)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating fraud review:", error);
+      throw new Error("Failed to create fraud review");
+    }
+  }
+  
+  async getFraudReviews(userId: string): Promise<FraudReview[]> {
+    try {
+      const reviews = await db
+        .select()
+        .from(fraudReviews)
+        .where(eq(fraudReviews.userId, userId))
+        .orderBy(desc(fraudReviews.reviewedAt));
+      return reviews;
+    } catch (error) {
+      console.error("Error getting fraud reviews:", error);
+      throw new Error("Failed to get fraud reviews");
+    }
+  }
+  
+  async getFraudStats(period: 'day' | 'week' | 'month'): Promise<{
+    totalScores: number;
+    averageScore: number;
+    highRiskCount: number;
+    suspiciousActivitiesCount: number;
+    reviewsCount: number;
+    autoBlockedCount: number;
+    topActivityTypes: { type: string; count: number }[];
+    riskDistribution: { level: string; count: number }[];
+  }> {
+    try {
+      // Calculate date range based on period
+      const now = new Date();
+      const startDate = new Date();
+      
+      switch (period) {
+        case 'day':
+          startDate.setDate(now.getDate() - 1);
+          break;
+        case 'week':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+      }
+      
+      // Get fraud scores in the period
+      const scores = await db
+        .select()
+        .from(fraudScores)
+        .where(gte(fraudScores.timestamp, startDate));
+      
+      const totalScores = scores.length;
+      const averageScore = totalScores > 0
+        ? scores.reduce((sum, s) => sum + s.score, 0) / totalScores
+        : 0;
+      const highRiskCount = scores.filter(s => s.score > 0.75).length;
+      
+      // Get suspicious activities
+      const activities = await db
+        .select()
+        .from(suspiciousActivities)
+        .where(gte(suspiciousActivities.detectedAt, startDate));
+      
+      const suspiciousActivitiesCount = activities.length;
+      const autoBlockedCount = activities.filter(a => a.autoBlocked).length;
+      
+      // Calculate top activity types
+      const activityTypeCounts: { [key: string]: number } = {};
+      activities.forEach(a => {
+        activityTypeCounts[a.activityType] = (activityTypeCounts[a.activityType] || 0) + 1;
+      });
+      const topActivityTypes = Object.entries(activityTypeCounts)
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      
+      // Calculate risk distribution
+      const riskLevelCounts: { [key: string]: number } = {
+        low: 0,
+        medium: 0,
+        high: 0,
+        critical: 0
+      };
+      activities.forEach(a => {
+        riskLevelCounts[a.riskLevel] = (riskLevelCounts[a.riskLevel] || 0) + 1;
+      });
+      const riskDistribution = Object.entries(riskLevelCounts)
+        .map(([level, count]) => ({ level, count }));
+      
+      // Get reviews count
+      const reviews = await db
+        .select()
+        .from(fraudReviews)
+        .where(gte(fraudReviews.reviewedAt, startDate));
+      const reviewsCount = reviews.length;
+      
+      return {
+        totalScores,
+        averageScore,
+        highRiskCount,
+        suspiciousActivitiesCount,
+        reviewsCount,
+        autoBlockedCount,
+        topActivityTypes,
+        riskDistribution
+      };
+    } catch (error) {
+      console.error("Error getting fraud statistics:", error);
+      throw new Error("Failed to get fraud statistics");
     }
   }
 
