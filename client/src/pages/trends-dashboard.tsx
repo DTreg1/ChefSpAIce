@@ -88,7 +88,10 @@ export default function TrendsDashboard() {
         title: "Analysis Complete",
         description: `Detected ${data.trends?.length || 0} new trends`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/trends"] });
+      // Invalidate all trend-related queries to refresh the dashboard
+      queryClient.invalidateQueries({ queryKey: ["/api/trends/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trends/emerging"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trends/alerts"] });
     },
     onError: (error: any) => {
       toast({

@@ -109,12 +109,13 @@ class TrendAnalyzerService {
         const anomalyTrend = await this.detectAnomalies(stream);
         
         // Combine and filter significant trends
+        // Requirement: Detect trends with 300%+ growth (growthRate >= 300)
         const detectedTrends = [
           movingAverageTrend,
           changePointTrend,
           seasonalTrend,
           anomalyTrend
-        ].filter(t => t && t.strength > 0.3);
+        ].filter(t => t && (t.growthRate >= 300 || (t.type === 'anomaly' && t.strength > 0.7)));
         
         // Convert to database format
         for (const trend of detectedTrends) {
@@ -233,7 +234,8 @@ class TrendAnalyzerService {
     // Calculate trend strength based on consistency
     const strength = this.calculateTrendStrength(sma);
     
-    if (Math.abs(growthRate) < 10 || strength < 0.3) {
+    // Only return trends with significant growth (300%+ for emerging trends)
+    if (Math.abs(growthRate) < 50 && strength < 0.5) {
       return null;
     }
     
