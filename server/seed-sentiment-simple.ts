@@ -47,11 +47,11 @@ async function seedSimpleSentimentData() {
       INSERT INTO sentiment_segments (period, period_type, segment_name, sentiment_score, sample_size, positive_count, negative_count, neutral_count, top_issues)
       VALUES 
         ('2024-11-01', 'week', 'New Users', 0.35, 142, 28, 85, 29,
-         '{"Cannot login", "Account creation fails"}'),
+         '[{"issue": "Cannot login", "count": 45, "sentiment": -0.8}, {"issue": "Account creation fails", "count": 40, "sentiment": -0.9}]'),
         ('2024-11-01', 'week', 'Premium Users', 0.62, 198, 98, 55, 45,
-         '{"Login delays", "Session expires quickly"}'),
+         '[{"issue": "Login delays", "count": 25, "sentiment": -0.6}, {"issue": "Session expires quickly", "count": 30, "sentiment": -0.7}]'),
         ('2024-11-01', 'week', 'Mobile Users', 0.48, 146, 45, 72, 29,
-         '{"App crashes on login", "Fingerprint auth not working"}')
+         '[{"issue": "App crashes on login", "count": 35, "sentiment": -0.85}, {"issue": "Fingerprint auth not working", "count": 37, "sentiment": -0.8}]')
     `);
 
     console.log("✅ Sentiment segments inserted");
