@@ -45,16 +45,16 @@ export function getAuthMode(): AuthMode {
     return 'replit';
   }
   
-  // Check if OAuth credentials are configured
-  const hasOAuthConfig = !!(
-    process.env.GOOGLE_CLIENT_ID || 
-    process.env.GITHUB_CLIENT_ID || 
-    process.env.TWITTER_CONSUMER_KEY ||
-    process.env.APPLE_CLIENT_ID
+  // Check if OAuth credentials are FULLY configured (both ID and secret)
+  const hasCompleteOAuthConfig = !!(
+    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) || 
+    (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) || 
+    (process.env.TWITTER_CONSUMER_KEY && process.env.TWITTER_CONSUMER_SECRET) ||
+    (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID)
   );
   
-  if (hasOAuthConfig) {
-    console.log('🌐 Using OAuth mode (OAuth credentials detected)');
+  if (hasCompleteOAuthConfig) {
+    console.log('🌐 Using OAuth mode (complete OAuth credentials detected)');
     return 'oauth';
   }
   
