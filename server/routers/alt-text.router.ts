@@ -6,7 +6,7 @@
 
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth";
+import { isAuthenticated } from "../middleware/auth.middleware";
 import multer from "multer";
 import type { DatabaseStorage } from "../storage";
 import {
@@ -67,7 +67,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
   const router = Router();
 
   // All routes require authentication
-  router.use(requireAuth);
+  router.use(isAuthenticated);
 
   /**
    * Generate alt text for an image
