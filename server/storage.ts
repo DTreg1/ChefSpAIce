@@ -76,6 +76,15 @@ import {
   type ActivityLog,
   type InsertActivityLog,
   type UserStorage,
+  // Sentiment tracking types
+  type SentimentMetrics,
+  type InsertSentimentMetrics,
+  type SentimentAlerts,
+  type InsertSentimentAlerts,
+  type SentimentSegments,
+  type InsertSentimentSegments,
+  type SentimentAnalysis,
+  type InsertSentimentAnalysis,
   type InsertUserInventory,
   type UserInventory,
   insertAnalyticsEventSchema,
@@ -206,6 +215,9 @@ import {
   type InsertSentimentTrend,
   sentimentAnalysis,
   sentimentTrends,
+  sentimentMetrics,
+  sentimentAlerts,
+  sentimentSegments,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -728,6 +740,66 @@ export interface IStorage {
     topEvents: Array<{ eventType: string; count: number }>;
     topCategories: Array<{ eventCategory: string; count: number }>;
     conversionRate: number;
+  }>;
+
+  // ==================== Sentiment Tracking Operations ====================
+  
+  // Sentiment Metrics Operations
+  createSentimentMetrics(metrics: InsertSentimentMetrics): Promise<SentimentMetrics>;
+  getSentimentMetrics(
+    period?: string,
+    periodType?: "day" | "week" | "month",
+  ): Promise<SentimentMetrics[]>;
+  getLatestSentimentMetrics(): Promise<SentimentMetrics | undefined>;
+  
+  // Sentiment Alerts Operations
+  createSentimentAlert(alert: InsertSentimentAlerts): Promise<SentimentAlerts>;
+  getSentimentAlerts(
+    status?: "active" | "acknowledged" | "resolved",
+    limit?: number,
+  ): Promise<SentimentAlerts[]>;
+  updateSentimentAlert(
+    alertId: string,
+    update: Partial<SentimentAlerts>,
+  ): Promise<SentimentAlerts>;
+  
+  // Sentiment Segments Operations
+  createSentimentSegment(segment: InsertSentimentSegments): Promise<SentimentSegments>;
+  getSentimentSegments(
+    period?: string,
+    segmentName?: string,
+  ): Promise<SentimentSegments[]>;
+  getSentimentBreakdown(
+    period: string,
+    periodType: "day" | "week" | "month",
+  ): Promise<{
+    segments: SentimentSegments[];
+    categories: Record<string, { sentiment: number; count: number }>;
+  }>;
+  
+  // Sentiment Analysis Operations
+  createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis>;
+  getSentimentAnalyses(
+    filters?: {
+      userId?: string;
+      contentType?: string;
+      sentiment?: "positive" | "negative" | "neutral" | "mixed";
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    },
+  ): Promise<SentimentAnalysis[]>;
+  
+  // Sentiment Report Generation
+  generateSentimentReport(
+    period: string,
+    periodType: "day" | "week" | "month",
+  ): Promise<{
+    metrics: SentimentMetrics;
+    alerts: SentimentAlerts[];
+    segments: SentimentSegments[];
+    painPoints: Array<{ category: string; issue: string; impact: number }>;
+    insights: string[];
   }>;
 
   // ==================== Natural Language Query Operations ====================
@@ -5364,6 +5436,256 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error getting analytics stats:", error);
       throw new Error("Failed to get analytics stats");
+    }
+  }
+
+  // ==================== Sentiment Tracking Implementation ====================
+
+  async createSentimentMetrics(metrics: InsertSentimentMetrics): Promise<SentimentMetrics> {
+    try {
+      const [result] = await db.insert(sentimentMetrics).values(metrics).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating sentiment metrics:", error);
+      throw new Error("Failed to create sentiment metrics");
+    }
+  }
+
+  async getSentimentMetrics(
+    period?: string,
+    periodType?: "day" | "week" | "month",
+  ): Promise<SentimentMetrics[]> {
+    try {
+      const conditions = [];
+      if (period) conditions.push(eq(sentimentMetrics.period, period));
+      if (periodType) conditions.push(eq(sentimentMetrics.periodType, periodType));
+
+      return await db
+        .select()
+        .from(sentimentMetrics)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(sentimentMetrics.createdAt));
+    } catch (error) {
+      console.error("Error getting sentiment metrics:", error);
+      throw new Error("Failed to get sentiment metrics");
+    }
+  }
+
+  async getLatestSentimentMetrics(): Promise<SentimentMetrics | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(sentimentMetrics)
+        .orderBy(desc(sentimentMetrics.createdAt))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error getting latest sentiment metrics:", error);
+      throw new Error("Failed to get latest sentiment metrics");
+    }
+  }
+
+  async createSentimentAlert(alert: InsertSentimentAlerts): Promise<SentimentAlerts> {
+    try {
+      const [result] = await db.insert(sentimentAlerts).values(alert).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating sentiment alert:", error);
+      throw new Error("Failed to create sentiment alert");
+    }
+  }
+
+  async getSentimentAlerts(
+    status?: "active" | "acknowledged" | "resolved",
+    limit: number = 50,
+  ): Promise<SentimentAlerts[]> {
+    try {
+      const conditions = [];
+      if (status) conditions.push(eq(sentimentAlerts.status, status));
+
+      return await db
+        .select()
+        .from(sentimentAlerts)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(sentimentAlerts.triggeredAt))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error getting sentiment alerts:", error);
+      throw new Error("Failed to get sentiment alerts");
+    }
+  }
+
+  async updateSentimentAlert(
+    alertId: string,
+    update: Partial<SentimentAlerts>,
+  ): Promise<SentimentAlerts> {
+    try {
+      const [result] = await db
+        .update(sentimentAlerts)
+        .set(update)
+        .where(eq(sentimentAlerts.id, alertId))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error updating sentiment alert:", error);
+      throw new Error("Failed to update sentiment alert");
+    }
+  }
+
+  async createSentimentSegment(segment: InsertSentimentSegments): Promise<SentimentSegments> {
+    try {
+      const [result] = await db.insert(sentimentSegments).values(segment).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating sentiment segment:", error);
+      throw new Error("Failed to create sentiment segment");
+    }
+  }
+
+  async getSentimentSegments(
+    period?: string,
+    segmentName?: string,
+  ): Promise<SentimentSegments[]> {
+    try {
+      const conditions = [];
+      if (period) conditions.push(eq(sentimentSegments.period, period));
+      if (segmentName) conditions.push(eq(sentimentSegments.segmentName, segmentName));
+
+      return await db
+        .select()
+        .from(sentimentSegments)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(sentimentSegments.sentimentScore));
+    } catch (error) {
+      console.error("Error getting sentiment segments:", error);
+      throw new Error("Failed to get sentiment segments");
+    }
+  }
+
+  async getSentimentBreakdown(
+    period: string,
+    periodType: "day" | "week" | "month",
+  ): Promise<{
+    segments: SentimentSegments[];
+    categories: Record<string, { sentiment: number; count: number }>;
+  }> {
+    try {
+      // Get segments for the period
+      const segments = await this.getSentimentSegments(period);
+      
+      // Get metrics for the period
+      const metrics = await this.getSentimentMetrics(period, periodType);
+      
+      // Extract categories from metrics
+      const categories = metrics[0]?.categories || {};
+      
+      return {
+        segments,
+        categories,
+      };
+    } catch (error) {
+      console.error("Error getting sentiment breakdown:", error);
+      throw new Error("Failed to get sentiment breakdown");
+    }
+  }
+
+  async createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis> {
+    try {
+      const [result] = await db.insert(sentimentAnalysis).values(analysis).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating sentiment analysis:", error);
+      throw new Error("Failed to create sentiment analysis");
+    }
+  }
+
+  async getSentimentAnalyses(
+    filters?: {
+      userId?: string;
+      contentType?: string;
+      sentiment?: "positive" | "negative" | "neutral" | "mixed";
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    },
+  ): Promise<SentimentAnalysis[]> {
+    try {
+      const conditions = [];
+      if (filters?.userId) conditions.push(eq(sentimentAnalysis.userId, filters.userId));
+      if (filters?.contentType) conditions.push(eq(sentimentAnalysis.contentType, filters.contentType));
+      if (filters?.sentiment) conditions.push(eq(sentimentAnalysis.sentiment, filters.sentiment));
+      if (filters?.startDate) conditions.push(gte(sentimentAnalysis.analyzedAt, filters.startDate));
+      if (filters?.endDate) conditions.push(lte(sentimentAnalysis.analyzedAt, filters.endDate));
+
+      const baseQuery = db.select().from(sentimentAnalysis);
+      const queryWithWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+      const queryWithOrder = queryWithWhere.orderBy(desc(sentimentAnalysis.analyzedAt));
+      const finalQuery = filters?.limit ? queryWithOrder.limit(filters.limit) : queryWithOrder;
+
+      return await finalQuery;
+    } catch (error) {
+      console.error("Error getting sentiment analyses:", error);
+      throw new Error("Failed to get sentiment analyses");
+    }
+  }
+
+  async generateSentimentReport(
+    period: string,
+    periodType: "day" | "week" | "month",
+  ): Promise<{
+    metrics: SentimentMetrics;
+    alerts: SentimentAlerts[];
+    segments: SentimentSegments[];
+    painPoints: Array<{ category: string; issue: string; impact: number }>;
+    insights: string[];
+  }> {
+    try {
+      // Get metrics for the period
+      const [metrics] = await this.getSentimentMetrics(period, periodType);
+      if (!metrics) {
+        throw new Error("No metrics found for the specified period");
+      }
+      
+      // Get active alerts
+      const alerts = await this.getSentimentAlerts("active");
+      
+      // Get segments for the period
+      const segments = await this.getSentimentSegments(period);
+      
+      // Extract pain points from metrics
+      const painPoints = metrics.painPoints || [];
+      
+      // Generate insights based on the data
+      const insights: string[] = [];
+      
+      // Check for significant sentiment drop
+      if (metrics.percentageChange && metrics.percentageChange < -15) {
+        insights.push(`Significant sentiment drop of ${Math.abs(metrics.percentageChange).toFixed(1)}% detected in the ${periodType}`);
+      }
+      
+      // Check for problematic segments
+      segments.forEach(segment => {
+        if (segment.sentimentScore < -0.3) {
+          insights.push(`${segment.segmentName} showing negative sentiment (${segment.sentimentScore.toFixed(2)})`);
+        }
+      });
+      
+      // Check alert severity
+      const criticalAlerts = alerts.filter(a => a.severity === "critical");
+      if (criticalAlerts.length > 0) {
+        insights.push(`${criticalAlerts.length} critical alert(s) require immediate attention`);
+      }
+      
+      return {
+        metrics,
+        alerts,
+        segments,
+        painPoints,
+        insights,
+      };
+    } catch (error) {
+      console.error("Error generating sentiment report:", error);
+      throw new Error("Failed to generate sentiment report");
     }
   }
 
