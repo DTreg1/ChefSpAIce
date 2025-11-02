@@ -5858,3 +5858,123 @@ export type ValidationRule = typeof validationRules.$inferSelect;
 
 export type InsertValidationError = z.infer<typeof insertValidationErrorSchema>;
 export type ValidationError = typeof validationErrors.$inferSelect;
+
+/**
+ * Analytics Insights Table
+ * 
+ * Stores AI-generated explanations of data trends, patterns, and anomalies.
+ * Provides plain-language interpretations for non-technical users.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - metricName: Name of the metric being analyzed (e.g., "traffic", "revenue", "user_engagement")
+ * - insightText: Plain-language explanation of the trend/pattern/anomaly
+ * - importance: Priority level (1-5, where 5 is most important)
+ * - period: Time period of analysis (e.g., "daily", "weekly", "monthly")
+ * - metricData: JSONB with actual data points and statistics
+ * - aiContext: JSONB with AI reasoning and confidence scores
+ * - category: Type of insight (e.g., "trend", "anomaly", "prediction", "comparison")
+ * - isRead: Whether user has viewed this insight
+ * - createdAt: When insight was generated
+ * 
+ * Business Rules:
+ * - Insights generated via OpenAI GPT-4 based on data analysis
+ * - Importance determines notification priority
+ * - Unread insights shown prominently in dashboard
+ * - Historical insights preserved for trend analysis
+ * 
+ * Indexes:
+ * - analytics_insights_user_id_idx: User's insights lookup
+ * - analytics_insights_importance_idx: Priority-based queries
+ * - analytics_insights_created_idx: Time-based filtering
+ */
+export const analyticsInsights = pgTable("analytics_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  metricName: text("metric_name").notNull(),
+  insightText: text("insight_text").notNull(),
+  importance: integer("importance").notNull().default(3), // 1-5 scale
+  period: text("period").notNull(), // "daily", "weekly", "monthly", "custom"
+  metricData: jsonb("metric_data").$type<{
+    currentValue?: number;
+    previousValue?: number;
+    percentageChange?: number;
+    dataPoints?: Array<{ date: string; value: number }>;
+    average?: number;
+    min?: number;
+    max?: number;
+    trend?: "up" | "down" | "stable";
+  }>(),
+  aiContext: jsonb("ai_context").$type<{
+    reasoning?: string;
+    confidence?: number;
+    suggestedActions?: string[];
+    relatedMetrics?: string[];
+    model?: string;
+  }>(),
+  category: text("category").notNull().default("trend"), // "trend", "anomaly", "prediction", "comparison"
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("analytics_insights_user_id_idx").on(table.userId),
+  index("analytics_insights_importance_idx").on(table.importance),
+  index("analytics_insights_created_idx").on(table.createdAt),
+]);
+
+/**
+ * Insight Feedback Table
+ * 
+ * Tracks user feedback on generated insights for quality improvement.
+ * Helps train and refine AI interpretation accuracy.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - insightId: Foreign key to analyticsInsights.id (CASCADE delete)
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - helpfulScore: Rating 1-5 on how helpful the insight was
+ * - comments: User's feedback text
+ * - wasActionable: Whether user could take action based on insight
+ * - resultOutcome: What happened after acting on the insight
+ * - createdAt: When feedback was submitted
+ * 
+ * Business Rules:
+ * - One feedback per user per insight
+ * - Feedback used to improve AI model prompts
+ * - Low scores trigger manual review
+ * - High scores promote similar insights
+ * 
+ * Indexes:
+ * - insight_feedback_insight_id_idx: Insight's feedback lookup
+ * - insight_feedback_user_insight_idx: Unique constraint
+ */
+export const insightFeedback = pgTable("insight_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  insightId: varchar("insight_id").notNull().references(() => analyticsInsights.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  helpfulScore: integer("helpful_score").notNull(), // 1-5 rating
+  comments: text("comments"),
+  wasActionable: boolean("was_actionable"),
+  resultOutcome: text("result_outcome"), // "positive", "negative", "neutral", "not_applied"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("insight_feedback_insight_id_idx").on(table.insightId),
+  uniqueIndex("insight_feedback_user_insight_idx").on(table.userId, table.insightId),
+]);
+
+// Insert schemas and types for analytics
+export const insertAnalyticsInsightSchema = createInsertSchema(analyticsInsights).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertInsightFeedbackSchema = createInsertSchema(insightFeedback).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAnalyticsInsight = z.infer<typeof insertAnalyticsInsightSchema>;
+export type AnalyticsInsight = typeof analyticsInsights.$inferSelect;
+
+export type InsertInsightFeedback = z.infer<typeof insertInsightFeedbackSchema>;
+export type InsightFeedback = typeof insightFeedback.$inferSelect;
