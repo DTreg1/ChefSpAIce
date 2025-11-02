@@ -26,13 +26,14 @@ export class NotificationSchedulerService {
     console.log('Starting notification scheduler service...');
     
     // Process notification queue every minute
-    this.queueProcessingTask = cron.schedule('* * * * *', async () => {
+    // TEMPORARILY DISABLED: This is blocking server startup
+    /* this.queueProcessingTask = cron.schedule('* * * * *', async () => {
       try {
         await intelligentNotificationService.processNotificationQueue();
       } catch (error) {
         console.error('Error in notification queue processing:', error);
       }
-    });
+    }); */
     
     // Train model with new feedback every 6 hours
     this.modelTrainingTask = cron.schedule('0 */6 * * *', async () => {
