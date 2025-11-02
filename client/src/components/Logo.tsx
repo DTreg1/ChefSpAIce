@@ -52,7 +52,7 @@ export function Logo({
       >
         <ChefHat className={cn(sizes.icon, "text-primary-foreground")} />
       </div>
-      {showText && (
+      {!!showText && (
         <h1
           className={cn(
             sizes.text,

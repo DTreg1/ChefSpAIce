@@ -33,7 +33,7 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
           qrbox: { width: 250, height: 250 },
         },
         (decodedText) => {
-          stopScanning();
+          void stopScanning();
           onScanSuccess(decodedText);
           setIsOpen(false);
           toast({
@@ -84,16 +84,17 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open) {
-      setTimeout(() => startScanning(), 100);
+      setTimeout(() => void startScanning(), 100);
     } else {
-      stopScanning();
+      void stopScanning();
     }
   };
 
   useEffect(() => {
     return () => {
-      stopScanning();
+      void stopScanning();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -123,7 +124,7 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
               className="w-full min-h-[300px] rounded-md overflow-hidden bg-black"
               data-testid="barcode-reader"
             />
-            {isScanning && (
+            {!!isScanning && (
               <div className="absolute top-2 right-2">
                 <Button
                   variant="secondary"

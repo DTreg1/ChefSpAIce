@@ -144,25 +144,30 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
   
   if (allMacrosZero) {
     console.warn(`Suspicious nutrition data for "${foodDescription}": all macronutrients are zero`);
-    return false;
+    // Don't reject, just warn - some foods legitimately have near-zero nutrition (e.g., water, herbs, spices)
+    return true;
   }
 
   // Check for specific food types that should have certain nutrients
   const descLower = foodDescription.toLowerCase();
   
   // Oils and fats should have significant fat content
+  // Only flag as invalid if they have calories but no fat (truly suspicious)
   if ((descLower.includes('oil') || descLower.includes('butter') || descLower.includes('lard')) && 
-      nutrition.fat === 0) {
-    console.warn(`Invalid nutrition data for "${foodDescription}": oil/fat product with zero fat`);
+      nutrition.fat === 0 && nutrition.calories && nutrition.calories > 50) {
+    console.warn(`Invalid nutrition data for "${foodDescription}": oil/fat product with zero fat but ${nutrition.calories} calories`);
     return false;
   }
 
   // Protein-rich foods should have protein
+  // Only flag as invalid if they have significant calories but no protein (likely bad data)
+  // Exception: allow through if calories are very low (could be broth, stock, etc.)
   if ((descLower.includes('meat') || descLower.includes('chicken') || 
        descLower.includes('beef') || descLower.includes('pork') || 
        descLower.includes('fish') || descLower.includes('egg')) && 
-      nutrition.protein === 0 && nutrition.calories && nutrition.calories > 0) {
-    console.warn(`Invalid nutrition data for "${foodDescription}": protein food with zero protein`);
+      nutrition.protein === 0 && nutrition.calories && nutrition.calories > 100) {
+    console.warn(`Invalid nutrition data for "${foodDescription}": protein food with zero protein but ${nutrition.calories} calories`);
+    // Reject this data as it's clearly incorrect
     return false;
   }
 

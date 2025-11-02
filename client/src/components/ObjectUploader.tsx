@@ -35,7 +35,7 @@ export function ObjectUploader({
     if (showModal && !uppy && !isLoading) {
       setIsLoading(true);
       // Dynamically import Uppy libraries only when modal is opened
-      Promise.all([
+      void Promise.all([
         import("@uppy/core"),
         import("@uppy/react"),
         import("@uppy/aws-s3")
@@ -69,7 +69,8 @@ export function ObjectUploader({
         uppy.close();
       }
     };
-  }, [showModal]); // Only depend on showModal to avoid recreating uppy
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showModal, uppy]); // uppy included but we intentionally only recreate when showModal changes
 
   return (
     <div>
@@ -82,7 +83,7 @@ export function ObjectUploader({
         {children}
       </Button>
 
-      {showModal && (
+      {!!showModal && (
         <>
           {isLoading ? (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">

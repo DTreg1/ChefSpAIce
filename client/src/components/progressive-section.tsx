@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Settings2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -42,15 +42,19 @@ export function ProgressiveSection({
   onToggle,
   testId
 }: ProgressiveSectionProps) {
-  const { expanded, setExpanded } = persist 
-    ? useProgressiveSection(id, defaultExpanded)
-    : { expanded: defaultExpanded, setExpanded: () => {} };
+  // Always call the hook to maintain consistent hook order
+  const persistedState = useProgressiveSection(id, defaultExpanded);
+  
+  // Local state for non-persisted sections
+  const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
+  
+  // Use persisted state if persist is true, otherwise use local state
+  const expanded = persist ? persistedState.expanded : localExpanded;
+  const setExpandedState = persist ? persistedState.setExpanded : setLocalExpanded;
 
   const handleToggle = () => {
     const newExpanded = !expanded;
-    if (persist) {
-      setExpanded(newExpanded);
-    }
+    setExpandedState(newExpanded);
     onToggle?.(newExpanded);
   };
 
@@ -73,7 +77,7 @@ export function ProgressiveSection({
   return (
     <Collapsible
       open={expanded}
-      onOpenChange={setExpanded}
+      onOpenChange={setExpandedState}
       className={cn("space-y-2", className)}
       data-testid={testId || `progressive-section-${id}`}
     >

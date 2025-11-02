@@ -310,8 +310,8 @@ export default function AdminActivityMonitor() {
                 variant="outline"
                 size="icon"
                 onClick={() => {
-                  refetchLogs();
-                  refetchStats();
+                  void refetchLogs();
+                  void refetchStats();
                 }}
                 data-testid="button-refresh-monitor"
               >
@@ -339,7 +339,7 @@ export default function AdminActivityMonitor() {
       </Card>
       
       {/* Stats Overview */}
-      {statsData && (
+      {!!statsData && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -450,7 +450,7 @@ export default function AdminActivityMonitor() {
                                 {format(new Date(error.timestamp), "HH:mm")}
                               </span>
                             </div>
-                            {error.metadata?.error && (
+                            {!!error.metadata?.error && (
                               <span className="text-xs text-muted-foreground truncate">
                                 {error.metadata.error}
                               </span>
@@ -580,7 +580,7 @@ export default function AdminActivityMonitor() {
                           {log.entity.replace(/_/g, " ")}
                         </TableCell>
                         <TableCell>
-                          {log.metadata && (
+                          {!!log.metadata && (
                             <Tooltip>
                               <TooltipTrigger>
                                 <span className="text-xs text-muted-foreground truncate max-w-[200px] block">
@@ -605,7 +605,7 @@ export default function AdminActivityMonitor() {
               </div>
               
               {/* Pagination */}
-              {logsData && logsData.totalPages > 1 && (
+              {!!logsData && logsData.totalPages > 1 && (
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     Page {page} of {logsData.totalPages} ({logsData.total} total logs)
@@ -698,7 +698,7 @@ export default function AdminActivityMonitor() {
                           {event.entity.replace(/_/g, " ")}
                         </TableCell>
                         <TableCell>
-                          {event.metadata && (
+                          {!!event.metadata && (
                             <span className="text-xs text-muted-foreground truncate max-w-[300px] block">
                               {JSON.stringify(event.metadata)}
                             </span>

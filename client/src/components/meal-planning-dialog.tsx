@@ -72,7 +72,7 @@ export function MealPlanningDialog({
       return await apiRequest("POST", "/api/meal-plans", validated);
     },
     onSuccess: (_, values) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/meal-plans"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/meal-plans"] });
       toast({
         title: "Meal scheduled",
         description: `${recipeTitle} scheduled for ${values.mealType} on ${format(values.date, "MMM d, yyyy")}`,

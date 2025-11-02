@@ -32,7 +32,7 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
     >
       <div className="border-b-8 border-foreground pb-1">
         <h2 className="text-3xl font-black">Nutrition Facts</h2>
-        {foodName && (
+        {!!foodName && (
           <p className="text-sm mt-1 font-medium">{foodName}</p>
         )}
       </div>

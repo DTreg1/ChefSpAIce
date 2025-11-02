@@ -91,7 +91,7 @@ export function ChatMessage({
           )}
         </div>
 
-        {children && <div className="w-full mt-1">{children}</div>}
+        {!!children && <div className="w-full mt-1">{children}</div>}
 
         <div className="flex items-center gap-2 mt-1">
           {!isUser && (

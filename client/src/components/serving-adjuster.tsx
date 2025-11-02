@@ -109,7 +109,7 @@ export function ServingAdjuster({
         </Button>
       )}
       
-      {showPerServing && (
+      {!!showPerServing && (
         <div className="border-t pt-4">
           <h4 className="text-sm font-semibold mb-2">Per Serving Breakdown:</h4>
           <ul className="space-y-1 text-sm text-muted-foreground">

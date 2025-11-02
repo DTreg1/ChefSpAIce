@@ -293,7 +293,7 @@ export default function ActivityTimeline({
         </div>
       </CardHeader>
       
-      {showFilters && (
+      {!!showFilters && (
         <CardContent className="border-b pb-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -378,7 +378,7 @@ export default function ActivityTimeline({
                           </Badge>
                         )}
                       </div>
-                      {metadataText && (
+                      {!!metadataText && (
                         <p className="text-sm text-muted-foreground mt-1 truncate">
                           {metadataText}
                         </p>

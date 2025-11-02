@@ -35,7 +35,7 @@ export function RecipeUpload() {
         title: "Recipe Added!",
         description: `Successfully extracted: ${recipe.title}`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
       setIsOpen(false);
       resetUpload();
     },

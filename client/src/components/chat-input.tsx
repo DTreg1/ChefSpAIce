@@ -191,7 +191,7 @@ export function ChatInput({
   return (
     <div className="border-t border-border bg-gradient-to-br p-4">
       {/* Voice Mode Status Bar */}
-      {isVoiceMode && (
+      {!!isVoiceMode && (
         <div className="max-w-4xl mx-auto mb-3 flex items-center justify-between bg-accent/50 rounded-lg px-4 py-2">
           <div className="flex items-center gap-2">
             {isListening && (

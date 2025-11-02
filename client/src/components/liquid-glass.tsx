@@ -175,7 +175,7 @@ export function LiquidGlassButton({
         </div>
 
         {/* Title and Description positioned to the right - horizontal layout shows/hides based on showTitle */}
-        {title && showTitle && (
+        {!!title && !!showTitle && (
           <div className="flex flex-col gap-0.5">
             <span
               className={`

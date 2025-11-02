@@ -236,11 +236,15 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       );
       setStorageLocationId(fridgeLocation?.id || storageLocations[0].id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, storageLocations]);
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
+      // These setState calls are intentional - we want to reset all form state when dialog closes
+      // This prevents stale data from appearing when the dialog is reopened
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchQuery("");
       setDebouncedSearchQuery("");
       setSelectedFood(null);

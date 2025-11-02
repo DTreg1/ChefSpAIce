@@ -132,7 +132,7 @@ export function NotificationSettings() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {error && (
+        {!!error && (
           <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
             <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <p>{error}</p>

@@ -78,7 +78,7 @@ export function AIErrorDisplay({
         <div className="flex-1">
           <AlertTitle className="flex items-center gap-2">
             {title}
-            {error.code && (
+            {!!error.code && (
               <Badge variant="secondary" className="text-xs">
                 {error.code}
               </Badge>

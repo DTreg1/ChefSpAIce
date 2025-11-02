@@ -45,7 +45,7 @@ export function FeedbackWidget({ mode = 'floating' }: FeedbackWidgetProps) {
       });
       setIsOpen(false);
       resetForm();
-      queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+      void queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
     },
     onError: () => {
       toast({

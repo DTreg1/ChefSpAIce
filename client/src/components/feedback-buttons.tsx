@@ -32,7 +32,7 @@ export function FeedbackButtons({
     onSuccess: (_, variables) => {
       setHasSubmitted(true);
       setSentiment(variables.sentiment as 'positive' | 'negative');
-      queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+      void queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
       if (onFeedbackSubmit && variables.sentiment) {
         onFeedbackSubmit(variables.sentiment as 'positive' | 'negative');
       }

@@ -57,7 +57,7 @@ export function BarcodeRateLimitInfo() {
                 </div>
               )}
             </div>
-            {isVeryLow && (
+            {!!isVeryLow && (
               <p className="mt-2 text-sm">
                 You're running low on product image lookups. Consider uploading your own photos or waiting for the limit to reset.
               </p>

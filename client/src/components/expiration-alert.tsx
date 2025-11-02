@@ -24,7 +24,7 @@ export function ExpirationAlert() {
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["/api/notifications/expiration"],
       });
     },

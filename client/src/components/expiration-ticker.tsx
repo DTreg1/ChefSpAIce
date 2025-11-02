@@ -27,7 +27,7 @@ export function ExpirationTicker() {
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["/api/notifications/expiration"],
       });
     },
@@ -55,7 +55,8 @@ export function ExpirationTicker() {
       localStorage.setItem("lastExpirationCheck", today);
       checkMutation.mutate();
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // checkMutation intentionally not included to avoid running on every render
 
   const hasNotifications = notifications && notifications.length > 0;
 
