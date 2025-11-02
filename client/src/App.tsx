@@ -44,7 +44,7 @@ const Orders = lazy(() => import("@/pages/orders"));
 const FoodGroups = lazy(() => import("@/pages/food-groups"));
 const FeedbackAnalytics = lazy(() => import("@/pages/feedback-analytics"));
 const FeedbackBoard = lazy(() => import("@/pages/feedback-board"));
-const AnalyticsDashboard = lazy(() => import("@/pages/analytics-dashboard"));
+const AnalyticsDashboard = lazy(() => import("@/pages/AnalyticsDashboard"));
 const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
 const Donate = lazy(() => import("@/pages/donate"));
 const DonateSuccess = lazy(() => import("@/pages/donate-success"));
