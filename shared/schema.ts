@@ -5639,3 +5639,222 @@ export type UserFormHistory = typeof userFormHistory.$inferSelect;
 
 export type InsertCompletionFeedback = z.infer<typeof insertCompletionFeedbackSchema>;
 export type CompletionFeedback = typeof completionFeedback.$inferSelect;
+
+/**
+ * Validation Rules Table
+ * 
+ * Stores intelligent validation rules and patterns for form fields.
+ * Combines regex patterns with AI-powered suggestions for better UX.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - fieldType: Type of field (phone, email, zip, ssn, date, etc.)
+ * - rules: JSONB with validation logic
+ *   - patterns: Array of regex patterns
+ *   - formatters: Formatting rules
+ *   - validators: Custom validation functions
+ *   - lengthConstraints: Min/max length
+ *   - characterConstraints: Allowed character sets
+ * - errorMessages: JSONB with contextual error messages
+ *   - default: Default error message
+ *   - tooShort: When input is too short
+ *   - tooLong: When input is too long
+ *   - invalidFormat: When format doesn't match
+ *   - missing: When required field is empty
+ * - suggestions: JSONB with fix suggestions
+ *   - autoCorrect: Automatic corrections
+ *   - formatHints: Format examples
+ *   - commonMistakes: Common error patterns
+ *   - quickFixes: One-click fixes
+ * - aiConfig: JSONB with AI configuration
+ *   - useAI: Whether to use AI for this field type
+ *   - model: Which OpenAI model to use
+ *   - temperature: AI creativity level
+ *   - maxSuggestions: Max number of AI suggestions
+ * - priority: Validation priority (higher = check first)
+ * - isActive: Whether this rule is currently active
+ * - createdAt: Rule creation timestamp
+ * - updatedAt: Last rule update timestamp
+ * 
+ * Business Rules:
+ * - Multiple rules can exist for same fieldType (priority determines order)
+ * - AI suggestions complement regex validation
+ * - Rules can be deactivated without deletion
+ * - System learns from user corrections
+ * 
+ * Indexes:
+ * - validation_rules_field_type_idx: Quick lookup by field type
+ * - validation_rules_active_priority_idx: Active rules in priority order
+ */
+export const validationRules = pgTable("validation_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fieldType: text("field_type").notNull(), // phone, email, zip, ssn, date, etc.
+  
+  rules: jsonb("rules").$type<{
+    patterns: Array<{ regex: string; flags?: string; description?: string }>;
+    formatters?: Array<{ from: string; to: string }>;
+    validators?: Array<{ type: string; params?: any }>;
+    lengthConstraints?: { min?: number; max?: number };
+    characterConstraints?: { allowed?: string; forbidden?: string };
+  }>().notNull().default({
+    patterns: []
+  }),
+  
+  errorMessages: jsonb("error_messages").$type<{
+    default?: string;
+    tooShort?: string;
+    tooLong?: string;
+    invalidFormat?: string;
+    missing?: string;
+    [key: string]: string | undefined;
+  }>().notNull().default({
+    default: "Please enter a valid value"
+  }),
+  
+  suggestions: jsonb("suggestions").$type<{
+    autoCorrect?: Array<{ pattern: string; replacement: string }>;
+    formatHints?: string[];
+    commonMistakes?: Array<{ mistake: string; correction: string }>;
+    quickFixes?: Array<{ label: string; action: string; value?: string }>;
+  }>().notNull().default({
+    formatHints: []
+  }),
+  
+  aiConfig: jsonb("ai_config").$type<{
+    useAI?: boolean;
+    model?: string;
+    temperature?: number;
+    maxSuggestions?: number;
+    contextFields?: string[];
+  }>().notNull().default({
+    useAI: true,
+    model: "gpt-3.5-turbo",
+    temperature: 0.3,
+    maxSuggestions: 3
+  }),
+  
+  priority: integer("priority").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("validation_rules_field_type_idx").on(table.fieldType),
+  index("validation_rules_active_priority_idx").on(table.isActive, table.priority),
+]);
+
+/**
+ * Validation Errors Table
+ * 
+ * Tracks validation errors and user corrections for ML improvement.
+ * Learns from patterns to provide better suggestions over time.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (SET NULL for anonymous tracking)
+ * - fieldName: Name of the form field
+ * - fieldType: Type of field (from validationRules)
+ * - errorType: Type of error encountered
+ *   - format: Format validation failed
+ *   - length: Length constraints violated
+ *   - required: Required field empty
+ *   - custom: Custom validation failed
+ *   - ai_suggestion: AI suggestion not accepted
+ * - originalValue: What the user originally entered
+ * - suggestedValue: What the system suggested
+ * - finalValue: What the user ultimately used
+ * - userResolution: How the user resolved the error
+ *   - accepted_suggestion: Used system suggestion
+ *   - manual_correction: Fixed it themselves
+ *   - ignored: Proceeded without fixing
+ *   - abandoned: Left the form
+ * - frequency: How often this error occurs (for this user)
+ * - context: JSONB with additional context
+ *   - formId: Which form this occurred on
+ *   - pageUrl: Page where error occurred
+ *   - otherFields: Values of related fields
+ *   - sessionId: Session identifier
+ *   - deviceInfo: Device/browser info
+ * - aiSuggestions: JSONB with AI-generated suggestions
+ *   - suggestions: Array of suggestions provided
+ *   - selectedIndex: Which suggestion was selected (-1 if none)
+ *   - confidence: AI confidence scores
+ *   - reasoning: AI reasoning for suggestions
+ * - resolutionTime: Time taken to resolve error (ms)
+ * - createdAt: When error occurred
+ * 
+ * Business Rules:
+ * - Errors tracked even for anonymous users
+ * - Used to train and improve validation rules
+ * - Aggregated for pattern analysis
+ * - Privacy-compliant data retention (auto-cleanup after 90 days)
+ * 
+ * Indexes:
+ * - validation_errors_user_field_idx: User's error history
+ * - validation_errors_field_type_idx: Field type analysis
+ * - validation_errors_error_type_idx: Error type distribution
+ * - validation_errors_created_idx: Time-based queries and cleanup
+ */
+export const validationErrors = pgTable("validation_errors", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  
+  fieldName: text("field_name").notNull(),
+  fieldType: text("field_type").notNull(),
+  errorType: text("error_type").notNull(), // format, length, required, custom, ai_suggestion
+  
+  originalValue: text("original_value"),
+  suggestedValue: text("suggested_value"),
+  finalValue: text("final_value"),
+  userResolution: text("user_resolution"), // accepted_suggestion, manual_correction, ignored, abandoned
+  
+  frequency: integer("frequency").notNull().default(1),
+  
+  context: jsonb("context").$type<{
+    formId?: string;
+    pageUrl?: string;
+    otherFields?: Record<string, any>;
+    sessionId?: string;
+    deviceInfo?: {
+      userAgent?: string;
+      viewport?: { width: number; height: number };
+      locale?: string;
+    };
+  }>(),
+  
+  aiSuggestions: jsonb("ai_suggestions").$type<{
+    suggestions?: Array<{
+      value: string;
+      confidence: number;
+      reasoning?: string;
+    }>;
+    selectedIndex?: number;
+    model?: string;
+    processingTime?: number;
+  }>(),
+  
+  resolutionTime: integer("resolution_time"), // milliseconds
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("validation_errors_user_field_idx").on(table.userId, table.fieldName),
+  index("validation_errors_field_type_idx").on(table.fieldType),
+  index("validation_errors_error_type_idx").on(table.errorType),
+  index("validation_errors_created_idx").on(table.createdAt),
+]);
+
+// Schema types for validation system
+export const insertValidationRuleSchema = createInsertSchema(validationRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertValidationErrorSchema = createInsertSchema(validationErrors).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertValidationRule = z.infer<typeof insertValidationRuleSchema>;
+export type ValidationRule = typeof validationRules.$inferSelect;
+
+export type InsertValidationError = z.infer<typeof insertValidationErrorSchema>;
+export type ValidationError = typeof validationErrors.$inferSelect;

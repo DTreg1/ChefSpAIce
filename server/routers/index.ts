@@ -38,6 +38,7 @@ import sentimentRouter from "./sentiment.router";
 import intelligentNotificationsRouter from "./intelligent-notifications.router";
 import autosaveRouter from "./autosave.router";
 import autocompleteRouter from "./autocomplete.router";
+import validationRouter from "./validation.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -90,6 +91,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/notifications", intelligentNotificationsRouter); // Intelligent notifications endpoints
   app.use("/api/autosave", autosaveRouter);     // Auto-save and draft versioning endpoints
   app.use("/api/autocomplete", autocompleteRouter); // Smart form auto-completion endpoints
+  app.use("/api/validate", validationRouter);   // Intelligent form validation endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);

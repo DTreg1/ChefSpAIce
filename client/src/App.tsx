@@ -75,6 +75,7 @@ const ModerationTest = lazy(() => import("@/pages/moderation-test"));
 const FraudDashboard = lazy(() => import("@/pages/fraud-dashboard"));
 const SentimentDashboard = lazy(() => import("@/pages/sentiment-dashboard"));
 const FormCompletionDemo = lazy(() => import("@/pages/form-completion-demo"));
+const ValidationDemo = lazy(() => import("@/pages/validation-demo"));
 
 function AuthenticatedRouter() {
   return (
@@ -127,6 +128,7 @@ function AuthenticatedRouter() {
         <Route path="/fraud-dashboard" component={FraudDashboard} />
         <Route path="/sentiment-dashboard" component={SentimentDashboard} />
         <Route path="/form-completion-demo" component={FormCompletionDemo} />
+        <Route path="/validation-demo" component={ValidationDemo} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
