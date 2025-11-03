@@ -84,6 +84,7 @@ const SystemHealth = lazy(() => import("@/pages/SystemHealth"));
 const Scheduling = lazy(() => import("@/pages/Scheduling"));
 const TicketRouting = lazy(() => import("@/pages/ticket-routing"));
 const ExtractionPage = lazy(() => import("@/pages/extraction"));
+const PricingPage = lazy(() => import("@/pages/pricing"));
 
 function AuthenticatedRouter() {
   return (
@@ -145,6 +146,7 @@ function AuthenticatedRouter() {
         <Route path="/scheduling" component={Scheduling} />
         <Route path="/ticket-routing" component={TicketRouting} />
         <Route path="/extraction" component={ExtractionPage} />
+        <Route path="/pricing" component={PricingPage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

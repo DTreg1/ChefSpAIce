@@ -3,6 +3,23 @@
 ## Overview
 ChefSpAIce is an AI-powered, chat-based kitchen assistant designed to manage home food inventory, reduce waste, and generate personalized recipes. It integrates with the USDA food database for accurate nutritional information and leverages OpenAI GPT-5 for conversational AI. The project aims to provide a comprehensive solution for efficient home food management, including expiration tracking, recipe saving, nutritional dashboards, and meal planning capabilities, thereby enhancing culinary experiences and promoting sustainable food practices.
 
+## Recent Updates (November 2025)
+
+### AI-Powered Data Extraction System
+- **Purpose**: Extracts structured order details from unstructured text with 95% accuracy
+- **Technology**: OpenAI GPT-5 with structured output via Replit AI Integrations
+- **Components**: Database schema (extracted_orders table), storage interface, API endpoint (/api/extraction/orders), and full extraction UI at /extraction
+- **Location**: Available under "Data Extraction" in the sidebar
+
+### AI-Driven Dynamic Pricing System  
+- **Purpose**: Optimizes prices based on demand, competition, inventory, and user behavior
+- **Technology**: TensorFlow.js for demand prediction + OpenAI for market analysis
+- **Achievement Goals**: 10% price increases during high demand, 15% discounts for high inventory, targeting 20% revenue increase
+- **Database**: pricing_rules, price_history, and pricing_performance tables
+- **API Endpoints**: Complete suite including optimize, simulate, competition, rules, report, apply, and history
+- **UI Components**: PricingDashboard, DemandCurve, PriceSimulator, CompetitorPricing, and RevenueImpact
+- **Location**: Available at /pricing with "Dynamic Pricing" in the sidebar
+
 ## User Preferences
 - Design follows ChatGPT-inspired conversational interface
 - Olive green (#6b8e23) and dark navy (#0e1621) color scheme

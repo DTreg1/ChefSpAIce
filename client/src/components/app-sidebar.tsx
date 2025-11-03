@@ -24,6 +24,7 @@ import {
   Brain,
   Bot,
   FileSearch,
+  DollarSign,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -309,6 +310,21 @@ export function AppSidebar() {
                     >
                       <FileSearch className="w-4 h-4" />
                       <span className="flex-1">Data Extraction</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/pricing"}
+                  >
+                    <Link
+                      href="/pricing"
+                      data-testid="link-pricing"
+                      onClick={handleLinkClick}
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      <span className="flex-1">Dynamic Pricing</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
