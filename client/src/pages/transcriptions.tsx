@@ -329,7 +329,7 @@ export default function TranscriptionsPage() {
                       </label>
                     </div>
                     <p className="text-xs text-muted-foreground text-center">
-                      Maximum file size: 25MB • Maximum duration: 5 minutes
+                      Maximum file size: 20MB • Maximum duration: 5 minutes
                     </p>
                   </div>
                 </CardContent>
