@@ -304,6 +304,19 @@ import {
   meetingSuggestions,
   schedulingPatterns,
   meetingEvents,
+  // Ticket routing types
+  type Ticket,
+  type InsertTicket,
+  type RoutingRule,
+  type InsertRoutingRule,
+  type TicketRouting,
+  type InsertTicketRouting,
+  type AgentExpertise,
+  type InsertAgentExpertise,
+  tickets,
+  routingRules,
+  ticketRouting,
+  agentExpertise,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -2709,6 +2722,105 @@ export interface IStorage {
   analyzeSchedulingPatterns(userId: string): Promise<{
     patterns: SchedulingPatterns[];
     insights: string[];
+  }>;
+
+  // ==================== Ticket Routing Operations ====================
+  
+  /**
+   * Get all tickets with optional filters
+   */
+  getTickets(filters?: {
+    status?: string;
+    assignedTo?: string;
+    priority?: string;
+    category?: string;
+  }): Promise<Ticket[]>;
+  
+  /**
+   * Get a single ticket by ID
+   */
+  getTicket(ticketId: string): Promise<Ticket | undefined>;
+  
+  /**
+   * Create a new ticket
+   */
+  createTicket(ticket: InsertTicket): Promise<Ticket>;
+  
+  /**
+   * Update a ticket
+   */
+  updateTicket(ticketId: string, updates: Partial<Ticket>): Promise<Ticket>;
+  
+  /**
+   * Get routing rules ordered by priority
+   */
+  getRoutingRules(isActive?: boolean): Promise<RoutingRule[]>;
+  
+  /**
+   * Get a single routing rule
+   */
+  getRoutingRule(ruleId: string): Promise<RoutingRule | undefined>;
+  
+  /**
+   * Create a routing rule
+   */
+  createRoutingRule(rule: InsertRoutingRule): Promise<RoutingRule>;
+  
+  /**
+   * Update a routing rule
+   */
+  updateRoutingRule(ruleId: string, updates: Partial<RoutingRule>): Promise<RoutingRule>;
+  
+  /**
+   * Delete a routing rule
+   */
+  deleteRoutingRule(ruleId: string): Promise<void>;
+  
+  /**
+   * Get routing history for a ticket
+   */
+  getTicketRouting(ticketId: string): Promise<TicketRouting[]>;
+  
+  /**
+   * Create a routing record
+   */
+  createTicketRouting(routing: InsertTicketRouting): Promise<TicketRouting>;
+  
+  /**
+   * Get all agents/teams
+   */
+  getAgents(): Promise<AgentExpertise[]>;
+  
+  /**
+   * Get agent by ID
+   */
+  getAgent(agentId: string): Promise<AgentExpertise | undefined>;
+  
+  /**
+   * Create or update agent expertise
+   */
+  upsertAgentExpertise(agent: InsertAgentExpertise): Promise<AgentExpertise>;
+  
+  /**
+   * Update agent workload
+   */
+  updateAgentWorkload(agentId: string, delta: number): Promise<void>;
+  
+  /**
+   * Get available agents (not at max capacity)
+   */
+  getAvailableAgents(): Promise<AgentExpertise[]>;
+  
+  /**
+   * Get routing performance metrics
+   */
+  getRoutingMetrics(startDate?: Date, endDate?: Date): Promise<{
+    totalTickets: number;
+    averageConfidence: number;
+    routingAccuracy: number;
+    averageResolutionTime: number;
+    byCategory: Record<string, number>;
+    byAgent: Record<string, { count: number; avgTime: number }>;
   }>;
 }
 
@@ -12687,6 +12799,348 @@ export class DatabaseStorage implements IStorage {
       return { patterns, insights };
     } catch (error) {
       console.error("Error analyzing scheduling patterns:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Ticket Routing Operations ====================
+  
+  async getTickets(filters?: {
+    status?: string;
+    assignedTo?: string;
+    priority?: string;
+    category?: string;
+  }): Promise<Ticket[]> {
+    try {
+      let query = db.select().from(tickets);
+      const conditions = [];
+      
+      if (filters?.status) {
+        conditions.push(eq(tickets.status, filters.status));
+      }
+      if (filters?.assignedTo) {
+        conditions.push(eq(tickets.assignedTo, filters.assignedTo));
+      }
+      if (filters?.priority) {
+        conditions.push(eq(tickets.priority, filters.priority));
+      }
+      if (filters?.category) {
+        conditions.push(eq(tickets.category, filters.category));
+      }
+      
+      if (conditions.length > 0) {
+        return await query.where(and(...conditions));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting tickets:", error);
+      throw error;
+    }
+  }
+  
+  async getTicket(ticketId: string): Promise<Ticket | undefined> {
+    try {
+      const [ticket] = await db
+        .select()
+        .from(tickets)
+        .where(eq(tickets.id, ticketId));
+      return ticket;
+    } catch (error) {
+      console.error("Error getting ticket:", error);
+      throw error;
+    }
+  }
+  
+  async createTicket(ticket: InsertTicket): Promise<Ticket> {
+    try {
+      const [newTicket] = await db
+        .insert(tickets)
+        .values(ticket)
+        .returning();
+      return newTicket;
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      throw error;
+    }
+  }
+  
+  async updateTicket(ticketId: string, updates: Partial<Ticket>): Promise<Ticket> {
+    try {
+      const [updatedTicket] = await db
+        .update(tickets)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(tickets.id, ticketId))
+        .returning();
+      return updatedTicket;
+    } catch (error) {
+      console.error("Error updating ticket:", error);
+      throw error;
+    }
+  }
+  
+  async getRoutingRules(isActive?: boolean): Promise<RoutingRule[]> {
+    try {
+      let query = db
+        .select()
+        .from(routingRules)
+        .orderBy(asc(routingRules.priority));
+      
+      if (isActive !== undefined) {
+        return await query.where(eq(routingRules.isActive, isActive));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting routing rules:", error);
+      throw error;
+    }
+  }
+  
+  async getRoutingRule(ruleId: string): Promise<RoutingRule | undefined> {
+    try {
+      const [rule] = await db
+        .select()
+        .from(routingRules)
+        .where(eq(routingRules.id, ruleId));
+      return rule;
+    } catch (error) {
+      console.error("Error getting routing rule:", error);
+      throw error;
+    }
+  }
+  
+  async createRoutingRule(rule: InsertRoutingRule): Promise<RoutingRule> {
+    try {
+      const [newRule] = await db
+        .insert(routingRules)
+        .values(rule)
+        .returning();
+      return newRule;
+    } catch (error) {
+      console.error("Error creating routing rule:", error);
+      throw error;
+    }
+  }
+  
+  async updateRoutingRule(ruleId: string, updates: Partial<RoutingRule>): Promise<RoutingRule> {
+    try {
+      const [updatedRule] = await db
+        .update(routingRules)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(routingRules.id, ruleId))
+        .returning();
+      return updatedRule;
+    } catch (error) {
+      console.error("Error updating routing rule:", error);
+      throw error;
+    }
+  }
+  
+  async deleteRoutingRule(ruleId: string): Promise<void> {
+    try {
+      await db
+        .delete(routingRules)
+        .where(eq(routingRules.id, ruleId));
+    } catch (error) {
+      console.error("Error deleting routing rule:", error);
+      throw error;
+    }
+  }
+  
+  async getTicketRouting(ticketId: string): Promise<TicketRouting[]> {
+    try {
+      return await db
+        .select()
+        .from(ticketRouting)
+        .where(eq(ticketRouting.ticket_id, ticketId))
+        .orderBy(desc(ticketRouting.createdAt));
+    } catch (error) {
+      console.error("Error getting ticket routing:", error);
+      throw error;
+    }
+  }
+  
+  async createTicketRouting(routing: InsertTicketRouting): Promise<TicketRouting> {
+    try {
+      const [newRouting] = await db
+        .insert(ticketRouting)
+        .values(routing)
+        .returning();
+      return newRouting;
+    } catch (error) {
+      console.error("Error creating ticket routing:", error);
+      throw error;
+    }
+  }
+  
+  async getAgents(): Promise<AgentExpertise[]> {
+    try {
+      return await db
+        .select()
+        .from(agentExpertise)
+        .orderBy(asc(agentExpertise.name));
+    } catch (error) {
+      console.error("Error getting agents:", error);
+      throw error;
+    }
+  }
+  
+  async getAgent(agentId: string): Promise<AgentExpertise | undefined> {
+    try {
+      const [agent] = await db
+        .select()
+        .from(agentExpertise)
+        .where(eq(agentExpertise.agent_id, agentId));
+      return agent;
+    } catch (error) {
+      console.error("Error getting agent:", error);
+      throw error;
+    }
+  }
+  
+  async upsertAgentExpertise(agent: InsertAgentExpertise): Promise<AgentExpertise> {
+    try {
+      const existingAgent = await this.getAgent(agent.agent_id);
+      
+      if (existingAgent) {
+        const [updatedAgent] = await db
+          .update(agentExpertise)
+          .set({
+            ...agent,
+            updatedAt: new Date()
+          })
+          .where(eq(agentExpertise.agent_id, agent.agent_id))
+          .returning();
+        return updatedAgent;
+      } else {
+        const [newAgent] = await db
+          .insert(agentExpertise)
+          .values(agent)
+          .returning();
+        return newAgent;
+      }
+    } catch (error) {
+      console.error("Error upserting agent expertise:", error);
+      throw error;
+    }
+  }
+  
+  async updateAgentWorkload(agentId: string, delta: number): Promise<void> {
+    try {
+      const agent = await this.getAgent(agentId);
+      if (agent) {
+        const newLoad = Math.max(0, agent.current_load + delta);
+        await db
+          .update(agentExpertise)
+          .set({
+            current_load: newLoad,
+            availability: newLoad >= agent.max_capacity ? 'busy' : 'available',
+            updatedAt: new Date()
+          })
+          .where(eq(agentExpertise.agent_id, agentId));
+      }
+    } catch (error) {
+      console.error("Error updating agent workload:", error);
+      throw error;
+    }
+  }
+  
+  async getAvailableAgents(): Promise<AgentExpertise[]> {
+    try {
+      return await db
+        .select()
+        .from(agentExpertise)
+        .where(
+          and(
+            ne(agentExpertise.availability, 'offline'),
+            sql`${agentExpertise.current_load} < ${agentExpertise.max_capacity}`
+          )
+        );
+    } catch (error) {
+      console.error("Error getting available agents:", error);
+      throw error;
+    }
+  }
+  
+  async getRoutingMetrics(startDate?: Date, endDate?: Date): Promise<{
+    totalTickets: number;
+    averageConfidence: number;
+    routingAccuracy: number;
+    averageResolutionTime: number;
+    byCategory: Record<string, number>;
+    byAgent: Record<string, { count: number; avgTime: number }>;
+  }> {
+    try {
+      // Get tickets within date range
+      let ticketQuery = db.select().from(tickets);
+      const conditions = [];
+      
+      if (startDate) {
+        conditions.push(gte(tickets.createdAt, startDate));
+      }
+      if (endDate) {
+        conditions.push(lte(tickets.createdAt, endDate));
+      }
+      
+      const filteredTickets = conditions.length > 0 
+        ? await ticketQuery.where(and(...conditions))
+        : await ticketQuery;
+      
+      // Get routing data
+      const routingData = await db
+        .select()
+        .from(ticketRouting)
+        .where(
+          sql`${ticketRouting.ticket_id} IN (${sql.raw(filteredTickets.map(t => `'${t.id}'`).join(',') || "''")})`
+        );
+      
+      // Calculate metrics
+      const totalTickets = filteredTickets.length;
+      const averageConfidence = routingData.length > 0
+        ? routingData.reduce((sum, r) => sum + r.confidence_score, 0) / routingData.length
+        : 0;
+      
+      // Calculate accuracy (simplified - would need actual feedback data in production)
+      const routingAccuracy = 0.9; // Placeholder - would calculate from actual resolution data
+      
+      // Calculate average resolution time (placeholder)
+      const averageResolutionTime = 120; // minutes - placeholder
+      
+      // Group by category
+      const byCategory: Record<string, number> = {};
+      filteredTickets.forEach(ticket => {
+        byCategory[ticket.category] = (byCategory[ticket.category] || 0) + 1;
+      });
+      
+      // Group by agent
+      const byAgent: Record<string, { count: number; avgTime: number }> = {};
+      filteredTickets.forEach(ticket => {
+        if (ticket.assignedTo) {
+          if (!byAgent[ticket.assignedTo]) {
+            byAgent[ticket.assignedTo] = { count: 0, avgTime: 0 };
+          }
+          byAgent[ticket.assignedTo].count++;
+          byAgent[ticket.assignedTo].avgTime = 120; // Placeholder
+        }
+      });
+      
+      return {
+        totalTickets,
+        averageConfidence,
+        routingAccuracy,
+        averageResolutionTime,
+        byCategory,
+        byAgent
+      };
+    } catch (error) {
+      console.error("Error getting routing metrics:", error);
       throw error;
     }
   }
