@@ -165,9 +165,21 @@ Create a mock authentication middleware for testing:
 1. Create `server/middleware/mockAuth.ts`:
 
 ```typescript
-import { RequestHandler } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
-export const mockAuth: RequestHandler = (req: any, res, next) => {
+// Extend Express Request type for authentication
+interface AuthenticatedRequest extends Request {
+  isAuthenticated?: () => boolean;
+  user?: {
+    claims: {
+      sub: string;
+      email: string;
+      name: string;
+    };
+  };
+}
+
+export const mockAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   if (process.env.NODE_ENV === 'test') {
     req.isAuthenticated = () => true;
     req.user = {
@@ -258,8 +270,8 @@ jobs:
         run: npm ci
       
       - name: Install Playwright
-        run: npx playwright install --with-deps chromium
-        # Note: Installing only chromium to optimize CI performance and cost.
+        run: npx playwright install chromium --with-deps
+        # Note: Installing only Chromium to optimize CI performance and cost.
         # For full cross-browser testing, use: npx playwright install --with-deps
       
       - name: Setup database
