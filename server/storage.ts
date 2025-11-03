@@ -291,9 +291,22 @@ import {
   systemMetrics,
   maintenancePredictions,
   maintenanceHistory,
+  // Scheduling types and tables
+  type SchedulingPreferences,
+  type InsertSchedulingPreferences,
+  type MeetingSuggestions,
+  type InsertMeetingSuggestions,
+  type SchedulingPatterns,
+  type InsertSchedulingPatterns,
+  type MeetingEvents,
+  type InsertMeetingEvents,
+  schedulingPreferences,
+  meetingSuggestions,
+  schedulingPatterns,
+  meetingEvents,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
+import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
 import {
   matchIngredientWithInventory,
   type IngredientMatch,
@@ -2618,6 +2631,85 @@ export interface IStorage {
    * Generate cohort insights with AI
    */
   generateCohortInsights(cohortId: string): Promise<CohortInsight[]>;
+
+  // ==================== Scheduling Operations ====================
+  
+  /**
+   * Get scheduling preferences for a user
+   */
+  getSchedulingPreferences(userId: string): Promise<SchedulingPreferences | undefined>;
+  
+  /**
+   * Create or update scheduling preferences
+   */
+  upsertSchedulingPreferences(userId: string, preferences: Omit<InsertSchedulingPreferences, "userId">): Promise<SchedulingPreferences>;
+  
+  /**
+   * Get meeting suggestions
+   */
+  getMeetingSuggestions(meetingId: string): Promise<MeetingSuggestions | undefined>;
+  
+  /**
+   * Get all meeting suggestions for a user
+   */
+  getUserMeetingSuggestions(userId: string, status?: string): Promise<MeetingSuggestions[]>;
+  
+  /**
+   * Create meeting suggestions
+   */
+  createMeetingSuggestions(suggestions: InsertMeetingSuggestions): Promise<MeetingSuggestions>;
+  
+  /**
+   * Update meeting suggestion status
+   */
+  updateMeetingSuggestionStatus(meetingId: string, status: string, selectedTime?: any): Promise<MeetingSuggestions>;
+  
+  /**
+   * Get scheduling patterns for a user
+   */
+  getSchedulingPatterns(userId: string): Promise<SchedulingPatterns[]>;
+  
+  /**
+   * Create or update scheduling pattern
+   */
+  upsertSchedulingPattern(userId: string, pattern: Omit<InsertSchedulingPatterns, "userId">): Promise<SchedulingPatterns>;
+  
+  /**
+   * Get meeting events for a user
+   */
+  getMeetingEvents(userId: string, filters?: {
+    startTime?: Date;
+    endTime?: Date;
+    status?: string;
+  }): Promise<MeetingEvents[]>;
+  
+  /**
+   * Create meeting event
+   */
+  createMeetingEvent(event: InsertMeetingEvents): Promise<MeetingEvents>;
+  
+  /**
+   * Update meeting event
+   */
+  updateMeetingEvent(eventId: string, updates: Partial<MeetingEvents>): Promise<MeetingEvents>;
+  
+  /**
+   * Delete meeting event
+   */
+  deleteMeetingEvent(userId: string, eventId: string): Promise<void>;
+  
+  /**
+   * Find scheduling conflicts
+   */
+  findSchedulingConflicts(userId: string, startTime: Date, endTime: Date): Promise<MeetingEvents[]>;
+  
+  /**
+   * Analyze scheduling patterns with AI
+   */
+  analyzeSchedulingPatterns(userId: string): Promise<{
+    patterns: SchedulingPatterns[];
+    insights: string[];
+  }>;
 }
 
 /**
@@ -12251,6 +12343,350 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Error getting component health:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Scheduling Operations Implementation ====================
+
+  async getSchedulingPreferences(userId: string): Promise<SchedulingPreferences | undefined> {
+    try {
+      const prefs = await db
+        .select()
+        .from(schedulingPreferences)
+        .where(eq(schedulingPreferences.userId, userId))
+        .limit(1);
+      return prefs[0];
+    } catch (error) {
+      console.error("Error getting scheduling preferences:", error);
+      throw error;
+    }
+  }
+
+  async upsertSchedulingPreferences(
+    userId: string,
+    preferences: Omit<InsertSchedulingPreferences, "userId">
+  ): Promise<SchedulingPreferences> {
+    try {
+      const existing = await this.getSchedulingPreferences(userId);
+      
+      if (existing) {
+        const [updated] = await db
+          .update(schedulingPreferences)
+          .set({
+            ...preferences,
+            updatedAt: new Date()
+          })
+          .where(eq(schedulingPreferences.userId, userId))
+          .returning();
+        return updated;
+      } else {
+        const [created] = await db
+          .insert(schedulingPreferences)
+          .values({
+            ...preferences,
+            userId
+          })
+          .returning();
+        return created;
+      }
+    } catch (error) {
+      console.error("Error upserting scheduling preferences:", error);
+      throw error;
+    }
+  }
+
+  async getMeetingSuggestions(meetingId: string): Promise<MeetingSuggestions | undefined> {
+    try {
+      const suggestions = await db
+        .select()
+        .from(meetingSuggestions)
+        .where(eq(meetingSuggestions.meetingId, meetingId))
+        .limit(1);
+      return suggestions[0];
+    } catch (error) {
+      console.error("Error getting meeting suggestions:", error);
+      throw error;
+    }
+  }
+
+  async getUserMeetingSuggestions(userId: string, status?: string): Promise<MeetingSuggestions[]> {
+    try {
+      let query = db
+        .select()
+        .from(meetingSuggestions)
+        .where(eq(meetingSuggestions.createdBy, userId));
+      
+      if (status) {
+        query = query.where(
+          and(
+            eq(meetingSuggestions.createdBy, userId),
+            eq(meetingSuggestions.status, status)
+          )
+        ) as any;
+      }
+      
+      return await query.orderBy(desc(meetingSuggestions.createdAt));
+    } catch (error) {
+      console.error("Error getting user meeting suggestions:", error);
+      throw error;
+    }
+  }
+
+  async createMeetingSuggestions(suggestions: InsertMeetingSuggestions): Promise<MeetingSuggestions> {
+    try {
+      const [created] = await db
+        .insert(meetingSuggestions)
+        .values(suggestions)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating meeting suggestions:", error);
+      throw error;
+    }
+  }
+
+  async updateMeetingSuggestionStatus(
+    meetingId: string,
+    status: string,
+    selectedTime?: any
+  ): Promise<MeetingSuggestions> {
+    try {
+      const updateData: any = {
+        status,
+        updatedAt: new Date()
+      };
+      
+      if (selectedTime) {
+        updateData.selectedTime = selectedTime;
+      }
+      
+      const [updated] = await db
+        .update(meetingSuggestions)
+        .set(updateData)
+        .where(eq(meetingSuggestions.meetingId, meetingId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating meeting suggestion status:", error);
+      throw error;
+    }
+  }
+
+  async getSchedulingPatterns(userId: string): Promise<SchedulingPatterns[]> {
+    try {
+      return await db
+        .select()
+        .from(schedulingPatterns)
+        .where(eq(schedulingPatterns.userId, userId))
+        .orderBy(desc(schedulingPatterns.confidence));
+    } catch (error) {
+      console.error("Error getting scheduling patterns:", error);
+      throw error;
+    }
+  }
+
+  async upsertSchedulingPattern(
+    userId: string,
+    pattern: Omit<InsertSchedulingPatterns, "userId">
+  ): Promise<SchedulingPatterns> {
+    try {
+      const existing = await db
+        .select()
+        .from(schedulingPatterns)
+        .where(
+          and(
+            eq(schedulingPatterns.userId, userId),
+            eq(schedulingPatterns.patternType, pattern.patternType)
+          )
+        )
+        .limit(1);
+      
+      if (existing[0]) {
+        const [updated] = await db
+          .update(schedulingPatterns)
+          .set({
+            ...pattern,
+            updatedAt: new Date()
+          })
+          .where(eq(schedulingPatterns.id, existing[0].id))
+          .returning();
+        return updated;
+      } else {
+        const [created] = await db
+          .insert(schedulingPatterns)
+          .values({
+            ...pattern,
+            userId
+          })
+          .returning();
+        return created;
+      }
+    } catch (error) {
+      console.error("Error upserting scheduling pattern:", error);
+      throw error;
+    }
+  }
+
+  async getMeetingEvents(
+    userId: string,
+    filters?: {
+      startTime?: Date;
+      endTime?: Date;
+      status?: string;
+    }
+  ): Promise<MeetingEvents[]> {
+    try {
+      const conditions: any[] = [eq(meetingEvents.userId, userId)];
+      
+      if (filters?.startTime) {
+        conditions.push(gte(meetingEvents.startTime, filters.startTime));
+      }
+      if (filters?.endTime) {
+        conditions.push(lte(meetingEvents.endTime, filters.endTime));
+      }
+      if (filters?.status) {
+        conditions.push(eq(meetingEvents.status, filters.status));
+      }
+      
+      return await db
+        .select()
+        .from(meetingEvents)
+        .where(and(...conditions))
+        .orderBy(asc(meetingEvents.startTime));
+    } catch (error) {
+      console.error("Error getting meeting events:", error);
+      throw error;
+    }
+  }
+
+  async createMeetingEvent(event: InsertMeetingEvents): Promise<MeetingEvents> {
+    try {
+      const [created] = await db
+        .insert(meetingEvents)
+        .values(event)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating meeting event:", error);
+      throw error;
+    }
+  }
+
+  async updateMeetingEvent(eventId: string, updates: Partial<MeetingEvents>): Promise<MeetingEvents> {
+    try {
+      const [updated] = await db
+        .update(meetingEvents)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(meetingEvents.id, eventId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating meeting event:", error);
+      throw error;
+    }
+  }
+
+  async deleteMeetingEvent(userId: string, eventId: string): Promise<void> {
+    try {
+      await db
+        .delete(meetingEvents)
+        .where(
+          and(
+            eq(meetingEvents.id, eventId),
+            eq(meetingEvents.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error("Error deleting meeting event:", error);
+      throw error;
+    }
+  }
+
+  async findSchedulingConflicts(
+    userId: string,
+    startTime: Date,
+    endTime: Date
+  ): Promise<MeetingEvents[]> {
+    try {
+      return await db
+        .select()
+        .from(meetingEvents)
+        .where(
+          and(
+            eq(meetingEvents.userId, userId),
+            ne(meetingEvents.status, 'cancelled'),
+            or(
+              // Event starts during the proposed time
+              and(
+                gte(meetingEvents.startTime, startTime),
+                lte(meetingEvents.startTime, endTime)
+              ),
+              // Event ends during the proposed time
+              and(
+                gte(meetingEvents.endTime, startTime),
+                lte(meetingEvents.endTime, endTime)
+              ),
+              // Event encompasses the proposed time
+              and(
+                lte(meetingEvents.startTime, startTime),
+                gte(meetingEvents.endTime, endTime)
+              )
+            )
+          )
+        );
+    } catch (error) {
+      console.error("Error finding scheduling conflicts:", error);
+      throw error;
+    }
+  }
+
+  async analyzeSchedulingPatterns(userId: string): Promise<{
+    patterns: SchedulingPatterns[];
+    insights: string[];
+  }> {
+    try {
+      const patterns = await this.getSchedulingPatterns(userId);
+      const events = await this.getMeetingEvents(userId, {
+        startTime: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+        endTime: new Date()
+      });
+      
+      const insights: string[] = [];
+      
+      // Generate insights based on patterns and events
+      if (patterns.length > 0) {
+        const highConfidencePatterns = patterns.filter(p => p.confidence > 0.7);
+        if (highConfidencePatterns.length > 0) {
+          insights.push(`You have ${highConfidencePatterns.length} strong scheduling patterns identified.`);
+        }
+      }
+      
+      if (events.length > 0) {
+        const meetingsPerDay = events.length / 30;
+        insights.push(`You average ${meetingsPerDay.toFixed(1)} meetings per day.`);
+        
+        // Find busiest day of week
+        const dayCount: Record<number, number> = {};
+        events.forEach(e => {
+          const day = new Date(e.startTime).getDay();
+          dayCount[day] = (dayCount[day] || 0) + 1;
+        });
+        
+        const busiestDay = Object.entries(dayCount)
+          .sort((a, b) => b[1] - a[1])[0];
+        if (busiestDay) {
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          insights.push(`Your busiest day is ${dayNames[parseInt(busiestDay[0])]}.`);
+        }
+      }
+      
+      return { patterns, insights };
+    } catch (error) {
+      console.error("Error analyzing scheduling patterns:", error);
       throw error;
     }
   }

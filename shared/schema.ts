@@ -7004,3 +7004,296 @@ export type MaintenancePrediction = typeof maintenancePredictions.$inferSelect;
 
 export type InsertMaintenanceHistory = z.infer<typeof insertMaintenanceHistorySchema>;
 export type MaintenanceHistory = typeof maintenanceHistory.$inferSelect;
+
+/**
+ * Scheduling Preferences Table
+ * 
+ * Stores user-specific scheduling preferences and availability patterns.
+ * Enables AI to find optimal meeting times based on personal constraints.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - preferredTimes: JSONB with preferred meeting slots
+ * - timezone: User's timezone (IANA format)
+ * - bufferTime: Minutes between meetings
+ * - workingHours: Standard working hours per day
+ * - blockedTimes: Times that should never be scheduled
+ * - meetingPreferences: Preferences for different meeting types
+ * - createdAt: Creation timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Default buffer time: 15 minutes
+ * - Timezone required for cross-timezone scheduling
+ * - Preferences influence AI scheduling suggestions
+ */
+export const schedulingPreferences = pgTable("scheduling_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  preferredTimes: jsonb("preferred_times").$type<{
+    monday?: Array<{ start: string; end: string; preference: number }>;
+    tuesday?: Array<{ start: string; end: string; preference: number }>;
+    wednesday?: Array<{ start: string; end: string; preference: number }>;
+    thursday?: Array<{ start: string; end: string; preference: number }>;
+    friday?: Array<{ start: string; end: string; preference: number }>;
+    saturday?: Array<{ start: string; end: string; preference: number }>;
+    sunday?: Array<{ start: string; end: string; preference: number }>;
+  }>().notNull().default({}),
+  timezone: varchar("timezone").notNull().default("America/New_York"),
+  bufferTime: integer("buffer_time").notNull().default(15), // Minutes between meetings
+  workingHours: jsonb("working_hours").$type<{
+    start: string;
+    end: string;
+    daysOfWeek: number[];
+  }>().notNull().default({
+    start: "09:00",
+    end: "17:00",
+    daysOfWeek: [1, 2, 3, 4, 5] // Monday through Friday
+  }),
+  blockedTimes: jsonb("blocked_times").$type<Array<{
+    start: string;
+    end: string;
+    recurring: boolean;
+    daysOfWeek?: number[];
+    reason?: string;
+  }>>().notNull().default([]),
+  meetingPreferences: jsonb("meeting_preferences").$type<{
+    preferInPerson?: boolean;
+    preferVideo?: boolean;
+    maxDailyMeetings?: number;
+    preferredDuration?: number;
+    avoidBackToBack?: boolean;
+  }>().notNull().default({
+    preferVideo: true,
+    maxDailyMeetings: 5,
+    preferredDuration: 30,
+    avoidBackToBack: true
+  }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("scheduling_preferences_user_id_idx").on(table.userId),
+]);
+
+export const insertSchedulingPreferencesSchema = createInsertSchema(schedulingPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSchedulingPreferences = z.infer<typeof insertSchedulingPreferencesSchema>;
+export type SchedulingPreferences = typeof schedulingPreferences.$inferSelect;
+
+/**
+ * Meeting Suggestions Table
+ * 
+ * Stores AI-generated optimal meeting times with confidence scores.
+ * Tracks suggestions for multi-participant meetings.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - meetingId: Unique meeting identifier
+ * - suggestedTimes: Array of suggested time slots with scores
+ * - confidenceScores: AI confidence for each suggestion
+ * - participants: List of participant user IDs
+ * - constraints: Meeting-specific constraints
+ * - optimizationFactors: Factors considered in optimization
+ * - status: Suggestion status (pending/accepted/rejected)
+ * - createdBy: User who initiated the meeting
+ * - createdAt: Creation timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Multiple suggestions per meeting for flexibility
+ * - Confidence scores help users pick best option
+ * - Constraints honored by AI algorithm
+ */
+export const meetingSuggestions = pgTable("meeting_suggestions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  meetingId: varchar("meeting_id").notNull().unique(),
+  suggestedTimes: jsonb("suggested_times").$type<Array<{
+    start: string;
+    end: string;
+    timezone: string;
+    score: number;
+    conflicts: Array<{ userId: string; severity: string; description: string }>;
+    optimality: { timeZoneFit: number; preferenceMatch: number; scheduleDisruption: number };
+  }>>().notNull(),
+  confidenceScores: jsonb("confidence_scores").$type<{
+    overall: number;
+    timeZoneAlignment: number;
+    preferenceAlignment: number;
+    conflictAvoidance: number;
+  }>().notNull(),
+  participants: text("participants").array().notNull(),
+  constraints: jsonb("constraints").$type<{
+    duration: number;
+    mustBeWithin?: { start: string; end: string };
+    avoidDates?: string[];
+    requireAllAttendees: boolean;
+    allowWeekends?: boolean;
+    preferredTimeOfDay?: string; // morning/afternoon/evening
+  }>().notNull(),
+  optimizationFactors: jsonb("optimization_factors").$type<{
+    weightTimeZone: number;
+    weightPreferences: number;
+    weightMinimalDisruption: number;
+    weightAvoidConflicts: number;
+  }>().notNull().default({
+    weightTimeZone: 0.3,
+    weightPreferences: 0.3,
+    weightMinimalDisruption: 0.2,
+    weightAvoidConflicts: 0.2
+  }),
+  status: varchar("status").notNull().default("pending"), // pending/accepted/rejected/expired
+  selectedTime: jsonb("selected_time").$type<{
+    start: string;
+    end: string;
+    timezone: string;
+  }>(),
+  createdBy: varchar("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("meeting_suggestions_meeting_id_idx").on(table.meetingId),
+  index("meeting_suggestions_created_by_idx").on(table.createdBy),
+  index("meeting_suggestions_status_idx").on(table.status),
+]);
+
+export const insertMeetingSuggestionsSchema = createInsertSchema(meetingSuggestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertMeetingSuggestions = z.infer<typeof insertMeetingSuggestionsSchema>;
+export type MeetingSuggestions = typeof meetingSuggestions.$inferSelect;
+
+/**
+ * Scheduling Patterns Table
+ * 
+ * Stores learned patterns from user's scheduling history.
+ * Used by AI to improve future suggestions.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - commonMeetingTimes: Frequently used meeting slots
+ * - meetingFrequency: How often user schedules meetings
+ * - patternType: Type of pattern (daily/weekly/monthly)
+ * - patternData: Detailed pattern information
+ * - confidence: Pattern confidence based on history
+ * - lastOccurrence: When pattern was last observed
+ * - createdAt: Creation timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Patterns extracted from historical data
+ * - Higher confidence patterns weighted more
+ * - Auto-updated as new meetings scheduled
+ */
+export const schedulingPatterns = pgTable("scheduling_patterns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  commonMeetingTimes: jsonb("common_meeting_times").$type<Array<{
+    dayOfWeek: number;
+    timeOfDay: string;
+    duration: number;
+    frequency: number;
+    lastUsed: string;
+  }>>().notNull().default([]),
+  meetingFrequency: jsonb("meeting_frequency").$type<{
+    daily: number;
+    weekly: number;
+    monthly: number;
+    averagePerDay: number;
+    peakDays: number[];
+    peakHours: number[];
+  }>().notNull(),
+  patternType: varchar("pattern_type").notNull(), // daily/weekly/monthly/adhoc
+  patternData: jsonb("pattern_data").$type<{
+    recurringMeetings?: Array<{
+      title: string;
+      dayOfWeek: number;
+      time: string;
+      participants: string[];
+    }>;
+    typicalDuration?: { [key: string]: number };
+    preferredGaps?: number;
+    batchingPreference?: boolean;
+  }>().notNull().default({}),
+  confidence: real("confidence").notNull().default(0.5), // 0-1 confidence score
+  lastOccurrence: timestamp("last_occurrence"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("scheduling_patterns_user_id_idx").on(table.userId),
+  index("scheduling_patterns_type_idx").on(table.patternType),
+]);
+
+export const insertSchedulingPatternsSchema = createInsertSchema(schedulingPatterns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSchedulingPatterns = z.infer<typeof insertSchedulingPatternsSchema>;
+export type SchedulingPatterns = typeof schedulingPatterns.$inferSelect;
+
+/**
+ * Meeting Events Table
+ * 
+ * Stores actual scheduled meetings and calendar events.
+ * Tracks both proposed and confirmed meetings.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Owner of the meeting
+ * - title: Meeting title
+ * - description: Meeting description
+ * - startTime: Meeting start time
+ * - endTime: Meeting end time
+ * - timezone: Meeting timezone
+ * - participants: Array of participant user IDs
+ * - location: Meeting location or video link
+ * - status: confirmed/tentative/cancelled
+ * - meetingSuggestionId: Link to AI suggestion if applicable
+ * - createdAt: Creation timestamp
+ * - updatedAt: Last modification timestamp
+ */
+export const meetingEvents = pgTable("meeting_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  timezone: varchar("timezone").notNull().default("America/New_York"),
+  participants: text("participants").array().notNull().default([]),
+  location: text("location"),
+  status: varchar("status").notNull().default("confirmed"), // confirmed/tentative/cancelled
+  meetingSuggestionId: varchar("meeting_suggestion_id").references(() => meetingSuggestions.id, { onDelete: "set null" }),
+  metadata: jsonb("metadata").$type<{
+    isRecurring?: boolean;
+    recurringPattern?: string;
+    parentEventId?: string;
+    source?: string; // manual/ai-suggested/imported
+    importance?: string; // low/medium/high
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("meeting_events_user_id_idx").on(table.userId),
+  index("meeting_events_start_time_idx").on(table.startTime),
+  index("meeting_events_status_idx").on(table.status),
+]);
+
+export const insertMeetingEventsSchema = createInsertSchema(meetingEvents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertMeetingEvents = z.infer<typeof insertMeetingEventsSchema>;
+export type MeetingEvents = typeof meetingEvents.$inferSelect;
