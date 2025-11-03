@@ -46,6 +46,7 @@ import abTestingRouter from "./ab-testing.router";
 import cohortsRouter from "./cohorts.router";
 import { maintenanceRouter } from "./maintenance.router";
 import schedulingRouter from "./scheduling.router";
+import ticketRoutingRouter from "./ticket-routing.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -108,6 +109,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/cohorts", cohortsRouter);       // Cohort analysis and segmentation endpoints
   app.use(maintenanceRouter);                   // Predictive maintenance and system health endpoints
   app.use("/api", schedulingRouter);            // Scheduling assistant endpoints
+  app.use("/api/routing", ticketRoutingRouter); // Ticket routing and intelligent assignment endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);
