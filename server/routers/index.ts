@@ -48,6 +48,7 @@ import cohortsRouter from "./cohorts.router";
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
 import { createABTestSeedEndpoint } from "../seed-ab-tests";
+import { createCohortSeedEndpoint } from "../seed-cohorts";
 import { storage } from "../storage";
 
 // Import activity logging middleware
@@ -109,6 +110,8 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api", seedEndpoint);
   const abTestSeedEndpoint = createABTestSeedEndpoint(storage);
   app.use("/api", abTestSeedEndpoint);
+  const cohortSeedEndpoint = createCohortSeedEndpoint(storage);
+  app.use("/api", cohortSeedEndpoint);
   
   // Health check endpoint
   app.get("/api/health", (_req: any, res: any) => {
