@@ -20,12 +20,6 @@ function isReplitTestEnvironment(): boolean {
     return true;
   }
   
-  // Check if explicitly forced to use Replit Auth
-  if (process.env.FORCE_REPLIT_AUTH === 'true') {
-    console.log('🔧 Forcing Replit Auth mode (FORCE_REPLIT_AUTH=true)');
-    return true;
-  }
-  
   return false;
 }
 
@@ -82,7 +76,6 @@ export function logAuthConfiguration() {
       REPLIT_DOMAINS: !!process.env.REPLIT_DOMAINS,
       ISSUER_URL: process.env.ISSUER_URL || 'not set',
       AUTH_MODE: process.env.AUTH_MODE || 'not set',
-      FORCE_REPLIT_AUTH: process.env.FORCE_REPLIT_AUTH || 'not set',
     },
     oauthProviders: {
       google: !!process.env.GOOGLE_CLIENT_ID,
