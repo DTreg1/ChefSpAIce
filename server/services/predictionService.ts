@@ -42,7 +42,8 @@ class PredictionService {
   private modelInitialized = false;
 
   constructor() {
-    this.initializeModels();
+    // Defer model initialization to avoid blocking server startup
+    setTimeout(() => this.initializeModels(), 1000);
   }
 
   /**

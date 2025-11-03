@@ -42,7 +42,8 @@ class TrendAnalyzerService {
   private model: tf.LayersModel | null = null;
   
   constructor() {
-    this.initializeModel();
+    // Defer model initialization to avoid blocking server startup
+    setTimeout(() => this.initializeModel(), 1500);
   }
   
   /**

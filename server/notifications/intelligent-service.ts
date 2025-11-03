@@ -44,8 +44,10 @@ export class IntelligentNotificationService {
   private readonly MIN_TRAINING_SAMPLES = 20;
 
   constructor() {
-    // Initialize the timing prediction model on startup
-    this.initializeModel().catch(console.error);
+    // Defer model initialization to avoid blocking server startup
+    setTimeout(() => {
+      this.initializeModel().catch(console.error);
+    }, 2000);
   }
 
   /**
