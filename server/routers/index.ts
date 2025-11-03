@@ -46,6 +46,7 @@ import abTestingRouter from "./ab-testing.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
+import { createABTestSeedEndpoint } from "../seed-ab-tests";
 import { storage } from "../storage";
 
 // Import activity logging middleware
@@ -104,6 +105,8 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);
   app.use("/api", seedEndpoint);
+  const abTestSeedEndpoint = createABTestSeedEndpoint(storage);
+  app.use("/api", abTestSeedEndpoint);
   
   // Health check endpoint
   app.get("/api/health", (_req: any, res: any) => {
