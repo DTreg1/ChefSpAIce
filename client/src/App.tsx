@@ -171,7 +171,6 @@ function Router() {
         <Route path="/" component={Landing} />
         <Route path="/recommendations-public-demo" component={RecommendationsPublicDemo} />
         <Route path="/ocr" component={OCRPage} />
-        <Route path="/transcriptions" component={TranscriptionsPage} />
         <Route component={Landing} />
       </Switch>
     );
