@@ -82,6 +82,7 @@ const ABTesting = lazy(() => import("@/pages/ABTesting"));
 const CohortAnalysis = lazy(() => import("@/pages/CohortAnalysis"));
 const SystemHealth = lazy(() => import("@/pages/SystemHealth"));
 const Scheduling = lazy(() => import("@/pages/Scheduling"));
+const TicketRouting = lazy(() => import("@/pages/ticket-routing"));
 
 function AuthenticatedRouter() {
   return (
@@ -141,6 +142,7 @@ function AuthenticatedRouter() {
         <Route path="/cohort-analysis" component={CohortAnalysis} />
         <Route path="/system-health" component={SystemHealth} />
         <Route path="/scheduling" component={Scheduling} />
+        <Route path="/ticket-routing" component={TicketRouting} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
