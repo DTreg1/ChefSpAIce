@@ -317,6 +317,13 @@ import {
   routingRules,
   ticketRouting,
   agentExpertise,
+  // Extraction types
+  type ExtractionTemplate,
+  type InsertExtractionTemplate,
+  type ExtractedData,
+  type InsertExtractedData,
+  extractionTemplates,
+  extractedData,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -2821,6 +2828,85 @@ export interface IStorage {
     averageResolutionTime: number;
     byCategory: Record<string, number>;
     byAgent: Record<string, { count: number; avgTime: number }>;
+  }>;
+
+  // ==================== Data Extraction Operations ====================
+
+  /**
+   * Create extraction template
+   */
+  createExtractionTemplate(template: InsertExtractionTemplate): Promise<ExtractionTemplate>;
+
+  /**
+   * Get extraction template by ID
+   */
+  getExtractionTemplate(id: string): Promise<ExtractionTemplate | undefined>;
+
+  /**
+   * Get all active extraction templates
+   */
+  getExtractionTemplates(): Promise<ExtractionTemplate[]>;
+
+  /**
+   * Update extraction template
+   */
+  updateExtractionTemplate(id: string, template: Partial<InsertExtractionTemplate>): Promise<ExtractionTemplate>;
+
+  /**
+   * Delete extraction template
+   */
+  deleteExtractionTemplate(id: string): Promise<void>;
+
+  /**
+   * Create extracted data record
+   */
+  createExtractedData(data: InsertExtractedData): Promise<ExtractedData>;
+
+  /**
+   * Get extracted data by ID
+   */
+  getExtractedData(id: string): Promise<ExtractedData | undefined>;
+
+  /**
+   * Get extracted data by source ID
+   */
+  getExtractedDataBySource(sourceId: string): Promise<ExtractedData[]>;
+
+  /**
+   * Get extracted data by template
+   */
+  getExtractedDataByTemplate(templateId: string): Promise<ExtractedData[]>;
+
+  /**
+   * Update extracted data (for corrections/validation)
+   */
+  updateExtractedData(id: string, data: Partial<InsertExtractedData>): Promise<ExtractedData>;
+
+  /**
+   * Get paginated extracted data with filters
+   */
+  getExtractedDataPaginated(params: {
+    page?: number;
+    limit?: number;
+    templateId?: string;
+    validationStatus?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<PaginatedResponse<ExtractedData>>;
+
+  /**
+   * Batch create extracted data
+   */
+  batchCreateExtractedData(dataList: InsertExtractedData[]): Promise<ExtractedData[]>;
+
+  /**
+   * Get extraction statistics
+   */
+  getExtractionStats(): Promise<{
+    totalExtractions: number;
+    averageConfidence: number;
+    validationRate: number;
+    templateUsage: Record<string, number>;
   }>;
 }
 
@@ -13184,6 +13270,277 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Error getting routing metrics:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Data Extraction Implementation ====================
+
+  async createExtractionTemplate(template: InsertExtractionTemplate): Promise<ExtractionTemplate> {
+    try {
+      const result = await db.insert(extractionTemplates).values(template).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating extraction template:", error);
+      throw error;
+    }
+  }
+
+  async getExtractionTemplate(id: string): Promise<ExtractionTemplate | undefined> {
+    try {
+      const result = await db.select().from(extractionTemplates).where(eq(extractionTemplates.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting extraction template:", error);
+      throw error;
+    }
+  }
+
+  async getExtractionTemplates(): Promise<ExtractionTemplate[]> {
+    try {
+      return await db.select()
+        .from(extractionTemplates)
+        .where(eq(extractionTemplates.isActive, true))
+        .orderBy(desc(extractionTemplates.createdAt));
+    } catch (error) {
+      console.error("Error getting extraction templates:", error);
+      throw error;
+    }
+  }
+
+  async updateExtractionTemplate(id: string, template: Partial<InsertExtractionTemplate>): Promise<ExtractionTemplate> {
+    try {
+      const result = await db
+        .update(extractionTemplates)
+        .set({ ...template, updatedAt: new Date() })
+        .where(eq(extractionTemplates.id, id))
+        .returning();
+      
+      if (!result[0]) {
+        throw new Error("Template not found");
+      }
+      
+      // Increment usage count if template is being used
+      if (template.usageCount !== undefined) {
+        await db
+          .update(extractionTemplates)
+          .set({ usageCount: sql`${extractionTemplates.usageCount} + 1` })
+          .where(eq(extractionTemplates.id, id));
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error updating extraction template:", error);
+      throw error;
+    }
+  }
+
+  async deleteExtractionTemplate(id: string): Promise<void> {
+    try {
+      await db.update(extractionTemplates)
+        .set({ isActive: false })
+        .where(eq(extractionTemplates.id, id));
+    } catch (error) {
+      console.error("Error deleting extraction template:", error);
+      throw error;
+    }
+  }
+
+  async createExtractedData(data: InsertExtractedData): Promise<ExtractedData> {
+    try {
+      const result = await db.insert(extractedData).values(data).returning();
+      
+      // Update template usage count
+      if (data.templateId) {
+        await db
+          .update(extractionTemplates)
+          .set({ usageCount: sql`${extractionTemplates.usageCount} + 1` })
+          .where(eq(extractionTemplates.id, data.templateId));
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error creating extracted data:", error);
+      throw error;
+    }
+  }
+
+  async getExtractedData(id: string): Promise<ExtractedData | undefined> {
+    try {
+      const result = await db.select().from(extractedData).where(eq(extractedData.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting extracted data:", error);
+      throw error;
+    }
+  }
+
+  async getExtractedDataBySource(sourceId: string): Promise<ExtractedData[]> {
+    try {
+      return await db.select()
+        .from(extractedData)
+        .where(eq(extractedData.sourceId, sourceId))
+        .orderBy(desc(extractedData.extractedAt));
+    } catch (error) {
+      console.error("Error getting extracted data by source:", error);
+      throw error;
+    }
+  }
+
+  async getExtractedDataByTemplate(templateId: string): Promise<ExtractedData[]> {
+    try {
+      return await db.select()
+        .from(extractedData)
+        .where(eq(extractedData.templateId, templateId))
+        .orderBy(desc(extractedData.extractedAt));
+    } catch (error) {
+      console.error("Error getting extracted data by template:", error);
+      throw error;
+    }
+  }
+
+  async updateExtractedData(id: string, data: Partial<InsertExtractedData>): Promise<ExtractedData> {
+    try {
+      // If validation status is being updated to validated/corrected, set validatedAt
+      const updates: any = { ...data };
+      if (data.validationStatus && ['validated', 'corrected'].includes(data.validationStatus)) {
+        updates.validatedAt = new Date();
+      }
+      
+      const result = await db
+        .update(extractedData)
+        .set(updates)
+        .where(eq(extractedData.id, id))
+        .returning();
+      
+      if (!result[0]) {
+        throw new Error("Extracted data not found");
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error("Error updating extracted data:", error);
+      throw error;
+    }
+  }
+
+  async getExtractedDataPaginated(params: {
+    page?: number;
+    limit?: number;
+    templateId?: string;
+    validationStatus?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<PaginatedResponse<ExtractedData>> {
+    try {
+      const page = params.page || 1;
+      const limit = params.limit || 20;
+      const offset = (page - 1) * limit;
+      
+      // Build filters
+      const conditions = [];
+      if (params.templateId) {
+        conditions.push(eq(extractedData.templateId, params.templateId));
+      }
+      if (params.validationStatus) {
+        conditions.push(eq(extractedData.validationStatus, params.validationStatus));
+      }
+      if (params.startDate) {
+        conditions.push(gte(extractedData.extractedAt, params.startDate));
+      }
+      if (params.endDate) {
+        conditions.push(lte(extractedData.extractedAt, params.endDate));
+      }
+      
+      // Build query
+      const query = conditions.length > 0
+        ? db.select().from(extractedData).where(and(...conditions))
+        : db.select().from(extractedData);
+      
+      // Get total count
+      const countResult = await db.select({ count: sql`count(*)` })
+        .from(extractedData)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+      const total = Number(countResult[0]?.count || 0);
+      
+      // Get paginated data
+      const data = await query
+        .orderBy(desc(extractedData.extractedAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+        offset
+      };
+    } catch (error) {
+      console.error("Error getting paginated extracted data:", error);
+      throw error;
+    }
+  }
+
+  async batchCreateExtractedData(dataList: InsertExtractedData[]): Promise<ExtractedData[]> {
+    try {
+      const result = await db.insert(extractedData).values(dataList).returning();
+      
+      // Update template usage counts
+      const templateIds = [...new Set(dataList.map(d => d.templateId).filter(Boolean))];
+      for (const templateId of templateIds) {
+        const count = dataList.filter(d => d.templateId === templateId).length;
+        await db
+          .update(extractionTemplates)
+          .set({ usageCount: sql`${extractionTemplates.usageCount} + ${count}` })
+          .where(eq(extractionTemplates.id, templateId as string));
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Error batch creating extracted data:", error);
+      throw error;
+    }
+  }
+
+  async getExtractionStats(): Promise<{
+    totalExtractions: number;
+    averageConfidence: number;
+    validationRate: number;
+    templateUsage: Record<string, number>;
+  }> {
+    try {
+      // Get total extractions
+      const totalResult = await db.select({ count: sql`count(*)` }).from(extractedData);
+      const totalExtractions = Number(totalResult[0]?.count || 0);
+      
+      // Get average confidence
+      const confidenceResult = await db.select({ avg: sql`avg(${extractedData.confidence})` }).from(extractedData);
+      const averageConfidence = Number(confidenceResult[0]?.avg || 0);
+      
+      // Get validation rate
+      const validatedResult = await db.select({ count: sql`count(*)` })
+        .from(extractedData)
+        .where(sql`${extractedData.validationStatus} IN ('validated', 'corrected')`);
+      const validatedCount = Number(validatedResult[0]?.count || 0);
+      const validationRate = totalExtractions > 0 ? validatedCount / totalExtractions : 0;
+      
+      // Get template usage
+      const templates = await db.select().from(extractionTemplates);
+      const templateUsage: Record<string, number> = {};
+      for (const template of templates) {
+        templateUsage[template.name] = template.usageCount;
+      }
+      
+      return {
+        totalExtractions,
+        averageConfidence,
+        validationRate,
+        templateUsage
+      };
+    } catch (error) {
+      console.error("Error getting extraction stats:", error);
       throw error;
     }
   }
