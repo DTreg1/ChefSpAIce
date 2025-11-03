@@ -6568,3 +6568,238 @@ export type AbTestResult = typeof abTestResults.$inferSelect;
 
 export type InsertAbTestInsight = z.infer<typeof insertAbTestInsightSchema>;
 export type AbTestInsight = typeof abTestInsights.$inferSelect;
+
+/**
+ * Cohorts Table
+ * 
+ * Stores user cohort definitions for behavioral analysis and segmentation.
+ * Enables tracking of user groups over time to identify patterns and insights.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - name: Cohort name for identification
+ * - definition: JSONB with cohort definition criteria
+ *   - signupDateRange: Date range for user signup
+ *   - userAttributes: User attribute filters
+ *   - behaviorCriteria: Behavioral patterns to match
+ *   - customQueries: Custom SQL conditions
+ * - userCount: Number of users in the cohort
+ * - isActive: Whether cohort is actively tracked
+ * - refreshFrequency: How often to recalculate ('hourly', 'daily', 'weekly', 'manual')
+ * - lastRefreshed: Last time cohort was recalculated
+ * - metadata: Additional cohort metadata
+ * - createdBy: User who created the cohort
+ * - createdAt: Cohort creation timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Cohort definitions are immutable once created
+ * - User count updated based on refresh frequency
+ * - Historical cohort data preserved for trend analysis
+ * - Cohorts can overlap (users can belong to multiple cohorts)
+ * 
+ * Indexes:
+ * - cohorts_name_idx: Unique cohort names
+ * - cohorts_active_idx: Filter active cohorts
+ * - cohorts_created_by_idx: User's created cohorts
+ */
+export const cohorts = pgTable("cohorts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  definition: jsonb("definition").notNull().$type<{
+    signupDateRange?: { start: string; end: string };
+    userAttributes?: Record<string, any>;
+    behaviorCriteria?: {
+      events?: string[];
+      minSessionCount?: number;
+      minEngagementScore?: number;
+      customMetrics?: Record<string, any>;
+    };
+    customQueries?: string[];
+    source?: string; // e.g., 'product_hunt', 'organic', 'paid_ads'
+  }>(),
+  userCount: integer("user_count").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  refreshFrequency: text("refresh_frequency").notNull().default('daily'), // 'hourly', 'daily', 'weekly', 'manual'
+  lastRefreshed: timestamp("last_refreshed"),
+  metadata: jsonb("metadata").$type<{
+    description?: string;
+    color?: string; // For UI visualization
+    icon?: string;
+    tags?: string[];
+    businessContext?: string;
+    hypothesis?: string;
+  }>(),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("cohorts_name_idx").on(table.name),
+  index("cohorts_active_idx").on(table.isActive),
+  index("cohorts_created_by_idx").on(table.createdBy),
+  index("cohorts_last_refreshed_idx").on(table.lastRefreshed),
+]);
+
+/**
+ * Cohort Metrics Table
+ * 
+ * Stores time-series metrics for each cohort to track behavior over time.
+ * Enables retention analysis, engagement tracking, and trend identification.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - cohortId: Foreign key to cohorts.id
+ * - metricName: Name of the metric being tracked
+ * - period: Time period for the metric ('day', 'week', 'month')
+ * - periodDate: Date of the measurement period
+ * - value: Numeric metric value
+ * - metricType: Type of metric ('retention', 'engagement', 'conversion', 'revenue', 'custom')
+ * - segmentData: JSONB with segmented metric breakdowns
+ * - comparisonData: JSONB with period-over-period comparisons
+ * - createdAt: Metric record creation
+ * 
+ * Common Metrics:
+ * - Retention rate (Day 1, Day 7, Day 30)
+ * - Average session duration
+ * - Events per user
+ * - Conversion rate
+ * - Revenue per user
+ * - Feature adoption rate
+ * 
+ * Business Rules:
+ * - Metrics calculated according to cohort refresh frequency
+ * - Historical metrics preserved for trend analysis
+ * - Aggregations computed at read time for flexible analysis
+ * 
+ * Indexes:
+ * - cohort_metrics_cohort_id_idx: Metrics for specific cohort
+ * - cohort_metrics_metric_name_idx: Filter by metric type
+ * - cohort_metrics_period_date_idx: Time-based queries
+ */
+export const cohortMetrics = pgTable("cohort_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cohortId: varchar("cohort_id").notNull().references(() => cohorts.id, { onDelete: "cascade" }),
+  metricName: text("metric_name").notNull(),
+  period: text("period").notNull(), // 'day', 'week', 'month'
+  periodDate: date("period_date").notNull(),
+  value: real("value").notNull(),
+  metricType: text("metric_type").notNull(), // 'retention', 'engagement', 'conversion', 'revenue', 'custom'
+  segmentData: jsonb("segment_data").$type<{
+    byDevice?: Record<string, number>;
+    bySource?: Record<string, number>;
+    byFeature?: Record<string, number>;
+    byUserAttribute?: Record<string, number>;
+    custom?: Record<string, any>;
+  }>(),
+  comparisonData: jsonb("comparison_data").$type<{
+    previousPeriod?: number;
+    percentageChange?: number;
+    trend?: 'increasing' | 'decreasing' | 'stable';
+    significance?: number;
+  }>(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("cohort_metrics_cohort_id_idx").on(table.cohortId),
+  index("cohort_metrics_metric_name_idx").on(table.metricName),
+  index("cohort_metrics_period_date_idx").on(table.periodDate),
+  index("cohort_metrics_type_idx").on(table.metricType),
+  uniqueIndex("cohort_metrics_unique_idx").on(table.cohortId, table.metricName, table.period, table.periodDate),
+]);
+
+/**
+ * Cohort Insights Table
+ * 
+ * Stores AI-generated insights and recommendations for cohorts.
+ * Provides actionable intelligence based on cohort behavior patterns.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - cohortId: Foreign key to cohorts.id
+ * - insight: AI-generated insight text
+ * - importance: Importance level ('low', 'medium', 'high', 'critical')
+ * - category: Insight category for grouping
+ * - actionRecommended: Specific action to take based on insight
+ * - confidenceScore: AI confidence in the insight (0-1)
+ * - supportingData: JSONB with data backing the insight
+ * - relatedCohorts: Array of related cohort IDs for comparison
+ * - status: Insight status ('new', 'reviewed', 'actioned', 'dismissed')
+ * - generatedBy: AI model used for insight generation
+ * - validUntil: When insight expires or needs refresh
+ * - createdAt: Insight generation timestamp
+ * - updatedAt: Last insight update
+ * 
+ * Insight Categories:
+ * - 'retention': User retention patterns
+ * - 'behavior': Behavioral changes
+ * - 'opportunity': Growth opportunities
+ * - 'risk': Potential risks or churn indicators
+ * - 'comparison': Cross-cohort comparisons
+ * - 'trend': Emerging trends
+ * 
+ * Business Rules:
+ * - Critical insights trigger immediate notifications
+ * - Insights expire based on data freshness
+ * - Similar insights deduplicated within time window
+ * - Historical insights preserved for learning
+ * 
+ * Indexes:
+ * - cohort_insights_cohort_id_idx: Insights for specific cohort
+ * - cohort_insights_importance_idx: High-importance insights
+ * - cohort_insights_status_idx: Filter by insight status
+ * - cohort_insights_category_idx: Group by category
+ */
+export const cohortInsights = pgTable("cohort_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cohortId: varchar("cohort_id").notNull().references(() => cohorts.id, { onDelete: "cascade" }),
+  insight: text("insight").notNull(),
+  importance: text("importance").notNull().default('medium'), // 'low', 'medium', 'high', 'critical'
+  category: text("category").notNull(), // 'retention', 'behavior', 'opportunity', 'risk', 'comparison', 'trend'
+  actionRecommended: text("action_recommended"),
+  confidenceScore: real("confidence_score").notNull().default(0.5), // 0-1
+  supportingData: jsonb("supporting_data").$type<{
+    metrics?: Record<string, any>;
+    comparisons?: Record<string, any>;
+    trends?: Array<{ date: string; value: number }>;
+    segments?: Record<string, any>;
+    evidence?: string[];
+  }>(),
+  relatedCohorts: text("related_cohorts").array(),
+  status: text("status").notNull().default('new'), // 'new', 'reviewed', 'actioned', 'dismissed'
+  generatedBy: text("generated_by").notNull().default('gpt-5'),
+  validUntil: timestamp("valid_until"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("cohort_insights_cohort_id_idx").on(table.cohortId),
+  index("cohort_insights_importance_idx").on(table.importance),
+  index("cohort_insights_status_idx").on(table.status),
+  index("cohort_insights_category_idx").on(table.category),
+  index("cohort_insights_created_at_idx").on(table.createdAt),
+]);
+
+// Insert schemas and types for cohort analysis
+export const insertCohortSchema = createInsertSchema(cohorts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCohortMetricSchema = createInsertSchema(cohortMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCohortInsightSchema = createInsertSchema(cohortInsights).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCohort = z.infer<typeof insertCohortSchema>;
+export type Cohort = typeof cohorts.$inferSelect;
+
+export type InsertCohortMetric = z.infer<typeof insertCohortMetricSchema>;
+export type CohortMetric = typeof cohortMetrics.$inferSelect;
+
+export type InsertCohortInsight = z.infer<typeof insertCohortInsightSchema>;
+export type CohortInsight = typeof cohortInsights.$inferSelect;
