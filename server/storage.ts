@@ -271,6 +271,16 @@ import {
   abTests,
   abTestResults,
   abTestInsights,
+  // Cohort Analysis types and tables
+  type Cohort,
+  type InsertCohort,
+  type CohortMetric,
+  type InsertCohortMetric,
+  type CohortInsight,
+  type InsertCohortInsight,
+  cohorts,
+  cohortMetrics,
+  cohortInsights,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -2497,6 +2507,107 @@ export interface IStorage {
    * Implement test winner
    */
   implementAbTestWinner(testId: string, variant: 'A' | 'B'): Promise<void>;
+
+  // ==================== Cohort Analysis Operations ====================
+
+  /**
+   * Create a new cohort
+   */
+  createCohort(cohort: InsertCohort): Promise<Cohort>;
+
+  /**
+   * Get a cohort by ID
+   */
+  getCohort(cohortId: string): Promise<Cohort | undefined>;
+
+  /**
+   * Get all cohorts
+   */
+  getCohorts(filters?: {
+    isActive?: boolean;
+    createdBy?: string;
+  }): Promise<Cohort[]>;
+
+  /**
+   * Update a cohort
+   */
+  updateCohort(cohortId: string, updates: Partial<InsertCohort>): Promise<Cohort>;
+
+  /**
+   * Delete a cohort
+   */
+  deleteCohort(cohortId: string): Promise<void>;
+
+  /**
+   * Record cohort metrics
+   */
+  recordCohortMetrics(metrics: InsertCohortMetric[]): Promise<CohortMetric[]>;
+
+  /**
+   * Get cohort metrics
+   */
+  getCohortMetrics(cohortId: string, filters?: {
+    metricName?: string;
+    metricType?: string;
+    period?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<CohortMetric[]>;
+
+  /**
+   * Calculate cohort retention
+   */
+  calculateCohortRetention(cohortId: string, periods: number[]): Promise<{
+    cohortId: string;
+    retention: Array<{ period: number; rate: number; count: number }>;
+  }>;
+
+  /**
+   * Compare cohorts
+   */
+  compareCohorts(cohortIds: string[], metrics: string[]): Promise<{
+    comparison: Array<{
+      cohortId: string;
+      metrics: Record<string, number>;
+    }>;
+  }>;
+
+  /**
+   * Create cohort insight
+   */
+  createCohortInsight(insight: InsertCohortInsight): Promise<CohortInsight>;
+
+  /**
+   * Get cohort insights
+   */
+  getCohortInsights(cohortId: string, filters?: {
+    status?: string;
+    importance?: string;
+    category?: string;
+  }): Promise<CohortInsight[]>;
+
+  /**
+   * Update cohort insight status
+   */
+  updateCohortInsightStatus(insightId: string, status: string): Promise<CohortInsight>;
+
+  /**
+   * Refresh cohort membership
+   */
+  refreshCohortMembership(cohortId: string): Promise<{ userCount: number }>;
+
+  /**
+   * Get cohort members
+   */
+  getCohortMembers(cohortId: string, limit?: number, offset?: number): Promise<{
+    users: User[];
+    total: number;
+  }>;
+
+  /**
+   * Generate cohort insights with AI
+   */
+  generateCohortInsights(cohortId: string): Promise<CohortInsight[]>;
 }
 
 /**
@@ -11521,6 +11632,424 @@ export class DatabaseStorage implements IStorage {
       console.error("Error implementing A/B test winner:", error);
       throw error;
     }
+  }
+
+  // ==================== Cohort Analysis Operations ====================
+
+  async createCohort(cohort: InsertCohort): Promise<Cohort> {
+    try {
+      const [newCohort] = await db.insert(cohorts).values(cohort).returning();
+      
+      // Refresh membership immediately for new cohort
+      await this.refreshCohortMembership(newCohort.id);
+      
+      return newCohort;
+    } catch (error) {
+      console.error("Error creating cohort:", error);
+      throw error;
+    }
+  }
+
+  async getCohort(cohortId: string): Promise<Cohort | undefined> {
+    try {
+      const [cohort] = await db
+        .select()
+        .from(cohorts)
+        .where(eq(cohorts.id, cohortId));
+      return cohort;
+    } catch (error) {
+      console.error("Error getting cohort:", error);
+      throw error;
+    }
+  }
+
+  async getCohorts(filters?: {
+    isActive?: boolean;
+    createdBy?: string;
+  }): Promise<Cohort[]> {
+    try {
+      let query = db.select().from(cohorts);
+      const conditions: any[] = [];
+
+      if (filters?.isActive !== undefined) {
+        conditions.push(eq(cohorts.isActive, filters.isActive));
+      }
+
+      if (filters?.createdBy) {
+        conditions.push(eq(cohorts.createdBy, filters.createdBy));
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+
+      return await query;
+    } catch (error) {
+      console.error("Error getting cohorts:", error);
+      throw error;
+    }
+  }
+
+  async updateCohort(cohortId: string, updates: Partial<InsertCohort>): Promise<Cohort> {
+    try {
+      const [updated] = await db
+        .update(cohorts)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(cohorts.id, cohortId))
+        .returning();
+
+      // Refresh membership if definition changed
+      if (updates.definition) {
+        await this.refreshCohortMembership(cohortId);
+      }
+
+      return updated;
+    } catch (error) {
+      console.error("Error updating cohort:", error);
+      throw error;
+    }
+  }
+
+  async deleteCohort(cohortId: string): Promise<void> {
+    try {
+      await db.delete(cohorts).where(eq(cohorts.id, cohortId));
+    } catch (error) {
+      console.error("Error deleting cohort:", error);
+      throw error;
+    }
+  }
+
+  async recordCohortMetrics(metrics: InsertCohortMetric[]): Promise<CohortMetric[]> {
+    try {
+      const recorded = await db
+        .insert(cohortMetrics)
+        .values(metrics)
+        .returning();
+      return recorded;
+    } catch (error) {
+      console.error("Error recording cohort metrics:", error);
+      throw error;
+    }
+  }
+
+  async getCohortMetrics(
+    cohortId: string,
+    filters?: {
+      metricName?: string;
+      metricType?: string;
+      period?: string;
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<CohortMetric[]> {
+    try {
+      let query = db.select().from(cohortMetrics);
+      const conditions: any[] = [eq(cohortMetrics.cohortId, cohortId)];
+
+      if (filters?.metricName) {
+        conditions.push(eq(cohortMetrics.metricName, filters.metricName));
+      }
+
+      if (filters?.metricType) {
+        conditions.push(eq(cohortMetrics.metricType, filters.metricType));
+      }
+
+      if (filters?.period) {
+        conditions.push(eq(cohortMetrics.period, filters.period));
+      }
+
+      if (filters?.startDate) {
+        conditions.push(gte(cohortMetrics.periodDate, filters.startDate.toISOString().split('T')[0]));
+      }
+
+      if (filters?.endDate) {
+        conditions.push(lte(cohortMetrics.periodDate, filters.endDate.toISOString().split('T')[0]));
+      }
+
+      query = query.where(and(...conditions)) as any;
+      return await query;
+    } catch (error) {
+      console.error("Error getting cohort metrics:", error);
+      throw error;
+    }
+  }
+
+  async calculateCohortRetention(
+    cohortId: string,
+    periods: number[]
+  ): Promise<{
+    cohortId: string;
+    retention: Array<{ period: number; rate: number; count: number }>;
+  }> {
+    try {
+      const cohort = await this.getCohort(cohortId);
+      if (!cohort) {
+        throw new Error(`Cohort ${cohortId} not found`);
+      }
+
+      // Get cohort members based on definition
+      const { users: cohortUsers } = await this.getCohortMembers(cohortId);
+      const totalUsers = cohortUsers.length;
+
+      const retention: Array<{ period: number; rate: number; count: number }> = [];
+
+      for (const period of periods) {
+        // Calculate retention for each period
+        // This is a simplified version - in production, you'd track actual user activity
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() - period);
+
+        // Count active users in the period
+        const activeUsers = await db
+          .select({ count: sql<number>`COUNT(DISTINCT user_id)` })
+          .from(userSessions)
+          .where(
+            and(
+              sql`user_id IN (${sql.join(cohortUsers.map(u => u.id), sql`, `)})`,
+              gte(userSessions.startTime, endDate)
+            )
+          );
+
+        const activeCount = Number(activeUsers[0]?.count || 0);
+        const retentionRate = totalUsers > 0 ? (activeCount / totalUsers) * 100 : 0;
+
+        retention.push({
+          period,
+          rate: retentionRate,
+          count: activeCount,
+        });
+
+        // Record metric
+        await this.recordCohortMetrics([
+          {
+            cohortId,
+            metricName: `retention_day_${period}`,
+            period: 'day',
+            periodDate: endDate.toISOString().split('T')[0],
+            value: retentionRate,
+            metricType: 'retention',
+          },
+        ]);
+      }
+
+      return { cohortId, retention };
+    } catch (error) {
+      console.error("Error calculating cohort retention:", error);
+      throw error;
+    }
+  }
+
+  async compareCohorts(
+    cohortIds: string[],
+    metrics: string[]
+  ): Promise<{
+    comparison: Array<{
+      cohortId: string;
+      metrics: Record<string, number>;
+    }>;
+  }> {
+    try {
+      const comparison = await Promise.all(
+        cohortIds.map(async (cohortId) => {
+          const cohortMetricsData = await this.getCohortMetrics(cohortId, {
+            metricName: metrics[0], // For simplicity, using first metric
+          });
+
+          const metricsMap: Record<string, number> = {};
+          
+          for (const metric of metrics) {
+            const metricData = cohortMetricsData.find(
+              (m) => m.metricName === metric
+            );
+            metricsMap[metric] = metricData?.value || 0;
+          }
+
+          return {
+            cohortId,
+            metrics: metricsMap,
+          };
+        })
+      );
+
+      return { comparison };
+    } catch (error) {
+      console.error("Error comparing cohorts:", error);
+      throw error;
+    }
+  }
+
+  async createCohortInsight(insight: InsertCohortInsight): Promise<CohortInsight> {
+    try {
+      const [newInsight] = await db
+        .insert(cohortInsights)
+        .values(insight)
+        .returning();
+      return newInsight;
+    } catch (error) {
+      console.error("Error creating cohort insight:", error);
+      throw error;
+    }
+  }
+
+  async getCohortInsights(
+    cohortId: string,
+    filters?: {
+      status?: string;
+      importance?: string;
+      category?: string;
+    }
+  ): Promise<CohortInsight[]> {
+    try {
+      let query = db.select().from(cohortInsights);
+      const conditions: any[] = [eq(cohortInsights.cohortId, cohortId)];
+
+      if (filters?.status) {
+        conditions.push(eq(cohortInsights.status, filters.status));
+      }
+
+      if (filters?.importance) {
+        conditions.push(eq(cohortInsights.importance, filters.importance));
+      }
+
+      if (filters?.category) {
+        conditions.push(eq(cohortInsights.category, filters.category));
+      }
+
+      query = query.where(and(...conditions)) as any;
+      return await query.orderBy(desc(cohortInsights.createdAt));
+    } catch (error) {
+      console.error("Error getting cohort insights:", error);
+      throw error;
+    }
+  }
+
+  async updateCohortInsightStatus(
+    insightId: string,
+    status: string
+  ): Promise<CohortInsight> {
+    try {
+      const [updated] = await db
+        .update(cohortInsights)
+        .set({
+          status,
+          updatedAt: new Date(),
+        })
+        .where(eq(cohortInsights.id, insightId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating cohort insight status:", error);
+      throw error;
+    }
+  }
+
+  async refreshCohortMembership(cohortId: string): Promise<{ userCount: number }> {
+    try {
+      const cohort = await this.getCohort(cohortId);
+      if (!cohort) {
+        throw new Error(`Cohort ${cohortId} not found`);
+      }
+
+      // Build query based on cohort definition
+      let userQuery = db.select().from(users);
+      const conditions: any[] = [];
+
+      // Apply signup date range filter
+      if (cohort.definition.signupDateRange) {
+        const { start, end } = cohort.definition.signupDateRange;
+        if (start) {
+          conditions.push(gte(users.createdAt, new Date(start)));
+        }
+        if (end) {
+          conditions.push(lte(users.createdAt, new Date(end)));
+        }
+      }
+
+      // Apply source filter (this would need to be tracked separately)
+      // For demo purposes, we'll simulate with user metadata
+
+      if (conditions.length > 0) {
+        userQuery = userQuery.where(and(...conditions)) as any;
+      }
+
+      const cohortUsers = await userQuery;
+      const userCount = cohortUsers.length;
+
+      // Update cohort user count
+      await db
+        .update(cohorts)
+        .set({
+          userCount,
+          lastRefreshed: new Date(),
+        })
+        .where(eq(cohorts.id, cohortId));
+
+      return { userCount };
+    } catch (error) {
+      console.error("Error refreshing cohort membership:", error);
+      throw error;
+    }
+  }
+
+  async getCohortMembers(
+    cohortId: string,
+    limit: number = 100,
+    offset: number = 0
+  ): Promise<{
+    users: User[];
+    total: number;
+  }> {
+    try {
+      const cohort = await this.getCohort(cohortId);
+      if (!cohort) {
+        throw new Error(`Cohort ${cohortId} not found`);
+      }
+
+      // Build query based on cohort definition
+      let userQuery = db.select().from(users);
+      const conditions: any[] = [];
+
+      // Apply signup date range filter
+      if (cohort.definition.signupDateRange) {
+        const { start, end } = cohort.definition.signupDateRange;
+        if (start) {
+          conditions.push(gte(users.createdAt, new Date(start)));
+        }
+        if (end) {
+          conditions.push(lte(users.createdAt, new Date(end)));
+        }
+      }
+
+      if (conditions.length > 0) {
+        userQuery = userQuery.where(and(...conditions)) as any;
+      }
+
+      // Get total count
+      const countResult = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(users)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+      const total = Number(countResult[0]?.count || 0);
+
+      // Get paginated users
+      const cohortUsers = await userQuery.limit(limit).offset(offset);
+
+      return { users: cohortUsers, total };
+    } catch (error) {
+      console.error("Error getting cohort members:", error);
+      throw error;
+    }
+  }
+
+  async generateCohortInsights(cohortId: string): Promise<CohortInsight[]> {
+    // This will be implemented with OpenAI integration
+    // For now, returning empty array
+    console.log(`Generating insights for cohort ${cohortId}`);
+    return [];
   }
 }
 
