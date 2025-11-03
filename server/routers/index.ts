@@ -48,6 +48,7 @@ import { maintenanceRouter } from "./maintenance.router";
 import schedulingRouter from "./scheduling.router";
 import ticketRoutingRouter from "./ticket-routing.router";
 import extractionRouter from "./extraction.router";
+import pricingRouter from "./pricing.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -112,6 +113,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api", schedulingRouter);            // Scheduling assistant endpoints
   app.use("/api/routing", ticketRoutingRouter); // Ticket routing and intelligent assignment endpoints
   app.use("/api/extract", extractionRouter);    // Data extraction with structured output endpoints
+  app.use("/api/pricing", pricingRouter);       // Dynamic pricing optimization with AI and ML endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);
