@@ -15,7 +15,6 @@ import sharp from "sharp";
 import axios from "axios";
 import FormData from "form-data";
 import { storage } from "../storage";
-import { asyncHandler } from "../utils/asyncHandler";
 import path from "path";
 import fs from "fs/promises";
 
@@ -192,7 +191,8 @@ async function removeBackground(imagePath: string, apiKey: string): Promise<Buff
  * POST /api/images/enhance
  * Auto-enhance image with AI
  */
-router.post("/enhance", upload.single("image"), asyncHandler(async (req: any, res: any) => {
+router.post("/enhance", upload.single("image"), async (req: any, res: any) => {
+  try {
   const userId = req.session?.user?.id;
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -221,8 +221,7 @@ router.post("/enhance", upload.single("image"), asyncHandler(async (req: any, re
     originalFileSize: req.file.size,
   });
 
-  try {
-    const startTime = Date.now();
+  const startTime = Date.now();
 
     // Process image with Sharp
     const { buffer, metadata } = await processWithSharp(inputPath, operations);
@@ -264,20 +263,24 @@ router.post("/enhance", upload.single("image"), asyncHandler(async (req: any, re
       },
     });
   } catch (error: any) {
-    await storage.updateImageProcessingJob(job.id, {
-      status: "failed",
-      errorMessage: error.message,
-    });
-
-    throw error;
+    console.error("Image processing error:", error);
+    // Update job status to failed
+    if (job) {
+      await storage.updateImageProcessingJob(job.id, {
+        status: "failed",
+        errorMessage: error.message,
+      });
+    }
+    res.status(500).json({ error: error.message || "Failed to process image" });
   }
-}));
+});
 
 /**
  * POST /api/images/background
  * Remove background using Remove.bg API
  */
-router.post("/background", upload.single("image"), asyncHandler(async (req: any, res: any) => {
+router.post("/background", upload.single("image"), async (req: any, res: any) => {
+  try {
   const userId = req.session?.user?.id;
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -306,8 +309,7 @@ router.post("/background", upload.single("image"), asyncHandler(async (req: any,
     originalFileSize: req.file.size,
   });
 
-  try {
-    const startTime = Date.now();
+  const startTime = Date.now();
 
     // Remove background using Remove.bg API
     const processedBuffer = await removeBackground(inputPath, apiKey);
@@ -351,20 +353,24 @@ router.post("/background", upload.single("image"), asyncHandler(async (req: any,
       },
     });
   } catch (error: any) {
-    await storage.updateImageProcessingJob(job.id, {
-      status: "failed",
-      errorMessage: error.message,
-    });
-
-    throw error;
+    console.error("Image processing error:", error);
+    // Update job status to failed
+    if (job) {
+      await storage.updateImageProcessingJob(job.id, {
+        status: "failed",
+        errorMessage: error.message,
+      });
+    }
+    res.status(500).json({ error: error.message || "Failed to process image" });
   }
-}));
+});
 
 /**
  * POST /api/images/crop
  * Smart crop to subject
  */
-router.post("/crop", upload.single("image"), asyncHandler(async (req: any, res: any) => {
+router.post("/crop", upload.single("image"), async (req: any, res: any) => {
+  try {
   const userId = req.session?.user?.id;
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -388,8 +394,7 @@ router.post("/crop", upload.single("image"), asyncHandler(async (req: any, res: 
     originalFileSize: req.file.size,
   });
 
-  try {
-    const startTime = Date.now();
+  const startTime = Date.now();
 
     let image = sharp(inputPath);
 
@@ -443,20 +448,24 @@ router.post("/crop", upload.single("image"), asyncHandler(async (req: any, res: 
       },
     });
   } catch (error: any) {
-    await storage.updateImageProcessingJob(job.id, {
-      status: "failed",
-      errorMessage: error.message,
-    });
-
-    throw error;
+    console.error("Image processing error:", error);
+    // Update job status to failed
+    if (job) {
+      await storage.updateImageProcessingJob(job.id, {
+        status: "failed",
+        errorMessage: error.message,
+      });
+    }
+    res.status(500).json({ error: error.message || "Failed to process image" });
   }
-}));
+});
 
 /**
  * POST /api/images/batch
  * Batch process multiple images
  */
-router.post("/batch", upload.array("images", 10), asyncHandler(async (req: any, res: any) => {
+router.post("/batch", upload.array("images", 10), async (req: any, res: any) => {
+  try {
   const userId = req.session?.user?.id;
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -543,13 +552,18 @@ router.post("/batch", upload.array("images", 10), asyncHandler(async (req: any, 
     failed: results.filter(r => !r.success).length,
     results,
   });
-}));
+  } catch (error: any) {
+    console.error("Batch processing error:", error);
+    res.status(500).json({ error: error.message || "Failed to process batch" });
+  }
+});
 
 /**
  * GET /api/images/presets
  * Get enhancement presets
  */
-router.get("/presets", asyncHandler(async (req: any, res: any) => {
+router.get("/presets", async (req: any, res: any) => {
+  try {
   const userId = req.session?.user?.id;
   const { category } = req.query;
 
@@ -636,13 +650,18 @@ router.get("/presets", asyncHandler(async (req: any, res: any) => {
   }
 
   res.json(presets);
-}));
+  } catch (error: any) {
+    console.error("Presets error:", error);
+    res.status(500).json({ error: error.message || "Failed to get presets" });
+  }
+});
 
 /**
  * POST /api/images/presets
  * Create custom preset
  */
-router.post("/presets", asyncHandler(async (req: any, res: any) => {
+router.post("/presets", async (req: any, res: any) => {
+  try {
   const userId = req.session?.user?.id;
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -664,13 +683,18 @@ router.post("/presets", asyncHandler(async (req: any, res: any) => {
   });
 
   res.json(preset);
-}));
+  } catch (error: any) {
+    console.error("Create preset error:", error);
+    res.status(500).json({ error: error.message || "Failed to create preset" });
+  }
+});
 
 /**
  * GET /api/images/jobs
  * Get user's processing jobs
  */
-router.get("/jobs", asyncHandler(async (req: any, res: any) => {
+router.get("/jobs", async (req: any, res: any) => {
+  try {
   const userId = req.session?.user?.id;
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -680,13 +704,18 @@ router.get("/jobs", asyncHandler(async (req: any, res: any) => {
   const jobs = await storage.getImageProcessingJobs(userId, status);
 
   res.json(jobs);
-}));
+  } catch (error: any) {
+    console.error("Get jobs error:", error);
+    res.status(500).json({ error: error.message || "Failed to get jobs" });
+  }
+});
 
 /**
  * GET /api/images/jobs/:id
  * Get specific job details
  */
-router.get("/jobs/:id", asyncHandler(async (req: any, res: any) => {
+router.get("/jobs/:id", async (req: any, res: any) => {
+  try {
   const { id } = req.params;
   const job = await storage.getImageProcessingJob(id);
 
@@ -695,6 +724,10 @@ router.get("/jobs/:id", asyncHandler(async (req: any, res: any) => {
   }
 
   res.json(job);
-}));
+  } catch (error: any) {
+    console.error("Get job error:", error);
+    res.status(500).json({ error: error.message || "Failed to get job" });
+  }
+});
 
 export default router;
