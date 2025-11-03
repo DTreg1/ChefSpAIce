@@ -8036,3 +8036,144 @@ export const insertImagePresetsSchema = createInsertSchema(imagePresets).omit({
 
 export type InsertImagePresets = z.infer<typeof insertImagePresetsSchema>;
 export type ImagePresets = typeof imagePresets.$inferSelect;
+
+/**
+ * Face Detections Table
+ * 
+ * Stores face detection results from TensorFlow.js BlazeFace model.
+ * Tracks detected faces and their coordinates for privacy features and avatar cropping.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - imageId: Reference to the image being analyzed
+ * - imageUrl: URL/path of the analyzed image
+ * - facesDetected: Number of faces found in the image
+ * - faceCoordinates: JSONB array of face bounding boxes
+ *   - Each face contains: x, y, width, height, confidence, landmarks
+ * - processedImageUrl: URL of the image after face processing (blurred/cropped)
+ * - processingType: Type of processing applied ('blur', 'crop', 'detect_only')
+ * - metadata: Additional detection metadata
+ * - createdAt: When the detection was performed
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Face coordinates stored as normalized values (0-1) for resolution independence
+ * - Minimum confidence threshold of 0.5 for face detection
+ * - Landmarks include eyes, nose, mouth positions when available
+ * 
+ * Indexes:
+ * - face_detections_user_id_idx: User's detection history
+ * - face_detections_image_id_idx: Lookup by image
+ * - face_detections_created_at_idx: Time-based queries
+ */
+export const faceDetections = pgTable("face_detections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  imageId: varchar("image_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  facesDetected: integer("faces_detected").notNull().default(0),
+  faceCoordinates: jsonb("face_coordinates").$type<Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    confidence: number;
+    landmarks?: {
+      leftEye?: { x: number; y: number };
+      rightEye?: { x: number; y: number };
+      nose?: { x: number; y: number };
+      mouth?: { x: number; y: number };
+      leftEar?: { x: number; y: number };
+      rightEar?: { x: number; y: number };
+    };
+  }>>().notNull().default([]),
+  processedImageUrl: text("processed_image_url"),
+  processingType: text("processing_type", {
+    enum: ["blur", "crop", "detect_only", "anonymize"]
+  }),
+  metadata: jsonb("metadata").$type<{
+    modelVersion?: string;
+    processingTime?: number;
+    originalDimensions?: { width: number; height: number };
+    blurIntensity?: number;
+    cropSettings?: { aspectRatio?: string; padding?: number };
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("face_detections_user_id_idx").on(table.userId),
+  index("face_detections_image_id_idx").on(table.imageId),
+  index("face_detections_created_at_idx").on(table.createdAt),
+]);
+
+/**
+ * Privacy Settings Table
+ * 
+ * User-specific privacy preferences for face detection and processing.
+ * Controls automatic face blurring and recognition features.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete, unique constraint)
+ * - autoBlurFaces: Automatically blur detected faces in uploaded images
+ * - faceRecognitionEnabled: Allow face recognition for authentication
+ * - blurIntensity: Blur strength (1-10, default: 5)
+ * - excludedFaces: JSONB array of face IDs to exclude from auto-blur
+ * - privacyMode: Overall privacy level ('strict', 'balanced', 'minimal')
+ * - consentToProcessing: User consent for face data processing
+ * - dataRetentionDays: Days to retain face detection data (default: 30)
+ * - notifyOnFaceDetection: Send notification when faces are detected
+ * - allowGroupPhotoTagging: Allow tagging in group photos
+ * - createdAt: Settings creation timestamp
+ * - updatedAt: Last settings modification
+ * 
+ * Business Rules:
+ * - One privacy settings record per user (unique constraint)
+ * - Strict mode: auto-blur enabled, no recognition, 7-day retention
+ * - Balanced mode: selective blur, recognition for auth only
+ * - Minimal mode: no auto-blur, full features enabled
+ * - Face data auto-deleted after retention period expires
+ * 
+ * Indexes:
+ * - privacy_settings_user_id_idx: Unique user lookup
+ */
+export const privacySettings = pgTable("privacy_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  autoBlurFaces: boolean("auto_blur_faces").notNull().default(false),
+  faceRecognitionEnabled: boolean("face_recognition_enabled").notNull().default(true),
+  blurIntensity: integer("blur_intensity").notNull().default(5),
+  excludedFaces: jsonb("excluded_faces").$type<string[]>().default([]),
+  privacyMode: text("privacy_mode", {
+    enum: ["strict", "balanced", "minimal"]
+  }).notNull().default("balanced"),
+  consentToProcessing: boolean("consent_to_processing").notNull().default(false),
+  dataRetentionDays: integer("data_retention_days").notNull().default(30),
+  notifyOnFaceDetection: boolean("notify_on_face_detection").notNull().default(false),
+  allowGroupPhotoTagging: boolean("allow_group_photo_tagging").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("privacy_settings_user_id_idx").on(table.userId),
+]);
+
+// Face Detections Schemas
+export const insertFaceDetectionSchema = createInsertSchema(faceDetections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertFaceDetection = z.infer<typeof insertFaceDetectionSchema>;
+export type FaceDetection = typeof faceDetections.$inferSelect;
+
+// Privacy Settings Schemas
+export const insertPrivacySettingsSchema = createInsertSchema(privacySettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPrivacySettings = z.infer<typeof insertPrivacySettingsSchema>;
+export type PrivacySettings = typeof privacySettings.$inferSelect;
