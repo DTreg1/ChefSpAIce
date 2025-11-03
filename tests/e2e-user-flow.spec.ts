@@ -22,6 +22,23 @@ import { test, expect, type Page } from '@playwright/test';
  * - Use a local auth system for testing
  */
 
+// Test data constants
+const AUTH_PROVIDERS = [
+  'button-signup-google',
+  'button-signup-github',
+  'button-signup-x',
+  'button-signup-apple',
+  'button-signup-email'
+] as const;
+
+const LOGIN_PROVIDERS = [
+  'button-login-google',
+  'button-login-github',
+  'button-login-x',
+  'button-login-apple',
+  'button-login-email'
+] as const;
+
 test.describe('Complete E2E User Flow - Registration to Login', () => {
   // Since the application requires Replit Auth which needs external network access,
   // we'll focus on testing the UI components that are accessible without authentication
@@ -78,15 +95,8 @@ test.describe('Complete E2E User Flow - Registration to Login', () => {
     await page.getByTestId('tab-signup').click();
     await expect(page.getByText('Start Your Journey')).toBeVisible();
     
-    const signupProviders = [
-      'button-signup-google',
-      'button-signup-github',
-      'button-signup-x',
-      'button-signup-apple',
-      'button-signup-email'
-    ];
-    
-    for (const provider of signupProviders) {
+    // Verify all signup providers using constant
+    for (const provider of AUTH_PROVIDERS) {
       await expect(page.getByTestId(provider)).toBeVisible();
     }
     
@@ -94,22 +104,15 @@ test.describe('Complete E2E User Flow - Registration to Login', () => {
     await page.getByTestId('tab-login').click();
     await expect(page.getByText('Welcome Back!')).toBeVisible();
     
-    const loginProviders = [
-      'button-login-google',
-      'button-login-github',
-      'button-login-x',
-      'button-login-apple',
-      'button-login-email'
-    ];
-    
-    for (const provider of loginProviders) {
+    // Verify all login providers using constant
+    for (const provider of LOGIN_PROVIDERS) {
       await expect(page.getByTestId(provider)).toBeVisible();
     }
   });
 });
 
 test.describe('Authentication Flow Edge Cases', () => {
-  test('should redirect authenticated users away from landing page', async ({ page }) => {
+  test('should redirect authenticated users away from landing page', async ({ page, baseURL }) => {
     // This test verifies that if a user is already authenticated,
     // they should not see the landing page
     
@@ -119,10 +122,13 @@ test.describe('Authentication Flow Edge Cases', () => {
     await page.waitForLoadState('networkidle');
     
     const currentUrl = page.url();
+    const baseUrlPattern = baseURL || 'http://localhost:5000';
     
     // If authenticated, should be redirected to onboarding or main app
     // If not authenticated, should stay on landing page
-    if (currentUrl.endsWith('/') || currentUrl.includes('localhost:5000/')) {
+    const isRootUrl = currentUrl === `${baseUrlPattern}/` || currentUrl.endsWith('/');
+    
+    if (isRootUrl) {
       // We're on landing page (not authenticated)
       const signupTab = page.getByTestId('tab-signup');
       const isVisible = await signupTab.isVisible().catch(() => false);

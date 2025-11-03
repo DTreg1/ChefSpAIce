@@ -259,6 +259,8 @@ jobs:
       
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
+        # Note: Installing only chromium to optimize CI performance and cost.
+        # For full cross-browser testing, use: npx playwright install --with-deps
       
       - name: Setup database
         run: npm run db:push
