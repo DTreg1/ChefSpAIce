@@ -5,10 +5,10 @@
  * Handles churn prediction, user behavior analysis, and intervention generation.
  */
 
-import * as tf from '@tensorflow/tfjs-node';
 import OpenAI from 'openai';
 import { storage } from '../storage';
 import type { UserPrediction, InsertUserPrediction } from '@shared/schema';
+import { predictChurnLightweight } from './lightweightPrediction';
 
 // Initialize OpenAI client (uses Replit AI Integrations)
 const openai = new OpenAI({
@@ -37,155 +37,12 @@ interface PredictionFactors {
 }
 
 class PredictionService {
-  private churnModel: tf.LayersModel | null = null;
-  private behaviorModel: tf.LayersModel | null = null;
-  private modelInitialized = false;
+  private modelInitialized = true; // Lightweight models are always ready
 
   constructor() {
-    // Defer model initialization to avoid blocking server startup
-    setTimeout(() => this.initializeModels(), 1000);
+    console.log('✓ Lightweight prediction models initialized (no training required)');
   }
 
-  /**
-   * Initialize TensorFlow models
-   */
-  private async initializeModels() {
-    try {
-      // Create a simple churn prediction model
-      this.churnModel = tf.sequential({
-        layers: [
-          tf.layers.dense({
-            inputShape: [6], // 6 input features
-            units: 12,
-            activation: 'relu',
-          }),
-          tf.layers.dropout({ rate: 0.2 }),
-          tf.layers.dense({
-            units: 8,
-            activation: 'relu',
-          }),
-          tf.layers.dropout({ rate: 0.2 }),
-          tf.layers.dense({
-            units: 1,
-            activation: 'sigmoid', // Output probability between 0 and 1
-          }),
-        ],
-      });
-
-      // Compile the model
-      this.churnModel.compile({
-        optimizer: tf.train.adam(0.001),
-        loss: 'binaryCrossentropy',
-        metrics: ['accuracy'],
-      });
-
-      // Train with synthetic historical data for demonstration
-      await this.trainChurnModel();
-
-      // Create behavior prediction model
-      this.behaviorModel = tf.sequential({
-        layers: [
-          tf.layers.dense({
-            inputShape: [8],
-            units: 16,
-            activation: 'relu',
-          }),
-          tf.layers.dropout({ rate: 0.2 }),
-          tf.layers.dense({
-            units: 12,
-            activation: 'relu',
-          }),
-          tf.layers.dense({
-            units: 4, // 4 output classes for different behaviors
-            activation: 'softmax',
-          }),
-        ],
-      });
-
-      this.behaviorModel.compile({
-        optimizer: tf.train.adam(0.001),
-        loss: 'categoricalCrossentropy',
-        metrics: ['accuracy'],
-      });
-
-      this.modelInitialized = true;
-      console.log('TensorFlow models initialized successfully');
-    } catch (error) {
-      console.error('Error initializing TensorFlow models:', error);
-      this.modelInitialized = false;
-    }
-  }
-
-  /**
-   * Train the churn model with synthetic data
-   * In production, this would use real historical data
-   */
-  private async trainChurnModel() {
-    try {
-      // Generate synthetic training data
-      const numSamples = 1000;
-      const features: number[][] = [];
-      const labels: number[] = [];
-
-      for (let i = 0; i < numSamples; i++) {
-        // Generate features: [daysSinceActive, sessionCount, avgDuration, featuresUsed, contentCreated, activityTrend]
-        const daysSinceActive = Math.random() * 30;
-        const sessionCount = Math.random() * 100;
-        const avgDuration = Math.random() * 600;
-        const featuresUsed = Math.random() * 10;
-        const contentCreated = Math.random() * 50;
-        const activityTrend = Math.random() * 2 - 1;
-
-        features.push([
-          daysSinceActive / 30,
-          sessionCount / 100,
-          avgDuration / 600,
-          featuresUsed / 10,
-          contentCreated / 50,
-          activityTrend,
-        ]);
-
-        // Generate label based on rules (simulating real patterns)
-        let churnProb = 0;
-        if (daysSinceActive > 14) churnProb += 0.4;
-        if (sessionCount < 10) churnProb += 0.3;
-        if (avgDuration < 120) churnProb += 0.2;
-        if (featuresUsed < 3) churnProb += 0.2;
-        if (contentCreated < 5) churnProb += 0.2;
-        if (activityTrend < -0.3) churnProb += 0.3;
-
-        // Add noise and ensure 0-1 range
-        churnProb = Math.min(1, Math.max(0, churnProb + (Math.random() - 0.5) * 0.2));
-        labels.push(churnProb > 0.6 ? 1 : 0);
-      }
-
-      // Convert to tensors
-      const xs = tf.tensor2d(features);
-      const ys = tf.tensor2d(labels, [numSamples, 1]);
-
-      // Train the model
-      await this.churnModel!.fit(xs, ys, {
-        epochs: 20,
-        batchSize: 32,
-        validationSplit: 0.2,
-        callbacks: {
-          onEpochEnd: (epoch, logs) => {
-            if (epoch % 5 === 0) {
-              console.log(`Churn model training - Epoch ${epoch}: loss = ${logs?.loss?.toFixed(4)}, accuracy = ${logs?.acc?.toFixed(4)}`);
-            }
-          },
-        },
-      });
-
-      // Clean up tensors
-      xs.dispose();
-      ys.dispose();
-
-      console.log('Churn model trained successfully');
-    } catch (error) {
-      console.error('Error training churn model:', error);
-    }
-  }
 
   /**
    * Generate predictions for a user
@@ -229,38 +86,20 @@ class PredictionService {
    * Predict churn risk for a user
    */
   private async predictChurn(metrics: UserMetrics): Promise<InsertUserPrediction | null> {
-    if (!this.modelInitialized || !this.churnModel) {
-      return this.generateSimulatedChurnPrediction(metrics);
-    }
+    // Use lightweight prediction instead of TensorFlow
+    const probability = predictChurnLightweight(metrics);
+    
+    // Analyze factors
+    const factors = this.analyzeChurnFactors(metrics);
 
-    try {
-      // Prepare input features
-      const features = this.prepareChurnFeatures(metrics);
-      const input = tf.tensor2d([features]);
-      
-      // Make prediction
-      const prediction = this.churnModel.predict(input) as tf.Tensor;
-      const probability = (await prediction.data())[0];
-      
-      // Clean up tensors
-      input.dispose();
-      prediction.dispose();
-
-      // Analyze factors
-      const factors = this.analyzeChurnFactors(metrics);
-
-      return {
-        userId: metrics.userId,
-        predictionType: 'churn_risk',
-        probability,
-        factors,
-        status: 'pending',
-        createdAt: new Date(),
-      };
-    } catch (error) {
-      console.error('Error predicting churn:', error);
-      return this.generateSimulatedChurnPrediction(metrics);
-    }
+    return {
+      userId: metrics.userId,
+      predictionType: 'churn_risk',
+      probability,
+      factors,
+      status: 'pending',
+      createdAt: new Date(),
+    };
   }
 
   /**

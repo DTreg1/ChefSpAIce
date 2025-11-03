@@ -13,8 +13,8 @@
  */
 
 import { OpenAI } from 'openai';
-import * as tf from '@tensorflow/tfjs-node';
 import { storage } from '../storage';
+import { calculateEngagementProbability } from '../services/lightweightPrediction';
 import {
   type NotificationScores,
   type InsertNotificationScores,
@@ -39,70 +39,8 @@ export interface NotificationPayload {
 }
 
 export class IntelligentNotificationService {
-  private timingModel: tf.Sequential | null = null;
-  private modelInitialized = false;
-  private readonly MIN_TRAINING_SAMPLES = 20;
-
   constructor() {
-    // Defer model initialization to avoid blocking server startup
-    setTimeout(() => {
-      this.initializeModel().catch(console.error);
-    }, 2000);
-  }
-
-  /**
-   * Initialize or load the TensorFlow.js timing prediction model
-   */
-  private async initializeModel(): Promise<void> {
-    try {
-      // Try to load existing model from disk
-      const modelPath = './models/notification-timing';
-      
-      try {
-        this.timingModel = await tf.loadLayersModel(`file://${modelPath}/model.json`) as tf.Sequential;
-        console.log('Loaded existing timing prediction model');
-      } catch (error) {
-        // Create a new model if none exists
-        this.timingModel = this.createNewModel();
-        console.log('Created new timing prediction model');
-      }
-      
-      this.modelInitialized = true;
-    } catch (error) {
-      console.error('Error initializing timing model:', error);
-    }
-  }
-
-  /**
-   * Create a new TensorFlow.js model for timing prediction
-   */
-  private createNewModel(): tf.Sequential {
-    const model = tf.sequential({
-      layers: [
-        tf.layers.dense({
-          inputShape: [8], // hour, dayOfWeek, notificationType, userActiveHours, etc.
-          units: 16,
-          activation: 'relu',
-        }),
-        tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({
-          units: 8,
-          activation: 'relu',
-        }),
-        tf.layers.dense({
-          units: 1,
-          activation: 'sigmoid', // Output: probability of engagement
-        }),
-      ],
-    });
-
-    model.compile({
-      optimizer: tf.train.adam(0.001),
-      loss: 'binaryCrossentropy',
-      metrics: ['accuracy'],
-    });
-
-    return model;
+    console.log('✓ Lightweight notification timing model initialized (no training required)');
   }
 
   /**
@@ -228,25 +166,55 @@ export class IntelligentNotificationService {
       }
 
       // Get user engagement patterns
-      const engagementData = await storage.getRecentUserEngagement(userId, 30);
       const feedbackHistory = await storage.getNotificationFeedback(userId);
       
-      // If we have enough training data, use the model
-      if (this.modelInitialized && feedbackHistory.length >= this.MIN_TRAINING_SAMPLES) {
-        const prediction = await this.predictWithModel(
-          notification,
-          relevanceScore,
-          feedbackHistory,
-          prefs
+      // Use lightweight prediction
+      const now2 = new Date();
+      const hour = now2.getHours();
+      const dayOfWeek = now2.getDay();
+      
+      // Extract user's active hours from feedback history
+      const userActiveHours = feedbackHistory
+        .filter(f => f.engaged)
+        .map(f => new Date(f.timestamp).getHours())
+        .slice(0, 20); // Use last 20 engagements
+      
+      const engagementProb = calculateEngagementProbability(
+        hour,
+        dayOfWeek,
+        notification.type,
+        userActiveHours
+      );
+      
+      // Find best time in next 24 hours
+      let bestTime = now2;
+      let bestScore = engagementProb * relevanceScore;
+      
+      for (let hoursAhead = 1; hoursAhead <= 24; hoursAhead++) {
+        const futureTime = new Date(now2.getTime() + hoursAhead * 60 * 60 * 1000);
+        const futureHour = futureTime.getHours();
+        const futureDayOfWeek = futureTime.getDay();
+        
+        const futureEngagement = calculateEngagementProbability(
+          futureHour,
+          futureDayOfWeek,
+          notification.type,
+          userActiveHours
         );
         
-        if (prediction.confidence > 0.7) {
-          return prediction;
+        const score = futureEngagement * relevanceScore;
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestTime = futureTime;
         }
       }
-
-      // Fallback to heuristic-based prediction
-      return this.heuristicPrediction(notification, relevanceScore, feedbackHistory, prefs);
+      
+      return {
+        optimalTime: bestTime,
+        confidence: bestScore,
+        reason: `Optimal time based on user patterns (${Math.round(bestScore * 100)}% engagement probability)`,
+      };
     } catch (error) {
       console.error('Error predicting optimal delivery time:', error);
       

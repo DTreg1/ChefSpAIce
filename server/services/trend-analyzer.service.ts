@@ -5,10 +5,10 @@
  * patterns, and anomalies in various data sources.
  */
 
-import * as tf from '@tensorflow/tfjs-node';
 import { storage } from '../storage';
 import { InsertTrend } from '@shared/schema';
 import { openai } from '../openai';
+import { detectSimpleTrend, detectAnomalies, detectSeasonality } from './lightweightPrediction';
 
 interface TrendAnalysisConfig {
   dataSource: 'analytics' | 'feedback' | 'inventory' | 'recipes' | 'all';
@@ -39,47 +39,8 @@ interface DetectedTrend {
 }
 
 class TrendAnalyzerService {
-  private model: tf.LayersModel | null = null;
-  
   constructor() {
-    // Defer model initialization to avoid blocking server startup
-    setTimeout(() => this.initializeModel(), 1500);
-  }
-  
-  /**
-   * Initialize the TensorFlow.js model for trend detection
-   */
-  private async initializeModel() {
-    try {
-      // Create a simple LSTM model for time series analysis
-      this.model = tf.sequential({
-        layers: [
-          tf.layers.lstm({
-            units: 50,
-            returnSequences: true,
-            inputShape: [null, 1]
-          }),
-          tf.layers.dropout({ rate: 0.2 }),
-          tf.layers.lstm({
-            units: 50,
-            returnSequences: false
-          }),
-          tf.layers.dropout({ rate: 0.2 }),
-          tf.layers.dense({ units: 25, activation: 'relu' }),
-          tf.layers.dense({ units: 1 })
-        ]
-      });
-      
-      this.model.compile({
-        optimizer: tf.train.adam(0.001),
-        loss: 'meanSquaredError',
-        metrics: ['mse']
-      });
-      
-      console.log('✓ TensorFlow.js trend detection model initialized');
-    } catch (error) {
-      console.error('Error initializing TensorFlow model:', error);
-    }
+    console.log('✓ Lightweight trend detection initialized (no training required)');
   }
   
   /**
@@ -222,7 +183,8 @@ class TrendAnalyzerService {
   private detectMovingAverageTrend(data: TimeSeriesData): DetectedTrend | null {
     if (data.values.length < 7) return null;
     
-    // Calculate simple and exponential moving averages
+    // Use lightweight trend detection
+    const trend = detectSimpleTrend(data.values);
     const windowSize = Math.min(7, Math.floor(data.values.length / 3));
     const sma = this.calculateSMA(data.values, windowSize);
     const ema = this.calculateEMA(data.values, windowSize);
