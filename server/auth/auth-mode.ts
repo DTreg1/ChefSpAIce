@@ -39,6 +39,16 @@ export function getAuthMode(): AuthMode {
     return 'replit';
   }
   
+  // Check if we're in a Replit development environment
+  const isReplitEnv = !!(process.env.REPL_ID || process.env.REPLIT_DOMAINS);
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // In Replit development, prefer Replit Auth for easier development
+  if (isReplitEnv && isDevelopment) {
+    console.log('🏠 Using Replit Auth mode (Replit development environment)');
+    return 'replit';
+  }
+  
   // Check if OAuth credentials are FULLY configured (both ID and secret)
   const hasCompleteOAuthConfig = !!(
     (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) || 
@@ -47,14 +57,15 @@ export function getAuthMode(): AuthMode {
     (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID)
   );
   
+  // In production or non-Replit environments with OAuth config, use OAuth
   if (hasCompleteOAuthConfig) {
     console.log('🌐 Using OAuth mode (complete OAuth credentials detected)');
     return 'oauth';
   }
   
-  // Default to Replit Auth for Replit environments without OAuth config
-  if (process.env.REPL_ID || process.env.REPLIT_DOMAINS) {
-    console.log('🏠 Using Replit Auth mode (Replit environment, no OAuth config)');
+  // Default to Replit Auth for Replit environments
+  if (isReplitEnv) {
+    console.log('🏠 Using Replit Auth mode (Replit environment)');
     return 'replit';
   }
   
