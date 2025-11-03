@@ -79,6 +79,7 @@ const ValidationDemo = lazy(() => import("@/pages/validation-demo"));
 const RetentionDashboard = lazy(() => import("@/pages/RetentionDashboard"));
 const TrendsDashboard = lazy(() => import("@/pages/trends-dashboard"));
 const ABTesting = lazy(() => import("@/pages/ABTesting"));
+const CohortAnalysis = lazy(() => import("@/pages/CohortAnalysis"));
 
 function AuthenticatedRouter() {
   return (
@@ -135,6 +136,7 @@ function AuthenticatedRouter() {
         <Route path="/retention-dashboard" component={RetentionDashboard} />
         <Route path="/trends-dashboard" component={TrendsDashboard} />
         <Route path="/ab-testing" component={ABTesting} />
+        <Route path="/cohort-analysis" component={CohortAnalysis} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
