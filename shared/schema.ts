@@ -76,7 +76,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, real, uniqueIndex, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, real, uniqueIndex, date, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -7708,3 +7708,175 @@ export const insertExtractedDataSchema = createInsertSchema(extractedData).omit(
 
 export type InsertExtractedData = z.infer<typeof insertExtractedDataSchema>;
 export type ExtractedData = typeof extractedData.$inferSelect;
+
+/**
+ * Dynamic Pricing Rules Table
+ * 
+ * Stores pricing rules and configuration for each product.
+ * Uses AI to optimize prices based on multiple factors.
+ * 
+ * Structure:
+ * - id: Unique pricing rule identifier
+ * - productId: Link to product/recipe being priced
+ * - productName: Name of the product for display
+ * - basePrise: Standard price point
+ * - minPrice: Floor price (never go below)
+ * - maxPrice: Ceiling price (never exceed)
+ * - factors: Dynamic pricing factors and weights
+ * - isActive: Whether rule is currently active
+ * - metadata: Additional configuration
+ */
+export const pricingRules = pgTable("pricing_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull(),
+  productName: varchar("product_name").notNull(),
+  basePrice: real("base_price").notNull(),
+  minPrice: real("min_price").notNull(),
+  maxPrice: real("max_price").notNull(),
+  factors: jsonb("factors").$type<{
+    demandWeight?: number; // 0-1 weight for demand factor
+    competitionWeight?: number; // 0-1 weight for competition
+    inventoryWeight?: number; // 0-1 weight for inventory levels
+    behaviorWeight?: number; // 0-1 weight for user behavior
+    seasonalWeight?: number; // 0-1 weight for seasonal trends
+    elasticity?: number; // Price elasticity coefficient
+    demandThresholds?: {
+      high: number; // Threshold for high demand
+      low: number; // Threshold for low demand
+    };
+    inventoryThresholds?: {
+      high: number; // Threshold for high inventory
+      low: number; // Threshold for low inventory
+    };
+  }>().notNull().default({}),
+  isActive: boolean("is_active").notNull().default(true),
+  metadata: jsonb("metadata").$type<{
+    category?: string;
+    tags?: string[];
+    competitors?: string[];
+    updateFrequency?: string; // hourly, daily, weekly
+    lastOptimized?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("pricing_rules_product_id_idx").on(table.productId),
+  index("pricing_rules_is_active_idx").on(table.isActive),
+]);
+
+/**
+ * Price History Table
+ * 
+ * Tracks all price changes over time for analysis and learning.
+ * Used to train ML models and identify patterns.
+ * 
+ * Structure:
+ * - id: Unique history entry identifier
+ * - productId: Product being tracked
+ * - price: The price at this point in time
+ * - previousPrice: Price before this change
+ * - changeReason: Why the price changed
+ * - demandLevel: Demand metric at time of change
+ * - inventoryLevel: Stock level at time of change
+ * - competitorPrice: Average competitor price
+ * - changedAt: When the price changed
+ */
+export const priceHistory = pgTable("price_history", {
+  id: serial("id").primaryKey(),
+  productId: varchar("product_id").notNull(),
+  price: real("price").notNull(),
+  previousPrice: real("previous_price"),
+  changeReason: varchar("change_reason"), // demand_surge, inventory_high, competition, manual, scheduled
+  demandLevel: real("demand_level"), // 0-100 demand score
+  inventoryLevel: real("inventory_level"), // 0-100 inventory score
+  competitorPrice: real("competitor_price"),
+  metadata: jsonb("metadata").$type<{
+    demandMetrics?: {
+      views?: number;
+      clicks?: number;
+      conversions?: number;
+      cartAdds?: number;
+    };
+    competitorData?: Array<{
+      name: string;
+      price: number;
+      source: string;
+    }>;
+    weatherImpact?: string;
+    eventImpact?: string;
+  }>(),
+  changedAt: timestamp("changed_at").defaultNow(),
+}, (table) => [
+  index("price_history_product_id_idx").on(table.productId),
+  index("price_history_changed_at_idx").on(table.changedAt),
+]);
+
+/**
+ * Pricing Performance Table
+ * 
+ * Tracks performance metrics for different price points.
+ * Used to measure effectiveness and optimize future pricing.
+ * 
+ * Structure:
+ * - id: Unique performance record identifier
+ * - productId: Product being measured
+ * - pricePoint: The price being evaluated
+ * - periodStart: Start of measurement period
+ * - periodEnd: End of measurement period
+ * - conversionRate: Sales conversion rate at this price
+ * - revenue: Total revenue generated
+ * - unitsSold: Number of units sold
+ * - profit: Calculated profit
+ */
+export const pricingPerformance = pgTable("pricing_performance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull(),
+  pricePoint: real("price_point").notNull(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  conversionRate: real("conversion_rate"), // 0-1 conversion percentage
+  revenue: real("revenue").notNull().default(0),
+  unitsSold: integer("units_sold").notNull().default(0),
+  profit: real("profit"),
+  metrics: jsonb("metrics").$type<{
+    avgOrderValue?: number;
+    repeatPurchaseRate?: number;
+    customerSatisfaction?: number;
+    cartAbandonmentRate?: number;
+    competitivePosition?: string; // below_market, at_market, above_market
+    marginPercentage?: number;
+    elasticityScore?: number; // How sensitive demand was to price
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("pricing_performance_product_id_idx").on(table.productId),
+  index("pricing_performance_period_idx").on(table.periodStart, table.periodEnd),
+]);
+
+// Pricing Rules Schemas
+export const insertPricingRulesSchema = createInsertSchema(pricingRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPricingRules = z.infer<typeof insertPricingRulesSchema>;
+export type PricingRules = typeof pricingRules.$inferSelect;
+
+// Price History Schemas
+export const insertPriceHistorySchema = createInsertSchema(priceHistory).omit({
+  id: true,
+  changedAt: true,
+});
+
+export type InsertPriceHistory = z.infer<typeof insertPriceHistorySchema>;
+export type PriceHistory = typeof priceHistory.$inferSelect;
+
+// Pricing Performance Schemas
+export const insertPricingPerformanceSchema = createInsertSchema(pricingPerformance).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPricingPerformance = z.infer<typeof insertPricingPerformanceSchema>;
+export type PricingPerformance = typeof pricingPerformance.$inferSelect;

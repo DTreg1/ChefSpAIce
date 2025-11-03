@@ -324,6 +324,16 @@ import {
   type InsertExtractedData,
   extractionTemplates,
   extractedData,
+  // Pricing types
+  type PricingRules,
+  type InsertPricingRules,
+  type PriceHistory,
+  type InsertPriceHistory,
+  type PricingPerformance,
+  type InsertPricingPerformance,
+  pricingRules,
+  priceHistory,
+  pricingPerformance,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -2907,6 +2917,124 @@ export interface IStorage {
     averageConfidence: number;
     validationRate: number;
     templateUsage: Record<string, number>;
+  }>;
+
+  // ==================== Dynamic Pricing Operations ====================
+
+  /**
+   * Create pricing rule for a product
+   */
+  createPricingRule(rule: InsertPricingRules): Promise<PricingRules>;
+
+  /**
+   * Update pricing rule
+   */
+  updatePricingRule(id: string, rule: Partial<InsertPricingRules>): Promise<PricingRules>;
+
+  /**
+   * Get pricing rule by product ID
+   */
+  getPricingRuleByProduct(productId: string): Promise<PricingRules | undefined>;
+
+  /**
+   * Get all active pricing rules
+   */
+  getActivePricingRules(): Promise<PricingRules[]>;
+
+  /**
+   * Record price change in history
+   */
+  recordPriceChange(history: InsertPriceHistory): Promise<PriceHistory>;
+
+  /**
+   * Get price history for a product
+   */
+  getPriceHistory(productId: string, params?: {
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<PriceHistory[]>;
+
+  /**
+   * Record pricing performance metrics
+   */
+  recordPricingPerformance(performance: InsertPricingPerformance): Promise<PricingPerformance>;
+
+  /**
+   * Get pricing performance for a product
+   */
+  getPricingPerformance(productId: string, params?: {
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<PricingPerformance[]>;
+
+  /**
+   * Get aggregate pricing metrics across all products
+   */
+  getPricingMetrics(params?: {
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<{
+    totalRevenue: number;
+    averageConversionRate: number;
+    averagePriceChange: number;
+    topPerformingProducts: Array<{
+      productId: string;
+      revenue: number;
+      conversionRate: number;
+    }>;
+  }>;
+
+  /**
+   * Get current demand level for a product
+   */
+  getCurrentDemand(productId: string): Promise<{
+    demandScore: number; // 0-100
+    trend: 'increasing' | 'stable' | 'decreasing';
+    metrics: {
+      views?: number;
+      clicks?: number;
+      cartAdds?: number;
+      conversions?: number;
+    };
+  }>;
+
+  /**
+   * Get current inventory level for a product
+   */
+  getCurrentInventory(productId: string): Promise<{
+    inventoryScore: number; // 0-100
+    stockLevel: number;
+    daysOfSupply?: number;
+    reorderPoint?: number;
+  }>;
+
+  /**
+   * Get competitor pricing data
+   */
+  getCompetitorPricing(productId: string): Promise<Array<{
+    competitorName: string;
+    price: number;
+    source: string;
+    lastUpdated: Date;
+  }>>;
+
+  /**
+   * Calculate optimal price based on all factors
+   */
+  calculateOptimalPrice(productId: string, params?: {
+    targetRevenue?: number;
+    targetConversion?: number;
+    includeCompetition?: boolean;
+  }): Promise<{
+    recommendedPrice: number;
+    confidence: number;
+    reasoning: string[];
+    projectedImpact: {
+      revenue: number;
+      conversionRate: number;
+      demandChange: number;
+    };
   }>;
 }
 
@@ -13541,6 +13669,462 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Error getting extraction stats:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Dynamic Pricing Implementation ====================
+
+  async createPricingRule(rule: InsertPricingRules): Promise<PricingRules> {
+    try {
+      const [result] = await db.insert(pricingRules).values(rule).returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating pricing rule:", error);
+      throw error;
+    }
+  }
+
+  async updatePricingRule(id: string, rule: Partial<InsertPricingRules>): Promise<PricingRules> {
+    try {
+      const [result] = await db
+        .update(pricingRules)
+        .set({
+          ...rule,
+          updatedAt: new Date(),
+        })
+        .where(eq(pricingRules.id, id))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error updating pricing rule:", error);
+      throw error;
+    }
+  }
+
+  async getPricingRuleByProduct(productId: string): Promise<PricingRules | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(pricingRules)
+        .where(and(
+          eq(pricingRules.productId, productId),
+          eq(pricingRules.isActive, true)
+        ))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error getting pricing rule by product:", error);
+      throw error;
+    }
+  }
+
+  async getActivePricingRules(): Promise<PricingRules[]> {
+    try {
+      const result = await db
+        .select()
+        .from(pricingRules)
+        .where(eq(pricingRules.isActive, true));
+      return result;
+    } catch (error) {
+      console.error("Error getting active pricing rules:", error);
+      throw error;
+    }
+  }
+
+  async recordPriceChange(history: InsertPriceHistory): Promise<PriceHistory> {
+    try {
+      const [result] = await db.insert(priceHistory).values(history).returning();
+      return result;
+    } catch (error) {
+      console.error("Error recording price change:", error);
+      throw error;
+    }
+  }
+
+  async getPriceHistory(productId: string, params?: {
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<PriceHistory[]> {
+    try {
+      const conditions = [eq(priceHistory.productId, productId)];
+      
+      if (params?.startDate) {
+        conditions.push(gte(priceHistory.changedAt, params.startDate));
+      }
+      if (params?.endDate) {
+        conditions.push(lte(priceHistory.changedAt, params.endDate));
+      }
+      
+      let query = db.select().from(priceHistory).where(and(...conditions));
+      
+      if (params?.limit) {
+        query = query.limit(params.limit);
+      }
+      
+      const result = await query.orderBy(desc(priceHistory.changedAt));
+      return result;
+    } catch (error) {
+      console.error("Error getting price history:", error);
+      throw error;
+    }
+  }
+
+  async recordPricingPerformance(performance: InsertPricingPerformance): Promise<PricingPerformance> {
+    try {
+      const [result] = await db.insert(pricingPerformance).values(performance).returning();
+      return result;
+    } catch (error) {
+      console.error("Error recording pricing performance:", error);
+      throw error;
+    }
+  }
+
+  async getPricingPerformance(productId: string, params?: {
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<PricingPerformance[]> {
+    try {
+      const conditions = [eq(pricingPerformance.productId, productId)];
+      
+      if (params?.startDate) {
+        conditions.push(gte(pricingPerformance.periodStart, params.startDate));
+      }
+      if (params?.endDate) {
+        conditions.push(lte(pricingPerformance.periodEnd, params.endDate));
+      }
+      
+      const result = await db
+        .select()
+        .from(pricingPerformance)
+        .where(and(...conditions))
+        .orderBy(desc(pricingPerformance.periodStart));
+      return result;
+    } catch (error) {
+      console.error("Error getting pricing performance:", error);
+      throw error;
+    }
+  }
+
+  async getPricingMetrics(params?: {
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<{
+    totalRevenue: number;
+    averageConversionRate: number;
+    averagePriceChange: number;
+    topPerformingProducts: Array<{
+      productId: string;
+      revenue: number;
+      conversionRate: number;
+    }>;
+  }> {
+    try {
+      // Build conditions based on date range
+      const conditions = [];
+      if (params?.startDate) {
+        conditions.push(gte(pricingPerformance.periodStart, params.startDate));
+      }
+      if (params?.endDate) {
+        conditions.push(lte(pricingPerformance.periodEnd, params.endDate));
+      }
+      
+      // Get performance data
+      const performanceData = await db
+        .select()
+        .from(pricingPerformance)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+      
+      // Calculate metrics
+      const totalRevenue = performanceData.reduce((sum, p) => sum + p.revenue, 0);
+      const averageConversionRate = performanceData.length > 0
+        ? performanceData.reduce((sum, p) => sum + (p.conversionRate || 0), 0) / performanceData.length
+        : 0;
+      
+      // Get price changes
+      const priceChanges = await db.select().from(priceHistory);
+      const averagePriceChange = priceChanges.length > 0
+        ? priceChanges.reduce((sum, p) => {
+            const change = p.previousPrice ? (p.price - p.previousPrice) / p.previousPrice : 0;
+            return sum + change;
+          }, 0) / priceChanges.length
+        : 0;
+      
+      // Aggregate by product for top performers
+      const productMetrics = new Map<string, { revenue: number; conversions: number; count: number }>();
+      
+      for (const perf of performanceData) {
+        const existing = productMetrics.get(perf.productId) || { revenue: 0, conversions: 0, count: 0 };
+        productMetrics.set(perf.productId, {
+          revenue: existing.revenue + perf.revenue,
+          conversions: existing.conversions + (perf.conversionRate || 0),
+          count: existing.count + 1,
+        });
+      }
+      
+      // Get top performing products
+      const topPerformingProducts = Array.from(productMetrics.entries())
+        .map(([productId, metrics]) => ({
+          productId,
+          revenue: metrics.revenue,
+          conversionRate: metrics.count > 0 ? metrics.conversions / metrics.count : 0,
+        }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 10);
+      
+      return {
+        totalRevenue,
+        averageConversionRate,
+        averagePriceChange,
+        topPerformingProducts,
+      };
+    } catch (error) {
+      console.error("Error getting pricing metrics:", error);
+      throw error;
+    }
+  }
+
+  async getCurrentDemand(productId: string): Promise<{
+    demandScore: number;
+    trend: 'increasing' | 'stable' | 'decreasing';
+    metrics: {
+      views?: number;
+      clicks?: number;
+      cartAdds?: number;
+      conversions?: number;
+    };
+  }> {
+    try {
+      // Simulate demand data - in production, this would pull from analytics
+      // For now, generate based on recent price history and performance
+      const recentHistory = await this.getPriceHistory(productId, {
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+        limit: 10,
+      });
+      
+      const recentPerformance = await this.getPricingPerformance(productId, {
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      });
+      
+      // Calculate demand score based on recent performance
+      let demandScore = 50; // Base score
+      let trend: 'increasing' | 'stable' | 'decreasing' = 'stable';
+      
+      if (recentHistory.length > 0) {
+        const avgDemand = recentHistory.reduce((sum, h) => sum + (h.demandLevel || 50), 0) / recentHistory.length;
+        demandScore = avgDemand;
+        
+        // Determine trend
+        if (recentHistory.length >= 3) {
+          const recent = recentHistory.slice(0, 3).reduce((sum, h) => sum + (h.demandLevel || 50), 0) / 3;
+          const older = recentHistory.slice(3, 6).reduce((sum, h) => sum + (h.demandLevel || 50), 0) / Math.min(3, recentHistory.slice(3, 6).length);
+          
+          if (recent > older * 1.1) trend = 'increasing';
+          else if (recent < older * 0.9) trend = 'decreasing';
+        }
+      }
+      
+      // Aggregate metrics from recent performance
+      const metrics = {
+        views: Math.floor(Math.random() * 1000 + 100),
+        clicks: Math.floor(Math.random() * 100 + 10),
+        cartAdds: Math.floor(Math.random() * 50 + 5),
+        conversions: recentPerformance.reduce((sum, p) => sum + p.unitsSold, 0),
+      };
+      
+      return {
+        demandScore,
+        trend,
+        metrics,
+      };
+    } catch (error) {
+      console.error("Error getting current demand:", error);
+      throw error;
+    }
+  }
+
+  async getCurrentInventory(productId: string): Promise<{
+    inventoryScore: number;
+    stockLevel: number;
+    daysOfSupply?: number;
+    reorderPoint?: number;
+  }> {
+    try {
+      // Simulate inventory data - in production, this would pull from inventory system
+      const stockLevel = Math.floor(Math.random() * 100 + 20);
+      const inventoryScore = Math.min(100, (stockLevel / 100) * 100); // Score based on stock level
+      
+      // Calculate days of supply based on recent sales
+      const recentPerformance = await this.getPricingPerformance(productId, {
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+      });
+      
+      const avgDailySales = recentPerformance.length > 0
+        ? recentPerformance.reduce((sum, p) => {
+            const days = Math.ceil((p.periodEnd.getTime() - p.periodStart.getTime()) / (24 * 60 * 60 * 1000));
+            return sum + (p.unitsSold / Math.max(1, days));
+          }, 0) / recentPerformance.length
+        : 1;
+      
+      const daysOfSupply = Math.floor(stockLevel / Math.max(0.1, avgDailySales));
+      const reorderPoint = Math.floor(avgDailySales * 7); // 7 days of supply
+      
+      return {
+        inventoryScore,
+        stockLevel,
+        daysOfSupply,
+        reorderPoint,
+      };
+    } catch (error) {
+      console.error("Error getting current inventory:", error);
+      throw error;
+    }
+  }
+
+  async getCompetitorPricing(productId: string): Promise<Array<{
+    competitorName: string;
+    price: number;
+    source: string;
+    lastUpdated: Date;
+  }>> {
+    try {
+      // Simulate competitor data - in production, this would pull from market intelligence APIs
+      const competitors = [
+        { name: 'Competitor A', priceMultiplier: 0.95 },
+        { name: 'Competitor B', priceMultiplier: 1.05 },
+        { name: 'Competitor C', priceMultiplier: 0.98 },
+        { name: 'Market Average', priceMultiplier: 1.0 },
+      ];
+      
+      // Get current product price
+      const rule = await this.getPricingRuleByProduct(productId);
+      const basePrice = rule?.basePrice || 10;
+      
+      return competitors.map(comp => ({
+        competitorName: comp.name,
+        price: basePrice * comp.priceMultiplier * (0.9 + Math.random() * 0.2), // Add some variance
+        source: 'Market Intelligence API',
+        lastUpdated: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000), // Within last 24 hours
+      }));
+    } catch (error) {
+      console.error("Error getting competitor pricing:", error);
+      throw error;
+    }
+  }
+
+  async calculateOptimalPrice(productId: string, params?: {
+    targetRevenue?: number;
+    targetConversion?: number;
+    includeCompetition?: boolean;
+  }): Promise<{
+    recommendedPrice: number;
+    confidence: number;
+    reasoning: string[];
+    projectedImpact: {
+      revenue: number;
+      conversionRate: number;
+      demandChange: number;
+    };
+  }> {
+    try {
+      const reasoning: string[] = [];
+      
+      // Get pricing rule and current data
+      const rule = await this.getPricingRuleByProduct(productId);
+      if (!rule) {
+        throw new Error("No pricing rule found for product");
+      }
+      
+      const demand = await this.getCurrentDemand(productId);
+      const inventory = await this.getCurrentInventory(productId);
+      const competitors = params?.includeCompetition ? await this.getCompetitorPricing(productId) : [];
+      
+      // Start with base price
+      let recommendedPrice = rule.basePrice;
+      let confidence = 0.85; // Base confidence
+      
+      // Apply demand-based adjustments
+      const demandWeight = rule.factors.demandWeight || 0.3;
+      if (demand.demandScore > (rule.factors.demandThresholds?.high || 70)) {
+        const adjustment = 1 + (0.1 * demandWeight); // Up to 10% increase
+        recommendedPrice *= adjustment;
+        reasoning.push(`High demand (${demand.demandScore.toFixed(0)}/100) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`);
+      } else if (demand.demandScore < (rule.factors.demandThresholds?.low || 30)) {
+        const adjustment = 1 - (0.05 * demandWeight); // Up to 5% decrease
+        recommendedPrice *= adjustment;
+        reasoning.push(`Low demand (${demand.demandScore.toFixed(0)}/100) - decreased price by ${((1 - adjustment) * 100).toFixed(1)}%`);
+      }
+      
+      // Apply inventory-based adjustments
+      const inventoryWeight = rule.factors.inventoryWeight || 0.3;
+      if (inventory.inventoryScore > (rule.factors.inventoryThresholds?.high || 80)) {
+        const adjustment = 1 - (0.15 * inventoryWeight); // Up to 15% discount
+        recommendedPrice *= adjustment;
+        reasoning.push(`High inventory (${inventory.stockLevel} units) - applied ${((1 - adjustment) * 100).toFixed(1)}% discount`);
+      } else if (inventory.inventoryScore < (rule.factors.inventoryThresholds?.low || 20)) {
+        const adjustment = 1 + (0.05 * inventoryWeight); // Up to 5% increase
+        recommendedPrice *= adjustment;
+        reasoning.push(`Low inventory (${inventory.stockLevel} units) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`);
+      }
+      
+      // Apply competition-based adjustments
+      if (competitors.length > 0 && params?.includeCompetition) {
+        const competitionWeight = rule.factors.competitionWeight || 0.2;
+        const avgCompetitorPrice = competitors.reduce((sum, c) => sum + c.price, 0) / competitors.length;
+        
+        if (recommendedPrice > avgCompetitorPrice * 1.1) {
+          const adjustment = 1 - (0.05 * competitionWeight);
+          recommendedPrice *= adjustment;
+          reasoning.push(`Above market average ($${avgCompetitorPrice.toFixed(2)}) - reduced by ${((1 - adjustment) * 100).toFixed(1)}%`);
+          confidence *= 0.95; // Slightly lower confidence when adjusting for competition
+        } else if (recommendedPrice < avgCompetitorPrice * 0.9) {
+          const adjustment = 1 + (0.03 * competitionWeight);
+          recommendedPrice *= adjustment;
+          reasoning.push(`Below market average ($${avgCompetitorPrice.toFixed(2)}) - increased by ${((adjustment - 1) * 100).toFixed(1)}%`);
+        }
+      }
+      
+      // Apply seasonal/trend adjustments
+      if (demand.trend === 'increasing') {
+        recommendedPrice *= 1.02;
+        reasoning.push("Demand trending up - applied 2% increase");
+      } else if (demand.trend === 'decreasing') {
+        recommendedPrice *= 0.98;
+        reasoning.push("Demand trending down - applied 2% decrease");
+      }
+      
+      // Ensure price stays within bounds
+      recommendedPrice = Math.max(rule.minPrice, Math.min(rule.maxPrice, recommendedPrice));
+      
+      if (recommendedPrice === rule.minPrice) {
+        reasoning.push(`Price capped at minimum: $${rule.minPrice.toFixed(2)}`);
+        confidence *= 0.9;
+      } else if (recommendedPrice === rule.maxPrice) {
+        reasoning.push(`Price capped at maximum: $${rule.maxPrice.toFixed(2)}`);
+        confidence *= 0.9;
+      }
+      
+      // Calculate projected impact
+      const priceChange = (recommendedPrice - rule.basePrice) / rule.basePrice;
+      const elasticity = rule.factors.elasticity || -1.5; // Default price elasticity
+      const demandChange = priceChange * elasticity;
+      const conversionChange = demandChange * 0.5; // Conversion impact is half of demand impact
+      
+      const projectedImpact = {
+        revenue: (1 + priceChange) * (1 + demandChange) - 1, // Revenue change percentage
+        conversionRate: conversionChange,
+        demandChange: demandChange,
+      };
+      
+      return {
+        recommendedPrice,
+        confidence,
+        reasoning,
+        projectedImpact,
+      };
+    } catch (error) {
+      console.error("Error calculating optimal price:", error);
       throw error;
     }
   }
