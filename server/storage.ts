@@ -347,6 +347,13 @@ import {
   type InsertPrivacySettings,
   faceDetections,
   privacySettings,
+  // OCR types and tables
+  type OcrResult,
+  type InsertOcrResult,
+  type OcrCorrection,
+  type InsertOcrCorrection,
+  ocrResults,
+  ocrCorrections,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -3177,6 +3184,110 @@ export interface IStorage {
    * @param daysOld - Delete detections older than this many days
    */
   cleanupOldFaceDetections(userId: string, daysOld: number): Promise<number>;
+
+  // ==================== OCR Operations ====================
+
+  /**
+   * Create OCR result from processed image/document
+   * @param userId - User ID
+   * @param result - OCR result data
+   */
+  createOcrResult(
+    userId: string,
+    result: Omit<InsertOcrResult, "userId">
+  ): Promise<OcrResult>;
+
+  /**
+   * Get OCR results for a user
+   * @param userId - User ID
+   * @param limit - Maximum number of results
+   */
+  getOcrResults(userId: string, limit?: number): Promise<OcrResult[]>;
+
+  /**
+   * Get OCR result by image ID
+   * @param userId - User ID
+   * @param imageId - Image/document ID
+   */
+  getOcrResultByImageId(
+    userId: string,
+    imageId: string
+  ): Promise<OcrResult | undefined>;
+
+  /**
+   * Get OCR result by ID
+   * @param userId - User ID
+   * @param resultId - OCR result ID
+   */
+  getOcrResultById(
+    userId: string,
+    resultId: string
+  ): Promise<OcrResult | undefined>;
+
+  /**
+   * Update OCR result
+   * @param userId - User ID
+   * @param resultId - Result ID
+   * @param updates - Updates to apply
+   */
+  updateOcrResult(
+    userId: string,
+    resultId: string,
+    updates: Partial<Omit<InsertOcrResult, "userId">>
+  ): Promise<OcrResult>;
+
+  /**
+   * Delete OCR result
+   * @param userId - User ID
+   * @param resultId - Result ID
+   */
+  deleteOcrResult(userId: string, resultId: string): Promise<void>;
+
+  /**
+   * Create OCR correction
+   * @param userId - User ID
+   * @param correction - Correction data
+   */
+  createOcrCorrection(
+    userId: string,
+    correction: Omit<InsertOcrCorrection, "userId">
+  ): Promise<OcrCorrection>;
+
+  /**
+   * Get corrections for an OCR result
+   * @param userId - User ID
+   * @param resultId - OCR result ID
+   */
+  getOcrCorrections(
+    userId: string,
+    resultId: string
+  ): Promise<OcrCorrection[]>;
+
+  /**
+   * Update OCR correction
+   * @param userId - User ID
+   * @param correctionId - Correction ID
+   * @param updates - Updates to apply
+   */
+  updateOcrCorrection(
+    userId: string,
+    correctionId: string,
+    updates: Partial<Omit<InsertOcrCorrection, "userId">>
+  ): Promise<OcrCorrection>;
+
+  /**
+   * Delete OCR correction
+   * @param userId - User ID
+   * @param correctionId - Correction ID
+   */
+  deleteOcrCorrection(userId: string, correctionId: string): Promise<void>;
+
+  /**
+   * Get all user corrections history
+   * @param userId - User ID
+   * @param limit - Maximum number of results
+   */
+  getUserCorrections(userId: string, limit?: number): Promise<OcrCorrection[]>;
 }
 
 /**
@@ -14700,6 +14811,274 @@ export class DatabaseStorage implements IStorage {
       return deleted.length;
     } catch (error) {
       console.error("Error cleaning up old face detections:", error);
+      throw error;
+    }
+  }
+
+  // ==================== OCR Operations ====================
+
+  /**
+   * Create OCR result from processed image/document
+   */
+  async createOcrResult(
+    userId: string,
+    result: Omit<InsertOcrResult, "userId">
+  ): Promise<OcrResult> {
+    try {
+      const [created] = await db
+        .insert(ocrResults)
+        .values({
+          ...result,
+          userId,
+        })
+        .returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating OCR result:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get OCR results for a user
+   */
+  async getOcrResults(userId: string, limit?: number): Promise<OcrResult[]> {
+    try {
+      const query = db
+        .select()
+        .from(ocrResults)
+        .where(eq(ocrResults.userId, userId))
+        .orderBy(desc(ocrResults.createdAt));
+      
+      if (limit) {
+        query.limit(limit);
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting OCR results:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get OCR result by image ID
+   */
+  async getOcrResultByImageId(
+    userId: string,
+    imageId: string
+  ): Promise<OcrResult | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(ocrResults)
+        .where(
+          and(
+            eq(ocrResults.userId, userId),
+            eq(ocrResults.imageId, imageId)
+          )
+        );
+      return result;
+    } catch (error) {
+      console.error("Error getting OCR result by image ID:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get OCR result by ID
+   */
+  async getOcrResultById(
+    userId: string,
+    resultId: string
+  ): Promise<OcrResult | undefined> {
+    try {
+      const [result] = await db
+        .select()
+        .from(ocrResults)
+        .where(
+          and(
+            eq(ocrResults.userId, userId),
+            eq(ocrResults.id, resultId)
+          )
+        );
+      return result;
+    } catch (error) {
+      console.error("Error getting OCR result by ID:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update OCR result
+   */
+  async updateOcrResult(
+    userId: string,
+    resultId: string,
+    updates: Partial<Omit<InsertOcrResult, "userId">>
+  ): Promise<OcrResult> {
+    try {
+      const [updated] = await db
+        .update(ocrResults)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(ocrResults.userId, userId),
+            eq(ocrResults.id, resultId)
+          )
+        )
+        .returning();
+      
+      if (!updated) {
+        throw new Error("OCR result not found");
+      }
+      
+      return updated;
+    } catch (error) {
+      console.error("Error updating OCR result:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete OCR result
+   */
+  async deleteOcrResult(userId: string, resultId: string): Promise<void> {
+    try {
+      await db
+        .delete(ocrResults)
+        .where(
+          and(
+            eq(ocrResults.userId, userId),
+            eq(ocrResults.id, resultId)
+          )
+        );
+    } catch (error) {
+      console.error("Error deleting OCR result:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create OCR correction
+   */
+  async createOcrCorrection(
+    userId: string,
+    correction: Omit<InsertOcrCorrection, "userId">
+  ): Promise<OcrCorrection> {
+    try {
+      const [created] = await db
+        .insert(ocrCorrections)
+        .values({
+          ...correction,
+          userId,
+        })
+        .returning();
+      return created;
+    } catch (error) {
+      console.error("Error creating OCR correction:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get corrections for an OCR result
+   */
+  async getOcrCorrections(
+    userId: string,
+    resultId: string
+  ): Promise<OcrCorrection[]> {
+    try {
+      return await db
+        .select()
+        .from(ocrCorrections)
+        .where(
+          and(
+            eq(ocrCorrections.userId, userId),
+            eq(ocrCorrections.resultId, resultId)
+          )
+        )
+        .orderBy(desc(ocrCorrections.createdAt));
+    } catch (error) {
+      console.error("Error getting OCR corrections:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update OCR correction
+   */
+  async updateOcrCorrection(
+    userId: string,
+    correctionId: string,
+    updates: Partial<Omit<InsertOcrCorrection, "userId">>
+  ): Promise<OcrCorrection> {
+    try {
+      const [updated] = await db
+        .update(ocrCorrections)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(ocrCorrections.userId, userId),
+            eq(ocrCorrections.id, correctionId)
+          )
+        )
+        .returning();
+      
+      if (!updated) {
+        throw new Error("OCR correction not found");
+      }
+      
+      return updated;
+    } catch (error) {
+      console.error("Error updating OCR correction:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete OCR correction
+   */
+  async deleteOcrCorrection(userId: string, correctionId: string): Promise<void> {
+    try {
+      await db
+        .delete(ocrCorrections)
+        .where(
+          and(
+            eq(ocrCorrections.userId, userId),
+            eq(ocrCorrections.id, correctionId)
+          )
+        );
+    } catch (error) {
+      console.error("Error deleting OCR correction:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all user corrections history
+   */
+  async getUserCorrections(userId: string, limit?: number): Promise<OcrCorrection[]> {
+    try {
+      const query = db
+        .select()
+        .from(ocrCorrections)
+        .where(eq(ocrCorrections.userId, userId))
+        .orderBy(desc(ocrCorrections.createdAt));
+      
+      if (limit) {
+        query.limit(limit);
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error getting user corrections:", error);
       throw error;
     }
   }
