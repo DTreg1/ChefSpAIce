@@ -21,7 +21,6 @@ Used for:
 
 ### Mode Selection
 - `AUTH_MODE`: Explicitly set authentication mode (`replit` or `oauth`)
-- `FORCE_REPLIT_AUTH`: Set to `true` to force Replit Auth mode regardless of other settings
 - `ISSUER_URL`: Automatically overridden by Replit Agent during testing (do not set manually)
 
 ### OAuth Configuration
