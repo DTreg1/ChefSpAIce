@@ -23,6 +23,7 @@ import {
   Activity,
   Brain,
   Bot,
+  FileSearch,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -293,6 +294,21 @@ export function AppSidebar() {
                     >
                       <Brain className="w-4 h-4" />
                       <span className="flex-1">Smart Search</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/extraction"}
+                  >
+                    <Link
+                      href="/extraction"
+                      data-testid="link-extraction"
+                      onClick={handleLinkClick}
+                    >
+                      <FileSearch className="w-4 h-4" />
+                      <span className="flex-1">Data Extraction</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
