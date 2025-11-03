@@ -261,6 +261,16 @@ import {
   type InsertTrendAlert,
   trends,
   trendAlerts,
+  // A/B Testing types and tables
+  type AbTest,
+  type InsertAbTest,
+  type AbTestResult,
+  type InsertAbTestResult,
+  type AbTestInsight,
+  type InsertAbTestInsight,
+  abTests,
+  abTestResults,
+  abTestInsights,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -2404,6 +2414,89 @@ export interface IStorage {
     conditions: InsertTrendAlert["conditions"],
     alertType: string
   ): Promise<TrendAlert>;
+
+  // ==================== A/B Testing Operations ====================
+
+  /**
+   * Create a new A/B test
+   */
+  createAbTest(test: InsertAbTest): Promise<AbTest>;
+
+  /**
+   * Get an A/B test by ID
+   */
+  getAbTest(testId: string): Promise<AbTest | undefined>;
+
+  /**
+   * Get all A/B tests
+   */
+  getAbTests(filters?: {
+    status?: string;
+    createdBy?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<AbTest[]>;
+
+  /**
+   * Update an A/B test
+   */
+  updateAbTest(testId: string, update: Partial<InsertAbTest>): Promise<AbTest>;
+
+  /**
+   * Delete an A/B test
+   */
+  deleteAbTest(testId: string): Promise<void>;
+
+  /**
+   * Create or update test results
+   */
+  upsertAbTestResult(result: InsertAbTestResult): Promise<AbTestResult>;
+
+  /**
+   * Get test results for a specific test
+   */
+  getAbTestResults(testId: string, variant?: string): Promise<AbTestResult[]>;
+
+  /**
+   * Get aggregated test results
+   */
+  getAggregatedAbTestResults(testId: string): Promise<{
+    variantA: AbTestResult;
+    variantB: AbTestResult;
+  }>;
+
+  /**
+   * Create or update test insights
+   */
+  upsertAbTestInsight(insight: InsertAbTestInsight): Promise<AbTestInsight>;
+
+  /**
+   * Get test insights
+   */
+  getAbTestInsights(testId: string): Promise<AbTestInsight | undefined>;
+
+  /**
+   * Calculate statistical significance
+   */
+  calculateStatisticalSignificance(testId: string): Promise<{
+    pValue: number;
+    confidence: number;
+    winner: 'A' | 'B' | 'inconclusive';
+    liftPercentage: number;
+  }>;
+
+  /**
+   * Get test recommendations
+   */
+  getAbTestRecommendations(userId?: string): Promise<Array<AbTest & {
+    insight?: AbTestInsight;
+    results?: AbTestResult[];
+  }>>;
+
+  /**
+   * Implement test winner
+   */
+  implementAbTestWinner(testId: string, variant: 'A' | 'B'): Promise<void>;
 }
 
 /**
@@ -11016,6 +11109,416 @@ export class DatabaseStorage implements IStorage {
       return await this.createTrendAlert(alert);
     } catch (error) {
       console.error("Error subscribing to trend alerts:", error);
+      throw error;
+    }
+  }
+
+  // ==================== A/B Testing Operations ====================
+
+  async createAbTest(test: InsertAbTest): Promise<AbTest> {
+    try {
+      const [newTest] = await db.insert(abTests).values(test).returning();
+      return newTest;
+    } catch (error) {
+      console.error("Error creating A/B test:", error);
+      throw error;
+    }
+  }
+
+  async getAbTest(testId: string): Promise<AbTest | undefined> {
+    try {
+      const [test] = await db
+        .select()
+        .from(abTests)
+        .where(eq(abTests.id, testId));
+      return test;
+    } catch (error) {
+      console.error("Error getting A/B test:", error);
+      throw error;
+    }
+  }
+
+  async getAbTests(filters?: {
+    status?: string;
+    createdBy?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<AbTest[]> {
+    try {
+      let query = db.select().from(abTests);
+      
+      if (filters) {
+        const conditions = [];
+        if (filters.status) {
+          conditions.push(eq(abTests.status, filters.status));
+        }
+        if (filters.createdBy) {
+          conditions.push(eq(abTests.createdBy, filters.createdBy));
+        }
+        if (filters.startDate) {
+          conditions.push(gte(abTests.startDate, filters.startDate));
+        }
+        if (filters.endDate) {
+          conditions.push(lte(abTests.endDate, filters.endDate));
+        }
+        
+        if (conditions.length > 0) {
+          // @ts-ignore - Dynamic where conditions
+          query = query.where(and(...conditions));
+        }
+      }
+      
+      return await query.orderBy(desc(abTests.createdAt));
+    } catch (error) {
+      console.error("Error getting A/B tests:", error);
+      throw error;
+    }
+  }
+
+  async updateAbTest(testId: string, update: Partial<InsertAbTest>): Promise<AbTest> {
+    try {
+      const [updatedTest] = await db
+        .update(abTests)
+        .set({
+          ...update,
+          updatedAt: new Date()
+        })
+        .where(eq(abTests.id, testId))
+        .returning();
+      return updatedTest;
+    } catch (error) {
+      console.error("Error updating A/B test:", error);
+      throw error;
+    }
+  }
+
+  async deleteAbTest(testId: string): Promise<void> {
+    try {
+      await db.delete(abTests).where(eq(abTests.id, testId));
+    } catch (error) {
+      console.error("Error deleting A/B test:", error);
+      throw error;
+    }
+  }
+
+  async upsertAbTestResult(result: InsertAbTestResult): Promise<AbTestResult> {
+    try {
+      // Try to find existing result for this test/variant/period
+      const existing = await db
+        .select()
+        .from(abTestResults)
+        .where(and(
+          eq(abTestResults.testId, result.testId),
+          eq(abTestResults.variant, result.variant),
+          eq(abTestResults.periodStart, result.periodStart),
+          eq(abTestResults.periodEnd, result.periodEnd)
+        ))
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update existing
+        const [updated] = await db
+          .update(abTestResults)
+          .set({
+            ...result,
+            updatedAt: new Date()
+          })
+          .where(eq(abTestResults.id, existing[0].id))
+          .returning();
+        return updated;
+      } else {
+        // Create new
+        const [created] = await db
+          .insert(abTestResults)
+          .values(result)
+          .returning();
+        return created;
+      }
+    } catch (error) {
+      console.error("Error upserting A/B test result:", error);
+      throw error;
+    }
+  }
+
+  async getAbTestResults(testId: string, variant?: string): Promise<AbTestResult[]> {
+    try {
+      let query = db
+        .select()
+        .from(abTestResults)
+        .where(eq(abTestResults.testId, testId));
+      
+      if (variant) {
+        // @ts-ignore
+        query = query.where(and(
+          eq(abTestResults.testId, testId),
+          eq(abTestResults.variant, variant)
+        ));
+      }
+      
+      return await query.orderBy(desc(abTestResults.periodEnd));
+    } catch (error) {
+      console.error("Error getting A/B test results:", error);
+      throw error;
+    }
+  }
+
+  async getAggregatedAbTestResults(testId: string): Promise<{
+    variantA: AbTestResult;
+    variantB: AbTestResult;
+  }> {
+    try {
+      // Get the most recent results for each variant
+      const results = await this.getAbTestResults(testId);
+      
+      // Aggregate results by variant
+      const variantA = results
+        .filter(r => r.variant === 'A')
+        .reduce((acc, r) => ({
+          ...r,
+          conversions: (acc?.conversions || 0) + r.conversions,
+          visitors: (acc?.visitors || 0) + r.visitors,
+          revenue: (acc?.revenue || 0) + r.revenue,
+          sampleSize: (acc?.sampleSize || 0) + r.sampleSize,
+        }), null as any);
+      
+      const variantB = results
+        .filter(r => r.variant === 'B')
+        .reduce((acc, r) => ({
+          ...r,
+          conversions: (acc?.conversions || 0) + r.conversions,
+          visitors: (acc?.visitors || 0) + r.visitors,
+          revenue: (acc?.revenue || 0) + r.revenue,
+          sampleSize: (acc?.sampleSize || 0) + r.sampleSize,
+        }), null as any);
+
+      return {
+        variantA: variantA || { 
+          id: '',
+          testId,
+          variant: 'A',
+          conversions: 0,
+          visitors: 0,
+          revenue: 0,
+          sampleSize: 0,
+          periodStart: new Date(),
+          periodEnd: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        variantB: variantB || {
+          id: '',
+          testId,
+          variant: 'B',
+          conversions: 0,
+          visitors: 0,
+          revenue: 0,
+          sampleSize: 0,
+          periodStart: new Date(),
+          periodEnd: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      };
+    } catch (error) {
+      console.error("Error getting aggregated A/B test results:", error);
+      throw error;
+    }
+  }
+
+  async upsertAbTestInsight(insight: InsertAbTestInsight): Promise<AbTestInsight> {
+    try {
+      // Check if insight already exists for this test
+      const existing = await db
+        .select()
+        .from(abTestInsights)
+        .where(eq(abTestInsights.testId, insight.testId))
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update existing
+        const [updated] = await db
+          .update(abTestInsights)
+          .set({
+            ...insight,
+            updatedAt: new Date()
+          })
+          .where(eq(abTestInsights.id, existing[0].id))
+          .returning();
+        return updated;
+      } else {
+        // Create new
+        const [created] = await db
+          .insert(abTestInsights)
+          .values(insight)
+          .returning();
+        return created;
+      }
+    } catch (error) {
+      console.error("Error upserting A/B test insight:", error);
+      throw error;
+    }
+  }
+
+  async getAbTestInsights(testId: string): Promise<AbTestInsight | undefined> {
+    try {
+      const [insight] = await db
+        .select()
+        .from(abTestInsights)
+        .where(eq(abTestInsights.testId, testId))
+        .orderBy(desc(abTestInsights.updatedAt))
+        .limit(1);
+      return insight;
+    } catch (error) {
+      console.error("Error getting A/B test insights:", error);
+      throw error;
+    }
+  }
+
+  async calculateStatisticalSignificance(testId: string): Promise<{
+    pValue: number;
+    confidence: number;
+    winner: 'A' | 'B' | 'inconclusive';
+    liftPercentage: number;
+  }> {
+    try {
+      const { variantA, variantB } = await this.getAggregatedAbTestResults(testId);
+      
+      // Calculate conversion rates
+      const conversionRateA = variantA.visitors > 0 ? variantA.conversions / variantA.visitors : 0;
+      const conversionRateB = variantB.visitors > 0 ? variantB.conversions / variantB.visitors : 0;
+      
+      // Calculate pooled probability
+      const pooledProbability = (variantA.conversions + variantB.conversions) / 
+                                (variantA.visitors + variantB.visitors);
+      
+      // Calculate standard error
+      const standardError = Math.sqrt(
+        pooledProbability * (1 - pooledProbability) * 
+        (1 / variantA.visitors + 1 / variantB.visitors)
+      );
+      
+      // Calculate z-score
+      const zScore = standardError > 0 ? (conversionRateB - conversionRateA) / standardError : 0;
+      
+      // Calculate p-value (simplified normal distribution approximation)
+      const pValue = 2 * (1 - this.normalCDF(Math.abs(zScore)));
+      
+      // Calculate confidence level
+      const confidence = 1 - pValue;
+      
+      // Calculate lift percentage
+      const liftPercentage = conversionRateA > 0 
+        ? ((conversionRateB - conversionRateA) / conversionRateA) * 100 
+        : 0;
+      
+      // Determine winner
+      let winner: 'A' | 'B' | 'inconclusive' = 'inconclusive';
+      if (pValue < 0.05 && variantA.visitors >= 100 && variantB.visitors >= 100) {
+        winner = conversionRateB > conversionRateA ? 'B' : 'A';
+      }
+      
+      return {
+        pValue,
+        confidence,
+        winner,
+        liftPercentage
+      };
+    } catch (error) {
+      console.error("Error calculating statistical significance:", error);
+      throw error;
+    }
+  }
+
+  // Helper function for normal CDF approximation
+  private normalCDF(x: number): number {
+    const a1 = 0.254829592;
+    const a2 = -0.284496736;
+    const a3 = 1.421413741;
+    const a4 = -1.453152027;
+    const a5 = 1.061405429;
+    const p = 0.3275911;
+    
+    const sign = x < 0 ? -1 : 1;
+    x = Math.abs(x) / Math.sqrt(2.0);
+    
+    const t = 1.0 / (1.0 + p * x);
+    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    
+    return 0.5 * (1.0 + sign * y);
+  }
+
+  async getAbTestRecommendations(userId?: string): Promise<Array<AbTest & {
+    insight?: AbTestInsight;
+    results?: AbTestResult[];
+  }>> {
+    try {
+      // Get active and recently completed tests
+      const tests = await this.getAbTests({
+        status: 'active'
+      });
+      
+      // Add completed tests from last 30 days
+      const recentCompleted = await this.getAbTests({
+        status: 'completed',
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      });
+      
+      const allTests = [...tests, ...recentCompleted];
+      
+      // Fetch insights and results for each test
+      const recommendations = await Promise.all(
+        allTests.map(async (test) => {
+          const insight = await this.getAbTestInsights(test.id);
+          const results = await this.getAbTestResults(test.id);
+          
+          return {
+            ...test,
+            insight,
+            results
+          };
+        })
+      );
+      
+      // Sort by confidence level if insights exist
+      recommendations.sort((a, b) => {
+        const confA = a.insight?.confidence || 0;
+        const confB = b.insight?.confidence || 0;
+        return confB - confA;
+      });
+      
+      return recommendations;
+    } catch (error) {
+      console.error("Error getting A/B test recommendations:", error);
+      throw error;
+    }
+  }
+
+  async implementAbTestWinner(testId: string, variant: 'A' | 'B'): Promise<void> {
+    try {
+      // Update test status to completed
+      await this.updateAbTest(testId, {
+        status: 'completed'
+      });
+      
+      // Update insight with implementation note
+      const insight = await this.getAbTestInsights(testId);
+      if (insight) {
+        await this.upsertAbTestInsight({
+          ...insight,
+          testId,
+          winner: variant,
+          recommendation: 'implement',
+          insights: {
+            ...insight.insights,
+            implementationDate: new Date().toISOString(),
+            implementedVariant: variant
+          }
+        });
+      }
+      
+      console.log(`Implemented variant ${variant} for test ${testId}`);
+    } catch (error) {
+      console.error("Error implementing A/B test winner:", error);
       throw error;
     }
   }
