@@ -340,6 +340,13 @@ import {
   type InsertImagePresets,
   imageProcessing,
   imagePresets,
+  // Face Detection types
+  type FaceDetection,
+  type InsertFaceDetection,
+  type PrivacySettings,
+  type InsertPrivacySettings,
+  faceDetections,
+  privacySettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -3099,6 +3106,77 @@ export interface IStorage {
    * Increment preset usage count
    */
   incrementPresetUsage(id: string): Promise<void>;
+
+  // ==================== Face Detection Operations ====================
+
+  /**
+   * Create face detection record
+   * @param userId - User ID
+   * @param detection - Face detection data
+   */
+  createFaceDetection(
+    userId: string,
+    detection: Omit<InsertFaceDetection, "userId">
+  ): Promise<FaceDetection>;
+
+  /**
+   * Get face detections for a user
+   * @param userId - User ID
+   * @param limit - Maximum number of results
+   */
+  getFaceDetections(userId: string, limit?: number): Promise<FaceDetection[]>;
+
+  /**
+   * Get face detection by image ID
+   * @param userId - User ID
+   * @param imageId - Image ID
+   */
+  getFaceDetectionByImageId(
+    userId: string,
+    imageId: string
+  ): Promise<FaceDetection | undefined>;
+
+  /**
+   * Update face detection
+   * @param userId - User ID
+   * @param detectionId - Detection ID
+   * @param updates - Updates to apply
+   */
+  updateFaceDetection(
+    userId: string,
+    detectionId: string,
+    updates: Partial<Omit<InsertFaceDetection, "userId">>
+  ): Promise<FaceDetection>;
+
+  /**
+   * Delete face detection
+   * @param userId - User ID
+   * @param detectionId - Detection ID
+   */
+  deleteFaceDetection(userId: string, detectionId: string): Promise<void>;
+
+  /**
+   * Get user privacy settings
+   * @param userId - User ID
+   */
+  getPrivacySettings(userId: string): Promise<PrivacySettings | undefined>;
+
+  /**
+   * Create or update privacy settings
+   * @param userId - User ID
+   * @param settings - Privacy settings
+   */
+  upsertPrivacySettings(
+    userId: string,
+    settings: Omit<InsertPrivacySettings, "userId">
+  ): Promise<PrivacySettings>;
+
+  /**
+   * Delete old face detections based on retention policy
+   * @param userId - User ID
+   * @param daysOld - Delete detections older than this many days
+   */
+  cleanupOldFaceDetections(userId: string, daysOld: number): Promise<number>;
 }
 
 /**
@@ -14415,6 +14493,213 @@ export class DatabaseStorage implements IStorage {
         .where(eq(imagePresets.id, id));
     } catch (error) {
       console.error("Error incrementing preset usage:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Face Detection Operations ====================
+
+  /**
+   * Create face detection record
+   */
+  async createFaceDetection(
+    userId: string,
+    detection: Omit<InsertFaceDetection, "userId">
+  ): Promise<FaceDetection> {
+    try {
+      const [created] = await db
+        .insert(faceDetections)
+        .values({
+          ...detection,
+          userId,
+        })
+        .returning();
+
+      return created;
+    } catch (error) {
+      console.error("Error creating face detection:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get face detections for a user
+   */
+  async getFaceDetections(userId: string, limit: number = 50): Promise<FaceDetection[]> {
+    try {
+      const detections = await db
+        .select()
+        .from(faceDetections)
+        .where(eq(faceDetections.userId, userId))
+        .orderBy(desc(faceDetections.createdAt))
+        .limit(limit);
+
+      return detections;
+    } catch (error) {
+      console.error("Error getting face detections:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get face detection by image ID
+   */
+  async getFaceDetectionByImageId(
+    userId: string,
+    imageId: string
+  ): Promise<FaceDetection | undefined> {
+    try {
+      const [detection] = await db
+        .select()
+        .from(faceDetections)
+        .where(
+          and(
+            eq(faceDetections.userId, userId),
+            eq(faceDetections.imageId, imageId)
+          )
+        )
+        .limit(1);
+
+      return detection;
+    } catch (error) {
+      console.error("Error getting face detection by image ID:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update face detection
+   */
+  async updateFaceDetection(
+    userId: string,
+    detectionId: string,
+    updates: Partial<Omit<InsertFaceDetection, "userId">>
+  ): Promise<FaceDetection> {
+    try {
+      const [updated] = await db
+        .update(faceDetections)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(faceDetections.id, detectionId),
+            eq(faceDetections.userId, userId)
+          )
+        )
+        .returning();
+
+      if (!updated) {
+        throw new Error("Face detection not found");
+      }
+
+      return updated;
+    } catch (error) {
+      console.error("Error updating face detection:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete face detection
+   */
+  async deleteFaceDetection(userId: string, detectionId: string): Promise<void> {
+    try {
+      await db
+        .delete(faceDetections)
+        .where(
+          and(
+            eq(faceDetections.id, detectionId),
+            eq(faceDetections.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error("Error deleting face detection:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user privacy settings
+   */
+  async getPrivacySettings(userId: string): Promise<PrivacySettings | undefined> {
+    try {
+      const cacheKey = `privacy:${userId}`;
+      const cached = this.getCached<PrivacySettings>(cacheKey);
+      if (cached) return cached;
+
+      const [settings] = await db
+        .select()
+        .from(privacySettings)
+        .where(eq(privacySettings.userId, userId))
+        .limit(1);
+
+      if (settings) {
+        this.setCached(cacheKey, settings, this.USER_PREFS_TTL);
+      }
+
+      return settings;
+    } catch (error) {
+      console.error("Error getting privacy settings:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create or update privacy settings
+   */
+  async upsertPrivacySettings(
+    userId: string,
+    settings: Omit<InsertPrivacySettings, "userId">
+  ): Promise<PrivacySettings> {
+    try {
+      const [upserted] = await db
+        .insert(privacySettings)
+        .values({
+          ...settings,
+          userId,
+        })
+        .onConflictDoUpdate({
+          target: privacySettings.userId,
+          set: {
+            ...settings,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      // Invalidate cache
+      this.invalidateCache(`privacy:${userId}`);
+
+      return upserted;
+    } catch (error) {
+      console.error("Error upserting privacy settings:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete old face detections based on retention policy
+   */
+  async cleanupOldFaceDetections(userId: string, daysOld: number): Promise<number> {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+      const deleted = await db
+        .delete(faceDetections)
+        .where(
+          and(
+            eq(faceDetections.userId, userId),
+            lte(faceDetections.createdAt, cutoffDate)
+          )
+        )
+        .returning();
+
+      return deleted.length;
+    } catch (error) {
+      console.error("Error cleaning up old face detections:", error);
       throw error;
     }
   }
