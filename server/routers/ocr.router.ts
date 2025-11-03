@@ -16,7 +16,6 @@ import { storage } from "../storage";
 import type { InsertOcrResult, InsertOcrCorrection } from "@shared/schema";
 import { insertOcrResultSchema, insertOcrCorrectionSchema } from "@shared/schema";
 import { z } from "zod";
-const pdfParse = require("pdf-parse");
 
 const router = express.Router();
 
@@ -192,7 +191,8 @@ router.post("/extract", upload.single("image"), async (req: any, res: any) => {
 
     if (req.file.mimetype === "application/pdf") {
       // Handle PDF files
-      const pdfData = await pdfParse(req.file.buffer);
+      const pdfParse = await import("pdf-parse");
+      const pdfData = await pdfParse.default(req.file.buffer);
       extractionResult = {
         text: pdfData.text,
         confidence: 95, // PDFs usually have high confidence
@@ -273,7 +273,8 @@ router.post("/document", upload.single("document"), async (req: any, res: any) =
     }
 
     // Extract text from PDF
-    const pdfData = await pdfParse(req.file.buffer);
+    const pdfParse = await import("pdf-parse");
+    const pdfData = await pdfParse.default(req.file.buffer);
     const processingTime = Date.now() - startTime;
 
     // Save OCR result to database
