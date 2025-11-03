@@ -17,10 +17,16 @@ import type {
 } from '@shared/schema';
 
 // This is using Replit's AI Integrations service, which provides OpenAI-compatible API access without requiring your own OpenAI API key.
-const openai = new OpenAI({
+const hasAICredentials = !!(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL && process.env.AI_INTEGRATIONS_OPENAI_API_KEY);
+
+if (!hasAICredentials) {
+  console.warn("AI credentials not configured. System will use enhanced rule-based routing with pattern matching.");
+}
+
+const openai = hasAICredentials ? new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
-});
+}) : null;
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const AI_MODEL = "gpt-5";
@@ -49,7 +55,81 @@ export interface RoutingSuggestion {
 /**
  * Analyzes ticket content using AI to determine routing
  */
+/**
+ * Enhanced rule-based analysis for when AI is not available
+ */
+function enhancedRuleBasedAnalysis(ticket: Ticket): RoutingDecision {
+  const title = ticket.title.toLowerCase();
+  const description = ticket.description.toLowerCase();
+  const combined = `${title} ${description}`;
+  
+  // Technical indicators
+  const technicalKeywords = ['api', 'error', 'bug', 'crash', 'database', 'server', 'authentication', 
+                            'login', 'password', '500', '404', 'timeout', 'connection', 'ssl', 'certificate'];
+  const billingKeywords = ['payment', 'billing', 'invoice', 'refund', 'charge', 'subscription', 
+                          'credit', 'plan', 'pricing', 'cost', 'fee'];
+  const featureKeywords = ['feature', 'request', 'enhancement', 'add', 'implement', 'need', 'want'];
+  
+  const technicalMatches = technicalKeywords.filter(kw => combined.includes(kw));
+  const billingMatches = billingKeywords.filter(kw => combined.includes(kw));
+  const featureMatches = featureKeywords.filter(kw => combined.includes(kw));
+  
+  let recommendedAssignment = 'support-team';
+  let detectedCategory = ticket.category || 'other';
+  let confidence = 0.5;
+  let reasoning = 'Rule-based analysis';
+  
+  // Determine assignment based on keyword matches
+  if (billingMatches.length > technicalMatches.length && billingMatches.length >= 2) {
+    recommendedAssignment = 'finance-team';
+    detectedCategory = 'billing';
+    confidence = Math.min(0.9, 0.5 + billingMatches.length * 0.1);
+    reasoning = `Detected billing-related keywords: ${billingMatches.join(', ')}`;
+  } else if (technicalMatches.length >= 2) {
+    recommendedAssignment = 'backend-team';
+    detectedCategory = 'technical';
+    confidence = Math.min(0.9, 0.5 + technicalMatches.length * 0.1);
+    reasoning = `Detected technical keywords: ${technicalMatches.join(', ')}`;
+  } else if (featureMatches.length >= 1) {
+    recommendedAssignment = 'product-team';
+    detectedCategory = 'feature';
+    confidence = Math.min(0.8, 0.5 + featureMatches.length * 0.15);
+    reasoning = `Detected feature request keywords: ${featureMatches.join(', ')}`;
+  }
+  
+  // Detect urgency based on priority and keywords
+  const urgencyKeywords = ['urgent', 'critical', 'asap', 'immediately', 'emergency', 'down', 'broken'];
+  const hasUrgency = urgencyKeywords.some(kw => combined.includes(kw));
+  const detectedUrgency = hasUrgency || ticket.priority === 'critical' ? 'critical' :
+                          ticket.priority === 'high' ? 'high' : 'medium';
+  
+  // Simple sentiment detection
+  const negativeWords = ['frustrated', 'angry', 'disappointed', 'upset', 'terrible', 'horrible', 'worst'];
+  const positiveWords = ['thank', 'appreciate', 'great', 'excellent', 'good', 'love'];
+  const negativeCount = negativeWords.filter(w => combined.includes(w)).length;
+  const positiveCount = positiveWords.filter(w => combined.includes(w)).length;
+  const sentiment = negativeCount > positiveCount ? 'negative' :
+                   positiveCount > negativeCount ? 'positive' : 'neutral';
+  
+  return {
+    recommendedAssignment,
+    confidence,
+    reasoning,
+    detectedCategory,
+    detectedUrgency,
+    keyPhrases: [...technicalMatches, ...billingMatches, ...featureMatches],
+    sentiment,
+    technicalIndicators: technicalMatches,
+    suggestedPriority: detectedUrgency === 'critical' ? 'high' : ticket.priority
+  };
+}
+
 export async function analyzeTicket(ticket: Ticket): Promise<RoutingDecision> {
+  // If AI is not available, use enhanced rule-based analysis
+  if (!openai) {
+    return enhancedRuleBasedAnalysis(ticket);
+  }
+  
   try {
     const prompt = `Analyze this support ticket and provide routing recommendations.
 
@@ -333,13 +413,24 @@ export async function routeTicket(ticketId: string): Promise<{
     const { rule, confidence: ruleConfidence } = await evaluateRoutingRules(ticket, aiAnalysis);
     
     if (rule && ruleConfidence >= 0.8) {
-      // High confidence rule match
+      // High confidence rule match - still apply workload balancing
+      const agentSuggestion = await findBestAgent(ticket, aiAnalysis, rule.assigned_to);
+      
+      // Use the best available agent from the team/department specified by the rule
+      const finalAssignment = agentSuggestion && agentSuggestion.confidence >= 0.4 
+        ? agentSuggestion.agentId 
+        : rule.assigned_to;
+      
+      const finalConfidence = agentSuggestion 
+        ? (ruleConfidence * 0.7 + agentSuggestion.confidence * 0.3)
+        : ruleConfidence;
+      
       await storage.createTicketRouting({
         ticket_id: ticketId,
-        routed_to: rule.assigned_to,
+        routed_to: finalAssignment,
         routing_method: 'rule',
-        confidence_score: ruleConfidence,
-        routing_reason: `Matched rule: ${rule.name}`,
+        confidence_score: finalConfidence,
+        routing_reason: `Matched rule: ${rule.name}${agentSuggestion ? ` (assigned to ${agentSuggestion.agentName} based on workload)` : ''}`,
         rule_id: rule.id,
         ai_analysis: {
           detected_intent: aiAnalysis.reasoning,
@@ -348,22 +439,31 @@ export async function routeTicket(ticketId: string): Promise<{
           key_phrases: aiAnalysis.keyPhrases,
           sentiment: aiAnalysis.sentiment,
           technical_indicators: aiAnalysis.technicalIndicators
+        },
+        metadata: {
+          workload_balanced: !!agentSuggestion,
+          agent_workload: agentSuggestion?.workloadScore
         }
       });
       
       // Update ticket assignment
       await storage.updateTicket(ticketId, {
-        assignedTo: rule.assigned_to,
+        assignedTo: finalAssignment,
         status: 'assigned',
         priority: aiAnalysis.suggestedPriority
       });
       
+      // Update agent workload if specific agent was selected
+      if (agentSuggestion) {
+        await storage.updateAgentWorkload(agentSuggestion.agentId, 1);
+      }
+      
       return {
         success: true,
-        assignment: rule.assigned_to,
-        confidence: ruleConfidence,
+        assignment: finalAssignment,
+        confidence: finalConfidence,
         method: 'rule',
-        reasoning: `Matched rule: ${rule.name}`
+        reasoning: `Matched rule: ${rule.name}${agentSuggestion ? ` (workload balanced)` : ''}`
       };
     }
     
@@ -492,6 +592,156 @@ export async function suggestRoutings(ticketId: string): Promise<RoutingSuggesti
   } catch (error) {
     console.error('Error suggesting routings:', error);
     return [];
+  }
+}
+
+/**
+ * Records the outcome of a ticket routing for accuracy tracking
+ */
+export async function recordRoutingOutcome(
+  ticketId: string,
+  wasCorrect: boolean,
+  actualTeam?: string,
+  notes?: string
+): Promise<void> {
+  try {
+    const routing = await storage.getTicketRouting(ticketId);
+    if (!routing || routing.length === 0) {
+      console.error(`No routing found for ticket ${ticketId}`);
+      return;
+    }
+    
+    const latestRouting = routing[0];
+    const metadata = latestRouting.metadata as any || {};
+    
+    // Update routing with outcome
+    await storage.updateTicketRouting(latestRouting.id, {
+      metadata: {
+        ...metadata,
+        outcome_recorded: true,
+        was_correct: wasCorrect,
+        actual_team: actualTeam,
+        outcome_notes: notes,
+        outcome_timestamp: new Date().toISOString()
+      }
+    });
+    
+    // If incorrect, log for improvement
+    if (!wasCorrect) {
+      console.log(`Routing mismatch for ticket ${ticketId}: routed to ${latestRouting.routed_to}, should have been ${actualTeam}`);
+    }
+  } catch (error) {
+    console.error('Error recording routing outcome:', error);
+  }
+}
+
+/**
+ * Calculates routing accuracy metrics
+ */
+export async function calculateRoutingAccuracy(
+  startDate?: Date,
+  endDate?: Date
+): Promise<{
+  overall_accuracy: number;
+  technical_accuracy: number;
+  billing_accuracy: number;
+  by_method: Record<string, number>;
+  total_routings: number;
+  correct_routings: number;
+}> {
+  try {
+    // Get all routings with outcomes in the date range
+    const routings = await storage.getAllRoutingsWithOutcomes(startDate, endDate);
+    
+    if (routings.length === 0) {
+      return {
+        overall_accuracy: 0,
+        technical_accuracy: 0,
+        billing_accuracy: 0,
+        by_method: {},
+        total_routings: 0,
+        correct_routings: 0
+      };
+    }
+    
+    let totalCorrect = 0;
+    let technicalCorrect = 0;
+    let technicalTotal = 0;
+    let billingCorrect = 0;
+    let billingTotal = 0;
+    const byMethod: Record<string, { correct: number; total: number }> = {};
+    
+    for (const routing of routings) {
+      const metadata = routing.metadata as any;
+      const analysis = routing.ai_analysis as any;
+      
+      if (metadata?.outcome_recorded) {
+        const wasCorrect = metadata.was_correct;
+        const method = routing.routing_method;
+        
+        if (wasCorrect) {
+          totalCorrect++;
+        }
+        
+        // Track by method
+        if (!byMethod[method]) {
+          byMethod[method] = { correct: 0, total: 0 };
+        }
+        byMethod[method].total++;
+        if (wasCorrect) {
+          byMethod[method].correct++;
+        }
+        
+        // Track technical routing accuracy
+        if (analysis?.detected_category === 'technical' || 
+            routing.routed_to?.includes('backend') || 
+            routing.routed_to?.includes('engineering')) {
+          technicalTotal++;
+          if (wasCorrect) {
+            technicalCorrect++;
+          }
+        }
+        
+        // Track billing routing accuracy
+        if (analysis?.detected_category === 'billing' || 
+            routing.routed_to?.includes('finance') || 
+            routing.routed_to?.includes('billing')) {
+          billingTotal++;
+          if (wasCorrect) {
+            billingCorrect++;
+          }
+        }
+      }
+    }
+    
+    // Calculate accuracies
+    const overall = routings.length > 0 ? totalCorrect / routings.length : 0;
+    const technical = technicalTotal > 0 ? technicalCorrect / technicalTotal : 0;
+    const billing = billingTotal > 0 ? billingCorrect / billingTotal : 0;
+    
+    const methodAccuracy: Record<string, number> = {};
+    for (const [method, stats] of Object.entries(byMethod)) {
+      methodAccuracy[method] = stats.total > 0 ? stats.correct / stats.total : 0;
+    }
+    
+    return {
+      overall_accuracy: overall,
+      technical_accuracy: technical,
+      billing_accuracy: billing,
+      by_method: methodAccuracy,
+      total_routings: routings.length,
+      correct_routings: totalCorrect
+    };
+  } catch (error) {
+    console.error('Error calculating routing accuracy:', error);
+    return {
+      overall_accuracy: 0,
+      technical_accuracy: 0,
+      billing_accuracy: 0,
+      by_method: {},
+      total_routings: 0,
+      correct_routings: 0
+    };
   }
 }
 

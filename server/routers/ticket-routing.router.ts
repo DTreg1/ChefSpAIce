@@ -535,14 +535,62 @@ router.get(
       
       const metrics = await storage.getRoutingMetrics(startDate, endDate);
       
+      // Get accuracy metrics using the AI routing service
+      const accuracyMetrics = await aiRoutingService.calculateRoutingAccuracy(startDate, endDate);
+      
+      // Combine metrics
+      const combinedMetrics = {
+        ...metrics,
+        accuracy: {
+          overall: accuracyMetrics.overall_accuracy,
+          technical: accuracyMetrics.technical_accuracy,
+          billing: accuracyMetrics.billing_accuracy,
+          byMethod: accuracyMetrics.by_method,
+          totalWithOutcomes: accuracyMetrics.total_routings,
+          correctRoutings: accuracyMetrics.correct_routings
+        }
+      };
+      
       res.json({
         success: true,
-        metrics,
+        metrics: combinedMetrics,
       });
     } catch (error) {
       console.error("Error getting routing metrics:", error);
       res.status(500).json({
         error: "Failed to get routing metrics",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  })
+);
+
+/**
+ * POST /api/routing/outcome/:ticketId
+ * Record the outcome of a ticket routing for accuracy tracking
+ */
+router.post(
+  "/outcome/:ticketId",
+  isAuthenticated,
+  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+    const { wasCorrect, actualTeam, notes } = req.body;
+    
+    try {
+      await aiRoutingService.recordRoutingOutcome(
+        req.params.ticketId,
+        wasCorrect,
+        actualTeam,
+        notes
+      );
+      
+      res.json({
+        success: true,
+        message: "Routing outcome recorded successfully",
+      });
+    } catch (error) {
+      console.error("Error recording routing outcome:", error);
+      res.status(500).json({
+        error: "Failed to record routing outcome",
         message: error instanceof Error ? error.message : "Unknown error",
       });
     }

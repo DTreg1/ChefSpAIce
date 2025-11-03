@@ -13069,6 +13069,49 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // Update ticket routing with outcome data
+  async updateTicketRouting(routingId: string, updates: Partial<TicketRouting>): Promise<TicketRouting | null> {
+    try {
+      const result = await db
+        .update(ticketRouting)
+        .set(updates)
+        .where(eq(ticketRouting.id, routingId))
+        .returning();
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error updating ticket routing:", error);
+      throw error;
+    }
+  }
+  
+  // Get all routings with recorded outcomes
+  async getAllRoutingsWithOutcomes(startDate?: Date, endDate?: Date): Promise<TicketRouting[]> {
+    try {
+      let query = db.select().from(ticketRouting);
+      const conditions = [];
+      
+      if (startDate) {
+        conditions.push(gte(ticketRouting.assigned_at, startDate));
+      }
+      if (endDate) {
+        conditions.push(lte(ticketRouting.assigned_at, endDate));
+      }
+      
+      const routings = conditions.length > 0
+        ? await query.where(and(...conditions))
+        : await query;
+      
+      // Filter for routings with outcomes recorded
+      return routings.filter(routing => {
+        const metadata = routing.metadata as any;
+        return metadata?.outcome_recorded === true;
+      });
+    } catch (error) {
+      console.error("Error getting routings with outcomes:", error);
+      throw error;
+    }
+  }
+  
   async getRoutingMetrics(startDate?: Date, endDate?: Date): Promise<{
     totalTickets: number;
     averageConfidence: number;
