@@ -49,34 +49,37 @@ router.post("/detect", upload.single("image"), async (req: any, res: any) => {
       return res.status(400).json({ error: "No image file provided" });
     }
 
-    // Initialize the model if not already done
-    await faceDetectionService.loadModel();
-
-    // Detect faces in the image
-    const detections = await faceDetectionService.detectFaces(req.file.buffer);
+    // Detect faces in the image (model loads automatically)
+    const detectionResult = await faceDetectionService.detectFaces(req.file.buffer);
 
     // Save detection results to database
     const detectionRecord = await storage.createFaceDetection(userId, {
       imageId: `upload_${Date.now()}`,
       imageUrl: req.body.imageUrl || "",
-      detectionCount: detections.length,
-      faceData: detections,
-      processingTime: 0, // Will be calculated
-      isBlurred: false,
+      facesDetected: detectionResult.faces.length,
+      faceCoordinates: detectionResult.faces,
+      processingType: "detect_only",
+      metadata: {
+        modelVersion: "blazeface",
+        originalDimensions: {
+          width: detectionResult.imageWidth,
+          height: detectionResult.imageHeight
+        }
+      }
     });
 
     res.json({
       success: true,
       detectionId: detectionRecord.id,
-      faceCount: detections.length,
-      detections: detections.map((face: any) => ({
+      faceCount: detectionResult.faces.length,
+      detections: detectionResult.faces.map((face: any) => ({
         boundingBox: {
-          x: face.topLeft[0],
-          y: face.topLeft[1],
-          width: face.bottomRight[0] - face.topLeft[0],
-          height: face.bottomRight[1] - face.topLeft[1],
+          x: face.x * detectionResult.imageWidth,
+          y: face.y * detectionResult.imageHeight,
+          width: face.width * detectionResult.imageWidth,
+          height: face.height * detectionResult.imageHeight,
         },
-        probability: face.probability,
+        probability: face.confidence,
         landmarks: face.landmarks || [],
       })),
     });
@@ -106,14 +109,19 @@ router.post("/blur", upload.single("image"), async (req: any, res: any) => {
       ? JSON.parse(req.body.excludeIndexes) 
       : [];
 
-    // Initialize the model if not already done
-    await faceDetectionService.loadModel();
+    // First detect faces to get their coordinates
+    const detectionResult = await faceDetectionService.detectFaces(req.file.buffer);
+    
+    // Filter faces to exclude
+    const facesToBlur = detectionResult.faces.filter(
+      (_, index) => !excludeIndexes.includes(index)
+    );
 
     // Blur faces in the image
     const blurredImage = await faceDetectionService.blurFaces(
       req.file.buffer,
-      blurIntensity,
-      excludeIndexes
+      facesToBlur,
+      blurIntensity
     );
 
     // Create a data URL for the blurred image
@@ -124,11 +132,14 @@ router.post("/blur", upload.single("image"), async (req: any, res: any) => {
     const detectionRecord = await storage.createFaceDetection(userId, {
       imageId: `blur_${Date.now()}`,
       imageUrl: req.body.originalImageUrl || "",
-      detectionCount: 0, // Will be updated
-      faceData: [],
-      processingTime: 0,
-      isBlurred: true,
-      blurIntensity,
+      facesDetected: facesToBlur.length,
+      faceCoordinates: facesToBlur,
+      processedImageUrl: dataUrl,
+      processingType: "blur",
+      metadata: {
+        blurIntensity,
+        modelVersion: "blazeface"
+      }
     });
 
     res.json({
@@ -164,14 +175,19 @@ router.post("/crop", upload.single("image"), async (req: any, res: any) => {
       : undefined;
     const padding = parseInt(req.body.padding) || 20;
 
-    // Initialize the model if not already done
-    await faceDetectionService.loadModel();
+    // First detect faces to get their coordinates
+    const detectionResult = await faceDetectionService.detectFaces(req.file.buffer);
+    
+    // Determine which faces to crop
+    const facesToCrop = faceIndex !== undefined 
+      ? [detectionResult.faces[faceIndex]].filter(Boolean)
+      : detectionResult.faces;
 
     // Crop faces from the image
-    const croppedFaces = await faceDetectionService.cropFaces(
-      req.file.buffer,
-      faceIndex,
-      padding
+    const croppedFaces = await Promise.all(
+      facesToCrop.map(face => 
+        faceDetectionService.cropToFace(req.file.buffer, face, padding / 100)
+      )
     );
 
     // Convert cropped faces to data URLs
@@ -184,11 +200,15 @@ router.post("/crop", upload.single("image"), async (req: any, res: any) => {
     for (let i = 0; i < croppedFaceUrls.length; i++) {
       await storage.createFaceDetection(userId, {
         imageId: `crop_${Date.now()}_${i}`,
-        imageUrl: croppedFaceUrls[i],
-        detectionCount: 1,
-        faceData: [],
-        processingTime: 0,
-        isBlurred: false,
+        imageUrl: req.body.originalImageUrl || "",
+        facesDetected: 1,
+        faceCoordinates: facesToCrop[i] ? [facesToCrop[i]] : [],
+        processedImageUrl: croppedFaceUrls[i],
+        processingType: "crop",
+        metadata: {
+          cropSettings: { padding },
+          modelVersion: "blazeface"
+        }
       });
     }
 
@@ -223,9 +243,6 @@ router.post("/count", upload.single("image"), async (req: any, res: any) => {
       return res.status(400).json({ error: "No image file provided" });
     }
 
-    // Initialize the model if not already done
-    await faceDetectionService.loadModel();
-
     // Count faces in the image
     const count = await faceDetectionService.countFaces(req.file.buffer);
 
@@ -233,10 +250,12 @@ router.post("/count", upload.single("image"), async (req: any, res: any) => {
     const detectionRecord = await storage.createFaceDetection(userId, {
       imageId: `count_${Date.now()}`,
       imageUrl: req.body.imageUrl || "",
-      detectionCount: count,
-      faceData: [],
-      processingTime: 0,
-      isBlurred: false,
+      facesDetected: count,
+      faceCoordinates: [],
+      processingType: "detect_only",
+      metadata: {
+        modelVersion: "blazeface"
+      }
     });
 
     res.json({
@@ -295,14 +314,17 @@ router.post("/privacy-settings", async (req: any, res: any) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { autoBlur, blurIntensity, saveOriginals, sharePermission, retentionDays } = req.body;
+    const { autoBlurFaces, blurIntensity, consentToProcessing, privacyMode, dataRetentionDays } = req.body;
 
     const settings = await storage.upsertPrivacySettings(userId, {
-      autoBlur: autoBlur ?? false,
+      autoBlurFaces: autoBlurFaces ?? false,
       blurIntensity: blurIntensity ?? 10,
-      saveOriginals: saveOriginals ?? true,
-      sharePermission: sharePermission ?? "private",
-      retentionDays: retentionDays ?? 30,
+      consentToProcessing: consentToProcessing ?? false,
+      privacyMode: privacyMode ?? "balanced",
+      dataRetentionDays: dataRetentionDays ?? 30,
+      faceRecognitionEnabled: req.body.faceRecognitionEnabled ?? true,
+      notifyOnFaceDetection: req.body.notifyOnFaceDetection ?? false,
+      allowGroupPhotoTagging: req.body.allowGroupPhotoTagging ?? true
     });
 
     res.json({
@@ -335,8 +357,8 @@ router.get("/history", async (req: any, res: any) => {
         id: d.id,
         imageId: d.imageId,
         imageUrl: d.imageUrl,
-        faceCount: d.detectionCount,
-        isBlurred: d.isBlurred,
+        faceCount: d.facesDetected,
+        processingType: d.processingType,
         createdAt: d.createdAt,
       })),
       total: detections.length,
@@ -384,7 +406,7 @@ router.post("/cleanup", async (req: any, res: any) => {
 
     // Get user's privacy settings
     const settings = await storage.getPrivacySettings(userId);
-    const retentionDays = settings?.retentionDays || 30;
+    const retentionDays = settings?.dataRetentionDays || 30;
 
     // Clean up old records
     const deletedCount = await storage.cleanupOldFaceDetections(userId, retentionDays);

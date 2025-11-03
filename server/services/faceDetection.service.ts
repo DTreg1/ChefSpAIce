@@ -370,3 +370,4 @@ class FaceDetectionService {
 }
 
 export const faceDetectionService = new FaceDetectionService();
+export { FaceDetectionService };
