@@ -7297,3 +7297,250 @@ export const insertMeetingEventsSchema = createInsertSchema(meetingEvents).omit(
 
 export type InsertMeetingEvents = z.infer<typeof insertMeetingEventsSchema>;
 export type MeetingEvents = typeof meetingEvents.$inferSelect;
+
+/**
+ * Support Tickets Table
+ * 
+ * Stores customer support tickets with content and metadata for intelligent routing.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - title: Ticket title/subject
+ * - description: Full ticket description
+ * - category: Initial category (technical/billing/feature/bug/other)
+ * - priority: low/medium/high/urgent
+ * - status: open/assigned/in_progress/resolved/closed
+ * - submittedBy: User email or identifier
+ * - assignedTo: Currently assigned team/person
+ * - metadata: Additional context (source, channel, etc.)
+ * - createdAt: Ticket creation timestamp
+ * - updatedAt: Last modification timestamp
+ */
+export const tickets = pgTable("tickets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: varchar("category").notNull().default("other"),
+  priority: varchar("priority").notNull().default("medium"),
+  status: varchar("status").notNull().default("open"),
+  submittedBy: varchar("submitted_by").notNull(),
+  assignedTo: varchar("assigned_to"),
+  metadata: jsonb("metadata").$type<{
+    source?: string;
+    channel?: string;
+    customFields?: Record<string, any>;
+    tags?: string[];
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("tickets_status_idx").on(table.status),
+  index("tickets_assigned_to_idx").on(table.assignedTo),
+  index("tickets_priority_idx").on(table.priority),
+]);
+
+export const insertTicketSchema = createInsertSchema(tickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+export type Ticket = typeof tickets.$inferSelect;
+
+/**
+ * Routing Rules Table
+ * 
+ * Stores configurable rules for automatic ticket routing.
+ * Rules are evaluated in priority order to determine assignment.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - name: Rule name for identification
+ * - condition: JSONB containing rule conditions
+ *   - keywords: Array of keywords to match
+ *   - categories: Applicable categories
+ *   - priorities: Applicable priority levels
+ *   - patterns: Regex patterns for content matching
+ * - assigned_to: Team/person to assign when rule matches
+ * - priority: Rule evaluation priority (lower = higher priority)
+ * - isActive: Whether rule is currently active
+ * - confidence_threshold: Minimum confidence score to apply rule
+ * - metadata: Additional rule configuration
+ * - createdAt: Rule creation timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Rules evaluated in priority order (ascending)
+ * - First matching rule with sufficient confidence wins
+ * - Inactive rules are skipped during evaluation
+ */
+export const routingRules = pgTable("routing_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  condition: jsonb("condition").$type<{
+    keywords?: string[];
+    categories?: string[];
+    priorities?: string[];
+    patterns?: string[];
+    departments?: string[];
+    products?: string[];
+  }>().notNull(),
+  assigned_to: varchar("assigned_to").notNull(),
+  priority: integer("priority").notNull().default(100),
+  isActive: boolean("is_active").notNull().default(true),
+  confidence_threshold: real("confidence_threshold").notNull().default(0.7),
+  metadata: jsonb("metadata").$type<{
+    description?: string;
+    escalation_path?: string[];
+    sla_minutes?: number;
+    auto_escalate?: boolean;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("routing_rules_priority_idx").on(table.priority),
+  index("routing_rules_is_active_idx").on(table.isActive),
+]);
+
+export const insertRoutingRuleSchema = createInsertSchema(routingRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertRoutingRule = z.infer<typeof insertRoutingRuleSchema>;
+export type RoutingRule = typeof routingRules.$inferSelect;
+
+/**
+ * Ticket Routing Table
+ * 
+ * Tracks routing history and AI decisions for each ticket.
+ * Provides audit trail and performance metrics.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - ticket_id: Foreign key to tickets.id
+ * - routed_to: Team/person assignment
+ * - routed_from: Previous assignment (for escalations)
+ * - routing_method: manual/rule/ai
+ * - confidence_score: AI confidence in routing decision (0-1)
+ * - routing_reason: Explanation for routing decision
+ * - rule_id: If rule-based, which rule was applied
+ * - ai_analysis: AI's analysis of the ticket
+ * - is_escalation: Whether this is an escalation
+ * - metadata: Additional routing context
+ * - createdAt: Routing timestamp
+ * 
+ * Business Rules:
+ * - Each ticket can have multiple routing records (history)
+ * - Latest routing record represents current assignment
+ * - Confidence scores help evaluate routing quality
+ */
+export const ticketRouting = pgTable("ticket_routing", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ticket_id: varchar("ticket_id").notNull().references(() => tickets.id, { onDelete: "cascade" }),
+  routed_to: varchar("routed_to").notNull(),
+  routed_from: varchar("routed_from"),
+  routing_method: varchar("routing_method").notNull().default("manual"), // manual/rule/ai
+  confidence_score: real("confidence_score").notNull().default(1.0),
+  routing_reason: text("routing_reason").notNull(),
+  rule_id: varchar("rule_id").references(() => routingRules.id, { onDelete: "set null" }),
+  ai_analysis: jsonb("ai_analysis").$type<{
+    detected_intent?: string;
+    detected_category?: string;
+    detected_urgency?: string;
+    key_phrases?: string[];
+    sentiment?: string;
+    technical_indicators?: string[];
+  }>(),
+  is_escalation: boolean("is_escalation").notNull().default(false),
+  metadata: jsonb("metadata").$type<{
+    processing_time_ms?: number;
+    ai_model?: string;
+    fallback_applied?: boolean;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("ticket_routing_ticket_id_idx").on(table.ticket_id),
+  index("ticket_routing_routed_to_idx").on(table.routed_to),
+  index("ticket_routing_created_at_idx").on(table.createdAt),
+]);
+
+export const insertTicketRoutingSchema = createInsertSchema(ticketRouting).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTicketRouting = z.infer<typeof insertTicketRoutingSchema>;
+export type TicketRouting = typeof ticketRouting.$inferSelect;
+
+/**
+ * Agent Expertise Table
+ * 
+ * Stores agent/team skills and capacity for intelligent workload balancing.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - agent_id: Unique identifier for agent/team
+ * - name: Agent/team display name
+ * - email: Contact email
+ * - skills: JSONB array of expertise areas
+ *   - skill: Skill name (e.g., "API", "Billing", "Database")
+ *   - level: Expertise level (1-5)
+ *   - categories: Related ticket categories
+ * - availability: Current availability status
+ * - current_load: Number of active tickets
+ * - max_capacity: Maximum concurrent tickets
+ * - avg_resolution_time: Average ticket resolution time in minutes
+ * - specializations: Specific product/feature expertise
+ * - languages: Supported languages for customer communication
+ * - timezone: Agent's timezone for shift management
+ * - metadata: Additional agent configuration
+ * - createdAt: Agent profile creation
+ * - updatedAt: Last profile update
+ * 
+ * Business Rules:
+ * - Workload balancing considers current_load vs max_capacity
+ * - Skills matching influences routing confidence
+ * - Availability status affects routing eligibility
+ */
+export const agentExpertise = pgTable("agent_expertise", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  agent_id: varchar("agent_id").notNull().unique(),
+  name: text("name").notNull(),
+  email: varchar("email"),
+  skills: jsonb("skills").$type<Array<{
+    skill: string;
+    level: number; // 1-5
+    categories: string[];
+  }>>().notNull().default([]),
+  availability: varchar("availability").notNull().default("available"), // available/busy/offline
+  current_load: integer("current_load").notNull().default(0),
+  max_capacity: integer("max_capacity").notNull().default(10),
+  avg_resolution_time: integer("avg_resolution_time"), // in minutes
+  specializations: text("specializations").array().default([]),
+  languages: text("languages").array().default(["English"]),
+  timezone: varchar("timezone").default("America/New_York"),
+  metadata: jsonb("metadata").$type<{
+    team?: string;
+    department?: string;
+    shift_hours?: { start: string; end: string };
+    escalation_contact?: boolean;
+    auto_assign_enabled?: boolean;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("agent_expertise_agent_id_idx").on(table.agent_id),
+  index("agent_expertise_availability_idx").on(table.availability),
+]);
+
+export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAgentExpertise = z.infer<typeof insertAgentExpertiseSchema>;
+export type AgentExpertise = typeof agentExpertise.$inferSelect;
