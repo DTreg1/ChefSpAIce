@@ -8320,3 +8320,138 @@ export const insertOcrCorrectionSchema = createInsertSchema(ocrCorrections).omit
 
 export type InsertOcrCorrection = z.infer<typeof insertOcrCorrectionSchema>;
 export type OcrCorrection = typeof ocrCorrections.$inferSelect;
+
+/**
+ * Transcriptions Table
+ * 
+ * Stores audio transcription results from OpenAI Whisper API.
+ * Tracks transcribed audio files with timestamps and metadata.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - audioUrl: URL/path of the source audio file
+ * - transcript: Full transcribed text
+ * - duration: Audio duration in seconds
+ * - language: Detected or selected language code (e.g., 'en', 'es', 'fr')
+ * - segments: JSONB array of transcript segments with timestamps
+ * - metadata: Additional processing metadata
+ * - status: Processing status ('processing', 'completed', 'failed')
+ * - createdAt: Transcription timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Each audio file creates one transcription record
+ * - Segments enable timestamp-based navigation and editing
+ * - Language detection improves accuracy for multilingual content
+ * - Failed transcriptions preserve error details in metadata
+ * 
+ * Indexes:
+ * - transcriptions_user_id_idx: Fast user-specific queries
+ * - transcriptions_status_idx: Filter by processing status
+ * - transcriptions_created_at_idx: Time-based queries
+ */
+export const transcriptions = pgTable("transcriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  audioUrl: text("audio_url").notNull(),
+  transcript: text("transcript").notNull(),
+  duration: real("duration").notNull(), // Duration in seconds
+  language: text("language").notNull().default('en'),
+  segments: jsonb("segments").$type<Array<{
+    id: string;
+    start: number; // Start time in seconds
+    end: number; // End time in seconds
+    text: string;
+    confidence?: number;
+    speaker?: string; // For multi-speaker detection (future feature)
+  }>>().notNull().default([]),
+  metadata: jsonb("metadata").$type<{
+    modelVersion?: string; // Whisper model used
+    audioFormat?: string;
+    sampleRate?: number;
+    bitrate?: number;
+    processingTime?: number;
+    errorDetails?: string;
+    title?: string; // User-provided title
+    description?: string; // User-provided description
+    tags?: string[]; // User-defined tags
+  }>(),
+  status: text("status", {
+    enum: ["processing", "completed", "failed"]
+  }).notNull().default("processing"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("transcriptions_user_id_idx").on(table.userId),
+  index("transcriptions_status_idx").on(table.status),
+  index("transcriptions_created_at_idx").on(table.createdAt),
+]);
+
+/**
+ * Transcript Edits Table
+ * 
+ * Stores user corrections to transcribed text segments.
+ * Maintains edit history for quality improvement.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - transcriptionId: Foreign key to transcriptions.id (CASCADE delete)
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - originalSegment: Text segment before correction
+ * - editedSegment: User-corrected text
+ * - timestamp: Time position in the audio (seconds)
+ * - editType: Type of edit ('spelling', 'punctuation', 'speaker', 'content', 'other')
+ * - confidence: User's confidence in the correction (0-100)
+ * - createdAt: Edit timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Multiple edits can exist for one transcription
+ * - Edits help identify common transcription errors
+ * - Timestamp links edit to specific audio position
+ * - Edit history preserved for quality tracking
+ * 
+ * Indexes:
+ * - transcript_edits_transcription_id_idx: Edits for specific transcription
+ * - transcript_edits_user_id_idx: User's edit history
+ * - transcript_edits_created_at_idx: Time-based queries
+ */
+export const transcriptEdits = pgTable("transcript_edits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transcriptionId: varchar("transcription_id").notNull().references(() => transcriptions.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  originalSegment: text("original_segment").notNull(),
+  editedSegment: text("edited_segment").notNull(),
+  timestamp: real("timestamp").notNull(), // Position in audio (seconds)
+  editType: text("edit_type", {
+    enum: ["spelling", "punctuation", "speaker", "content", "other"]
+  }).notNull().default("other"),
+  confidence: real("confidence").notNull().default(100),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("transcript_edits_transcription_id_idx").on(table.transcriptionId),
+  index("transcript_edits_user_id_idx").on(table.userId),
+  index("transcript_edits_created_at_idx").on(table.createdAt),
+]);
+
+// Transcriptions Schemas
+export const insertTranscriptionSchema = createInsertSchema(transcriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTranscription = z.infer<typeof insertTranscriptionSchema>;
+export type Transcription = typeof transcriptions.$inferSelect;
+
+// Transcript Edits Schemas
+export const insertTranscriptEditSchema = createInsertSchema(transcriptEdits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTranscriptEdit = z.infer<typeof insertTranscriptEditSchema>;
+export type TranscriptEdit = typeof transcriptEdits.$inferSelect;
