@@ -7544,3 +7544,167 @@ export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise).omi
 
 export type InsertAgentExpertise = z.infer<typeof insertAgentExpertiseSchema>;
 export type AgentExpertise = typeof agentExpertise.$inferSelect;
+
+/**
+ * Extraction Templates Table
+ * 
+ * Stores predefined schemas for structured data extraction from unstructured text.
+ * Enables reusable extraction patterns for common document types.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - name: Template name (e.g., "Order Email", "Invoice", "Resume")
+ * - description: Detailed description of what this template extracts
+ * - schema: JSONB schema definition for extraction
+ *   - fields: Array of field definitions
+ *     - name: Field name (e.g., "customerName", "orderTotal")
+ *     - type: Data type (string, number, date, array, object)
+ *     - description: Field description for AI extraction
+ *     - required: Whether field is mandatory
+ *     - validation: Optional validation rules
+ *     - examples: Sample values to guide extraction
+ * - exampleText: Sample input text for this template type
+ * - systemPrompt: Custom system prompt for GPT extraction
+ * - extractionConfig: Configuration for extraction process
+ *   - model: GPT model to use (default: gpt-3.5-turbo)
+ *   - temperature: Model temperature (0-1)
+ *   - maxRetries: Number of extraction retries
+ *   - confidenceThreshold: Minimum confidence for acceptance
+ * - isActive: Whether template is currently available for use
+ * - usageCount: Number of times template has been used
+ * - createdBy: User ID who created the template
+ * - createdAt: Template creation timestamp
+ * - updatedAt: Last template modification
+ * 
+ * Business Rules:
+ * - Each template defines a reusable extraction pattern
+ * - Schema must be valid JSON Schema format
+ * - Example text helps validate extraction accuracy
+ * - Templates can be shared across users or private
+ */
+export const extractionTemplates = pgTable("extraction_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  schema: jsonb("schema").$type<{
+    fields: Array<{
+      name: string;
+      type: 'string' | 'number' | 'date' | 'boolean' | 'array' | 'object';
+      description: string;
+      required?: boolean;
+      validation?: any;
+      examples?: string[];
+    }>;
+    outputFormat?: 'json' | 'table' | 'csv';
+  }>().notNull(),
+  exampleText: text("example_text"),
+  systemPrompt: text("system_prompt"),
+  extractionConfig: jsonb("extraction_config").$type<{
+    model?: string;
+    temperature?: number;
+    maxRetries?: number;
+    confidenceThreshold?: number;
+    enableStructuredOutput?: boolean;
+  }>().default({
+    model: 'gpt-3.5-turbo',
+    temperature: 0.3,
+    maxRetries: 2,
+    confidenceThreshold: 0.85,
+    enableStructuredOutput: true
+  }),
+  isActive: boolean("is_active").notNull().default(true),
+  usageCount: integer("usage_count").notNull().default(0),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("extraction_templates_name_idx").on(table.name),
+  index("extraction_templates_is_active_idx").on(table.isActive),
+]);
+
+export const insertExtractionTemplateSchema = createInsertSchema(extractionTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  usageCount: true,
+});
+
+export type InsertExtractionTemplate = z.infer<typeof insertExtractionTemplateSchema>;
+export type ExtractionTemplate = typeof extractionTemplates.$inferSelect;
+
+/**
+ * Extracted Data Table
+ * 
+ * Stores results from AI-powered data extraction operations.
+ * Links extracted structured data to templates and source documents.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - sourceId: Reference to source document/text
+ * - sourceType: Type of source (email, document, message, web, api)
+ * - templateId: Foreign key to extraction_templates.id
+ * - inputText: Original unstructured text input
+ * - extractedFields: JSONB containing extracted structured data
+ *   - Matches schema defined in template
+ *   - Contains actual extracted values
+ * - confidence: Overall extraction confidence score (0-1)
+ * - fieldConfidence: Per-field confidence scores
+ * - validationStatus: Extraction validation state
+ *   - 'pending': Awaiting review
+ *   - 'validated': Human verified
+ *   - 'corrected': Human corrected
+ *   - 'rejected': Failed validation
+ * - validationErrors: Array of validation error messages
+ * - corrections: Human corrections to extracted data
+ * - metadata: Additional extraction metadata
+ *   - processingTime: Time taken to extract (ms)
+ *   - modelUsed: GPT model used for extraction
+ *   - tokenCount: Tokens consumed
+ *   - retryCount: Number of retries needed
+ * - extractedAt: Extraction timestamp
+ * - validatedAt: Validation timestamp
+ * - validatedBy: User who validated/corrected
+ * 
+ * Business Rules:
+ * - Confidence score affects auto-acceptance threshold
+ * - Low confidence extractions require manual review
+ * - Corrections feed back into template improvement
+ * - Validation history tracked for audit trail
+ */
+export const extractedData = pgTable("extracted_data", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sourceId: varchar("source_id"),
+  sourceType: varchar("source_type").notNull(), // email, document, message, web, api
+  templateId: varchar("template_id").references(() => extractionTemplates.id, { onDelete: "set null" }),
+  inputText: text("input_text").notNull(),
+  extractedFields: jsonb("extracted_fields").$type<Record<string, any>>().notNull(),
+  confidence: real("confidence").notNull().default(0), // 0-1 confidence score
+  fieldConfidence: jsonb("field_confidence").$type<Record<string, number>>(),
+  validationStatus: varchar("validation_status").notNull().default("pending"), // pending, validated, corrected, rejected
+  validationErrors: jsonb("validation_errors").$type<string[]>(),
+  corrections: jsonb("corrections").$type<Record<string, any>>(),
+  metadata: jsonb("metadata").$type<{
+    processingTime?: number;
+    modelUsed?: string;
+    tokenCount?: number;
+    retryCount?: number;
+    batchId?: string;
+    tags?: string[];
+  }>(),
+  extractedAt: timestamp("extracted_at").defaultNow(),
+  validatedAt: timestamp("validated_at"),
+  validatedBy: varchar("validated_by"),
+}, (table) => [
+  index("extracted_data_source_id_idx").on(table.sourceId),
+  index("extracted_data_template_id_idx").on(table.templateId),
+  index("extracted_data_validation_status_idx").on(table.validationStatus),
+  index("extracted_data_extracted_at_idx").on(table.extractedAt),
+]);
+
+export const insertExtractedDataSchema = createInsertSchema(extractedData).omit({
+  id: true,
+  extractedAt: true,
+});
+
+export type InsertExtractedData = z.infer<typeof insertExtractedDataSchema>;
+export type ExtractedData = typeof extractedData.$inferSelect;
