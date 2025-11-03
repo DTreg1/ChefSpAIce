@@ -8177,3 +8177,146 @@ export const insertPrivacySettingsSchema = createInsertSchema(privacySettings).o
 
 export type InsertPrivacySettings = z.infer<typeof insertPrivacySettingsSchema>;
 export type PrivacySettings = typeof privacySettings.$inferSelect;
+
+/**
+ * OCR Results Table
+ * 
+ * Stores extracted text from images, PDFs, and scanned documents.
+ * Tracks confidence scores and processing metadata.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - imageId: Unique identifier for the processed image/document
+ * - fileName: Original file name uploaded by user
+ * - fileType: File type ('image/jpeg', 'image/png', 'application/pdf', etc.)
+ * - extractedText: Full text extracted from the document
+ * - confidence: OCR confidence score (0-100)
+ * - language: Detected/selected language code (e.g., 'eng', 'spa', 'fra')
+ * - pageCount: Number of pages in document (1 for images)
+ * - processingTime: Time taken to process in milliseconds
+ * - boundingBoxes: JSONB array of text regions with coordinates
+ * - metadata: Additional processing metadata (OCR engine version, settings, etc.)
+ * - createdAt: Processing timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Each document processing creates one result record
+ * - Confidence scores help users identify areas needing correction
+ * - Bounding boxes enable highlighting text regions on original image
+ * - Language detection improves accuracy for multilingual documents
+ * 
+ * Indexes:
+ * - ocr_results_user_id_idx: Fast user-specific queries
+ * - ocr_results_image_id_idx: Unique document lookups
+ * - ocr_results_created_at_idx: Time-based queries
+ */
+export const ocrResults = pgTable("ocr_results", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  imageId: varchar("image_id").notNull().unique(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  extractedText: text("extracted_text").notNull(),
+  confidence: real("confidence").notNull().default(0),
+  language: text("language").notNull().default('eng'),
+  pageCount: integer("page_count").notNull().default(1),
+  processingTime: integer("processing_time"),
+  boundingBoxes: jsonb("bounding_boxes").$type<Array<{
+    text: string;
+    confidence: number;
+    bbox: {
+      x0: number;
+      y0: number;
+      x1: number;
+      y1: number;
+    };
+  }>>().default([]),
+  metadata: jsonb("metadata").$type<{
+    ocrEngine?: string;
+    engineVersion?: string;
+    imageWidth?: number;
+    imageHeight?: number;
+    preprocessingApplied?: string[];
+    structuredData?: any; // For receipts, forms, etc.
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("ocr_results_user_id_idx").on(table.userId),
+  index("ocr_results_image_id_idx").on(table.imageId),
+  index("ocr_results_created_at_idx").on(table.createdAt),
+]);
+
+/**
+ * OCR Corrections Table
+ * 
+ * Stores user corrections to OCR extracted text.
+ * Helps improve accuracy and provides training data.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - resultId: Foreign key to ocrResults.id (CASCADE delete)
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - originalText: Text segment before correction
+ * - correctedText: User-corrected text
+ * - correctionType: Type of correction ('spelling', 'formatting', 'structure', 'other')
+ * - confidence: User's confidence in the correction (0-100)
+ * - boundingBox: JSONB with coordinates of corrected region
+ * - createdAt: Correction timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Multiple corrections can exist for one OCR result
+ * - Corrections help identify common OCR errors
+ * - Can be used to retrain or fine-tune OCR models
+ * - User corrections are preserved for quality improvement
+ * 
+ * Indexes:
+ * - ocr_corrections_result_id_idx: Corrections for specific result
+ * - ocr_corrections_user_id_idx: User's correction history
+ * - ocr_corrections_created_at_idx: Time-based queries
+ */
+export const ocrCorrections = pgTable("ocr_corrections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resultId: varchar("result_id").notNull().references(() => ocrResults.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  originalText: text("original_text").notNull(),
+  correctedText: text("corrected_text").notNull(),
+  correctionType: text("correction_type", {
+    enum: ["spelling", "formatting", "structure", "other"]
+  }).notNull().default("other"),
+  confidence: real("confidence").notNull().default(100),
+  boundingBox: jsonb("bounding_box").$type<{
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("ocr_corrections_result_id_idx").on(table.resultId),
+  index("ocr_corrections_user_id_idx").on(table.userId),
+  index("ocr_corrections_created_at_idx").on(table.createdAt),
+]);
+
+// OCR Results Schemas
+export const insertOcrResultSchema = createInsertSchema(ocrResults).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertOcrResult = z.infer<typeof insertOcrResultSchema>;
+export type OcrResult = typeof ocrResults.$inferSelect;
+
+// OCR Corrections Schemas
+export const insertOcrCorrectionSchema = createInsertSchema(ocrCorrections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertOcrCorrection = z.infer<typeof insertOcrCorrectionSchema>;
+export type OcrCorrection = typeof ocrCorrections.$inferSelect;
