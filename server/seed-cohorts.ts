@@ -349,9 +349,11 @@ export async function seedCohorts(storage: Storage) {
   }
 }
 
+import { Router } from "express";
+
 // Create endpoint for seeding cohorts
 export function createCohortSeedEndpoint(storage: Storage) {
-  const router = require("express").Router();
+  const router = Router();
   
   router.post("/seed-cohorts", async (req: any, res: any) => {
     try {
