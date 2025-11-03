@@ -20,6 +20,25 @@ ChefSpAIce is an AI-powered, chat-based kitchen assistant designed to manage hom
 - **UI Components**: PricingDashboard, DemandCurve, PriceSimulator, CompetitorPricing, and RevenueImpact
 - **Location**: Available at /pricing with "Dynamic Pricing" in the sidebar
 
+### Face Detection System with Privacy Controls
+- **Purpose**: AI-powered face detection for user avatar management with comprehensive privacy features
+- **Technology**: TensorFlow.js BlazeFace model for real-time browser-based face detection
+- **Core Features**:
+  - **Face Detection**: Real-time detection with bounding boxes and confidence scores (0-1 normalized coordinates)
+  - **Privacy Blur**: Apply adjustable blur intensity (1-30) to detected faces for anonymization
+  - **Avatar Extraction**: Crop individual faces from group photos with customizable padding
+  - **Face Counting**: Count and display statistics for group photo management
+  - **Detection History**: Track all face detection operations with metadata
+- **Privacy Controls**:
+  - **Privacy Modes**: strict (auto-anonymize), balanced (selective blur), minimal (detect only)
+  - **Settings**: autoBlurFaces, blurIntensity, dataRetentionDays, faceRecognitionEnabled
+  - **Data Retention**: Automatic cleanup of old detections based on user-defined retention period
+  - **Processing Types**: detect_only, blur, crop, anonymize
+- **Database Tables**: face_detections (detection records), privacy_settings (user preferences)
+- **API Endpoints**: /api/face-detection/detect, /blur, /crop, /count, /history, /privacy, /cleanup
+- **UI Components**: FaceDetector (main UI), PrivacyBlur, FaceCropper, FaceCounter, FaceDetectionDemo
+- **Location**: Available at /face-detection with "Face Detection" in the sidebar
+
 ## User Preferences
 - Design follows ChatGPT-inspired conversational interface
 - Olive green (#6b8e23) and dark navy (#0e1621) color scheme
