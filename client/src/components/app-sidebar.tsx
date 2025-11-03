@@ -25,6 +25,7 @@ import {
   Bot,
   FileSearch,
   DollarSign,
+  Image,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -325,6 +326,21 @@ export function AppSidebar() {
                     >
                       <DollarSign className="w-4 h-4" />
                       <span className="flex-1">Dynamic Pricing</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === "/images"}
+                  >
+                    <Link
+                      href="/images"
+                      data-testid="link-images"
+                      onClick={handleLinkClick}
+                    >
+                      <Image className="w-4 h-4" />
+                      <span className="flex-1">Image Enhancement</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
