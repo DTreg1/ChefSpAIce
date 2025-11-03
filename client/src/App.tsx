@@ -88,6 +88,7 @@ const PricingPage = lazy(() => import("@/pages/pricing"));
 const ImageEnhancement = lazy(() => import("@/pages/ImageEnhancement"));
 const FaceDetectionDemo = lazy(() => import("@/pages/FaceDetectionDemo"));
 const OCRPage = lazy(() => import("@/pages/ocr"));
+const TranscriptionsPage = lazy(() => import("@/pages/transcriptions"));
 
 function AuthenticatedRouter() {
   return (
@@ -153,6 +154,7 @@ function AuthenticatedRouter() {
         <Route path="/images" component={ImageEnhancement} />
         <Route path="/face-detection" component={FaceDetectionDemo} />
         <Route path="/ocr" component={OCRPage} />
+        <Route path="/transcriptions" component={TranscriptionsPage} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>
