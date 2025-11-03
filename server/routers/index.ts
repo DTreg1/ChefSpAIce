@@ -51,6 +51,7 @@ import extractionRouter from "./extraction.router";
 import pricingRouter from "./pricing.router";
 import imagesRouter from "./images.router";
 import faceDetectionRouter from "./face-detection.router";
+import ocrRouter from "./ocr.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -118,6 +119,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/pricing", pricingRouter);       // Dynamic pricing optimization with AI and ML endpoints
   app.use("/api/images", imagesRouter);         // AI-powered image enhancement and processing endpoints
   app.use("/api/faces", faceDetectionRouter);   // Face detection and privacy protection endpoints
+  app.use("/api/ocr", ocrRouter);               // OCR text extraction and correction endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);
