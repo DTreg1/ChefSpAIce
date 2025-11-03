@@ -354,6 +354,13 @@ import {
   type InsertOcrCorrection,
   ocrResults,
   ocrCorrections,
+  // Transcription types and tables
+  type Transcription,
+  type InsertTranscription,
+  type TranscriptEdit,
+  type InsertTranscriptEdit,
+  transcriptions,
+  transcriptEdits,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -1501,6 +1508,117 @@ export interface IStorage {
     totalSuggestions: number;
     commonIssues: Array<{ type: string; count: number }>;
   }>;
+
+  // ==================== Transcription Operations ====================
+  
+  /**
+   * Get all transcriptions for a user
+   * @param userId - User ID
+   * @param status - Filter by status (processing, completed, failed)
+   * @param limit - Max results
+   */
+  getTranscriptions(userId: string, status?: string, limit?: number): Promise<Transcription[]>;
+  
+  /**
+   * Get paginated transcriptions
+   * @param userId - User ID
+   * @param page - Page number
+   * @param limit - Items per page
+   * @param status - Filter by status
+   */
+  getTranscriptionsPaginated(
+    userId: string,
+    page?: number,
+    limit?: number,
+    status?: string
+  ): Promise<PaginatedResponse<Transcription>>;
+  
+  /**
+   * Get a specific transcription
+   * @param userId - User ID
+   * @param transcriptionId - Transcription ID
+   */
+  getTranscription(userId: string, transcriptionId: string): Promise<Transcription | undefined>;
+  
+  /**
+   * Create a new transcription
+   * @param userId - User ID
+   * @param transcription - Transcription data
+   */
+  createTranscription(
+    userId: string,
+    transcription: Omit<InsertTranscription, "userId">
+  ): Promise<Transcription>;
+  
+  /**
+   * Update transcription (e.g., status, transcript, segments)
+   * @param userId - User ID
+   * @param transcriptionId - Transcription ID
+   * @param updates - Fields to update
+   */
+  updateTranscription(
+    userId: string,
+    transcriptionId: string,
+    updates: Partial<Transcription>
+  ): Promise<Transcription>;
+  
+  /**
+   * Delete a transcription and all its edits
+   * @param userId - User ID
+   * @param transcriptionId - Transcription ID
+   */
+  deleteTranscription(userId: string, transcriptionId: string): Promise<void>;
+  
+  /**
+   * Get transcript edits for a transcription
+   * @param transcriptionId - Transcription ID
+   * @param limit - Max results
+   */
+  getTranscriptEdits(transcriptionId: string, limit?: number): Promise<TranscriptEdit[]>;
+  
+  /**
+   * Create a transcript edit
+   * @param userId - User ID
+   * @param edit - Edit data
+   */
+  createTranscriptEdit(
+    userId: string,
+    edit: Omit<InsertTranscriptEdit, "userId">
+  ): Promise<TranscriptEdit>;
+  
+  /**
+   * Update transcript edit
+   * @param userId - User ID
+   * @param editId - Edit ID
+   * @param updates - Fields to update
+   */
+  updateTranscriptEdit(
+    userId: string,
+    editId: string,
+    updates: Partial<TranscriptEdit>
+  ): Promise<TranscriptEdit>;
+  
+  /**
+   * Delete a transcript edit
+   * @param userId - User ID
+   * @param editId - Edit ID
+   */
+  deleteTranscriptEdit(userId: string, editId: string): Promise<void>;
+  
+  /**
+   * Get recent transcriptions
+   * @param userId - User ID
+   * @param days - Number of days to look back
+   */
+  getRecentTranscriptions(userId: string, days?: number): Promise<Transcription[]>;
+  
+  /**
+   * Search transcriptions by text
+   * @param userId - User ID
+   * @param query - Search query
+   * @param limit - Max results
+   */
+  searchTranscriptions(userId: string, query: string, limit?: number): Promise<Transcription[]>;
 
   // ==================== Summarization ====================
   
@@ -15079,6 +15197,323 @@ export class DatabaseStorage implements IStorage {
       return await query;
     } catch (error) {
       console.error("Error getting user corrections:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Transcription Operations ====================
+  
+  /**
+   * Get all transcriptions for a user
+   */
+  async getTranscriptions(userId: string, status?: string, limit?: number): Promise<Transcription[]> {
+    try {
+      const conditions = [eq(transcriptions.userId, userId)];
+      
+      if (status) {
+        conditions.push(eq(transcriptions.status, status as any));
+      }
+
+      let query = db
+        .select()
+        .from(transcriptions)
+        .where(and(...conditions))
+        .orderBy(desc(transcriptions.createdAt));
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      return await query;
+    } catch (error) {
+      console.error("Error getting transcriptions:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get paginated transcriptions
+   */
+  async getTranscriptionsPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 10,
+    status?: string
+  ): Promise<PaginatedResponse<Transcription>> {
+    try {
+      const conditions = [eq(transcriptions.userId, userId)];
+      
+      if (status) {
+        conditions.push(eq(transcriptions.status, status as any));
+      }
+
+      const helper = new PaginationHelper(page, limit);
+      const offset = helper.getOffset();
+
+      const [transcriptionsList, totalResult] = await Promise.all([
+        db
+          .select()
+          .from(transcriptions)
+          .where(and(...conditions))
+          .orderBy(desc(transcriptions.createdAt))
+          .limit(limit)
+          .offset(offset),
+        db
+          .select({ count: sql`count(*)` })
+          .from(transcriptions)
+          .where(and(...conditions))
+      ]);
+
+      const total = Number(totalResult[0]?.count || 0);
+      return helper.createResponse(transcriptionsList, total);
+    } catch (error) {
+      console.error("Error getting paginated transcriptions:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get a specific transcription
+   */
+  async getTranscription(userId: string, transcriptionId: string): Promise<Transcription | undefined> {
+    try {
+      const [transcription] = await db
+        .select()
+        .from(transcriptions)
+        .where(
+          and(
+            eq(transcriptions.userId, userId),
+            eq(transcriptions.id, transcriptionId)
+          )
+        );
+
+      return transcription;
+    } catch (error) {
+      console.error("Error getting transcription:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create a new transcription
+   */
+  async createTranscription(
+    userId: string,
+    transcription: Omit<InsertTranscription, "userId">
+  ): Promise<Transcription> {
+    try {
+      const [newTranscription] = await db
+        .insert(transcriptions)
+        .values({ ...transcription, userId })
+        .returning();
+
+      return newTranscription;
+    } catch (error) {
+      console.error("Error creating transcription:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Update transcription
+   */
+  async updateTranscription(
+    userId: string,
+    transcriptionId: string,
+    updates: Partial<Transcription>
+  ): Promise<Transcription> {
+    try {
+      const [updated] = await db
+        .update(transcriptions)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(transcriptions.userId, userId),
+            eq(transcriptions.id, transcriptionId)
+          )
+        )
+        .returning();
+
+      if (!updated) {
+        throw new Error("Transcription not found");
+      }
+
+      return updated;
+    } catch (error) {
+      console.error("Error updating transcription:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Delete a transcription and all its edits
+   */
+  async deleteTranscription(userId: string, transcriptionId: string): Promise<void> {
+    try {
+      await db
+        .delete(transcriptions)
+        .where(
+          and(
+            eq(transcriptions.userId, userId),
+            eq(transcriptions.id, transcriptionId)
+          )
+        );
+    } catch (error) {
+      console.error("Error deleting transcription:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get transcript edits for a transcription
+   */
+  async getTranscriptEdits(transcriptionId: string, limit?: number): Promise<TranscriptEdit[]> {
+    try {
+      let query = db
+        .select()
+        .from(transcriptEdits)
+        .where(eq(transcriptEdits.transcriptionId, transcriptionId))
+        .orderBy(asc(transcriptEdits.timestamp));
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      return await query;
+    } catch (error) {
+      console.error("Error getting transcript edits:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Create a transcript edit
+   */
+  async createTranscriptEdit(
+    userId: string,
+    edit: Omit<InsertTranscriptEdit, "userId">
+  ): Promise<TranscriptEdit> {
+    try {
+      const [newEdit] = await db
+        .insert(transcriptEdits)
+        .values({ ...edit, userId })
+        .returning();
+
+      return newEdit;
+    } catch (error) {
+      console.error("Error creating transcript edit:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Update transcript edit
+   */
+  async updateTranscriptEdit(
+    userId: string,
+    editId: string,
+    updates: Partial<TranscriptEdit>
+  ): Promise<TranscriptEdit> {
+    try {
+      const [updated] = await db
+        .update(transcriptEdits)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(transcriptEdits.userId, userId),
+            eq(transcriptEdits.id, editId)
+          )
+        )
+        .returning();
+
+      if (!updated) {
+        throw new Error("Transcript edit not found");
+      }
+
+      return updated;
+    } catch (error) {
+      console.error("Error updating transcript edit:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Delete a transcript edit
+   */
+  async deleteTranscriptEdit(userId: string, editId: string): Promise<void> {
+    try {
+      await db
+        .delete(transcriptEdits)
+        .where(
+          and(
+            eq(transcriptEdits.userId, userId),
+            eq(transcriptEdits.id, editId)
+          )
+        );
+    } catch (error) {
+      console.error("Error deleting transcript edit:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get recent transcriptions
+   */
+  async getRecentTranscriptions(userId: string, days: number = 7): Promise<Transcription[]> {
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - days);
+
+      const recent = await db
+        .select()
+        .from(transcriptions)
+        .where(
+          and(
+            eq(transcriptions.userId, userId),
+            gte(transcriptions.createdAt, since)
+          )
+        )
+        .orderBy(desc(transcriptions.createdAt));
+
+      return recent;
+    } catch (error) {
+      console.error("Error getting recent transcriptions:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Search transcriptions by text
+   */
+  async searchTranscriptions(userId: string, query: string, limit: number = 20): Promise<Transcription[]> {
+    try {
+      const searchTerm = `%${query.toLowerCase()}%`;
+      
+      const results = await db
+        .select()
+        .from(transcriptions)
+        .where(
+          and(
+            eq(transcriptions.userId, userId),
+            or(
+              sql`lower(${transcriptions.transcript}) LIKE ${searchTerm}`,
+              sql`lower(${transcriptions.metadata}->>'title') LIKE ${searchTerm}`,
+              sql`lower(${transcriptions.metadata}->>'description') LIKE ${searchTerm}`
+            )
+          )
+        )
+        .orderBy(desc(transcriptions.createdAt))
+        .limit(limit);
+
+      return results;
+    } catch (error) {
+      console.error("Error searching transcriptions:", error);
       throw error;
     }
   }
