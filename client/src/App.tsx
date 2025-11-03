@@ -168,6 +168,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Landing} />
         <Route path="/recommendations-public-demo" component={RecommendationsPublicDemo} />
+        <Route path="/ocr" component={OCRPage} />
         <Route component={Landing} />
       </Switch>
     );

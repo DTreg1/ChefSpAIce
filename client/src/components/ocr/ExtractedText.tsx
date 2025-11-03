@@ -42,55 +42,45 @@ export function ExtractedText({
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text);
   const [hasChanges, setHasChanges] = useState(false);
-  const [selectedText, setSelectedText] = useState("");
+  const [originalFullText, setOriginalFullText] = useState(text);
 
   useEffect(() => {
     setEditedText(text);
+    setOriginalFullText(text);
   }, [text]);
 
   useEffect(() => {
-    setHasChanges(editedText !== text);
-  }, [editedText, text]);
+    setHasChanges(editedText !== originalFullText);
+  }, [editedText, originalFullText]);
 
   const handleStartEdit = useCallback(() => {
     if (!readOnly) {
       setIsEditing(true);
+      setOriginalFullText(editedText); // Save the current state as original
     }
-  }, [readOnly]);
+  }, [readOnly, editedText]);
 
   const handleCancelEdit = useCallback(() => {
-    setEditedText(text);
+    setEditedText(originalFullText);
     setIsEditing(false);
     setHasChanges(false);
-    setSelectedText("");
-  }, [text]);
+  }, [originalFullText]);
 
   const handleSaveEdit = useCallback(() => {
-    if (hasChanges && onSaveCorrection && selectedText) {
+    if (hasChanges && onSaveCorrection) {
+      // Save the entire text correction
       onSaveCorrection({
-        originalText: selectedText,
-        correctedText: editedText.substring(
-          editedText.indexOf(selectedText),
-          editedText.indexOf(selectedText) + selectedText.length
-        ),
+        originalText: originalFullText,
+        correctedText: editedText,
         correctionType: "other",
         confidence: 100,
       });
     }
+    setOriginalFullText(editedText); // Update original to the new saved state
     setIsEditing(false);
     setHasChanges(false);
-    setSelectedText("");
-  }, [hasChanges, onSaveCorrection, selectedText, editedText]);
+  }, [hasChanges, onSaveCorrection, originalFullText, editedText]);
 
-  const handleTextSelect = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const textarea = e.target;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    
-    if (start !== end) {
-      setSelectedText(textarea.value.substring(start, end));
-    }
-  }, []);
 
   const getConfidenceColor = useCallback((conf: number) => {
     if (conf >= 90) return "text-green-600";
@@ -170,7 +160,6 @@ export function ExtractedText({
             <Textarea
               value={editedText}
               onChange={(e) => setEditedText(e.target.value)}
-              onSelect={handleTextSelect}
               className="min-h-[200px] font-mono text-sm"
               placeholder="Extracted text will appear here..."
               data-testid="textarea-edit"

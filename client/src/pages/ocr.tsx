@@ -164,7 +164,7 @@ export default function OCRPage() {
     }
   }, []);
 
-  // Extract text from file (client-side with Tesseract.js)
+  // Extract text from file (server-side processing)
   const handleExtractText = useCallback(async () => {
     if (!selectedFile) return;
 
@@ -172,68 +172,36 @@ export default function OCRPage() {
     setProcessingProgress(0);
 
     try {
-      if (selectedFile.type.startsWith('image/')) {
-        // Use Tesseract.js for client-side OCR
-        const result = await Tesseract.recognize(
-          selectedFile,
-          selectedLanguage,
-          {
-            logger: (m) => {
-              if (m.status === 'recognizing text') {
-                setProcessingProgress(Math.round(m.progress * 100));
-              }
-            }
-          }
-        );
+      // Use server-side processing for reliability
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('language', selectedLanguage);
+      formData.append('parseReceipt', 'true');
 
-        setExtractedText(result.data.text);
-        setConfidence(result.data.confidence);
-        
-        // Extract bounding boxes for visualization
-        const boxes: any[] = [];
-        if (result.data.words) {
-          result.data.words.forEach((word: any) => {
-            boxes.push({
-              text: word.text,
-              confidence: word.confidence,
-              bbox: word.bbox
-            });
-          });
-        }
-        setBoundingBoxes(boxes);
+      setProcessingProgress(50); // Show some progress
 
+      const result = await extractMutation.mutateAsync(formData);
+      
+      setProcessingProgress(90);
+      
+      setExtractedText(result.text || '');
+      setConfidence(result.confidence || 0);
+      setBoundingBoxes(result.boundingBoxes || []);
+      
+      if (result.structuredData) {
+        setStructuredData(result.structuredData);
+      } else if (result.text && (result.text.toLowerCase().includes('total') || 
+                                   result.text.toLowerCase().includes('receipt'))) {
         // Parse receipt if it looks like one
-        if (result.data.text.toLowerCase().includes('total') || 
-            result.data.text.toLowerCase().includes('receipt')) {
-          const parsed = parseReceipt(result.data.text);
-          setStructuredData(parsed);
-        }
-
-        toast({
-          title: "Text extracted successfully",
-          description: `Extracted ${boxes.length} words with ${result.data.confidence.toFixed(1)}% confidence`,
-        });
-      } else {
-        // For PDFs, use server-side processing
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        formData.append('language', selectedLanguage);
-
-        const result = await extractMutation.mutateAsync(formData);
-        
-        setExtractedText(result.text || '');
-        setConfidence(result.confidence || 0);
-        setBoundingBoxes(result.boundingBoxes || []);
-        
-        if (result.structuredData) {
-          setStructuredData(result.structuredData);
-        }
-
-        toast({
-          title: "PDF processed successfully",
-          description: `Extracted text from PDF document`,
-        });
+        const parsed = parseReceipt(result.text);
+        setStructuredData(parsed);
       }
+
+      const fileType = selectedFile.type.startsWith('image/') ? 'image' : 'PDF';
+      toast({
+        title: "Text extracted successfully",
+        description: `Extracted text from ${fileType} with ${(result.confidence || 0).toFixed(1)}% confidence`,
+      });
     } catch (error) {
       console.error('OCR Error:', error);
       toast({

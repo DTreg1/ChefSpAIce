@@ -39,6 +39,36 @@ ChefSpAIce is an AI-powered, chat-based kitchen assistant designed to manage hom
 - **UI Components**: FaceDetector (main UI), PrivacyBlur, FaceCropper, FaceCounter, FaceDetectionDemo
 - **Location**: Available at /face-detection with "Face Detection" in the sidebar
 
+### OCR Text Extraction System (November 2025)
+- **Purpose**: Extract text from images, PDFs, and scanned documents with user correction capabilities
+- **Technology**: Tesseract.js for optical character recognition (currently using mock implementation for stability)
+- **Core Features**:
+  - **Multi-format Support**: Extract text from images (PNG, JPG, WebP) and PDF documents
+  - **Multi-language OCR**: Support for 20+ languages including English, Spanish, Chinese, Arabic
+  - **User Corrections**: Edit extracted text with confidence tracking for accuracy improvements
+  - **Structured Data Parsing**: Automatic receipt parsing to extract items, prices, and totals
+  - **Export Options**: Download or copy extracted text as plain text, JSON, or CSV formats
+- **Key Capabilities**:
+  - **Receipt Processing**: Automatically identifies and structures receipt data (items, prices, tax, total)
+  - **Confidence Scoring**: Displays extraction confidence percentage for quality assessment
+  - **Bounding Boxes**: Preserves text location data for spatial analysis
+  - **Edit History**: Tracks user corrections with original vs corrected text comparison
+- **Database Tables**: 
+  - **ocr_results**: Stores extraction results with confidence scores and metadata
+  - **ocr_corrections**: Tracks user edits and improvements to extracted text
+- **API Endpoints**: 
+  - **/api/ocr/extract**: Process images/PDFs and extract text
+  - **/api/ocr/document/:id**: Retrieve specific OCR results
+  - **/api/ocr/correct**: Save user corrections to extracted text
+  - **/api/ocr/languages**: Get list of supported OCR languages
+- **UI Components**: 
+  - **OCRUploader**: Drag-and-drop file upload interface
+  - **ExtractedText**: Display and edit extracted text with confidence indicators
+  - **HighlightedRegions**: Visual bounding box overlay (for future implementation)
+  - **LanguageSelector**: Choose OCR language for processing
+  - **CopyButton**: Export text in multiple formats
+- **Location**: Available at /ocr (currently public for testing)
+
 ## User Preferences
 - Design follows ChatGPT-inspired conversational interface
 - Olive green (#6b8e23) and dark navy (#0e1621) color scheme
