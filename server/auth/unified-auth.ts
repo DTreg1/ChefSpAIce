@@ -45,6 +45,22 @@ export async function setupUnifiedAuth(app: Express) {
       }
     });
     
+    // Add config-status endpoint for Replit mode
+    app.get('/api/auth/config-status', (req, res) => {
+      res.json({
+        providers: {
+          replit: true,  // Replit auth is always available in Replit mode
+          google: false,
+          github: false,
+          twitter: false,
+          apple: false,
+          email: false
+        },
+        configured: true,
+        message: "Using Replit authentication"
+      });
+    });
+    
   } else {
     // Use custom OAuth for production
     await setupCustomOAuth(app);
