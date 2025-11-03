@@ -6803,3 +6803,204 @@ export type CohortMetric = typeof cohortMetrics.$inferSelect;
 
 export type InsertCohortInsight = z.infer<typeof insertCohortInsightSchema>;
 export type CohortInsight = typeof cohortInsights.$inferSelect;
+
+/**
+ * Predictive Maintenance System Tables
+ * 
+ * Implements time-series anomaly detection and predictive analytics
+ * for system component health monitoring and failure prediction.
+ */
+
+/**
+ * System Metrics Table
+ * 
+ * Stores time-series performance metrics for system components.
+ * Used as input data for LSTM autoencoder anomaly detection.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - component: System component name (database, server, cache, api, storage)
+ * - metricName: Metric identifier (query_time, cpu_usage, memory_usage, etc.)
+ * - value: Numeric metric value
+ * - timestamp: When metric was recorded
+ * - metadata: Additional context as JSONB
+ * - anomalyScore: Real-time anomaly detection score (0-1)
+ * - createdAt: Record creation timestamp
+ * 
+ * Business Rules:
+ * - Metrics ingested continuously from system monitoring
+ * - Anomaly scores computed by LSTM autoencoder
+ * - Data retention: 90 days of raw metrics
+ * - Aggregated hourly/daily summaries preserved longer
+ * 
+ * Indexes:
+ * - Component + timestamp for time-series queries
+ * - Metric name for specific metric analysis
+ * - Anomaly score for alerting thresholds
+ */
+export const systemMetrics = pgTable("system_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  component: text("component").notNull(), // 'database', 'server', 'cache', 'api', 'storage'
+  metricName: text("metric_name").notNull(), // 'query_time', 'cpu_usage', 'memory_usage', 'error_rate'
+  value: real("value").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  metadata: jsonb("metadata").$type<{
+    unit?: string;
+    source?: string;
+    tags?: string[];
+    context?: Record<string, any>;
+  }>(),
+  anomalyScore: real("anomaly_score"), // 0-1 score from LSTM autoencoder
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("system_metrics_component_timestamp_idx").on(table.component, table.timestamp),
+  index("system_metrics_metric_name_idx").on(table.metricName),
+  index("system_metrics_anomaly_score_idx").on(table.anomalyScore),
+  index("system_metrics_timestamp_idx").on(table.timestamp),
+]);
+
+/**
+ * Maintenance Predictions Table
+ * 
+ * Stores ML-generated predictions for component failures and maintenance needs.
+ * Output from LSTM time-series forecasting model.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - component: System component requiring maintenance
+ * - predictedIssue: Type of predicted failure/issue
+ * - probability: Confidence of prediction (0-1)
+ * - recommendedDate: Suggested maintenance date
+ * - urgencyLevel: Priority classification
+ * - estimatedDowntime: Expected downtime in minutes
+ * - preventiveActions: JSONB array of recommended actions
+ * - modelVersion: ML model version for traceability
+ * - features: Input features used for prediction
+ * - status: Prediction lifecycle status
+ * - createdAt: Prediction generation timestamp
+ * - updatedAt: Last status update
+ * 
+ * Business Rules:
+ * - Predictions regenerated daily or on significant metric changes
+ * - High probability (>0.7) triggers immediate alerts
+ * - Recommended dates optimize for low-traffic periods
+ * - Historical predictions preserved for model evaluation
+ * 
+ * Indexes:
+ * - Component for component-specific views
+ * - Recommended date for maintenance scheduling
+ * - Status for active predictions
+ * - Probability for high-confidence alerts
+ */
+export const maintenancePredictions = pgTable("maintenance_predictions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  component: text("component").notNull(),
+  predictedIssue: text("predicted_issue").notNull(), // 'performance_degradation', 'disk_full', 'memory_leak', 'index_fragmentation'
+  probability: real("probability").notNull(), // 0-1 confidence score
+  recommendedDate: timestamp("recommended_date").notNull(),
+  urgencyLevel: text("urgency_level").notNull().default('medium'), // 'low', 'medium', 'high', 'critical'
+  estimatedDowntime: integer("estimated_downtime"), // minutes
+  preventiveActions: jsonb("preventive_actions").$type<string[]>(),
+  modelVersion: text("model_version").notNull().default('v1.0.0'),
+  features: jsonb("features").$type<{
+    trendSlope?: number;
+    seasonality?: Record<string, number>;
+    recentAnomalies?: number;
+    historicalPatterns?: any[];
+  }>(),
+  status: text("status").notNull().default('active'), // 'active', 'scheduled', 'completed', 'dismissed'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("maintenance_predictions_component_idx").on(table.component),
+  index("maintenance_predictions_recommended_date_idx").on(table.recommendedDate),
+  index("maintenance_predictions_status_idx").on(table.status),
+  index("maintenance_predictions_probability_idx").on(table.probability),
+  index("maintenance_predictions_urgency_idx").on(table.urgencyLevel),
+]);
+
+/**
+ * Maintenance History Table
+ * 
+ * Tracks completed maintenance activities and their outcomes.
+ * Used for model training and performance evaluation.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - component: System component maintained
+ * - issue: Actual issue addressed
+ * - predictedIssue: What was predicted (for accuracy tracking)
+ * - predictionId: Link to original prediction
+ * - resolvedAt: When maintenance was completed
+ * - downtimeMinutes: Actual downtime incurred
+ * - performedActions: Actions taken during maintenance
+ * - outcome: Result of maintenance
+ * - performanceMetrics: Before/after performance comparison
+ * - cost: Estimated cost/impact metrics
+ * - notes: Additional maintenance notes
+ * - createdAt: Record creation timestamp
+ * 
+ * Business Rules:
+ * - Records created after maintenance completion
+ * - Links to predictions for accuracy tracking
+ * - Performance metrics validate maintenance effectiveness
+ * - Historical data improves future predictions
+ * 
+ * Indexes:
+ * - Component for maintenance history queries
+ * - Resolved date for temporal analysis
+ * - Prediction ID for accuracy tracking
+ */
+export const maintenanceHistory = pgTable("maintenance_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  component: text("component").notNull(),
+  issue: text("issue").notNull(),
+  predictedIssue: text("predicted_issue"), // For comparing with predictions
+  predictionId: varchar("prediction_id").references(() => maintenancePredictions.id, { onDelete: "set null" }),
+  resolvedAt: timestamp("resolved_at").notNull(),
+  downtimeMinutes: integer("downtime_minutes").notNull(),
+  performedActions: jsonb("performed_actions").$type<string[]>(),
+  outcome: text("outcome").notNull(), // 'successful', 'partial', 'failed'
+  performanceMetrics: jsonb("performance_metrics").$type<{
+    before?: Record<string, number>;
+    after?: Record<string, number>;
+    improvement?: number; // percentage
+  }>(),
+  cost: jsonb("cost").$type<{
+    laborHours?: number;
+    resourceCost?: number;
+    opportunityCost?: number;
+  }>(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("maintenance_history_component_idx").on(table.component),
+  index("maintenance_history_resolved_at_idx").on(table.resolvedAt),
+  index("maintenance_history_prediction_id_idx").on(table.predictionId),
+]);
+
+// Insert schemas and types for predictive maintenance
+export const insertSystemMetricSchema = createInsertSchema(systemMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMaintenancePredictionSchema = createInsertSchema(maintenancePredictions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMaintenanceHistorySchema = createInsertSchema(maintenanceHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSystemMetric = z.infer<typeof insertSystemMetricSchema>;
+export type SystemMetric = typeof systemMetrics.$inferSelect;
+
+export type InsertMaintenancePrediction = z.infer<typeof insertMaintenancePredictionSchema>;
+export type MaintenancePrediction = typeof maintenancePredictions.$inferSelect;
+
+export type InsertMaintenanceHistory = z.infer<typeof insertMaintenanceHistorySchema>;
+export type MaintenanceHistory = typeof maintenanceHistory.$inferSelect;

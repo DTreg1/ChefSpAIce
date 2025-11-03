@@ -281,6 +281,16 @@ import {
   cohorts,
   cohortMetrics,
   cohortInsights,
+  // Predictive Maintenance types and tables
+  type SystemMetric,
+  type InsertSystemMetric,
+  type MaintenancePrediction,
+  type InsertMaintenancePrediction,
+  type MaintenanceHistory,
+  type InsertMaintenanceHistory,
+  systemMetrics,
+  maintenancePredictions,
+  maintenanceHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -12050,6 +12060,199 @@ export class DatabaseStorage implements IStorage {
     // For now, returning empty array
     console.log(`Generating insights for cohort ${cohortId}`);
     return [];
+  }
+
+  // Predictive Maintenance Methods
+  async saveSystemMetric(metric: InsertSystemMetric): Promise<SystemMetric> {
+    try {
+      const [saved] = await db.insert(systemMetrics).values(metric).returning();
+      return saved;
+    } catch (error) {
+      console.error("Error saving system metric:", error);
+      throw error;
+    }
+  }
+
+  async getSystemMetrics(
+    component?: string,
+    startDate?: Date,
+    endDate?: Date,
+    limit: number = 100
+  ): Promise<SystemMetric[]> {
+    try {
+      let query = db.select().from(systemMetrics);
+      const conditions: any[] = [];
+
+      if (component) {
+        conditions.push(eq(systemMetrics.component, component));
+      }
+      if (startDate) {
+        conditions.push(gte(systemMetrics.timestamp, startDate));
+      }
+      if (endDate) {
+        conditions.push(lte(systemMetrics.timestamp, endDate));
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+
+      return await query
+        .orderBy(desc(systemMetrics.timestamp))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error getting system metrics:", error);
+      throw error;
+    }
+  }
+
+  async saveMaintenancePrediction(prediction: InsertMaintenancePrediction): Promise<MaintenancePrediction> {
+    try {
+      const [saved] = await db
+        .insert(maintenancePredictions)
+        .values(prediction)
+        .returning();
+      return saved;
+    } catch (error) {
+      console.error("Error saving maintenance prediction:", error);
+      throw error;
+    }
+  }
+
+  async getMaintenancePredictions(
+    status?: string,
+    component?: string
+  ): Promise<MaintenancePrediction[]> {
+    try {
+      let query = db.select().from(maintenancePredictions);
+      const conditions: any[] = [];
+
+      if (status) {
+        conditions.push(eq(maintenancePredictions.status, status));
+      }
+      if (component) {
+        conditions.push(eq(maintenancePredictions.component, component));
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+
+      return await query.orderBy(asc(maintenancePredictions.recommendedDate));
+    } catch (error) {
+      console.error("Error getting maintenance predictions:", error);
+      throw error;
+    }
+  }
+
+  async updatePredictionStatus(
+    predictionId: string,
+    status: string
+  ): Promise<MaintenancePrediction> {
+    try {
+      const [updated] = await db
+        .update(maintenancePredictions)
+        .set({ 
+          status,
+          updatedAt: new Date()
+        })
+        .where(eq(maintenancePredictions.id, predictionId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating prediction status:", error);
+      throw error;
+    }
+  }
+
+  async saveMaintenanceHistory(
+    history: InsertMaintenanceHistory
+  ): Promise<MaintenanceHistory> {
+    try {
+      const [saved] = await db
+        .insert(maintenanceHistory)
+        .values(history)
+        .returning();
+      
+      // Mark related prediction as completed if exists
+      if (saved.predictionId) {
+        await this.updatePredictionStatus(saved.predictionId, 'completed');
+      }
+      
+      return saved;
+    } catch (error) {
+      console.error("Error saving maintenance history:", error);
+      throw error;
+    }
+  }
+
+  async getMaintenanceHistory(
+    component?: string,
+    limit: number = 50
+  ): Promise<MaintenanceHistory[]> {
+    try {
+      let query = db.select().from(maintenanceHistory);
+      
+      if (component) {
+        query = query.where(eq(maintenanceHistory.component, component)) as any;
+      }
+
+      return await query
+        .orderBy(desc(maintenanceHistory.resolvedAt))
+        .limit(limit);
+    } catch (error) {
+      console.error("Error getting maintenance history:", error);
+      throw error;
+    }
+  }
+
+  async getComponentHealth(component: string): Promise<{
+    avgAnomalyScore: number;
+    recentMetrics: SystemMetric[];
+    predictions: MaintenancePrediction[];
+    history: MaintenanceHistory[];
+  }> {
+    try {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+      // Get recent metrics
+      const recentMetrics = await this.getSystemMetrics(
+        component,
+        oneDayAgo,
+        new Date(),
+        100
+      );
+
+      // Calculate average anomaly score
+      const avgAnomalyScore = recentMetrics.length > 0
+        ? recentMetrics.reduce((sum, m) => sum + (m.anomalyScore || 0), 0) / recentMetrics.length
+        : 0;
+
+      // Get active predictions
+      const predictions = await db
+        .select()
+        .from(maintenancePredictions)
+        .where(
+          and(
+            eq(maintenancePredictions.component, component),
+            eq(maintenancePredictions.status, 'active')
+          )
+        );
+
+      // Get recent history
+      const history = await this.getMaintenanceHistory(component, 10);
+
+      return {
+        avgAnomalyScore,
+        recentMetrics,
+        predictions,
+        history
+      };
+    } catch (error) {
+      console.error("Error getting component health:", error);
+      throw error;
+    }
   }
 }
 
