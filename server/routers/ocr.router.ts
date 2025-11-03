@@ -16,7 +16,7 @@ import { storage } from "../storage";
 import type { InsertOcrResult, InsertOcrCorrection } from "@shared/schema";
 import { insertOcrResultSchema, insertOcrCorrectionSchema } from "@shared/schema";
 import { z } from "zod";
-import pdfParse from "pdf-parse";
+const pdfParse = require("pdf-parse");
 
 const router = express.Router();
 
