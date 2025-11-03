@@ -6349,3 +6349,222 @@ export type Trend = typeof trends.$inferSelect;
 
 export type InsertTrendAlert = z.infer<typeof insertTrendAlertSchema>;
 export type TrendAlert = typeof trendAlerts.$inferSelect;
+
+/**
+ * A/B Tests Table
+ * 
+ * Stores configuration for A/B split tests to optimize features and conversion rates.
+ * Enables controlled experiments with statistical significance tracking.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - name: Test name for identification
+ * - variantA: Control variant description
+ * - variantB: Test variant description
+ * - startDate: When test begins
+ * - endDate: When test ends
+ * - status: 'draft', 'active', 'completed', 'paused'
+ * - targetAudience: Percentage of users to include
+ * - successMetric: Primary metric to optimize (conversion, revenue, engagement)
+ * - metadata: Additional test configuration and context
+ * - createdBy: User who created the test
+ * - createdAt: Test creation timestamp
+ * - updatedAt: Last modification timestamp
+ * 
+ * Business Rules:
+ * - Only one active test per feature area at a time
+ * - Minimum sample size required for statistical significance
+ * - Tests auto-pause if anomalies detected
+ * - Historical tests preserved for learning
+ * 
+ * Indexes:
+ * - ab_tests_status_idx: Filter by test status
+ * - ab_tests_dates_idx: Active test lookups
+ * - ab_tests_created_by_idx: User's created tests
+ */
+export const abTests = pgTable("ab_tests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  variantA: text("variant_a").notNull(),
+  variantB: text("variant_b").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull().default('draft'), // 'draft', 'active', 'completed', 'paused'
+  targetAudience: real("target_audience").notNull().default(0.5), // Percentage as decimal
+  successMetric: text("success_metric").notNull().default('conversion'), // 'conversion', 'revenue', 'engagement'
+  metadata: jsonb("metadata").$type<{
+    hypothesis?: string;
+    featureArea?: string;
+    minimumSampleSize?: number;
+    confidenceLevel?: number;
+    testType?: string; // 'split', 'multivariate', 'redirect'
+    tags?: string[];
+  }>(),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("ab_tests_status_idx").on(table.status),
+  index("ab_tests_dates_idx").on(table.startDate, table.endDate),
+  index("ab_tests_created_by_idx").on(table.createdBy),
+]);
+
+/**
+ * A/B Test Results Table
+ * 
+ * Stores aggregated performance metrics for each test variant.
+ * Updated periodically to track test progress and outcomes.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - testId: Foreign key to abTests.id
+ * - variant: 'A' (control) or 'B' (test)
+ * - conversions: Number of successful conversions
+ * - visitors: Total number of visitors exposed
+ * - revenue: Total revenue generated (if applicable)
+ * - engagementScore: Average engagement metric
+ * - bounceRate: Percentage of single-action sessions
+ * - avgSessionDuration: Average time spent (seconds)
+ * - sampleSize: Current sample size
+ * - metadata: Additional metrics and segmentation
+ * - periodStart: Start of measurement period
+ * - periodEnd: End of measurement period
+ * - createdAt: Result record creation
+ * - updatedAt: Last metrics update
+ * 
+ * Business Rules:
+ * - Results aggregated hourly for active tests
+ * - Separate records for each measurement period
+ * - Statistical calculations based on cumulative data
+ * - Confidence intervals computed on read
+ * 
+ * Indexes:
+ * - ab_test_results_test_id_idx: Results for specific test
+ * - ab_test_results_variant_idx: Variant comparison
+ * - ab_test_results_period_idx: Time-based analysis
+ */
+export const abTestResults = pgTable("ab_test_results", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  testId: varchar("test_id").notNull().references(() => abTests.id, { onDelete: "cascade" }),
+  variant: text("variant").notNull(), // 'A' or 'B'
+  conversions: integer("conversions").notNull().default(0),
+  visitors: integer("visitors").notNull().default(0),
+  revenue: real("revenue").notNull().default(0),
+  engagementScore: real("engagement_score"),
+  bounceRate: real("bounce_rate"),
+  avgSessionDuration: real("avg_session_duration"),
+  sampleSize: integer("sample_size").notNull().default(0),
+  metadata: jsonb("metadata").$type<{
+    deviceBreakdown?: Record<string, number>;
+    geoBreakdown?: Record<string, number>;
+    referrerBreakdown?: Record<string, number>;
+    customMetrics?: Record<string, number>;
+    segments?: Record<string, any>;
+  }>(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("ab_test_results_test_id_idx").on(table.testId),
+  index("ab_test_results_variant_idx").on(table.variant),
+  index("ab_test_results_period_idx").on(table.periodStart, table.periodEnd),
+]);
+
+/**
+ * A/B Test Insights Table
+ * 
+ * Stores AI-generated analysis and recommendations for test outcomes.
+ * Provides plain-language interpretation of statistical results.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - testId: Foreign key to abTests.id
+ * - winner: Winning variant ('A', 'B', or 'inconclusive')
+ * - confidence: Statistical confidence level (0-1)
+ * - pValue: Statistical p-value from significance test
+ * - liftPercentage: Percentage improvement of winner
+ * - recommendation: Action recommendation ('implement', 'continue', 'stop', 'iterate')
+ * - explanation: Plain-language explanation of results
+ * - insights: Detailed AI analysis and observations
+ * - statisticalAnalysis: Raw statistical calculations
+ * - generatedBy: AI model used for interpretation
+ * - createdAt: Insight generation timestamp
+ * - updatedAt: Last insight update
+ * 
+ * Business Rules:
+ * - Insights generated when significance reached or test ends
+ * - Confidence threshold of 0.95 for winner declaration
+ * - P-value < 0.05 for statistical significance
+ * - AI interpretation includes context and best practices
+ * 
+ * Indexes:
+ * - ab_test_insights_test_id_idx: Insights for specific test
+ * - ab_test_insights_winner_idx: Filter by winning variant
+ * - ab_test_insights_confidence_idx: High-confidence results
+ */
+export const abTestInsights = pgTable("ab_test_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  testId: varchar("test_id").notNull().references(() => abTests.id, { onDelete: "cascade" }),
+  winner: text("winner"), // 'A', 'B', or 'inconclusive'
+  confidence: real("confidence").notNull(), // 0-1 confidence level
+  pValue: real("p_value"),
+  liftPercentage: real("lift_percentage"),
+  recommendation: text("recommendation").notNull(), // 'implement', 'continue', 'stop', 'iterate'
+  explanation: text("explanation").notNull(),
+  insights: jsonb("insights").$type<{
+    keyFindings?: string[];
+    segmentInsights?: Record<string, string>;
+    bestPractices?: string[];
+    nextSteps?: string[];
+    warnings?: string[];
+    learnings?: string[];
+  }>(),
+  statisticalAnalysis: jsonb("statistical_analysis").$type<{
+    sampleSizeA?: number;
+    sampleSizeB?: number;
+    conversionRateA?: number;
+    conversionRateB?: number;
+    standardErrorA?: number;
+    standardErrorB?: number;
+    zScore?: number;
+    confidenceInterval?: { lower: number; upper: number };
+    minimumDetectableEffect?: number;
+    power?: number;
+  }>(),
+  generatedBy: text("generated_by").notNull().default('gpt-3.5-turbo'),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("ab_test_insights_test_id_idx").on(table.testId),
+  index("ab_test_insights_winner_idx").on(table.winner),
+  index("ab_test_insights_confidence_idx").on(table.confidence),
+]);
+
+// Insert schemas and types for A/B testing
+export const insertAbTestSchema = createInsertSchema(abTests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAbTestResultSchema = createInsertSchema(abTestResults).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAbTestInsightSchema = createInsertSchema(abTestInsights).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
+export type AbTest = typeof abTests.$inferSelect;
+
+export type InsertAbTestResult = z.infer<typeof insertAbTestResultSchema>;
+export type AbTestResult = typeof abTestResults.$inferSelect;
+
+export type InsertAbTestInsight = z.infer<typeof insertAbTestInsightSchema>;
+export type AbTestInsight = typeof abTestInsights.$inferSelect;
