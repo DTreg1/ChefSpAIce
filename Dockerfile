@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Node.js application
 
 # Stage 1: Base image with dependencies
-FROM node:20-alpine AS base
+FROM node:25-alpine AS base
 WORKDIR /app
 
 # Install system dependencies (required for some npm packages)
@@ -37,7 +37,7 @@ COPY . .
 RUN npm run build
 
 # Stage 4: Production stage
-FROM node:20-alpine AS production
+FROM node:25-alpine AS production
 WORKDIR /app
 
 # Install only production dependencies
