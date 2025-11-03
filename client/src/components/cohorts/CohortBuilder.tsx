@@ -361,8 +361,8 @@ export function CohortBuilder() {
                       <SelectContent>
                         <SelectItem value="equals">=</SelectItem>
                         <SelectItem value="not_equals">≠</SelectItem>
-                        <SelectItem value="greater">></SelectItem>
-                        <SelectItem value="less"><</SelectItem>
+                        <SelectItem value="greater">{'>'}</SelectItem>
+                        <SelectItem value="less">{'<'}</SelectItem>
                         <SelectItem value="contains">Contains</SelectItem>
                       </SelectContent>
                     </Select>

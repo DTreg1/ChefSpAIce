@@ -334,6 +334,12 @@ import {
   pricingRules,
   priceHistory,
   pricingPerformance,
+  type ImageProcessing,
+  type InsertImageProcessing,
+  type ImagePresets,
+  type InsertImagePresets,
+  imageProcessing,
+  imagePresets,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
@@ -3036,6 +3042,63 @@ export interface IStorage {
       demandChange: number;
     };
   }>;
+
+  // ==================== Image Processing Operations ====================
+
+  /**
+   * Get all image processing jobs for a user
+   */
+  getImageProcessingJobs(userId: string, status?: string): Promise<ImageProcessing[]>;
+
+  /**
+   * Get a specific image processing job
+   */
+  getImageProcessingJob(id: string): Promise<ImageProcessing | null>;
+
+  /**
+   * Create a new image processing job
+   */
+  createImageProcessingJob(data: InsertImageProcessing): Promise<ImageProcessing>;
+
+  /**
+   * Update an image processing job
+   */
+  updateImageProcessingJob(id: string, data: Partial<InsertImageProcessing>): Promise<ImageProcessing | null>;
+
+  /**
+   * Delete an image processing job
+   */
+  deleteImageProcessingJob(id: string): Promise<boolean>;
+
+  /**
+   * Get image presets
+   */
+  getImagePresets(userId?: string, category?: string): Promise<ImagePresets[]>;
+
+  /**
+   * Get a specific image preset
+   */
+  getImagePreset(id: string): Promise<ImagePresets | null>;
+
+  /**
+   * Create a new image preset
+   */
+  createImagePreset(data: InsertImagePresets): Promise<ImagePresets>;
+
+  /**
+   * Update an image preset
+   */
+  updateImagePreset(id: string, data: Partial<InsertImagePresets>): Promise<ImagePresets | null>;
+
+  /**
+   * Delete an image preset
+   */
+  deleteImagePreset(id: string): Promise<boolean>;
+
+  /**
+   * Increment preset usage count
+   */
+  incrementPresetUsage(id: string): Promise<void>;
 }
 
 /**
@@ -14125,6 +14188,233 @@ export class DatabaseStorage implements IStorage {
       };
     } catch (error) {
       console.error("Error calculating optimal price:", error);
+      throw error;
+    }
+  }
+
+  // ==================== Image Processing Operations ====================
+
+  /**
+   * Get all image processing jobs for a user
+   */
+  async getImageProcessingJobs(userId: string, status?: string): Promise<ImageProcessing[]> {
+    try {
+      const conditions = [eq(imageProcessing.userId, userId)];
+      
+      if (status) {
+        conditions.push(eq(imageProcessing.status, status as any));
+      }
+
+      const jobs = await db
+        .select()
+        .from(imageProcessing)
+        .where(and(...conditions))
+        .orderBy(desc(imageProcessing.createdAt));
+
+      return jobs;
+    } catch (error) {
+      console.error("Error getting image processing jobs:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific image processing job
+   */
+  async getImageProcessingJob(id: string): Promise<ImageProcessing | null> {
+    try {
+      const job = await db
+        .select()
+        .from(imageProcessing)
+        .where(eq(imageProcessing.id, id))
+        .limit(1);
+
+      return job[0] || null;
+    } catch (error) {
+      console.error("Error getting image processing job:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new image processing job
+   */
+  async createImageProcessingJob(data: InsertImageProcessing): Promise<ImageProcessing> {
+    try {
+      const [job] = await db
+        .insert(imageProcessing)
+        .values(data)
+        .returning();
+
+      return job;
+    } catch (error) {
+      console.error("Error creating image processing job:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an image processing job
+   */
+  async updateImageProcessingJob(id: string, data: Partial<InsertImageProcessing>): Promise<ImageProcessing | null> {
+    try {
+      const [updated] = await db
+        .update(imageProcessing)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(imageProcessing.id, id))
+        .returning();
+
+      return updated || null;
+    } catch (error) {
+      console.error("Error updating image processing job:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an image processing job
+   */
+  async deleteImageProcessingJob(id: string): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(imageProcessing)
+        .where(eq(imageProcessing.id, id))
+        .returning();
+
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting image processing job:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get image presets
+   */
+  async getImagePresets(userId?: string, category?: string): Promise<ImagePresets[]> {
+    try {
+      const conditions = [];
+
+      if (userId) {
+        // Get user's presets and public presets
+        conditions.push(
+          or(
+            eq(imagePresets.userId, userId),
+            eq(imagePresets.isPublic, true)
+          )
+        );
+      } else {
+        // Only get public presets
+        conditions.push(eq(imagePresets.isPublic, true));
+      }
+
+      if (category) {
+        conditions.push(eq(imagePresets.category, category as any));
+      }
+
+      const presets = await db
+        .select()
+        .from(imagePresets)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(imagePresets.usageCount), desc(imagePresets.createdAt));
+
+      return presets;
+    } catch (error) {
+      console.error("Error getting image presets:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific image preset
+   */
+  async getImagePreset(id: string): Promise<ImagePresets | null> {
+    try {
+      const preset = await db
+        .select()
+        .from(imagePresets)
+        .where(eq(imagePresets.id, id))
+        .limit(1);
+
+      return preset[0] || null;
+    } catch (error) {
+      console.error("Error getting image preset:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new image preset
+   */
+  async createImagePreset(data: InsertImagePresets): Promise<ImagePresets> {
+    try {
+      const [preset] = await db
+        .insert(imagePresets)
+        .values(data)
+        .returning();
+
+      return preset;
+    } catch (error) {
+      console.error("Error creating image preset:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an image preset
+   */
+  async updateImagePreset(id: string, data: Partial<InsertImagePresets>): Promise<ImagePresets | null> {
+    try {
+      const [updated] = await db
+        .update(imagePresets)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(imagePresets.id, id))
+        .returning();
+
+      return updated || null;
+    } catch (error) {
+      console.error("Error updating image preset:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an image preset
+   */
+  async deleteImagePreset(id: string): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(imagePresets)
+        .where(eq(imagePresets.id, id))
+        .returning();
+
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting image preset:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Increment preset usage count
+   */
+  async incrementPresetUsage(id: string): Promise<void> {
+    try {
+      await db
+        .update(imagePresets)
+        .set({
+          usageCount: sql`${imagePresets.usageCount} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(imagePresets.id, id));
+    } catch (error) {
+      console.error("Error incrementing preset usage:", error);
       throw error;
     }
   }

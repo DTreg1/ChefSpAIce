@@ -49,6 +49,7 @@ import schedulingRouter from "./scheduling.router";
 import ticketRoutingRouter from "./ticket-routing.router";
 import extractionRouter from "./extraction.router";
 import pricingRouter from "./pricing.router";
+import imagesRouter from "./images.router";
 
 // Import special endpoints
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
@@ -114,6 +115,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/routing", ticketRoutingRouter); // Ticket routing and intelligent assignment endpoints
   app.use("/api/extract", extractionRouter);    // Data extraction with structured output endpoints
   app.use("/api/pricing", pricingRouter);       // Dynamic pricing optimization with AI and ML endpoints
+  app.use("/api/images", imagesRouter);         // AI-powered image enhancement and processing endpoints
   
   // Register special endpoints
   const seedEndpoint = createSeedEndpoint(storage);

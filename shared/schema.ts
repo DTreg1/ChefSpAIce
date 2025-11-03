@@ -7880,3 +7880,159 @@ export const insertPricingPerformanceSchema = createInsertSchema(pricingPerforma
 
 export type InsertPricingPerformance = z.infer<typeof insertPricingPerformanceSchema>;
 export type PricingPerformance = typeof pricingPerformance.$inferSelect;
+
+/**
+ * Image Processing Table
+ * 
+ * Tracks all image enhancement operations.
+ * Stores both original and processed image URLs with applied operations.
+ * 
+ * Structure:
+ * - id: Unique processing job identifier
+ * - userId: User who initiated the processing
+ * - originalUrl: URL of the original uploaded image
+ * - processedUrl: URL of the processed/enhanced image
+ * - operations: JSON array of applied operations and settings
+ * - processingTime: Time taken to process in milliseconds
+ * - fileSize: Size comparison before/after
+ * - status: processing, completed, failed
+ * - metadata: Additional processing details
+ */
+export const imageProcessing = pgTable("image_processing", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  originalUrl: text("original_url").notNull(),
+  processedUrl: text("processed_url"),
+  operations: jsonb("operations").$type<{
+    backgroundRemoval?: boolean;
+    autoCrop?: boolean;
+    qualityEnhancement?: boolean;
+    filters?: Array<{
+      type: string;
+      intensity: number;
+      parameters?: Record<string, any>;
+    }>;
+    resize?: {
+      width?: number;
+      height?: number;
+      mode?: 'fit' | 'fill' | 'cover';
+    };
+    format?: string;
+    compression?: number;
+  }>().notNull().default({}),
+  processingTime: integer("processing_time"), // milliseconds
+  originalFileSize: integer("original_file_size"), // bytes
+  processedFileSize: integer("processed_file_size"), // bytes
+  status: text("status", { enum: ["processing", "completed", "failed"] })
+    .notNull()
+    .default("processing"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata").$type<{
+    width?: number;
+    height?: number;
+    format?: string;
+    colorSpace?: string;
+    hasTransparency?: boolean;
+    dominantColors?: string[];
+    quality?: number;
+    aiAnalysis?: {
+      mainSubject?: string;
+      backgroundComplexity?: number;
+      suggestedCrop?: { x: number; y: number; width: number; height: number };
+    };
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("image_processing_user_id_idx").on(table.userId),
+  index("image_processing_status_idx").on(table.status),
+  index("image_processing_created_at_idx").on(table.createdAt),
+]);
+
+/**
+ * Image Presets Table
+ * 
+ * Stores reusable enhancement presets for quick application.
+ * Can be user-defined or system-provided.
+ * 
+ * Structure:
+ * - id: Unique preset identifier
+ * - userId: Owner of the preset (null for system presets)
+ * - name: Display name for the preset
+ * - description: What this preset does
+ * - operations: JSON configuration of operations to apply
+ * - category: Type of preset (product, portrait, landscape, etc.)
+ * - isPublic: Whether other users can use this preset
+ * - usageCount: How many times this preset has been used
+ */
+export const imagePresets = pgTable("image_presets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id")
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  operations: jsonb("operations").$type<{
+    backgroundRemoval?: boolean;
+    autoCrop?: boolean;
+    qualityEnhancement?: boolean;
+    filters?: Array<{
+      type: string;
+      intensity: number;
+      parameters?: Record<string, any>;
+    }>;
+    resize?: {
+      width?: number;
+      height?: number;
+      mode?: 'fit' | 'fill' | 'cover';
+    };
+    format?: string;
+    compression?: number;
+    colorAdjustments?: {
+      brightness?: number;
+      contrast?: number;
+      saturation?: number;
+      hue?: number;
+      gamma?: number;
+    };
+    sharpening?: {
+      radius?: number;
+      amount?: number;
+      threshold?: number;
+    };
+  }>().notNull(),
+  category: text("category", { 
+    enum: ["product", "portrait", "landscape", "document", "social_media", "custom"] 
+  }).notNull().default("custom"),
+  isPublic: boolean("is_public").notNull().default(false),
+  usageCount: integer("usage_count").notNull().default(0),
+  thumbnailUrl: text("thumbnail_url"), // Example result using this preset
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("image_presets_user_id_idx").on(table.userId),
+  index("image_presets_category_idx").on(table.category),
+  index("image_presets_is_public_idx").on(table.isPublic),
+  index("image_presets_usage_count_idx").on(table.usageCount),
+]);
+
+// Image Processing Schemas
+export const insertImageProcessingSchema = createInsertSchema(imageProcessing).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertImageProcessing = z.infer<typeof insertImageProcessingSchema>;
+export type ImageProcessing = typeof imageProcessing.$inferSelect;
+
+// Image Presets Schemas
+export const insertImagePresetsSchema = createInsertSchema(imagePresets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertImagePresets = z.infer<typeof insertImagePresetsSchema>;
+export type ImagePresets = typeof imagePresets.$inferSelect;

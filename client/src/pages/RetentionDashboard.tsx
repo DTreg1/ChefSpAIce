@@ -167,7 +167,7 @@ export default function RetentionDashboard() {
               <CardHeader>
                 <CardTitle>High Churn Risk Users</CardTitle>
                 <CardDescription>
-                  Users with >70% probability of churning
+                  Users with {'>'}70% probability of churning
                 </CardDescription>
               </CardHeader>
               <CardContent>
