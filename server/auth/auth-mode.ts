@@ -83,10 +83,9 @@ export function logAuthConfiguration() {
     mode,
     environment: {
       NODE_ENV: process.env.NODE_ENV,
-      REPL_ID: !!process.env.REPL_ID,
-      REPLIT_DOMAINS: !!process.env.REPLIT_DOMAINS,
+      REPL_ID: process.env.REPL_ID,
+      REPLIT_DOMAINS: process.env.REPLIT_DOMAINS,
       ISSUER_URL: process.env.ISSUER_URL || 'not set',
-      AUTH_MODE: process.env.AUTH_MODE || 'not set',
     },
     oauthProviders: {
       google: !!process.env.GOOGLE_CLIENT_ID,
