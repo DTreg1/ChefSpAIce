@@ -4334,6 +4334,107 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateStorageLocation(
+    userId: string,
+    id: string,
+    updates: Partial<UserStorage>
+  ): Promise<UserStorage> {
+    try {
+      // Ensure the storage location exists and belongs to the user
+      const [existing] = await db
+        .select()
+        .from(userStorage)
+        .where(
+          and(
+            eq(userStorage.userId, userId),
+            eq(userStorage.id, id)
+          )
+        );
+
+      if (!existing) {
+        throw new Error("Storage location not found");
+      }
+
+      // Don't allow changing the default storage locations
+      if (existing.isDefault && updates.isDefault === false) {
+        throw new Error("Cannot unset default storage location");
+      }
+
+      // Update the storage location
+      const [updated] = await db
+        .update(userStorage)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+          userId: existing.userId, // Ensure userId cannot be changed
+          id: existing.id, // Ensure id cannot be changed
+        })
+        .where(
+          and(
+            eq(userStorage.userId, userId),
+            eq(userStorage.id, id)
+          )
+        )
+        .returning();
+
+      return updated;
+    } catch (error) {
+      console.error(`Error updating storage location ${id}:`, error);
+      throw new Error("Failed to update storage location");
+    }
+  }
+
+  async deleteStorageLocation(userId: string, id: string): Promise<void> {
+    try {
+      // Check if the location exists and is not a default
+      const [location] = await db
+        .select()
+        .from(userStorage)
+        .where(
+          and(
+            eq(userStorage.userId, userId),
+            eq(userStorage.id, id)
+          )
+        );
+
+      if (!location) {
+        throw new Error("Storage location not found");
+      }
+
+      if (location.isDefault) {
+        throw new Error("Cannot delete default storage locations");
+      }
+
+      // Check if there are items in this location
+      const [itemCount] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(userInventory)
+        .where(
+          and(
+            eq(userInventory.userId, userId),
+            eq(userInventory.storageLocationId, id)
+          )
+        );
+
+      if (itemCount && Number(itemCount.count) > 0) {
+        throw new Error("Cannot delete storage location with items. Move or delete items first.");
+      }
+
+      // Delete the storage location
+      await db
+        .delete(userStorage)
+        .where(
+          and(
+            eq(userStorage.userId, userId),
+            eq(userStorage.id, id)
+          )
+        );
+    } catch (error) {
+      console.error(`Error deleting storage location ${id}:`, error);
+      throw new Error((error as Error).message || "Failed to delete storage location");
+    }
+  }
+
   // Appliances
   async getAppliances(userId: string): Promise<ApplianceWithCategory[]> {
     try {
@@ -10852,12 +10953,21 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(autoSaveDrafts.userId, userId));
       }
       
-      const result = await db
-        .delete(autoSaveDrafts)
+      // Get drafts to be deleted first to count them
+      const draftsToDelete = await db
+        .select({ id: autoSaveDrafts.id })
+        .from(autoSaveDrafts)
         .where(and(...conditions));
       
-      // Return count of deleted rows (Drizzle doesn't provide this directly)
-      return 0; // TODO: Implement proper row count
+      // Delete the drafts if any exist
+      if (draftsToDelete.length > 0) {
+        await db
+          .delete(autoSaveDrafts)
+          .where(and(...conditions));
+      }
+      
+      // Return count of deleted rows
+      return draftsToDelete.length;
     } catch (error) {
       console.error("Error cleaning up old drafts:", error);
       throw new Error("Failed to clean up old drafts");
