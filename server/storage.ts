@@ -7317,12 +7317,7 @@ export class DatabaseStorage implements IStorage {
 
   async createSentimentMetrics(metrics: InsertSentimentMetrics): Promise<SentimentMetrics> {
     try {
-      const [result] = await db.insert(sentimentMetrics).values({
-        ...metrics,
-        metadata: metrics.metadata as any,
-        categories: metrics.categories as any,
-        painPoints: metrics.painPoints as any
-      }).returning();
+      const [result] = await db.insert(sentimentMetrics).values(metrics as any).returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment metrics:", error);
@@ -7366,10 +7361,7 @@ export class DatabaseStorage implements IStorage {
 
   async createSentimentAlert(alert: InsertSentimentAlerts): Promise<SentimentAlerts> {
     try {
-      const [result] = await db.insert(sentimentAlerts).values({
-        ...alert,
-        metadata: alert.metadata as any
-      }).returning();
+      const [result] = await db.insert(sentimentAlerts).values(alert as any).returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment alert:", error);
@@ -7416,12 +7408,7 @@ export class DatabaseStorage implements IStorage {
 
   async createSentimentSegment(segment: InsertSentimentSegments): Promise<SentimentSegments> {
     try {
-      const [result] = await db.insert(sentimentSegments).values({
-        ...segment,
-        metadata: segment.metadata as any,
-        topIssues: segment.topIssues as any,
-        topPraises: segment.topPraises as any
-      }).returning();
+      const [result] = await db.insert(sentimentSegments).values(segment as any).returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment segment:", error);
@@ -8839,17 +8826,15 @@ export class DatabaseStorage implements IStorage {
 
   async createImageMetadata(
     userId: string,
-    metadata: Omit<InsertImageMetadata, "userId">
+    metadataInput: Omit<InsertImageMetadata, "userId">
   ): Promise<ImageMetadata> {
     try {
       const result = await db
         .insert(imageMetadata)
         .values({
-          ...metadata,
-          userId,
-          dimensions: metadata.dimensions as any,
-          metadata: metadata.metadata as any
-        })
+          ...metadataInput,
+          userId
+        } as any)
         .returning();
       
       return result[0];
@@ -8869,10 +8854,8 @@ export class DatabaseStorage implements IStorage {
         .update(imageMetadata)
         .set({
           ...updates,
-          dimensions: updates.dimensions as any,
-          metadata: updates.metadata as any,
           updatedAt: new Date()
-        })
+        } as any)
         .where(and(
           eq(imageMetadata.userId, userId),
           eq(imageMetadata.id, imageId)
@@ -9133,12 +9116,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(moderationLogs)
-        .values({
-          ...log,
-          toxicityScores: log.toxicityScores as any,
-          flaggedWords: log.flaggedWords as any,
-          contextAnalysis: log.contextAnalysis as any
-        })
+        .values(log as any)
         .returning();
       return result;
     } catch (error) {
@@ -9153,11 +9131,8 @@ export class DatabaseStorage implements IStorage {
         .update(moderationLogs)
         .set({
           ...updates,
-          toxicityScores: updates.toxicityScores as any,
-          flaggedWords: updates.flaggedWords as any,
-          contextAnalysis: updates.contextAnalysis as any,
           updatedAt: new Date()
-        })
+        } as any)
         .where(eq(moderationLogs.id, id));
     } catch (error) {
       console.error("Error updating moderation log:", error);
