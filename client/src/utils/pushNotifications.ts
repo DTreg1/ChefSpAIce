@@ -39,7 +39,7 @@ class PushNotificationService {
         await PushNotifications.addListener('registration', (token: Token) => {
           // console.log('Push registration success, token:', token.value);
           this.pushToken = token.value;
-          // TODO: Send token to backend to store for this user
+          // Send token to backend to store for this user
           this.sendTokenToBackend(token.value);
         });
 

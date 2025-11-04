@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   ChefHat, 
   Refrigerator, 
@@ -28,6 +31,87 @@ import {
 export default function AuthUI() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string>("");
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailFormData, setEmailFormData] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: ""
+  });
+  const [emailFormError, setEmailFormError] = useState("");
+
+  const handleEmailRegister = async () => {
+    setIsLoading(true);
+    setEmailFormError("");
+    
+    if (!emailFormData.email || !emailFormData.password) {
+      setEmailFormError("Email and password are required");
+      setIsLoading(false);
+      return;
+    }
+    
+    if (emailFormData.password.length < 8) {
+      setEmailFormError("Password must be at least 8 characters");
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      const response = await fetch("/api/auth/email/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(emailFormData)
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        window.location.href = "/";
+      } else {
+        setEmailFormError(data.error || "Registration failed");
+      }
+    } catch (error) {
+      setEmailFormError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleEmailLogin = async () => {
+    setIsLoading(true);
+    setEmailFormError("");
+    
+    if (!emailFormData.email || !emailFormData.password) {
+      setEmailFormError("Email and password are required");
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      const response = await fetch("/api/auth/email/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          username: emailFormData.email, // Passport local expects 'username'
+          password: emailFormData.password
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        window.location.href = "/";
+      } else {
+        setEmailFormError(data.error || "Login failed");
+      }
+    } catch (error) {
+      setEmailFormError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAuth = async (provider?: string) => {
     if (!provider) return;
@@ -48,10 +132,10 @@ export default function AuthUI() {
     const endpoint = providerEndpoints[provider];
     
     if (endpoint) {
-      // For email, we'll need to handle it differently with a form
+      // For email, show the form instead of redirecting
       if (provider === "Email") {
-        // TODO: Show email/password form instead of redirecting
-        console.log("Email authentication needs a form implementation");
+        setShowEmailForm(true);
+        setEmailFormError("");
         setIsLoading(false);
         return;
       }
@@ -174,25 +258,113 @@ export default function AuthUI() {
                     </p>
                   </div>
 
-                  <div className="space-y-3">
-                    {providers.map((provider) => (
+                  {showEmailForm ? (
+                    <div className="space-y-4">
                       <Button
-                        key={provider.name}
-                        variant="outline"
-                        className={`w-full justify-start gap-3 ${provider.color} hover-elevate`}
-                        onClick={() => handleAuth(provider.name)}
-                        disabled={isLoading}
-                        data-testid={`button-signup-${provider.name.toLowerCase()}`}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowEmailForm(false);
+                          setEmailFormError("");
+                        }}
+                        className="mb-2"
+                        data-testid="button-back-from-email"
                       >
-                        {isLoading && selectedProvider === provider.name ? (
+                        ← Back to options
+                      </Button>
+                      
+                      {emailFormError && (
+                        <Alert variant="destructive">
+                          <AlertDescription>{emailFormError}</AlertDescription>
+                        </Alert>
+                      )}
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name (Optional)</Label>
+                        <Input
+                          id="firstName"
+                          type="text"
+                          value={emailFormData.firstName}
+                          onChange={(e) => setEmailFormData({...emailFormData, firstName: e.target.value})}
+                          placeholder="John"
+                          disabled={isLoading}
+                          data-testid="input-firstName"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name (Optional)</Label>
+                        <Input
+                          id="lastName"
+                          type="text"
+                          value={emailFormData.lastName}
+                          onChange={(e) => setEmailFormData({...emailFormData, lastName: e.target.value})}
+                          placeholder="Doe"
+                          disabled={isLoading}
+                          data-testid="input-lastName"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={emailFormData.email}
+                          onChange={(e) => setEmailFormData({...emailFormData, email: e.target.value})}
+                          placeholder="john@example.com"
+                          disabled={isLoading}
+                          data-testid="input-email"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={emailFormData.password}
+                          onChange={(e) => setEmailFormData({...emailFormData, password: e.target.value})}
+                          placeholder="At least 8 characters"
+                          disabled={isLoading}
+                          data-testid="input-password"
+                        />
+                      </div>
+                      
+                      <Button
+                        className="w-full"
+                        onClick={handleEmailRegister}
+                        disabled={isLoading}
+                        data-testid="button-email-register"
+                      >
+                        {isLoading ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
-                          <provider.icon className={`w-5 h-5 ${provider.iconColor}`} />
+                          "Create Account"
                         )}
-                        Continue with {provider.name}
                       </Button>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {providers.map((provider) => (
+                        <Button
+                          key={provider.name}
+                          variant="outline"
+                          className={`w-full justify-start gap-3 ${provider.color} hover-elevate`}
+                          onClick={() => handleAuth(provider.name)}
+                          disabled={isLoading}
+                          data-testid={`button-signup-${provider.name.toLowerCase()}`}
+                        >
+                          {isLoading && selectedProvider === provider.name ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <provider.icon className={`w-5 h-5 ${provider.iconColor}`} />
+                          )}
+                          Continue with {provider.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="relative my-4">
                     <div className="absolute inset-0 flex items-center">
@@ -229,25 +401,87 @@ export default function AuthUI() {
                     </p>
                   </div>
 
-                  <div className="space-y-3">
-                    {providers.map((provider) => (
+                  {showEmailForm ? (
+                    <div className="space-y-4">
                       <Button
-                        key={provider.name}
-                        variant="outline"
-                        className={`w-full justify-start gap-3 ${provider.color} hover-elevate`}
-                        onClick={() => handleAuth(provider.name)}
-                        disabled={isLoading}
-                        data-testid={`button-login-${provider.name.toLowerCase()}`}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowEmailForm(false);
+                          setEmailFormError("");
+                        }}
+                        className="mb-2"
+                        data-testid="button-back-from-email-login"
                       >
-                        {isLoading && selectedProvider === provider.name ? (
+                        ← Back to options
+                      </Button>
+                      
+                      {emailFormError && (
+                        <Alert variant="destructive">
+                          <AlertDescription>{emailFormError}</AlertDescription>
+                        </Alert>
+                      )}
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="email-login">Email</Label>
+                        <Input
+                          id="email-login"
+                          type="email"
+                          value={emailFormData.email}
+                          onChange={(e) => setEmailFormData({...emailFormData, email: e.target.value})}
+                          placeholder="john@example.com"
+                          disabled={isLoading}
+                          data-testid="input-email-login"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password-login">Password</Label>
+                        <Input
+                          id="password-login"
+                          type="password"
+                          value={emailFormData.password}
+                          onChange={(e) => setEmailFormData({...emailFormData, password: e.target.value})}
+                          placeholder="Enter your password"
+                          disabled={isLoading}
+                          data-testid="input-password-login"
+                        />
+                      </div>
+                      
+                      <Button
+                        className="w-full"
+                        onClick={handleEmailLogin}
+                        disabled={isLoading}
+                        data-testid="button-email-login"
+                      >
+                        {isLoading ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
-                          <provider.icon className={`w-5 h-5 ${provider.iconColor}`} />
+                          "Sign In"
                         )}
-                        Sign in with {provider.name}
                       </Button>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {providers.map((provider) => (
+                        <Button
+                          key={provider.name}
+                          variant="outline"
+                          className={`w-full justify-start gap-3 ${provider.color} hover-elevate`}
+                          onClick={() => handleAuth(provider.name)}
+                          disabled={isLoading}
+                          data-testid={`button-login-${provider.name.toLowerCase()}`}
+                        >
+                          {isLoading && selectedProvider === provider.name ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <provider.icon className={`w-5 h-5 ${provider.iconColor}`} />
+                          )}
+                          Sign in with {provider.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="relative my-4">
                     <div className="absolute inset-0 flex items-center">
