@@ -10,6 +10,12 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
 import type { Conversation } from '@shared/schema';
 
+// Extended conversation type with optional display fields
+type ConversationWithMeta = Conversation & {
+  lastMessage?: string;
+  messageCount?: number;
+};
+
 interface ConversationSidebarProps {
   currentConversationId?: string;
   onSelectConversation: (conversationId: string | undefined) => void;
@@ -22,7 +28,7 @@ export function ConversationSidebar({
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch conversations
-  const { data: conversations = [], isLoading } = useQuery({
+  const { data: conversations = [], isLoading } = useQuery<ConversationWithMeta[]>({
     queryKey: ['/api/chat/conversations'],
     queryFn: async () => {
       const response = await fetch('/api/chat/conversations');
@@ -34,9 +40,7 @@ export function ConversationSidebar({
   // Delete conversation mutation
   const deleteConversationMutation = useMutation({
     mutationFn: async (conversationId: string) => {
-      await apiRequest(`/api/chat/conversation/${conversationId}`, {
-        method: 'DELETE',
-      });
+      await apiRequest('DELETE', `/api/chat/conversation/${conversationId}`);
     },
     onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
@@ -49,7 +53,7 @@ export function ConversationSidebar({
   });
 
   // Filter conversations based on search
-  const filteredConversations = conversations.filter((conv: Conversation) => {
+  const filteredConversations = conversations.filter((conv: ConversationWithMeta) => {
     if (!searchQuery) return true;
     return conv.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
            conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -127,7 +131,7 @@ export function ConversationSidebar({
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(conversation.updatedAt), 'MMM d, HH:mm')}
+                    {conversation.updatedAt && format(new Date(conversation.updatedAt), 'MMM d, HH:mm')}
                   </p>
                 </div>
                 
