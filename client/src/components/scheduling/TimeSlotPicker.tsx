@@ -57,7 +57,7 @@ export function TimeSlotPicker({
         allowWeekends: false,
         preferredTimeOfDay: "morning"
       });
-      return response.json() as Promise<MeetingSuggestions>;
+      return (await response.json()) as MeetingSuggestions;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/schedule/suggestions"] });

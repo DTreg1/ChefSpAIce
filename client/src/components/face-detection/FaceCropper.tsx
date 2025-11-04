@@ -61,7 +61,7 @@ export function FaceCropper({ imageFile, faceCount }: FaceCropperProps) {
         throw new Error('Failed to crop faces');
       }
       
-      return response.json() as Promise<CropResponse>;
+      return (await response.json()) as CropResponse;
     },
     onSuccess: (data) => {
       setCroppedFaces(data.croppedFaces);

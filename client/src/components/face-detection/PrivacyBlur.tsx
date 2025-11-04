@@ -56,7 +56,7 @@ export function PrivacyBlur({ imageFile, faceCount, onBlurComplete }: PrivacyBlu
         throw new Error('Failed to blur faces');
       }
       
-      return response.json() as Promise<BlurResponse>;
+      return (await response.json()) as BlurResponse;
     },
     onSuccess: (data) => {
       setBlurredImage(data.blurredImageUrl);

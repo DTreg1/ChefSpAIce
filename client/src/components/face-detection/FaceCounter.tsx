@@ -56,7 +56,7 @@ export function FaceCounter({ imageFile, onCountComplete }: FaceCounterProps) {
         throw new Error('Failed to count faces');
       }
       
-      return response.json() as Promise<CountResponse>;
+      return (await response.json()) as CountResponse;
     },
     onSuccess: (data) => {
       setCurrentCount(data.faceCount);

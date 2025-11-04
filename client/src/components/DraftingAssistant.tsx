@@ -41,7 +41,7 @@ export function DraftingAssistant() {
   const generateDraftsMutation = useMutation({
     mutationFn: async (data: { originalMessage: string; contextType: string; tones: string[]; subject?: string; approach?: string }) => {
       const response = await apiRequest("POST", "/api/drafts/generate", data);
-      return response.json() as Promise<GeneratedDraft[]>;
+      return (await response.json()) as GeneratedDraft[];
     },
     onSuccess: (drafts) => {
       setGeneratedDrafts(drafts);
@@ -75,7 +75,7 @@ export function DraftingAssistant() {
   const improveDraftMutation = useMutation({
     mutationFn: async (data: { draft: string; improvements: string[] }) => {
       const response = await apiRequest("POST", "/api/drafts/improve", data);
-      return response.json() as Promise<{ improved: string; changes: string[]; suggestions: string[] }>;
+      return (await response.json()) as { improved: string; changes: string[]; suggestions: string[] };
     },
     onSuccess: (result) => {
       toast({

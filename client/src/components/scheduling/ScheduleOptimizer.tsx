@@ -55,7 +55,7 @@ export function ScheduleOptimizer({
         startDate: dateRange.start.toISOString(),
         endDate: dateRange.end.toISOString()
       });
-      return response.json() as Promise<{ optimizations: Optimization[]; insights: string[] }>;
+      return (await response.json()) as { optimizations: Optimization[]; insights: string[] };
     },
     onSuccess: (data) => {
       setOptimizations(data.optimizations || []);

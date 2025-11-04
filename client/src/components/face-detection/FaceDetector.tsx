@@ -58,7 +58,7 @@ export function FaceDetector() {
         throw new Error('Failed to detect faces');
       }
       
-      return response.json() as Promise<DetectionResponse>;
+      return (await response.json()) as DetectionResponse;
     },
     onSuccess: (data) => {
       setDetections(data.detections);
