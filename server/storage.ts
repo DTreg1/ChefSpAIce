@@ -7605,7 +7605,12 @@ export class DatabaseStorage implements IStorage {
 
   async createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis> {
     try {
-      const [result] = await db.insert(sentimentAnalysis).values([analysis]).returning();
+      // Ensure sentiment is properly typed as one of the allowed values
+      const validatedAnalysis = {
+        ...analysis,
+        sentiment: analysis.sentiment as "positive" | "negative" | "neutral" | "mixed"
+      };
+      const [result] = await db.insert(sentimentAnalysis).values([validatedAnalysis]).returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment analysis:", error);
