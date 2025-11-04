@@ -5034,7 +5034,7 @@ export class DatabaseStorage implements IStorage {
     limit: number = 100,
   ): Promise<ChatMessage[]> {
     try {
-      return db
+      return await db
         .select()
         .from(userChats)
         .where(eq(userChats.userId, userId))
