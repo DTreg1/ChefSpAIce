@@ -11625,7 +11625,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getAnalyticsStats(userId: string): Promise<{
+  async getUserInsightStats(userId: string): Promise<{
     totalInsights: number;
     unreadInsights: number;
     averageImportance: number;
@@ -11655,7 +11655,7 @@ export class DatabaseStorage implements IStorage {
         insightsByCategory
       };
     } catch (error) {
-      console.error("Error getting analytics stats:", error);
+      console.error("Error getting user insight stats:", error);
       throw error;
     }
   }
