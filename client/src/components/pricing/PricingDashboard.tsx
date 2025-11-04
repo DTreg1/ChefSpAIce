@@ -75,12 +75,9 @@ export function PricingDashboard() {
       
       if (optimization.recommendedPrice) {
         // Apply the recommended price
-        await apiRequest(`/api/pricing/apply/${productId}`, {
-          method: 'POST',
-          body: JSON.stringify({
-            price: optimization.recommendedPrice,
-            reason: 'ai_optimization'
-          })
+        await apiRequest('POST', `/api/pricing/apply/${productId}`, {
+          price: optimization.recommendedPrice,
+          reason: 'ai_optimization'
         });
         
         // Invalidate queries to refresh data

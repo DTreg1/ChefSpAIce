@@ -57,7 +57,8 @@ export function DataValidator({ className }: DataValidatorProps) {
       if (filterTemplate !== 'all') params.append('templateId', filterTemplate);
       params.append('limit', '50');
       
-      return apiRequest(`/api/extract/history?${params}`);
+      const response = await apiRequest('GET', `/api/extract/history?${params}`);
+      return response.json();
     }
   });
 
@@ -69,10 +70,8 @@ export function DataValidator({ className }: DataValidatorProps) {
   // Validate extraction mutation
   const validateMutation = useMutation({
     mutationFn: async (extractionId: string) => {
-      return apiRequest(`/api/extract/verify/${extractionId}`, {
-        method: 'PUT',
-        body: { validationStatus: 'validated' }
-      });
+      const response = await apiRequest('PUT', `/api/extract/verify/${extractionId}`, { validationStatus: 'validated' });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/extract/history'] });

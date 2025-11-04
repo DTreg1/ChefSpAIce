@@ -100,15 +100,12 @@ export function ConflictResolver({
   const resolveMutation = useMutation({
     mutationFn: async (resolution: { conflictId: string; action: string }) => {
       // This would call an AI endpoint to resolve the conflict
-      const response = await apiRequest("/api/schedule/optimize", {
-        method: "POST",
-        body: JSON.stringify({
-          startDate: startTime,
-          endDate: endTime,
-          action: resolution.action
-        })
+      const response = await apiRequest("POST", "/api/schedule/optimize", {
+        startDate: startTime,
+        endDate: endTime,
+        action: resolution.action
       });
-      return response;
+      return response.json();
     },
     onSuccess: () => {
       toast({

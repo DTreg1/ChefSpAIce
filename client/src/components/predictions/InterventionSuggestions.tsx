@@ -57,10 +57,7 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
 
   const generateMutation = useMutation({
     mutationFn: async ({ userId, predictionId, regenerate }: any) => {
-      const response = await apiRequest('/api/predict/intervention', {
-        method: 'POST',
-        body: JSON.stringify({ userId, predictionId, regenerate }),
-      });
+      const response = await apiRequest('POST', '/api/predict/intervention', { userId, predictionId, regenerate });
       return response.json();
     },
     onSuccess: (data: InterventionResponse) => {

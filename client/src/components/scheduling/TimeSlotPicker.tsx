@@ -47,20 +47,17 @@ export function TimeSlotPicker({
   // Fetch AI-suggested meeting times
   const suggestMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/schedule/suggest", {
-        method: "POST",
-        body: JSON.stringify({
-          participants,
-          duration,
-          mustBeWithin: dateRange ? {
-            start: dateRange.start.toISOString(),
-            end: dateRange.end.toISOString()
-          } : undefined,
-          allowWeekends: false,
-          preferredTimeOfDay: "morning"
-        })
+      const response = await apiRequest("POST", "/api/schedule/suggest", {
+        participants,
+        duration,
+        mustBeWithin: dateRange ? {
+          start: dateRange.start.toISOString(),
+          end: dateRange.end.toISOString()
+        } : undefined,
+        allowWeekends: false,
+        preferredTimeOfDay: "morning"
       });
-      return response as MeetingSuggestions;
+      return response.json() as Promise<MeetingSuggestions>;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/schedule/suggestions"] });
@@ -103,12 +100,9 @@ export function TimeSlotPicker({
     
     setLoading(true);
     try {
-      await apiRequest(`/api/schedule/suggestions/${suggestMutation.data.meetingId}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          status: "accepted",
-          selectedTime: selectedSlot
-        })
+      await apiRequest("PUT", `/api/schedule/suggestions/${suggestMutation.data.meetingId}`, {
+        status: "accepted",
+        selectedTime: selectedSlot
       });
       
       toast({
