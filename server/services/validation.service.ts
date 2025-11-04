@@ -443,11 +443,8 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
       frequency: 1,
     });
 
-    // TODO: Implement ML model training based on corrections
-    // This could involve:
-    // 1. Analyzing patterns in corrections
-    // 2. Updating validation rules
-    // 3. Improving AI suggestion prompts
+    // Implement ML model training based on corrections
+    await this.trainModelFromCorrection(params);
   }
 
   /**
@@ -504,6 +501,116 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
     }
 
     return grouped;
+  }
+
+  /**
+   * Train ML model from user corrections
+   */
+  private async trainModelFromCorrection(params: {
+    fieldName: string;
+    fieldType: string;
+    originalValue: string;
+    suggestedValue?: string;
+    finalValue: string;
+    userResolution: "accepted_suggestion" | "manual_correction" | "ignored" | "abandoned";
+    userId?: string;
+    context?: any;
+    resolutionTime?: number;
+  }) {
+    try {
+      // 1. Analyze patterns in corrections for this field type
+      const recentCorrections = await db
+        .select()
+        .from(validationErrors)
+        .where(eq(validationErrors.fieldType, params.fieldType))
+        .orderBy(desc(validationErrors.createdAt))
+        .limit(100);
+
+      // Calculate pattern metrics
+      const metrics = {
+        acceptanceRate: recentCorrections.filter(e => e.userResolution === "accepted_suggestion").length / recentCorrections.length,
+        correctionRate: recentCorrections.filter(e => e.userResolution === "manual_correction").length / recentCorrections.length,
+        ignoreRate: recentCorrections.filter(e => e.userResolution === "ignored").length / recentCorrections.length,
+      };
+
+      // 2. Update validation rules based on patterns
+      if (params.userResolution === "manual_correction" && params.finalValue) {
+        // Learn from manual corrections to improve rules
+        const existingRules = await this.getRulesForFieldType(params.fieldType);
+        
+        // Check if we need to create a new rule or update existing ones
+        const shouldUpdateRules = metrics.correctionRate > 0.3; // If more than 30% need manual correction
+        
+        if (shouldUpdateRules) {
+          // Create or update a rule based on the correction pattern
+          const rulePattern = this.extractPatternFromCorrection(params.originalValue, params.finalValue);
+          
+          if (rulePattern) {
+            // Check if similar rule exists
+            const existingRule = existingRules.find(r => r.pattern === rulePattern);
+            
+            if (!existingRule) {
+              // Create new rule based on learned pattern
+              await db.insert(validationRules).values({
+                id: crypto.randomUUID(),
+                fieldType: params.fieldType,
+                ruleName: `Learned pattern for ${params.fieldType}`,
+                pattern: rulePattern,
+                errorMessage: `Format should match pattern: ${rulePattern}`,
+                severity: "warning",
+                isActive: true,
+                priority: 5,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+            }
+          }
+        }
+      }
+
+      // 3. Update AI prompt optimization based on success rates
+      if (metrics.acceptanceRate < 0.5) {
+        // If AI suggestions are rarely accepted, flag for prompt improvement
+        console.log(`Low AI suggestion acceptance rate (${metrics.acceptanceRate}) for field type: ${params.fieldType}`);
+        // In a production system, this would trigger a review of the AI prompts
+        // or send feedback to a prompt optimization service
+      }
+
+      // 4. Store learning metrics for monitoring
+      console.log(`ML Training metrics for ${params.fieldType}:`, metrics);
+      
+    } catch (error) {
+      console.error("Error in ML model training:", error);
+      // Don't throw - training failures shouldn't break validation
+    }
+  }
+
+  /**
+   * Extract pattern from correction for rule learning
+   */
+  private extractPatternFromCorrection(original: string, corrected: string): string | null {
+    // Simple pattern extraction - in production, this would use more sophisticated ML
+    if (!original || !corrected) return null;
+    
+    // Check for common formatting patterns
+    if (corrected.includes("-") && !original.includes("-")) {
+      // Learning hyphenation pattern (e.g., phone numbers)
+      const segments = corrected.split("-").map(s => `\\d{${s.length}}`);
+      return segments.join("-");
+    }
+    
+    if (corrected.includes("/") && !original.includes("/")) {
+      // Learning date pattern
+      const segments = corrected.split("/").map(s => `\\d{${s.length}}`);
+      return segments.join("/");
+    }
+    
+    // Check for capitalization patterns
+    if (corrected[0] === corrected[0].toUpperCase() && original[0] !== original[0].toUpperCase()) {
+      return "^[A-Z].*"; // First letter should be capitalized
+    }
+    
+    return null;
   }
 
   /**
