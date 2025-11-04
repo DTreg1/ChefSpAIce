@@ -1347,7 +1347,6 @@ export interface IStorage {
    * Create natural language query log
    * @param log - Query log data
    */
-  createQueryLog(log: InsertQueryLog): Promise<QueryLog>;
 
   // ==================== Task 7: AI Chat Assistant ====================
   
@@ -8490,20 +8489,6 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error caching related content:", error);
       throw new Error("Failed to cache related content");
-    }
-  }
-
-  async createQueryLog(log: InsertQueryLog): Promise<QueryLog> {
-    try {
-      const [result] = await db
-        .insert(queryLogs)
-        .values(log)
-        .returning();
-
-      return result;
-    } catch (error) {
-      console.error("Error creating query log:", error);
-      throw new Error("Failed to create query log");
     }
   }
 
