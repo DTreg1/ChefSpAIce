@@ -145,10 +145,21 @@ export function useAutoSave(
         // Load pre-trained weights if available from user patterns
         if (userPatterns?.modelWeights) {
           try {
-            const weights = userPatterns.modelWeights.weights;
-            const bias = userPatterns.modelWeights.bias;
-            if (weights && bias) {
-              // TODO: Implement weight loading from saved patterns
+            const savedWeights = userPatterns.modelWeights;
+            if (Array.isArray(savedWeights) && savedWeights.length > 0) {
+              // Convert saved weights back to tensors
+              const tensorWeights = savedWeights.map((weightData: any) => {
+                if (weightData && weightData.shape && weightData.values) {
+                  return tf.tensor(weightData.values, weightData.shape);
+                }
+                return null;
+              }).filter(Boolean);
+              
+              if (tensorWeights.length > 0) {
+                // Load the weights into the model
+                model.setWeights(tensorWeights);
+                console.log('Successfully loaded saved model weights');
+              }
             }
           } catch (error) {
             console.error('Failed to load model weights:', error);
