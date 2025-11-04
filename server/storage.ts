@@ -4017,17 +4017,29 @@ export class DatabaseStorage implements IStorage {
     preferences: Omit<InsertNotificationPreferences, "userId">,
   ): Promise<NotificationPreferences> {
     try {
+      // Ensure quietHours.periods.days is a proper array
+      const normalizedPreferences = {
+        ...preferences,
+        quietHours: preferences.quietHours ? {
+          ...preferences.quietHours,
+          periods: preferences.quietHours.periods?.map((period: any) => ({
+            ...period,
+            days: Array.isArray(period.days) ? [...period.days] : []
+          }))
+        } : preferences.quietHours
+      };
+      
       const [result] = await db
         .insert(notificationPreferences)
         .values({
-          ...preferences,
+          ...normalizedPreferences,
           userId,
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: notificationPreferences.userId,
           set: {
-            ...preferences,
+            ...normalizedPreferences,
             updatedAt: new Date(),
           },
         })
@@ -4115,7 +4127,10 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(notificationFeedback)
-        .values(feedback)
+        .values({
+          ...feedback,
+          deviceInfo: feedback.deviceInfo as any
+        })
         .returning();
       
       // Invalidate engagement cache for this user
