@@ -5062,7 +5062,7 @@ export class DatabaseStorage implements IStorage {
       const total = Number(countResult?.count || 0);
 
       // Get paginated messages
-      const messages = await db
+      const messages: ChatMessage[] = await db
         .select()
         .from(userChats)
         .where(eq(userChats.userId, userId))
@@ -7618,8 +7618,6 @@ export class DatabaseStorage implements IStorage {
     },
   ): Promise<ActivityLog[]> {
     try {
-      let query = db.select().from(activityLogs).$dynamic();
-
       const conditions: any[] = [];
 
       // User filter
@@ -7656,23 +7654,23 @@ export class DatabaseStorage implements IStorage {
         conditions.push(lte(activityLogs.timestamp, filters.endDate));
       }
 
-      // Apply conditions
+      // Build and execute query
+      let baseQuery = db.select().from(activityLogs);
+      
       if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+        baseQuery = baseQuery.where(and(...conditions)) as any;
       }
-
-      // Order by timestamp descending
-      query = query.orderBy(desc(activityLogs.timestamp));
-
-      // Apply limit and offset
+      
+      baseQuery = baseQuery.orderBy(desc(activityLogs.timestamp)) as any;
+      
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        baseQuery = baseQuery.limit(filters.limit) as any;
       }
       if (filters?.offset) {
-        query = query.offset(filters.offset);
+        baseQuery = baseQuery.offset(filters.offset) as any;
       }
 
-      return await query;
+      return await baseQuery;
     } catch (error) {
       console.error("Error fetching activity logs:", error);
       throw new Error("Failed to fetch activity logs");
@@ -9754,44 +9752,6 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== Task 9: Smart Email/Message Drafting Implementations ====================
   
-  async getDraftTemplates(contextType?: string): Promise<DraftTemplate[]> {
-    try {
-      let query = db.select().from(draftTemplates);
-      if (contextType) {
-        return await query.where(eq(draftTemplates.contextType, contextType)).orderBy(desc(draftTemplates.usageCount));
-      }
-      return await query.orderBy(desc(draftTemplates.usageCount));
-    } catch (error) {
-      console.error("Error getting draft templates:", error);
-      throw new Error("Failed to get draft templates");
-    }
-  }
-  
-  async createDraftTemplate(template: InsertDraftTemplate): Promise<DraftTemplate> {
-    try {
-      const [result] = await db
-        .insert(draftTemplates)
-        .values(template)
-        .returning();
-      return result;
-    } catch (error) {
-      console.error("Error creating draft template:", error);
-      throw new Error("Failed to create draft template");
-    }
-  }
-  
-  async incrementTemplateUsage(templateId: string): Promise<void> {
-    try {
-      await db
-        .update(draftTemplates)
-        .set({ usageCount: sql`${draftTemplates.usageCount} + 1` })
-        .where(eq(draftTemplates.id, templateId));
-    } catch (error) {
-      console.error("Error incrementing template usage:", error);
-      throw new Error("Failed to increment template usage");
-    }
-  }
-  
   async saveGeneratedDrafts(userId: string, drafts: Omit<InsertGeneratedDraft, "userId">[]): Promise<GeneratedDraft[]> {
     try {
       const draftsWithUserId = drafts.map(draft => ({ ...draft, userId }));
@@ -9803,18 +9763,6 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error saving generated drafts:", error);
       throw new Error("Failed to save generated drafts");
-    }
-  }
-  
-  async markDraftSelected(userId: string, draftId: string, edited: boolean): Promise<void> {
-    try {
-      await db
-        .update(generatedDrafts)
-        .set({ selected: true, edited })
-        .where(and(eq(generatedDrafts.userId, userId), eq(generatedDrafts.id, draftId)));
-    } catch (error) {
-      console.error("Error marking draft as selected:", error);
-      throw new Error("Failed to mark draft as selected");
     }
   }
   
@@ -10274,19 +10222,22 @@ export class DatabaseStorage implements IStorage {
   
   async getDraftTemplates(contextType?: string): Promise<DraftTemplate[]> {
     try {
-      const query = db
-        .select()
-        .from(draftTemplates)
-        .where(eq(draftTemplates.isActive, true));
-      
       if (contextType) {
-        return await query.where(and(
-          eq(draftTemplates.isActive, true),
-          eq(draftTemplates.contextType, contextType)
-        ));
+        return await db
+          .select()
+          .from(draftTemplates)
+          .where(and(
+            eq(draftTemplates.isActive, true),
+            eq(draftTemplates.contextType, contextType)
+          ))
+          .orderBy(desc(draftTemplates.usageCount));
       }
       
-      return await query.orderBy(desc(draftTemplates.usageCount));
+      return await db
+        .select()
+        .from(draftTemplates)
+        .where(eq(draftTemplates.isActive, true))
+        .orderBy(desc(draftTemplates.usageCount));
     } catch (error) {
       console.error("Error getting draft templates:", error);
       throw new Error("Failed to get draft templates");
@@ -10340,19 +10291,22 @@ export class DatabaseStorage implements IStorage {
   
   async getGeneratedDrafts(userId: string, originalMessageId?: string): Promise<GeneratedDraft[]> {
     try {
-      const query = db
-        .select()
-        .from(generatedDrafts)
-        .where(eq(generatedDrafts.userId, userId));
-      
       if (originalMessageId) {
-        return await query.where(and(
-          eq(generatedDrafts.userId, userId),
-          eq(generatedDrafts.originalMessageId, originalMessageId)
-        )).orderBy(desc(generatedDrafts.createdAt));
+        return await db
+          .select()
+          .from(generatedDrafts)
+          .where(and(
+            eq(generatedDrafts.userId, userId),
+            eq(generatedDrafts.originalMessageId, originalMessageId)
+          ))
+          .orderBy(desc(generatedDrafts.createdAt));
       }
       
-      return await query.orderBy(desc(generatedDrafts.createdAt));
+      return await db
+        .select()
+        .from(generatedDrafts)
+        .where(eq(generatedDrafts.userId, userId))
+        .orderBy(desc(generatedDrafts.createdAt));
     } catch (error) {
       console.error("Error getting generated drafts:", error);
       throw new Error("Failed to get generated drafts");
@@ -10589,7 +10543,7 @@ export class DatabaseStorage implements IStorage {
     try {
       await db
         .update(sentimentAnalysis)
-        .set(data)
+        .set(data as any)
         .where(eq(sentimentAnalysis.id, id));
     } catch (error) {
       console.error("Error updating sentiment analysis:", error);
@@ -10616,7 +10570,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(sentimentTrends)
-        .values(trend)
+        .values(trend as any)
         .returning();
       return result;
     } catch (error) {
@@ -10631,21 +10585,24 @@ export class DatabaseStorage implements IStorage {
     limit: number = 30
   ): Promise<SentimentTrend[]> {
     try {
-      let query = db.select().from(sentimentTrends);
+      const conditions = [];
       
       // Filter by userId (null for global trends)
       if (userId !== null) {
-        query = query.where(eq(sentimentTrends.userId, userId));
+        conditions.push(eq(sentimentTrends.userId, userId));
       } else {
-        query = query.where(isNull(sentimentTrends.userId));
+        conditions.push(isNull(sentimentTrends.userId));
       }
       
       // Filter by period type if specified
       if (periodType) {
-        query = query.where(eq(sentimentTrends.periodType, periodType));
+        conditions.push(eq(sentimentTrends.periodType, periodType));
       }
       
-      const trends = await query
+      const trends = await db
+        .select()
+        .from(sentimentTrends)
+        .where(and(...conditions))
         .orderBy(desc(sentimentTrends.timePeriod))
         .limit(limit);
       
@@ -10681,9 +10638,6 @@ export class DatabaseStorage implements IStorage {
     }>;
   }> {
     try {
-      // Build base query
-      let query = db.select().from(sentimentAnalysis);
-      
       // Apply filters
       const conditions = [];
       if (userId) {
@@ -10696,11 +10650,9 @@ export class DatabaseStorage implements IStorage {
         conditions.push(lte(sentimentAnalysis.analyzedAt, endDate));
       }
       
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-      
-      const analyses = await query;
+      const analyses = conditions.length > 0
+        ? await db.select().from(sentimentAnalysis).where(and(...conditions))
+        : await db.select().from(sentimentAnalysis);
       
       // Calculate overall sentiment (-1 to 1 scale)
       let sentimentSum = 0;
@@ -11424,32 +11376,32 @@ export class DatabaseStorage implements IStorage {
     }
   ): Promise<AnalyticsInsight[]> {
     try {
+      const conditions = [eq(analyticsInsights.userId, userId)];
+      
+      if (filters?.metricName) {
+        conditions.push(eq(analyticsInsights.metricName, filters.metricName));
+      }
+      if (filters?.period) {
+        conditions.push(eq(analyticsInsights.period, filters.period));
+      }
+      if (filters?.category) {
+        conditions.push(eq(analyticsInsights.category, filters.category));
+      }
+      if (filters?.importance !== undefined) {
+        conditions.push(eq(analyticsInsights.importance, filters.importance));
+      }
+      if (filters?.isRead !== undefined) {
+        conditions.push(eq(analyticsInsights.isRead, filters.isRead));
+      }
+      
       let query = db
         .select()
         .from(analyticsInsights)
-        .where(eq(analyticsInsights.userId, userId))
-        .$dynamic();
-      
-      if (filters?.metricName) {
-        query = query.where(eq(analyticsInsights.metricName, filters.metricName));
-      }
-      if (filters?.period) {
-        query = query.where(eq(analyticsInsights.period, filters.period));
-      }
-      if (filters?.category) {
-        query = query.where(eq(analyticsInsights.category, filters.category));
-      }
-      if (filters?.importance !== undefined) {
-        query = query.where(eq(analyticsInsights.importance, filters.importance));
-      }
-      if (filters?.isRead !== undefined) {
-        query = query.where(eq(analyticsInsights.isRead, filters.isRead));
-      }
-      
-      query = query.orderBy(desc(analyticsInsights.createdAt));
+        .where(and(...conditions))
+        .orderBy(desc(analyticsInsights.createdAt));
       
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit) as any;
       }
       
       return await query;
@@ -15358,8 +15310,7 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(transcriptions.status, status as any));
       }
 
-      const helper = new PaginationHelper(page, limit);
-      const offset = helper.getOffset();
+      const offset = (page - 1) * limit;
 
       const [transcriptionsList, totalResult] = await Promise.all([
         db
@@ -15376,7 +15327,7 @@ export class DatabaseStorage implements IStorage {
       ]);
 
       const total = Number(totalResult[0]?.count || 0);
-      return helper.createResponse(transcriptionsList, total);
+      return PaginationHelper.createResponse(transcriptionsList, total, page, limit);
     } catch (error) {
       console.error("Error getting paginated transcriptions:", error);
       throw error;
@@ -15483,14 +15434,14 @@ export class DatabaseStorage implements IStorage {
    */
   async getTranscriptEdits(transcriptionId: string, limit?: number): Promise<TranscriptEdit[]> {
     try {
-      let query = db
+      const query = db
         .select()
         .from(transcriptEdits)
         .where(eq(transcriptEdits.transcriptionId, transcriptionId))
         .orderBy(asc(transcriptEdits.timestamp));
 
       if (limit) {
-        query = query.limit(limit);
+        return await query.limit(limit);
       }
 
       return await query;
