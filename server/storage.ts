@@ -8846,7 +8846,9 @@ export class DatabaseStorage implements IStorage {
         .insert(imageMetadata)
         .values({
           ...metadata,
-          userId
+          userId,
+          dimensions: metadata.dimensions as any,
+          metadata: metadata.metadata as any
         })
         .returning();
       
@@ -8867,6 +8869,8 @@ export class DatabaseStorage implements IStorage {
         .update(imageMetadata)
         .set({
           ...updates,
+          dimensions: updates.dimensions as any,
+          metadata: updates.metadata as any,
           updatedAt: new Date()
         })
         .where(and(
