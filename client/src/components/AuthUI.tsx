@@ -145,7 +145,17 @@ export default function AuthUI() {
         const response = await fetch("/api/auth/config-status");
         const config = await response.json();
         
-        if (!config.providers[provider.toLowerCase()]) {
+        // Map provider names to config keys (X is stored as twitter in backend)
+        const providerConfigKey: Record<string, string> = {
+          "Google": "google",
+          "GitHub": "github", 
+          "X": "twitter",
+          "Apple": "apple",
+          "Replit": "replit"
+        };
+        
+        const configKey = providerConfigKey[provider];
+        if (configKey && !config.providers[configKey]) {
           console.error(`${provider} OAuth is not configured. Please add valid OAuth credentials.`);
           alert(`${provider} authentication is not configured yet. Please set up OAuth credentials.`);
           setIsLoading(false);

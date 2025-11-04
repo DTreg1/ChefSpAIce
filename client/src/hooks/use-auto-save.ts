@@ -68,8 +68,16 @@ export function useAutoSave(
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Define user patterns type
+  interface UserPatternsData {
+    avgPauseDuration?: number;
+    sentencePauseDuration?: number;
+    paragraphPauseDuration?: number;
+    modelWeights?: any[];
+  }
+
   // Fetch user's typing patterns
-  const { data: userPatterns } = useQuery({
+  const { data: userPatterns } = useQuery<UserPatternsData>({
     queryKey: ['/api/autosave/patterns'],
     enabled: true,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
@@ -77,11 +85,16 @@ export function useAutoSave(
 
   // Mutation for saving drafts
   const saveDraftMutation = useMutation({
-    mutationFn: async (data: any) => 
-      apiRequest('/api/autosave/draft', {
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/autosave/draft', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
-      }),
+      });
+      if (!response.ok) throw new Error('Failed to save draft');
+      return response.json();
+    },
     onSuccess: (result) => {
       setIsSaving(false);
       setLastSaved(new Date());

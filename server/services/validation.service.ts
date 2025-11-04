@@ -546,20 +546,36 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
           const rulePattern = this.extractPatternFromCorrection(params.originalValue, params.finalValue);
           
           if (rulePattern) {
-            // Check if similar rule exists
-            const existingRule = existingRules.find(r => r.pattern === rulePattern);
+            // Check if a similar pattern exists in existing rules
+            const hasExistingPattern = existingRules.some(r => {
+              return r.rules?.patterns?.some(p => p.regex === rulePattern);
+            });
             
-            if (!existingRule) {
-              // Create new rule based on learned pattern
+            if (!hasExistingPattern) {
+              // Create new rule with the learned pattern
               await db.insert(validationRules).values({
-                id: crypto.randomUUID(),
                 fieldType: params.fieldType,
-                ruleName: `Learned pattern for ${params.fieldType}`,
-                pattern: rulePattern,
-                errorMessage: `Format should match pattern: ${rulePattern}`,
-                severity: "warning",
-                isActive: true,
+                rules: {
+                  patterns: [{ 
+                    regex: rulePattern, 
+                    description: `Learned from user corrections` 
+                  }]
+                },
+                errorMessages: {
+                  default: `Format should match: ${rulePattern}`,
+                  invalidFormat: `Please use the correct format`
+                },
+                suggestions: {
+                  formatHints: [`Expected format based on previous corrections`]
+                },
+                aiConfig: {
+                  useAI: true,
+                  model: "gpt-3.5-turbo",
+                  temperature: 0.3,
+                  maxSuggestions: 3
+                },
                 priority: 5,
+                isActive: true,
                 createdAt: new Date(),
                 updatedAt: new Date(),
               });
@@ -647,8 +663,20 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
       
       return ruleData;
     } else {
-      // Create new rule
-      const [newRule] = await db.insert(validationRules).values(ruleData).returning();
+      // Create new rule - ensure required fields are provided
+      const newRuleData = {
+        fieldType: ruleData.fieldType || 'custom',
+        rules: ruleData.rules || { patterns: [] },
+        errorMessages: ruleData.errorMessages || { default: 'Please enter a valid value' },
+        suggestions: ruleData.suggestions || { formatHints: [] },
+        aiConfig: ruleData.aiConfig || { useAI: true, model: 'gpt-3.5-turbo', temperature: 0.3, maxSuggestions: 3 },
+        priority: ruleData.priority || 10,
+        isActive: ruleData.isActive !== undefined ? ruleData.isActive : true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      const [newRule] = await db.insert(validationRules).values(newRuleData).returning();
       return newRule;
     }
   }
