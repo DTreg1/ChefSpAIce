@@ -626,6 +626,20 @@ export interface IStorage {
   ): Promise<UserInventory>;
   deleteFoodItem(userId: string, id: string): Promise<void>;
   getFoodCategories(userId: string): Promise<string[]>;
+  
+  // Storage Locations (user-scoped)
+  getStorageLocations(userId: string): Promise<UserStorage[]>;
+  getStorageLocation(userId: string, id: string): Promise<UserStorage | undefined>;
+  createStorageLocation(
+    userId: string,
+    location: Omit<UserStorage, "id" | "userId" | "createdAt" | "updatedAt" | "isDefault" | "isActive" | "sortOrder">
+  ): Promise<UserStorage>;
+  updateStorageLocation(
+    userId: string,
+    id: string,
+    updates: Partial<UserStorage>
+  ): Promise<UserStorage>;
+  deleteStorageLocation(userId: string, id: string): Promise<void>;
 
   // Chat Messages (user-scoped)
   getChatMessages(userId: string, limit?: number): Promise<ChatMessage[]>;

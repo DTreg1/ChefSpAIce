@@ -58,6 +58,7 @@ import transcriptionsRouter from "./transcriptions.router";
 import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
 import { createABTestSeedEndpoint } from "../seed-ab-tests";
 import { createCohortSeedEndpoint } from "../seed-cohorts";
+import { createDataCompletionRoutes } from "../dataCompletionEndpoints";
 import { storage } from "../storage";
 
 // Import activity logging middleware
@@ -75,6 +76,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   // Register all route modules with their base paths
   app.use("/api/auth", authRouter);
   app.use("/api", inventoryRouter);  // Handles food-items, storage-locations, barcode, fdc
+  app.use("/api/data-completion", createDataCompletionRoutes(storage)); // Data quality and completion endpoints
   app.use("/api", recipesRouter);     // Handles chat and recipes
   app.use("/api/chat", chatRouter);   // Handles comprehensive chat with conversation management
   app.use("/api/chat", chatStreamRouter); // Handles streaming chat with SSE

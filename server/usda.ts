@@ -49,6 +49,7 @@
 
 import type { USDAFoodItem, USDASearchResponse, NutritionInfo } from "@shared/schema";
 import { ApiError } from "./apiError";
+import { ensureRequiredFields, assessDataQuality } from './foodCategoryDefaults';
 
 /** USDA FoodData Central API base URL */
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
@@ -143,9 +144,24 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
                         nutrition.fat === 0;
   
   if (allMacrosZero) {
-    console.warn(`Suspicious nutrition data for "${foodDescription}": all macronutrients are zero`);
-    // Don't reject, just warn - some foods legitimately have near-zero nutrition (e.g., water, herbs, spices)
+    const descLower = foodDescription.toLowerCase();
+    // Only allow zero macros for water, tea, coffee, and certain seasonings
+    const allowedZeroMacros = ['water', 'tea', 'coffee', 'salt', 'pepper', 'herb', 'spice'];
+    const isAllowed = allowedZeroMacros.some(term => descLower.includes(term));
+    
+    if (!isAllowed) {
+      console.error(`Invalid nutrition data for "${foodDescription}": all macronutrients are zero`);
+      return false;
+    }
+    console.warn(`Low/zero nutrition accepted for "${foodDescription}" (water/seasoning category)`);
     return true;
+  }
+  
+  // Reject if calories present but all macros are zero (physically impossible)
+  if (nutrition.calories && nutrition.calories > 10 && 
+      nutrition.protein === 0 && nutrition.carbs === 0 && nutrition.fat === 0) {
+    console.error(`Invalid nutrition data for "${foodDescription}": ${nutrition.calories} calories but zero macros`);
+    return false;
   }
 
   // Check for specific food types that should have certain nutrients
@@ -204,6 +220,21 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
   // First try labelNutrients (Branded Foods)
   if (food.labelNutrients) {
     const label = food.labelNutrients;
+    
+    // Determine appropriate serving size defaults based on food type
+    let defaultServingSize = "100";
+    let defaultServingUnit = "g";
+    
+    // Use householdServingFullText as a fallback for serving info
+    if (!food.servingSize && food.householdServingFullText) {
+      // Try to parse serving text like "1 cup (240g)" or "2 tbsp (30ml)"
+      const servingMatch = food.householdServingFullText.match(/(\d+(?:\.\d+)?)\s*(\w+)/);
+      if (servingMatch) {
+        defaultServingSize = servingMatch[1];
+        defaultServingUnit = servingMatch[2];
+      }
+    }
+    
     const nutrition: NutritionInfo = {
       calories: label.calories?.value || 0,
       protein: label.protein?.value || 0,
@@ -212,8 +243,8 @@ function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
       fiber: label.fiber?.value,
       sugar: label.sugars?.value,
       sodium: label.sodium?.value,
-      servingSize: food.servingSize?.toString() || "100",
-      servingUnit: food.servingSizeUnit || "g",
+      servingSize: food.servingSize?.toString() || defaultServingSize,
+      servingUnit: food.servingSizeUnit || defaultServingUnit,
     };
 
     // Validate the nutrition data
@@ -310,8 +341,9 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
 
   // Extract nutrition info if available
   const nutritionInfo = extractNutritionInfo(food);
-
-  return {
+  
+  // Create base item with known fields
+  const baseItem = {
     fdcId: food.fdcId,
     description: food.description,
     dataType: food.dataType,
@@ -334,6 +366,17 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
       ]
     }),
   };
+  
+  // Ensure all required fields are populated with defaults if missing
+  const enrichedItem = ensureRequiredFields(baseItem, foodCategory, food.description);
+  
+  // Add data quality assessment
+  const dataQuality = assessDataQuality(enrichedItem);
+  if (dataQuality.level === 'poor') {
+    console.warn(`Poor data quality for "${food.description}": ${dataQuality.message}. Missing: ${dataQuality.missingFields.join(', ')}`);
+  }
+  
+  return enrichedItem;
 }
 
 /**
