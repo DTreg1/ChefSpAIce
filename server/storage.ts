@@ -10552,51 +10552,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ============================================================================
-  // Sentiment Analysis Implementations
+  // Sentiment Analysis Implementations (see earlier implementation)
   // ============================================================================
-  
-  async createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis> {
-    try {
-      const [result] = await db
-        .insert(sentimentAnalysis)
-        .values(analysis)
-        .returning();
-      return result;
-    } catch (error) {
-      console.error("Error creating sentiment analysis:", error);
-      throw new Error("Failed to create sentiment analysis");
-    }
-  }
-  
-  async getSentimentAnalysis(contentId: string): Promise<SentimentAnalysis | undefined> {
-    try {
-      const [result] = await db
-        .select()
-        .from(sentimentAnalysis)
-        .where(eq(sentimentAnalysis.contentId, contentId))
-        .orderBy(desc(sentimentAnalysis.analyzedAt))
-        .limit(1);
-      return result;
-    } catch (error) {
-      console.error("Error getting sentiment analysis:", error);
-      throw new Error("Failed to get sentiment analysis");
-    }
-  }
-  
-  async getUserSentimentAnalyses(userId: string, limit: number = 50): Promise<SentimentAnalysis[]> {
-    try {
-      const analyses = await db
-        .select()
-        .from(sentimentAnalysis)
-        .where(eq(sentimentAnalysis.userId, userId))
-        .orderBy(desc(sentimentAnalysis.analyzedAt))
-        .limit(limit);
-      return analyses;
-    } catch (error) {
-      console.error("Error getting user sentiment analyses:", error);
-      throw new Error("Failed to get user sentiment analyses");
-    }
-  }
   
   async updateSentimentAnalysis(id: string, data: Partial<InsertSentimentAnalysis>): Promise<void> {
     try {
