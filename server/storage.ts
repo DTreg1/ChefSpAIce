@@ -7284,6 +7284,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // First overload - general analytics stats by date range  
   async getAnalyticsStats(
     startDate?: Date,
     endDate?: Date,
@@ -7295,7 +7296,54 @@ export class DatabaseStorage implements IStorage {
     topEvents: Array<{ eventType: string; count: number }>;
     topCategories: Array<{ eventCategory: string; count: number }>;
     conversionRate: number;
-  }> {
+  }>;
+  // Second overload - user-specific insights analytics
+  async getAnalyticsStats(
+    userId: string
+  ): Promise<{
+    totalInsights: number;
+    unreadInsights: number;
+    averageImportance: number;
+    insightsByCategory: Record<string, number>;
+  }>;
+  // Implementation that handles both overloads
+  async getAnalyticsStats(
+    startDateOrUserId?: Date | string,
+    endDate?: Date,
+  ): Promise<any> {
+    // Check if first parameter is a string (userId) for the second overload
+    if (typeof startDateOrUserId === 'string') {
+      const userId = startDateOrUserId;
+      try {
+        const insights = await db
+          .select()
+          .from(analyticsInsights)
+          .where(eq(analyticsInsights.userId, userId));
+        
+        const unreadInsights = insights.filter(i => !i.isRead).length;
+        const averageImportance = insights.length > 0
+          ? insights.reduce((sum, i) => sum + i.importance, 0) / insights.length
+          : 0;
+        
+        const insightsByCategory: Record<string, number> = {};
+        insights.forEach(i => {
+          insightsByCategory[i.category] = (insightsByCategory[i.category] || 0) + 1;
+        });
+        
+        return {
+          totalInsights: insights.length,
+          unreadInsights,
+          averageImportance,
+          insightsByCategory,
+        };
+      } catch (error) {
+        console.error("Error getting user analytics stats:", error);
+        throw new Error("Failed to get user analytics stats");
+      }
+    }
+
+    // First overload implementation
+    const startDate = startDateOrUserId as Date | undefined;
     try {
       const conditions = [];
       if (startDate) conditions.push(gte(analyticsEvents.timestamp, startDate));
@@ -7557,7 +7605,7 @@ export class DatabaseStorage implements IStorage {
 
   async createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis> {
     try {
-      const [result] = await db.insert(sentimentAnalysis).values(analysis).returning();
+      const [result] = await db.insert(sentimentAnalysis).values([analysis]).returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment analysis:", error);
@@ -8630,16 +8678,20 @@ export class DatabaseStorage implements IStorage {
 
   async getTranslations(contentId: string, languageCode?: string): Promise<Translation[]> {
     try {
-      const query = db.select().from(translations).where(eq(translations.contentId, contentId));
-      
       if (languageCode) {
-        return await query.where(and(
-          eq(translations.contentId, contentId),
-          eq(translations.languageCode, languageCode)
-        ));
+        return await db
+          .select()
+          .from(translations)
+          .where(and(
+            eq(translations.contentId, contentId),
+            eq(translations.languageCode, languageCode)
+          ));
       }
       
-      return await query;
+      return await db
+        .select()
+        .from(translations)
+        .where(eq(translations.contentId, contentId));
     } catch (error) {
       console.error("Error getting translations:", error);
       throw new Error("Failed to get translations");
@@ -9048,6 +9100,12 @@ export class DatabaseStorage implements IStorage {
           .update(altTextQuality)
           .set({
             ...quality,
+            metadata: quality.metadata ? {
+              wordCount: Number(quality.metadata.wordCount || 0),
+              readabilityScore: Number(quality.metadata.readabilityScore || 0),
+              sentimentScore: Number(quality.metadata.sentimentScore || 0),
+              technicalTerms: quality.metadata.technicalTerms as string[] || []
+            } : null,
             updatedAt: new Date(),
             lastAnalyzedAt: new Date()
           })
@@ -9059,10 +9117,16 @@ export class DatabaseStorage implements IStorage {
         // Create new
         const result = await db
           .insert(altTextQuality)
-          .values({
+          .values([{
             ...quality,
+            metadata: quality.metadata ? {
+              wordCount: Number(quality.metadata.wordCount || 0),
+              readabilityScore: Number(quality.metadata.readabilityScore || 0),
+              sentimentScore: Number(quality.metadata.sentimentScore || 0),
+              technicalTerms: quality.metadata.technicalTerms as string[] || []
+            } : null,
             imageId
-          })
+          }])
           .returning();
         
         return result[0];
@@ -9252,7 +9316,7 @@ export class DatabaseStorage implements IStorage {
       
       // Apply filters
       if (filters?.status) {
-        conditions.push(eq(moderationLogs.status, filters.status));
+        conditions.push(eq(moderationLogs.actionTaken, filters.status));
       }
       if (filters?.severity) {
         conditions.push(eq(moderationLogs.severity, filters.severity));
@@ -9263,7 +9327,7 @@ export class DatabaseStorage implements IStorage {
       
       // Apply conditions if any
       if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+        query = query.where(and(...conditions)) as typeof query;
       }
       
       // Order by creation date (newest first)
@@ -9280,7 +9344,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(blockedContent)
-        .values(content)
+        .values([content])
         .returning();
       return result;
     } catch (error) {
@@ -9378,7 +9442,7 @@ export class DatabaseStorage implements IStorage {
       // Calculate statistics
       const totalChecked = logs.length;
       const totalBlocked = logs.filter(log => log.actionTaken === 'blocked').length;
-      const totalFlagged = logs.filter(log => log.flaggedCategories && log.flaggedCategories.length > 0).length;
+      const totalFlagged = logs.filter(log => log.categories && log.categories.length > 0).length;
       
       // Get appeals statistics
       let appealsQuery = db.select().from(moderationAppeals);
@@ -9388,7 +9452,7 @@ export class DatabaseStorage implements IStorage {
             gte(moderationAppeals.createdAt, timeRange.start),
             lte(moderationAppeals.createdAt, timeRange.end)
           )
-        );
+        ) as typeof appealsQuery;
       }
       const appeals = await appealsQuery;
       const totalAppeals = appeals.length;
@@ -9397,8 +9461,8 @@ export class DatabaseStorage implements IStorage {
       // Calculate categories breakdown
       const categoriesBreakdown: { [key: string]: number } = {};
       logs.forEach(log => {
-        if (log.flaggedCategories) {
-          log.flaggedCategories.forEach(category => {
+        if (log.categories) {
+          log.categories.forEach((category: any) => {
             categoriesBreakdown[category] = (categoriesBreakdown[category] || 0) + 1;
           });
         }
@@ -9419,8 +9483,8 @@ export class DatabaseStorage implements IStorage {
       
       // Calculate average confidence
       const confidenceScores = logs
-        .filter(log => log.confidenceScore !== null)
-        .map(log => log.confidenceScore!);
+        .filter(log => log.confidence !== null)
+        .map(log => log.confidence!);
       const averageConfidence = confidenceScores.length > 0
         ? confidenceScores.reduce((sum, score) => sum + score, 0) / confidenceScores.length
         : 0;
@@ -9477,7 +9541,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(suspiciousActivities)
-        .values(activity)
+        .values([activity])
         .returning();
       return result;
     } catch (error) {
@@ -9492,7 +9556,7 @@ export class DatabaseStorage implements IStorage {
       
       // Filter by userId if provided or if not admin
       if (userId && !isAdmin) {
-        query = query.where(eq(suspiciousActivities.userId, userId));
+        query = query.where(eq(suspiciousActivities.userId, userId)) as typeof query;
       } else if (!isAdmin) {
         // Non-admin users with no userId specified should not see any activities
         return [];
@@ -9530,7 +9594,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(fraudReviews)
-        .values(review)
+        .values([review])
         .returning();
       return result;
     } catch (error) {
@@ -9734,7 +9798,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(messages)
-        .values(message)
+        .values([message])
         .returning();
       
       // Update conversation's updatedAt
@@ -9771,7 +9835,7 @@ export class DatabaseStorage implements IStorage {
         .values({ conversationId, ...context })
         .onConflictDoUpdate({
           target: conversationContext.conversationId,
-          set: { ...context, updatedAt: new Date() }
+          set: { ...context, lastSummarized: new Date() }
         })
         .returning();
       return result;
@@ -11666,7 +11730,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newPrediction] = await db
         .insert(userPredictions)
-        .values(prediction)
+        .values([prediction])
         .returning();
       return newPrediction;
     } catch (error) {
@@ -11779,7 +11843,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newAccuracy] = await db
         .insert(predictionAccuracy)
-        .values(accuracy)
+        .values([accuracy])
         .returning();
       return newAccuracy;
     } catch (error) {
@@ -13088,7 +13152,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updatePredictionStatus(
+  async updateMaintenancePredictionStatus(
     predictionId: string,
     status: string
   ): Promise<MaintenancePrediction> {
@@ -13103,7 +13167,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updated;
     } catch (error) {
-      console.error("Error updating prediction status:", error);
+      console.error("Error updating maintenance prediction status:", error);
       throw error;
     }
   }
@@ -13114,12 +13178,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const [saved] = await db
         .insert(maintenanceHistory)
-        .values(history)
+        .values([history])
         .returning();
       
       // Mark related prediction as completed if exists
       if (saved.predictionId) {
-        await this.updatePredictionStatus(saved.predictionId, 'completed');
+        await this.updateMaintenancePredictionStatus(saved.predictionId, 'completed');
       }
       
       return saved;
