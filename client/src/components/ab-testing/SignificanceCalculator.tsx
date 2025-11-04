@@ -25,10 +25,8 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
 
   const analyzeTest = useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/ab/analyze", {
-        method: "POST",
-        body: JSON.stringify({ testId: test.id }),
-      });
+      const response = await apiRequest("POST", "/api/ab/analyze", { testId: test.id });
+      return response.json();
     },
     onSuccess: (data) => {
       setAnalysis(data);

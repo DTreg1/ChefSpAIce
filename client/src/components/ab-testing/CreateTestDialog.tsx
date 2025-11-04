@@ -42,10 +42,8 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
 
   const createTest = useMutation({
     mutationFn: async (data: Partial<InsertAbTest>) => {
-      return apiRequest("/api/ab/create", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/ab/create", data);
+      return response.json();
     },
     onSuccess: () => {
       toast({

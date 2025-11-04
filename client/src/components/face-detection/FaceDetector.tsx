@@ -48,10 +48,17 @@ export function FaceDetector() {
       const formData = new FormData();
       formData.append('image', file);
       
-      return apiRequest('/api/faces/detect', {
+      const response = await fetch('/api/faces/detect', {
         method: 'POST',
         body: formData,
-      }) as Promise<DetectionResponse>;
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to detect faces');
+      }
+      
+      return response.json() as Promise<DetectionResponse>;
     },
     onSuccess: (data) => {
       setDetections(data.detections);
