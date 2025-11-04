@@ -9133,7 +9133,12 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(moderationLogs)
-        .values(log)
+        .values({
+          ...log,
+          toxicityScores: log.toxicityScores as any,
+          flaggedWords: log.flaggedWords as any,
+          contextAnalysis: log.contextAnalysis as any
+        })
         .returning();
       return result;
     } catch (error) {
@@ -9148,6 +9153,9 @@ export class DatabaseStorage implements IStorage {
         .update(moderationLogs)
         .set({
           ...updates,
+          toxicityScores: updates.toxicityScores as any,
+          flaggedWords: updates.flaggedWords as any,
+          contextAnalysis: updates.contextAnalysis as any,
           updatedAt: new Date()
         })
         .where(eq(moderationLogs.id, id));
