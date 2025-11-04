@@ -5027,18 +5027,41 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Chat Messages - Optimized with default limit to prevent memory issues
+  // Chat Messages - Legacy compatibility layer using conversations/messages tables
   async getChatMessages(
     userId: string,
     limit: number = 100,
   ): Promise<ChatMessage[]> {
     try {
-      return await db
+      // Get the most recent conversation for the user
+      const [conversation] = await db
         .select()
-        .from(userChats)
-        .where(eq(userChats.userId, userId))
-        .orderBy(desc(userChats.createdAt)) // Most recent first
+        .from(conversations)
+        .where(eq(conversations.userId, userId))
+        .orderBy(desc(conversations.updatedAt))
+        .limit(1);
+      
+      if (!conversation) {
+        return [];
+      }
+
+      // Get messages from that conversation
+      const msgs = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.conversationId, conversation.id))
+        .orderBy(desc(messages.timestamp))
         .limit(limit);
+
+      // Map to ChatMessage format
+      return msgs.map(msg => ({
+        id: msg.id,
+        userId: userId,
+        role: msg.role,
+        content: msg.content,
+        similarityHash: null,
+        createdAt: msg.timestamp || new Date()
+      }));
     } catch (error) {
       console.error(`Error getting chat messages for user ${userId}:`, error);
       throw new Error("Failed to retrieve chat messages");
@@ -5053,24 +5076,46 @@ export class DatabaseStorage implements IStorage {
     try {
       const offset = (page - 1) * limit;
 
+      // Get the most recent conversation for the user
+      const [conversation] = await db
+        .select()
+        .from(conversations)
+        .where(eq(conversations.userId, userId))
+        .orderBy(desc(conversations.updatedAt))
+        .limit(1);
+      
+      if (!conversation) {
+        return PaginationHelper.createResponse([], 0, page, limit);
+      }
+
       // Get total count
       const [countResult] = await db
         .select({ count: sql<number>`count(*)` })
-        .from(userChats)
-        .where(eq(userChats.userId, userId));
+        .from(messages)
+        .where(eq(messages.conversationId, conversation.id));
 
       const total = Number(countResult?.count || 0);
 
       // Get paginated messages
-      const messages: ChatMessage[] = await db
+      const msgs = await db
         .select()
-        .from(userChats)
-        .where(eq(userChats.userId, userId))
-        .orderBy(desc(userChats.createdAt))
+        .from(messages)
+        .where(eq(messages.conversationId, conversation.id))
+        .orderBy(desc(messages.timestamp))
         .limit(limit)
         .offset(offset);
 
-      return PaginationHelper.createResponse(messages, total, page, limit);
+      // Map to ChatMessage format
+      const chatMessages: ChatMessage[] = msgs.map(msg => ({
+        id: msg.id,
+        userId: userId,
+        role: msg.role,
+        content: msg.content,
+        similarityHash: null,
+        createdAt: msg.timestamp || new Date()
+      }));
+
+      return PaginationHelper.createResponse(chatMessages, total, page, limit);
     } catch (error) {
       console.error(
         `Error getting paginated chat messages for user ${userId}:`,
@@ -5085,17 +5130,52 @@ export class DatabaseStorage implements IStorage {
     message: Omit<InsertChatMessage, "userId">,
   ): Promise<ChatMessage> {
     try {
-      const messageData = {
-        userId,
-        role: message.role,
-        content: message.content,
-      };
+      // Get or create the most recent conversation for the user
+      let [conversation] = await db
+        .select()
+        .from(conversations)
+        .where(eq(conversations.userId, userId))
+        .orderBy(desc(conversations.updatedAt))
+        .limit(1);
+      
+      if (!conversation) {
+        // Create a new conversation if none exists
+        [conversation] = await db
+          .insert(conversations)
+          .values({
+            userId: userId,
+            title: "Chat Session"
+          })
+          .returning();
+      }
 
+      // Create the message in the messages table
       const [newMessage] = await db
-        .insert(userChats)
-        .values(messageData)
+        .insert(messages)
+        .values({
+          conversationId: conversation.id,
+          role: message.role,
+          content: message.content,
+          metadata: null,
+          tokensUsed: 0
+        })
         .returning();
-      return newMessage;
+
+      // Update conversation's updatedAt
+      await db
+        .update(conversations)
+        .set({ updatedAt: new Date() })
+        .where(eq(conversations.id, conversation.id));
+
+      // Map to ChatMessage format
+      return {
+        id: newMessage.id,
+        userId: userId,
+        role: newMessage.role,
+        content: newMessage.content,
+        similarityHash: message.similarityHash || null,
+        createdAt: newMessage.timestamp || new Date()
+      };
     } catch (error) {
       console.error("Error creating chat message:", error);
       throw new Error("Failed to create chat message");
@@ -5104,7 +5184,8 @@ export class DatabaseStorage implements IStorage {
 
   async clearChatMessages(userId: string): Promise<void> {
     try {
-      await db.delete(userChats).where(eq(userChats.userId, userId));
+      // Delete all conversations for the user (messages will cascade delete)
+      await db.delete(conversations).where(eq(conversations.userId, userId));
     } catch (error) {
       console.error(`Error clearing chat messages for user ${userId}:`, error);
       throw new Error("Failed to clear chat messages");
@@ -5119,12 +5200,23 @@ export class DatabaseStorage implements IStorage {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
 
+      // Get conversations for the user
+      const userConversations = await db
+        .select()
+        .from(conversations)
+        .where(eq(conversations.userId, userId));
+
+      if (userConversations.length === 0) {
+        return 0;
+      }
+
+      // Delete old messages from user's conversations
       const result = await db
-        .delete(userChats)
+        .delete(messages)
         .where(
           and(
-            eq(userChats.userId, userId),
-            sql`${userChats.createdAt} < ${cutoffDate}`,
+            sql`${messages.conversationId} IN (${sql.join(userConversations.map(c => sql`${c.id}`), sql`, `)})`,
+            sql`${messages.timestamp} < ${cutoffDate}`,
           ),
         )
         .returning();
