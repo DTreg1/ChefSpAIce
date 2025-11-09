@@ -46,10 +46,7 @@ export function PrivacyBlur({ imageFile, faceCount, onBlurComplete }: PrivacyBlu
       formData.append('blurIntensity', blurIntensity.toString());
       formData.append('excludeIndexes', JSON.stringify(Array.from(excludedFaces)));
       
-      return apiRequest('/api/faces/blur', {
-        method: 'POST',
-        body: formData,
-      }) as Promise<BlurResponse>;
+      return apiRequest('/api/faces/blur', 'POST', formData) as Promise<BlurResponse>;
     },
     onSuccess: (data) => {
       setBlurredImage(data.blurredImageUrl);

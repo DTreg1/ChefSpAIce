@@ -40,10 +40,7 @@ export function DraftingAssistant() {
   // Generate drafts mutation
   const generateDraftsMutation = useMutation({
     mutationFn: async (data: { originalMessage: string; contextType: string; tones: string[]; subject?: string; approach?: string }) =>
-      apiRequest<GeneratedDraft[]>("/api/drafts/generate", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      apiRequest<GeneratedDraft[]>("/api/drafts/generate", "POST", data),
     onSuccess: (drafts) => {
       setGeneratedDrafts(drafts);
       toast({
@@ -64,10 +61,7 @@ export function DraftingAssistant() {
   // Submit feedback mutation
   const feedbackMutation = useMutation({
     mutationFn: async (data: { draftId: string; selected: boolean; edited?: boolean; editedContent?: string }) =>
-      apiRequest("/api/drafts/feedback", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      apiRequest("/api/drafts/feedback", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/drafts/history"] });
     },
@@ -76,10 +70,7 @@ export function DraftingAssistant() {
   // Improve draft mutation
   const improveDraftMutation = useMutation({
     mutationFn: async (data: { draft: string; improvements: string[] }) =>
-      apiRequest<{ improved: string; changes: string[]; suggestions: string[] }>("/api/drafts/improve", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      apiRequest<{ improved: string; changes: string[]; suggestions: string[] }>("/api/drafts/improve", "POST", data),
     onSuccess: (result) => {
       toast({
         title: "Draft Improved",

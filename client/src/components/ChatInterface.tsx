@@ -64,13 +64,9 @@ export function ChatInterface({
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       setIsTyping(true);
-      const response = await apiRequest('/api/chat/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message,
-          conversationId 
-        }),
+      const response = await apiRequest('/api/chat/message', 'POST', { 
+        message,
+        conversationId 
       });
       return response;
     },
@@ -155,7 +151,7 @@ export function ChatInterface({
                 >
                   <p className="whitespace-pre-wrap break-words">{message.content}</p>
                   <p className="text-xs opacity-70 mt-1">
-                    {format(new Date(message.timestamp), 'HH:mm')}
+                    {message.timestamp ? format(new Date(message.timestamp), 'HH:mm') : ''}
                   </p>
                 </div>
                 

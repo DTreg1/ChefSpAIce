@@ -34,9 +34,7 @@ export function ConversationSidebar({
   // Delete conversation mutation
   const deleteConversationMutation = useMutation({
     mutationFn: async (conversationId: string) => {
-      await apiRequest(`/api/chat/conversation/${conversationId}`, {
-        method: 'DELETE',
-      });
+      await apiRequest(`/api/chat/conversation/${conversationId}`, 'DELETE');
     },
     onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
@@ -51,8 +49,7 @@ export function ConversationSidebar({
   // Filter conversations based on search
   const filteredConversations = conversations.filter((conv: Conversation) => {
     if (!searchQuery) return true;
-    return conv.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase());
+    return conv.title?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const handleNewConversation = () => {
@@ -121,13 +118,8 @@ export function ConversationSidebar({
                   <h3 className="font-medium truncate">
                     {conversation.title || 'New Conversation'}
                   </h3>
-                  {conversation.lastMessage && (
-                    <p className="text-sm text-muted-foreground truncate mt-1">
-                      {conversation.lastMessage}
-                    </p>
-                  )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(conversation.updatedAt), 'MMM d, HH:mm')}
+                    {conversation.updatedAt ? format(new Date(conversation.updatedAt), 'MMM d, HH:mm') : ''}
                   </p>
                 </div>
                 
@@ -141,13 +133,6 @@ export function ConversationSidebar({
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
-              
-              {conversation.messageCount && (
-                <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                  <MessageSquare className="w-3 h-3" />
-                  <span>{conversation.messageCount} messages</span>
-                </div>
-              )}
             </div>
           ))}
         </div>

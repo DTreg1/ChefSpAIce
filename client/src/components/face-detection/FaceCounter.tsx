@@ -46,10 +46,7 @@ export function FaceCounter({ imageFile, onCountComplete }: FaceCounterProps) {
       const formData = new FormData();
       formData.append('image', imageFile);
       
-      return apiRequest('/api/faces/count', {
-        method: 'POST',
-        body: formData,
-      }) as Promise<CountResponse>;
+      return apiRequest('/api/faces/count', 'POST', formData) as Promise<CountResponse>;
     },
     onSuccess: (data) => {
       setCurrentCount(data.faceCount);

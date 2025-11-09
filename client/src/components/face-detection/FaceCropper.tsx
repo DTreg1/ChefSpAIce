@@ -51,10 +51,7 @@ export function FaceCropper({ imageFile, faceCount }: FaceCropperProps) {
         formData.append('faceIndex', faceIndex.toString());
       }
       
-      return apiRequest('/api/faces/crop', {
-        method: 'POST',
-        body: formData,
-      }) as Promise<CropResponse>;
+      return apiRequest('/api/faces/crop', 'POST', formData) as Promise<CropResponse>;
     },
     onSuccess: (data) => {
       setCroppedFaces(data.croppedFaces);
