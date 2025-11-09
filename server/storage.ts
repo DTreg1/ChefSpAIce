@@ -12273,7 +12273,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newInsight] = await db
         .insert(analyticsInsights)
-        .values(insight as any)
+        .values(insight)
         .returning();
       return newInsight;
     } catch (error) {
