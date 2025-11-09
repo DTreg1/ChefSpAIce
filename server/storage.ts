@@ -13584,7 +13584,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const recorded = await db
         .insert(cohortMetrics)
-        .values(metrics)
+        .values(metrics as any)
         .returning();
       return recorded;
     } catch (error) {
