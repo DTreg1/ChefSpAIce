@@ -7605,12 +7605,7 @@ export class DatabaseStorage implements IStorage {
 
   async createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis> {
     try {
-      // Ensure sentiment is properly typed as one of the allowed values
-      const validatedAnalysis = {
-        ...analysis,
-        sentiment: analysis.sentiment as "positive" | "negative" | "neutral" | "mixed"
-      };
-      const [result] = await db.insert(sentimentAnalysis).values([validatedAnalysis]).returning();
+      const [result] = await db.insert(sentimentAnalysis).values([analysis as any]).returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment analysis:", error);
@@ -9349,7 +9344,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(blockedContent)
-        .values([content])
+        .values([content as any])
         .returning();
       return result;
     } catch (error) {
@@ -9546,7 +9541,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(suspiciousActivities)
-        .values([activity])
+        .values([activity as any])
         .returning();
       return result;
     } catch (error) {
@@ -9599,7 +9594,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(fraudReviews)
-        .values([review])
+        .values([review as any])
         .returning();
       return result;
     } catch (error) {
@@ -9803,7 +9798,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(messages)
-        .values([message])
+        .values([message as any])
         .returning();
       
       // Update conversation's updatedAt
