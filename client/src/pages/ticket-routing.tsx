@@ -149,10 +149,7 @@ export default function TicketRouting() {
   // Mutations
   const createTicketMutation = useMutation({
     mutationFn: (data: CreateTicketForm) => 
-      apiRequest("/api/routing/tickets", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      apiRequest("/api/routing/tickets", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/tickets"] });
       setShowCreateTicket(false);
@@ -165,9 +162,7 @@ export default function TicketRouting() {
 
   const assignTicketMutation = useMutation({
     mutationFn: (ticketId: string) => 
-      apiRequest(`/api/routing/assign/${ticketId}`, {
-        method: "POST",
-      }),
+      apiRequest(`/api/routing/assign/${ticketId}`, "POST"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/tickets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/routing/performance"] });
@@ -180,10 +175,7 @@ export default function TicketRouting() {
 
   const escalateTicketMutation = useMutation({
     mutationFn: ({ ticketId, reason }: { ticketId: string; reason: string }) => 
-      apiRequest(`/api/routing/escalate/${ticketId}`, {
-        method: "POST",
-        body: JSON.stringify({ reason }),
-      }),
+      apiRequest(`/api/routing/escalate/${ticketId}`, "POST", { reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/tickets"] });
       toast({
@@ -207,10 +199,7 @@ export default function TicketRouting() {
         confidence_threshold: data.confidence_threshold ? parseFloat(data.confidence_threshold) : 0.7,
       };
       
-      return apiRequest("/api/routing/rules", {
-        method: "POST",
-        body: JSON.stringify(processed),
-      });
+      return apiRequest("/api/routing/rules", "POST", processed);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/rules"] });
@@ -224,10 +213,7 @@ export default function TicketRouting() {
 
   const toggleRuleMutation = useMutation({
     mutationFn: ({ ruleId, isActive }: { ruleId: string; isActive: boolean }) => 
-      apiRequest(`/api/routing/rules/${ruleId}`, {
-        method: "PUT",
-        body: JSON.stringify({ isActive }),
-      }),
+      apiRequest(`/api/routing/rules/${ruleId}`, "PUT", { isActive }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/routing/rules"] });
       toast({

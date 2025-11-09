@@ -151,10 +151,7 @@ export default function SystemHealthDashboard() {
   // Analyze component mutation
   const analyzeMutation = useMutation({
     mutationFn: (component: string) =>
-      apiRequest('/api/maintenance/analyze', {
-        method: 'POST',
-        body: JSON.stringify({ component })
-      }),
+      apiRequest('/api/maintenance/analyze', 'POST', { component }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
       toast({
@@ -174,7 +171,7 @@ export default function SystemHealthDashboard() {
   // Initialize models mutation
   const initializeMutation = useMutation({
     mutationFn: () =>
-      apiRequest('/api/maintenance/initialize', { method: 'POST' }),
+      apiRequest('/api/maintenance/initialize', 'POST'),
     onSuccess: () => {
       toast({
         title: "Models Initialized",
@@ -186,10 +183,7 @@ export default function SystemHealthDashboard() {
   // Simulate metrics mutation (for testing)
   const simulateMutation = useMutation({
     mutationFn: ({ component, anomaly }: { component: string; anomaly: boolean }) =>
-      apiRequest('/api/maintenance/simulate', {
-        method: 'POST',
-        body: JSON.stringify({ component, anomaly })
-      }),
+      apiRequest('/api/maintenance/simulate', 'POST', { component, anomaly }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/maintenance'] });
     }

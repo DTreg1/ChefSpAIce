@@ -38,14 +38,11 @@ export default function ExtractionPage() {
   // Single extraction mutation
   const extractMutation = useMutation({
     mutationFn: async (data: { text: string, templateId?: string, customSchema?: any }) => {
-      return apiRequest('/api/extract/data', {
-        method: 'POST',
-        body: {
-          text: data.text,
-          templateId: data.templateId,
-          customSchema: data.customSchema,
-          sourceType: 'email'
-        }
+      return apiRequest('/api/extract/data', 'POST', {
+        text: data.text,
+        templateId: data.templateId,
+        customSchema: data.customSchema,
+        sourceType: 'email'
       });
     },
     onSuccess: (data) => {
@@ -69,10 +66,7 @@ export default function ExtractionPage() {
   // Save template mutation
   const saveTemplateMutation = useMutation({
     mutationFn: async (template: any) => {
-      return apiRequest('/api/extract/template', {
-        method: 'POST',
-        body: template
-      });
+      return apiRequest('/api/extract/template', 'POST', template);
     },
     onSuccess: (data) => {
       toast({
