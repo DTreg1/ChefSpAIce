@@ -33,10 +33,10 @@
 
 // Referenced from blueprint:javascript_log_in_with_replit - Added user operations and user-scoped data
 import { parallelQueries } from "./utils/batchQueries";
-import { 
-  type ChatMessage, 
+import {
+  type ChatMessage,
   type InsertChatMessage,
-  userChats 
+  userChats,
 } from "@shared/chat-compatibility";
 import {
   type User,
@@ -363,7 +363,19 @@ import {
   transcriptEdits,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and, or, desc, asc, gte, lte, isNull, isNotNull, ne } from "drizzle-orm";
+import {
+  eq,
+  sql,
+  and,
+  or,
+  desc,
+  asc,
+  gte,
+  lte,
+  isNull,
+  isNotNull,
+  ne,
+} from "drizzle-orm";
 import {
   matchIngredientWithInventory,
   type IngredientMatch,
@@ -445,34 +457,40 @@ export interface IStorage {
    * - Existing users retain their admin status
    */
   upsertUser(user: UpsertUser): Promise<User>;
-  
+
   /**
    * Get user by email address
    */
   getUserByEmail(email: string): Promise<User | undefined>;
-  
+
   /**
    * Create a new user
    */
   createUser(user: UpsertUser): Promise<User>;
-  
+
   // ==================== OAuth Authentication ====================
-  
+
   /**
    * Get auth provider by provider and provider ID
    */
-  getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<AuthProvider | undefined>;
-  
+  getAuthProviderByProviderAndId(
+    provider: string,
+    providerId: string,
+  ): Promise<AuthProvider | undefined>;
+
   /**
    * Get auth provider by provider and user ID
    */
-  getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<AuthProvider | undefined>;
-  
+  getAuthProviderByProviderAndUserId(
+    provider: string,
+    userId: string,
+  ): Promise<AuthProvider | undefined>;
+
   /**
    * Create a new auth provider
    */
   createAuthProvider(authProvider: InsertAuthProvider): Promise<AuthProvider>;
-  
+
   /**
    * Update auth provider
    */
@@ -500,39 +518,39 @@ export interface IStorage {
     dismissedBy?: string,
   ): Promise<void>;
   getUndismissedNotifications(userId: string, limit?: number): Promise<any[]>;
-  
+
   // Intelligent Notification System
-  getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
+  getNotificationPreferences(
+    userId: string,
+  ): Promise<NotificationPreferences | undefined>;
   upsertNotificationPreferences(
     userId: string,
     preferences: Omit<InsertNotificationPreferences, "userId">,
   ): Promise<NotificationPreferences>;
-  
+
   createNotificationScore(
-    score: InsertNotificationScores
+    score: InsertNotificationScores,
   ): Promise<NotificationScores>;
   getNotificationScores(
     userId: string,
-    limit?: number
+    limit?: number,
   ): Promise<NotificationScores[]>;
-  getPendingNotifications(
-    beforeTime: Date
-  ): Promise<NotificationScores[]>;
+  getPendingNotifications(beforeTime: Date): Promise<NotificationScores[]>;
   updateNotificationScore(
     id: string,
-    updates: Partial<NotificationScores>
+    updates: Partial<NotificationScores>,
   ): Promise<void>;
-  
+
   createNotificationFeedback(
-    feedback: InsertNotificationFeedback
+    feedback: InsertNotificationFeedback,
   ): Promise<NotificationFeedback>;
   getNotificationFeedback(
     userId: string,
-    notificationId?: string
+    notificationId?: string,
   ): Promise<NotificationFeedback[]>;
   getRecentUserEngagement(
     userId: string,
-    days?: number
+    days?: number,
   ): Promise<{
     totalSent: number;
     clicked: number;
@@ -626,18 +644,30 @@ export interface IStorage {
   ): Promise<UserInventory>;
   deleteFoodItem(userId: string, id: string): Promise<void>;
   getFoodCategories(userId: string): Promise<string[]>;
-  
+
   // Storage Locations (user-scoped)
   getStorageLocations(userId: string): Promise<UserStorage[]>;
-  getStorageLocation(userId: string, id: string): Promise<UserStorage | undefined>;
+  getStorageLocation(
+    userId: string,
+    id: string,
+  ): Promise<UserStorage | undefined>;
   createStorageLocation(
     userId: string,
-    location: Omit<UserStorage, "id" | "userId" | "createdAt" | "updatedAt" | "isDefault" | "isActive" | "sortOrder">
+    location: Omit<
+      UserStorage,
+      | "id"
+      | "userId"
+      | "createdAt"
+      | "updatedAt"
+      | "isDefault"
+      | "isActive"
+      | "sortOrder"
+    >,
   ): Promise<UserStorage>;
   updateStorageLocation(
     userId: string,
     id: string,
-    updates: Partial<UserStorage>
+    updates: Partial<UserStorage>,
   ): Promise<UserStorage>;
   deleteStorageLocation(userId: string, id: string): Promise<void>;
 
@@ -686,7 +716,10 @@ export interface IStorage {
   ): Promise<Array<Recipe & { ingredientMatches: any[] }>>;
 
   // Expiration Handling (now in userInventory table)
-  getExpiringItems(userId: string, daysThreshold: number): Promise<UserInventory[]>;
+  getExpiringItems(
+    userId: string,
+    daysThreshold: number,
+  ): Promise<UserInventory[]>;
   dismissFoodItemNotification(
     userId: string,
     foodItemId: string,
@@ -940,15 +973,17 @@ export interface IStorage {
   }>;
 
   // ==================== Sentiment Tracking Operations ====================
-  
+
   // Sentiment Metrics Operations
-  createSentimentMetrics(metrics: InsertSentimentMetrics): Promise<SentimentMetrics>;
+  createSentimentMetrics(
+    metrics: InsertSentimentMetrics,
+  ): Promise<SentimentMetrics>;
   getSentimentMetrics(
     period?: string,
     periodType?: "day" | "week" | "month",
   ): Promise<SentimentMetrics[]>;
   getLatestSentimentMetrics(): Promise<SentimentMetrics | undefined>;
-  
+
   // Sentiment Alerts Operations
   createSentimentAlert(alert: InsertSentimentAlerts): Promise<SentimentAlerts>;
   getSentimentAlerts(
@@ -959,9 +994,11 @@ export interface IStorage {
     alertId: string,
     update: Partial<SentimentAlerts>,
   ): Promise<SentimentAlerts>;
-  
+
   // Sentiment Segments Operations
-  createSentimentSegment(segment: InsertSentimentSegments): Promise<SentimentSegments>;
+  createSentimentSegment(
+    segment: InsertSentimentSegments,
+  ): Promise<SentimentSegments>;
   getSentimentSegments(
     period?: string,
     segmentName?: string,
@@ -973,20 +1010,20 @@ export interface IStorage {
     segments: SentimentSegments[];
     categories: Record<string, { sentiment: number; count: number }>;
   }>;
-  
+
   // Sentiment Analysis Operations
-  createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis>;
-  getSentimentAnalyses(
-    filters?: {
-      userId?: string;
-      contentType?: string;
-      sentiment?: "positive" | "negative" | "neutral" | "mixed";
-      startDate?: Date;
-      endDate?: Date;
-      limit?: number;
-    },
-  ): Promise<SentimentAnalysis[]>;
-  
+  createSentimentAnalysis(
+    analysis: InsertSentimentAnalysis,
+  ): Promise<SentimentAnalysis>;
+  getSentimentAnalyses(filters?: {
+    userId?: string;
+    contentType?: string;
+    sentiment?: "positive" | "negative" | "neutral" | "mixed";
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<SentimentAnalysis[]>;
+
   // Sentiment Report Generation
   generateSentimentReport(
     period: string,
@@ -1006,16 +1043,13 @@ export interface IStorage {
    */
   createQueryLog(
     userId: string,
-    log: Omit<InsertQueryLog, "userId">
+    log: Omit<InsertQueryLog, "userId">,
   ): Promise<QueryLog>;
 
   /**
    * Get query history for a user
    */
-  getQueryLogs(
-    userId: string,
-    limit?: number
-  ): Promise<QueryLog[]>;
+  getQueryLogs(userId: string, limit?: number): Promise<QueryLog[]>;
 
   /**
    * Get saved queries for a user
@@ -1028,7 +1062,7 @@ export interface IStorage {
   saveQuery(
     userId: string,
     queryId: string,
-    savedName: string
+    savedName: string,
   ): Promise<QueryLog>;
 
   /**
@@ -1036,16 +1070,13 @@ export interface IStorage {
    */
   updateQueryLog(
     queryId: string,
-    updates: Partial<QueryLog>
+    updates: Partial<QueryLog>,
   ): Promise<QueryLog>;
 
   /**
    * Get query by ID
    */
-  getQueryLog(
-    userId: string,
-    queryId: string
-  ): Promise<QueryLog | undefined>;
+  getQueryLog(userId: string, queryId: string): Promise<QueryLog | undefined>;
 
   // ==================== Activity Logging ====================
 
@@ -1176,7 +1207,9 @@ export interface IStorage {
    * Create or update content embedding
    * @param embedding - Embedding data
    */
-  upsertContentEmbedding(embedding: InsertContentEmbedding): Promise<ContentEmbedding>;
+  upsertContentEmbedding(
+    embedding: InsertContentEmbedding,
+  ): Promise<ContentEmbedding>;
 
   /**
    * Get embeddings for content
@@ -1184,7 +1217,11 @@ export interface IStorage {
    * @param contentType - Type of content
    * @param userId - User ID
    */
-  getContentEmbedding(contentId: string, contentType: string, userId: string): Promise<ContentEmbedding | undefined>;
+  getContentEmbedding(
+    contentId: string,
+    contentType: string,
+    userId: string,
+  ): Promise<ContentEmbedding | undefined>;
 
   /**
    * Search by embedding similarity
@@ -1193,25 +1230,33 @@ export interface IStorage {
    * @param userId - User ID
    * @param limit - Max results
    */
-  searchByEmbedding(queryEmbedding: number[], contentType: string, userId: string, limit?: number): Promise<Array<ContentEmbedding & { similarity: number }>>;
+  searchByEmbedding(
+    queryEmbedding: number[],
+    contentType: string,
+    userId: string,
+    limit?: number,
+  ): Promise<Array<ContentEmbedding & { similarity: number }>>;
 
   /**
    * Log search query
    * @param log - Search log data
    */
   createSearchLog(log: InsertSearchLog): Promise<SearchLog>;
-  
+
   /**
    * Update search log with click feedback
    * @param searchLogId - Search log ID
    * @param feedback - Click feedback data
    */
-  updateSearchLogFeedback(searchLogId: string, feedback: {
-    clickedResultId: string;
-    clickedResultType: string;
-    clickPosition: number;
-    timeToClick: number;
-  }): Promise<SearchLog>;
+  updateSearchLogFeedback(
+    searchLogId: string,
+    feedback: {
+      clickedResultId: string;
+      clickedResultType: string;
+      clickPosition: number;
+      timeToClick: number;
+    },
+  ): Promise<SearchLog>;
 
   /**
    * Get all categories
@@ -1231,13 +1276,19 @@ export interface IStorage {
    * @param contentType - Content type
    * @param userId - User ID
    */
-  getContentCategories(contentId: string, contentType: string, userId: string): Promise<ContentCategory[]>;
+  getContentCategories(
+    contentId: string,
+    contentType: string,
+    userId: string,
+  ): Promise<ContentCategory[]>;
 
   /**
    * Assign category to content
    * @param assignment - Category assignment data
    */
-  assignContentCategory(assignment: InsertContentCategory): Promise<ContentCategory>;
+  assignContentCategory(
+    assignment: InsertContentCategory,
+  ): Promise<ContentCategory>;
 
   /**
    * Get or create tag
@@ -1257,41 +1308,49 @@ export interface IStorage {
    * @param contentType - Content type
    * @param userId - User ID
    */
-  getContentTags(contentId: string, contentType: string, userId: string): Promise<Array<ContentTag & { tag: Tag }>>;
+  getContentTags(
+    contentId: string,
+    contentType: string,
+    userId: string,
+  ): Promise<Array<ContentTag & { tag: Tag }>>;
 
   /**
    * Assign tag to content
    * @param assignment - Tag assignment data
    */
   assignContentTag(assignment: InsertContentTag): Promise<ContentTag>;
-  
+
   /**
    * Create or get tag by name
    * @param name - Tag name
    */
   createOrGetTag(name: string): Promise<Tag>;
-  
+
   /**
    * Get all tags
    * @param userId - Optional user filter
    */
   getAllTags(userId?: string): Promise<Tag[]>;
-  
+
   /**
    * Get related tags
    * @param tagId - Tag ID
    * @param limit - Max results
    */
   getRelatedTags(tagId: string, limit?: number): Promise<Tag[]>;
-  
+
   /**
    * Remove tag from content
    * @param contentId - Content ID
    * @param tagId - Tag ID
    * @param userId - User ID
    */
-  removeContentTag(contentId: string, tagId: string, userId: string): Promise<void>;
-  
+  removeContentTag(
+    contentId: string,
+    tagId: string,
+    userId: string,
+  ): Promise<void>;
+
   /**
    * Update tag relevance score
    * @param contentId - Content ID
@@ -1299,8 +1358,13 @@ export interface IStorage {
    * @param userId - User ID
    * @param relevanceScore - New relevance score
    */
-  updateTagRelevanceScore(contentId: string, tagId: string, userId: string, relevanceScore: number): Promise<void>;
-  
+  updateTagRelevanceScore(
+    contentId: string,
+    tagId: string,
+    userId: string,
+    relevanceScore: number,
+  ): Promise<void>;
+
   /**
    * Search tags by query
    * @param query - Search query
@@ -1327,7 +1391,11 @@ export interface IStorage {
    * @param status - New status
    * @param reviewedBy - Reviewer user ID
    */
-  updateDuplicateStatus(pairId: string, status: string, reviewedBy: string): Promise<void>;
+  updateDuplicateStatus(
+    pairId: string,
+    status: string,
+    reviewedBy: string,
+  ): Promise<void>;
 
   /**
    * Get related content from cache
@@ -1335,13 +1403,19 @@ export interface IStorage {
    * @param contentType - Content type
    * @param userId - User ID
    */
-  getRelatedContent(contentId: string, contentType: string, userId: string): Promise<RelatedContentCache | undefined>;
+  getRelatedContent(
+    contentId: string,
+    contentType: string,
+    userId: string,
+  ): Promise<RelatedContentCache | undefined>;
 
   /**
    * Cache related content
    * @param cache - Related content cache data
    */
-  cacheRelatedContent(cache: InsertRelatedContentCache): Promise<RelatedContentCache>;
+  cacheRelatedContent(
+    cache: InsertRelatedContentCache,
+  ): Promise<RelatedContentCache>;
 
   /**
    * Create natural language query log
@@ -1349,123 +1423,144 @@ export interface IStorage {
    */
 
   // ==================== Task 7: AI Chat Assistant ====================
-  
+
   /**
    * Get all conversations for a user
    * @param userId - User ID
    */
   getConversations(userId: string): Promise<Conversation[]>;
-  
+
   /**
    * Get a specific conversation
    * @param userId - User ID
    * @param conversationId - Conversation ID
    */
-  getConversation(userId: string, conversationId: string): Promise<Conversation | undefined>;
-  
+  getConversation(
+    userId: string,
+    conversationId: string,
+  ): Promise<Conversation | undefined>;
+
   /**
    * Create a new conversation
    * @param userId - User ID
    * @param title - Conversation title
    */
   createConversation(userId: string, title: string): Promise<Conversation>;
-  
+
   /**
    * Update conversation (e.g., title, updatedAt)
    * @param userId - User ID
    * @param conversationId - Conversation ID
    * @param updates - Fields to update
    */
-  updateConversation(userId: string, conversationId: string, updates: Partial<Conversation>): Promise<Conversation>;
-  
+  updateConversation(
+    userId: string,
+    conversationId: string,
+    updates: Partial<Conversation>,
+  ): Promise<Conversation>;
+
   /**
    * Delete a conversation and all its messages
    * @param userId - User ID
    * @param conversationId - Conversation ID
    */
   deleteConversation(userId: string, conversationId: string): Promise<void>;
-  
+
   /**
    * Get messages for a conversation
    * @param conversationId - Conversation ID
    * @param limit - Max messages to return
    */
   getMessages(conversationId: string, limit?: number): Promise<Message[]>;
-  
+
   /**
    * Create a new message in a conversation
    * @param message - Message data
    */
   createMessage(message: InsertMessage): Promise<Message>;
-  
+
   /**
    * Get or create conversation context
    * @param conversationId - Conversation ID
    */
-  getConversationContext(conversationId: string): Promise<ConversationContext | undefined>;
-  
+  getConversationContext(
+    conversationId: string,
+  ): Promise<ConversationContext | undefined>;
+
   /**
    * Update conversation context
    * @param conversationId - Conversation ID
    * @param context - Context data
    */
-  updateConversationContext(conversationId: string, context: Partial<ConversationContext>): Promise<ConversationContext>;
+  updateConversationContext(
+    conversationId: string,
+    context: Partial<ConversationContext>,
+  ): Promise<ConversationContext>;
 
   // ==================== Task 8: Voice Commands ====================
-  
+
   /**
    * Log a voice command
    * @param command - Voice command data
    */
   createVoiceCommand(command: InsertVoiceCommand): Promise<VoiceCommand>;
-  
+
   /**
    * Get voice command history for a user
    * @param userId - User ID
    * @param limit - Max commands to return
    */
   getVoiceCommands(userId: string, limit?: number): Promise<VoiceCommand[]>;
-  
+
   /**
    * Get available voice commands (for help/documentation)
    */
-  getAvailableVoiceCommands(): Promise<Array<{ command: string; description: string; example: string }>>;
+  getAvailableVoiceCommands(): Promise<
+    Array<{ command: string; description: string; example: string }>
+  >;
 
   // ==================== Task 9: Smart Email/Message Drafting ====================
-  
+
   /**
    * Get draft templates
    * @param contextType - Filter by context type
    */
   getDraftTemplates(contextType?: string): Promise<DraftTemplate[]>;
-  
+
   /**
    * Create a draft template
    * @param template - Template data
    */
   createDraftTemplate(template: InsertDraftTemplate): Promise<DraftTemplate>;
-  
+
   /**
    * Increment template usage count
    * @param templateId - Template ID
    */
   incrementTemplateUsage(templateId: string): Promise<void>;
-  
+
   /**
    * Generate and save message drafts
    * @param userId - User ID
    * @param drafts - Array of generated drafts
    */
-  saveGeneratedDrafts(userId: string, drafts: Omit<InsertGeneratedDraft, "userId">[]): Promise<GeneratedDraft[]>;
-  
+  saveGeneratedDrafts(
+    userId: string,
+    drafts: Omit<InsertGeneratedDraft, "userId">[],
+  ): Promise<GeneratedDraft[]>;
+
   /**
    * Mark a draft as selected
    * @param userId - User ID
    * @param draftId - Draft ID
    * @param edited - Whether the draft was edited before sending
    */
-  markDraftSelected(userId: string, draftId: string, edited: boolean): Promise<void>;
-  
+  markDraftSelected(
+    userId: string,
+    draftId: string,
+    edited: boolean,
+  ): Promise<void>;
+
   /**
    * Get draft generation history
    * @param userId - User ID
@@ -1474,20 +1569,23 @@ export interface IStorage {
   getDraftHistory(userId: string, limit?: number): Promise<GeneratedDraft[]>;
 
   // ==================== Task 10: Writing Assistant ====================
-  
+
   /**
    * Create a writing session
    * @param session - Writing session data
    */
   createWritingSession(session: InsertWritingSession): Promise<WritingSession>;
-  
+
   /**
    * Get writing session
    * @param userId - User ID
    * @param sessionId - Session ID
    */
-  getWritingSession(userId: string, sessionId: string): Promise<WritingSession | undefined>;
-  
+  getWritingSession(
+    userId: string,
+    sessionId: string,
+  ): Promise<WritingSession | undefined>;
+
   /**
    * Update writing session with improvements
    * @param userId - User ID
@@ -1495,22 +1593,33 @@ export interface IStorage {
    * @param improvedText - Improved text
    * @param improvements - Applied improvements
    */
-  updateWritingSession(userId: string, sessionId: string, improvedText: string, improvements: string[]): Promise<WritingSession>;
-  
+  updateWritingSession(
+    userId: string,
+    sessionId: string,
+    improvedText: string,
+    improvements: string[],
+  ): Promise<WritingSession>;
+
   /**
    * Add writing suggestions to a session
    * @param sessionId - Session ID
    * @param suggestions - Array of suggestions
    */
-  addWritingSuggestions(sessionId: string, suggestions: Omit<InsertWritingSuggestion, "sessionId">[]): Promise<WritingSuggestion[]>;
-  
+  addWritingSuggestions(
+    sessionId: string,
+    suggestions: Omit<InsertWritingSuggestion, "sessionId">[],
+  ): Promise<WritingSuggestion[]>;
+
   /**
    * Mark suggestion as accepted/rejected
    * @param suggestionId - Suggestion ID
    * @param accepted - Whether suggestion was accepted
    */
-  updateSuggestionStatus(suggestionId: string, accepted: boolean): Promise<void>;
-  
+  updateSuggestionStatus(
+    suggestionId: string,
+    accepted: boolean,
+  ): Promise<void>;
+
   /**
    * Get writing statistics for a user
    * @param userId - User ID
@@ -1523,15 +1632,19 @@ export interface IStorage {
   }>;
 
   // ==================== Transcription Operations ====================
-  
+
   /**
    * Get all transcriptions for a user
    * @param userId - User ID
    * @param status - Filter by status (processing, completed, failed)
    * @param limit - Max results
    */
-  getTranscriptions(userId: string, status?: string, limit?: number): Promise<Transcription[]>;
-  
+  getTranscriptions(
+    userId: string,
+    status?: string,
+    limit?: number,
+  ): Promise<Transcription[]>;
+
   /**
    * Get paginated transcriptions
    * @param userId - User ID
@@ -1543,16 +1656,19 @@ export interface IStorage {
     userId: string,
     page?: number,
     limit?: number,
-    status?: string
+    status?: string,
   ): Promise<PaginatedResponse<Transcription>>;
-  
+
   /**
    * Get a specific transcription
    * @param userId - User ID
    * @param transcriptionId - Transcription ID
    */
-  getTranscription(userId: string, transcriptionId: string): Promise<Transcription | undefined>;
-  
+  getTranscription(
+    userId: string,
+    transcriptionId: string,
+  ): Promise<Transcription | undefined>;
+
   /**
    * Create a new transcription
    * @param userId - User ID
@@ -1560,9 +1676,9 @@ export interface IStorage {
    */
   createTranscription(
     userId: string,
-    transcription: Omit<InsertTranscription, "userId">
+    transcription: Omit<InsertTranscription, "userId">,
   ): Promise<Transcription>;
-  
+
   /**
    * Update transcription (e.g., status, transcript, segments)
    * @param userId - User ID
@@ -1572,23 +1688,26 @@ export interface IStorage {
   updateTranscription(
     userId: string,
     transcriptionId: string,
-    updates: Partial<Transcription>
+    updates: Partial<Transcription>,
   ): Promise<Transcription>;
-  
+
   /**
    * Delete a transcription and all its edits
    * @param userId - User ID
    * @param transcriptionId - Transcription ID
    */
   deleteTranscription(userId: string, transcriptionId: string): Promise<void>;
-  
+
   /**
    * Get transcript edits for a transcription
    * @param transcriptionId - Transcription ID
    * @param limit - Max results
    */
-  getTranscriptEdits(transcriptionId: string, limit?: number): Promise<TranscriptEdit[]>;
-  
+  getTranscriptEdits(
+    transcriptionId: string,
+    limit?: number,
+  ): Promise<TranscriptEdit[]>;
+
   /**
    * Create a transcript edit
    * @param userId - User ID
@@ -1596,9 +1715,9 @@ export interface IStorage {
    */
   createTranscriptEdit(
     userId: string,
-    edit: Omit<InsertTranscriptEdit, "userId">
+    edit: Omit<InsertTranscriptEdit, "userId">,
   ): Promise<TranscriptEdit>;
-  
+
   /**
    * Update transcript edit
    * @param userId - User ID
@@ -1608,147 +1727,188 @@ export interface IStorage {
   updateTranscriptEdit(
     userId: string,
     editId: string,
-    updates: Partial<TranscriptEdit>
+    updates: Partial<TranscriptEdit>,
   ): Promise<TranscriptEdit>;
-  
+
   /**
    * Delete a transcript edit
    * @param userId - User ID
    * @param editId - Edit ID
    */
   deleteTranscriptEdit(userId: string, editId: string): Promise<void>;
-  
+
   /**
    * Get recent transcriptions
    * @param userId - User ID
    * @param days - Number of days to look back
    */
-  getRecentTranscriptions(userId: string, days?: number): Promise<Transcription[]>;
-  
+  getRecentTranscriptions(
+    userId: string,
+    days?: number,
+  ): Promise<Transcription[]>;
+
   /**
    * Search transcriptions by text
    * @param userId - User ID
    * @param query - Search query
    * @param limit - Max results
    */
-  searchTranscriptions(userId: string, query: string, limit?: number): Promise<Transcription[]>;
+  searchTranscriptions(
+    userId: string,
+    query: string,
+    limit?: number,
+  ): Promise<Transcription[]>;
 
   // ==================== Summarization ====================
-  
+
   /**
    * Get a summary by content ID
    * @param userId - User ID
    * @param contentId - Unique identifier for the content
    */
   getSummary(userId: string, contentId: string): Promise<Summary | undefined>;
-  
+
   /**
    * Get all summaries for a user
    * @param userId - User ID
    * @param limit - Max results
    */
   getSummaries(userId: string, limit?: number): Promise<Summary[]>;
-  
+
   /**
    * Create a new summary
    * @param userId - User ID
    * @param summary - Summary data
    */
-  createSummary(userId: string, summary: Omit<InsertSummary, "userId">): Promise<Summary>;
-  
+  createSummary(
+    userId: string,
+    summary: Omit<InsertSummary, "userId">,
+  ): Promise<Summary>;
+
   /**
    * Update an existing summary (for editing)
    * @param userId - User ID
    * @param summaryId - Summary ID
    * @param updates - Partial summary updates
    */
-  updateSummary(userId: string, summaryId: string, updates: Partial<Omit<InsertSummary, "userId" | "id">>): Promise<Summary>;
-  
+  updateSummary(
+    userId: string,
+    summaryId: string,
+    updates: Partial<Omit<InsertSummary, "userId" | "id">>,
+  ): Promise<Summary>;
+
   /**
    * Delete a summary
    * @param userId - User ID
    * @param summaryId - Summary ID
    */
   deleteSummary(userId: string, summaryId: string): Promise<void>;
-  
+
   /**
    * Get summaries by type
    * @param userId - User ID
    * @param type - Summary type (tldr, bullet, paragraph)
    */
-  getSummariesByType(userId: string, type: 'tldr' | 'bullet' | 'paragraph'): Promise<Summary[]>;
-  
+  getSummariesByType(
+    userId: string,
+    type: "tldr" | "bullet" | "paragraph",
+  ): Promise<Summary[]>;
+
   /**
    * Get excerpt by content ID
    * @param userId - User ID
    * @param contentId - Content ID
    * @param variant - Optional variant (A, B, C, etc.)
    */
-  getExcerpt(userId: string, contentId: string, variant?: string): Promise<Excerpt | undefined>;
-  
+  getExcerpt(
+    userId: string,
+    contentId: string,
+    variant?: string,
+  ): Promise<Excerpt | undefined>;
+
   /**
    * Get all excerpts for a content ID
    * @param userId - User ID
    * @param contentId - Content ID
    */
   getExcerptsByContent(userId: string, contentId: string): Promise<Excerpt[]>;
-  
+
   /**
    * Create a new excerpt
    * @param userId - User ID
    * @param excerpt - Excerpt data
    */
-  createExcerpt(userId: string, excerpt: Omit<InsertExcerpt, "userId">): Promise<Excerpt>;
-  
+  createExcerpt(
+    userId: string,
+    excerpt: Omit<InsertExcerpt, "userId">,
+  ): Promise<Excerpt>;
+
   /**
    * Update an excerpt
    * @param userId - User ID
    * @param excerptId - Excerpt ID
    * @param updates - Partial excerpt updates
    */
-  updateExcerpt(userId: string, excerptId: string, updates: Partial<Omit<InsertExcerpt, "userId" | "id">>): Promise<Excerpt>;
-  
+  updateExcerpt(
+    userId: string,
+    excerptId: string,
+    updates: Partial<Omit<InsertExcerpt, "userId" | "id">>,
+  ): Promise<Excerpt>;
+
   /**
    * Delete an excerpt
    * @param userId - User ID
    * @param excerptId - Excerpt ID
    */
   deleteExcerpt(userId: string, excerptId: string): Promise<void>;
-  
+
   /**
    * Mark excerpt as active
    * @param userId - User ID
    * @param contentId - Content ID
    * @param excerptId - Excerpt ID to activate
    */
-  setActiveExcerpt(userId: string, contentId: string, excerptId: string): Promise<void>;
-  
+  setActiveExcerpt(
+    userId: string,
+    contentId: string,
+    excerptId: string,
+  ): Promise<void>;
+
   /**
    * Record excerpt performance
    * @param performance - Performance data
    */
-  recordExcerptPerformance(performance: InsertExcerptPerformance): Promise<ExcerptPerformance>;
-  
+  recordExcerptPerformance(
+    performance: InsertExcerptPerformance,
+  ): Promise<ExcerptPerformance>;
+
   /**
    * Get excerpt performance metrics
    * @param excerptId - Excerpt ID
    * @param startDate - Optional start date
    * @param endDate - Optional end date
    */
-  getExcerptPerformance(excerptId: string, startDate?: Date, endDate?: Date): Promise<ExcerptPerformance[]>;
-  
+  getExcerptPerformance(
+    excerptId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<ExcerptPerformance[]>;
+
   /**
    * Update excerpt CTR based on performance
    * @param excerptId - Excerpt ID
    */
   updateExcerptCTR(excerptId: string): Promise<void>;
-  
+
   /**
    * Get best performing excerpt for content
    * @param userId - User ID
    * @param contentId - Content ID
    */
-  getBestExcerpt(userId: string, contentId: string): Promise<Excerpt | undefined>;
+  getBestExcerpt(
+    userId: string,
+    contentId: string,
+  ): Promise<Excerpt | undefined>;
 
   /**
    * Get user's query history
@@ -1758,7 +1918,7 @@ export interface IStorage {
   getQueryHistory(userId: string, limit?: number): Promise<QueryLog[]>;
 
   // ==================== Translation System ====================
-  
+
   /**
    * Translate content using AI
    * @param contentId - Content identifier
@@ -1772,55 +1932,68 @@ export interface IStorage {
     targetLanguage: string,
     originalText: string,
     contentType?: string,
-    context?: string
+    context?: string,
   ): Promise<Translation>;
-  
+
   /**
    * Get translations for content
    * @param contentId - Content identifier
    * @param languageCode - Optional language code filter
    */
-  getTranslations(contentId: string, languageCode?: string): Promise<Translation[]>;
-  
+  getTranslations(
+    contentId: string,
+    languageCode?: string,
+  ): Promise<Translation[]>;
+
   /**
    * Get translation by content and language
    * @param contentId - Content identifier
    * @param languageCode - Language code
    */
-  getTranslation(contentId: string, languageCode: string): Promise<Translation | undefined>;
-  
+  getTranslation(
+    contentId: string,
+    languageCode: string,
+  ): Promise<Translation | undefined>;
+
   /**
    * Verify a translation
    * @param translationId - Translation ID
    * @param translatorId - User ID of verifier
    */
-  verifyTranslation(translationId: string, translatorId: string): Promise<Translation>;
-  
+  verifyTranslation(
+    translationId: string,
+    translatorId: string,
+  ): Promise<Translation>;
+
   /**
    * Delete translation
    * @param translationId - Translation ID
    */
   deleteTranslation(translationId: string): Promise<void>;
-  
+
   /**
    * Detect language of text
    * @param text - Text to analyze
    */
   detectLanguage(text: string): Promise<string>;
-  
+
   /**
    * Get supported languages
    */
-  getSupportedLanguages(): Promise<Array<{ code: string; name: string; nativeName: string }>>;
-  
+  getSupportedLanguages(): Promise<
+    Array<{ code: string; name: string; nativeName: string }>
+  >;
+
   // Language Preferences
-  
+
   /**
    * Get user language preferences
    * @param userId - User ID
    */
-  getLanguagePreferences(userId: string): Promise<LanguagePreference | undefined>;
-  
+  getLanguagePreferences(
+    userId: string,
+  ): Promise<LanguagePreference | undefined>;
+
   /**
    * Create or update language preferences
    * @param userId - User ID
@@ -1828,31 +2001,37 @@ export interface IStorage {
    */
   upsertLanguagePreferences(
     userId: string,
-    preferences: Omit<InsertLanguagePreference, "userId">
+    preferences: Omit<InsertLanguagePreference, "userId">,
   ): Promise<LanguagePreference>;
-  
+
   /**
    * Get users with auto-translate enabled for a language
    * @param languageCode - Language code
    */
   getUsersWithAutoTranslate(languageCode: string): Promise<string[]>;
-  
+
   // ==================== Image Metadata & Alt Text ====================
-  
+
   /**
    * Get image metadata by ID
    * @param userId - User ID
    * @param imageId - Image metadata ID
    */
-  getImageMetadata(userId: string, imageId: string): Promise<ImageMetadata | undefined>;
-  
+  getImageMetadata(
+    userId: string,
+    imageId: string,
+  ): Promise<ImageMetadata | undefined>;
+
   /**
    * Get image metadata by URL
-   * @param userId - User ID  
+   * @param userId - User ID
    * @param imageUrl - Image URL
    */
-  getImageMetadataByUrl(userId: string, imageUrl: string): Promise<ImageMetadata | undefined>;
-  
+  getImageMetadataByUrl(
+    userId: string,
+    imageUrl: string,
+  ): Promise<ImageMetadata | undefined>;
+
   /**
    * Get all images for user
    * @param userId - User ID
@@ -1866,9 +2045,9 @@ export interface IStorage {
       isDecorative?: boolean;
       hasAltText?: boolean;
       needsImprovement?: boolean;
-    }
+    },
   ): Promise<PaginatedResponse<ImageMetadata>>;
-  
+
   /**
    * Create image metadata record
    * @param userId - User ID
@@ -1876,9 +2055,9 @@ export interface IStorage {
    */
   createImageMetadata(
     userId: string,
-    metadata: Omit<InsertImageMetadata, "userId">
+    metadata: Omit<InsertImageMetadata, "userId">,
   ): Promise<ImageMetadata>;
-  
+
   /**
    * Update image metadata (including alt text)
    * @param userId - User ID
@@ -1888,16 +2067,16 @@ export interface IStorage {
   updateImageMetadata(
     userId: string,
     imageId: string,
-    updates: Partial<Omit<InsertImageMetadata, "userId">>
+    updates: Partial<Omit<InsertImageMetadata, "userId">>,
   ): Promise<ImageMetadata>;
-  
+
   /**
    * Delete image metadata
    * @param userId - User ID
    * @param imageId - Image metadata ID
    */
   deleteImageMetadata(userId: string, imageId: string): Promise<void>;
-  
+
   /**
    * Batch process multiple images
    * @param userId - User ID
@@ -1907,17 +2086,17 @@ export interface IStorage {
   batchProcessImages(
     userId: string,
     imageIds: string[],
-    processor: (image: ImageMetadata) => Promise<Partial<InsertImageMetadata>>
+    processor: (image: ImageMetadata) => Promise<Partial<InsertImageMetadata>>,
   ): Promise<ImageMetadata[]>;
-  
+
   // ==================== Alt Text Quality ====================
-  
+
   /**
    * Get alt text quality for image
    * @param imageId - Image metadata ID
    */
   getAltTextQuality(imageId: string): Promise<AltTextQuality | undefined>;
-  
+
   /**
    * Create or update alt text quality scores
    * @param imageId - Image metadata ID
@@ -1925,9 +2104,9 @@ export interface IStorage {
    */
   upsertAltTextQuality(
     imageId: string,
-    quality: Omit<InsertAltTextQuality, "imageId">
+    quality: Omit<InsertAltTextQuality, "imageId">,
   ): Promise<AltTextQuality>;
-  
+
   /**
    * Get accessibility report for user
    * @param userId - User ID
@@ -1940,7 +2119,7 @@ export interface IStorage {
       minScore?: number;
       maxScore?: number;
       dateRange?: { start: Date; end: Date };
-    }
+    },
   ): Promise<{
     totalImages: number;
     imagesWithAltText: number;
@@ -1954,7 +2133,7 @@ export interface IStorage {
     };
     needsImprovement: ImageMetadata[];
   }>;
-  
+
   /**
    * Mark quality record as reviewed
    * @param imageId - Image metadata ID
@@ -1964,24 +2143,27 @@ export interface IStorage {
   reviewAltTextQuality(
     imageId: string,
     reviewerId: string,
-    notes?: string
+    notes?: string,
   ): Promise<AltTextQuality>;
-  
+
   // ==================== Moderation Operations ====================
-  
+
   /**
    * Create a moderation log entry
    * @param log - Moderation log data
    */
   createModerationLog(log: InsertModerationLog): Promise<ModerationLog>;
-  
+
   /**
    * Update moderation log
    * @param id - Log ID
    * @param updates - Fields to update
    */
-  updateModerationLog(id: string, updates: Partial<InsertModerationLog>): Promise<void>;
-  
+  updateModerationLog(
+    id: string,
+    updates: Partial<InsertModerationLog>,
+  ): Promise<void>;
+
   /**
    * Get moderation queue
    * @param userId - User ID
@@ -1995,41 +2177,46 @@ export interface IStorage {
       status?: string;
       severity?: string;
       contentType?: string;
-    }
+    },
   ): Promise<ModerationLog[]>;
-  
+
   /**
    * Create blocked content entry
    * @param content - Blocked content data
    */
   createBlockedContent(content: InsertBlockedContent): Promise<BlockedContent>;
-  
+
   /**
    * Restore blocked content
    * @param id - Blocked content ID
    * @param restoredBy - User ID who restored
    */
   restoreBlockedContent(id: string, restoredBy: string): Promise<void>;
-  
+
   /**
    * Create moderation appeal
    * @param appeal - Appeal data
    */
-  createModerationAppeal(appeal: InsertModerationAppeal): Promise<ModerationAppeal>;
-  
+  createModerationAppeal(
+    appeal: InsertModerationAppeal,
+  ): Promise<ModerationAppeal>;
+
   /**
    * Get moderation appeal
    * @param id - Appeal ID
    */
   getModerationAppeal(id: string): Promise<ModerationAppeal | undefined>;
-  
+
   /**
    * Update moderation appeal
    * @param id - Appeal ID
    * @param updates - Fields to update
    */
-  updateModerationAppeal(id: string, updates: Partial<InsertModerationAppeal>): Promise<void>;
-  
+  updateModerationAppeal(
+    id: string,
+    updates: Partial<InsertModerationAppeal>,
+  ): Promise<void>;
+
   /**
    * Get moderation statistics
    * @param timeRange - Optional time range
@@ -2044,37 +2231,42 @@ export interface IStorage {
     severityBreakdown: { [key: string]: number };
     averageConfidence: number;
   }>;
-  
+
   // ============================================================================
   // Fraud Detection Methods
   // ============================================================================
-  
+
   /**
    * Create fraud score entry
    * @param score - Fraud score data
    */
   createFraudScore(score: InsertFraudScore): Promise<FraudScore>;
-  
+
   /**
    * Get fraud scores for user
    * @param userId - User ID
    * @param limit - Number of scores to return
    */
   getFraudScores(userId: string, limit?: number): Promise<FraudScore[]>;
-  
+
   /**
    * Create suspicious activity log
    * @param activity - Suspicious activity data
    */
-  createSuspiciousActivity(activity: InsertSuspiciousActivity): Promise<SuspiciousActivity>;
-  
+  createSuspiciousActivity(
+    activity: InsertSuspiciousActivity,
+  ): Promise<SuspiciousActivity>;
+
   /**
    * Get suspicious activities
    * @param userId - Filter by user (optional)
    * @param isAdmin - Whether requester is admin
    */
-  getSuspiciousActivities(userId?: string, isAdmin?: boolean): Promise<SuspiciousActivity[]>;
-  
+  getSuspiciousActivities(
+    userId?: string,
+    isAdmin?: boolean,
+  ): Promise<SuspiciousActivity[]>;
+
   /**
    * Update suspicious activity status
    * @param activityId - Activity ID
@@ -2082,28 +2274,28 @@ export interface IStorage {
    * @param resolvedAt - Resolution timestamp (optional)
    */
   updateSuspiciousActivity(
-    activityId: string, 
-    status: 'pending' | 'reviewing' | 'confirmed' | 'dismissed' | 'escalated',
-    resolvedAt?: Date
+    activityId: string,
+    status: "pending" | "reviewing" | "confirmed" | "dismissed" | "escalated",
+    resolvedAt?: Date,
   ): Promise<void>;
-  
+
   /**
    * Create fraud review
    * @param review - Review data
    */
   createFraudReview(review: InsertFraudReview): Promise<FraudReview>;
-  
+
   /**
    * Get fraud reviews for user
    * @param userId - User ID
    */
   getFraudReviews(userId: string): Promise<FraudReview[]>;
-  
+
   /**
    * Get fraud statistics
    * @param period - Time period for stats
    */
-  getFraudStats(period: 'day' | 'week' | 'month'): Promise<{
+  getFraudStats(period: "day" | "week" | "month"): Promise<{
     totalScores: number;
     averageScore: number;
     highRiskCount: number;
@@ -2117,46 +2309,59 @@ export interface IStorage {
   // ============================================================================
   // Sentiment Analysis Methods
   // ============================================================================
-  
+
   /**
    * Create sentiment analysis entry
    * @param analysis - Sentiment analysis data
    */
-  createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis>;
-  
+  createSentimentAnalysis(
+    analysis: InsertSentimentAnalysis,
+  ): Promise<SentimentAnalysis>;
+
   /**
    * Get sentiment analysis by content ID
    * @param contentId - Content ID
    */
-  getSentimentAnalysis(contentId: string): Promise<SentimentAnalysis | undefined>;
-  
+  getSentimentAnalysis(
+    contentId: string,
+  ): Promise<SentimentAnalysis | undefined>;
+
   /**
    * Get sentiment analyses for user
    * @param userId - User ID
    * @param limit - Number of analyses to return
    */
-  getUserSentimentAnalyses(userId: string, limit?: number): Promise<SentimentAnalysis[]>;
-  
+  getUserSentimentAnalyses(
+    userId: string,
+    limit?: number,
+  ): Promise<SentimentAnalysis[]>;
+
   /**
    * Update sentiment analysis
    * @param id - Analysis ID
    * @param data - Updated analysis data
    */
-  updateSentimentAnalysis(id: string, data: Partial<InsertSentimentAnalysis>): Promise<void>;
-  
+  updateSentimentAnalysis(
+    id: string,
+    data: Partial<InsertSentimentAnalysis>,
+  ): Promise<void>;
+
   /**
    * Get sentiment analyses by type
    * @param contentType - Type of content
    * @param limit - Number of analyses to return
    */
-  getSentimentAnalysesByType(contentType: string, limit?: number): Promise<SentimentAnalysis[]>;
-  
+  getSentimentAnalysesByType(
+    contentType: string,
+    limit?: number,
+  ): Promise<SentimentAnalysis[]>;
+
   /**
    * Create sentiment trend
    * @param trend - Sentiment trend data
    */
   createSentimentTrend(trend: InsertSentimentTrend): Promise<SentimentTrend>;
-  
+
   /**
    * Get sentiment trends for user
    * @param userId - User ID (null for global trends)
@@ -2165,10 +2370,10 @@ export interface IStorage {
    */
   getSentimentTrends(
     userId: string | null,
-    periodType?: 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year',
-    limit?: number
+    periodType?: "hour" | "day" | "week" | "month" | "quarter" | "year",
+    limit?: number,
   ): Promise<SentimentTrend[]>;
-  
+
   /**
    * Get sentiment insights
    * @param userId - User ID (optional)
@@ -2178,7 +2383,7 @@ export interface IStorage {
   getSentimentInsights(
     userId?: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     overallSentiment: number;
     sentimentDistribution: {
@@ -2199,56 +2404,63 @@ export interface IStorage {
       count: number;
     }>;
   }>;
-  
+
   // ==================== Auto-Save Operations ====================
-  
+
   /**
    * Save draft version of content
    * @param draft - Draft data to save
    */
   saveDraft(draft: InsertAutoSaveDraft): Promise<AutoSaveDraft>;
-  
+
   /**
    * Get latest draft for a document
    * @param userId - User ID
    * @param documentId - Document ID
    */
-  getLatestDraft(userId: string, documentId: string): Promise<AutoSaveDraft | undefined>;
-  
+  getLatestDraft(
+    userId: string,
+    documentId: string,
+  ): Promise<AutoSaveDraft | undefined>;
+
   /**
    * Get all draft versions for a document
-   * @param userId - User ID  
+   * @param userId - User ID
    * @param documentId - Document ID
    * @param limit - Maximum number of versions to return
    */
-  getDraftVersions(userId: string, documentId: string, limit?: number): Promise<AutoSaveDraft[]>;
-  
+  getDraftVersions(
+    userId: string,
+    documentId: string,
+    limit?: number,
+  ): Promise<AutoSaveDraft[]>;
+
   /**
    * Delete specific draft version
    * @param userId - User ID
    * @param draftId - Draft ID
    */
   deleteDraft(userId: string, draftId: string): Promise<void>;
-  
+
   /**
    * Delete all drafts for a document
    * @param userId - User ID
    * @param documentId - Document ID
    */
   deleteDocumentDrafts(userId: string, documentId: string): Promise<void>;
-  
+
   /**
    * Clean up old drafts (older than 30 days)
    * @param userId - User ID (optional, cleans all if not provided)
    */
   cleanupOldDrafts(userId?: string): Promise<number>;
-  
+
   /**
    * Get or create user's typing patterns
    * @param userId - User ID
    */
   getUserSavePatterns(userId: string): Promise<SavePattern>;
-  
+
   /**
    * Update user's typing patterns
    * @param userId - User ID
@@ -2256,9 +2468,9 @@ export interface IStorage {
    */
   updateUserSavePatterns(
     userId: string,
-    patterns: Partial<InsertSavePattern>
+    patterns: Partial<InsertSavePattern>,
   ): Promise<SavePattern>;
-  
+
   /**
    * Record typing event for pattern learning
    * @param userId - User ID
@@ -2273,9 +2485,9 @@ export interface IStorage {
       isSentenceEnd?: boolean;
       isParagraphEnd?: boolean;
       wasManualSave?: boolean;
-    }
+    },
   ): Promise<void>;
-  
+
   /**
    * Check for conflicting edits
    * @param userId - User ID
@@ -2285,14 +2497,14 @@ export interface IStorage {
   checkForConflicts(
     userId: string,
     documentId: string,
-    contentHash: string
+    contentHash: string,
   ): Promise<{
     hasConflict: boolean;
     latestVersion?: AutoSaveDraft;
   }>;
 
   // ==================== Form Completion Operations ====================
-  
+
   /**
    * Get field suggestions based on query and user history
    * @param fieldName - Name of the field (e.g., "email", "city")
@@ -2300,8 +2512,12 @@ export interface IStorage {
    * @param userId - Optional user ID for personalized suggestions
    * @returns Array of suggested values
    */
-  getFieldSuggestions(fieldName: string, query: string, userId?: string): Promise<string[]>;
-  
+  getFieldSuggestions(
+    fieldName: string,
+    query: string,
+    userId?: string,
+  ): Promise<string[]>;
+
   /**
    * Get contextual suggestions based on other form fields
    * @param fieldName - Name of the field to get suggestions for
@@ -2309,8 +2525,12 @@ export interface IStorage {
    * @param userId - Optional user ID for personalized suggestions
    * @returns Array of contextual suggestions
    */
-  getContextualSuggestions(fieldName: string, context: Record<string, any>, userId?: string): Promise<string[]>;
-  
+  getContextualSuggestions(
+    fieldName: string,
+    context: Record<string, any>,
+    userId?: string,
+  ): Promise<string[]>;
+
   /**
    * Record a form input for learning
    * @param userId - User ID
@@ -2318,33 +2538,43 @@ export interface IStorage {
    * @param value - Value entered
    * @param context - Optional context
    */
-  recordFormInput(userId: string, fieldName: string, value: string, context?: Record<string, any>): Promise<void>;
-  
+  recordFormInput(
+    userId: string,
+    fieldName: string,
+    value: string,
+    context?: Record<string, any>,
+  ): Promise<void>;
+
   /**
    * Record feedback on a suggestion
    * @param feedback - Feedback data
    */
-  recordCompletionFeedback(feedback: InsertCompletionFeedback): Promise<CompletionFeedback>;
-  
+  recordCompletionFeedback(
+    feedback: InsertCompletionFeedback,
+  ): Promise<CompletionFeedback>;
+
   /**
    * Get user's form history
    * @param userId - User ID
    * @param fieldName - Optional field name filter
    */
-  getUserFormHistory(userId: string, fieldName?: string): Promise<UserFormHistory[]>;
-  
+  getUserFormHistory(
+    userId: string,
+    fieldName?: string,
+  ): Promise<UserFormHistory[]>;
+
   /**
    * Clear user's form history
    * @param userId - User ID
    */
   clearUserFormHistory(userId: string): Promise<void>;
-  
+
   /**
    * Update global form completion statistics
    * @param fieldName - Field name to update stats for
    */
   updateFormCompletionStats(fieldName: string): Promise<void>;
-  
+
   /**
    * Get form completion data for a field
    * @param fieldName - Field name
@@ -2352,13 +2582,15 @@ export interface IStorage {
   getFormCompletion(fieldName: string): Promise<FormCompletion | null>;
 
   // ==================== Analytics Insights Operations ====================
-  
+
   /**
    * Create a new analytics insight
    * @param insight - Insight data
    */
-  createAnalyticsInsight(insight: InsertAnalyticsInsight): Promise<AnalyticsInsight>;
-  
+  createAnalyticsInsight(
+    insight: InsertAnalyticsInsight,
+  ): Promise<AnalyticsInsight>;
+
   /**
    * Get analytics insights for a user
    * @param userId - User ID
@@ -2373,23 +2605,26 @@ export interface IStorage {
       importance?: number;
       isRead?: boolean;
       limit?: number;
-    }
+    },
   ): Promise<AnalyticsInsight[]>;
-  
+
   /**
    * Get daily insight summary for a user
    * @param userId - User ID
    * @param date - Date for summary (defaults to today)
    */
-  getDailyInsightSummary(userId: string, date?: string): Promise<AnalyticsInsight[]>;
-  
+  getDailyInsightSummary(
+    userId: string,
+    date?: string,
+  ): Promise<AnalyticsInsight[]>;
+
   /**
    * Mark an insight as read
    * @param userId - User ID
    * @param insightId - Insight ID
    */
   markInsightAsRead(userId: string, insightId: string): Promise<void>;
-  
+
   /**
    * Generate insights from data
    * @param userId - User ID
@@ -2401,9 +2636,9 @@ export interface IStorage {
       metricName: string;
       dataPoints: Array<{ date: string; value: number }>;
       period: string;
-    }
+    },
   ): Promise<AnalyticsInsight>;
-  
+
   /**
    * Explain a specific metric
    * @param userId - User ID
@@ -2413,37 +2648,36 @@ export interface IStorage {
   explainMetric(
     userId: string,
     metricName: string,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): Promise<string>;
-  
+
   /**
    * Create insight feedback
    * @param feedback - Feedback data
    */
-  createInsightFeedback(feedback: InsertInsightFeedback): Promise<InsightFeedback>;
-  
+  createInsightFeedback(
+    feedback: InsertInsightFeedback,
+  ): Promise<InsightFeedback>;
+
   /**
    * Get insight feedback
    * @param insightId - Insight ID
    */
   getInsightFeedback(insightId: string): Promise<InsightFeedback[]>;
-  
+
   /**
    * Get user's feedback on insights
    * @param userId - User ID
    */
   getUserInsightFeedback(userId: string): Promise<InsightFeedback[]>;
-  
+
   /**
    * Subscribe user to insights
    * @param userId - User ID
    * @param subscriptionType - Type of subscription
    */
-  subscribeToInsights(
-    userId: string,
-    subscriptionType: string
-  ): Promise<void>;
-  
+  subscribeToInsights(userId: string, subscriptionType: string): Promise<void>;
+
   /**
    * Get analytics statistics
    * @param userId - User ID
@@ -2454,15 +2688,17 @@ export interface IStorage {
     averageImportance: number;
     insightsByCategory: Record<string, number>;
   }>;
-  
+
   // ==================== Prediction Operations ====================
-  
+
   /**
    * Create a new user prediction
    * @param prediction - Prediction data
    */
-  createUserPrediction(prediction: InsertUserPrediction): Promise<UserPrediction>;
-  
+  createUserPrediction(
+    prediction: InsertUserPrediction,
+  ): Promise<UserPrediction>;
+
   /**
    * Get user predictions
    * @param userId - User ID
@@ -2475,15 +2711,15 @@ export interface IStorage {
       status?: string;
       minProbability?: number;
       limit?: number;
-    }
+    },
   ): Promise<UserPrediction[]>;
-  
+
   /**
    * Get a specific prediction
    * @param predictionId - Prediction ID
    */
   getPredictionById(predictionId: string): Promise<UserPrediction | undefined>;
-  
+
   /**
    * Update prediction status
    * @param predictionId - Prediction ID
@@ -2493,21 +2729,23 @@ export interface IStorage {
   updatePredictionStatus(
     predictionId: string,
     status: string,
-    interventionTaken?: string
+    interventionTaken?: string,
   ): Promise<void>;
-  
+
   /**
    * Get high-risk churn users
    * @param threshold - Probability threshold (default 0.7)
    */
   getChurnRiskUsers(threshold?: number): Promise<UserPrediction[]>;
-  
+
   /**
    * Create prediction accuracy record
    * @param accuracy - Accuracy data
    */
-  createPredictionAccuracy(accuracy: InsertPredictionAccuracy): Promise<PredictionAccuracy>;
-  
+  createPredictionAccuracy(
+    accuracy: InsertPredictionAccuracy,
+  ): Promise<PredictionAccuracy>;
+
   /**
    * Get prediction accuracy metrics
    * @param filters - Optional filters
@@ -2523,20 +2761,20 @@ export interface IStorage {
   }>;
 
   // ==================== Trend Detection Operations ====================
-  
+
   /**
    * Create a new trend
    * @param trend - Trend data
    */
   createTrend(trend: InsertTrend): Promise<Trend>;
-  
+
   /**
    * Update an existing trend
    * @param trendId - Trend ID
    * @param update - Partial trend update
    */
   updateTrend(trendId: string, update: Partial<InsertTrend>): Promise<Trend>;
-  
+
   /**
    * Get trends with filters
    * @param filters - Optional filters
@@ -2548,54 +2786,57 @@ export interface IStorage {
     dateRange?: { start: Date; end: Date };
     limit?: number;
   }): Promise<Trend[]>;
-  
+
   /**
    * Get a specific trend by ID
    * @param trendId - Trend ID
    */
   getTrendById(trendId: string): Promise<Trend | undefined>;
-  
+
   /**
    * Get current active trends
    */
   getCurrentTrends(): Promise<Trend[]>;
-  
+
   /**
    * Get emerging trends
    */
   getEmergingTrends(): Promise<Trend[]>;
-  
+
   /**
    * Get historical trends
    * @param dateRange - Date range
    */
   getHistoricalTrends(dateRange: { start: Date; end: Date }): Promise<Trend[]>;
-  
+
   /**
    * Create a trend alert
    * @param alert - Alert data
    */
   createTrendAlert(alert: InsertTrendAlert): Promise<TrendAlert>;
-  
+
   /**
    * Update a trend alert
    * @param alertId - Alert ID
    * @param update - Partial alert update
    */
-  updateTrendAlert(alertId: string, update: Partial<InsertTrendAlert>): Promise<TrendAlert>;
-  
+  updateTrendAlert(
+    alertId: string,
+    update: Partial<InsertTrendAlert>,
+  ): Promise<TrendAlert>;
+
   /**
    * Get trend alerts for a user
    * @param userId - User ID (null for system-wide alerts)
    */
   getTrendAlerts(userId?: string | null): Promise<TrendAlert[]>;
-  
+
   /**
    * Get alerts for a specific trend
    * @param trendId - Trend ID
    */
   getTrendAlertsByTrendId(trendId: string): Promise<TrendAlert[]>;
-  
+
   /**
    * Trigger a trend alert
    * @param alertId - Alert ID
@@ -2605,19 +2846,16 @@ export interface IStorage {
   triggerTrendAlert(
     alertId: string,
     message: string,
-    notifiedUsers: string[]
+    notifiedUsers: string[],
   ): Promise<void>;
-  
+
   /**
    * Acknowledge a trend alert
    * @param alertId - Alert ID
    * @param actionTaken - Action taken in response
    */
-  acknowledgeTrendAlert(
-    alertId: string,
-    actionTaken?: string
-  ): Promise<void>;
-  
+  acknowledgeTrendAlert(alertId: string, actionTaken?: string): Promise<void>;
+
   /**
    * Subscribe user to trend alerts
    * @param userId - User ID
@@ -2626,7 +2864,7 @@ export interface IStorage {
   subscribeTrendAlerts(
     userId: string,
     conditions: InsertTrendAlert["conditions"],
-    alertType: string
+    alertType: string,
   ): Promise<TrendAlert>;
 
   // ==================== A/B Testing Operations ====================
@@ -2695,22 +2933,26 @@ export interface IStorage {
   calculateStatisticalSignificance(testId: string): Promise<{
     pValue: number;
     confidence: number;
-    winner: 'A' | 'B' | 'inconclusive';
+    winner: "A" | "B" | "inconclusive";
     liftPercentage: number;
   }>;
 
   /**
    * Get test recommendations
    */
-  getAbTestRecommendations(userId?: string): Promise<Array<AbTest & {
-    insight?: AbTestInsight;
-    results?: AbTestResult[];
-  }>>;
+  getAbTestRecommendations(userId?: string): Promise<
+    Array<
+      AbTest & {
+        insight?: AbTestInsight;
+        results?: AbTestResult[];
+      }
+    >
+  >;
 
   /**
    * Implement test winner
    */
-  implementAbTestWinner(testId: string, variant: 'A' | 'B'): Promise<void>;
+  implementAbTestWinner(testId: string, variant: "A" | "B"): Promise<void>;
 
   // ==================== Cohort Analysis Operations ====================
 
@@ -2735,7 +2977,10 @@ export interface IStorage {
   /**
    * Update a cohort
    */
-  updateCohort(cohortId: string, updates: Partial<InsertCohort>): Promise<Cohort>;
+  updateCohort(
+    cohortId: string,
+    updates: Partial<InsertCohort>,
+  ): Promise<Cohort>;
 
   /**
    * Delete a cohort
@@ -2750,18 +2995,24 @@ export interface IStorage {
   /**
    * Get cohort metrics
    */
-  getCohortMetrics(cohortId: string, filters?: {
-    metricName?: string;
-    metricType?: string;
-    period?: string;
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<CohortMetric[]>;
+  getCohortMetrics(
+    cohortId: string,
+    filters?: {
+      metricName?: string;
+      metricType?: string;
+      period?: string;
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ): Promise<CohortMetric[]>;
 
   /**
    * Calculate cohort retention
    */
-  calculateCohortRetention(cohortId: string, periods: number[]): Promise<{
+  calculateCohortRetention(
+    cohortId: string,
+    periods: number[],
+  ): Promise<{
     cohortId: string;
     retention: Array<{ period: number; rate: number; count: number }>;
   }>;
@@ -2769,7 +3020,10 @@ export interface IStorage {
   /**
    * Compare cohorts
    */
-  compareCohorts(cohortIds: string[], metrics: string[]): Promise<{
+  compareCohorts(
+    cohortIds: string[],
+    metrics: string[],
+  ): Promise<{
     comparison: Array<{
       cohortId: string;
       metrics: Record<string, number>;
@@ -2784,16 +3038,22 @@ export interface IStorage {
   /**
    * Get cohort insights
    */
-  getCohortInsights(cohortId: string, filters?: {
-    status?: string;
-    importance?: string;
-    category?: string;
-  }): Promise<CohortInsight[]>;
+  getCohortInsights(
+    cohortId: string,
+    filters?: {
+      status?: string;
+      importance?: string;
+      category?: string;
+    },
+  ): Promise<CohortInsight[]>;
 
   /**
    * Update cohort insight status
    */
-  updateCohortInsightStatus(insightId: string, status: string): Promise<CohortInsight>;
+  updateCohortInsightStatus(
+    insightId: string,
+    status: string,
+  ): Promise<CohortInsight>;
 
   /**
    * Refresh cohort membership
@@ -2803,7 +3063,11 @@ export interface IStorage {
   /**
    * Get cohort members
    */
-  getCohortMembers(cohortId: string, limit?: number, offset?: number): Promise<{
+  getCohortMembers(
+    cohortId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{
     users: User[];
     total: number;
   }>;
@@ -2814,76 +3078,105 @@ export interface IStorage {
   generateCohortInsights(cohortId: string): Promise<CohortInsight[]>;
 
   // ==================== Scheduling Operations ====================
-  
+
   /**
    * Get scheduling preferences for a user
    */
-  getSchedulingPreferences(userId: string): Promise<SchedulingPreferences | undefined>;
-  
+  getSchedulingPreferences(
+    userId: string,
+  ): Promise<SchedulingPreferences | undefined>;
+
   /**
    * Create or update scheduling preferences
    */
-  upsertSchedulingPreferences(userId: string, preferences: Omit<InsertSchedulingPreferences, "userId">): Promise<SchedulingPreferences>;
-  
+  upsertSchedulingPreferences(
+    userId: string,
+    preferences: Omit<InsertSchedulingPreferences, "userId">,
+  ): Promise<SchedulingPreferences>;
+
   /**
    * Get meeting suggestions
    */
-  getMeetingSuggestions(meetingId: string): Promise<MeetingSuggestions | undefined>;
-  
+  getMeetingSuggestions(
+    meetingId: string,
+  ): Promise<MeetingSuggestions | undefined>;
+
   /**
    * Get all meeting suggestions for a user
    */
-  getUserMeetingSuggestions(userId: string, status?: string): Promise<MeetingSuggestions[]>;
-  
+  getUserMeetingSuggestions(
+    userId: string,
+    status?: string,
+  ): Promise<MeetingSuggestions[]>;
+
   /**
    * Create meeting suggestions
    */
-  createMeetingSuggestions(suggestions: InsertMeetingSuggestions): Promise<MeetingSuggestions>;
-  
+  createMeetingSuggestions(
+    suggestions: InsertMeetingSuggestions,
+  ): Promise<MeetingSuggestions>;
+
   /**
    * Update meeting suggestion status
    */
-  updateMeetingSuggestionStatus(meetingId: string, status: string, selectedTime?: any): Promise<MeetingSuggestions>;
-  
+  updateMeetingSuggestionStatus(
+    meetingId: string,
+    status: string,
+    selectedTime?: any,
+  ): Promise<MeetingSuggestions>;
+
   /**
    * Get scheduling patterns for a user
    */
   getSchedulingPatterns(userId: string): Promise<SchedulingPatterns[]>;
-  
+
   /**
    * Create or update scheduling pattern
    */
-  upsertSchedulingPattern(userId: string, pattern: Omit<InsertSchedulingPatterns, "userId">): Promise<SchedulingPatterns>;
-  
+  upsertSchedulingPattern(
+    userId: string,
+    pattern: Omit<InsertSchedulingPatterns, "userId">,
+  ): Promise<SchedulingPatterns>;
+
   /**
    * Get meeting events for a user
    */
-  getMeetingEvents(userId: string, filters?: {
-    startTime?: Date;
-    endTime?: Date;
-    status?: string;
-  }): Promise<MeetingEvents[]>;
-  
+  getMeetingEvents(
+    userId: string,
+    filters?: {
+      startTime?: Date;
+      endTime?: Date;
+      status?: string;
+    },
+  ): Promise<MeetingEvents[]>;
+
   /**
    * Create meeting event
    */
   createMeetingEvent(event: InsertMeetingEvents): Promise<MeetingEvents>;
-  
+
   /**
    * Update meeting event
    */
-  updateMeetingEvent(eventId: string, updates: Partial<MeetingEvents>): Promise<MeetingEvents>;
-  
+  updateMeetingEvent(
+    eventId: string,
+    updates: Partial<MeetingEvents>,
+  ): Promise<MeetingEvents>;
+
   /**
    * Delete meeting event
    */
   deleteMeetingEvent(userId: string, eventId: string): Promise<void>;
-  
+
   /**
    * Find scheduling conflicts
    */
-  findSchedulingConflicts(userId: string, startTime: Date, endTime: Date): Promise<MeetingEvents[]>;
-  
+  findSchedulingConflicts(
+    userId: string,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<MeetingEvents[]>;
+
   /**
    * Analyze scheduling patterns with AI
    */
@@ -2893,7 +3186,7 @@ export interface IStorage {
   }>;
 
   // ==================== Ticket Routing Operations ====================
-  
+
   /**
    * Get all tickets with optional filters
    */
@@ -2903,86 +3196,92 @@ export interface IStorage {
     priority?: string;
     category?: string;
   }): Promise<Ticket[]>;
-  
+
   /**
    * Get a single ticket by ID
    */
   getTicket(ticketId: string): Promise<Ticket | undefined>;
-  
+
   /**
    * Create a new ticket
    */
   createTicket(ticket: InsertTicket): Promise<Ticket>;
-  
+
   /**
    * Update a ticket
    */
   updateTicket(ticketId: string, updates: Partial<Ticket>): Promise<Ticket>;
-  
+
   /**
    * Get routing rules ordered by priority
    */
   getRoutingRules(isActive?: boolean): Promise<RoutingRule[]>;
-  
+
   /**
    * Get a single routing rule
    */
   getRoutingRule(ruleId: string): Promise<RoutingRule | undefined>;
-  
+
   /**
    * Create a routing rule
    */
   createRoutingRule(rule: InsertRoutingRule): Promise<RoutingRule>;
-  
+
   /**
    * Update a routing rule
    */
-  updateRoutingRule(ruleId: string, updates: Partial<RoutingRule>): Promise<RoutingRule>;
-  
+  updateRoutingRule(
+    ruleId: string,
+    updates: Partial<RoutingRule>,
+  ): Promise<RoutingRule>;
+
   /**
    * Delete a routing rule
    */
   deleteRoutingRule(ruleId: string): Promise<void>;
-  
+
   /**
    * Get routing history for a ticket
    */
   getTicketRouting(ticketId: string): Promise<TicketRouting[]>;
-  
+
   /**
    * Create a routing record
    */
   createTicketRouting(routing: InsertTicketRouting): Promise<TicketRouting>;
-  
+
   /**
    * Get all agents/teams
    */
   getAgents(): Promise<AgentExpertise[]>;
-  
+
   /**
    * Get agent by ID
    */
   getAgent(agentId: string): Promise<AgentExpertise | undefined>;
-  
+
   /**
    * Create or update agent expertise
    */
   upsertAgentExpertise(agent: InsertAgentExpertise): Promise<AgentExpertise>;
-  
+
   /**
    * Update agent workload
    */
   updateAgentWorkload(agentId: string, delta: number): Promise<void>;
-  
+
   /**
    * Get available agents (not at max capacity)
    */
   getAvailableAgents(): Promise<AgentExpertise[]>;
-  
+
   /**
    * Get routing performance metrics
    */
-  getRoutingMetrics(startDate?: Date, endDate?: Date): Promise<{
+  getRoutingMetrics(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
     totalTickets: number;
     averageConfidence: number;
     routingAccuracy: number;
@@ -2996,7 +3295,9 @@ export interface IStorage {
   /**
    * Create extraction template
    */
-  createExtractionTemplate(template: InsertExtractionTemplate): Promise<ExtractionTemplate>;
+  createExtractionTemplate(
+    template: InsertExtractionTemplate,
+  ): Promise<ExtractionTemplate>;
 
   /**
    * Get extraction template by ID
@@ -3011,7 +3312,10 @@ export interface IStorage {
   /**
    * Update extraction template
    */
-  updateExtractionTemplate(id: string, template: Partial<InsertExtractionTemplate>): Promise<ExtractionTemplate>;
+  updateExtractionTemplate(
+    id: string,
+    template: Partial<InsertExtractionTemplate>,
+  ): Promise<ExtractionTemplate>;
 
   /**
    * Delete extraction template
@@ -3041,7 +3345,10 @@ export interface IStorage {
   /**
    * Update extracted data (for corrections/validation)
    */
-  updateExtractedData(id: string, data: Partial<InsertExtractedData>): Promise<ExtractedData>;
+  updateExtractedData(
+    id: string,
+    data: Partial<InsertExtractedData>,
+  ): Promise<ExtractedData>;
 
   /**
    * Get paginated extracted data with filters
@@ -3058,7 +3365,9 @@ export interface IStorage {
   /**
    * Batch create extracted data
    */
-  batchCreateExtractedData(dataList: InsertExtractedData[]): Promise<ExtractedData[]>;
+  batchCreateExtractedData(
+    dataList: InsertExtractedData[],
+  ): Promise<ExtractedData[]>;
 
   /**
    * Get extraction statistics
@@ -3080,7 +3389,10 @@ export interface IStorage {
   /**
    * Update pricing rule
    */
-  updatePricingRule(id: string, rule: Partial<InsertPricingRules>): Promise<PricingRules>;
+  updatePricingRule(
+    id: string,
+    rule: Partial<InsertPricingRules>,
+  ): Promise<PricingRules>;
 
   /**
    * Get pricing rule by product ID
@@ -3100,32 +3412,37 @@ export interface IStorage {
   /**
    * Get price history for a product
    */
-  getPriceHistory(productId: string, params?: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  }): Promise<PriceHistory[]>;
+  getPriceHistory(
+    productId: string,
+    params?: {
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    },
+  ): Promise<PriceHistory[]>;
 
   /**
    * Record pricing performance metrics
    */
-  recordPricingPerformance(performance: InsertPricingPerformance): Promise<PricingPerformance>;
+  recordPricingPerformance(
+    performance: InsertPricingPerformance,
+  ): Promise<PricingPerformance>;
 
   /**
    * Get pricing performance for a product
    */
-  getPricingPerformance(productId: string, params?: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<PricingPerformance[]>;
+  getPricingPerformance(
+    productId: string,
+    params?: {
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ): Promise<PricingPerformance[]>;
 
   /**
    * Get aggregate pricing metrics across all products
    */
-  getPricingMetrics(params?: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<{
+  getPricingMetrics(params?: { startDate?: Date; endDate?: Date }): Promise<{
     totalRevenue: number;
     averageConversionRate: number;
     averagePriceChange: number;
@@ -3141,7 +3458,7 @@ export interface IStorage {
    */
   getCurrentDemand(productId: string): Promise<{
     demandScore: number; // 0-100
-    trend: 'increasing' | 'stable' | 'decreasing';
+    trend: "increasing" | "stable" | "decreasing";
     metrics: {
       views?: number;
       clicks?: number;
@@ -3163,21 +3480,26 @@ export interface IStorage {
   /**
    * Get competitor pricing data
    */
-  getCompetitorPricing(productId: string): Promise<Array<{
-    competitorName: string;
-    price: number;
-    source: string;
-    lastUpdated: Date;
-  }>>;
+  getCompetitorPricing(productId: string): Promise<
+    Array<{
+      competitorName: string;
+      price: number;
+      source: string;
+      lastUpdated: Date;
+    }>
+  >;
 
   /**
    * Calculate optimal price based on all factors
    */
-  calculateOptimalPrice(productId: string, params?: {
-    targetRevenue?: number;
-    targetConversion?: number;
-    includeCompetition?: boolean;
-  }): Promise<{
+  calculateOptimalPrice(
+    productId: string,
+    params?: {
+      targetRevenue?: number;
+      targetConversion?: number;
+      includeCompetition?: boolean;
+    },
+  ): Promise<{
     recommendedPrice: number;
     confidence: number;
     reasoning: string[];
@@ -3193,7 +3515,10 @@ export interface IStorage {
   /**
    * Get all image processing jobs for a user
    */
-  getImageProcessingJobs(userId: string, status?: string): Promise<ImageProcessing[]>;
+  getImageProcessingJobs(
+    userId: string,
+    status?: string,
+  ): Promise<ImageProcessing[]>;
 
   /**
    * Get a specific image processing job
@@ -3203,12 +3528,17 @@ export interface IStorage {
   /**
    * Create a new image processing job
    */
-  createImageProcessingJob(data: InsertImageProcessing): Promise<ImageProcessing>;
+  createImageProcessingJob(
+    data: InsertImageProcessing,
+  ): Promise<ImageProcessing>;
 
   /**
    * Update an image processing job
    */
-  updateImageProcessingJob(id: string, data: Partial<InsertImageProcessing>): Promise<ImageProcessing | null>;
+  updateImageProcessingJob(
+    id: string,
+    data: Partial<InsertImageProcessing>,
+  ): Promise<ImageProcessing | null>;
 
   /**
    * Delete an image processing job
@@ -3233,7 +3563,10 @@ export interface IStorage {
   /**
    * Update an image preset
    */
-  updateImagePreset(id: string, data: Partial<InsertImagePresets>): Promise<ImagePresets | null>;
+  updateImagePreset(
+    id: string,
+    data: Partial<InsertImagePresets>,
+  ): Promise<ImagePresets | null>;
 
   /**
    * Delete an image preset
@@ -3254,7 +3587,7 @@ export interface IStorage {
    */
   createFaceDetection(
     userId: string,
-    detection: Omit<InsertFaceDetection, "userId">
+    detection: Omit<InsertFaceDetection, "userId">,
   ): Promise<FaceDetection>;
 
   /**
@@ -3271,7 +3604,7 @@ export interface IStorage {
    */
   getFaceDetectionByImageId(
     userId: string,
-    imageId: string
+    imageId: string,
   ): Promise<FaceDetection | undefined>;
 
   /**
@@ -3283,7 +3616,7 @@ export interface IStorage {
   updateFaceDetection(
     userId: string,
     detectionId: string,
-    updates: Partial<Omit<InsertFaceDetection, "userId">>
+    updates: Partial<Omit<InsertFaceDetection, "userId">>,
   ): Promise<FaceDetection>;
 
   /**
@@ -3306,7 +3639,7 @@ export interface IStorage {
    */
   upsertPrivacySettings(
     userId: string,
-    settings: Omit<InsertPrivacySettings, "userId">
+    settings: Omit<InsertPrivacySettings, "userId">,
   ): Promise<PrivacySettings>;
 
   /**
@@ -3325,7 +3658,7 @@ export interface IStorage {
    */
   createOcrResult(
     userId: string,
-    result: Omit<InsertOcrResult, "userId">
+    result: Omit<InsertOcrResult, "userId">,
   ): Promise<OcrResult>;
 
   /**
@@ -3342,7 +3675,7 @@ export interface IStorage {
    */
   getOcrResultByImageId(
     userId: string,
-    imageId: string
+    imageId: string,
   ): Promise<OcrResult | undefined>;
 
   /**
@@ -3352,7 +3685,7 @@ export interface IStorage {
    */
   getOcrResultById(
     userId: string,
-    resultId: string
+    resultId: string,
   ): Promise<OcrResult | undefined>;
 
   /**
@@ -3364,7 +3697,7 @@ export interface IStorage {
   updateOcrResult(
     userId: string,
     resultId: string,
-    updates: Partial<Omit<InsertOcrResult, "userId">>
+    updates: Partial<Omit<InsertOcrResult, "userId">>,
   ): Promise<OcrResult>;
 
   /**
@@ -3381,7 +3714,7 @@ export interface IStorage {
    */
   createOcrCorrection(
     userId: string,
-    correction: Omit<InsertOcrCorrection, "userId">
+    correction: Omit<InsertOcrCorrection, "userId">,
   ): Promise<OcrCorrection>;
 
   /**
@@ -3389,10 +3722,7 @@ export interface IStorage {
    * @param userId - User ID
    * @param resultId - OCR result ID
    */
-  getOcrCorrections(
-    userId: string,
-    resultId: string
-  ): Promise<OcrCorrection[]>;
+  getOcrCorrections(userId: string, resultId: string): Promise<OcrCorrection[]>;
 
   /**
    * Update OCR correction
@@ -3403,7 +3733,7 @@ export interface IStorage {
   updateOcrCorrection(
     userId: string,
     correctionId: string,
-    updates: Partial<Omit<InsertOcrCorrection, "userId">>
+    updates: Partial<Omit<InsertOcrCorrection, "userId">>,
   ): Promise<OcrCorrection>;
 
   /**
@@ -3657,17 +3987,20 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to retrieve user");
     }
   }
-  
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     try {
-      const [user] = await db.select().from(users).where(eq(users.email, email));
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email));
       return user;
     } catch (error) {
       console.error(`Error getting user by email ${email}:`, error);
       throw new Error("Failed to retrieve user by email");
     }
   }
-  
+
   async createUser(userData: UpsertUser): Promise<User> {
     try {
       const [user] = await db.insert(users).values(userData).returning();
@@ -3677,10 +4010,13 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create user");
     }
   }
-  
+
   // OAuth Authentication Methods
-  
-  async getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<AuthProvider | undefined> {
+
+  async getAuthProviderByProviderAndId(
+    provider: string,
+    providerId: string,
+  ): Promise<AuthProvider | undefined> {
     try {
       const [authProvider] = await db
         .select()
@@ -3688,17 +4024,23 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(authProviders.provider, provider),
-            eq(authProviders.providerId, providerId)
-          )
+            eq(authProviders.providerId, providerId),
+          ),
         );
       return authProvider;
     } catch (error) {
-      console.error(`Error getting auth provider ${provider}/${providerId}:`, error);
+      console.error(
+        `Error getting auth provider ${provider}/${providerId}:`,
+        error,
+      );
       throw new Error("Failed to retrieve auth provider");
     }
   }
-  
-  async getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<AuthProvider | undefined> {
+
+  async getAuthProviderByProviderAndUserId(
+    provider: string,
+    userId: string,
+  ): Promise<AuthProvider | undefined> {
     try {
       const [authProvider] = await db
         .select()
@@ -3706,17 +4048,22 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(authProviders.provider, provider),
-            eq(authProviders.userId, userId)
-          )
+            eq(authProviders.userId, userId),
+          ),
         );
       return authProvider;
     } catch (error) {
-      console.error(`Error getting auth provider ${provider} for user ${userId}:`, error);
+      console.error(
+        `Error getting auth provider ${provider} for user ${userId}:`,
+        error,
+      );
       throw new Error("Failed to retrieve auth provider");
     }
   }
-  
-  async createAuthProvider(authProviderData: InsertAuthProvider): Promise<AuthProvider> {
+
+  async createAuthProvider(
+    authProviderData: InsertAuthProvider,
+  ): Promise<AuthProvider> {
     try {
       const [authProvider] = await db
         .insert(authProviders)
@@ -3728,13 +4075,13 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create auth provider");
     }
   }
-  
-  async updateAuthProvider(id: string, data: Partial<AuthProvider>): Promise<void> {
+
+  async updateAuthProvider(
+    id: string,
+    data: Partial<AuthProvider>,
+  ): Promise<void> {
     try {
-      await db
-        .update(authProviders)
-        .set(data)
-        .where(eq(authProviders.id, id));
+      await db.update(authProviders).set(data).where(eq(authProviders.id, id));
     } catch (error) {
       console.error(`Error updating auth provider ${id}:`, error);
       throw new Error("Failed to update auth provider");
@@ -3988,8 +4335,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Intelligent Notification System ====================
-  
-  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+
+  async getNotificationPreferences(
+    userId: string,
+  ): Promise<NotificationPreferences | undefined> {
     const cacheKey = `notif-prefs:${userId}`;
     const cached = this.getCached<NotificationPreferences>(cacheKey);
     if (cached) return cached;
@@ -4000,7 +4349,7 @@ export class DatabaseStorage implements IStorage {
         .from(notificationPreferences)
         .where(eq(notificationPreferences.userId, userId))
         .limit(1);
-      
+
       if (prefs) {
         this.setCached(cacheKey, prefs, this.USER_PREFS_TTL);
       }
@@ -4019,15 +4368,17 @@ export class DatabaseStorage implements IStorage {
       // Ensure quietHours.periods.days is a proper array
       const normalizedPreferences = {
         ...preferences,
-        quietHours: preferences.quietHours ? {
-          ...preferences.quietHours,
-          periods: preferences.quietHours.periods?.map((period: any) => ({
-            ...period,
-            days: Array.isArray(period.days) ? [...period.days] : []
-          }))
-        } : preferences.quietHours
+        quietHours: preferences.quietHours
+          ? {
+              ...preferences.quietHours,
+              periods: preferences.quietHours.periods?.map((period: any) => ({
+                ...period,
+                days: Array.isArray(period.days) ? [...period.days] : [],
+              })),
+            }
+          : preferences.quietHours,
       };
-      
+
       const [result] = await db
         .insert(notificationPreferences)
         .values({
@@ -4043,7 +4394,7 @@ export class DatabaseStorage implements IStorage {
           },
         })
         .returning();
-      
+
       // Invalidate cache
       this.invalidateCache(`notif-prefs:${userId}`);
       return result;
@@ -4054,7 +4405,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNotificationScore(
-    score: InsertNotificationScores
+    score: InsertNotificationScores,
   ): Promise<NotificationScores> {
     try {
       const [result] = await db
@@ -4070,7 +4421,7 @@ export class DatabaseStorage implements IStorage {
 
   async getNotificationScores(
     userId: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<NotificationScores[]> {
     try {
       return await db
@@ -4086,7 +4437,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPendingNotifications(
-    beforeTime: Date
+    beforeTime: Date,
   ): Promise<NotificationScores[]> {
     try {
       return await db
@@ -4098,7 +4449,10 @@ export class DatabaseStorage implements IStorage {
             lte(notificationScores.holdUntil, beforeTime),
           ),
         )
-        .orderBy(desc(notificationScores.urgencyLevel), desc(notificationScores.relevanceScore));
+        .orderBy(
+          desc(notificationScores.urgencyLevel),
+          desc(notificationScores.relevanceScore),
+        );
     } catch (error) {
       console.error("Error getting pending notifications:", error);
       throw new Error("Failed to get pending notifications");
@@ -4107,7 +4461,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateNotificationScore(
     id: string,
-    updates: Partial<NotificationScores>
+    updates: Partial<NotificationScores>,
   ): Promise<void> {
     try {
       await db
@@ -4121,17 +4475,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNotificationFeedback(
-    feedback: InsertNotificationFeedback
+    feedback: InsertNotificationFeedback,
   ): Promise<NotificationFeedback> {
     try {
       const [result] = await db
         .insert(notificationFeedback)
         .values({
           ...feedback,
-          deviceInfo: feedback.deviceInfo as any
+          deviceInfo: feedback.deviceInfo as any,
         })
         .returning();
-      
+
       // Invalidate engagement cache for this user
       this.invalidateCache(`engagement:${feedback.userId}`);
       return result;
@@ -4143,15 +4497,17 @@ export class DatabaseStorage implements IStorage {
 
   async getNotificationFeedback(
     userId: string,
-    notificationId?: string
+    notificationId?: string,
   ): Promise<NotificationFeedback[]> {
     try {
       const conditions = [eq(notificationFeedback.userId, userId)];
-      
+
       if (notificationId) {
-        conditions.push(eq(notificationFeedback.notificationId, notificationId));
+        conditions.push(
+          eq(notificationFeedback.notificationId, notificationId),
+        );
       }
-      
+
       return await db
         .select()
         .from(notificationFeedback)
@@ -4165,7 +4521,7 @@ export class DatabaseStorage implements IStorage {
 
   async getRecentUserEngagement(
     userId: string,
-    days: number = 7
+    days: number = 7,
   ): Promise<{
     totalSent: number;
     clicked: number;
@@ -4204,18 +4560,21 @@ export class DatabaseStorage implements IStorage {
         );
 
       const totalSent = sentNotifications.length;
-      const clicked = feedbackData.filter(f => f.action === 'clicked').length;
-      const dismissed = feedbackData.filter(f => f.action === 'dismissed').length;
+      const clicked = feedbackData.filter((f) => f.action === "clicked").length;
+      const dismissed = feedbackData.filter(
+        (f) => f.action === "dismissed",
+      ).length;
       const clickRate = totalSent > 0 ? clicked / totalSent : 0;
 
       // Calculate average engagement time for clicked notifications
       const engagementTimes = feedbackData
-        .filter(f => f.action === 'clicked' && f.engagementTime)
-        .map(f => f.engagementTime!);
-      
-      const avgEngagementTime = engagementTimes.length > 0
-        ? engagementTimes.reduce((a, b) => a + b, 0) / engagementTimes.length
-        : undefined;
+        .filter((f) => f.action === "clicked" && f.engagementTime)
+        .map((f) => f.engagementTime!);
+
+      const avgEngagementTime =
+        engagementTimes.length > 0
+          ? engagementTimes.reduce((a, b) => a + b, 0) / engagementTimes.length
+          : undefined;
 
       const result = {
         totalSent,
@@ -4351,19 +4710,14 @@ export class DatabaseStorage implements IStorage {
   async updateStorageLocation(
     userId: string,
     id: string,
-    updates: Partial<UserStorage>
+    updates: Partial<UserStorage>,
   ): Promise<UserStorage> {
     try {
       // Ensure the storage location exists and belongs to the user
       const [existing] = await db
         .select()
         .from(userStorage)
-        .where(
-          and(
-            eq(userStorage.userId, userId),
-            eq(userStorage.id, id)
-          )
-        );
+        .where(and(eq(userStorage.userId, userId), eq(userStorage.id, id)));
 
       if (!existing) {
         throw new Error("Storage location not found");
@@ -4383,12 +4737,7 @@ export class DatabaseStorage implements IStorage {
           userId: existing.userId, // Ensure userId cannot be changed
           id: existing.id, // Ensure id cannot be changed
         })
-        .where(
-          and(
-            eq(userStorage.userId, userId),
-            eq(userStorage.id, id)
-          )
-        )
+        .where(and(eq(userStorage.userId, userId), eq(userStorage.id, id)))
         .returning();
 
       return updated;
@@ -4404,12 +4753,7 @@ export class DatabaseStorage implements IStorage {
       const [location] = await db
         .select()
         .from(userStorage)
-        .where(
-          and(
-            eq(userStorage.userId, userId),
-            eq(userStorage.id, id)
-          )
-        );
+        .where(and(eq(userStorage.userId, userId), eq(userStorage.id, id)));
 
       if (!location) {
         throw new Error("Storage location not found");
@@ -4426,26 +4770,25 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(userInventory.userId, userId),
-            eq(userInventory.storageLocationId, id)
-          )
+            eq(userInventory.storageLocationId, id),
+          ),
         );
 
       if (itemCount && Number(itemCount.count) > 0) {
-        throw new Error("Cannot delete storage location with items. Move or delete items first.");
+        throw new Error(
+          "Cannot delete storage location with items. Move or delete items first.",
+        );
       }
 
       // Delete the storage location
       await db
         .delete(userStorage)
-        .where(
-          and(
-            eq(userStorage.userId, userId),
-            eq(userStorage.id, id)
-          )
-        );
+        .where(and(eq(userStorage.userId, userId), eq(userStorage.id, id)));
     } catch (error) {
       console.error(`Error deleting storage location ${id}:`, error);
-      throw new Error((error as Error).message || "Failed to delete storage location");
+      throw new Error(
+        (error as Error).message || "Failed to delete storage location",
+      );
     }
   }
 
@@ -4947,7 +5290,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getFoodItem(userId: string, id: string): Promise<UserInventory | undefined> {
+  async getFoodItem(
+    userId: string,
+    id: string,
+  ): Promise<UserInventory | undefined> {
     try {
       const [item] = await db
         .select()
@@ -5040,7 +5386,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(conversations.userId, userId))
         .orderBy(desc(conversations.updatedAt))
         .limit(1);
-      
+
       if (!conversation) {
         return [];
       }
@@ -5054,13 +5400,13 @@ export class DatabaseStorage implements IStorage {
         .limit(limit);
 
       // Map to ChatMessage format
-      return msgs.map(msg => ({
+      return msgs.map((msg) => ({
         id: msg.id,
         userId: userId,
         role: msg.role,
         content: msg.content,
         similarityHash: null,
-        createdAt: msg.timestamp || new Date()
+        createdAt: msg.timestamp || new Date(),
       }));
     } catch (error) {
       console.error(`Error getting chat messages for user ${userId}:`, error);
@@ -5083,7 +5429,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(conversations.userId, userId))
         .orderBy(desc(conversations.updatedAt))
         .limit(1);
-      
+
       if (!conversation) {
         return PaginationHelper.createResponse([], 0, page, limit);
       }
@@ -5106,13 +5452,13 @@ export class DatabaseStorage implements IStorage {
         .offset(offset);
 
       // Map to ChatMessage format
-      const chatMessages: ChatMessage[] = msgs.map(msg => ({
+      const chatMessages: ChatMessage[] = msgs.map((msg) => ({
         id: msg.id,
         userId: userId,
         role: msg.role,
         content: msg.content,
         similarityHash: null,
-        createdAt: msg.timestamp || new Date()
+        createdAt: msg.timestamp || new Date(),
       }));
 
       return PaginationHelper.createResponse(chatMessages, total, page, limit);
@@ -5137,14 +5483,14 @@ export class DatabaseStorage implements IStorage {
         .where(eq(conversations.userId, userId))
         .orderBy(desc(conversations.updatedAt))
         .limit(1);
-      
+
       if (!conversation) {
         // Create a new conversation if none exists
         [conversation] = await db
           .insert(conversations)
           .values({
             userId: userId,
-            title: "Chat Session"
+            title: "Chat Session",
           })
           .returning();
       }
@@ -5157,7 +5503,7 @@ export class DatabaseStorage implements IStorage {
           role: message.role,
           content: message.content,
           metadata: null,
-          tokensUsed: 0
+          tokensUsed: 0,
         })
         .returning();
 
@@ -5174,7 +5520,7 @@ export class DatabaseStorage implements IStorage {
         role: newMessage.role,
         content: newMessage.content,
         similarityHash: message.similarityHash || null,
-        createdAt: newMessage.timestamp || new Date()
+        createdAt: newMessage.timestamp || new Date(),
       };
     } catch (error) {
       console.error("Error creating chat message:", error);
@@ -5215,7 +5561,10 @@ export class DatabaseStorage implements IStorage {
         .delete(messages)
         .where(
           and(
-            sql`${messages.conversationId} IN (${sql.join(userConversations.map(c => sql`${c.id}`), sql`, `)})`,
+            sql`${messages.conversationId} IN (${sql.join(
+              userConversations.map((c) => sql`${c.id}`),
+              sql`, `,
+            )})`,
             sql`${messages.timestamp} < ${cutoffDate}`,
           ),
         )
@@ -5457,14 +5806,14 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(notificationHistory.userId, userId),
-            eq(notificationHistory.type, 'expiring-food'),
+            eq(notificationHistory.type, "expiring-food"),
             sql`${notificationHistory.data}->>'foodItemId' = ${foodItemId}`,
-            isNull(notificationHistory.dismissedAt)
-          )
+            isNull(notificationHistory.dismissedAt),
+          ),
         )
         .orderBy(desc(notificationHistory.sentAt))
         .limit(1);
-      
+
       if (notifications.length > 0) {
         // Dismiss the notification
         await db
@@ -5472,12 +5821,15 @@ export class DatabaseStorage implements IStorage {
           .set({
             status: "dismissed",
             dismissedAt: new Date(),
-            dismissedBy: "food-item-action"
+            dismissedBy: "food-item-action",
           })
           .where(eq(notificationHistory.id, notifications[0].id));
       }
     } catch (error) {
-      console.error(`Error dismissing notification for food item ${foodItemId}:`, error);
+      console.error(
+        `Error dismissing notification for food item ${foodItemId}:`,
+        error,
+      );
       throw new Error("Failed to dismiss food item notification");
     }
   }
@@ -7284,7 +7636,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // First overload - general analytics stats by date range  
+  // First overload - general analytics stats by date range
   async getAnalyticsStats(
     startDate?: Date,
     endDate?: Date,
@@ -7298,9 +7650,7 @@ export class DatabaseStorage implements IStorage {
     conversionRate: number;
   }>;
   // Second overload - user-specific insights analytics
-  async getAnalyticsStats(
-    userId: string
-  ): Promise<{
+  async getAnalyticsStats(userId: string): Promise<{
     totalInsights: number;
     unreadInsights: number;
     averageImportance: number;
@@ -7312,24 +7662,27 @@ export class DatabaseStorage implements IStorage {
     endDate?: Date,
   ): Promise<any> {
     // Check if first parameter is a string (userId) for the second overload
-    if (typeof startDateOrUserId === 'string') {
+    if (typeof startDateOrUserId === "string") {
       const userId = startDateOrUserId;
       try {
         const insights = await db
           .select()
           .from(analyticsInsights)
           .where(eq(analyticsInsights.userId, userId));
-        
-        const unreadInsights = insights.filter(i => !i.isRead).length;
-        const averageImportance = insights.length > 0
-          ? insights.reduce((sum, i) => sum + i.importance, 0) / insights.length
-          : 0;
-        
+
+        const unreadInsights = insights.filter((i) => !i.isRead).length;
+        const averageImportance =
+          insights.length > 0
+            ? insights.reduce((sum, i) => sum + i.importance, 0) /
+              insights.length
+            : 0;
+
         const insightsByCategory: Record<string, number> = {};
-        insights.forEach(i => {
-          insightsByCategory[i.category] = (insightsByCategory[i.category] || 0) + 1;
+        insights.forEach((i) => {
+          insightsByCategory[i.category] =
+            (insightsByCategory[i.category] || 0) + 1;
         });
-        
+
         return {
           totalInsights: insights.length,
           unreadInsights,
@@ -7455,9 +7808,14 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== Sentiment Tracking Implementation ====================
 
-  async createSentimentMetrics(metrics: InsertSentimentMetrics): Promise<SentimentMetrics> {
+  async createSentimentMetrics(
+    metrics: InsertSentimentMetrics,
+  ): Promise<SentimentMetrics> {
     try {
-      const [result] = await db.insert(sentimentMetrics).values(metrics as any).returning();
+      const [result] = await db
+        .insert(sentimentMetrics)
+        .values(metrics as any)
+        .returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment metrics:", error);
@@ -7472,7 +7830,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const conditions = [];
       if (period) conditions.push(eq(sentimentMetrics.period, period));
-      if (periodType) conditions.push(eq(sentimentMetrics.periodType, periodType));
+      if (periodType)
+        conditions.push(eq(sentimentMetrics.periodType, periodType));
 
       return await db
         .select()
@@ -7499,9 +7858,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createSentimentAlert(alert: InsertSentimentAlerts): Promise<SentimentAlerts> {
+  async createSentimentAlert(
+    alert: InsertSentimentAlerts,
+  ): Promise<SentimentAlerts> {
     try {
-      const [result] = await db.insert(sentimentAlerts).values(alert as any).returning();
+      const [result] = await db
+        .insert(sentimentAlerts)
+        .values(alert as any)
+        .returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment alert:", error);
@@ -7546,9 +7910,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createSentimentSegment(segment: InsertSentimentSegments): Promise<SentimentSegments> {
+  async createSentimentSegment(
+    segment: InsertSentimentSegments,
+  ): Promise<SentimentSegments> {
     try {
-      const [result] = await db.insert(sentimentSegments).values(segment as any).returning();
+      const [result] = await db
+        .insert(sentimentSegments)
+        .values(segment as any)
+        .returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment segment:", error);
@@ -7563,7 +7932,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const conditions = [];
       if (period) conditions.push(eq(sentimentSegments.period, period));
-      if (segmentName) conditions.push(eq(sentimentSegments.segmentName, segmentName));
+      if (segmentName)
+        conditions.push(eq(sentimentSegments.segmentName, segmentName));
 
       return await db
         .select()
@@ -7586,13 +7956,13 @@ export class DatabaseStorage implements IStorage {
     try {
       // Get segments for the period
       const segments = await this.getSentimentSegments(period);
-      
+
       // Get metrics for the period
       const metrics = await this.getSentimentMetrics(period, periodType);
-      
+
       // Extract categories from metrics
       const categories = metrics[0]?.categories || {};
-      
+
       return {
         segments,
         categories,
@@ -7603,9 +7973,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createSentimentAnalysis(analysis: InsertSentimentAnalysis): Promise<SentimentAnalysis> {
+  async createSentimentAnalysis(
+    analysis: InsertSentimentAnalysis,
+  ): Promise<SentimentAnalysis> {
     try {
-      const [result] = await db.insert(sentimentAnalysis).values([analysis as any]).returning();
+      const [result] = await db
+        .insert(sentimentAnalysis)
+        .values([analysis as any])
+        .returning();
       return result;
     } catch (error) {
       console.error("Error creating sentiment analysis:", error);
@@ -7613,28 +7988,36 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSentimentAnalyses(
-    filters?: {
-      userId?: string;
-      contentType?: string;
-      sentiment?: "positive" | "negative" | "neutral" | "mixed";
-      startDate?: Date;
-      endDate?: Date;
-      limit?: number;
-    },
-  ): Promise<SentimentAnalysis[]> {
+  async getSentimentAnalyses(filters?: {
+    userId?: string;
+    contentType?: string;
+    sentiment?: "positive" | "negative" | "neutral" | "mixed";
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<SentimentAnalysis[]> {
     try {
       const conditions = [];
-      if (filters?.userId) conditions.push(eq(sentimentAnalysis.userId, filters.userId));
-      if (filters?.contentType) conditions.push(eq(sentimentAnalysis.contentType, filters.contentType));
-      if (filters?.sentiment) conditions.push(eq(sentimentAnalysis.sentiment, filters.sentiment));
-      if (filters?.startDate) conditions.push(gte(sentimentAnalysis.analyzedAt, filters.startDate));
-      if (filters?.endDate) conditions.push(lte(sentimentAnalysis.analyzedAt, filters.endDate));
+      if (filters?.userId)
+        conditions.push(eq(sentimentAnalysis.userId, filters.userId));
+      if (filters?.contentType)
+        conditions.push(eq(sentimentAnalysis.contentType, filters.contentType));
+      if (filters?.sentiment)
+        conditions.push(eq(sentimentAnalysis.sentiment, filters.sentiment));
+      if (filters?.startDate)
+        conditions.push(gte(sentimentAnalysis.analyzedAt, filters.startDate));
+      if (filters?.endDate)
+        conditions.push(lte(sentimentAnalysis.analyzedAt, filters.endDate));
 
       const baseQuery = db.select().from(sentimentAnalysis);
-      const queryWithWhere = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
-      const queryWithOrder = queryWithWhere.orderBy(desc(sentimentAnalysis.analyzedAt));
-      const finalQuery = filters?.limit ? queryWithOrder.limit(filters.limit) : queryWithOrder;
+      const queryWithWhere =
+        conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
+      const queryWithOrder = queryWithWhere.orderBy(
+        desc(sentimentAnalysis.analyzedAt),
+      );
+      const finalQuery = filters?.limit
+        ? queryWithOrder.limit(filters.limit)
+        : queryWithOrder;
 
       return await finalQuery;
     } catch (error) {
@@ -7643,7 +8026,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSentimentAnalysis(contentId: string): Promise<SentimentAnalysis | undefined> {
+  async getSentimentAnalysis(
+    contentId: string,
+  ): Promise<SentimentAnalysis | undefined> {
     try {
       const [result] = await db
         .select()
@@ -7658,7 +8043,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserSentimentAnalyses(userId: string, limit: number = 50): Promise<SentimentAnalysis[]> {
+  async getUserSentimentAnalyses(
+    userId: string,
+    limit: number = 50,
+  ): Promise<SentimentAnalysis[]> {
     try {
       const analyses = await db
         .select()
@@ -7689,37 +8077,43 @@ export class DatabaseStorage implements IStorage {
       if (!metrics) {
         throw new Error("No metrics found for the specified period");
       }
-      
+
       // Get active alerts
       const alerts = await this.getSentimentAlerts("active");
-      
+
       // Get segments for the period
       const segments = await this.getSentimentSegments(period);
-      
+
       // Extract pain points from metrics
       const painPoints = metrics.painPoints || [];
-      
+
       // Generate insights based on the data
       const insights: string[] = [];
-      
+
       // Check for significant sentiment drop
       if (metrics.percentageChange && metrics.percentageChange < -15) {
-        insights.push(`Significant sentiment drop of ${Math.abs(metrics.percentageChange).toFixed(1)}% detected in the ${periodType}`);
+        insights.push(
+          `Significant sentiment drop of ${Math.abs(metrics.percentageChange).toFixed(1)}% detected in the ${periodType}`,
+        );
       }
-      
+
       // Check for problematic segments
-      segments.forEach(segment => {
+      segments.forEach((segment) => {
         if (segment.sentimentScore < -0.3) {
-          insights.push(`${segment.segmentName} showing negative sentiment (${segment.sentimentScore.toFixed(2)})`);
+          insights.push(
+            `${segment.segmentName} showing negative sentiment (${segment.sentimentScore.toFixed(2)})`,
+          );
         }
       });
-      
+
       // Check alert severity
-      const criticalAlerts = alerts.filter(a => a.severity === "critical");
+      const criticalAlerts = alerts.filter((a) => a.severity === "critical");
       if (criticalAlerts.length > 0) {
-        insights.push(`${criticalAlerts.length} critical alert(s) require immediate attention`);
+        insights.push(
+          `${criticalAlerts.length} critical alert(s) require immediate attention`,
+        );
       }
-      
+
       return {
         metrics,
         alerts,
@@ -7796,13 +8190,13 @@ export class DatabaseStorage implements IStorage {
 
       // Build and execute query
       let baseQuery = db.select().from(activityLogs);
-      
+
       if (conditions.length > 0) {
         baseQuery = baseQuery.where(and(...conditions)) as any;
       }
-      
+
       baseQuery = baseQuery.orderBy(desc(activityLogs.timestamp)) as any;
-      
+
       if (filters?.limit) {
         baseQuery = baseQuery.limit(filters.limit) as any;
       }
@@ -8072,13 +8466,15 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== ML Feature Implementations ====================
 
-  async upsertContentEmbedding(embedding: InsertContentEmbedding): Promise<ContentEmbedding> {
+  async upsertContentEmbedding(
+    embedding: InsertContentEmbedding,
+  ): Promise<ContentEmbedding> {
     try {
       // Ensure embedding is a regular array for database compatibility
-      const embeddingArray: number[] = Array.isArray(embedding.embedding) 
-        ? Array.from(embedding.embedding as ArrayLike<number>) 
-        : embedding.embedding as number[];
-      
+      const embeddingArray: number[] = Array.isArray(embedding.embedding)
+        ? Array.from(embedding.embedding as ArrayLike<number>)
+        : (embedding.embedding as number[]);
+
       const [result] = await db
         .insert(contentEmbeddings)
         .values({
@@ -8086,15 +8482,20 @@ export class DatabaseStorage implements IStorage {
           contentId: embedding.contentId,
           contentType: embedding.contentType,
           embedding: embeddingArray,
-          embeddingModel: embedding.embeddingModel || 'text-embedding-ada-002',
+          embeddingModel: embedding.embeddingModel || "text-embedding-ada-002",
           contentText: embedding.contentText,
           metadata: embedding.metadata as any,
         })
         .onConflictDoUpdate({
-          target: [contentEmbeddings.contentId, contentEmbeddings.contentType, contentEmbeddings.userId],
+          target: [
+            contentEmbeddings.contentId,
+            contentEmbeddings.contentType,
+            contentEmbeddings.userId,
+          ],
           set: {
             embedding: embeddingArray,
-            embeddingModel: embedding.embeddingModel || 'text-embedding-ada-002',
+            embeddingModel:
+              embedding.embeddingModel || "text-embedding-ada-002",
             contentText: embedding.contentText,
             metadata: embedding.metadata as any,
             updatedAt: sql`now()`,
@@ -8109,7 +8510,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getContentEmbedding(contentId: string, contentType: string, userId: string): Promise<ContentEmbedding | undefined> {
+  async getContentEmbedding(
+    contentId: string,
+    contentType: string,
+    userId: string,
+  ): Promise<ContentEmbedding | undefined> {
     try {
       const [result] = await db
         .select()
@@ -8118,8 +8523,8 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(contentEmbeddings.contentId, contentId),
             eq(contentEmbeddings.contentType, contentType),
-            eq(contentEmbeddings.userId, userId)
-          )
+            eq(contentEmbeddings.userId, userId),
+          ),
         );
 
       return result;
@@ -8129,13 +8534,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async searchByEmbedding(queryEmbedding: number[], contentType: string, userId: string, limit: number = 10): Promise<Array<ContentEmbedding & { similarity: number }>> {
+  async searchByEmbedding(
+    queryEmbedding: number[],
+    contentType: string,
+    userId: string,
+    limit: number = 10,
+  ): Promise<Array<ContentEmbedding & { similarity: number }>> {
     try {
       // Calculate cosine similarity in PostgreSQL
       // This is a simplified version - in production you'd use pgvector extension
       const results = await db.execute(sql`
         WITH query_embedding AS (
-          SELECT ARRAY[${sql.raw(queryEmbedding.join(','))}]::float8[] as embedding
+          SELECT ARRAY[${sql.raw(queryEmbedding.join(","))}]::float8[] as embedding
         )
         SELECT 
           ce.*,
@@ -8164,10 +8574,7 @@ export class DatabaseStorage implements IStorage {
 
   async createSearchLog(log: InsertSearchLog): Promise<SearchLog> {
     try {
-      const [result] = await db
-        .insert(searchLogs)
-        .values(log)
-        .returning();
+      const [result] = await db.insert(searchLogs).values(log).returning();
 
       return result;
     } catch (error) {
@@ -8175,13 +8582,16 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create search log");
     }
   }
-  
-  async updateSearchLogFeedback(searchLogId: string, feedback: {
-    clickedResultId: string;
-    clickedResultType: string;
-    clickPosition: number;
-    timeToClick: number;
-  }): Promise<SearchLog> {
+
+  async updateSearchLogFeedback(
+    searchLogId: string,
+    feedback: {
+      clickedResultId: string;
+      clickedResultType: string;
+      clickPosition: number;
+      timeToClick: number;
+    },
+  ): Promise<SearchLog> {
     try {
       const [result] = await db
         .update(searchLogs)
@@ -8209,7 +8619,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Build the where conditions based on parentId
       const conditions = [eq(categories.isActive, true)];
-      
+
       if (parentId === null) {
         conditions.push(isNull(categories.parentId));
       } else if (parentId !== undefined) {
@@ -8229,10 +8639,7 @@ export class DatabaseStorage implements IStorage {
 
   async createCategory(category: InsertCategory): Promise<Category> {
     try {
-      const [result] = await db
-        .insert(categories)
-        .values(category)
-        .returning();
+      const [result] = await db.insert(categories).values(category).returning();
 
       return result;
     } catch (error) {
@@ -8241,7 +8648,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getContentCategories(contentId: string, contentType: string, userId: string): Promise<ContentCategory[]> {
+  async getContentCategories(
+    contentId: string,
+    contentType: string,
+    userId: string,
+  ): Promise<ContentCategory[]> {
     try {
       return await db
         .select()
@@ -8250,8 +8661,8 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(contentCategories.contentId, contentId),
             eq(contentCategories.contentType, contentType),
-            eq(contentCategories.userId, userId)
-          )
+            eq(contentCategories.userId, userId),
+          ),
         );
     } catch (error) {
       console.error("Error getting content categories:", error);
@@ -8259,13 +8670,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async assignContentCategory(assignment: InsertContentCategory): Promise<ContentCategory> {
+  async assignContentCategory(
+    assignment: InsertContentCategory,
+  ): Promise<ContentCategory> {
     try {
       const [result] = await db
         .insert(contentCategories)
         .values(assignment)
         .onConflictDoUpdate({
-          target: [contentCategories.contentId, contentCategories.contentType, contentCategories.categoryId, contentCategories.userId],
+          target: [
+            contentCategories.contentId,
+            contentCategories.contentType,
+            contentCategories.categoryId,
+            contentCategories.userId,
+          ],
           set: {
             confidenceScore: assignment.confidenceScore,
             isManual: assignment.isManual,
@@ -8282,7 +8700,7 @@ export class DatabaseStorage implements IStorage {
 
   async getOrCreateTag(name: string): Promise<Tag> {
     try {
-      const normalizedName = name.toLowerCase().replace(/\s+/g, '-');
+      const normalizedName = name.toLowerCase().replace(/\s+/g, "-");
       const slug = normalizedName;
 
       // Try to get existing tag
@@ -8330,7 +8748,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getContentTags(contentId: string, contentType: string, userId: string): Promise<Array<ContentTag & { tag: Tag }>> {
+  async getContentTags(
+    contentId: string,
+    contentType: string,
+    userId: string,
+  ): Promise<Array<ContentTag & { tag: Tag }>> {
     try {
       const results = await db
         .select({
@@ -8343,11 +8765,11 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(contentTags.contentId, contentId),
             eq(contentTags.contentType, contentType),
-            eq(contentTags.userId, userId)
-          )
+            eq(contentTags.userId, userId),
+          ),
         );
 
-      return results.map(r => ({
+      return results.map((r) => ({
         ...r.contentTag,
         tag: r.tag,
       }));
@@ -8363,7 +8785,12 @@ export class DatabaseStorage implements IStorage {
         .insert(contentTags)
         .values(assignment)
         .onConflictDoUpdate({
-          target: [contentTags.contentId, contentTags.contentType, contentTags.tagId, contentTags.userId],
+          target: [
+            contentTags.contentId,
+            contentTags.contentType,
+            contentTags.tagId,
+            contentTags.userId,
+          ],
           set: {
             relevanceScore: assignment.relevanceScore,
             isManual: assignment.isManual,
@@ -8377,11 +8804,11 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to assign content tag");
     }
   }
-  
+
   async createOrGetTag(name: string): Promise<Tag> {
     return this.getOrCreateTag(name);
   }
-  
+
   async getAllTags(userId?: string): Promise<Tag[]> {
     try {
       if (userId) {
@@ -8392,34 +8819,34 @@ export class DatabaseStorage implements IStorage {
           .innerJoin(contentTags, eq(tags.id, contentTags.tagId))
           .where(eq(contentTags.userId, userId))
           .orderBy(desc(tags.usageCount));
-        
-        return results.map(r => r.tag);
+
+        return results.map((r) => r.tag);
       } else {
         // Get all tags
-        return await db
-          .select()
-          .from(tags)
-          .orderBy(desc(tags.usageCount));
+        return await db.select().from(tags).orderBy(desc(tags.usageCount));
       }
     } catch (error) {
       console.error("Error getting all tags:", error);
       throw new Error("Failed to get all tags");
     }
   }
-  
+
   async getRelatedTags(tagId: string, limit: number = 5): Promise<Tag[]> {
     try {
       // Find content with this tag
       const contentWithTag = await db
-        .select({ contentId: contentTags.contentId, contentType: contentTags.contentType })
+        .select({
+          contentId: contentTags.contentId,
+          contentType: contentTags.contentType,
+        })
         .from(contentTags)
         .where(eq(contentTags.tagId, tagId))
         .limit(10);
-      
+
       if (contentWithTag.length === 0) {
         return [];
       }
-      
+
       // Find other tags on the same content
       const relatedTagIds = await db
         .selectDistinct({ tagId: contentTags.tagId })
@@ -8427,40 +8854,42 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             or(
-              ...contentWithTag.map(c => 
+              ...contentWithTag.map((c) =>
                 and(
                   eq(contentTags.contentId, c.contentId),
-                  eq(contentTags.contentType, c.contentType)
-                )
-              )
+                  eq(contentTags.contentType, c.contentType),
+                ),
+              ),
             ),
-            ne(contentTags.tagId, tagId)
-          )
+            ne(contentTags.tagId, tagId),
+          ),
         )
         .limit(limit * 2);
-      
+
       if (relatedTagIds.length === 0) {
         return [];
       }
-      
+
       // Get tag details
       const relatedTags = await db
         .select()
         .from(tags)
-        .where(
-          or(...relatedTagIds.map(r => eq(tags.id, r.tagId)))
-        )
+        .where(or(...relatedTagIds.map((r) => eq(tags.id, r.tagId))))
         .orderBy(desc(tags.usageCount))
         .limit(limit);
-      
+
       return relatedTags;
     } catch (error) {
       console.error("Error getting related tags:", error);
       throw new Error("Failed to get related tags");
     }
   }
-  
-  async removeContentTag(contentId: string, tagId: string, userId: string): Promise<void> {
+
+  async removeContentTag(
+    contentId: string,
+    tagId: string,
+    userId: string,
+  ): Promise<void> {
     try {
       await db
         .delete(contentTags)
@@ -8468,10 +8897,10 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(contentTags.contentId, contentId),
             eq(contentTags.tagId, tagId),
-            eq(contentTags.userId, userId)
-          )
+            eq(contentTags.userId, userId),
+          ),
         );
-      
+
       // Decrement usage count
       await db
         .update(tags)
@@ -8482,8 +8911,13 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to remove content tag");
     }
   }
-  
-  async updateTagRelevanceScore(contentId: string, tagId: string, userId: string, relevanceScore: number): Promise<void> {
+
+  async updateTagRelevanceScore(
+    contentId: string,
+    tagId: string,
+    userId: string,
+    relevanceScore: number,
+  ): Promise<void> {
     try {
       await db
         .update(contentTags)
@@ -8492,15 +8926,15 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(contentTags.contentId, contentId),
             eq(contentTags.tagId, tagId),
-            eq(contentTags.userId, userId)
-          )
+            eq(contentTags.userId, userId),
+          ),
         );
     } catch (error) {
       console.error("Error updating tag relevance score:", error);
       throw new Error("Failed to update tag relevance score");
     }
   }
-  
+
   async searchTags(query: string, limit: number = 10): Promise<Tag[]> {
     try {
       const searchQuery = `%${query.toLowerCase()}%`;
@@ -8516,7 +8950,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getDuplicates(contentId: string, userId: string): Promise<DuplicatePair[]> {
+  async getDuplicates(
+    contentId: string,
+    userId: string,
+  ): Promise<DuplicatePair[]> {
     try {
       return await db
         .select()
@@ -8526,9 +8963,9 @@ export class DatabaseStorage implements IStorage {
             eq(duplicatePairs.userId, userId),
             or(
               eq(duplicatePairs.contentId1, contentId),
-              eq(duplicatePairs.contentId2, contentId)
-            )
-          )
+              eq(duplicatePairs.contentId2, contentId),
+            ),
+          ),
         )
         .orderBy(desc(duplicatePairs.similarityScore));
     } catch (error) {
@@ -8539,10 +8976,7 @@ export class DatabaseStorage implements IStorage {
 
   async createDuplicatePair(pair: InsertDuplicatePair): Promise<DuplicatePair> {
     try {
-      const [result] = await db
-        .insert(duplicatePairs)
-        .values(pair)
-        .returning();
+      const [result] = await db.insert(duplicatePairs).values(pair).returning();
 
       return result;
     } catch (error) {
@@ -8551,7 +8985,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateDuplicateStatus(pairId: string, status: string, reviewedBy: string): Promise<void> {
+  async updateDuplicateStatus(
+    pairId: string,
+    status: string,
+    reviewedBy: string,
+  ): Promise<void> {
     try {
       await db
         .update(duplicatePairs)
@@ -8567,7 +9005,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getRelatedContent(contentId: string, contentType: string, userId: string): Promise<RelatedContentCache | undefined> {
+  async getRelatedContent(
+    contentId: string,
+    contentType: string,
+    userId: string,
+  ): Promise<RelatedContentCache | undefined> {
     try {
       const [result] = await db
         .select()
@@ -8577,8 +9019,8 @@ export class DatabaseStorage implements IStorage {
             eq(relatedContentCache.contentId, contentId),
             eq(relatedContentCache.contentType, contentType),
             eq(relatedContentCache.userId, userId),
-            gte(relatedContentCache.expiresAt, sql`now()`)
-          )
+            gte(relatedContentCache.expiresAt, sql`now()`),
+          ),
         );
 
       return result;
@@ -8588,7 +9030,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async cacheRelatedContent(cache: InsertRelatedContentCache): Promise<RelatedContentCache> {
+  async cacheRelatedContent(
+    cache: InsertRelatedContentCache,
+  ): Promise<RelatedContentCache> {
     try {
       // Delete old cache entries for this content
       await db
@@ -8597,8 +9041,8 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(relatedContentCache.contentId, cache.contentId),
             eq(relatedContentCache.contentType, cache.contentType),
-            eq(relatedContentCache.userId, cache.userId)
-          )
+            eq(relatedContentCache.userId, cache.userId),
+          ),
         );
 
       // Insert new cache entry
@@ -8606,7 +9050,7 @@ export class DatabaseStorage implements IStorage {
         .insert(relatedContentCache)
         .values({
           ...cache,
-          relatedItems: cache.relatedItems as any // Cast array properly for jsonb
+          relatedItems: cache.relatedItems as any, // Cast array properly for jsonb
         })
         .returning();
 
@@ -8617,7 +9061,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getQueryHistory(userId: string, limit: number = 20): Promise<QueryLog[]> {
+  async getQueryHistory(
+    userId: string,
+    limit: number = 20,
+  ): Promise<QueryLog[]> {
     try {
       return await db
         .select()
@@ -8638,7 +9085,7 @@ export class DatabaseStorage implements IStorage {
     targetLanguage: string,
     originalText: string,
     contentType?: string,
-    context?: string
+    context?: string,
   ): Promise<Translation> {
     // Note: This method is not used by the API route, which handles translation directly
     // Keeping for interface compatibility but the router handles the actual translation
@@ -8654,8 +9101,8 @@ export class DatabaseStorage implements IStorage {
           isVerified: false,
           translationMetadata: {
             context,
-            sourceLanguage: 'en'
-          }
+            sourceLanguage: "en",
+          },
         })
         .onConflictDoUpdate({
           target: [translations.contentId, translations.languageCode],
@@ -8664,11 +9111,11 @@ export class DatabaseStorage implements IStorage {
             originalText: sql`EXCLUDED.original_text`,
             contentType: sql`EXCLUDED.content_type`,
             translationMetadata: sql`EXCLUDED.translation_metadata`,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         })
         .returning();
-      
+
       return translation;
     } catch (error) {
       console.error("Error creating translation:", error);
@@ -8676,18 +9123,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getTranslations(contentId: string, languageCode?: string): Promise<Translation[]> {
+  async getTranslations(
+    contentId: string,
+    languageCode?: string,
+  ): Promise<Translation[]> {
     try {
       if (languageCode) {
         return await db
           .select()
           .from(translations)
-          .where(and(
-            eq(translations.contentId, contentId),
-            eq(translations.languageCode, languageCode)
-          ));
+          .where(
+            and(
+              eq(translations.contentId, contentId),
+              eq(translations.languageCode, languageCode),
+            ),
+          );
       }
-      
+
       return await db
         .select()
         .from(translations)
@@ -8698,17 +9150,22 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getTranslation(contentId: string, languageCode: string): Promise<Translation | undefined> {
+  async getTranslation(
+    contentId: string,
+    languageCode: string,
+  ): Promise<Translation | undefined> {
     try {
       const [translation] = await db
         .select()
         .from(translations)
-        .where(and(
-          eq(translations.contentId, contentId),
-          eq(translations.languageCode, languageCode)
-        ))
+        .where(
+          and(
+            eq(translations.contentId, contentId),
+            eq(translations.languageCode, languageCode),
+          ),
+        )
         .limit(1);
-      
+
       return translation;
     } catch (error) {
       console.error("Error getting translation:", error);
@@ -8716,18 +9173,21 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async verifyTranslation(translationId: string, translatorId: string): Promise<Translation> {
+  async verifyTranslation(
+    translationId: string,
+    translatorId: string,
+  ): Promise<Translation> {
     try {
       const [translation] = await db
         .update(translations)
         .set({
           isVerified: true,
           translatorId,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(translations.id, translationId))
         .returning();
-      
+
       return translation;
     } catch (error) {
       console.error("Error verifying translation:", error);
@@ -8757,11 +9217,11 @@ export class DatabaseStorage implements IStorage {
       ko: /[\uAC00-\uD7AF\u1100-\u11FF]/,
       zh: /[\u4E00-\u9FFF\u3400-\u4DBF]/,
       ar: /[\u0600-\u06FF\u0750-\u077F]/,
-      ru: /[\u0400-\u04FF]/
+      ru: /[\u0400-\u04FF]/,
     };
 
     const scores: Record<string, number> = {};
-    
+
     for (const [lang, pattern] of Object.entries(patterns)) {
       const matches = text.match(pattern);
       if (matches) {
@@ -8771,37 +9231,41 @@ export class DatabaseStorage implements IStorage {
 
     // Return the language with the highest score
     const detectedLang = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
-    return detectedLang ? detectedLang[0] : 'en';
+    return detectedLang ? detectedLang[0] : "en";
   }
 
-  async getSupportedLanguages(): Promise<Array<{ code: string; name: string; nativeName: string }>> {
+  async getSupportedLanguages(): Promise<
+    Array<{ code: string; name: string; nativeName: string }>
+  > {
     return [
-      { code: 'en', name: 'English', nativeName: 'English' },
-      { code: 'es', name: 'Spanish', nativeName: 'Español' },
-      { code: 'fr', name: 'French', nativeName: 'Français' },
-      { code: 'de', name: 'German', nativeName: 'Deutsch' },
-      { code: 'it', name: 'Italian', nativeName: 'Italiano' },
-      { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
-      { code: 'ru', name: 'Russian', nativeName: 'Русский' },
-      { code: 'ja', name: 'Japanese', nativeName: '日本語' },
-      { code: 'ko', name: 'Korean', nativeName: '한국어' },
-      { code: 'zh', name: 'Chinese', nativeName: '中文' },
-      { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
-      { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
-      { code: 'nl', name: 'Dutch', nativeName: 'Nederlands' },
-      { code: 'sv', name: 'Swedish', nativeName: 'Svenska' },
-      { code: 'pl', name: 'Polish', nativeName: 'Polski' }
+      { code: "en", name: "English", nativeName: "English" },
+      { code: "es", name: "Spanish", nativeName: "Español" },
+      { code: "fr", name: "French", nativeName: "Français" },
+      { code: "de", name: "German", nativeName: "Deutsch" },
+      { code: "it", name: "Italian", nativeName: "Italiano" },
+      { code: "pt", name: "Portuguese", nativeName: "Português" },
+      { code: "ru", name: "Russian", nativeName: "Русский" },
+      { code: "ja", name: "Japanese", nativeName: "日本語" },
+      { code: "ko", name: "Korean", nativeName: "한국어" },
+      { code: "zh", name: "Chinese", nativeName: "中文" },
+      { code: "ar", name: "Arabic", nativeName: "العربية" },
+      { code: "hi", name: "Hindi", nativeName: "हिन्दी" },
+      { code: "nl", name: "Dutch", nativeName: "Nederlands" },
+      { code: "sv", name: "Swedish", nativeName: "Svenska" },
+      { code: "pl", name: "Polish", nativeName: "Polski" },
     ];
   }
 
-  async getLanguagePreferences(userId: string): Promise<LanguagePreference | undefined> {
+  async getLanguagePreferences(
+    userId: string,
+  ): Promise<LanguagePreference | undefined> {
     try {
       const [prefs] = await db
         .select()
         .from(languagePreferences)
         .where(eq(languagePreferences.userId, userId))
         .limit(1);
-      
+
       return prefs;
     } catch (error) {
       console.error("Error getting language preferences:", error);
@@ -8811,27 +9275,27 @@ export class DatabaseStorage implements IStorage {
 
   async upsertLanguagePreferences(
     userId: string,
-    preferences: Omit<InsertLanguagePreference, "userId">
+    preferences: Omit<InsertLanguagePreference, "userId">,
   ): Promise<LanguagePreference> {
     try {
       const [result] = await db
         .insert(languagePreferences)
         .values({
           ...preferences,
-          userId
+          userId,
         })
         .onConflictDoUpdate({
           target: languagePreferences.userId,
           set: {
             ...preferences,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         })
         .returning();
-      
+
       // Clear cache
       this.invalidateCache(`lang-prefs:${userId}`);
-      
+
       return result;
     } catch (error) {
       console.error("Error upserting language preferences:", error);
@@ -8844,12 +9308,14 @@ export class DatabaseStorage implements IStorage {
       const users = await db
         .select({ userId: languagePreferences.userId })
         .from(languagePreferences)
-        .where(and(
-          eq(languagePreferences.autoTranslate, true),
-          sql`${languagePreferences.preferredLanguages} @> ARRAY[${languageCode}]::text[]`
-        ));
-      
-      return users.map(u => u.userId);
+        .where(
+          and(
+            eq(languagePreferences.autoTranslate, true),
+            sql`${languagePreferences.preferredLanguages} @> ARRAY[${languageCode}]::text[]`,
+          ),
+        );
+
+      return users.map((u) => u.userId);
     } catch (error) {
       console.error("Error getting users with auto-translate:", error);
       throw new Error("Failed to get users with auto-translate");
@@ -8858,17 +9324,19 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== Image Metadata & Alt Text Implementation ====================
 
-  async getImageMetadata(userId: string, imageId: string): Promise<ImageMetadata | undefined> {
+  async getImageMetadata(
+    userId: string,
+    imageId: string,
+  ): Promise<ImageMetadata | undefined> {
     try {
       const result = await db
         .select()
         .from(imageMetadata)
-        .where(and(
-          eq(imageMetadata.userId, userId),
-          eq(imageMetadata.id, imageId)
-        ))
+        .where(
+          and(eq(imageMetadata.userId, userId), eq(imageMetadata.id, imageId)),
+        )
         .limit(1);
-      
+
       return result[0];
     } catch (error) {
       console.error("Failed to get image metadata:", error);
@@ -8876,17 +9344,22 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getImageMetadataByUrl(userId: string, imageUrl: string): Promise<ImageMetadata | undefined> {
+  async getImageMetadataByUrl(
+    userId: string,
+    imageUrl: string,
+  ): Promise<ImageMetadata | undefined> {
     try {
       const result = await db
         .select()
         .from(imageMetadata)
-        .where(and(
-          eq(imageMetadata.userId, userId),
-          eq(imageMetadata.imageUrl, imageUrl)
-        ))
+        .where(
+          and(
+            eq(imageMetadata.userId, userId),
+            eq(imageMetadata.imageUrl, imageUrl),
+          ),
+        )
         .limit(1);
-      
+
       return result[0];
     } catch (error) {
       console.error("Failed to get image metadata by URL:", error);
@@ -8902,18 +9375,18 @@ export class DatabaseStorage implements IStorage {
       isDecorative?: boolean;
       hasAltText?: boolean;
       needsImprovement?: boolean;
-    }
+    },
   ): Promise<PaginatedResponse<ImageMetadata>> {
     try {
       const offset = (page - 1) * limit;
-      
+
       // Build filter conditions
       const conditions = [eq(imageMetadata.userId, userId)];
-      
+
       if (filters?.isDecorative !== undefined) {
         conditions.push(eq(imageMetadata.isDecorative, filters.isDecorative));
       }
-      
+
       if (filters?.hasAltText !== undefined) {
         if (filters.hasAltText) {
           conditions.push(isNotNull(imageMetadata.altText));
@@ -8921,20 +9394,20 @@ export class DatabaseStorage implements IStorage {
           conditions.push(isNull(imageMetadata.altText));
         }
       }
-      
+
       if (filters?.needsImprovement) {
         // Images with quality score < 70 need improvement
         const lowQualityImages = await db
           .select({ imageId: altTextQuality.imageId })
           .from(altTextQuality)
           .where(lte(altTextQuality.qualityScore, 70));
-        
-        const lowQualityIds = lowQualityImages.map(img => img.imageId);
+
+        const lowQualityIds = lowQualityImages.map((img) => img.imageId);
         if (lowQualityIds.length > 0) {
           conditions.push(sql`${imageMetadata.id} = ANY(${lowQualityIds})`);
         }
       }
-      
+
       const [data, totalResult] = await Promise.all([
         db
           .select()
@@ -8946,19 +9419,19 @@ export class DatabaseStorage implements IStorage {
         db
           .select({ count: sql<number>`count(*)` })
           .from(imageMetadata)
-          .where(and(...conditions))
+          .where(and(...conditions)),
       ]);
-      
+
       const total = Number(totalResult[0]?.count ?? 0);
       const totalPages = Math.ceil(total / limit);
-      
+
       return {
         data,
         total,
         page,
         totalPages,
         limit,
-        offset
+        offset,
       };
     } catch (error) {
       console.error("Failed to get paginated images:", error);
@@ -8968,17 +9441,17 @@ export class DatabaseStorage implements IStorage {
 
   async createImageMetadata(
     userId: string,
-    metadataInput: Omit<InsertImageMetadata, "userId">
+    metadataInput: Omit<InsertImageMetadata, "userId">,
   ): Promise<ImageMetadata> {
     try {
       const result = await db
         .insert(imageMetadata)
         .values({
           ...metadataInput,
-          userId
+          userId,
         } as any)
         .returning();
-      
+
       return result[0];
     } catch (error) {
       console.error("Failed to create image metadata:", error);
@@ -8989,25 +9462,24 @@ export class DatabaseStorage implements IStorage {
   async updateImageMetadata(
     userId: string,
     imageId: string,
-    updates: Partial<Omit<InsertImageMetadata, "userId">>
+    updates: Partial<Omit<InsertImageMetadata, "userId">>,
   ): Promise<ImageMetadata> {
     try {
       const result = await db
         .update(imageMetadata)
         .set({
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         } as any)
-        .where(and(
-          eq(imageMetadata.userId, userId),
-          eq(imageMetadata.id, imageId)
-        ))
+        .where(
+          and(eq(imageMetadata.userId, userId), eq(imageMetadata.id, imageId)),
+        )
         .returning();
-      
+
       if (!result[0]) {
         throw new Error("Image metadata not found");
       }
-      
+
       return result[0];
     } catch (error) {
       console.error("Failed to update image metadata:", error);
@@ -9019,10 +9491,9 @@ export class DatabaseStorage implements IStorage {
     try {
       await db
         .delete(imageMetadata)
-        .where(and(
-          eq(imageMetadata.userId, userId),
-          eq(imageMetadata.id, imageId)
-        ));
+        .where(
+          and(eq(imageMetadata.userId, userId), eq(imageMetadata.id, imageId)),
+        );
     } catch (error) {
       console.error("Failed to delete image metadata:", error);
       throw error;
@@ -9032,36 +9503,38 @@ export class DatabaseStorage implements IStorage {
   async batchProcessImages(
     userId: string,
     imageIds: string[],
-    processor: (image: ImageMetadata) => Promise<Partial<InsertImageMetadata>>
+    processor: (image: ImageMetadata) => Promise<Partial<InsertImageMetadata>>,
   ): Promise<ImageMetadata[]> {
     try {
       // Get all images
       const images = await db
         .select()
         .from(imageMetadata)
-        .where(and(
-          eq(imageMetadata.userId, userId),
-          sql`${imageMetadata.id} = ANY(${imageIds})`
-        ));
-      
+        .where(
+          and(
+            eq(imageMetadata.userId, userId),
+            sql`${imageMetadata.id} = ANY(${imageIds})`,
+          ),
+        );
+
       // Process each image
       const updates = await Promise.all(
         images.map(async (image) => {
           const updateData = await processor(image);
           return {
             id: image.id,
-            ...updateData
+            ...updateData,
           };
-        })
+        }),
       );
-      
+
       // Update all images
       const updatedImages = await Promise.all(
         updates.map((update) =>
-          this.updateImageMetadata(userId, update.id!, update)
-        )
+          this.updateImageMetadata(userId, update.id!, update),
+        ),
       );
-      
+
       return updatedImages;
     } catch (error) {
       console.error("Failed to batch process images:", error);
@@ -9071,14 +9544,16 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== Alt Text Quality Implementation ====================
 
-  async getAltTextQuality(imageId: string): Promise<AltTextQuality | undefined> {
+  async getAltTextQuality(
+    imageId: string,
+  ): Promise<AltTextQuality | undefined> {
     try {
       const result = await db
         .select()
         .from(altTextQuality)
         .where(eq(altTextQuality.imageId, imageId))
         .limit(1);
-      
+
       return result[0];
     } catch (error) {
       console.error("Failed to get alt text quality:", error);
@@ -9088,47 +9563,61 @@ export class DatabaseStorage implements IStorage {
 
   async upsertAltTextQuality(
     imageId: string,
-    quality: Omit<InsertAltTextQuality, "imageId">
+    quality: Omit<InsertAltTextQuality, "imageId">,
   ): Promise<AltTextQuality> {
     try {
       // Check if quality record exists
       const existing = await this.getAltTextQuality(imageId);
-      
+
       if (existing) {
         // Update existing
         const result = await db
           .update(altTextQuality)
           .set({
             ...quality,
-            metadata: quality.metadata ? {
-              wordCount: Number(quality.metadata.wordCount || 0),
-              readabilityScore: Number(quality.metadata.readabilityScore || 0),
-              sentimentScore: Number(quality.metadata.sentimentScore || 0),
-              technicalTerms: quality.metadata.technicalTerms as string[] || []
-            } : null,
+            metadata: quality.metadata
+              ? {
+                  wordCount: Number(quality.metadata.wordCount || 0),
+                  readabilityScore: Number(
+                    quality.metadata.readabilityScore || 0,
+                  ),
+                  sentimentScore: Number(quality.metadata.sentimentScore || 0),
+                  technicalTerms:
+                    (quality.metadata.technicalTerms as string[]) || [],
+                }
+              : null,
             updatedAt: new Date(),
-            lastAnalyzedAt: new Date()
+            lastAnalyzedAt: new Date(),
           })
           .where(eq(altTextQuality.imageId, imageId))
           .returning();
-        
+
         return result[0];
       } else {
         // Create new
         const result = await db
           .insert(altTextQuality)
-          .values([{
-            ...quality,
-            metadata: quality.metadata ? {
-              wordCount: Number(quality.metadata.wordCount || 0),
-              readabilityScore: Number(quality.metadata.readabilityScore || 0),
-              sentimentScore: Number(quality.metadata.sentimentScore || 0),
-              technicalTerms: quality.metadata.technicalTerms as string[] || []
-            } : null,
-            imageId
-          }])
+          .values([
+            {
+              ...quality,
+              metadata: quality.metadata
+                ? {
+                    wordCount: Number(quality.metadata.wordCount || 0),
+                    readabilityScore: Number(
+                      quality.metadata.readabilityScore || 0,
+                    ),
+                    sentimentScore: Number(
+                      quality.metadata.sentimentScore || 0,
+                    ),
+                    technicalTerms:
+                      (quality.metadata.technicalTerms as string[]) || [],
+                  }
+                : null,
+              imageId,
+            },
+          ])
           .returning();
-        
+
         return result[0];
       }
     } catch (error) {
@@ -9144,7 +9633,7 @@ export class DatabaseStorage implements IStorage {
       minScore?: number;
       maxScore?: number;
       dateRange?: { start: Date; end: Date };
-    }
+    },
   ): Promise<{
     totalImages: number;
     imagesWithAltText: number;
@@ -9161,66 +9650,82 @@ export class DatabaseStorage implements IStorage {
     try {
       // Base conditions for user's images
       const conditions = [eq(imageMetadata.userId, userId)];
-      
+
       if (filters?.dateRange) {
         conditions.push(
           gte(imageMetadata.uploadedAt, filters.dateRange.start),
-          lte(imageMetadata.uploadedAt, filters.dateRange.end)
+          lte(imageMetadata.uploadedAt, filters.dateRange.end),
         );
       }
-      
+
       // Get all user images
       const allImages = await db
         .select()
         .from(imageMetadata)
         .where(and(...conditions));
-      
+
       // Get quality scores
       const qualityData = await db
         .select()
         .from(altTextQuality)
-        .where(sql`${altTextQuality.imageId} = ANY(${allImages.map(img => img.id)})`);
-      
+        .where(
+          sql`${altTextQuality.imageId} = ANY(${allImages.map((img) => img.id)})`,
+        );
+
       // Apply quality filters if needed
       let filteredQualityData = qualityData;
       if (filters?.wcagLevel) {
-        filteredQualityData = qualityData.filter(q => q.wcagLevel === filters.wcagLevel);
+        filteredQualityData = qualityData.filter(
+          (q) => q.wcagLevel === filters.wcagLevel,
+        );
       }
       if (filters?.minScore !== undefined) {
-        filteredQualityData = filteredQualityData.filter(q => q.qualityScore >= filters.minScore!);
+        filteredQualityData = filteredQualityData.filter(
+          (q) => q.qualityScore >= filters.minScore!,
+        );
       }
       if (filters?.maxScore !== undefined) {
-        filteredQualityData = filteredQualityData.filter(q => q.qualityScore <= filters.maxScore!);
+        filteredQualityData = filteredQualityData.filter(
+          (q) => q.qualityScore <= filters.maxScore!,
+        );
       }
-      
+
       // Calculate statistics
       const totalImages = allImages.length;
-      const imagesWithAltText = allImages.filter(img => img.altText).length;
-      const decorativeImages = allImages.filter(img => img.isDecorative).length;
-      
-      const averageQualityScore = filteredQualityData.length > 0
-        ? filteredQualityData.reduce((sum, q) => sum + q.qualityScore, 0) / filteredQualityData.length
-        : 0;
-      
-      const averageAccessibilityScore = filteredQualityData.length > 0
-        ? filteredQualityData.reduce((sum, q) => sum + q.accessibilityScore, 0) / filteredQualityData.length
-        : 0;
-      
+      const imagesWithAltText = allImages.filter((img) => img.altText).length;
+      const decorativeImages = allImages.filter(
+        (img) => img.isDecorative,
+      ).length;
+
+      const averageQualityScore =
+        filteredQualityData.length > 0
+          ? filteredQualityData.reduce((sum, q) => sum + q.qualityScore, 0) /
+            filteredQualityData.length
+          : 0;
+
+      const averageAccessibilityScore =
+        filteredQualityData.length > 0
+          ? filteredQualityData.reduce(
+              (sum, q) => sum + q.accessibilityScore,
+              0,
+            ) / filteredQualityData.length
+          : 0;
+
       const wcagCompliance = {
-        A: qualityData.filter(q => q.wcagLevel === 'A').length,
-        AA: qualityData.filter(q => q.wcagLevel === 'AA').length,
-        AAA: qualityData.filter(q => q.wcagLevel === 'AAA').length
+        A: qualityData.filter((q) => q.wcagLevel === "A").length,
+        AA: qualityData.filter((q) => q.wcagLevel === "AA").length,
+        AAA: qualityData.filter((q) => q.wcagLevel === "AAA").length,
       };
-      
+
       // Find images needing improvement (quality score < 70)
       const needsImprovementIds = qualityData
-        .filter(q => q.qualityScore < 70)
-        .map(q => q.imageId);
-      
-      const needsImprovement = allImages.filter(img =>
-        needsImprovementIds.includes(img.id)
+        .filter((q) => q.qualityScore < 70)
+        .map((q) => q.imageId);
+
+      const needsImprovement = allImages.filter((img) =>
+        needsImprovementIds.includes(img.id),
       );
-      
+
       return {
         totalImages,
         imagesWithAltText,
@@ -9228,7 +9733,7 @@ export class DatabaseStorage implements IStorage {
         averageQualityScore,
         averageAccessibilityScore,
         wcagCompliance,
-        needsImprovement
+        needsImprovement,
       };
     } catch (error) {
       console.error("Failed to get accessibility report:", error);
@@ -9239,7 +9744,7 @@ export class DatabaseStorage implements IStorage {
   async reviewAltTextQuality(
     imageId: string,
     reviewerId: string,
-    notes?: string
+    notes?: string,
   ): Promise<AltTextQuality> {
     try {
       const result = await db
@@ -9248,15 +9753,15 @@ export class DatabaseStorage implements IStorage {
           manuallyReviewed: true,
           reviewedBy: reviewerId,
           reviewNotes: notes,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(altTextQuality.imageId, imageId))
         .returning();
-      
+
       if (!result[0]) {
         throw new Error("Alt text quality record not found");
       }
-      
+
       return result[0];
     } catch (error) {
       console.error("Failed to review alt text quality:", error);
@@ -9265,7 +9770,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Moderation Implementations ====================
-  
+
   async createModerationLog(log: InsertModerationLog): Promise<ModerationLog> {
     try {
       const [result] = await db
@@ -9278,14 +9783,17 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create moderation log");
     }
   }
-  
-  async updateModerationLog(id: string, updates: Partial<InsertModerationLog>): Promise<void> {
+
+  async updateModerationLog(
+    id: string,
+    updates: Partial<InsertModerationLog>,
+  ): Promise<void> {
     try {
       await db
         .update(moderationLogs)
         .set({
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         } as any)
         .where(eq(moderationLogs.id, id));
     } catch (error) {
@@ -9293,7 +9801,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to update moderation log");
     }
   }
-  
+
   async getModerationQueue(
     userId: string,
     isAdmin: boolean,
@@ -9301,19 +9809,19 @@ export class DatabaseStorage implements IStorage {
       status?: string;
       severity?: string;
       contentType?: string;
-    }
+    },
   ): Promise<ModerationLog[]> {
     try {
       let query = db.select().from(moderationLogs);
-      
+
       // Build where conditions
       const conditions = [];
-      
+
       // Admin can see all logs, non-admin can only see their own
       if (!isAdmin) {
         conditions.push(eq(moderationLogs.userId, userId));
       }
-      
+
       // Apply filters
       if (filters?.status) {
         conditions.push(eq(moderationLogs.actionTaken, filters.status));
@@ -9324,23 +9832,25 @@ export class DatabaseStorage implements IStorage {
       if (filters?.contentType) {
         conditions.push(eq(moderationLogs.contentType, filters.contentType));
       }
-      
+
       // Apply conditions if any
       if (conditions.length > 0) {
         query = query.where(and(...conditions)) as typeof query;
       }
-      
+
       // Order by creation date (newest first)
       const result = await query.orderBy(desc(moderationLogs.createdAt));
-      
+
       return result;
     } catch (error) {
       console.error("Error getting moderation queue:", error);
       throw new Error("Failed to get moderation queue");
     }
   }
-  
-  async createBlockedContent(content: InsertBlockedContent): Promise<BlockedContent> {
+
+  async createBlockedContent(
+    content: InsertBlockedContent,
+  ): Promise<BlockedContent> {
     try {
       const [result] = await db
         .insert(blockedContent)
@@ -9352,16 +9862,16 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create blocked content");
     }
   }
-  
+
   async restoreBlockedContent(id: string, restoredBy: string): Promise<void> {
     try {
       await db
         .update(blockedContent)
         .set({
-          status: 'restored',
+          status: "restored",
           restoredBy,
           restoredAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(blockedContent.id, id));
     } catch (error) {
@@ -9369,8 +9879,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to restore blocked content");
     }
   }
-  
-  async createModerationAppeal(appeal: InsertModerationAppeal): Promise<ModerationAppeal> {
+
+  async createModerationAppeal(
+    appeal: InsertModerationAppeal,
+  ): Promise<ModerationAppeal> {
     try {
       const [result] = await db
         .insert(moderationAppeals)
@@ -9382,7 +9894,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create moderation appeal");
     }
   }
-  
+
   async getModerationAppeal(id: string): Promise<ModerationAppeal | undefined> {
     try {
       const [result] = await db
@@ -9396,14 +9908,17 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get moderation appeal");
     }
   }
-  
-  async updateModerationAppeal(id: string, updates: Partial<InsertModerationAppeal>): Promise<void> {
+
+  async updateModerationAppeal(
+    id: string,
+    updates: Partial<InsertModerationAppeal>,
+  ): Promise<void> {
     try {
       await db
         .update(moderationAppeals)
         .set({
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(moderationAppeals.id, id));
     } catch (error) {
@@ -9411,7 +9926,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to update moderation appeal");
     }
   }
-  
+
   async getModerationStats(timeRange?: { start: Date; end: Date }): Promise<{
     totalChecked: number;
     totalBlocked: number;
@@ -9428,67 +9943,77 @@ export class DatabaseStorage implements IStorage {
       if (timeRange) {
         conditions.push(
           gte(moderationLogs.createdAt, timeRange.start),
-          lte(moderationLogs.createdAt, timeRange.end)
+          lte(moderationLogs.createdAt, timeRange.end),
         );
       }
-      
+
       // Get all moderation logs within time range
       let logsQuery = db.select().from(moderationLogs);
       if (conditions.length > 0) {
         logsQuery = logsQuery.where(and(...conditions));
       }
       const logs = await logsQuery;
-      
+
       // Calculate statistics
       const totalChecked = logs.length;
-      const totalBlocked = logs.filter(log => log.actionTaken === 'blocked').length;
-      const totalFlagged = logs.filter(log => log.categories && log.categories.length > 0).length;
-      
+      const totalBlocked = logs.filter(
+        (log) => log.actionTaken === "blocked",
+      ).length;
+      const totalFlagged = logs.filter(
+        (log) => log.categories && log.categories.length > 0,
+      ).length;
+
       // Get appeals statistics
       let appealsQuery = db.select().from(moderationAppeals);
       if (timeRange) {
         appealsQuery = appealsQuery.where(
           and(
             gte(moderationAppeals.createdAt, timeRange.start),
-            lte(moderationAppeals.createdAt, timeRange.end)
-          )
+            lte(moderationAppeals.createdAt, timeRange.end),
+          ),
         ) as typeof appealsQuery;
       }
       const appeals = await appealsQuery;
       const totalAppeals = appeals.length;
-      const appealsApproved = appeals.filter(appeal => appeal.status === 'approved').length;
-      
+      const appealsApproved = appeals.filter(
+        (appeal) => appeal.status === "approved",
+      ).length;
+
       // Calculate categories breakdown
       const categoriesBreakdown: { [key: string]: number } = {};
-      logs.forEach(log => {
+      logs.forEach((log) => {
         if (log.categories) {
           log.categories.forEach((category: any) => {
-            categoriesBreakdown[category] = (categoriesBreakdown[category] || 0) + 1;
+            categoriesBreakdown[category] =
+              (categoriesBreakdown[category] || 0) + 1;
           });
         }
       });
-      
+
       // Calculate severity breakdown
       const severityBreakdown: { [key: string]: number } = {
         low: 0,
         medium: 0,
         high: 0,
-        critical: 0
+        critical: 0,
       };
-      logs.forEach(log => {
+      logs.forEach((log) => {
         if (log.severity) {
-          severityBreakdown[log.severity] = (severityBreakdown[log.severity] || 0) + 1;
+          severityBreakdown[log.severity] =
+            (severityBreakdown[log.severity] || 0) + 1;
         }
       });
-      
+
       // Calculate average confidence
       const confidenceScores = logs
-        .filter(log => log.confidence !== null)
-        .map(log => log.confidence!);
-      const averageConfidence = confidenceScores.length > 0
-        ? confidenceScores.reduce((sum, score) => sum + score, 0) / confidenceScores.length
-        : 0;
-      
+        .filter((log) => log.confidence !== null)
+        .map((log) => log.confidence!);
+      const averageConfidence =
+        confidenceScores.length > 0
+          ? confidenceScores.reduce((sum, score) => sum + score, 0) /
+            confidenceScores.length
+          : 0;
+
       return {
         totalChecked,
         totalBlocked,
@@ -9497,32 +10022,32 @@ export class DatabaseStorage implements IStorage {
         appealsApproved,
         categoriesBreakdown,
         severityBreakdown,
-        averageConfidence
+        averageConfidence,
       };
     } catch (error) {
       console.error("Error getting moderation stats:", error);
       throw new Error("Failed to get moderation statistics");
     }
   }
-  
+
   // ============================================================================
   // Fraud Detection Implementations
   // ============================================================================
-  
+
   async createFraudScore(score: InsertFraudScore): Promise<FraudScore> {
     try {
-      const [result] = await db
-        .insert(fraudScores)
-        .values(score)
-        .returning();
+      const [result] = await db.insert(fraudScores).values(score).returning();
       return result;
     } catch (error) {
       console.error("Error creating fraud score:", error);
       throw new Error("Failed to create fraud score");
     }
   }
-  
-  async getFraudScores(userId: string, limit: number = 10): Promise<FraudScore[]> {
+
+  async getFraudScores(
+    userId: string,
+    limit: number = 10,
+  ): Promise<FraudScore[]> {
     try {
       const scores = await db
         .select()
@@ -9536,8 +10061,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get fraud scores");
     }
   }
-  
-  async createSuspiciousActivity(activity: InsertSuspiciousActivity): Promise<SuspiciousActivity> {
+
+  async createSuspiciousActivity(
+    activity: InsertSuspiciousActivity,
+  ): Promise<SuspiciousActivity> {
     try {
       const [result] = await db
         .insert(suspiciousActivities)
@@ -9549,39 +10076,46 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create suspicious activity");
     }
   }
-  
-  async getSuspiciousActivities(userId?: string, isAdmin: boolean = false): Promise<SuspiciousActivity[]> {
+
+  async getSuspiciousActivities(
+    userId?: string,
+    isAdmin: boolean = false,
+  ): Promise<SuspiciousActivity[]> {
     try {
       let query = db.select().from(suspiciousActivities);
-      
+
       // Filter by userId if provided or if not admin
       if (userId && !isAdmin) {
-        query = query.where(eq(suspiciousActivities.userId, userId)) as typeof query;
+        query = query.where(
+          eq(suspiciousActivities.userId, userId),
+        ) as typeof query;
       } else if (!isAdmin) {
         // Non-admin users with no userId specified should not see any activities
         return [];
       }
-      
+
       // Order by most recent first
-      const activities = await query.orderBy(desc(suspiciousActivities.detectedAt));
+      const activities = await query.orderBy(
+        desc(suspiciousActivities.detectedAt),
+      );
       return activities;
     } catch (error) {
       console.error("Error getting suspicious activities:", error);
       throw new Error("Failed to get suspicious activities");
     }
   }
-  
+
   async updateSuspiciousActivity(
     activityId: string,
-    status: 'pending' | 'reviewing' | 'confirmed' | 'dismissed' | 'escalated',
-    resolvedAt?: Date
+    status: "pending" | "reviewing" | "confirmed" | "dismissed" | "escalated",
+    resolvedAt?: Date,
   ): Promise<void> {
     try {
       await db
         .update(suspiciousActivities)
-        .set({ 
+        .set({
           status,
-          resolvedAt: resolvedAt || null
+          resolvedAt: resolvedAt || null,
         })
         .where(eq(suspiciousActivities.id, activityId));
     } catch (error) {
@@ -9589,7 +10123,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to update suspicious activity");
     }
   }
-  
+
   async createFraudReview(review: InsertFraudReview): Promise<FraudReview> {
     try {
       const [result] = await db
@@ -9602,7 +10136,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create fraud review");
     }
   }
-  
+
   async getFraudReviews(userId: string): Promise<FraudReview[]> {
     try {
       const reviews = await db
@@ -9616,8 +10150,8 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get fraud reviews");
     }
   }
-  
-  async getFraudStats(period: 'day' | 'week' | 'month'): Promise<{
+
+  async getFraudStats(period: "day" | "week" | "month"): Promise<{
     totalScores: number;
     averageScore: number;
     highRiskCount: number;
@@ -9631,70 +10165,73 @@ export class DatabaseStorage implements IStorage {
       // Calculate date range based on period
       const now = new Date();
       const startDate = new Date();
-      
+
       switch (period) {
-        case 'day':
+        case "day":
           startDate.setDate(now.getDate() - 1);
           break;
-        case 'week':
+        case "week":
           startDate.setDate(now.getDate() - 7);
           break;
-        case 'month':
+        case "month":
           startDate.setMonth(now.getMonth() - 1);
           break;
       }
-      
+
       // Get fraud scores in the period
       const scores = await db
         .select()
         .from(fraudScores)
         .where(gte(fraudScores.timestamp, startDate));
-      
+
       const totalScores = scores.length;
-      const averageScore = totalScores > 0
-        ? scores.reduce((sum, s) => sum + s.score, 0) / totalScores
-        : 0;
-      const highRiskCount = scores.filter(s => s.score > 0.75).length;
-      
+      const averageScore =
+        totalScores > 0
+          ? scores.reduce((sum, s) => sum + s.score, 0) / totalScores
+          : 0;
+      const highRiskCount = scores.filter((s) => s.score > 0.75).length;
+
       // Get suspicious activities
       const activities = await db
         .select()
         .from(suspiciousActivities)
         .where(gte(suspiciousActivities.detectedAt, startDate));
-      
+
       const suspiciousActivitiesCount = activities.length;
-      const autoBlockedCount = activities.filter(a => a.autoBlocked).length;
-      
+      const autoBlockedCount = activities.filter((a) => a.autoBlocked).length;
+
       // Calculate top activity types
       const activityTypeCounts: { [key: string]: number } = {};
-      activities.forEach(a => {
-        activityTypeCounts[a.activityType] = (activityTypeCounts[a.activityType] || 0) + 1;
+      activities.forEach((a) => {
+        activityTypeCounts[a.activityType] =
+          (activityTypeCounts[a.activityType] || 0) + 1;
       });
       const topActivityTypes = Object.entries(activityTypeCounts)
         .map(([type, count]) => ({ type, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
-      
+
       // Calculate risk distribution
       const riskLevelCounts: { [key: string]: number } = {
         low: 0,
         medium: 0,
         high: 0,
-        critical: 0
+        critical: 0,
       };
-      activities.forEach(a => {
+      activities.forEach((a) => {
         riskLevelCounts[a.riskLevel] = (riskLevelCounts[a.riskLevel] || 0) + 1;
       });
-      const riskDistribution = Object.entries(riskLevelCounts)
-        .map(([level, count]) => ({ level, count }));
-      
+      const riskDistribution = Object.entries(riskLevelCounts).map(
+        ([level, count]) => ({ level, count }),
+      );
+
       // Get reviews count
       const reviews = await db
         .select()
         .from(fraudReviews)
         .where(gte(fraudReviews.reviewedAt, startDate));
       const reviewsCount = reviews.length;
-      
+
       return {
         totalScores,
         averageScore,
@@ -9703,7 +10240,7 @@ export class DatabaseStorage implements IStorage {
         reviewsCount,
         autoBlockedCount,
         topActivityTypes,
-        riskDistribution
+        riskDistribution,
       };
     } catch (error) {
       console.error("Error getting fraud statistics:", error);
@@ -9712,7 +10249,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Task 7: AI Chat Assistant Implementations ====================
-  
+
   async getConversations(userId: string): Promise<Conversation[]> {
     try {
       const result = await db
@@ -9726,13 +10263,21 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get conversations");
     }
   }
-  
-  async getConversation(userId: string, conversationId: string): Promise<Conversation | undefined> {
+
+  async getConversation(
+    userId: string,
+    conversationId: string,
+  ): Promise<Conversation | undefined> {
     try {
       const [result] = await db
         .select()
         .from(conversations)
-        .where(and(eq(conversations.userId, userId), eq(conversations.id, conversationId)))
+        .where(
+          and(
+            eq(conversations.userId, userId),
+            eq(conversations.id, conversationId),
+          ),
+        )
         .limit(1);
       return result;
     } catch (error) {
@@ -9740,8 +10285,11 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get conversation");
     }
   }
-  
-  async createConversation(userId: string, title: string): Promise<Conversation> {
+
+  async createConversation(
+    userId: string,
+    title: string,
+  ): Promise<Conversation> {
     try {
       const [result] = await db
         .insert(conversations)
@@ -9753,13 +10301,22 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create conversation");
     }
   }
-  
-  async updateConversation(userId: string, conversationId: string, updates: Partial<Conversation>): Promise<Conversation> {
+
+  async updateConversation(
+    userId: string,
+    conversationId: string,
+    updates: Partial<Conversation>,
+  ): Promise<Conversation> {
     try {
       const [result] = await db
         .update(conversations)
         .set({ ...updates, updatedAt: new Date() })
-        .where(and(eq(conversations.userId, userId), eq(conversations.id, conversationId)))
+        .where(
+          and(
+            eq(conversations.userId, userId),
+            eq(conversations.id, conversationId),
+          ),
+        )
         .returning();
       return result;
     } catch (error) {
@@ -9767,19 +10324,30 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to update conversation");
     }
   }
-  
-  async deleteConversation(userId: string, conversationId: string): Promise<void> {
+
+  async deleteConversation(
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
     try {
       await db
         .delete(conversations)
-        .where(and(eq(conversations.userId, userId), eq(conversations.id, conversationId)));
+        .where(
+          and(
+            eq(conversations.userId, userId),
+            eq(conversations.id, conversationId),
+          ),
+        );
     } catch (error) {
       console.error("Error deleting conversation:", error);
       throw new Error("Failed to delete conversation");
     }
   }
-  
-  async getMessages(conversationId: string, limit: number = 100): Promise<Message[]> {
+
+  async getMessages(
+    conversationId: string,
+    limit: number = 100,
+  ): Promise<Message[]> {
     try {
       const result = await db
         .select()
@@ -9793,28 +10361,30 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get messages");
     }
   }
-  
+
   async createMessage(message: InsertMessage): Promise<Message> {
     try {
       const [result] = await db
         .insert(messages)
         .values([message as any])
         .returning();
-      
+
       // Update conversation's updatedAt
       await db
         .update(conversations)
         .set({ updatedAt: new Date() })
         .where(eq(conversations.id, message.conversationId));
-      
+
       return result;
     } catch (error) {
       console.error("Error creating message:", error);
       throw new Error("Failed to create message");
     }
   }
-  
-  async getConversationContext(conversationId: string): Promise<ConversationContext | undefined> {
+
+  async getConversationContext(
+    conversationId: string,
+  ): Promise<ConversationContext | undefined> {
     try {
       const [result] = await db
         .select()
@@ -9827,15 +10397,18 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get conversation context");
     }
   }
-  
-  async updateConversationContext(conversationId: string, context: Partial<ConversationContext>): Promise<ConversationContext> {
+
+  async updateConversationContext(
+    conversationId: string,
+    context: Partial<ConversationContext>,
+  ): Promise<ConversationContext> {
     try {
       const [result] = await db
         .insert(conversationContext)
         .values({ conversationId, ...context })
         .onConflictDoUpdate({
           target: conversationContext.conversationId,
-          set: { ...context, lastSummarized: new Date() }
+          set: { ...context, lastSummarized: new Date() },
         })
         .returning();
       return result;
@@ -9846,7 +10419,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Task 8: Voice Commands Implementations ====================
-  
+
   async createVoiceCommand(command: InsertVoiceCommand): Promise<VoiceCommand> {
     try {
       const [result] = await db
@@ -9859,8 +10432,11 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create voice command");
     }
   }
-  
-  async getVoiceCommands(userId: string, limit: number = 50): Promise<VoiceCommand[]> {
+
+  async getVoiceCommands(
+    userId: string,
+    limit: number = 50,
+  ): Promise<VoiceCommand[]> {
     try {
       const result = await db
         .select()
@@ -9874,43 +10450,48 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get voice commands");
     }
   }
-  
-  async getAvailableVoiceCommands(): Promise<Array<{ command: string; description: string; example: string }>> {
+
+  async getAvailableVoiceCommands(): Promise<
+    Array<{ command: string; description: string; example: string }>
+  > {
     // Static list of available commands - could be moved to a config file
     return [
       {
         command: "navigate",
         description: "Navigate to a page in the app",
-        example: "Show me my recipes"
+        example: "Show me my recipes",
       },
       {
         command: "search",
         description: "Search for items",
-        example: "Search for chicken recipes"
+        example: "Search for chicken recipes",
       },
       {
         command: "add",
         description: "Add items to lists",
-        example: "Add milk to shopping list"
+        example: "Add milk to shopping list",
       },
       {
         command: "show",
         description: "Display specific information",
-        example: "Show expiring items"
+        example: "Show expiring items",
       },
       {
         command: "create",
         description: "Create new items",
-        example: "Create a new meal plan"
-      }
+        example: "Create a new meal plan",
+      },
     ];
   }
 
   // ==================== Task 9: Smart Email/Message Drafting Implementations ====================
-  
-  async saveGeneratedDrafts(userId: string, drafts: Omit<InsertGeneratedDraft, "userId">[]): Promise<GeneratedDraft[]> {
+
+  async saveGeneratedDrafts(
+    userId: string,
+    drafts: Omit<InsertGeneratedDraft, "userId">[],
+  ): Promise<GeneratedDraft[]> {
     try {
-      const draftsWithUserId = drafts.map(draft => ({ ...draft, userId }));
+      const draftsWithUserId = drafts.map((draft) => ({ ...draft, userId }));
       const result = await db
         .insert(generatedDrafts)
         .values(draftsWithUserId as any)
@@ -9921,8 +10502,11 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to save generated drafts");
     }
   }
-  
-  async getDraftHistory(userId: string, limit: number = 50): Promise<GeneratedDraft[]> {
+
+  async getDraftHistory(
+    userId: string,
+    limit: number = 50,
+  ): Promise<GeneratedDraft[]> {
     try {
       const result = await db
         .select()
@@ -9938,14 +10522,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Task 10: Writing Assistant Implementations ====================
-  
-  async createWritingSession(session: InsertWritingSession): Promise<WritingSession> {
+
+  async createWritingSession(
+    session: InsertWritingSession,
+  ): Promise<WritingSession> {
     try {
       const [result] = await db
         .insert(writingSessions)
         .values({
           ...session,
-          improvementsApplied: session.improvementsApplied as any // Cast array properly for jsonb
+          improvementsApplied: session.improvementsApplied as any, // Cast array properly for jsonb
         })
         .returning();
       return result;
@@ -9954,13 +10540,21 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create writing session");
     }
   }
-  
-  async getWritingSession(userId: string, sessionId: string): Promise<WritingSession | undefined> {
+
+  async getWritingSession(
+    userId: string,
+    sessionId: string,
+  ): Promise<WritingSession | undefined> {
     try {
       const [result] = await db
         .select()
         .from(writingSessions)
-        .where(and(eq(writingSessions.userId, userId), eq(writingSessions.id, sessionId)))
+        .where(
+          and(
+            eq(writingSessions.userId, userId),
+            eq(writingSessions.id, sessionId),
+          ),
+        )
         .limit(1);
       return result;
     } catch (error) {
@@ -9968,13 +10562,23 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get writing session");
     }
   }
-  
-  async updateWritingSession(userId: string, sessionId: string, improvedText: string, improvements: string[]): Promise<WritingSession> {
+
+  async updateWritingSession(
+    userId: string,
+    sessionId: string,
+    improvedText: string,
+    improvements: string[],
+  ): Promise<WritingSession> {
     try {
       const [result] = await db
         .update(writingSessions)
         .set({ improvedText, improvementsApplied: improvements })
-        .where(and(eq(writingSessions.userId, userId), eq(writingSessions.id, sessionId)))
+        .where(
+          and(
+            eq(writingSessions.userId, userId),
+            eq(writingSessions.id, sessionId),
+          ),
+        )
         .returning();
       return result;
     } catch (error) {
@@ -9982,10 +10586,16 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to update writing session");
     }
   }
-  
-  async addWritingSuggestions(sessionId: string, suggestions: Omit<InsertWritingSuggestion, "sessionId">[]): Promise<WritingSuggestion[]> {
+
+  async addWritingSuggestions(
+    sessionId: string,
+    suggestions: Omit<InsertWritingSuggestion, "sessionId">[],
+  ): Promise<WritingSuggestion[]> {
     try {
-      const suggestionsWithSessionId = suggestions.map(s => ({ ...s, sessionId }));
+      const suggestionsWithSessionId = suggestions.map((s) => ({
+        ...s,
+        sessionId,
+      }));
       const result = await db
         .insert(writingSuggestions)
         .values(suggestionsWithSessionId)
@@ -9996,8 +10606,11 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to add writing suggestions");
     }
   }
-  
-  async updateSuggestionStatus(suggestionId: string, accepted: boolean): Promise<void> {
+
+  async updateSuggestionStatus(
+    suggestionId: string,
+    accepted: boolean,
+  ): Promise<void> {
     try {
       await db
         .update(writingSuggestions)
@@ -10008,7 +10621,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to update suggestion status");
     }
   }
-  
+
   async getWritingStats(userId: string): Promise<{
     totalSessions: number;
     acceptedSuggestions: number;
@@ -10021,38 +10634,44 @@ export class DatabaseStorage implements IStorage {
         .select({ count: sql<number>`count(*)` })
         .from(writingSessions)
         .where(eq(writingSessions.userId, userId));
-      
+
       // Get suggestions stats
       const suggestionsStats = await db
         .select({
           accepted: sql<number>`count(*) filter (where ${writingSuggestions.accepted} = true)`,
-          total: sql<number>`count(*)`
+          total: sql<number>`count(*)`,
         })
         .from(writingSuggestions)
-        .innerJoin(writingSessions, eq(writingSessions.id, writingSuggestions.sessionId))
+        .innerJoin(
+          writingSessions,
+          eq(writingSessions.id, writingSuggestions.sessionId),
+        )
         .where(eq(writingSessions.userId, userId));
-      
+
       // Get common issues
       const commonIssues = await db
         .select({
           type: writingSuggestions.suggestionType,
-          count: sql<number>`count(*)`
+          count: sql<number>`count(*)`,
         })
         .from(writingSuggestions)
-        .innerJoin(writingSessions, eq(writingSessions.id, writingSuggestions.sessionId))
+        .innerJoin(
+          writingSessions,
+          eq(writingSessions.id, writingSuggestions.sessionId),
+        )
         .where(eq(writingSessions.userId, userId))
         .groupBy(writingSuggestions.suggestionType)
         .orderBy(desc(sql`count(*)`))
         .limit(5);
-      
+
       return {
         totalSessions: Number(sessionsCount[0]?.count || 0),
         acceptedSuggestions: Number(suggestionsStats[0]?.accepted || 0),
         totalSuggestions: Number(suggestionsStats[0]?.total || 0),
-        commonIssues: commonIssues.map(ci => ({
+        commonIssues: commonIssues.map((ci) => ({
           type: ci.type,
-          count: Number(ci.count)
-        }))
+          count: Number(ci.count),
+        })),
       };
     } catch (error) {
       console.error("Error getting writing stats:", error);
@@ -10061,13 +10680,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Summarization Operations ====================
-  
-  async getSummary(userId: string, contentId: string): Promise<Summary | undefined> {
+
+  async getSummary(
+    userId: string,
+    contentId: string,
+  ): Promise<Summary | undefined> {
     try {
       const [result] = await db
         .select()
         .from(summaries)
-        .where(and(eq(summaries.userId, userId), eq(summaries.contentId, contentId)))
+        .where(
+          and(eq(summaries.userId, userId), eq(summaries.contentId, contentId)),
+        )
         .limit(1);
       return result;
     } catch (error) {
@@ -10075,7 +10699,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get summary");
     }
   }
-  
+
   async getSummaries(userId: string, limit?: number): Promise<Summary[]> {
     try {
       const query = db
@@ -10083,19 +10707,22 @@ export class DatabaseStorage implements IStorage {
         .from(summaries)
         .where(eq(summaries.userId, userId))
         .orderBy(desc(summaries.createdAt));
-      
+
       if (limit) {
         return await query.limit(limit);
       }
-      
+
       return await query;
     } catch (error) {
       console.error("Error getting summaries:", error);
       throw new Error("Failed to get summaries");
     }
   }
-  
-  async createSummary(userId: string, summary: Omit<InsertSummary, "userId">): Promise<Summary> {
+
+  async createSummary(
+    userId: string,
+    summary: Omit<InsertSummary, "userId">,
+  ): Promise<Summary> {
     try {
       const [result] = await db
         .insert(summaries)
@@ -10103,7 +10730,7 @@ export class DatabaseStorage implements IStorage {
           ...summary,
           userId,
           keyPoints: summary.keyPoints as any, // Cast array properly
-          metadata: summary.metadata as any // Cast metadata properly
+          metadata: summary.metadata as any, // Cast metadata properly
         })
         .returning();
       return result;
@@ -10112,31 +10739,35 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create summary");
     }
   }
-  
-  async updateSummary(userId: string, summaryId: string, updates: Partial<Omit<InsertSummary, "userId" | "id">>): Promise<Summary> {
+
+  async updateSummary(
+    userId: string,
+    summaryId: string,
+    updates: Partial<Omit<InsertSummary, "userId" | "id">>,
+  ): Promise<Summary> {
     try {
       const [result] = await db
         .update(summaries)
         .set({
           ...updates,
           updatedAt: new Date(),
-          keyPoints: updates.keyPoints as any, // Cast array properly  
-          metadata: updates.metadata as any // Cast metadata properly
+          keyPoints: updates.keyPoints as any, // Cast array properly
+          metadata: updates.metadata as any, // Cast metadata properly
         })
         .where(and(eq(summaries.userId, userId), eq(summaries.id, summaryId)))
         .returning();
-      
+
       if (!result) {
         throw new Error("Summary not found");
       }
-      
+
       return result;
     } catch (error) {
       console.error("Error updating summary:", error);
       throw new Error("Failed to update summary");
     }
   }
-  
+
   async deleteSummary(userId: string, summaryId: string): Promise<void> {
     try {
       await db
@@ -10147,13 +10778,18 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to delete summary");
     }
   }
-  
-  async getSummariesByType(userId: string, type: 'tldr' | 'bullet' | 'paragraph'): Promise<Summary[]> {
+
+  async getSummariesByType(
+    userId: string,
+    type: "tldr" | "bullet" | "paragraph",
+  ): Promise<Summary[]> {
     try {
       return await db
         .select()
         .from(summaries)
-        .where(and(eq(summaries.userId, userId), eq(summaries.summaryType, type)))
+        .where(
+          and(eq(summaries.userId, userId), eq(summaries.summaryType, type)),
+        )
         .orderBy(desc(summaries.createdAt));
     } catch (error) {
       console.error("Error getting summaries by type:", error);
@@ -10161,16 +10797,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getExcerpt(userId: string, contentId: string, variant?: string): Promise<Excerpt | undefined> {
+  async getExcerpt(
+    userId: string,
+    contentId: string,
+    variant?: string,
+  ): Promise<Excerpt | undefined> {
     try {
       const conditions = [
         eq(excerpts.userId, userId),
-        eq(excerpts.contentId, contentId)
+        eq(excerpts.contentId, contentId),
       ];
       if (variant) {
         conditions.push(eq(excerpts.variant, variant));
       }
-      
+
       const [result] = await db
         .select()
         .from(excerpts)
@@ -10183,12 +10823,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getExcerptsByContent(userId: string, contentId: string): Promise<Excerpt[]> {
+  async getExcerptsByContent(
+    userId: string,
+    contentId: string,
+  ): Promise<Excerpt[]> {
     try {
       return await db
         .select()
         .from(excerpts)
-        .where(and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)))
+        .where(
+          and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)),
+        )
         .orderBy(desc(excerpts.clickThroughRate), desc(excerpts.createdAt));
     } catch (error) {
       console.error("Error getting excerpts by content:", error);
@@ -10196,7 +10841,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createExcerpt(userId: string, excerpt: Omit<InsertExcerpt, "userId">): Promise<Excerpt> {
+  async createExcerpt(
+    userId: string,
+    excerpt: Omit<InsertExcerpt, "userId">,
+  ): Promise<Excerpt> {
     try {
       const [result] = await db
         .insert(excerpts)
@@ -10214,7 +10862,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateExcerpt(userId: string, excerptId: string, updates: Partial<Omit<InsertExcerpt, "userId" | "id">>): Promise<Excerpt> {
+  async updateExcerpt(
+    userId: string,
+    excerptId: string,
+    updates: Partial<Omit<InsertExcerpt, "userId" | "id">>,
+  ): Promise<Excerpt> {
     try {
       const [result] = await db
         .update(excerpts)
@@ -10226,11 +10878,11 @@ export class DatabaseStorage implements IStorage {
         })
         .where(and(eq(excerpts.userId, userId), eq(excerpts.id, excerptId)))
         .returning();
-      
+
       if (!result) {
         throw new Error("Excerpt not found");
       }
-      
+
       return result;
     } catch (error) {
       console.error("Error updating excerpt:", error);
@@ -10249,14 +10901,20 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async setActiveExcerpt(userId: string, contentId: string, excerptId: string): Promise<void> {
+  async setActiveExcerpt(
+    userId: string,
+    contentId: string,
+    excerptId: string,
+  ): Promise<void> {
     try {
       // First, deactivate all excerpts for this content
       await db
         .update(excerpts)
         .set({ isActive: false })
-        .where(and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)));
-      
+        .where(
+          and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)),
+        );
+
       // Then activate the selected excerpt
       await db
         .update(excerpts)
@@ -10268,15 +10926,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async recordExcerptPerformance(performance: InsertExcerptPerformance): Promise<ExcerptPerformance> {
+  async recordExcerptPerformance(
+    performance: InsertExcerptPerformance,
+  ): Promise<ExcerptPerformance> {
     try {
       // Calculate derived metrics
-      const ctr = performance.views && performance.views > 0 
-        ? performance.clicks! / performance.views : 0;
-      const shareRate = performance.views && performance.views > 0 
-        ? (performance.shares || 0) / performance.views : 0;
-      const engagementRate = performance.views && performance.views > 0 
-        ? (performance.engagements || 0) / performance.views : 0;
+      const ctr =
+        performance.views && performance.views > 0
+          ? performance.clicks! / performance.views
+          : 0;
+      const shareRate =
+        performance.views && performance.views > 0
+          ? (performance.shares || 0) / performance.views
+          : 0;
+      const engagementRate =
+        performance.views && performance.views > 0
+          ? (performance.engagements || 0) / performance.views
+          : 0;
 
       const [result] = await db
         .insert(excerptPerformance)
@@ -10311,15 +10977,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getExcerptPerformance(excerptId: string, startDate?: Date, endDate?: Date): Promise<ExcerptPerformance[]> {
+  async getExcerptPerformance(
+    excerptId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<ExcerptPerformance[]> {
     try {
       const conditions = [eq(excerptPerformance.excerptId, excerptId)];
-      
+
       if (startDate) {
-        conditions.push(gte(excerptPerformance.date, startDate.toISOString().split('T')[0]));
+        conditions.push(
+          gte(excerptPerformance.date, startDate.toISOString().split("T")[0]),
+        );
       }
       if (endDate) {
-        conditions.push(lte(excerptPerformance.date, endDate.toISOString().split('T')[0]));
+        conditions.push(
+          lte(excerptPerformance.date, endDate.toISOString().split("T")[0]),
+        );
       }
 
       return await db
@@ -10359,12 +11033,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getBestExcerpt(userId: string, contentId: string): Promise<Excerpt | undefined> {
+  async getBestExcerpt(
+    userId: string,
+    contentId: string,
+  ): Promise<Excerpt | undefined> {
     try {
       const [result] = await db
         .select()
         .from(excerpts)
-        .where(and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)))
+        .where(
+          and(eq(excerpts.userId, userId), eq(excerpts.contentId, contentId)),
+        )
         .orderBy(desc(excerpts.clickThroughRate), desc(excerpts.isActive))
         .limit(1);
       return result;
@@ -10375,20 +11054,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Draft Operations ====================
-  
+
   async getDraftTemplates(contextType?: string): Promise<DraftTemplate[]> {
     try {
       if (contextType) {
         return await db
           .select()
           .from(draftTemplates)
-          .where(and(
-            eq(draftTemplates.isActive, true),
-            eq(draftTemplates.contextType, contextType)
-          ))
+          .where(
+            and(
+              eq(draftTemplates.isActive, true),
+              eq(draftTemplates.contextType, contextType),
+            ),
+          )
           .orderBy(desc(draftTemplates.usageCount));
       }
-      
+
       return await db
         .select()
         .from(draftTemplates)
@@ -10399,8 +11080,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get draft templates");
     }
   }
-  
-  async createDraftTemplate(template: InsertDraftTemplate): Promise<DraftTemplate> {
+
+  async createDraftTemplate(
+    template: InsertDraftTemplate,
+  ): Promise<DraftTemplate> {
     try {
       const [result] = await db
         .insert(draftTemplates)
@@ -10412,14 +11095,14 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create draft template");
     }
   }
-  
+
   async incrementTemplateUsage(templateId: string): Promise<void> {
     try {
       await db
         .update(draftTemplates)
-        .set({ 
+        .set({
           usageCount: sql`${draftTemplates.usageCount} + 1`,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(draftTemplates.id, templateId));
     } catch (error) {
@@ -10427,15 +11110,18 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to increment template usage");
     }
   }
-  
-  async createGeneratedDraft(userId: string, draft: Omit<InsertGeneratedDraft, "userId">): Promise<GeneratedDraft> {
+
+  async createGeneratedDraft(
+    userId: string,
+    draft: Omit<InsertGeneratedDraft, "userId">,
+  ): Promise<GeneratedDraft> {
     try {
       const [result] = await db
         .insert(generatedDrafts)
         .values({
           ...draft,
           userId,
-          metadata: draft.metadata as any
+          metadata: draft.metadata as any,
         })
         .returning();
       return result;
@@ -10444,20 +11130,25 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create generated draft");
     }
   }
-  
-  async getGeneratedDrafts(userId: string, originalMessageId?: string): Promise<GeneratedDraft[]> {
+
+  async getGeneratedDrafts(
+    userId: string,
+    originalMessageId?: string,
+  ): Promise<GeneratedDraft[]> {
     try {
       if (originalMessageId) {
         return await db
           .select()
           .from(generatedDrafts)
-          .where(and(
-            eq(generatedDrafts.userId, userId),
-            eq(generatedDrafts.originalMessageId, originalMessageId)
-          ))
+          .where(
+            and(
+              eq(generatedDrafts.userId, userId),
+              eq(generatedDrafts.originalMessageId, originalMessageId),
+            ),
+          )
           .orderBy(desc(generatedDrafts.createdAt));
       }
-      
+
       return await db
         .select()
         .from(generatedDrafts)
@@ -10468,70 +11159,84 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get generated drafts");
     }
   }
-  
-  async updateGeneratedDraft(userId: string, draftId: string, updates: Partial<Omit<InsertGeneratedDraft, "userId" | "id">>): Promise<GeneratedDraft> {
+
+  async updateGeneratedDraft(
+    userId: string,
+    draftId: string,
+    updates: Partial<Omit<InsertGeneratedDraft, "userId" | "id">>,
+  ): Promise<GeneratedDraft> {
     try {
       const [result] = await db
         .update(generatedDrafts)
         .set({
           ...updates,
           updatedAt: new Date(),
-          metadata: updates.metadata as any
+          metadata: updates.metadata as any,
         })
-        .where(and(
-          eq(generatedDrafts.userId, userId),
-          eq(generatedDrafts.id, draftId)
-        ))
+        .where(
+          and(
+            eq(generatedDrafts.userId, userId),
+            eq(generatedDrafts.id, draftId),
+          ),
+        )
         .returning();
-      
+
       if (!result) {
         throw new Error("Draft not found");
       }
-      
+
       return result;
     } catch (error) {
       console.error("Error updating generated draft:", error);
       throw new Error("Failed to update generated draft");
     }
   }
-  
+
   async markDraftSelected(userId: string, draftId: string): Promise<void> {
     try {
       await db
         .update(generatedDrafts)
-        .set({ 
+        .set({
           selected: true,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
-        .where(and(
-          eq(generatedDrafts.userId, userId),
-          eq(generatedDrafts.id, draftId)
-        ));
+        .where(
+          and(
+            eq(generatedDrafts.userId, userId),
+            eq(generatedDrafts.id, draftId),
+          ),
+        );
     } catch (error) {
       console.error("Error marking draft as selected:", error);
       throw new Error("Failed to mark draft as selected");
     }
   }
-  
-  async markDraftEdited(userId: string, draftId: string, editedContent: string): Promise<void> {
+
+  async markDraftEdited(
+    userId: string,
+    draftId: string,
+    editedContent: string,
+  ): Promise<void> {
     try {
       await db
         .update(generatedDrafts)
-        .set({ 
+        .set({
           edited: true,
           editedContent,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
-        .where(and(
-          eq(generatedDrafts.userId, userId),
-          eq(generatedDrafts.id, draftId)
-        ));
+        .where(
+          and(
+            eq(generatedDrafts.userId, userId),
+            eq(generatedDrafts.id, draftId),
+          ),
+        );
     } catch (error) {
       console.error("Error marking draft as edited:", error);
       throw new Error("Failed to mark draft as edited");
     }
   }
-  
+
   async getUserDraftAnalytics(userId: string): Promise<{
     totalDrafts: number;
     selectedCount: number;
@@ -10543,25 +11248,25 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(generatedDrafts)
         .where(eq(generatedDrafts.userId, userId));
-      
+
       const toneDistribution = await db
         .select({
           tone: generatedDrafts.tone,
-          count: sql<number>`count(*)`
+          count: sql<number>`count(*)`,
         })
         .from(generatedDrafts)
         .where(eq(generatedDrafts.userId, userId))
         .groupBy(generatedDrafts.tone)
         .orderBy(desc(sql`count(*)`));
-      
+
       return {
         totalDrafts: drafts.length,
-        selectedCount: drafts.filter(d => d.selected).length,
-        editedCount: drafts.filter(d => d.edited).length,
-        toneDistribution: toneDistribution.map(td => ({
-          tone: td.tone || 'unknown',
-          count: Number(td.count)
-        }))
+        selectedCount: drafts.filter((d) => d.selected).length,
+        editedCount: drafts.filter((d) => d.edited).length,
+        toneDistribution: toneDistribution.map((td) => ({
+          tone: td.tone || "unknown",
+          count: Number(td.count),
+        })),
       };
     } catch (error) {
       console.error("Error getting draft analytics:", error);
@@ -10573,7 +11278,7 @@ export class DatabaseStorage implements IStorage {
 
   async createQueryLog(
     userId: string,
-    log: Omit<InsertQueryLog, "userId">
+    log: Omit<InsertQueryLog, "userId">,
   ): Promise<QueryLog> {
     try {
       const [result] = await db
@@ -10581,7 +11286,7 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...log,
           userId,
-          metadata: log.metadata as any // Cast metadata properly
+          metadata: log.metadata as any, // Cast metadata properly
         })
         .returning();
       return result;
@@ -10591,21 +11296,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getQueryLogs(
-    userId: string,
-    limit?: number
-  ): Promise<QueryLog[]> {
+  async getQueryLogs(userId: string, limit?: number): Promise<QueryLog[]> {
     try {
       const query = db
         .select()
         .from(queryLogs)
         .where(eq(queryLogs.userId, userId))
         .orderBy(desc(queryLogs.createdAt));
-      
+
       if (limit) {
         return await query.limit(limit);
       }
-      
+
       return await query;
     } catch (error) {
       console.error("Error getting query logs:", error);
@@ -10629,22 +11331,22 @@ export class DatabaseStorage implements IStorage {
   async saveQuery(
     userId: string,
     queryId: string,
-    savedName: string
+    savedName: string,
   ): Promise<QueryLog> {
     try {
       const [result] = await db
         .update(queryLogs)
         .set({
           isSaved: true,
-          savedName
+          savedName,
         })
         .where(and(eq(queryLogs.id, queryId), eq(queryLogs.userId, userId)))
         .returning();
-      
+
       if (!result) {
         throw new Error("Query not found");
       }
-      
+
       return result;
     } catch (error) {
       console.error("Error saving query:", error);
@@ -10654,7 +11356,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateQueryLog(
     queryId: string,
-    updates: Partial<QueryLog>
+    updates: Partial<QueryLog>,
   ): Promise<QueryLog> {
     try {
       const [result] = await db
@@ -10662,11 +11364,11 @@ export class DatabaseStorage implements IStorage {
         .set(updates)
         .where(eq(queryLogs.id, queryId))
         .returning();
-      
+
       if (!result) {
         throw new Error("Query log not found");
       }
-      
+
       return result;
     } catch (error) {
       console.error("Error updating query log:", error);
@@ -10676,7 +11378,7 @@ export class DatabaseStorage implements IStorage {
 
   async getQueryLog(
     userId: string,
-    queryId: string
+    queryId: string,
   ): Promise<QueryLog | undefined> {
     try {
       const [result] = await db
@@ -10694,8 +11396,11 @@ export class DatabaseStorage implements IStorage {
   // ============================================================================
   // Sentiment Analysis Implementations (see earlier implementation)
   // ============================================================================
-  
-  async updateSentimentAnalysis(id: string, data: Partial<InsertSentimentAnalysis>): Promise<void> {
+
+  async updateSentimentAnalysis(
+    id: string,
+    data: Partial<InsertSentimentAnalysis>,
+  ): Promise<void> {
     try {
       await db
         .update(sentimentAnalysis)
@@ -10706,8 +11411,11 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to update sentiment analysis");
     }
   }
-  
-  async getSentimentAnalysesByType(contentType: string, limit: number = 50): Promise<SentimentAnalysis[]> {
+
+  async getSentimentAnalysesByType(
+    contentType: string,
+    limit: number = 50,
+  ): Promise<SentimentAnalysis[]> {
     try {
       const analyses = await db
         .select()
@@ -10721,8 +11429,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to get sentiment analyses by type");
     }
   }
-  
-  async createSentimentTrend(trend: InsertSentimentTrend): Promise<SentimentTrend> {
+
+  async createSentimentTrend(
+    trend: InsertSentimentTrend,
+  ): Promise<SentimentTrend> {
     try {
       const [result] = await db
         .insert(sentimentTrends)
@@ -10734,45 +11444,45 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to create sentiment trend");
     }
   }
-  
+
   async getSentimentTrends(
     userId: string | null,
-    periodType?: 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year',
-    limit: number = 30
+    periodType?: "hour" | "day" | "week" | "month" | "quarter" | "year",
+    limit: number = 30,
   ): Promise<SentimentTrend[]> {
     try {
       const conditions = [];
-      
+
       // Filter by userId (null for global trends)
       if (userId !== null) {
         conditions.push(eq(sentimentTrends.userId, userId));
       } else {
         conditions.push(isNull(sentimentTrends.userId));
       }
-      
+
       // Filter by period type if specified
       if (periodType) {
         conditions.push(eq(sentimentTrends.periodType, periodType));
       }
-      
+
       const trends = await db
         .select()
         .from(sentimentTrends)
         .where(and(...conditions))
         .orderBy(desc(sentimentTrends.timePeriod))
         .limit(limit);
-      
+
       return trends;
     } catch (error) {
       console.error("Error getting sentiment trends:", error);
       throw new Error("Failed to get sentiment trends");
     }
   }
-  
+
   async getSentimentInsights(
     userId?: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{
     overallSentiment: number;
     sentimentDistribution: {
@@ -10805,40 +11515,46 @@ export class DatabaseStorage implements IStorage {
       if (endDate) {
         conditions.push(lte(sentimentAnalysis.analyzedAt, endDate));
       }
-      
-      const analyses = conditions.length > 0
-        ? await db.select().from(sentimentAnalysis).where(and(...conditions))
-        : await db.select().from(sentimentAnalysis);
-      
+
+      const analyses =
+        conditions.length > 0
+          ? await db
+              .select()
+              .from(sentimentAnalysis)
+              .where(and(...conditions))
+          : await db.select().from(sentimentAnalysis);
+
       // Calculate overall sentiment (-1 to 1 scale)
       let sentimentSum = 0;
       const sentimentCounts = {
         positive: 0,
         negative: 0,
         neutral: 0,
-        mixed: 0
+        mixed: 0,
       };
-      
+
       // Track emotions
-      const emotionData: { [key: string]: { count: number; totalIntensity: number } } = {};
-      
+      const emotionData: {
+        [key: string]: { count: number; totalIntensity: number };
+      } = {};
+
       // Track topics
       const topicCounts: { [key: string]: number } = {};
-      
+
       // Process each analysis
       analyses.forEach((analysis: any) => {
         // Count sentiments
         sentimentCounts[analysis.sentiment as keyof typeof sentimentCounts]++;
-        
+
         // Calculate sentiment score
-        if (analysis.sentiment === 'positive') sentimentSum += 1;
-        else if (analysis.sentiment === 'negative') sentimentSum -= 1;
-        else if (analysis.sentiment === 'mixed') sentimentSum += 0;
-        
+        if (analysis.sentiment === "positive") sentimentSum += 1;
+        else if (analysis.sentiment === "negative") sentimentSum -= 1;
+        else if (analysis.sentiment === "mixed") sentimentSum += 0;
+
         // Process emotions
         if (analysis.emotions) {
           Object.entries(analysis.emotions).forEach(([emotion, intensity]) => {
-            if (typeof intensity === 'number' && intensity > 0) {
+            if (typeof intensity === "number" && intensity > 0) {
               if (!emotionData[emotion]) {
                 emotionData[emotion] = { count: 0, totalIntensity: 0 };
               }
@@ -10847,7 +11563,7 @@ export class DatabaseStorage implements IStorage {
             }
           });
         }
-        
+
         // Process topics
         if (analysis.topics && Array.isArray(analysis.topics)) {
           analysis.topics.forEach((topic: string) => {
@@ -10855,78 +11571,86 @@ export class DatabaseStorage implements IStorage {
           });
         }
       });
-      
+
       // Calculate overall sentiment
-      const overallSentiment = analyses.length > 0 ? sentimentSum / analyses.length : 0;
-      
+      const overallSentiment =
+        analyses.length > 0 ? sentimentSum / analyses.length : 0;
+
       // Calculate sentiment distribution percentages
       const total = analyses.length || 1;
       const sentimentDistribution = {
         positive: (sentimentCounts.positive / total) * 100,
         negative: (sentimentCounts.negative / total) * 100,
         neutral: (sentimentCounts.neutral / total) * 100,
-        mixed: (sentimentCounts.mixed / total) * 100
+        mixed: (sentimentCounts.mixed / total) * 100,
       };
-      
+
       // Calculate top emotions
       const topEmotions = Object.entries(emotionData)
         .map(([emotion, data]) => ({
           emotion,
           count: data.count,
-          avgIntensity: data.totalIntensity / data.count
+          avgIntensity: data.totalIntensity / data.count,
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
-      
+
       // Get top topics
       const topTopics = Object.entries(topicCounts)
         .sort(([, a], [, b]) => b - a)
         .slice(0, 10)
         .map(([topic]) => topic);
-      
+
       // Get trends over time (simplified - in production, would aggregate by period)
-      const recentTrends = await this.getSentimentTrends(userId || null, 'day', 7);
-      const trendsOverTime = recentTrends.map(trend => ({
+      const recentTrends = await this.getSentimentTrends(
+        userId || null,
+        "day",
+        7,
+      );
+      const trendsOverTime = recentTrends.map((trend) => ({
         period: trend.timePeriod,
         avgSentiment: trend.avgSentiment,
-        count: trend.totalAnalyzed
+        count: trend.totalAnalyzed,
       }));
-      
+
       return {
         overallSentiment,
         sentimentDistribution,
         topEmotions,
         topTopics,
-        trendsOverTime
+        trendsOverTime,
       };
     } catch (error) {
       console.error("Error getting sentiment insights:", error);
       throw new Error("Failed to get sentiment insights");
     }
   }
-  
+
   // ============================================================================
   // Auto-Save Methods
   // ============================================================================
-  
+
   async saveDraft(draft: InsertAutoSaveDraft): Promise<AutoSaveDraft> {
     try {
       // Get the latest version for this document to increment
-      const latestDraft = await this.getLatestDraft(draft.userId, draft.documentId);
-      const nextVersion = latestDraft ? (latestDraft.version + 1) : 1;
-      
+      const latestDraft = await this.getLatestDraft(
+        draft.userId,
+        draft.documentId,
+      );
+      const nextVersion = latestDraft ? latestDraft.version + 1 : 1;
+
       // Calculate content hash for duplicate detection
-      const crypto = await import('crypto');
+      const crypto = await import("crypto");
       const contentHash = crypto
-        .createHash('sha256')
+        .createHash("sha256")
         .update(draft.content)
-        .digest('hex');
-      
+        .digest("hex");
+
       // Skip saving if content hasn't changed
       if (latestDraft && latestDraft.contentHash === contentHash) {
         return latestDraft;
       }
-      
+
       // Save the draft with incremented version
       const [savedDraft] = await db
         .insert(autoSaveDrafts)
@@ -10936,32 +11660,36 @@ export class DatabaseStorage implements IStorage {
           contentHash,
         } as any)
         .returning();
-      
+
       // Clean up old versions (keep only last 10)
-      const allVersions = await this.getDraftVersions(draft.userId, draft.documentId);
+      const allVersions = await this.getDraftVersions(
+        draft.userId,
+        draft.documentId,
+      );
       if (allVersions.length > 10) {
-        const versionsToDelete = allVersions
-          .slice(10)
-          .map(v => v.id);
-        
+        const versionsToDelete = allVersions.slice(10).map((v) => v.id);
+
         await db
           .delete(autoSaveDrafts)
           .where(
             and(
               eq(autoSaveDrafts.userId, draft.userId),
-              sql`${autoSaveDrafts.id} = ANY(${versionsToDelete})`
-            )
+              sql`${autoSaveDrafts.id} = ANY(${versionsToDelete})`,
+            ),
           );
       }
-      
+
       return savedDraft;
     } catch (error) {
       console.error("Error saving draft:", error);
       throw new Error("Failed to save draft");
     }
   }
-  
-  async getLatestDraft(userId: string, documentId: string): Promise<AutoSaveDraft | undefined> {
+
+  async getLatestDraft(
+    userId: string,
+    documentId: string,
+  ): Promise<AutoSaveDraft | undefined> {
     try {
       const [draft] = await db
         .select()
@@ -10969,20 +11697,24 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(autoSaveDrafts.userId, userId),
-            eq(autoSaveDrafts.documentId, documentId)
-          )
+            eq(autoSaveDrafts.documentId, documentId),
+          ),
         )
         .orderBy(desc(autoSaveDrafts.version))
         .limit(1);
-      
+
       return draft;
     } catch (error) {
       console.error("Error getting latest draft:", error);
       throw new Error("Failed to get latest draft");
     }
   }
-  
-  async getDraftVersions(userId: string, documentId: string, limit = 10): Promise<AutoSaveDraft[]> {
+
+  async getDraftVersions(
+    userId: string,
+    documentId: string,
+    limit = 10,
+  ): Promise<AutoSaveDraft[]> {
     try {
       const drafts = await db
         .select()
@@ -10990,19 +11722,19 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(autoSaveDrafts.userId, userId),
-            eq(autoSaveDrafts.documentId, documentId)
-          )
+            eq(autoSaveDrafts.documentId, documentId),
+          ),
         )
         .orderBy(desc(autoSaveDrafts.version))
         .limit(limit);
-      
+
       return drafts;
     } catch (error) {
       console.error("Error getting draft versions:", error);
       throw new Error("Failed to get draft versions");
     }
   }
-  
+
   async deleteDraft(userId: string, draftId: string): Promise<void> {
     try {
       await db
@@ -11010,57 +11742,56 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(autoSaveDrafts.id, draftId),
-            eq(autoSaveDrafts.userId, userId)
-          )
+            eq(autoSaveDrafts.userId, userId),
+          ),
         );
     } catch (error) {
       console.error("Error deleting draft:", error);
       throw new Error("Failed to delete draft");
     }
   }
-  
-  async deleteDocumentDrafts(userId: string, documentId: string): Promise<void> {
+
+  async deleteDocumentDrafts(
+    userId: string,
+    documentId: string,
+  ): Promise<void> {
     try {
       await db
         .delete(autoSaveDrafts)
         .where(
           and(
             eq(autoSaveDrafts.userId, userId),
-            eq(autoSaveDrafts.documentId, documentId)
-          )
+            eq(autoSaveDrafts.documentId, documentId),
+          ),
         );
     } catch (error) {
       console.error("Error deleting document drafts:", error);
       throw new Error("Failed to delete document drafts");
     }
   }
-  
+
   async cleanupOldDrafts(userId?: string): Promise<number> {
     try {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const conditions = [
-        lte(autoSaveDrafts.savedAt, thirtyDaysAgo)
-      ];
-      
+
+      const conditions = [lte(autoSaveDrafts.savedAt, thirtyDaysAgo)];
+
       if (userId) {
         conditions.push(eq(autoSaveDrafts.userId, userId));
       }
-      
+
       // Get drafts to be deleted first to count them
       const draftsToDelete = await db
         .select({ id: autoSaveDrafts.id })
         .from(autoSaveDrafts)
         .where(and(...conditions));
-      
+
       // Delete the drafts if any exist
       if (draftsToDelete.length > 0) {
-        await db
-          .delete(autoSaveDrafts)
-          .where(and(...conditions));
+        await db.delete(autoSaveDrafts).where(and(...conditions));
       }
-      
+
       // Return count of deleted rows
       return draftsToDelete.length;
     } catch (error) {
@@ -11068,14 +11799,14 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to clean up old drafts");
     }
   }
-  
+
   async getUserSavePatterns(userId: string): Promise<SavePattern> {
     try {
       const [pattern] = await db
         .select()
         .from(savePatterns)
         .where(eq(savePatterns.userId, userId));
-      
+
       if (!pattern) {
         // Create default pattern for new user
         const [newPattern] = await db
@@ -11091,20 +11822,20 @@ export class DatabaseStorage implements IStorage {
             totalSessions: 0,
           })
           .returning();
-        
+
         return newPattern;
       }
-      
+
       return pattern;
     } catch (error) {
       console.error("Error getting user save patterns:", error);
       throw new Error("Failed to get user save patterns");
     }
   }
-  
+
   async updateUserSavePatterns(
     userId: string,
-    patterns: Partial<InsertSavePattern>
+    patterns: Partial<InsertSavePattern>,
   ): Promise<SavePattern> {
     try {
       const [updatedPattern] = await db
@@ -11115,14 +11846,14 @@ export class DatabaseStorage implements IStorage {
         } as any)
         .where(eq(savePatterns.userId, userId))
         .returning();
-      
+
       return updatedPattern;
     } catch (error) {
       console.error("Error updating user save patterns:", error);
       throw new Error("Failed to update user save patterns");
     }
   }
-  
+
   async recordTypingEvent(
     userId: string,
     event: {
@@ -11132,12 +11863,12 @@ export class DatabaseStorage implements IStorage {
       isSentenceEnd?: boolean;
       isParagraphEnd?: boolean;
       wasManualSave?: boolean;
-    }
+    },
   ): Promise<void> {
     try {
       // Get current patterns
       const patterns = await this.getUserSavePatterns(userId);
-      
+
       // Update pattern data with new event
       const patternData = patterns.patternData || {
         pauseHistogram: [],
@@ -11146,7 +11877,7 @@ export class DatabaseStorage implements IStorage {
         timeOfDayPreferences: {},
         contentTypePatterns: {},
       };
-      
+
       // Add event data to pattern history
       if (event.pauseDuration !== undefined && patternData.pauseHistogram) {
         patternData.pauseHistogram.push(event.pauseDuration);
@@ -11155,25 +11886,31 @@ export class DatabaseStorage implements IStorage {
           patternData.pauseHistogram = patternData.pauseHistogram.slice(-1000);
         }
       }
-      
+
       if (event.keyInterval !== undefined && patternData.keystrokeIntervals) {
         patternData.keystrokeIntervals.push(event.keyInterval);
         if (patternData.keystrokeIntervals.length > 1000) {
-          patternData.keystrokeIntervals = patternData.keystrokeIntervals.slice(-1000);
+          patternData.keystrokeIntervals =
+            patternData.keystrokeIntervals.slice(-1000);
         }
       }
-      
+
       if (event.burstLength !== undefined && patternData.burstLengths) {
         patternData.burstLengths.push(event.burstLength);
         if (patternData.burstLengths.length > 1000) {
           patternData.burstLengths = patternData.burstLengths.slice(-1000);
         }
       }
-      
+
       // Update patterns if we have enough data
-      if (patternData.pauseHistogram && patternData.pauseHistogram.length > 100) {
-        const avgPause = patternData.pauseHistogram.reduce((a, b) => a + b, 0) / patternData.pauseHistogram.length;
-        
+      if (
+        patternData.pauseHistogram &&
+        patternData.pauseHistogram.length > 100
+      ) {
+        const avgPause =
+          patternData.pauseHistogram.reduce((a, b) => a + b, 0) /
+          patternData.pauseHistogram.length;
+
         await this.updateUserSavePatterns(userId, {
           avgPauseDuration: avgPause,
           patternData,
@@ -11185,24 +11922,24 @@ export class DatabaseStorage implements IStorage {
       // Don't throw - this is a background operation
     }
   }
-  
+
   async checkForConflicts(
     userId: string,
     documentId: string,
-    contentHash: string
+    contentHash: string,
   ): Promise<{
     hasConflict: boolean;
     latestVersion?: AutoSaveDraft;
   }> {
     try {
       const latestDraft = await this.getLatestDraft(userId, documentId);
-      
+
       if (!latestDraft) {
         return { hasConflict: false };
       }
-      
+
       const hasConflict = latestDraft.contentHash !== contentHash;
-      
+
       return {
         hasConflict,
         latestVersion: hasConflict ? latestDraft : undefined,
@@ -11214,16 +11951,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Form Completion Implementation ====================
-  
+
   async getFieldSuggestions(
     fieldName: string,
     query: string,
-    userId?: string
+    userId?: string,
   ): Promise<string[]> {
     try {
       const suggestions: string[] = [];
       const normalizedQuery = query.toLowerCase();
-      
+
       // First, get user's personal history if userId provided
       if (userId) {
         const userHistory = await db
@@ -11232,62 +11969,73 @@ export class DatabaseStorage implements IStorage {
           .where(
             and(
               eq(userFormHistory.userId, userId),
-              eq(userFormHistory.fieldName, fieldName)
-            )
+              eq(userFormHistory.fieldName, fieldName),
+            ),
           )
           .limit(1);
-          
+
         if (userHistory.length > 0 && userHistory[0].valuesUsed) {
-          const sortedValues = (userHistory[0].valuesUsed as Array<{value: string; count: number}>)
-            .filter(v => v.value.toLowerCase().startsWith(normalizedQuery))
+          const sortedValues = (
+            userHistory[0].valuesUsed as Array<{ value: string; count: number }>
+          )
+            .filter((v) => v.value.toLowerCase().startsWith(normalizedQuery))
             .sort((a, b) => b.count - a.count)
             .slice(0, 5)
-            .map(v => v.value);
+            .map((v) => v.value);
           suggestions.push(...sortedValues);
         }
       }
-      
+
       // Then add global suggestions
       const globalCompletions = await db
         .select()
         .from(formCompletions)
         .where(eq(formCompletions.fieldName, fieldName))
         .limit(1);
-        
+
       if (globalCompletions.length > 0 && globalCompletions[0].commonValues) {
-        const globalValues = (globalCompletions[0].commonValues as Array<{value: string; count: number}>)
-          .filter(v => !suggestions.includes(v.value) && v.value.toLowerCase().startsWith(normalizedQuery))
+        const globalValues = (
+          globalCompletions[0].commonValues as Array<{
+            value: string;
+            count: number;
+          }>
+        )
+          .filter(
+            (v) =>
+              !suggestions.includes(v.value) &&
+              v.value.toLowerCase().startsWith(normalizedQuery),
+          )
           .sort((a, b) => b.count - a.count)
           .slice(0, 10 - suggestions.length)
-          .map(v => v.value);
+          .map((v) => v.value);
         suggestions.push(...globalValues);
       }
-      
+
       return suggestions;
     } catch (error) {
       console.error("Error getting field suggestions:", error);
       return [];
     }
   }
-  
+
   async getContextualSuggestions(
     fieldName: string,
     context: Record<string, any>,
-    userId?: string
+    userId?: string,
   ): Promise<string[]> {
     try {
       const suggestions: string[] = [];
-      
+
       // Get form completion data
       const completion = await this.getFormCompletion(fieldName);
-      
+
       if (completion?.contextRules) {
         const rules = completion.contextRules as Array<{
           condition: string;
           suggestions: string[];
           priority: number;
         }>;
-        
+
         // Evaluate context rules
         for (const rule of rules.sort((a, b) => b.priority - a.priority)) {
           // Simple condition evaluation (e.g., "if field:country = 'USA'")
@@ -11301,25 +12049,31 @@ export class DatabaseStorage implements IStorage {
           }
         }
       }
-      
+
       // Add user history if available
       if (userId && suggestions.length < 10) {
-        const personalSuggestions = await this.getFieldSuggestions(fieldName, '', userId);
-        suggestions.push(...personalSuggestions.slice(0, 10 - suggestions.length));
+        const personalSuggestions = await this.getFieldSuggestions(
+          fieldName,
+          "",
+          userId,
+        );
+        suggestions.push(
+          ...personalSuggestions.slice(0, 10 - suggestions.length),
+        );
       }
-      
+
       return suggestions;
     } catch (error) {
       console.error("Error getting contextual suggestions:", error);
       return [];
     }
   }
-  
+
   async recordFormInput(
     userId: string,
     fieldName: string,
     value: string,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): Promise<void> {
     try {
       // Update user's personal history
@@ -11329,19 +12083,26 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(userFormHistory.userId, userId),
-            eq(userFormHistory.fieldName, fieldName)
-          )
+            eq(userFormHistory.fieldName, fieldName),
+          ),
         )
         .limit(1);
-        
+
       const now = new Date().toISOString();
-      
+
       if (existingHistory.length > 0) {
         const history = existingHistory[0];
-        let valuesUsed = (history.valuesUsed || []) as Array<{value: string; count: number; lastUsed: string; context?: any}>;
-        
-        const existingValueIndex = valuesUsed.findIndex(v => v.value === value);
-        
+        let valuesUsed = (history.valuesUsed || []) as Array<{
+          value: string;
+          count: number;
+          lastUsed: string;
+          context?: any;
+        }>;
+
+        const existingValueIndex = valuesUsed.findIndex(
+          (v) => v.value === value,
+        );
+
         if (existingValueIndex >= 0) {
           valuesUsed[existingValueIndex].count++;
           valuesUsed[existingValueIndex].lastUsed = now;
@@ -11351,87 +12112,84 @@ export class DatabaseStorage implements IStorage {
             value,
             count: 1,
             lastUsed: now,
-            context
+            context,
           });
         }
-        
+
         // Keep only top 50 values
-        valuesUsed = valuesUsed
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 50);
-          
+        valuesUsed = valuesUsed.sort((a, b) => b.count - a.count).slice(0, 50);
+
         // Update frequency map
         const frequencyMap: Record<string, number> = {};
         for (const v of valuesUsed) {
           frequencyMap[v.value] = v.count;
         }
-        
+
         await db
           .update(userFormHistory)
           .set({
             valuesUsed,
             frequencyMap,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(userFormHistory.id, history.id));
       } else {
         // Create new history
-        await db
-          .insert(userFormHistory)
-          .values({
-            userId,
-            fieldName,
-            valuesUsed: [{
+        await db.insert(userFormHistory).values({
+          userId,
+          fieldName,
+          valuesUsed: [
+            {
               value,
               count: 1,
               lastUsed: now,
-              context
-            }],
-            frequencyMap: { [value]: 1 },
-            preferences: {
-              autoFillEnabled: true,
-              rememberValues: true,
-              suggestSimilar: true
-            }
-          });
+              context,
+            },
+          ],
+          frequencyMap: { [value]: 1 },
+          preferences: {
+            autoFillEnabled: true,
+            rememberValues: true,
+            suggestSimilar: true,
+          },
+        });
       }
-      
+
       // Update global statistics (async, don't await)
       this.updateFormCompletionStats(fieldName).catch(console.error);
-      
     } catch (error) {
       console.error("Error recording form input:", error);
       // Don't throw - this is a background operation
     }
   }
-  
+
   async recordCompletionFeedback(
-    feedback: InsertCompletionFeedback
+    feedback: InsertCompletionFeedback,
   ): Promise<CompletionFeedback> {
     try {
       const result = await db
         .insert(completionFeedback)
         .values(feedback as any)
         .returning();
-      
+
       return result[0];
     } catch (error) {
       console.error("Error recording completion feedback:", error);
       throw error;
     }
   }
-  
+
   async getUserFormHistory(
     userId: string,
-    fieldName?: string
+    fieldName?: string,
   ): Promise<UserFormHistory[]> {
     try {
       const conditions = [eq(userFormHistory.userId, userId)];
-      
+
       if (fieldName) {
         conditions.push(eq(userFormHistory.fieldName, fieldName));
       }
-      
+
       return await db
         .select()
         .from(userFormHistory)
@@ -11442,7 +12200,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async clearUserFormHistory(userId: string): Promise<void> {
     try {
       await db
@@ -11453,7 +12211,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async updateFormCompletionStats(fieldName: string): Promise<void> {
     try {
       // Get existing completion data
@@ -11462,34 +12220,36 @@ export class DatabaseStorage implements IStorage {
         .from(formCompletions)
         .where(eq(formCompletions.fieldName, fieldName))
         .limit(1);
-        
+
       if (existing.length > 0) {
         // Update usage count
         await db
           .update(formCompletions)
           .set({
             globalUsageCount: sql`${formCompletions.globalUsageCount} + 1`,
-            lastUpdated: new Date()
+            lastUpdated: new Date(),
           })
           .where(eq(formCompletions.fieldName, fieldName));
       } else {
         // Create new entry
-        await db
-          .insert(formCompletions)
-          .values({
-            fieldName,
-            fieldType: fieldName.includes('email') ? 'email' : 
-                       fieldName.includes('phone') ? 'tel' :
-                       fieldName.includes('address') ? 'address' : 'text',
-            globalUsageCount: 1
-          });
+        await db.insert(formCompletions).values({
+          fieldName,
+          fieldType: fieldName.includes("email")
+            ? "email"
+            : fieldName.includes("phone")
+              ? "tel"
+              : fieldName.includes("address")
+                ? "address"
+                : "text",
+          globalUsageCount: 1,
+        });
       }
     } catch (error) {
       console.error("Error updating form completion stats:", error);
       // Don't throw - this is a background operation
     }
   }
-  
+
   async getFormCompletion(fieldName: string): Promise<FormCompletion | null> {
     try {
       const result = await db
@@ -11497,7 +12257,7 @@ export class DatabaseStorage implements IStorage {
         .from(formCompletions)
         .where(eq(formCompletions.fieldName, fieldName))
         .limit(1);
-        
+
       return result.length > 0 ? result[0] : null;
     } catch (error) {
       console.error("Error getting form completion:", error);
@@ -11506,12 +12266,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Analytics Insights Implementation ====================
-  
-  async createAnalyticsInsight(insight: InsertAnalyticsInsight): Promise<AnalyticsInsight> {
+
+  async createAnalyticsInsight(
+    insight: InsertAnalyticsInsight,
+  ): Promise<AnalyticsInsight> {
     try {
       const [newInsight] = await db
         .insert(analyticsInsights)
-        .values(insight)
+        .values(insight as any)
         .returning();
       return newInsight;
     } catch (error) {
@@ -11519,7 +12281,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getAnalyticsInsights(
     userId: string,
     filters?: {
@@ -11529,11 +12291,11 @@ export class DatabaseStorage implements IStorage {
       importance?: number;
       isRead?: boolean;
       limit?: number;
-    }
+    },
   ): Promise<AnalyticsInsight[]> {
     try {
       const conditions = [eq(analyticsInsights.userId, userId)];
-      
+
       if (filters?.metricName) {
         conditions.push(eq(analyticsInsights.metricName, filters.metricName));
       }
@@ -11549,32 +12311,35 @@ export class DatabaseStorage implements IStorage {
       if (filters?.isRead !== undefined) {
         conditions.push(eq(analyticsInsights.isRead, filters.isRead));
       }
-      
+
       let query = db
         .select()
         .from(analyticsInsights)
         .where(and(...conditions))
         .orderBy(desc(analyticsInsights.createdAt));
-      
+
       if (filters?.limit) {
         query = query.limit(filters.limit) as any;
       }
-      
+
       return await query;
     } catch (error) {
       console.error("Error getting analytics insights:", error);
       throw error;
     }
   }
-  
-  async getDailyInsightSummary(userId: string, date?: string): Promise<AnalyticsInsight[]> {
+
+  async getDailyInsightSummary(
+    userId: string,
+    date?: string,
+  ): Promise<AnalyticsInsight[]> {
     try {
-      const targetDate = date || new Date().toISOString().split('T')[0];
+      const targetDate = date || new Date().toISOString().split("T")[0];
       const startOfDay = new Date(targetDate);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(targetDate);
       endOfDay.setHours(23, 59, 59, 999);
-      
+
       return await db
         .select()
         .from(analyticsInsights)
@@ -11582,8 +12347,8 @@ export class DatabaseStorage implements IStorage {
           and(
             eq(analyticsInsights.userId, userId),
             gte(analyticsInsights.createdAt, startOfDay),
-            lte(analyticsInsights.createdAt, endOfDay)
-          )
+            lte(analyticsInsights.createdAt, endOfDay),
+          ),
         )
         .orderBy(desc(analyticsInsights.importance));
     } catch (error) {
@@ -11591,7 +12356,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async markInsightAsRead(userId: string, insightId: string): Promise<void> {
     try {
       await db
@@ -11600,41 +12365,45 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(analyticsInsights.id, insightId),
-            eq(analyticsInsights.userId, userId)
-          )
+            eq(analyticsInsights.userId, userId),
+          ),
         );
     } catch (error) {
       console.error("Error marking insight as read:", error);
       throw error;
     }
   }
-  
+
   async generateInsightsFromData(
     userId: string,
     metricData: {
       metricName: string;
       dataPoints: Array<{ date: string; value: number }>;
       period: string;
-    }
+    },
   ): Promise<AnalyticsInsight> {
     // This method will use OpenAI to generate insights
     // For now, returning a placeholder implementation
     // The actual implementation will be in the service layer
-    throw new Error("generateInsightsFromData should be implemented in the service layer");
+    throw new Error(
+      "generateInsightsFromData should be implemented in the service layer",
+    );
   }
-  
+
   async explainMetric(
     userId: string,
     metricName: string,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): Promise<string> {
     // This method will use OpenAI to explain metrics
     // For now, returning a placeholder implementation
     // The actual implementation will be in the service layer
     throw new Error("explainMetric should be implemented in the service layer");
   }
-  
-  async createInsightFeedback(feedback: InsertInsightFeedback): Promise<InsightFeedback> {
+
+  async createInsightFeedback(
+    feedback: InsertInsightFeedback,
+  ): Promise<InsightFeedback> {
     try {
       const [newFeedback] = await db
         .insert(insightFeedback)
@@ -11646,7 +12415,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getInsightFeedback(insightId: string): Promise<InsightFeedback[]> {
     try {
       return await db
@@ -11659,7 +12428,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getUserInsightFeedback(userId: string): Promise<InsightFeedback[]> {
     try {
       return await db
@@ -11672,15 +12441,19 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
-  async subscribeToInsights(userId: string, subscriptionType: string): Promise<void> {
+
+  async subscribeToInsights(
+    userId: string,
+    subscriptionType: string,
+  ): Promise<void> {
     try {
       // Update user preferences for insight subscriptions
       await db
         .update(users)
         .set({
-          notifyRecipeSuggestions: subscriptionType === 'all' || subscriptionType === 'important',
-          updatedAt: new Date()
+          notifyRecipeSuggestions:
+            subscriptionType === "all" || subscriptionType === "important",
+          updatedAt: new Date(),
         })
         .where(eq(users.id, userId));
     } catch (error) {
@@ -11688,7 +12461,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getUserInsightStats(userId: string): Promise<{
     totalInsights: number;
     unreadInsights: number;
@@ -11700,33 +12473,37 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(analyticsInsights)
         .where(eq(analyticsInsights.userId, userId));
-      
+
       const totalInsights = insights.length;
-      const unreadInsights = insights.filter(i => !i.isRead).length;
-      const averageImportance = insights.length > 0
-        ? insights.reduce((sum, i) => sum + i.importance, 0) / insights.length
-        : 0;
-      
+      const unreadInsights = insights.filter((i) => !i.isRead).length;
+      const averageImportance =
+        insights.length > 0
+          ? insights.reduce((sum, i) => sum + i.importance, 0) / insights.length
+          : 0;
+
       const insightsByCategory: Record<string, number> = {};
-      insights.forEach(i => {
-        insightsByCategory[i.category] = (insightsByCategory[i.category] || 0) + 1;
+      insights.forEach((i) => {
+        insightsByCategory[i.category] =
+          (insightsByCategory[i.category] || 0) + 1;
       });
-      
+
       return {
         totalInsights,
         unreadInsights,
         averageImportance,
-        insightsByCategory
+        insightsByCategory,
       };
     } catch (error) {
       console.error("Error getting user insight stats:", error);
       throw error;
     }
   }
-  
+
   // ==================== Prediction Operations Implementation ====================
-  
-  async createUserPrediction(prediction: InsertUserPrediction): Promise<UserPrediction> {
+
+  async createUserPrediction(
+    prediction: InsertUserPrediction,
+  ): Promise<UserPrediction> {
     try {
       const [newPrediction] = await db
         .insert(userPredictions)
@@ -11738,7 +12515,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getUserPredictions(
     userId: string,
     filters?: {
@@ -11746,43 +12523,52 @@ export class DatabaseStorage implements IStorage {
       status?: string;
       minProbability?: number;
       limit?: number;
-    }
+    },
   ): Promise<UserPrediction[]> {
     try {
       let query = db
         .select()
         .from(userPredictions)
         .where(eq(userPredictions.userId, userId));
-      
+
       const conditions: any[] = [eq(userPredictions.userId, userId)];
-      
+
       if (filters?.predictionType) {
-        conditions.push(eq(userPredictions.predictionType, filters.predictionType));
+        conditions.push(
+          eq(userPredictions.predictionType, filters.predictionType),
+        );
       }
-      
+
       if (filters?.status) {
         conditions.push(eq(userPredictions.status, filters.status));
       }
-      
+
       if (filters?.minProbability !== undefined) {
-        conditions.push(gte(userPredictions.probability, filters.minProbability));
+        conditions.push(
+          gte(userPredictions.probability, filters.minProbability),
+        );
       }
-      
+
       let results = await db
         .select()
         .from(userPredictions)
         .where(and(...conditions))
-        .orderBy(desc(userPredictions.probability), desc(userPredictions.createdAt))
+        .orderBy(
+          desc(userPredictions.probability),
+          desc(userPredictions.createdAt),
+        )
         .limit(filters?.limit || 100);
-      
+
       return results;
     } catch (error) {
       console.error("Error getting user predictions:", error);
       throw error;
     }
   }
-  
-  async getPredictionById(predictionId: string): Promise<UserPrediction | undefined> {
+
+  async getPredictionById(
+    predictionId: string,
+  ): Promise<UserPrediction | undefined> {
     try {
       const [prediction] = await db
         .select()
@@ -11794,22 +12580,22 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async updatePredictionStatus(
     predictionId: string,
     status: string,
-    interventionTaken?: string
+    interventionTaken?: string,
   ): Promise<void> {
     try {
       const updateData: any = {
         status,
-        ...(status !== 'pending' && { resolvedAt: new Date() })
+        ...(status !== "pending" && { resolvedAt: new Date() }),
       };
-      
+
       if (interventionTaken) {
         updateData.interventionTaken = interventionTaken;
       }
-      
+
       await db
         .update(userPredictions)
         .set(updateData)
@@ -11819,7 +12605,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getChurnRiskUsers(threshold: number = 0.7): Promise<UserPrediction[]> {
     try {
       return await db
@@ -11827,10 +12613,10 @@ export class DatabaseStorage implements IStorage {
         .from(userPredictions)
         .where(
           and(
-            eq(userPredictions.predictionType, 'churn_risk'),
-            eq(userPredictions.status, 'pending'),
-            gte(userPredictions.probability, threshold)
-          )
+            eq(userPredictions.predictionType, "churn_risk"),
+            eq(userPredictions.status, "pending"),
+            gte(userPredictions.probability, threshold),
+          ),
         )
         .orderBy(desc(userPredictions.probability));
     } catch (error) {
@@ -11838,8 +12624,10 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
-  async createPredictionAccuracy(accuracy: InsertPredictionAccuracy): Promise<PredictionAccuracy> {
+
+  async createPredictionAccuracy(
+    accuracy: InsertPredictionAccuracy,
+  ): Promise<PredictionAccuracy> {
     try {
       const [newAccuracy] = await db
         .insert(predictionAccuracy)
@@ -11851,7 +12639,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getPredictionAccuracy(filters?: {
     dateRange?: { start: Date; end: Date };
     predictionType?: string;
@@ -11863,21 +12651,22 @@ export class DatabaseStorage implements IStorage {
   }> {
     try {
       const conditions: any[] = [];
-      
+
       if (filters?.dateRange) {
         conditions.push(
           gte(predictionAccuracy.outcomeDate, filters.dateRange.start),
-          lte(predictionAccuracy.outcomeDate, filters.dateRange.end)
+          lte(predictionAccuracy.outcomeDate, filters.dateRange.end),
         );
       }
-      
-      const accuracyRecords = conditions.length > 0
-        ? await db
-            .select()
-            .from(predictionAccuracy)
-            .where(and(...conditions))
-        : await db.select().from(predictionAccuracy);
-      
+
+      const accuracyRecords =
+        conditions.length > 0
+          ? await db
+              .select()
+              .from(predictionAccuracy)
+              .where(and(...conditions))
+          : await db.select().from(predictionAccuracy);
+
       // Get predictions for type filtering
       const predictions = filters?.predictionType
         ? await db
@@ -11885,28 +12674,32 @@ export class DatabaseStorage implements IStorage {
             .from(userPredictions)
             .where(eq(userPredictions.predictionType, filters.predictionType))
         : await db.select().from(userPredictions);
-      
-      const predictionMap = new Map(predictions.map(p => [p.id, p]));
-      
+
+      const predictionMap = new Map(predictions.map((p) => [p.id, p]));
+
       // Filter accuracy records by prediction type if needed
       const filteredAccuracy = filters?.predictionType
-        ? accuracyRecords.filter(a => {
+        ? accuracyRecords.filter((a) => {
             const pred = predictionMap.get(a.predictionId);
             return pred?.predictionType === filters.predictionType;
           })
         : accuracyRecords;
-      
+
       const totalPredictions = filteredAccuracy.length;
-      const correctPredictions = filteredAccuracy.filter(a => a.accuracyScore >= 0.5).length;
-      const averageAccuracy = totalPredictions > 0
-        ? filteredAccuracy.reduce((sum, a) => sum + a.accuracyScore, 0) / totalPredictions
-        : 0;
-      
+      const correctPredictions = filteredAccuracy.filter(
+        (a) => a.accuracyScore >= 0.5,
+      ).length;
+      const averageAccuracy =
+        totalPredictions > 0
+          ? filteredAccuracy.reduce((sum, a) => sum + a.accuracyScore, 0) /
+            totalPredictions
+          : 0;
+
       // Calculate accuracy by type
       const accuracyByType: Record<string, number> = {};
       const typeGroups: Record<string, number[]> = {};
-      
-      filteredAccuracy.forEach(a => {
+
+      filteredAccuracy.forEach((a) => {
         const pred = predictionMap.get(a.predictionId);
         if (pred) {
           if (!typeGroups[pred.predictionType]) {
@@ -11915,16 +12708,17 @@ export class DatabaseStorage implements IStorage {
           typeGroups[pred.predictionType].push(a.accuracyScore);
         }
       });
-      
+
       Object.entries(typeGroups).forEach(([type, scores]) => {
-        accuracyByType[type] = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+        accuracyByType[type] =
+          scores.reduce((sum, s) => sum + s, 0) / scores.length;
       });
-      
+
       return {
         averageAccuracy,
         totalPredictions,
         correctPredictions,
-        accuracyByType
+        accuracyByType,
       };
     } catch (error) {
       console.error("Error getting prediction accuracy:", error);
@@ -11933,7 +12727,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Trend Detection Implementation ====================
-  
+
   async createTrend(trend: InsertTrend): Promise<Trend> {
     try {
       const [newTrend] = await db.insert(trends).values(trend).returning();
@@ -11943,14 +12737,17 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
-  async updateTrend(trendId: string, update: Partial<InsertTrend>): Promise<Trend> {
+
+  async updateTrend(
+    trendId: string,
+    update: Partial<InsertTrend>,
+  ): Promise<Trend> {
     try {
       const [updatedTrend] = await db
         .update(trends)
         .set({
           ...update,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(trends.id, trendId))
         .returning();
@@ -11960,7 +12757,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getTrends(filters?: {
     status?: string | string[];
     trendType?: string | string[];
@@ -11970,7 +12767,7 @@ export class DatabaseStorage implements IStorage {
   }): Promise<Trend[]> {
     try {
       const conditions: any[] = [];
-      
+
       if (filters?.status) {
         if (Array.isArray(filters.status)) {
           conditions.push(sql`${trends.status} = ANY(${filters.status})`);
@@ -11978,7 +12775,7 @@ export class DatabaseStorage implements IStorage {
           conditions.push(eq(trends.status, filters.status));
         }
       }
-      
+
       if (filters?.trendType) {
         if (Array.isArray(filters.trendType)) {
           conditions.push(sql`${trends.trendType} = ANY(${filters.trendType})`);
@@ -11986,38 +12783,38 @@ export class DatabaseStorage implements IStorage {
           conditions.push(eq(trends.trendType, filters.trendType));
         }
       }
-      
+
       if (filters?.minStrength) {
         conditions.push(gte(trends.strength, filters.minStrength));
       }
-      
+
       if (filters?.dateRange) {
         conditions.push(
           gte(trends.startDate, filters.dateRange.start),
-          lte(trends.startDate, filters.dateRange.end)
+          lte(trends.startDate, filters.dateRange.end),
         );
       }
-      
+
       let query = db
         .select()
         .from(trends)
         .orderBy(desc(trends.strength), desc(trends.createdAt));
-      
+
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
       }
-      
+
       if (filters?.limit) {
         query = query.limit(filters.limit);
       }
-      
+
       return await query;
     } catch (error) {
       console.error("Error getting trends:", error);
       throw error;
     }
   }
-  
+
   async getTrendById(trendId: string): Promise<Trend | undefined> {
     try {
       const [trend] = await db
@@ -12030,7 +12827,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getCurrentTrends(): Promise<Trend[]> {
     try {
       return await db
@@ -12039,8 +12836,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             sql`${trends.status} IN ('active', 'emerging', 'peaking')`,
-            gte(trends.strength, 0.3)
-          )
+            gte(trends.strength, 0.3),
+          ),
         )
         .orderBy(desc(trends.strength));
     } catch (error) {
@@ -12048,21 +12845,21 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getEmergingTrends(): Promise<Trend[]> {
     try {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
+
       return await db
         .select()
         .from(trends)
         .where(
           and(
-            eq(trends.status, 'emerging'),
+            eq(trends.status, "emerging"),
             gte(trends.startDate, oneWeekAgo),
-            gte(trends.growthRate, 50) // 50% growth rate threshold
-          )
+            gte(trends.growthRate, 50), // 50% growth rate threshold
+          ),
         )
         .orderBy(desc(trends.growthRate));
     } catch (error) {
@@ -12070,8 +12867,11 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
-  async getHistoricalTrends(dateRange: { start: Date; end: Date }): Promise<Trend[]> {
+
+  async getHistoricalTrends(dateRange: {
+    start: Date;
+    end: Date;
+  }): Promise<Trend[]> {
     try {
       return await db
         .select()
@@ -12080,13 +12880,13 @@ export class DatabaseStorage implements IStorage {
           or(
             and(
               gte(trends.startDate, dateRange.start),
-              lte(trends.startDate, dateRange.end)
+              lte(trends.startDate, dateRange.end),
             ),
             and(
               gte(trends.peakDate, dateRange.start),
-              lte(trends.peakDate, dateRange.end)
-            )
-          )
+              lte(trends.peakDate, dateRange.end),
+            ),
+          ),
         )
         .orderBy(desc(trends.peakDate));
     } catch (error) {
@@ -12094,7 +12894,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async createTrendAlert(alert: InsertTrendAlert): Promise<TrendAlert> {
     try {
       const [newAlert] = await db.insert(trendAlerts).values(alert).returning();
@@ -12104,14 +12904,17 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
-  async updateTrendAlert(alertId: string, update: Partial<InsertTrendAlert>): Promise<TrendAlert> {
+
+  async updateTrendAlert(
+    alertId: string,
+    update: Partial<InsertTrendAlert>,
+  ): Promise<TrendAlert> {
     try {
       const [updatedAlert] = await db
         .update(trendAlerts)
         .set({
           ...update,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(trendAlerts.id, alertId))
         .returning();
@@ -12121,7 +12924,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getTrendAlerts(userId?: string | null): Promise<TrendAlert[]> {
     try {
       if (userId === undefined) {
@@ -12137,10 +12940,7 @@ export class DatabaseStorage implements IStorage {
           .select()
           .from(trendAlerts)
           .where(
-            and(
-              isNull(trendAlerts.userId),
-              eq(trendAlerts.isActive, true)
-            )
+            and(isNull(trendAlerts.userId), eq(trendAlerts.isActive, true)),
           )
           .orderBy(desc(trendAlerts.priority), desc(trendAlerts.createdAt));
       } else {
@@ -12150,12 +12950,9 @@ export class DatabaseStorage implements IStorage {
           .from(trendAlerts)
           .where(
             and(
-              or(
-                eq(trendAlerts.userId, userId),
-                isNull(trendAlerts.userId)
-              ),
-              eq(trendAlerts.isActive, true)
-            )
+              or(eq(trendAlerts.userId, userId), isNull(trendAlerts.userId)),
+              eq(trendAlerts.isActive, true),
+            ),
           )
           .orderBy(desc(trendAlerts.priority), desc(trendAlerts.createdAt));
       }
@@ -12164,7 +12961,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getTrendAlertsByTrendId(trendId: string): Promise<TrendAlert[]> {
     try {
       return await db
@@ -12177,11 +12974,11 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async triggerTrendAlert(
     alertId: string,
     message: string,
-    notifiedUsers: string[]
+    notifiedUsers: string[],
   ): Promise<void> {
     try {
       await db
@@ -12190,7 +12987,7 @@ export class DatabaseStorage implements IStorage {
           triggeredAt: new Date(),
           alertMessage: message,
           notifiedUsers,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(trendAlerts.id, alertId));
     } catch (error) {
@@ -12198,10 +12995,10 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async acknowledgeTrendAlert(
     alertId: string,
-    actionTaken?: string
+    actionTaken?: string,
   ): Promise<void> {
     try {
       await db
@@ -12210,7 +13007,7 @@ export class DatabaseStorage implements IStorage {
           acknowledgedAt: new Date(),
           actionTaken,
           isActive: false,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(trendAlerts.id, alertId));
     } catch (error) {
@@ -12218,22 +13015,22 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async subscribeTrendAlerts(
     userId: string,
     conditions: InsertTrendAlert["conditions"],
-    alertType: string
+    alertType: string,
   ): Promise<TrendAlert> {
     try {
       const alert: InsertTrendAlert = {
         userId,
         alertType,
         conditions,
-        priority: 'medium',
+        priority: "medium",
         isActive: true,
-        notificationChannels: ['in-app', 'email']
+        notificationChannels: ["in-app", "email"],
       };
-      
+
       return await this.createTrendAlert(alert);
     } catch (error) {
       console.error("Error subscribing to trend alerts:", error);
@@ -12274,7 +13071,7 @@ export class DatabaseStorage implements IStorage {
   }): Promise<AbTest[]> {
     try {
       let query = db.select().from(abTests);
-      
+
       if (filters) {
         const conditions = [];
         if (filters.status) {
@@ -12289,13 +13086,13 @@ export class DatabaseStorage implements IStorage {
         if (filters.endDate) {
           conditions.push(lte(abTests.endDate, filters.endDate));
         }
-        
+
         if (conditions.length > 0) {
           // @ts-ignore - Dynamic where conditions
           query = query.where(and(...conditions));
         }
       }
-      
+
       return await query.orderBy(desc(abTests.createdAt));
     } catch (error) {
       console.error("Error getting A/B tests:", error);
@@ -12303,13 +13100,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateAbTest(testId: string, update: Partial<InsertAbTest>): Promise<AbTest> {
+  async updateAbTest(
+    testId: string,
+    update: Partial<InsertAbTest>,
+  ): Promise<AbTest> {
     try {
       const [updatedTest] = await db
         .update(abTests)
         .set({
           ...update,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(abTests.id, testId))
         .returning();
@@ -12335,12 +13135,14 @@ export class DatabaseStorage implements IStorage {
       const existing = await db
         .select()
         .from(abTestResults)
-        .where(and(
-          eq(abTestResults.testId, result.testId),
-          eq(abTestResults.variant, result.variant),
-          eq(abTestResults.periodStart, result.periodStart),
-          eq(abTestResults.periodEnd, result.periodEnd)
-        ))
+        .where(
+          and(
+            eq(abTestResults.testId, result.testId),
+            eq(abTestResults.variant, result.variant),
+            eq(abTestResults.periodStart, result.periodStart),
+            eq(abTestResults.periodEnd, result.periodEnd),
+          ),
+        )
         .limit(1);
 
       if (existing.length > 0) {
@@ -12349,7 +13151,7 @@ export class DatabaseStorage implements IStorage {
           .update(abTestResults)
           .set({
             ...result,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(abTestResults.id, existing[0].id))
           .returning();
@@ -12368,21 +13170,26 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAbTestResults(testId: string, variant?: string): Promise<AbTestResult[]> {
+  async getAbTestResults(
+    testId: string,
+    variant?: string,
+  ): Promise<AbTestResult[]> {
     try {
       let query = db
         .select()
         .from(abTestResults)
         .where(eq(abTestResults.testId, testId));
-      
+
       if (variant) {
         // @ts-ignore
-        query = query.where(and(
-          eq(abTestResults.testId, testId),
-          eq(abTestResults.variant, variant)
-        ));
+        query = query.where(
+          and(
+            eq(abTestResults.testId, testId),
+            eq(abTestResults.variant, variant),
+          ),
+        );
       }
-      
+
       return await query.orderBy(desc(abTestResults.periodEnd));
     } catch (error) {
       console.error("Error getting A/B test results:", error);
@@ -12397,33 +13204,39 @@ export class DatabaseStorage implements IStorage {
     try {
       // Get the most recent results for each variant
       const results = await this.getAbTestResults(testId);
-      
+
       // Aggregate results by variant
       const variantA = results
-        .filter(r => r.variant === 'A')
-        .reduce((acc, r) => ({
-          ...r,
-          conversions: (acc?.conversions || 0) + r.conversions,
-          visitors: (acc?.visitors || 0) + r.visitors,
-          revenue: (acc?.revenue || 0) + r.revenue,
-          sampleSize: (acc?.sampleSize || 0) + r.sampleSize,
-        }), null as any);
-      
+        .filter((r) => r.variant === "A")
+        .reduce(
+          (acc, r) => ({
+            ...r,
+            conversions: (acc?.conversions || 0) + r.conversions,
+            visitors: (acc?.visitors || 0) + r.visitors,
+            revenue: (acc?.revenue || 0) + r.revenue,
+            sampleSize: (acc?.sampleSize || 0) + r.sampleSize,
+          }),
+          null as any,
+        );
+
       const variantB = results
-        .filter(r => r.variant === 'B')
-        .reduce((acc, r) => ({
-          ...r,
-          conversions: (acc?.conversions || 0) + r.conversions,
-          visitors: (acc?.visitors || 0) + r.visitors,
-          revenue: (acc?.revenue || 0) + r.revenue,
-          sampleSize: (acc?.sampleSize || 0) + r.sampleSize,
-        }), null as any);
+        .filter((r) => r.variant === "B")
+        .reduce(
+          (acc, r) => ({
+            ...r,
+            conversions: (acc?.conversions || 0) + r.conversions,
+            visitors: (acc?.visitors || 0) + r.visitors,
+            revenue: (acc?.revenue || 0) + r.revenue,
+            sampleSize: (acc?.sampleSize || 0) + r.sampleSize,
+          }),
+          null as any,
+        );
 
       return {
-        variantA: variantA || { 
-          id: '',
+        variantA: variantA || {
+          id: "",
           testId,
-          variant: 'A',
+          variant: "A",
           conversions: 0,
           visitors: 0,
           revenue: 0,
@@ -12431,12 +13244,12 @@ export class DatabaseStorage implements IStorage {
           periodStart: new Date(),
           periodEnd: new Date(),
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         variantB: variantB || {
-          id: '',
+          id: "",
           testId,
-          variant: 'B',
+          variant: "B",
           conversions: 0,
           visitors: 0,
           revenue: 0,
@@ -12444,8 +13257,8 @@ export class DatabaseStorage implements IStorage {
           periodStart: new Date(),
           periodEnd: new Date(),
           createdAt: new Date(),
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       };
     } catch (error) {
       console.error("Error getting aggregated A/B test results:", error);
@@ -12453,7 +13266,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async upsertAbTestInsight(insight: InsertAbTestInsight): Promise<AbTestInsight> {
+  async upsertAbTestInsight(
+    insight: InsertAbTestInsight,
+  ): Promise<AbTestInsight> {
     try {
       // Check if insight already exists for this test
       const existing = await db
@@ -12468,7 +13283,7 @@ export class DatabaseStorage implements IStorage {
           .update(abTestInsights)
           .set({
             ...insight,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(abTestInsights.id, existing[0].id))
           .returning();
@@ -12505,51 +13320,64 @@ export class DatabaseStorage implements IStorage {
   async calculateStatisticalSignificance(testId: string): Promise<{
     pValue: number;
     confidence: number;
-    winner: 'A' | 'B' | 'inconclusive';
+    winner: "A" | "B" | "inconclusive";
     liftPercentage: number;
   }> {
     try {
-      const { variantA, variantB } = await this.getAggregatedAbTestResults(testId);
-      
+      const { variantA, variantB } =
+        await this.getAggregatedAbTestResults(testId);
+
       // Calculate conversion rates
-      const conversionRateA = variantA.visitors > 0 ? variantA.conversions / variantA.visitors : 0;
-      const conversionRateB = variantB.visitors > 0 ? variantB.conversions / variantB.visitors : 0;
-      
+      const conversionRateA =
+        variantA.visitors > 0 ? variantA.conversions / variantA.visitors : 0;
+      const conversionRateB =
+        variantB.visitors > 0 ? variantB.conversions / variantB.visitors : 0;
+
       // Calculate pooled probability
-      const pooledProbability = (variantA.conversions + variantB.conversions) / 
-                                (variantA.visitors + variantB.visitors);
-      
+      const pooledProbability =
+        (variantA.conversions + variantB.conversions) /
+        (variantA.visitors + variantB.visitors);
+
       // Calculate standard error
       const standardError = Math.sqrt(
-        pooledProbability * (1 - pooledProbability) * 
-        (1 / variantA.visitors + 1 / variantB.visitors)
+        pooledProbability *
+          (1 - pooledProbability) *
+          (1 / variantA.visitors + 1 / variantB.visitors),
       );
-      
+
       // Calculate z-score
-      const zScore = standardError > 0 ? (conversionRateB - conversionRateA) / standardError : 0;
-      
+      const zScore =
+        standardError > 0
+          ? (conversionRateB - conversionRateA) / standardError
+          : 0;
+
       // Calculate p-value (simplified normal distribution approximation)
       const pValue = 2 * (1 - this.normalCDF(Math.abs(zScore)));
-      
+
       // Calculate confidence level
       const confidence = 1 - pValue;
-      
+
       // Calculate lift percentage
-      const liftPercentage = conversionRateA > 0 
-        ? ((conversionRateB - conversionRateA) / conversionRateA) * 100 
-        : 0;
-      
+      const liftPercentage =
+        conversionRateA > 0
+          ? ((conversionRateB - conversionRateA) / conversionRateA) * 100
+          : 0;
+
       // Determine winner
-      let winner: 'A' | 'B' | 'inconclusive' = 'inconclusive';
-      if (pValue < 0.05 && variantA.visitors >= 100 && variantB.visitors >= 100) {
-        winner = conversionRateB > conversionRateA ? 'B' : 'A';
+      let winner: "A" | "B" | "inconclusive" = "inconclusive";
+      if (
+        pValue < 0.05 &&
+        variantA.visitors >= 100 &&
+        variantB.visitors >= 100
+      ) {
+        winner = conversionRateB > conversionRateA ? "B" : "A";
       }
-      
+
       return {
         pValue,
         confidence,
         winner,
-        liftPercentage
+        liftPercentage,
       };
     } catch (error) {
       console.error("Error calculating statistical significance:", error);
@@ -12565,55 +13393,61 @@ export class DatabaseStorage implements IStorage {
     const a4 = -1.453152027;
     const a5 = 1.061405429;
     const p = 0.3275911;
-    
+
     const sign = x < 0 ? -1 : 1;
     x = Math.abs(x) / Math.sqrt(2.0);
-    
+
     const t = 1.0 / (1.0 + p * x);
-    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
-    
+    const y =
+      1.0 -
+      ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+
     return 0.5 * (1.0 + sign * y);
   }
 
-  async getAbTestRecommendations(userId?: string): Promise<Array<AbTest & {
-    insight?: AbTestInsight;
-    results?: AbTestResult[];
-  }>> {
+  async getAbTestRecommendations(userId?: string): Promise<
+    Array<
+      AbTest & {
+        insight?: AbTestInsight;
+        results?: AbTestResult[];
+      }
+    >
+  > {
     try {
       // Get active and recently completed tests
       const tests = await this.getAbTests({
-        status: 'active'
+        status: "active",
       });
-      
+
       // Add completed tests from last 30 days
       const recentCompleted = await this.getAbTests({
-        status: 'completed',
-        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        status: "completed",
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       });
-      
+
       const allTests = [...tests, ...recentCompleted];
-      
+
       // Fetch insights and results for each test
       const recommendations = await Promise.all(
         allTests.map(async (test) => {
           const insight = await this.getAbTestInsights(test.id);
           const results = await this.getAbTestResults(test.id);
-          
+
           return {
             ...test,
             insight,
-            results
+            results,
           };
-        })
+        }),
       );
-      
+
       // Sort by confidence level if insights exist
       recommendations.sort((a, b) => {
         const confA = a.insight?.confidence || 0;
         const confB = b.insight?.confidence || 0;
         return confB - confA;
       });
-      
+
       return recommendations;
     } catch (error) {
       console.error("Error getting A/B test recommendations:", error);
@@ -12621,13 +13455,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async implementAbTestWinner(testId: string, variant: 'A' | 'B'): Promise<void> {
+  async implementAbTestWinner(
+    testId: string,
+    variant: "A" | "B",
+  ): Promise<void> {
     try {
       // Update test status to completed
       await this.updateAbTest(testId, {
-        status: 'completed'
+        status: "completed",
       });
-      
+
       // Update insight with implementation note
       const insight = await this.getAbTestInsights(testId);
       if (insight) {
@@ -12635,15 +13472,15 @@ export class DatabaseStorage implements IStorage {
           ...insight,
           testId,
           winner: variant,
-          recommendation: 'implement',
+          recommendation: "implement",
           insights: {
             ...insight.insights,
             implementationDate: new Date().toISOString(),
-            implementedVariant: variant
-          }
+            implementedVariant: variant,
+          },
         });
       }
-      
+
       console.log(`Implemented variant ${variant} for test ${testId}`);
     } catch (error) {
       console.error("Error implementing A/B test winner:", error);
@@ -12656,10 +13493,10 @@ export class DatabaseStorage implements IStorage {
   async createCohort(cohort: InsertCohort): Promise<Cohort> {
     try {
       const [newCohort] = await db.insert(cohorts).values(cohort).returning();
-      
+
       // Refresh membership immediately for new cohort
       await this.refreshCohortMembership(newCohort.id);
-      
+
       return newCohort;
     } catch (error) {
       console.error("Error creating cohort:", error);
@@ -12707,7 +13544,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateCohort(cohortId: string, updates: Partial<InsertCohort>): Promise<Cohort> {
+  async updateCohort(
+    cohortId: string,
+    updates: Partial<InsertCohort>,
+  ): Promise<Cohort> {
     try {
       const [updated] = await db
         .update(cohorts)
@@ -12739,7 +13579,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async recordCohortMetrics(metrics: InsertCohortMetric[]): Promise<CohortMetric[]> {
+  async recordCohortMetrics(
+    metrics: InsertCohortMetric[],
+  ): Promise<CohortMetric[]> {
     try {
       const recorded = await db
         .insert(cohortMetrics)
@@ -12760,7 +13602,7 @@ export class DatabaseStorage implements IStorage {
       period?: string;
       startDate?: Date;
       endDate?: Date;
-    }
+    },
   ): Promise<CohortMetric[]> {
     try {
       let query = db.select().from(cohortMetrics);
@@ -12779,11 +13621,21 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (filters?.startDate) {
-        conditions.push(gte(cohortMetrics.periodDate, filters.startDate.toISOString().split('T')[0]));
+        conditions.push(
+          gte(
+            cohortMetrics.periodDate,
+            filters.startDate.toISOString().split("T")[0],
+          ),
+        );
       }
 
       if (filters?.endDate) {
-        conditions.push(lte(cohortMetrics.periodDate, filters.endDate.toISOString().split('T')[0]));
+        conditions.push(
+          lte(
+            cohortMetrics.periodDate,
+            filters.endDate.toISOString().split("T")[0],
+          ),
+        );
       }
 
       query = query.where(and(...conditions)) as any;
@@ -12796,7 +13648,7 @@ export class DatabaseStorage implements IStorage {
 
   async calculateCohortRetention(
     cohortId: string,
-    periods: number[]
+    periods: number[],
   ): Promise<{
     cohortId: string;
     retention: Array<{ period: number; rate: number; count: number }>;
@@ -12811,7 +13663,8 @@ export class DatabaseStorage implements IStorage {
       const { users: cohortUsers } = await this.getCohortMembers(cohortId);
       const totalUsers = cohortUsers.length;
 
-      const retention: Array<{ period: number; rate: number; count: number }> = [];
+      const retention: Array<{ period: number; rate: number; count: number }> =
+        [];
 
       for (const period of periods) {
         // Calculate retention for each period
@@ -12825,13 +13678,17 @@ export class DatabaseStorage implements IStorage {
           .from(userSessions)
           .where(
             and(
-              sql`user_id IN (${sql.join(cohortUsers.map(u => u.id), sql`, `)})`,
-              gte(userSessions.startTime, endDate)
-            )
+              sql`user_id IN (${sql.join(
+                cohortUsers.map((u) => u.id),
+                sql`, `,
+              )})`,
+              gte(userSessions.startTime, endDate),
+            ),
           );
 
         const activeCount = Number(activeUsers[0]?.count || 0);
-        const retentionRate = totalUsers > 0 ? (activeCount / totalUsers) * 100 : 0;
+        const retentionRate =
+          totalUsers > 0 ? (activeCount / totalUsers) * 100 : 0;
 
         retention.push({
           period,
@@ -12844,10 +13701,10 @@ export class DatabaseStorage implements IStorage {
           {
             cohortId,
             metricName: `retention_day_${period}`,
-            period: 'day',
-            periodDate: endDate.toISOString().split('T')[0],
+            period: "day",
+            periodDate: endDate.toISOString().split("T")[0],
             value: retentionRate,
-            metricType: 'retention',
+            metricType: "retention",
           },
         ]);
       }
@@ -12861,7 +13718,7 @@ export class DatabaseStorage implements IStorage {
 
   async compareCohorts(
     cohortIds: string[],
-    metrics: string[]
+    metrics: string[],
   ): Promise<{
     comparison: Array<{
       cohortId: string;
@@ -12876,10 +13733,10 @@ export class DatabaseStorage implements IStorage {
           });
 
           const metricsMap: Record<string, number> = {};
-          
+
           for (const metric of metrics) {
             const metricData = cohortMetricsData.find(
-              (m) => m.metricName === metric
+              (m) => m.metricName === metric,
             );
             metricsMap[metric] = metricData?.value || 0;
           }
@@ -12888,7 +13745,7 @@ export class DatabaseStorage implements IStorage {
             cohortId,
             metrics: metricsMap,
           };
-        })
+        }),
       );
 
       return { comparison };
@@ -12898,7 +13755,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createCohortInsight(insight: InsertCohortInsight): Promise<CohortInsight> {
+  async createCohortInsight(
+    insight: InsertCohortInsight,
+  ): Promise<CohortInsight> {
     try {
       const [newInsight] = await db
         .insert(cohortInsights)
@@ -12917,7 +13776,7 @@ export class DatabaseStorage implements IStorage {
       status?: string;
       importance?: string;
       category?: string;
-    }
+    },
   ): Promise<CohortInsight[]> {
     try {
       let query = db.select().from(cohortInsights);
@@ -12945,7 +13804,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateCohortInsightStatus(
     insightId: string,
-    status: string
+    status: string,
   ): Promise<CohortInsight> {
     try {
       const [updated] = await db
@@ -12963,7 +13822,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async refreshCohortMembership(cohortId: string): Promise<{ userCount: number }> {
+  async refreshCohortMembership(
+    cohortId: string,
+  ): Promise<{ userCount: number }> {
     try {
       const cohort = await this.getCohort(cohortId);
       if (!cohort) {
@@ -13014,7 +13875,7 @@ export class DatabaseStorage implements IStorage {
   async getCohortMembers(
     cohortId: string,
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<{
     users: User[];
     total: number;
@@ -13084,7 +13945,7 @@ export class DatabaseStorage implements IStorage {
     component?: string,
     startDate?: Date,
     endDate?: Date,
-    limit: number = 100
+    limit: number = 100,
   ): Promise<SystemMetric[]> {
     try {
       let query = db.select().from(systemMetrics);
@@ -13104,16 +13965,16 @@ export class DatabaseStorage implements IStorage {
         query = query.where(and(...conditions)) as any;
       }
 
-      return await query
-        .orderBy(desc(systemMetrics.timestamp))
-        .limit(limit);
+      return await query.orderBy(desc(systemMetrics.timestamp)).limit(limit);
     } catch (error) {
       console.error("Error getting system metrics:", error);
       throw error;
     }
   }
 
-  async saveMaintenancePrediction(prediction: InsertMaintenancePrediction): Promise<MaintenancePrediction> {
+  async saveMaintenancePrediction(
+    prediction: InsertMaintenancePrediction,
+  ): Promise<MaintenancePrediction> {
     try {
       const [saved] = await db
         .insert(maintenancePredictions)
@@ -13128,7 +13989,7 @@ export class DatabaseStorage implements IStorage {
 
   async getMaintenancePredictions(
     status?: string,
-    component?: string
+    component?: string,
   ): Promise<MaintenancePrediction[]> {
     try {
       let query = db.select().from(maintenancePredictions);
@@ -13154,14 +14015,14 @@ export class DatabaseStorage implements IStorage {
 
   async updateMaintenancePredictionStatus(
     predictionId: string,
-    status: string
+    status: string,
   ): Promise<MaintenancePrediction> {
     try {
       const [updated] = await db
         .update(maintenancePredictions)
-        .set({ 
+        .set({
           status,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(maintenancePredictions.id, predictionId))
         .returning();
@@ -13173,19 +14034,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveMaintenanceHistory(
-    history: InsertMaintenanceHistory
+    history: InsertMaintenanceHistory,
   ): Promise<MaintenanceHistory> {
     try {
       const [saved] = await db
         .insert(maintenanceHistory)
         .values([history])
         .returning();
-      
+
       // Mark related prediction as completed if exists
       if (saved.predictionId) {
-        await this.updateMaintenancePredictionStatus(saved.predictionId, 'completed');
+        await this.updateMaintenancePredictionStatus(
+          saved.predictionId,
+          "completed",
+        );
       }
-      
+
       return saved;
     } catch (error) {
       console.error("Error saving maintenance history:", error);
@@ -13195,11 +14059,11 @@ export class DatabaseStorage implements IStorage {
 
   async getMaintenanceHistory(
     component?: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<MaintenanceHistory[]> {
     try {
       let query = db.select().from(maintenanceHistory);
-      
+
       if (component) {
         query = query.where(eq(maintenanceHistory.component, component)) as any;
       }
@@ -13228,13 +14092,15 @@ export class DatabaseStorage implements IStorage {
         component,
         oneDayAgo,
         new Date(),
-        100
+        100,
       );
 
       // Calculate average anomaly score
-      const avgAnomalyScore = recentMetrics.length > 0
-        ? recentMetrics.reduce((sum, m) => sum + (m.anomalyScore || 0), 0) / recentMetrics.length
-        : 0;
+      const avgAnomalyScore =
+        recentMetrics.length > 0
+          ? recentMetrics.reduce((sum, m) => sum + (m.anomalyScore || 0), 0) /
+            recentMetrics.length
+          : 0;
 
       // Get active predictions
       const predictions = await db
@@ -13243,8 +14109,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(maintenancePredictions.component, component),
-            eq(maintenancePredictions.status, 'active')
-          )
+            eq(maintenancePredictions.status, "active"),
+          ),
         );
 
       // Get recent history
@@ -13254,7 +14120,7 @@ export class DatabaseStorage implements IStorage {
         avgAnomalyScore,
         recentMetrics,
         predictions,
-        history
+        history,
       };
     } catch (error) {
       console.error("Error getting component health:", error);
@@ -13264,7 +14130,9 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== Scheduling Operations Implementation ====================
 
-  async getSchedulingPreferences(userId: string): Promise<SchedulingPreferences | undefined> {
+  async getSchedulingPreferences(
+    userId: string,
+  ): Promise<SchedulingPreferences | undefined> {
     try {
       const prefs = await db
         .select()
@@ -13280,17 +14148,17 @@ export class DatabaseStorage implements IStorage {
 
   async upsertSchedulingPreferences(
     userId: string,
-    preferences: Omit<InsertSchedulingPreferences, "userId">
+    preferences: Omit<InsertSchedulingPreferences, "userId">,
   ): Promise<SchedulingPreferences> {
     try {
       const existing = await this.getSchedulingPreferences(userId);
-      
+
       if (existing) {
         const [updated] = await db
           .update(schedulingPreferences)
           .set({
             ...preferences,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(schedulingPreferences.userId, userId))
           .returning();
@@ -13300,7 +14168,7 @@ export class DatabaseStorage implements IStorage {
           .insert(schedulingPreferences)
           .values({
             ...preferences,
-            userId
+            userId,
           })
           .returning();
         return created;
@@ -13311,7 +14179,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getMeetingSuggestions(meetingId: string): Promise<MeetingSuggestions | undefined> {
+  async getMeetingSuggestions(
+    meetingId: string,
+  ): Promise<MeetingSuggestions | undefined> {
     try {
       const suggestions = await db
         .select()
@@ -13325,22 +14195,25 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserMeetingSuggestions(userId: string, status?: string): Promise<MeetingSuggestions[]> {
+  async getUserMeetingSuggestions(
+    userId: string,
+    status?: string,
+  ): Promise<MeetingSuggestions[]> {
     try {
       let query = db
         .select()
         .from(meetingSuggestions)
         .where(eq(meetingSuggestions.createdBy, userId));
-      
+
       if (status) {
         query = query.where(
           and(
             eq(meetingSuggestions.createdBy, userId),
-            eq(meetingSuggestions.status, status)
-          )
+            eq(meetingSuggestions.status, status),
+          ),
         ) as any;
       }
-      
+
       return await query.orderBy(desc(meetingSuggestions.createdAt));
     } catch (error) {
       console.error("Error getting user meeting suggestions:", error);
@@ -13348,7 +14221,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createMeetingSuggestions(suggestions: InsertMeetingSuggestions): Promise<MeetingSuggestions> {
+  async createMeetingSuggestions(
+    suggestions: InsertMeetingSuggestions,
+  ): Promise<MeetingSuggestions> {
     try {
       const [created] = await db
         .insert(meetingSuggestions)
@@ -13364,18 +14239,18 @@ export class DatabaseStorage implements IStorage {
   async updateMeetingSuggestionStatus(
     meetingId: string,
     status: string,
-    selectedTime?: any
+    selectedTime?: any,
   ): Promise<MeetingSuggestions> {
     try {
       const updateData: any = {
         status,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       if (selectedTime) {
         updateData.selectedTime = selectedTime;
       }
-      
+
       const [updated] = await db
         .update(meetingSuggestions)
         .set(updateData)
@@ -13403,7 +14278,7 @@ export class DatabaseStorage implements IStorage {
 
   async upsertSchedulingPattern(
     userId: string,
-    pattern: Omit<InsertSchedulingPatterns, "userId">
+    pattern: Omit<InsertSchedulingPatterns, "userId">,
   ): Promise<SchedulingPatterns> {
     try {
       const existing = await db
@@ -13412,17 +14287,17 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(schedulingPatterns.userId, userId),
-            eq(schedulingPatterns.patternType, pattern.patternType)
-          )
+            eq(schedulingPatterns.patternType, pattern.patternType),
+          ),
         )
         .limit(1);
-      
+
       if (existing[0]) {
         const [updated] = await db
           .update(schedulingPatterns)
           .set({
             ...pattern,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(schedulingPatterns.id, existing[0].id))
           .returning();
@@ -13432,7 +14307,7 @@ export class DatabaseStorage implements IStorage {
           .insert(schedulingPatterns)
           .values({
             ...pattern,
-            userId
+            userId,
           })
           .returning();
         return created;
@@ -13449,11 +14324,11 @@ export class DatabaseStorage implements IStorage {
       startTime?: Date;
       endTime?: Date;
       status?: string;
-    }
+    },
   ): Promise<MeetingEvents[]> {
     try {
       const conditions: any[] = [eq(meetingEvents.userId, userId)];
-      
+
       if (filters?.startTime) {
         conditions.push(gte(meetingEvents.startTime, filters.startTime));
       }
@@ -13463,7 +14338,7 @@ export class DatabaseStorage implements IStorage {
       if (filters?.status) {
         conditions.push(eq(meetingEvents.status, filters.status));
       }
-      
+
       return await db
         .select()
         .from(meetingEvents)
@@ -13488,13 +14363,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateMeetingEvent(eventId: string, updates: Partial<MeetingEvents>): Promise<MeetingEvents> {
+  async updateMeetingEvent(
+    eventId: string,
+    updates: Partial<MeetingEvents>,
+  ): Promise<MeetingEvents> {
     try {
       const [updated] = await db
         .update(meetingEvents)
         .set({
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(meetingEvents.id, eventId))
         .returning();
@@ -13510,10 +14388,7 @@ export class DatabaseStorage implements IStorage {
       await db
         .delete(meetingEvents)
         .where(
-          and(
-            eq(meetingEvents.id, eventId),
-            eq(meetingEvents.userId, userId)
-          )
+          and(eq(meetingEvents.id, eventId), eq(meetingEvents.userId, userId)),
         );
     } catch (error) {
       console.error("Error deleting meeting event:", error);
@@ -13524,7 +14399,7 @@ export class DatabaseStorage implements IStorage {
   async findSchedulingConflicts(
     userId: string,
     startTime: Date,
-    endTime: Date
+    endTime: Date,
   ): Promise<MeetingEvents[]> {
     try {
       return await db
@@ -13533,25 +14408,25 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(meetingEvents.userId, userId),
-            ne(meetingEvents.status, 'cancelled'),
+            ne(meetingEvents.status, "cancelled"),
             or(
               // Event starts during the proposed time
               and(
                 gte(meetingEvents.startTime, startTime),
-                lte(meetingEvents.startTime, endTime)
+                lte(meetingEvents.startTime, endTime),
               ),
               // Event ends during the proposed time
               and(
                 gte(meetingEvents.endTime, startTime),
-                lte(meetingEvents.endTime, endTime)
+                lte(meetingEvents.endTime, endTime),
               ),
               // Event encompasses the proposed time
               and(
                 lte(meetingEvents.startTime, startTime),
-                gte(meetingEvents.endTime, endTime)
-              )
-            )
-          )
+                gte(meetingEvents.endTime, endTime),
+              ),
+            ),
+          ),
         );
     } catch (error) {
       console.error("Error finding scheduling conflicts:", error);
@@ -13567,38 +14442,55 @@ export class DatabaseStorage implements IStorage {
       const patterns = await this.getSchedulingPatterns(userId);
       const events = await this.getMeetingEvents(userId, {
         startTime: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-        endTime: new Date()
+        endTime: new Date(),
       });
-      
+
       const insights: string[] = [];
-      
+
       // Generate insights based on patterns and events
       if (patterns.length > 0) {
-        const highConfidencePatterns = patterns.filter(p => p.confidence > 0.7);
+        const highConfidencePatterns = patterns.filter(
+          (p) => p.confidence > 0.7,
+        );
         if (highConfidencePatterns.length > 0) {
-          insights.push(`You have ${highConfidencePatterns.length} strong scheduling patterns identified.`);
+          insights.push(
+            `You have ${highConfidencePatterns.length} strong scheduling patterns identified.`,
+          );
         }
       }
-      
+
       if (events.length > 0) {
         const meetingsPerDay = events.length / 30;
-        insights.push(`You average ${meetingsPerDay.toFixed(1)} meetings per day.`);
-        
+        insights.push(
+          `You average ${meetingsPerDay.toFixed(1)} meetings per day.`,
+        );
+
         // Find busiest day of week
         const dayCount: Record<number, number> = {};
-        events.forEach(e => {
+        events.forEach((e) => {
           const day = new Date(e.startTime).getDay();
           dayCount[day] = (dayCount[day] || 0) + 1;
         });
-        
-        const busiestDay = Object.entries(dayCount)
-          .sort((a, b) => b[1] - a[1])[0];
+
+        const busiestDay = Object.entries(dayCount).sort(
+          (a, b) => b[1] - a[1],
+        )[0];
         if (busiestDay) {
-          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-          insights.push(`Your busiest day is ${dayNames[parseInt(busiestDay[0])]}.`);
+          const dayNames = [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+          ];
+          insights.push(
+            `Your busiest day is ${dayNames[parseInt(busiestDay[0])]}.`,
+          );
         }
       }
-      
+
       return { patterns, insights };
     } catch (error) {
       console.error("Error analyzing scheduling patterns:", error);
@@ -13607,7 +14499,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Ticket Routing Operations ====================
-  
+
   async getTickets(filters?: {
     status?: string;
     assignedTo?: string;
@@ -13617,7 +14509,7 @@ export class DatabaseStorage implements IStorage {
     try {
       let query = db.select().from(tickets);
       const conditions = [];
-      
+
       if (filters?.status) {
         conditions.push(eq(tickets.status, filters.status));
       }
@@ -13630,18 +14522,18 @@ export class DatabaseStorage implements IStorage {
       if (filters?.category) {
         conditions.push(eq(tickets.category, filters.category));
       }
-      
+
       if (conditions.length > 0) {
         return await query.where(and(...conditions));
       }
-      
+
       return await query;
     } catch (error) {
       console.error("Error getting tickets:", error);
       throw error;
     }
   }
-  
+
   async getTicket(ticketId: string): Promise<Ticket | undefined> {
     try {
       const [ticket] = await db
@@ -13654,27 +14546,27 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async createTicket(ticket: InsertTicket): Promise<Ticket> {
     try {
-      const [newTicket] = await db
-        .insert(tickets)
-        .values(ticket)
-        .returning();
+      const [newTicket] = await db.insert(tickets).values(ticket).returning();
       return newTicket;
     } catch (error) {
       console.error("Error creating ticket:", error);
       throw error;
     }
   }
-  
-  async updateTicket(ticketId: string, updates: Partial<Ticket>): Promise<Ticket> {
+
+  async updateTicket(
+    ticketId: string,
+    updates: Partial<Ticket>,
+  ): Promise<Ticket> {
     try {
       const [updatedTicket] = await db
         .update(tickets)
         .set({
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(tickets.id, ticketId))
         .returning();
@@ -13684,25 +14576,25 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getRoutingRules(isActive?: boolean): Promise<RoutingRule[]> {
     try {
       let query = db
         .select()
         .from(routingRules)
         .orderBy(asc(routingRules.priority));
-      
+
       if (isActive !== undefined) {
         return await query.where(eq(routingRules.isActive, isActive));
       }
-      
+
       return await query;
     } catch (error) {
       console.error("Error getting routing rules:", error);
       throw error;
     }
   }
-  
+
   async getRoutingRule(ruleId: string): Promise<RoutingRule | undefined> {
     try {
       const [rule] = await db
@@ -13715,27 +14607,27 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async createRoutingRule(rule: InsertRoutingRule): Promise<RoutingRule> {
     try {
-      const [newRule] = await db
-        .insert(routingRules)
-        .values(rule)
-        .returning();
+      const [newRule] = await db.insert(routingRules).values(rule).returning();
       return newRule;
     } catch (error) {
       console.error("Error creating routing rule:", error);
       throw error;
     }
   }
-  
-  async updateRoutingRule(ruleId: string, updates: Partial<RoutingRule>): Promise<RoutingRule> {
+
+  async updateRoutingRule(
+    ruleId: string,
+    updates: Partial<RoutingRule>,
+  ): Promise<RoutingRule> {
     try {
       const [updatedRule] = await db
         .update(routingRules)
         .set({
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(routingRules.id, ruleId))
         .returning();
@@ -13745,18 +14637,16 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async deleteRoutingRule(ruleId: string): Promise<void> {
     try {
-      await db
-        .delete(routingRules)
-        .where(eq(routingRules.id, ruleId));
+      await db.delete(routingRules).where(eq(routingRules.id, ruleId));
     } catch (error) {
       console.error("Error deleting routing rule:", error);
       throw error;
     }
   }
-  
+
   async getTicketRouting(ticketId: string): Promise<TicketRouting[]> {
     try {
       return await db
@@ -13769,8 +14659,10 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
-  async createTicketRouting(routing: InsertTicketRouting): Promise<TicketRouting> {
+
+  async createTicketRouting(
+    routing: InsertTicketRouting,
+  ): Promise<TicketRouting> {
     try {
       const [newRouting] = await db
         .insert(ticketRouting)
@@ -13782,7 +14674,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getAgents(): Promise<AgentExpertise[]> {
     try {
       return await db
@@ -13794,7 +14686,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getAgent(agentId: string): Promise<AgentExpertise | undefined> {
     try {
       const [agent] = await db
@@ -13807,17 +14699,19 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
-  async upsertAgentExpertise(agent: InsertAgentExpertise): Promise<AgentExpertise> {
+
+  async upsertAgentExpertise(
+    agent: InsertAgentExpertise,
+  ): Promise<AgentExpertise> {
     try {
       const existingAgent = await this.getAgent(agent.agent_id);
-      
+
       if (existingAgent) {
         const [updatedAgent] = await db
           .update(agentExpertise)
           .set({
             ...agent,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(agentExpertise.agent_id, agent.agent_id))
           .returning();
@@ -13834,7 +14728,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async updateAgentWorkload(agentId: string, delta: number): Promise<void> {
     try {
       const agent = await this.getAgent(agentId);
@@ -13844,8 +14738,8 @@ export class DatabaseStorage implements IStorage {
           .update(agentExpertise)
           .set({
             current_load: newLoad,
-            availability: newLoad >= agent.max_capacity ? 'busy' : 'available',
-            updatedAt: new Date()
+            availability: newLoad >= agent.max_capacity ? "busy" : "available",
+            updatedAt: new Date(),
           })
           .where(eq(agentExpertise.agent_id, agentId));
       }
@@ -13854,7 +14748,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getAvailableAgents(): Promise<AgentExpertise[]> {
     try {
       return await db
@@ -13862,18 +14756,21 @@ export class DatabaseStorage implements IStorage {
         .from(agentExpertise)
         .where(
           and(
-            ne(agentExpertise.availability, 'offline'),
-            sql`${agentExpertise.current_load} < ${agentExpertise.max_capacity}`
-          )
+            ne(agentExpertise.availability, "offline"),
+            sql`${agentExpertise.current_load} < ${agentExpertise.max_capacity}`,
+          ),
         );
     } catch (error) {
       console.error("Error getting available agents:", error);
       throw error;
     }
   }
-  
+
   // Update ticket routing with outcome data
-  async updateTicketRouting(routingId: string, updates: Partial<TicketRouting>): Promise<TicketRouting | null> {
+  async updateTicketRouting(
+    routingId: string,
+    updates: Partial<TicketRouting>,
+  ): Promise<TicketRouting | null> {
     try {
       const result = await db
         .update(ticketRouting)
@@ -13886,26 +14783,30 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Get all routings with recorded outcomes
-  async getAllRoutingsWithOutcomes(startDate?: Date, endDate?: Date): Promise<TicketRouting[]> {
+  async getAllRoutingsWithOutcomes(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<TicketRouting[]> {
     try {
       let query = db.select().from(ticketRouting);
       const conditions = [];
-      
+
       if (startDate) {
         conditions.push(gte(ticketRouting.assigned_at, startDate));
       }
       if (endDate) {
         conditions.push(lte(ticketRouting.assigned_at, endDate));
       }
-      
-      const routings = conditions.length > 0
-        ? await query.where(and(...conditions))
-        : await query;
-      
+
+      const routings =
+        conditions.length > 0
+          ? await query.where(and(...conditions))
+          : await query;
+
       // Filter for routings with outcomes recorded
-      return routings.filter(routing => {
+      return routings.filter((routing) => {
         const metadata = routing.metadata as any;
         return metadata?.outcome_recorded === true;
       });
@@ -13914,8 +14815,11 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
-  async getRoutingMetrics(startDate?: Date, endDate?: Date): Promise<{
+
+  async getRoutingMetrics(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
     totalTickets: number;
     averageConfidence: number;
     routingAccuracy: number;
@@ -13927,47 +14831,50 @@ export class DatabaseStorage implements IStorage {
       // Get tickets within date range
       let ticketQuery = db.select().from(tickets);
       const conditions = [];
-      
+
       if (startDate) {
         conditions.push(gte(tickets.createdAt, startDate));
       }
       if (endDate) {
         conditions.push(lte(tickets.createdAt, endDate));
       }
-      
-      const filteredTickets = conditions.length > 0 
-        ? await ticketQuery.where(and(...conditions))
-        : await ticketQuery;
-      
+
+      const filteredTickets =
+        conditions.length > 0
+          ? await ticketQuery.where(and(...conditions))
+          : await ticketQuery;
+
       // Get routing data
       const routingData = await db
         .select()
         .from(ticketRouting)
         .where(
-          sql`${ticketRouting.ticket_id} IN (${sql.raw(filteredTickets.map(t => `'${t.id}'`).join(',') || "''")})`
+          sql`${ticketRouting.ticket_id} IN (${sql.raw(filteredTickets.map((t) => `'${t.id}'`).join(",") || "''")})`,
         );
-      
+
       // Calculate metrics
       const totalTickets = filteredTickets.length;
-      const averageConfidence = routingData.length > 0
-        ? routingData.reduce((sum, r) => sum + r.confidence_score, 0) / routingData.length
-        : 0;
-      
+      const averageConfidence =
+        routingData.length > 0
+          ? routingData.reduce((sum, r) => sum + r.confidence_score, 0) /
+            routingData.length
+          : 0;
+
       // Calculate accuracy (simplified - would need actual feedback data in production)
       const routingAccuracy = 0.9; // Placeholder - would calculate from actual resolution data
-      
+
       // Calculate average resolution time (placeholder)
       const averageResolutionTime = 120; // minutes - placeholder
-      
+
       // Group by category
       const byCategory: Record<string, number> = {};
-      filteredTickets.forEach(ticket => {
+      filteredTickets.forEach((ticket) => {
         byCategory[ticket.category] = (byCategory[ticket.category] || 0) + 1;
       });
-      
+
       // Group by agent
       const byAgent: Record<string, { count: number; avgTime: number }> = {};
-      filteredTickets.forEach(ticket => {
+      filteredTickets.forEach((ticket) => {
         if (ticket.assignedTo) {
           if (!byAgent[ticket.assignedTo]) {
             byAgent[ticket.assignedTo] = { count: 0, avgTime: 0 };
@@ -13976,14 +14883,14 @@ export class DatabaseStorage implements IStorage {
           byAgent[ticket.assignedTo].avgTime = 120; // Placeholder
         }
       });
-      
+
       return {
         totalTickets,
         averageConfidence,
         routingAccuracy,
         averageResolutionTime,
         byCategory,
-        byAgent
+        byAgent,
       };
     } catch (error) {
       console.error("Error getting routing metrics:", error);
@@ -13993,9 +14900,14 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== Data Extraction Implementation ====================
 
-  async createExtractionTemplate(template: InsertExtractionTemplate): Promise<ExtractionTemplate> {
+  async createExtractionTemplate(
+    template: InsertExtractionTemplate,
+  ): Promise<ExtractionTemplate> {
     try {
-      const result = await db.insert(extractionTemplates).values(template).returning();
+      const result = await db
+        .insert(extractionTemplates)
+        .values(template)
+        .returning();
       return result[0];
     } catch (error) {
       console.error("Error creating extraction template:", error);
@@ -14003,9 +14915,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getExtractionTemplate(id: string): Promise<ExtractionTemplate | undefined> {
+  async getExtractionTemplate(
+    id: string,
+  ): Promise<ExtractionTemplate | undefined> {
     try {
-      const result = await db.select().from(extractionTemplates).where(eq(extractionTemplates.id, id)).limit(1);
+      const result = await db
+        .select()
+        .from(extractionTemplates)
+        .where(eq(extractionTemplates.id, id))
+        .limit(1);
       return result[0];
     } catch (error) {
       console.error("Error getting extraction template:", error);
@@ -14015,7 +14933,8 @@ export class DatabaseStorage implements IStorage {
 
   async getExtractionTemplates(): Promise<ExtractionTemplate[]> {
     try {
-      return await db.select()
+      return await db
+        .select()
         .from(extractionTemplates)
         .where(eq(extractionTemplates.isActive, true))
         .orderBy(desc(extractionTemplates.createdAt));
@@ -14025,18 +14944,21 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateExtractionTemplate(id: string, template: Partial<InsertExtractionTemplate>): Promise<ExtractionTemplate> {
+  async updateExtractionTemplate(
+    id: string,
+    template: Partial<InsertExtractionTemplate>,
+  ): Promise<ExtractionTemplate> {
     try {
       const result = await db
         .update(extractionTemplates)
         .set({ ...template, updatedAt: new Date() })
         .where(eq(extractionTemplates.id, id))
         .returning();
-      
+
       if (!result[0]) {
         throw new Error("Template not found");
       }
-      
+
       // Increment usage count if template is being used
       if (template.usageCount !== undefined) {
         await db
@@ -14044,7 +14966,7 @@ export class DatabaseStorage implements IStorage {
           .set({ usageCount: sql`${extractionTemplates.usageCount} + 1` })
           .where(eq(extractionTemplates.id, id));
       }
-      
+
       return result[0];
     } catch (error) {
       console.error("Error updating extraction template:", error);
@@ -14054,7 +14976,8 @@ export class DatabaseStorage implements IStorage {
 
   async deleteExtractionTemplate(id: string): Promise<void> {
     try {
-      await db.update(extractionTemplates)
+      await db
+        .update(extractionTemplates)
         .set({ isActive: false })
         .where(eq(extractionTemplates.id, id));
     } catch (error) {
@@ -14066,7 +14989,7 @@ export class DatabaseStorage implements IStorage {
   async createExtractedData(data: InsertExtractedData): Promise<ExtractedData> {
     try {
       const result = await db.insert(extractedData).values(data).returning();
-      
+
       // Update template usage count
       if (data.templateId) {
         await db
@@ -14074,7 +14997,7 @@ export class DatabaseStorage implements IStorage {
           .set({ usageCount: sql`${extractionTemplates.usageCount} + 1` })
           .where(eq(extractionTemplates.id, data.templateId));
       }
-      
+
       return result[0];
     } catch (error) {
       console.error("Error creating extracted data:", error);
@@ -14084,7 +15007,11 @@ export class DatabaseStorage implements IStorage {
 
   async getExtractedData(id: string): Promise<ExtractedData | undefined> {
     try {
-      const result = await db.select().from(extractedData).where(eq(extractedData.id, id)).limit(1);
+      const result = await db
+        .select()
+        .from(extractedData)
+        .where(eq(extractedData.id, id))
+        .limit(1);
       return result[0];
     } catch (error) {
       console.error("Error getting extracted data:", error);
@@ -14094,7 +15021,8 @@ export class DatabaseStorage implements IStorage {
 
   async getExtractedDataBySource(sourceId: string): Promise<ExtractedData[]> {
     try {
-      return await db.select()
+      return await db
+        .select()
         .from(extractedData)
         .where(eq(extractedData.sourceId, sourceId))
         .orderBy(desc(extractedData.extractedAt));
@@ -14104,9 +15032,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getExtractedDataByTemplate(templateId: string): Promise<ExtractedData[]> {
+  async getExtractedDataByTemplate(
+    templateId: string,
+  ): Promise<ExtractedData[]> {
     try {
-      return await db.select()
+      return await db
+        .select()
         .from(extractedData)
         .where(eq(extractedData.templateId, templateId))
         .orderBy(desc(extractedData.extractedAt));
@@ -14116,24 +15047,30 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateExtractedData(id: string, data: Partial<InsertExtractedData>): Promise<ExtractedData> {
+  async updateExtractedData(
+    id: string,
+    data: Partial<InsertExtractedData>,
+  ): Promise<ExtractedData> {
     try {
       // If validation status is being updated to validated/corrected, set validatedAt
       const updates: any = { ...data };
-      if (data.validationStatus && ['validated', 'corrected'].includes(data.validationStatus)) {
+      if (
+        data.validationStatus &&
+        ["validated", "corrected"].includes(data.validationStatus)
+      ) {
         updates.validatedAt = new Date();
       }
-      
+
       const result = await db
         .update(extractedData)
         .set(updates)
         .where(eq(extractedData.id, id))
         .returning();
-      
+
       if (!result[0]) {
         throw new Error("Extracted data not found");
       }
-      
+
       return result[0];
     } catch (error) {
       console.error("Error updating extracted data:", error);
@@ -14153,14 +15090,16 @@ export class DatabaseStorage implements IStorage {
       const page = params.page || 1;
       const limit = params.limit || 20;
       const offset = (page - 1) * limit;
-      
+
       // Build filters
       const conditions = [];
       if (params.templateId) {
         conditions.push(eq(extractedData.templateId, params.templateId));
       }
       if (params.validationStatus) {
-        conditions.push(eq(extractedData.validationStatus, params.validationStatus));
+        conditions.push(
+          eq(extractedData.validationStatus, params.validationStatus),
+        );
       }
       if (params.startDate) {
         conditions.push(gte(extractedData.extractedAt, params.startDate));
@@ -14168,31 +15107,36 @@ export class DatabaseStorage implements IStorage {
       if (params.endDate) {
         conditions.push(lte(extractedData.extractedAt, params.endDate));
       }
-      
+
       // Build query
-      const query = conditions.length > 0
-        ? db.select().from(extractedData).where(and(...conditions))
-        : db.select().from(extractedData);
-      
+      const query =
+        conditions.length > 0
+          ? db
+              .select()
+              .from(extractedData)
+              .where(and(...conditions))
+          : db.select().from(extractedData);
+
       // Get total count
-      const countResult = await db.select({ count: sql`count(*)` })
+      const countResult = await db
+        .select({ count: sql`count(*)` })
         .from(extractedData)
         .where(conditions.length > 0 ? and(...conditions) : undefined);
       const total = Number(countResult[0]?.count || 0);
-      
+
       // Get paginated data
       const data = await query
         .orderBy(desc(extractedData.extractedAt))
         .limit(limit)
         .offset(offset);
-      
+
       return {
         data,
         total,
         page,
         totalPages: Math.ceil(total / limit),
         limit,
-        offset
+        offset,
       };
     } catch (error) {
       console.error("Error getting paginated extracted data:", error);
@@ -14200,20 +15144,31 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async batchCreateExtractedData(dataList: InsertExtractedData[]): Promise<ExtractedData[]> {
+  async batchCreateExtractedData(
+    dataList: InsertExtractedData[],
+  ): Promise<ExtractedData[]> {
     try {
-      const result = await db.insert(extractedData).values(dataList).returning();
-      
+      const result = await db
+        .insert(extractedData)
+        .values(dataList)
+        .returning();
+
       // Update template usage counts
-      const templateIds = [...new Set(dataList.map(d => d.templateId).filter(Boolean))];
+      const templateIds = [
+        ...new Set(dataList.map((d) => d.templateId).filter(Boolean)),
+      ];
       for (const templateId of templateIds) {
-        const count = dataList.filter(d => d.templateId === templateId).length;
+        const count = dataList.filter(
+          (d) => d.templateId === templateId,
+        ).length;
         await db
           .update(extractionTemplates)
-          .set({ usageCount: sql`${extractionTemplates.usageCount} + ${count}` })
+          .set({
+            usageCount: sql`${extractionTemplates.usageCount} + ${count}`,
+          })
           .where(eq(extractionTemplates.id, templateId as string));
       }
-      
+
       return result;
     } catch (error) {
       console.error("Error batch creating extracted data:", error);
@@ -14229,32 +15184,40 @@ export class DatabaseStorage implements IStorage {
   }> {
     try {
       // Get total extractions
-      const totalResult = await db.select({ count: sql`count(*)` }).from(extractedData);
+      const totalResult = await db
+        .select({ count: sql`count(*)` })
+        .from(extractedData);
       const totalExtractions = Number(totalResult[0]?.count || 0);
-      
+
       // Get average confidence
-      const confidenceResult = await db.select({ avg: sql`avg(${extractedData.confidence})` }).from(extractedData);
+      const confidenceResult = await db
+        .select({ avg: sql`avg(${extractedData.confidence})` })
+        .from(extractedData);
       const averageConfidence = Number(confidenceResult[0]?.avg || 0);
-      
+
       // Get validation rate
-      const validatedResult = await db.select({ count: sql`count(*)` })
+      const validatedResult = await db
+        .select({ count: sql`count(*)` })
         .from(extractedData)
-        .where(sql`${extractedData.validationStatus} IN ('validated', 'corrected')`);
+        .where(
+          sql`${extractedData.validationStatus} IN ('validated', 'corrected')`,
+        );
       const validatedCount = Number(validatedResult[0]?.count || 0);
-      const validationRate = totalExtractions > 0 ? validatedCount / totalExtractions : 0;
-      
+      const validationRate =
+        totalExtractions > 0 ? validatedCount / totalExtractions : 0;
+
       // Get template usage
       const templates = await db.select().from(extractionTemplates);
       const templateUsage: Record<string, number> = {};
       for (const template of templates) {
         templateUsage[template.name] = template.usageCount;
       }
-      
+
       return {
         totalExtractions,
         averageConfidence,
         validationRate,
-        templateUsage
+        templateUsage,
       };
     } catch (error) {
       console.error("Error getting extraction stats:", error);
@@ -14274,7 +15237,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updatePricingRule(id: string, rule: Partial<InsertPricingRules>): Promise<PricingRules> {
+  async updatePricingRule(
+    id: string,
+    rule: Partial<InsertPricingRules>,
+  ): Promise<PricingRules> {
     try {
       const [result] = await db
         .update(pricingRules)
@@ -14291,15 +15257,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getPricingRuleByProduct(productId: string): Promise<PricingRules | undefined> {
+  async getPricingRuleByProduct(
+    productId: string,
+  ): Promise<PricingRules | undefined> {
     try {
       const result = await db
         .select()
         .from(pricingRules)
-        .where(and(
-          eq(pricingRules.productId, productId),
-          eq(pricingRules.isActive, true)
-        ))
+        .where(
+          and(
+            eq(pricingRules.productId, productId),
+            eq(pricingRules.isActive, true),
+          ),
+        )
         .limit(1);
       return result[0];
     } catch (error) {
@@ -14323,7 +15293,10 @@ export class DatabaseStorage implements IStorage {
 
   async recordPriceChange(history: InsertPriceHistory): Promise<PriceHistory> {
     try {
-      const [result] = await db.insert(priceHistory).values(history).returning();
+      const [result] = await db
+        .insert(priceHistory)
+        .values(history)
+        .returning();
       return result;
     } catch (error) {
       console.error("Error recording price change:", error);
@@ -14331,27 +15304,33 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getPriceHistory(productId: string, params?: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  }): Promise<PriceHistory[]> {
+  async getPriceHistory(
+    productId: string,
+    params?: {
+      startDate?: Date;
+      endDate?: Date;
+      limit?: number;
+    },
+  ): Promise<PriceHistory[]> {
     try {
       const conditions = [eq(priceHistory.productId, productId)];
-      
+
       if (params?.startDate) {
         conditions.push(gte(priceHistory.changedAt, params.startDate));
       }
       if (params?.endDate) {
         conditions.push(lte(priceHistory.changedAt, params.endDate));
       }
-      
-      let query = db.select().from(priceHistory).where(and(...conditions));
-      
+
+      let query = db
+        .select()
+        .from(priceHistory)
+        .where(and(...conditions));
+
       if (params?.limit) {
         query = query.limit(params.limit);
       }
-      
+
       const result = await query.orderBy(desc(priceHistory.changedAt));
       return result;
     } catch (error) {
@@ -14360,9 +15339,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async recordPricingPerformance(performance: InsertPricingPerformance): Promise<PricingPerformance> {
+  async recordPricingPerformance(
+    performance: InsertPricingPerformance,
+  ): Promise<PricingPerformance> {
     try {
-      const [result] = await db.insert(pricingPerformance).values(performance).returning();
+      const [result] = await db
+        .insert(pricingPerformance)
+        .values(performance)
+        .returning();
       return result;
     } catch (error) {
       console.error("Error recording pricing performance:", error);
@@ -14370,20 +15354,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getPricingPerformance(productId: string, params?: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<PricingPerformance[]> {
+  async getPricingPerformance(
+    productId: string,
+    params?: {
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ): Promise<PricingPerformance[]> {
     try {
       const conditions = [eq(pricingPerformance.productId, productId)];
-      
+
       if (params?.startDate) {
         conditions.push(gte(pricingPerformance.periodStart, params.startDate));
       }
       if (params?.endDate) {
         conditions.push(lte(pricingPerformance.periodEnd, params.endDate));
       }
-      
+
       const result = await db
         .select()
         .from(pricingPerformance)
@@ -14418,50 +15405,68 @@ export class DatabaseStorage implements IStorage {
       if (params?.endDate) {
         conditions.push(lte(pricingPerformance.periodEnd, params.endDate));
       }
-      
+
       // Get performance data
       const performanceData = await db
         .select()
         .from(pricingPerformance)
         .where(conditions.length > 0 ? and(...conditions) : undefined);
-      
+
       // Calculate metrics
-      const totalRevenue = performanceData.reduce((sum, p) => sum + p.revenue, 0);
-      const averageConversionRate = performanceData.length > 0
-        ? performanceData.reduce((sum, p) => sum + (p.conversionRate || 0), 0) / performanceData.length
-        : 0;
-      
+      const totalRevenue = performanceData.reduce(
+        (sum, p) => sum + p.revenue,
+        0,
+      );
+      const averageConversionRate =
+        performanceData.length > 0
+          ? performanceData.reduce(
+              (sum, p) => sum + (p.conversionRate || 0),
+              0,
+            ) / performanceData.length
+          : 0;
+
       // Get price changes
       const priceChanges = await db.select().from(priceHistory);
-      const averagePriceChange = priceChanges.length > 0
-        ? priceChanges.reduce((sum, p) => {
-            const change = p.previousPrice ? (p.price - p.previousPrice) / p.previousPrice : 0;
-            return sum + change;
-          }, 0) / priceChanges.length
-        : 0;
-      
+      const averagePriceChange =
+        priceChanges.length > 0
+          ? priceChanges.reduce((sum, p) => {
+              const change = p.previousPrice
+                ? (p.price - p.previousPrice) / p.previousPrice
+                : 0;
+              return sum + change;
+            }, 0) / priceChanges.length
+          : 0;
+
       // Aggregate by product for top performers
-      const productMetrics = new Map<string, { revenue: number; conversions: number; count: number }>();
-      
+      const productMetrics = new Map<
+        string,
+        { revenue: number; conversions: number; count: number }
+      >();
+
       for (const perf of performanceData) {
-        const existing = productMetrics.get(perf.productId) || { revenue: 0, conversions: 0, count: 0 };
+        const existing = productMetrics.get(perf.productId) || {
+          revenue: 0,
+          conversions: 0,
+          count: 0,
+        };
         productMetrics.set(perf.productId, {
           revenue: existing.revenue + perf.revenue,
           conversions: existing.conversions + (perf.conversionRate || 0),
           count: existing.count + 1,
         });
       }
-      
+
       // Get top performing products
       const topPerformingProducts = Array.from(productMetrics.entries())
         .map(([productId, metrics]) => ({
           productId,
           revenue: metrics.revenue,
-          conversionRate: metrics.count > 0 ? metrics.conversions / metrics.count : 0,
+          conversionRate:
+            metrics.count > 0 ? metrics.conversions / metrics.count : 0,
         }))
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 10);
-      
+
       return {
         totalRevenue,
         averageConversionRate,
@@ -14476,7 +15481,7 @@ export class DatabaseStorage implements IStorage {
 
   async getCurrentDemand(productId: string): Promise<{
     demandScore: number;
-    trend: 'increasing' | 'stable' | 'decreasing';
+    trend: "increasing" | "stable" | "decreasing";
     metrics: {
       views?: number;
       clicks?: number;
@@ -14491,29 +15496,38 @@ export class DatabaseStorage implements IStorage {
         startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
         limit: 10,
       });
-      
+
       const recentPerformance = await this.getPricingPerformance(productId, {
         startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       });
-      
+
       // Calculate demand score based on recent performance
       let demandScore = 50; // Base score
-      let trend: 'increasing' | 'stable' | 'decreasing' = 'stable';
-      
+      let trend: "increasing" | "stable" | "decreasing" = "stable";
+
       if (recentHistory.length > 0) {
-        const avgDemand = recentHistory.reduce((sum, h) => sum + (h.demandLevel || 50), 0) / recentHistory.length;
+        const avgDemand =
+          recentHistory.reduce((sum, h) => sum + (h.demandLevel || 50), 0) /
+          recentHistory.length;
         demandScore = avgDemand;
-        
+
         // Determine trend
         if (recentHistory.length >= 3) {
-          const recent = recentHistory.slice(0, 3).reduce((sum, h) => sum + (h.demandLevel || 50), 0) / 3;
-          const older = recentHistory.slice(3, 6).reduce((sum, h) => sum + (h.demandLevel || 50), 0) / Math.min(3, recentHistory.slice(3, 6).length);
-          
-          if (recent > older * 1.1) trend = 'increasing';
-          else if (recent < older * 0.9) trend = 'decreasing';
+          const recent =
+            recentHistory
+              .slice(0, 3)
+              .reduce((sum, h) => sum + (h.demandLevel || 50), 0) / 3;
+          const older =
+            recentHistory
+              .slice(3, 6)
+              .reduce((sum, h) => sum + (h.demandLevel || 50), 0) /
+            Math.min(3, recentHistory.slice(3, 6).length);
+
+          if (recent > older * 1.1) trend = "increasing";
+          else if (recent < older * 0.9) trend = "decreasing";
         }
       }
-      
+
       // Aggregate metrics from recent performance
       const metrics = {
         views: Math.floor(Math.random() * 1000 + 100),
@@ -14521,7 +15535,7 @@ export class DatabaseStorage implements IStorage {
         cartAdds: Math.floor(Math.random() * 50 + 5),
         conversions: recentPerformance.reduce((sum, p) => sum + p.unitsSold, 0),
       };
-      
+
       return {
         demandScore,
         trend,
@@ -14543,22 +15557,28 @@ export class DatabaseStorage implements IStorage {
       // Simulate inventory data - in production, this would pull from inventory system
       const stockLevel = Math.floor(Math.random() * 100 + 20);
       const inventoryScore = Math.min(100, (stockLevel / 100) * 100); // Score based on stock level
-      
+
       // Calculate days of supply based on recent sales
       const recentPerformance = await this.getPricingPerformance(productId, {
         startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
       });
-      
-      const avgDailySales = recentPerformance.length > 0
-        ? recentPerformance.reduce((sum, p) => {
-            const days = Math.ceil((p.periodEnd.getTime() - p.periodStart.getTime()) / (24 * 60 * 60 * 1000));
-            return sum + (p.unitsSold / Math.max(1, days));
-          }, 0) / recentPerformance.length
-        : 1;
-      
-      const daysOfSupply = Math.floor(stockLevel / Math.max(0.1, avgDailySales));
+
+      const avgDailySales =
+        recentPerformance.length > 0
+          ? recentPerformance.reduce((sum, p) => {
+              const days = Math.ceil(
+                (p.periodEnd.getTime() - p.periodStart.getTime()) /
+                  (24 * 60 * 60 * 1000),
+              );
+              return sum + p.unitsSold / Math.max(1, days);
+            }, 0) / recentPerformance.length
+          : 1;
+
+      const daysOfSupply = Math.floor(
+        stockLevel / Math.max(0.1, avgDailySales),
+      );
       const reorderPoint = Math.floor(avgDailySales * 7); // 7 days of supply
-      
+
       return {
         inventoryScore,
         stockLevel,
@@ -14571,29 +15591,31 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCompetitorPricing(productId: string): Promise<Array<{
-    competitorName: string;
-    price: number;
-    source: string;
-    lastUpdated: Date;
-  }>> {
+  async getCompetitorPricing(productId: string): Promise<
+    Array<{
+      competitorName: string;
+      price: number;
+      source: string;
+      lastUpdated: Date;
+    }>
+  > {
     try {
       // Simulate competitor data - in production, this would pull from market intelligence APIs
       const competitors = [
-        { name: 'Competitor A', priceMultiplier: 0.95 },
-        { name: 'Competitor B', priceMultiplier: 1.05 },
-        { name: 'Competitor C', priceMultiplier: 0.98 },
-        { name: 'Market Average', priceMultiplier: 1.0 },
+        { name: "Competitor A", priceMultiplier: 0.95 },
+        { name: "Competitor B", priceMultiplier: 1.05 },
+        { name: "Competitor C", priceMultiplier: 0.98 },
+        { name: "Market Average", priceMultiplier: 1.0 },
       ];
-      
+
       // Get current product price
       const rule = await this.getPricingRuleByProduct(productId);
       const basePrice = rule?.basePrice || 10;
-      
-      return competitors.map(comp => ({
+
+      return competitors.map((comp) => ({
         competitorName: comp.name,
         price: basePrice * comp.priceMultiplier * (0.9 + Math.random() * 0.2), // Add some variance
-        source: 'Market Intelligence API',
+        source: "Market Intelligence API",
         lastUpdated: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000), // Within last 24 hours
       }));
     } catch (error) {
@@ -14602,11 +15624,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async calculateOptimalPrice(productId: string, params?: {
-    targetRevenue?: number;
-    targetConversion?: number;
-    includeCompetition?: boolean;
-  }): Promise<{
+  async calculateOptimalPrice(
+    productId: string,
+    params?: {
+      targetRevenue?: number;
+      targetConversion?: number;
+      includeCompetition?: boolean;
+    },
+  ): Promise<{
     recommendedPrice: number;
     confidence: number;
     reasoning: string[];
@@ -14618,74 +15643,99 @@ export class DatabaseStorage implements IStorage {
   }> {
     try {
       const reasoning: string[] = [];
-      
+
       // Get pricing rule and current data
       const rule = await this.getPricingRuleByProduct(productId);
       if (!rule) {
         throw new Error("No pricing rule found for product");
       }
-      
+
       const demand = await this.getCurrentDemand(productId);
       const inventory = await this.getCurrentInventory(productId);
-      const competitors = params?.includeCompetition ? await this.getCompetitorPricing(productId) : [];
-      
+      const competitors = params?.includeCompetition
+        ? await this.getCompetitorPricing(productId)
+        : [];
+
       // Start with base price
       let recommendedPrice = rule.basePrice;
       let confidence = 0.85; // Base confidence
-      
+
       // Apply demand-based adjustments
       const demandWeight = rule.factors.demandWeight || 0.3;
       if (demand.demandScore > (rule.factors.demandThresholds?.high || 70)) {
-        const adjustment = 1 + (0.1 * demandWeight); // Up to 10% increase
+        const adjustment = 1 + 0.1 * demandWeight; // Up to 10% increase
         recommendedPrice *= adjustment;
-        reasoning.push(`High demand (${demand.demandScore.toFixed(0)}/100) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`);
-      } else if (demand.demandScore < (rule.factors.demandThresholds?.low || 30)) {
-        const adjustment = 1 - (0.05 * demandWeight); // Up to 5% decrease
+        reasoning.push(
+          `High demand (${demand.demandScore.toFixed(0)}/100) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`,
+        );
+      } else if (
+        demand.demandScore < (rule.factors.demandThresholds?.low || 30)
+      ) {
+        const adjustment = 1 - 0.05 * demandWeight; // Up to 5% decrease
         recommendedPrice *= adjustment;
-        reasoning.push(`Low demand (${demand.demandScore.toFixed(0)}/100) - decreased price by ${((1 - adjustment) * 100).toFixed(1)}%`);
+        reasoning.push(
+          `Low demand (${demand.demandScore.toFixed(0)}/100) - decreased price by ${((1 - adjustment) * 100).toFixed(1)}%`,
+        );
       }
-      
+
       // Apply inventory-based adjustments
       const inventoryWeight = rule.factors.inventoryWeight || 0.3;
-      if (inventory.inventoryScore > (rule.factors.inventoryThresholds?.high || 80)) {
-        const adjustment = 1 - (0.15 * inventoryWeight); // Up to 15% discount
+      if (
+        inventory.inventoryScore >
+        (rule.factors.inventoryThresholds?.high || 80)
+      ) {
+        const adjustment = 1 - 0.15 * inventoryWeight; // Up to 15% discount
         recommendedPrice *= adjustment;
-        reasoning.push(`High inventory (${inventory.stockLevel} units) - applied ${((1 - adjustment) * 100).toFixed(1)}% discount`);
-      } else if (inventory.inventoryScore < (rule.factors.inventoryThresholds?.low || 20)) {
-        const adjustment = 1 + (0.05 * inventoryWeight); // Up to 5% increase
+        reasoning.push(
+          `High inventory (${inventory.stockLevel} units) - applied ${((1 - adjustment) * 100).toFixed(1)}% discount`,
+        );
+      } else if (
+        inventory.inventoryScore < (rule.factors.inventoryThresholds?.low || 20)
+      ) {
+        const adjustment = 1 + 0.05 * inventoryWeight; // Up to 5% increase
         recommendedPrice *= adjustment;
-        reasoning.push(`Low inventory (${inventory.stockLevel} units) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`);
+        reasoning.push(
+          `Low inventory (${inventory.stockLevel} units) - increased price by ${((adjustment - 1) * 100).toFixed(1)}%`,
+        );
       }
-      
+
       // Apply competition-based adjustments
       if (competitors.length > 0 && params?.includeCompetition) {
         const competitionWeight = rule.factors.competitionWeight || 0.2;
-        const avgCompetitorPrice = competitors.reduce((sum, c) => sum + c.price, 0) / competitors.length;
-        
+        const avgCompetitorPrice =
+          competitors.reduce((sum, c) => sum + c.price, 0) / competitors.length;
+
         if (recommendedPrice > avgCompetitorPrice * 1.1) {
-          const adjustment = 1 - (0.05 * competitionWeight);
+          const adjustment = 1 - 0.05 * competitionWeight;
           recommendedPrice *= adjustment;
-          reasoning.push(`Above market average ($${avgCompetitorPrice.toFixed(2)}) - reduced by ${((1 - adjustment) * 100).toFixed(1)}%`);
+          reasoning.push(
+            `Above market average ($${avgCompetitorPrice.toFixed(2)}) - reduced by ${((1 - adjustment) * 100).toFixed(1)}%`,
+          );
           confidence *= 0.95; // Slightly lower confidence when adjusting for competition
         } else if (recommendedPrice < avgCompetitorPrice * 0.9) {
-          const adjustment = 1 + (0.03 * competitionWeight);
+          const adjustment = 1 + 0.03 * competitionWeight;
           recommendedPrice *= adjustment;
-          reasoning.push(`Below market average ($${avgCompetitorPrice.toFixed(2)}) - increased by ${((adjustment - 1) * 100).toFixed(1)}%`);
+          reasoning.push(
+            `Below market average ($${avgCompetitorPrice.toFixed(2)}) - increased by ${((adjustment - 1) * 100).toFixed(1)}%`,
+          );
         }
       }
-      
+
       // Apply seasonal/trend adjustments
-      if (demand.trend === 'increasing') {
+      if (demand.trend === "increasing") {
         recommendedPrice *= 1.02;
         reasoning.push("Demand trending up - applied 2% increase");
-      } else if (demand.trend === 'decreasing') {
+      } else if (demand.trend === "decreasing") {
         recommendedPrice *= 0.98;
         reasoning.push("Demand trending down - applied 2% decrease");
       }
-      
+
       // Ensure price stays within bounds
-      recommendedPrice = Math.max(rule.minPrice, Math.min(rule.maxPrice, recommendedPrice));
-      
+      recommendedPrice = Math.max(
+        rule.minPrice,
+        Math.min(rule.maxPrice, recommendedPrice),
+      );
+
       if (recommendedPrice === rule.minPrice) {
         reasoning.push(`Price capped at minimum: $${rule.minPrice.toFixed(2)}`);
         confidence *= 0.9;
@@ -14693,19 +15743,19 @@ export class DatabaseStorage implements IStorage {
         reasoning.push(`Price capped at maximum: $${rule.maxPrice.toFixed(2)}`);
         confidence *= 0.9;
       }
-      
+
       // Calculate projected impact
       const priceChange = (recommendedPrice - rule.basePrice) / rule.basePrice;
       const elasticity = rule.factors.elasticity || -1.5; // Default price elasticity
       const demandChange = priceChange * elasticity;
       const conversionChange = demandChange * 0.5; // Conversion impact is half of demand impact
-      
+
       const projectedImpact = {
         revenue: (1 + priceChange) * (1 + demandChange) - 1, // Revenue change percentage
         conversionRate: conversionChange,
         demandChange: demandChange,
       };
-      
+
       return {
         recommendedPrice,
         confidence,
@@ -14723,10 +15773,13 @@ export class DatabaseStorage implements IStorage {
   /**
    * Get all image processing jobs for a user
    */
-  async getImageProcessingJobs(userId: string, status?: string): Promise<ImageProcessing[]> {
+  async getImageProcessingJobs(
+    userId: string,
+    status?: string,
+  ): Promise<ImageProcessing[]> {
     try {
       const conditions = [eq(imageProcessing.userId, userId)];
-      
+
       if (status) {
         conditions.push(eq(imageProcessing.status, status as any));
       }
@@ -14765,12 +15818,11 @@ export class DatabaseStorage implements IStorage {
   /**
    * Create a new image processing job
    */
-  async createImageProcessingJob(data: InsertImageProcessing): Promise<ImageProcessing> {
+  async createImageProcessingJob(
+    data: InsertImageProcessing,
+  ): Promise<ImageProcessing> {
     try {
-      const [job] = await db
-        .insert(imageProcessing)
-        .values(data)
-        .returning();
+      const [job] = await db.insert(imageProcessing).values(data).returning();
 
       return job;
     } catch (error) {
@@ -14782,7 +15834,10 @@ export class DatabaseStorage implements IStorage {
   /**
    * Update an image processing job
    */
-  async updateImageProcessingJob(id: string, data: Partial<InsertImageProcessing>): Promise<ImageProcessing | null> {
+  async updateImageProcessingJob(
+    id: string,
+    data: Partial<InsertImageProcessing>,
+  ): Promise<ImageProcessing | null> {
     try {
       const [updated] = await db
         .update(imageProcessing)
@@ -14820,17 +15875,17 @@ export class DatabaseStorage implements IStorage {
   /**
    * Get image presets
    */
-  async getImagePresets(userId?: string, category?: string): Promise<ImagePresets[]> {
+  async getImagePresets(
+    userId?: string,
+    category?: string,
+  ): Promise<ImagePresets[]> {
     try {
       const conditions = [];
 
       if (userId) {
         // Get user's presets and public presets
         conditions.push(
-          or(
-            eq(imagePresets.userId, userId),
-            eq(imagePresets.isPublic, true)
-          )
+          or(eq(imagePresets.userId, userId), eq(imagePresets.isPublic, true)),
         );
       } else {
         // Only get public presets
@@ -14877,10 +15932,7 @@ export class DatabaseStorage implements IStorage {
    */
   async createImagePreset(data: InsertImagePresets): Promise<ImagePresets> {
     try {
-      const [preset] = await db
-        .insert(imagePresets)
-        .values(data)
-        .returning();
+      const [preset] = await db.insert(imagePresets).values(data).returning();
 
       return preset;
     } catch (error) {
@@ -14892,7 +15944,10 @@ export class DatabaseStorage implements IStorage {
   /**
    * Update an image preset
    */
-  async updateImagePreset(id: string, data: Partial<InsertImagePresets>): Promise<ImagePresets | null> {
+  async updateImagePreset(
+    id: string,
+    data: Partial<InsertImagePresets>,
+  ): Promise<ImagePresets | null> {
     try {
       const [updated] = await db
         .update(imagePresets)
@@ -14952,7 +16007,7 @@ export class DatabaseStorage implements IStorage {
    */
   async createFaceDetection(
     userId: string,
-    detection: Omit<InsertFaceDetection, "userId">
+    detection: Omit<InsertFaceDetection, "userId">,
   ): Promise<FaceDetection> {
     try {
       const [created] = await db
@@ -14973,7 +16028,10 @@ export class DatabaseStorage implements IStorage {
   /**
    * Get face detections for a user
    */
-  async getFaceDetections(userId: string, limit: number = 50): Promise<FaceDetection[]> {
+  async getFaceDetections(
+    userId: string,
+    limit: number = 50,
+  ): Promise<FaceDetection[]> {
     try {
       const detections = await db
         .select()
@@ -14994,7 +16052,7 @@ export class DatabaseStorage implements IStorage {
    */
   async getFaceDetectionByImageId(
     userId: string,
-    imageId: string
+    imageId: string,
   ): Promise<FaceDetection | undefined> {
     try {
       const [detection] = await db
@@ -15003,8 +16061,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(faceDetections.userId, userId),
-            eq(faceDetections.imageId, imageId)
-          )
+            eq(faceDetections.imageId, imageId),
+          ),
         )
         .limit(1);
 
@@ -15021,7 +16079,7 @@ export class DatabaseStorage implements IStorage {
   async updateFaceDetection(
     userId: string,
     detectionId: string,
-    updates: Partial<Omit<InsertFaceDetection, "userId">>
+    updates: Partial<Omit<InsertFaceDetection, "userId">>,
   ): Promise<FaceDetection> {
     try {
       const [updated] = await db
@@ -15033,8 +16091,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(faceDetections.id, detectionId),
-            eq(faceDetections.userId, userId)
-          )
+            eq(faceDetections.userId, userId),
+          ),
         )
         .returning();
 
@@ -15052,15 +16110,18 @@ export class DatabaseStorage implements IStorage {
   /**
    * Delete face detection
    */
-  async deleteFaceDetection(userId: string, detectionId: string): Promise<void> {
+  async deleteFaceDetection(
+    userId: string,
+    detectionId: string,
+  ): Promise<void> {
     try {
       await db
         .delete(faceDetections)
         .where(
           and(
             eq(faceDetections.id, detectionId),
-            eq(faceDetections.userId, userId)
-          )
+            eq(faceDetections.userId, userId),
+          ),
         );
     } catch (error) {
       console.error("Error deleting face detection:", error);
@@ -15071,7 +16132,9 @@ export class DatabaseStorage implements IStorage {
   /**
    * Get user privacy settings
    */
-  async getPrivacySettings(userId: string): Promise<PrivacySettings | undefined> {
+  async getPrivacySettings(
+    userId: string,
+  ): Promise<PrivacySettings | undefined> {
     try {
       const cacheKey = `privacy:${userId}`;
       const cached = this.getCached<PrivacySettings>(cacheKey);
@@ -15099,7 +16162,7 @@ export class DatabaseStorage implements IStorage {
    */
   async upsertPrivacySettings(
     userId: string,
-    settings: Omit<InsertPrivacySettings, "userId">
+    settings: Omit<InsertPrivacySettings, "userId">,
   ): Promise<PrivacySettings> {
     try {
       const [upserted] = await db
@@ -15130,7 +16193,10 @@ export class DatabaseStorage implements IStorage {
   /**
    * Delete old face detections based on retention policy
    */
-  async cleanupOldFaceDetections(userId: string, daysOld: number): Promise<number> {
+  async cleanupOldFaceDetections(
+    userId: string,
+    daysOld: number,
+  ): Promise<number> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysOld);
@@ -15140,8 +16206,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(faceDetections.userId, userId),
-            lte(faceDetections.createdAt, cutoffDate)
-          )
+            lte(faceDetections.createdAt, cutoffDate),
+          ),
         )
         .returning();
 
@@ -15159,7 +16225,7 @@ export class DatabaseStorage implements IStorage {
    */
   async createOcrResult(
     userId: string,
-    result: Omit<InsertOcrResult, "userId">
+    result: Omit<InsertOcrResult, "userId">,
   ): Promise<OcrResult> {
     try {
       const [created] = await db
@@ -15186,11 +16252,11 @@ export class DatabaseStorage implements IStorage {
         .from(ocrResults)
         .where(eq(ocrResults.userId, userId))
         .orderBy(desc(ocrResults.createdAt));
-      
+
       if (limit) {
         query.limit(limit);
       }
-      
+
       return await query;
     } catch (error) {
       console.error("Error getting OCR results:", error);
@@ -15203,17 +16269,14 @@ export class DatabaseStorage implements IStorage {
    */
   async getOcrResultByImageId(
     userId: string,
-    imageId: string
+    imageId: string,
   ): Promise<OcrResult | undefined> {
     try {
       const [result] = await db
         .select()
         .from(ocrResults)
         .where(
-          and(
-            eq(ocrResults.userId, userId),
-            eq(ocrResults.imageId, imageId)
-          )
+          and(eq(ocrResults.userId, userId), eq(ocrResults.imageId, imageId)),
         );
       return result;
     } catch (error) {
@@ -15227,18 +16290,13 @@ export class DatabaseStorage implements IStorage {
    */
   async getOcrResultById(
     userId: string,
-    resultId: string
+    resultId: string,
   ): Promise<OcrResult | undefined> {
     try {
       const [result] = await db
         .select()
         .from(ocrResults)
-        .where(
-          and(
-            eq(ocrResults.userId, userId),
-            eq(ocrResults.id, resultId)
-          )
-        );
+        .where(and(eq(ocrResults.userId, userId), eq(ocrResults.id, resultId)));
       return result;
     } catch (error) {
       console.error("Error getting OCR result by ID:", error);
@@ -15252,7 +16310,7 @@ export class DatabaseStorage implements IStorage {
   async updateOcrResult(
     userId: string,
     resultId: string,
-    updates: Partial<Omit<InsertOcrResult, "userId">>
+    updates: Partial<Omit<InsertOcrResult, "userId">>,
   ): Promise<OcrResult> {
     try {
       const [updated] = await db
@@ -15261,18 +16319,13 @@ export class DatabaseStorage implements IStorage {
           ...updates,
           updatedAt: new Date(),
         })
-        .where(
-          and(
-            eq(ocrResults.userId, userId),
-            eq(ocrResults.id, resultId)
-          )
-        )
+        .where(and(eq(ocrResults.userId, userId), eq(ocrResults.id, resultId)))
         .returning();
-      
+
       if (!updated) {
         throw new Error("OCR result not found");
       }
-      
+
       return updated;
     } catch (error) {
       console.error("Error updating OCR result:", error);
@@ -15287,12 +16340,7 @@ export class DatabaseStorage implements IStorage {
     try {
       await db
         .delete(ocrResults)
-        .where(
-          and(
-            eq(ocrResults.userId, userId),
-            eq(ocrResults.id, resultId)
-          )
-        );
+        .where(and(eq(ocrResults.userId, userId), eq(ocrResults.id, resultId)));
     } catch (error) {
       console.error("Error deleting OCR result:", error);
       throw error;
@@ -15304,7 +16352,7 @@ export class DatabaseStorage implements IStorage {
    */
   async createOcrCorrection(
     userId: string,
-    correction: Omit<InsertOcrCorrection, "userId">
+    correction: Omit<InsertOcrCorrection, "userId">,
   ): Promise<OcrCorrection> {
     try {
       const [created] = await db
@@ -15326,7 +16374,7 @@ export class DatabaseStorage implements IStorage {
    */
   async getOcrCorrections(
     userId: string,
-    resultId: string
+    resultId: string,
   ): Promise<OcrCorrection[]> {
     try {
       return await db
@@ -15335,8 +16383,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(ocrCorrections.userId, userId),
-            eq(ocrCorrections.resultId, resultId)
-          )
+            eq(ocrCorrections.resultId, resultId),
+          ),
         )
         .orderBy(desc(ocrCorrections.createdAt));
     } catch (error) {
@@ -15351,7 +16399,7 @@ export class DatabaseStorage implements IStorage {
   async updateOcrCorrection(
     userId: string,
     correctionId: string,
-    updates: Partial<Omit<InsertOcrCorrection, "userId">>
+    updates: Partial<Omit<InsertOcrCorrection, "userId">>,
   ): Promise<OcrCorrection> {
     try {
       const [updated] = await db
@@ -15363,15 +16411,15 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(ocrCorrections.userId, userId),
-            eq(ocrCorrections.id, correctionId)
-          )
+            eq(ocrCorrections.id, correctionId),
+          ),
         )
         .returning();
-      
+
       if (!updated) {
         throw new Error("OCR correction not found");
       }
-      
+
       return updated;
     } catch (error) {
       console.error("Error updating OCR correction:", error);
@@ -15382,15 +16430,18 @@ export class DatabaseStorage implements IStorage {
   /**
    * Delete OCR correction
    */
-  async deleteOcrCorrection(userId: string, correctionId: string): Promise<void> {
+  async deleteOcrCorrection(
+    userId: string,
+    correctionId: string,
+  ): Promise<void> {
     try {
       await db
         .delete(ocrCorrections)
         .where(
           and(
             eq(ocrCorrections.userId, userId),
-            eq(ocrCorrections.id, correctionId)
-          )
+            eq(ocrCorrections.id, correctionId),
+          ),
         );
     } catch (error) {
       console.error("Error deleting OCR correction:", error);
@@ -15401,18 +16452,21 @@ export class DatabaseStorage implements IStorage {
   /**
    * Get all user corrections history
    */
-  async getUserCorrections(userId: string, limit?: number): Promise<OcrCorrection[]> {
+  async getUserCorrections(
+    userId: string,
+    limit?: number,
+  ): Promise<OcrCorrection[]> {
     try {
       const query = db
         .select()
         .from(ocrCorrections)
         .where(eq(ocrCorrections.userId, userId))
         .orderBy(desc(ocrCorrections.createdAt));
-      
+
       if (limit) {
         query.limit(limit);
       }
-      
+
       return await query;
     } catch (error) {
       console.error("Error getting user corrections:", error);
@@ -15421,14 +16475,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // ==================== Transcription Operations ====================
-  
+
   /**
    * Get all transcriptions for a user
    */
-  async getTranscriptions(userId: string, status?: string, limit?: number): Promise<Transcription[]> {
+  async getTranscriptions(
+    userId: string,
+    status?: string,
+    limit?: number,
+  ): Promise<Transcription[]> {
     try {
       const conditions = [eq(transcriptions.userId, userId)];
-      
+
       if (status) {
         conditions.push(eq(transcriptions.status, status as any));
       }
@@ -15449,7 +16507,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Get paginated transcriptions
    */
@@ -15457,11 +16515,11 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     page: number = 1,
     limit: number = 10,
-    status?: string
+    status?: string,
   ): Promise<PaginatedResponse<Transcription>> {
     try {
       const conditions = [eq(transcriptions.userId, userId)];
-      
+
       if (status) {
         conditions.push(eq(transcriptions.status, status as any));
       }
@@ -15479,21 +16537,29 @@ export class DatabaseStorage implements IStorage {
         db
           .select({ count: sql`count(*)` })
           .from(transcriptions)
-          .where(and(...conditions))
+          .where(and(...conditions)),
       ]);
 
       const total = Number(totalResult[0]?.count || 0);
-      return PaginationHelper.createResponse(transcriptionsList, total, page, limit);
+      return PaginationHelper.createResponse(
+        transcriptionsList,
+        total,
+        page,
+        limit,
+      );
     } catch (error) {
       console.error("Error getting paginated transcriptions:", error);
       throw error;
     }
   }
-  
+
   /**
    * Get a specific transcription
    */
-  async getTranscription(userId: string, transcriptionId: string): Promise<Transcription | undefined> {
+  async getTranscription(
+    userId: string,
+    transcriptionId: string,
+  ): Promise<Transcription | undefined> {
     try {
       const [transcription] = await db
         .select()
@@ -15501,8 +16567,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(transcriptions.userId, userId),
-            eq(transcriptions.id, transcriptionId)
-          )
+            eq(transcriptions.id, transcriptionId),
+          ),
         );
 
       return transcription;
@@ -15511,13 +16577,13 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Create a new transcription
    */
   async createTranscription(
     userId: string,
-    transcription: Omit<InsertTranscription, "userId">
+    transcription: Omit<InsertTranscription, "userId">,
   ): Promise<Transcription> {
     try {
       const [newTranscription] = await db
@@ -15531,27 +16597,27 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Update transcription
    */
   async updateTranscription(
     userId: string,
     transcriptionId: string,
-    updates: Partial<Transcription>
+    updates: Partial<Transcription>,
   ): Promise<Transcription> {
     try {
       const [updated] = await db
         .update(transcriptions)
         .set({
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(
           and(
             eq(transcriptions.userId, userId),
-            eq(transcriptions.id, transcriptionId)
-          )
+            eq(transcriptions.id, transcriptionId),
+          ),
         )
         .returning();
 
@@ -15565,30 +16631,36 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Delete a transcription and all its edits
    */
-  async deleteTranscription(userId: string, transcriptionId: string): Promise<void> {
+  async deleteTranscription(
+    userId: string,
+    transcriptionId: string,
+  ): Promise<void> {
     try {
       await db
         .delete(transcriptions)
         .where(
           and(
             eq(transcriptions.userId, userId),
-            eq(transcriptions.id, transcriptionId)
-          )
+            eq(transcriptions.id, transcriptionId),
+          ),
         );
     } catch (error) {
       console.error("Error deleting transcription:", error);
       throw error;
     }
   }
-  
+
   /**
    * Get transcript edits for a transcription
    */
-  async getTranscriptEdits(transcriptionId: string, limit?: number): Promise<TranscriptEdit[]> {
+  async getTranscriptEdits(
+    transcriptionId: string,
+    limit?: number,
+  ): Promise<TranscriptEdit[]> {
     try {
       const query = db
         .select()
@@ -15606,13 +16678,13 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Create a transcript edit
    */
   async createTranscriptEdit(
     userId: string,
-    edit: Omit<InsertTranscriptEdit, "userId">
+    edit: Omit<InsertTranscriptEdit, "userId">,
   ): Promise<TranscriptEdit> {
     try {
       const [newEdit] = await db
@@ -15626,27 +16698,27 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Update transcript edit
    */
   async updateTranscriptEdit(
     userId: string,
     editId: string,
-    updates: Partial<TranscriptEdit>
+    updates: Partial<TranscriptEdit>,
   ): Promise<TranscriptEdit> {
     try {
       const [updated] = await db
         .update(transcriptEdits)
         .set({
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(
           and(
             eq(transcriptEdits.userId, userId),
-            eq(transcriptEdits.id, editId)
-          )
+            eq(transcriptEdits.id, editId),
+          ),
         )
         .returning();
 
@@ -15660,7 +16732,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Delete a transcript edit
    */
@@ -15671,19 +16743,22 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(transcriptEdits.userId, userId),
-            eq(transcriptEdits.id, editId)
-          )
+            eq(transcriptEdits.id, editId),
+          ),
         );
     } catch (error) {
       console.error("Error deleting transcript edit:", error);
       throw error;
     }
   }
-  
+
   /**
    * Get recent transcriptions
    */
-  async getRecentTranscriptions(userId: string, days: number = 7): Promise<Transcription[]> {
+  async getRecentTranscriptions(
+    userId: string,
+    days: number = 7,
+  ): Promise<Transcription[]> {
     try {
       const since = new Date();
       since.setDate(since.getDate() - days);
@@ -15694,8 +16769,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(transcriptions.userId, userId),
-            gte(transcriptions.createdAt, since)
-          )
+            gte(transcriptions.createdAt, since),
+          ),
         )
         .orderBy(desc(transcriptions.createdAt));
 
@@ -15705,14 +16780,18 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   /**
    * Search transcriptions by text
    */
-  async searchTranscriptions(userId: string, query: string, limit: number = 20): Promise<Transcription[]> {
+  async searchTranscriptions(
+    userId: string,
+    query: string,
+    limit: number = 20,
+  ): Promise<Transcription[]> {
     try {
       const searchTerm = `%${query.toLowerCase()}%`;
-      
+
       const results = await db
         .select()
         .from(transcriptions)
@@ -15722,9 +16801,9 @@ export class DatabaseStorage implements IStorage {
             or(
               sql`lower(${transcriptions.transcript}) LIKE ${searchTerm}`,
               sql`lower(${transcriptions.metadata}->>'title') LIKE ${searchTerm}`,
-              sql`lower(${transcriptions.metadata}->>'description') LIKE ${searchTerm}`
-            )
-          )
+              sql`lower(${transcriptions.metadata}->>'description') LIKE ${searchTerm}`,
+            ),
+          ),
         )
         .orderBy(desc(transcriptions.createdAt))
         .limit(limit);
