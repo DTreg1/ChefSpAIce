@@ -48,4 +48,4 @@ integrations = ["javascript_mem_db:1.0.0", "javascript_openai_ai_integrations:1.
 [rules.formatter.fileExtensions]
 
 [rules.formatter.fileExtensions.".ts"]
-id = "module:web/languageServer:typescript-language-server"
+id = "module:nodejs-20/formatter:prettier"

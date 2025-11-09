@@ -9950,7 +9950,7 @@ export class DatabaseStorage implements IStorage {
       // Get all moderation logs within time range
       let logsQuery = db.select().from(moderationLogs);
       if (conditions.length > 0) {
-        logsQuery = logsQuery.where(and(...conditions));
+        logsQuery = logsQuery.where(and(...conditions)) as typeof logsQuery;
       }
       const logs = await logsQuery;
 
@@ -11914,7 +11914,6 @@ export class DatabaseStorage implements IStorage {
         await this.updateUserSavePatterns(userId, {
           avgPauseDuration: avgPause,
           patternData,
-          lastAnalyzed: new Date(),
         });
       }
     } catch (error) {
@@ -12507,7 +12506,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newPrediction] = await db
         .insert(userPredictions)
-        .values([prediction])
+        .values([prediction as any])
         .returning();
       return newPrediction;
     } catch (error) {
@@ -12631,7 +12630,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newAccuracy] = await db
         .insert(predictionAccuracy)
-        .values([accuracy])
+        .values([accuracy as any])
         .returning();
       return newAccuracy;
     } catch (error) {
@@ -12730,7 +12729,7 @@ export class DatabaseStorage implements IStorage {
 
   async createTrend(trend: InsertTrend): Promise<Trend> {
     try {
-      const [newTrend] = await db.insert(trends).values(trend).returning();
+      const [newTrend] = await db.insert(trends).values(trend as any).returning();
       return newTrend;
     } catch (error) {
       console.error("Error creating trend:", error);
@@ -12748,7 +12747,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...update,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(trends.id, trendId))
         .returning();
       return updatedTrend;
@@ -12801,11 +12800,11 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(trends.strength), desc(trends.createdAt));
 
       if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+        query = query.where(and(...conditions)) as typeof query;
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit) as typeof query;
       }
 
       return await query;
@@ -12897,7 +12896,7 @@ export class DatabaseStorage implements IStorage {
 
   async createTrendAlert(alert: InsertTrendAlert): Promise<TrendAlert> {
     try {
-      const [newAlert] = await db.insert(trendAlerts).values(alert).returning();
+      const [newAlert] = await db.insert(trendAlerts).values(alert as any).returning();
       return newAlert;
     } catch (error) {
       console.error("Error creating trend alert:", error);
@@ -12915,7 +12914,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...update,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(trendAlerts.id, alertId))
         .returning();
       return updatedAlert;
@@ -13042,7 +13041,7 @@ export class DatabaseStorage implements IStorage {
 
   async createAbTest(test: InsertAbTest): Promise<AbTest> {
     try {
-      const [newTest] = await db.insert(abTests).values(test).returning();
+      const [newTest] = await db.insert(abTests).values(test as any).returning();
       return newTest;
     } catch (error) {
       console.error("Error creating A/B test:", error);
@@ -13110,7 +13109,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...update,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(abTests.id, testId))
         .returning();
       return updatedTest;
@@ -13152,7 +13151,7 @@ export class DatabaseStorage implements IStorage {
           .set({
             ...result,
             updatedAt: new Date(),
-          })
+          } as any)
           .where(eq(abTestResults.id, existing[0].id))
           .returning();
         return updated;
@@ -13160,7 +13159,7 @@ export class DatabaseStorage implements IStorage {
         // Create new
         const [created] = await db
           .insert(abTestResults)
-          .values(result)
+          .values(result as any)
           .returning();
         return created;
       }
@@ -13284,7 +13283,7 @@ export class DatabaseStorage implements IStorage {
           .set({
             ...insight,
             updatedAt: new Date(),
-          })
+          } as any)
           .where(eq(abTestInsights.id, existing[0].id))
           .returning();
         return updated;
@@ -13292,7 +13291,7 @@ export class DatabaseStorage implements IStorage {
         // Create new
         const [created] = await db
           .insert(abTestInsights)
-          .values(insight)
+          .values(insight as any)
           .returning();
         return created;
       }
@@ -13492,7 +13491,7 @@ export class DatabaseStorage implements IStorage {
 
   async createCohort(cohort: InsertCohort): Promise<Cohort> {
     try {
-      const [newCohort] = await db.insert(cohorts).values(cohort).returning();
+      const [newCohort] = await db.insert(cohorts).values(cohort as any).returning();
 
       // Refresh membership immediately for new cohort
       await this.refreshCohortMembership(newCohort.id);
@@ -13761,7 +13760,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newInsight] = await db
         .insert(cohortInsights)
-        .values(insight)
+        .values(insight as any)
         .returning();
       return newInsight;
     } catch (error) {
