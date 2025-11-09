@@ -80,7 +80,7 @@ export function VersionHistory({
   // Fetch version history
   const { data: versions, isLoading } = useQuery<{ versions: DraftVersion[] }>({
     queryKey: ['/api/autosave/versions', documentId],
-    queryFn: () => apiRequest(`/api/autosave/versions?documentId=${documentId}&limit=20`),
+    queryFn: () => apiRequest(`/api/autosave/versions?documentId=${documentId}&limit=20`, 'GET'),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 

@@ -57,7 +57,7 @@ export function DataValidator({ className }: DataValidatorProps) {
       if (filterTemplate !== 'all') params.append('templateId', filterTemplate);
       params.append('limit', '50');
       
-      return apiRequest(`/api/extract/history?${params}`);
+      return apiRequest(`/api/extract/history?${params}`, 'GET');
     }
   });
 
