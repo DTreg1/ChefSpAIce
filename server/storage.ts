@@ -9913,7 +9913,7 @@ export class DatabaseStorage implements IStorage {
       const draftsWithUserId = drafts.map(draft => ({ ...draft, userId }));
       const result = await db
         .insert(generatedDrafts)
-        .values(draftsWithUserId)
+        .values(draftsWithUserId as any)
         .returning();
       return result;
     } catch (error) {
@@ -10934,7 +10934,7 @@ export class DatabaseStorage implements IStorage {
           ...draft,
           version: nextVersion,
           contentHash,
-        })
+        } as any)
         .returning();
       
       // Clean up old versions (keep only last 10)
@@ -11112,7 +11112,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...patterns,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(savePatterns.userId, userId))
         .returning();
       
@@ -11411,7 +11411,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db
         .insert(completionFeedback)
-        .values(feedback)
+        .values(feedback as any)
         .returning();
       
       return result[0];
