@@ -6,9 +6,10 @@ import {
   conversationContext,
   type InsertMessage,
   type InsertConversation,
-  type InsertConversationContext
+  type InsertConversationContext,
+  type ConversationWithMetadata
 } from '@shared/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 
 // Initialize OpenAI client using Replit AI Integrations
 // This uses Replit's AI Integrations service, which provides OpenAI-compatible API access 
@@ -303,13 +304,36 @@ export class ChatService {
   }
 
   /**
-   * Get user's conversations
+   * Get user's conversations with metadata
    */
-  async getUserConversations(userId: string) {
-    return await db.select()
+  async getUserConversations(userId: string): Promise<ConversationWithMetadata[]> {
+    const userConversations = await db.select()
       .from(conversations)
       .where(eq(conversations.userId, userId))
       .orderBy(desc(conversations.updatedAt));
+
+    const conversationsWithMetadata = await Promise.all(
+      userConversations.map(async (conversation) => {
+        const conversationMessages = await db.select()
+          .from(messages)
+          .where(eq(messages.conversationId, conversation.id))
+          .orderBy(desc(messages.timestamp));
+
+        const lastMessage = conversationMessages.length > 0 
+          ? conversationMessages[0].content 
+          : null;
+        
+        const messageCount = conversationMessages.length;
+
+        return {
+          ...conversation,
+          lastMessage,
+          messageCount
+        };
+      })
+    );
+
+    return conversationsWithMetadata;
   }
 
   /**

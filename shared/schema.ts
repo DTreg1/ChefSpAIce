@@ -3272,6 +3272,11 @@ export const insertConversationSchema = createInsertSchema(conversations).omit({
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type Conversation = typeof conversations.$inferSelect;
 
+export type ConversationWithMetadata = Conversation & {
+  lastMessage: string | null;
+  messageCount: number;
+};
+
 /**
  * Messages Table (Task 7 - AI Chat Assistant)
  * 

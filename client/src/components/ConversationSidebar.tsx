@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { format } from 'date-fns';
-import type { Conversation } from '@shared/schema';
+import type { ConversationWithMetadata } from '@shared/schema';
 
 interface ConversationSidebarProps {
   currentConversationId?: string;
@@ -22,7 +22,7 @@ export function ConversationSidebar({
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch conversations
-  const { data: conversations = [], isLoading } = useQuery({
+  const { data: conversations = [], isLoading } = useQuery<ConversationWithMetadata[]>({
     queryKey: ['/api/chat/conversations'],
     queryFn: async () => {
       const response = await fetch('/api/chat/conversations');
@@ -47,7 +47,7 @@ export function ConversationSidebar({
   });
 
   // Filter conversations based on search
-  const filteredConversations = conversations.filter((conv: Conversation) => {
+  const filteredConversations = conversations.filter((conv: ConversationWithMetadata) => {
     if (!searchQuery) return true;
     return conv.title?.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -103,7 +103,7 @@ export function ConversationSidebar({
             </div>
           )}
 
-          {filteredConversations.map((conversation: Conversation) => (
+          {filteredConversations.map((conversation: ConversationWithMetadata) => (
             <div
               key={conversation.id}
               onClick={() => onSelectConversation(conversation.id)}
@@ -118,9 +118,18 @@ export function ConversationSidebar({
                   <h3 className="font-medium truncate">
                     {conversation.title || 'New Conversation'}
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {conversation.updatedAt ? format(new Date(conversation.updatedAt), 'MMM d, HH:mm') : ''}
-                  </p>
+                  {conversation.lastMessage && (
+                    <p className="text-sm text-muted-foreground truncate mt-1">
+                      {conversation.lastMessage}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                    <span>
+                      {conversation.updatedAt ? format(new Date(conversation.updatedAt), 'MMM d, HH:mm') : ''}
+                    </span>
+                    <span>•</span>
+                    <span>{conversation.messageCount} messages</span>
+                  </div>
                 </div>
                 
                 <Button
