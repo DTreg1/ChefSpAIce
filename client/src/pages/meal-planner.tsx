@@ -99,7 +99,7 @@ export default function MealPlanner() {
   // Delete meal plan mutation
   const deleteMealPlanMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/meal-plans/${id}`, null);
+      return await apiRequest(`/api/meal-plans/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/meal-plans"] });

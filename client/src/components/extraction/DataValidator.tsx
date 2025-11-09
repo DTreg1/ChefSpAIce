@@ -69,10 +69,7 @@ export function DataValidator({ className }: DataValidatorProps) {
   // Validate extraction mutation
   const validateMutation = useMutation({
     mutationFn: async (extractionId: string) => {
-      return apiRequest(`/api/extract/verify/${extractionId}`, {
-        method: 'PUT',
-        body: { validationStatus: 'validated' }
-      });
+      return apiRequest(`/api/extract/verify/${extractionId}`, 'PUT', { validationStatus: 'validated' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/extract/history'] });
@@ -84,10 +81,7 @@ export function DataValidator({ className }: DataValidatorProps) {
   // Correct extraction mutation
   const correctMutation = useMutation({
     mutationFn: async (data: { extractionId: string, corrections: Record<string, any> }) => {
-      return apiRequest('/api/extract/correct', {
-        method: 'POST',
-        body: data
-      });
+      return apiRequest('/api/extract/correct', 'POST', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/extract/history'] });

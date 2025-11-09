@@ -66,9 +66,9 @@ export default function FeedbackBoard() {
   const upvoteMutation = useMutation({
     mutationFn: async ({ feedbackId, action }: { feedbackId: string; action: 'add' | 'remove' }) => {
       if (action === 'add') {
-        return apiRequest('POST', `/api/feedback/${feedbackId}/upvote`);
+        return apiRequest(`/api/feedback/${feedbackId}/upvote`, 'POST');
       } else {
-        return apiRequest('DELETE', `/api/feedback/${feedbackId}/upvote`);
+        return apiRequest(`/api/feedback/${feedbackId}/upvote`, 'DELETE');
       }
     },
     onSuccess: () => {

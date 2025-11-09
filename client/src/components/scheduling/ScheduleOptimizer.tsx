@@ -51,12 +51,9 @@ export function ScheduleOptimizer({
   // Optimize schedule mutation
   const optimizeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("/api/schedule/optimize", {
-        method: "POST",
-        body: JSON.stringify({
-          startDate: dateRange.start.toISOString(),
-          endDate: dateRange.end.toISOString()
-        })
+      const response = await apiRequest("/api/schedule/optimize", "POST", {
+        startDate: dateRange.start.toISOString(),
+        endDate: dateRange.end.toISOString()
       });
       return response as { optimizations: Optimization[]; insights: string[] };
     },
@@ -91,11 +88,8 @@ export function ScheduleOptimizer({
     try {
       // Apply the optimization
       if (optimization.eventId && optimization.newTime) {
-        await apiRequest(`/api/schedule/events/${optimization.eventId}`, {
-          method: "PUT",
-          body: JSON.stringify({
-            startTime: optimization.newTime
-          })
+        await apiRequest(`/api/schedule/events/${optimization.eventId}`, "PUT", {
+          startTime: optimization.newTime
         });
       }
       

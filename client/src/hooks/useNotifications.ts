@@ -11,7 +11,7 @@ export function useNotificationHistory(includeDismissed: boolean = false) {
 export function useDismissNotification() {
   return useMutation({
     mutationFn: async ({ notificationId, dismissedBy }: { notificationId: string; dismissedBy?: string }) => {
-      return apiRequest('POST', `/api/notifications/${notificationId}/dismiss`, { dismissedBy });
+      return apiRequest(`/api/notifications/${notificationId}/dismiss`, 'POST', { dismissedBy });
     },
     onSuccess: () => {
       // Invalidate both dismissed and undismissed queries

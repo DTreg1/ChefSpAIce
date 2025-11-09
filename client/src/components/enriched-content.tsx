@@ -64,7 +64,7 @@ export const EnrichedContent = memo(function EnrichedContent({
         return { matches: [] };
       }
       
-      const response = await apiRequest("POST", "/api/cooking-terms/detect-enhanced", {
+      const response = await apiRequest("/api/cooking-terms/detect-enhanced", "POST", {
         text,
         excludeCategories,
         maxMatches: maxTerms,
@@ -249,7 +249,7 @@ export function useEnrichedText(text: string, options?: {
         return { text };
       }
       
-      const response = await apiRequest("POST", "/api/cooking-terms/enrich", {
+      const response = await apiRequest("/api/cooking-terms/enrich", "POST", {
         text,
         ...options
       });

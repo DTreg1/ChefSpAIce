@@ -53,18 +53,15 @@ export default function WritingAssistant() {
   // Analyze text mutation
   const analyzeMutation = useMutation({
     mutationFn: async (data: { text: string; targetTone: WritingTone }) => {
-      const response = await apiRequest("/api/writing/analyze", {
-        method: "POST",
-        body: JSON.stringify({
-          text: data.text,
-          options: {
-            checkGrammar: true,
-            checkSpelling: true,
-            checkStyle: true,
-            suggestTone: true,
-            targetTone: data.targetTone,
-          },
-        }),
+      const response = await apiRequest("/api/writing/analyze", "POST", {
+        text: data.text,
+        options: {
+          checkGrammar: true,
+          checkSpelling: true,
+          checkStyle: true,
+          suggestTone: true,
+          targetTone: data.targetTone,
+        },
       });
       return response as AnalysisResponse;
     },
@@ -98,12 +95,9 @@ export default function WritingAssistant() {
   // Tone adjustment mutation
   const toneMutation = useMutation({
     mutationFn: async (targetTone: WritingTone) => {
-      const response = await apiRequest("/api/writing/tone", {
-        method: "POST",
-        body: JSON.stringify({
-          text: improvedText || text,
-          targetTone,
-        }),
+      const response = await apiRequest("/api/writing/tone", "POST", {
+        text: improvedText || text,
+        targetTone,
       });
       return response as { adjustedText: string };
     },

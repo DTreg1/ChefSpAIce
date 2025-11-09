@@ -52,7 +52,7 @@ export function CohortBuilder() {
   
   const createCohortMutation = useMutation({
     mutationFn: (cohort: Partial<InsertCohort>) => 
-      apiRequest("/api/cohorts", { method: "POST", body: JSON.stringify(cohort) }),
+      apiRequest("/api/cohorts", "POST", cohort),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cohorts"] });
       toast({

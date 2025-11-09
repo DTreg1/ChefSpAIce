@@ -69,10 +69,7 @@ export function BatchUploader({
       const formData = new FormData();
       formData.append("image", file);
       
-      return apiRequest("/api/images/batch", {
-        method: "POST",
-        body: formData,
-      });
+      return apiRequest("/api/images/batch", "POST", formData);
     }
   });
 

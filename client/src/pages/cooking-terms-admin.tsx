@@ -42,7 +42,7 @@ export default function CookingTermsAdmin() {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: InsertCookingTerm) => 
-      apiRequest("POST", "/api/cooking-terms", data),
+      apiRequest("/api/cooking-terms", "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cooking-terms"] });
       toast({
@@ -64,7 +64,7 @@ export default function CookingTermsAdmin() {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<InsertCookingTerm> }) =>
-      apiRequest("PUT", `/api/cooking-terms/${id}`, data),
+      apiRequest(`/api/cooking-terms/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cooking-terms"] });
       toast({
@@ -86,7 +86,7 @@ export default function CookingTermsAdmin() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
-      apiRequest("DELETE", `/api/cooking-terms/${id}`),
+      apiRequest(`/api/cooking-terms/${id}`, "DELETE"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cooking-terms"] });
       toast({
@@ -106,7 +106,7 @@ export default function CookingTermsAdmin() {
   // Seed mutation
   const seedMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/cooking-terms/seed");
+      const response = await apiRequest("/api/cooking-terms/seed", "POST");
       return await response.json();
     },
     onSuccess: (data) => {

@@ -106,7 +106,7 @@ export function WritingAssistant() {
         .filter(([_, enabled]) => enabled)
         .map(([key, _]) => key);
 
-      const response = await apiRequest("POST", "/api/writing/analyze", {
+      const response = await apiRequest("/api/writing/analyze", "POST", {
         text,
         type: textType,
         targetTone,
@@ -140,7 +140,7 @@ export function WritingAssistant() {
         index => analysisResult?.suggestions[index]?.suggestionType || ""
       );
 
-      const response = await apiRequest("POST", "/api/writing/improve", {
+      const response = await apiRequest("/api/writing/improve", "POST", {
         sessionId: currentSessionId,
         suggestionIds
       });

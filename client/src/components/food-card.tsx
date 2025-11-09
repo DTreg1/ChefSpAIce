@@ -201,7 +201,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
   // Mutation for quick quantity update
   const updateQuantityMutation = useMutation({
     mutationFn: async (newQuantity: number) => {
-      return await apiRequest("PUT", `/api/food-items/${item.id}`, {
+      return await apiRequest(`/api/food-items/${item.id}`, "PUT", {
         quantity: newQuantity.toString(),
         unit: item.unit,
         storageLocationId: item.storageLocationId,
@@ -248,7 +248,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
   // Mutation for quick expiry update
   const updateExpiryMutation = useMutation({
     mutationFn: async (newExpiry: string) => {
-      return await apiRequest("PUT", `/api/food-items/${item.id}`, {
+      return await apiRequest(`/api/food-items/${item.id}`, "PUT", {
         quantity: item.quantity,
         unit: item.unit,
         storageLocationId: item.storageLocationId,
@@ -276,7 +276,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
   // Mutation for quick storage location update
   const updateStorageMutation = useMutation({
     mutationFn: async (newStorageId: string) => {
-      return await apiRequest("PUT", `/api/food-items/${item.id}`, {
+      return await apiRequest(`/api/food-items/${item.id}`, "PUT", {
         quantity: item.quantity,
         unit: item.unit,
         storageLocationId: newStorageId,
@@ -303,7 +303,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("DELETE", `/api/food-items/${item.id}`, null);
+      return await apiRequest(`/api/food-items/${item.id}`, "DELETE");
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });

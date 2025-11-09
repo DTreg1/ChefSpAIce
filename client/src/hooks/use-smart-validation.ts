@@ -41,10 +41,7 @@ export function useSmartValidation() {
       value: string;
       context?: any;
     }) => {
-      const response = await apiRequest("/api/validate/field", {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
+      const response = await apiRequest("/api/validate/field", "POST", params);
       return response;
     },
   });
@@ -56,10 +53,7 @@ export function useSmartValidation() {
       fields: Array<{ name: string; type: string; value: string; required?: boolean }>;
       context?: any;
     }) => {
-      const response = await apiRequest("/api/validate/form", {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
+      const response = await apiRequest("/api/validate/form", "POST", params);
       return response;
     },
   });
@@ -76,10 +70,7 @@ export function useSmartValidation() {
       context?: any;
       resolutionTime?: number;
     }) => {
-      const response = await apiRequest("/api/validate/learn", {
-        method: "POST",
-        body: JSON.stringify(params),
-      });
+      const response = await apiRequest("/api/validate/learn", "POST", params);
       return response;
     },
   });

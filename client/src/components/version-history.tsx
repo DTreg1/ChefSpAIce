@@ -87,9 +87,7 @@ export function VersionHistory({
   // Delete version mutation
   const deleteVersionMutation = useMutation({
     mutationFn: async (draftId: string) =>
-      apiRequest(`/api/autosave/draft/${draftId}`, {
-        method: 'DELETE',
-      }),
+      apiRequest(`/api/autosave/draft/${draftId}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['/api/autosave/versions', documentId],

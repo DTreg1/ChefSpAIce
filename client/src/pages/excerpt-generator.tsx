@@ -58,9 +58,7 @@ export default function ExcerptGeneratorPage() {
     queryKey: ['/api/excerpts', contentId],
     queryFn: async () => {
       try {
-        const response = await apiRequest(`/api/excerpts/${contentId}`, {
-          method: 'GET',
-        });
+        const response = await apiRequest(`/api/excerpts/${contentId}`, 'GET');
         return response.excerpts || [];
       } catch (error) {
         return [];
@@ -76,9 +74,7 @@ export default function ExcerptGeneratorPage() {
       const perfData: Record<string, any> = {};
       for (const excerpt of excerpts) {
         try {
-          const response = await apiRequest(`/api/excerpts/performance?excerptId=${excerpt.id}`, {
-            method: 'GET',
-          });
+          const response = await apiRequest(`/api/excerpts/performance?excerptId=${excerpt.id}`, 'GET');
           perfData[excerpt.id] = {
             views: response.aggregate?.totalViews || 0,
             clicks: response.aggregate?.totalClicks || 0,
@@ -97,13 +93,10 @@ export default function ExcerptGeneratorPage() {
   // Generate excerpts mutation
   const generateMutation = useMutation({
     mutationFn: async (options: ExcerptGenerationOptions) => {
-      const response = await apiRequest('/api/excerpts/generate', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...options,
-          content,
-          contentId,
-        }),
+      const response = await apiRequest('/api/excerpts/generate', 'POST', {
+        ...options,
+        content,
+        contentId,
       });
       return response;
     },
@@ -130,10 +123,7 @@ export default function ExcerptGeneratorPage() {
   // Activate excerpt mutation
   const activateMutation = useMutation({
     mutationFn: async (excerptId: string) => {
-      return await apiRequest(`/api/excerpts/${excerptId}/activate`, {
-        method: 'PUT',
-        body: JSON.stringify({ contentId }),
-      });
+      return await apiRequest(`/api/excerpts/${excerptId}/activate`, 'PUT', { contentId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/excerpts', contentId] });
@@ -154,12 +144,9 @@ export default function ExcerptGeneratorPage() {
   // Track performance mutation
   const trackMutation = useMutation({
     mutationFn: async (excerptId: string) => {
-      return await apiRequest(`/api/excerpts/${excerptId}/track`, {
-        method: 'POST',
-        body: JSON.stringify({
-          views: 1,
-          clicks: Math.random() > 0.8 ? 1 : 0, // Simulate click
-        }),
+      return await apiRequest(`/api/excerpts/${excerptId}/track`, 'POST', {
+        views: 1,
+        clicks: Math.random() > 0.8 ? 1 : 0, // Simulate click
       });
     },
     onSuccess: () => {
@@ -170,12 +157,9 @@ export default function ExcerptGeneratorPage() {
   // Optimize excerpt mutation
   const optimizeMutation = useMutation({
     mutationFn: async (excerptId: string) => {
-      return await apiRequest('/api/excerpts/optimize', {
-        method: 'PUT',
-        body: JSON.stringify({
-          excerptId,
-          targetCTR: 0.2,
-        }),
+      return await apiRequest('/api/excerpts/optimize', 'PUT', {
+        excerptId,
+        targetCTR: 0.2,
       });
     },
     onSuccess: (data) => {

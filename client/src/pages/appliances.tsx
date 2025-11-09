@@ -90,7 +90,7 @@ export default function Appliances() {
   // Add appliance mutation
   const addMutation = useMutation({
     mutationFn: async (data: unknown) => {
-      return apiRequest("POST", "/api/appliances", data);
+      return apiRequest("/api/appliances", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
@@ -112,7 +112,7 @@ export default function Appliances() {
   // Update appliance mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => 
-      apiRequest("PUT", `/api/appliances/${id}`, data),
+      apiRequest(`/api/appliances/${id}`, "PUT", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
       setEditingAppliance(null);
@@ -133,7 +133,7 @@ export default function Appliances() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/appliances/${id}`);
+      return apiRequest(`/api/appliances/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });

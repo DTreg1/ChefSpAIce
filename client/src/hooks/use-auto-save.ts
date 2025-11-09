@@ -118,10 +118,7 @@ export function useAutoSave(
   // Mutation for recording typing events
   const recordEventMutation = useMutation({
     mutationFn: async (event: any) =>
-      apiRequest('/api/autosave/typing-event', {
-        method: 'POST',
-        body: JSON.stringify(event),
-      }),
+      apiRequest('/api/autosave/typing-event', 'POST', event),
   });
 
   // Initialize TensorFlow.js model
@@ -268,12 +265,9 @@ export function useAutoSave(
       const contentHash = await calculateHash(contentRef.current);
 
       // Check for conflicts
-      const conflictCheck = await apiRequest('/api/autosave/check-conflicts', {
-        method: 'POST',
-        body: JSON.stringify({
-          documentId,
-          contentHash,
-        }),
+      const conflictCheck = await apiRequest('/api/autosave/check-conflicts', 'POST', {
+        documentId,
+        contentHash,
       });
 
       let finalContent = contentRef.current;
@@ -398,7 +392,7 @@ export function useAutoSave(
   useEffect(() => {
     const restoreDraft = async () => {
       try {
-        const response = await apiRequest(`/api/autosave/restore?documentId=${documentId}`);
+        const response = await apiRequest(`/api/autosave/restore?documentId=${documentId}`, 'GET');
         if (response.draft && response.draft.content !== content) {
           onRestore?.(response.draft.content);
           lastSaveRef.current = response.draft.content;

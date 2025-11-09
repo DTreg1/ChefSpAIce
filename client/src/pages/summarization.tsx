@@ -60,14 +60,11 @@ export default function SummarizationPage() {
       type: 'tldr' | 'bullet' | 'paragraph';
       length: number;
     }) => {
-      return apiRequest<Summary>('/api/summarize', {
-        method: 'POST',
-        body: JSON.stringify({
-          content: data.content,
-          type: data.type,
-          length: data.length,
-          extractKeyPoints: true,
-        }),
+      return apiRequest<Summary>('/api/summarize', 'POST', {
+        content: data.content,
+        type: data.type,
+        length: data.length,
+        extractKeyPoints: true,
       });
     },
     onSuccess: (data) => {
@@ -89,12 +86,9 @@ export default function SummarizationPage() {
   // Edit summary mutation
   const editSummaryMutation = useMutation({
     mutationFn: async ({ id, text }: { id: string; text: string }) => {
-      return apiRequest<Summary>(`/api/summarize/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          editedText: text,
-          isEdited: true,
-        }),
+      return apiRequest<Summary>(`/api/summarize/${id}`, 'PUT', {
+        editedText: text,
+        isEdited: true,
       });
     },
     onSuccess: (data) => {

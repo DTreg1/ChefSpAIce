@@ -30,7 +30,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
   
   const generateInsightsMutation = useMutation({
     mutationFn: () => 
-      apiRequest(`/api/cohorts/${cohortId}/insights`, { method: "POST" }),
+      apiRequest(`/api/cohorts/${cohortId}/insights`, "POST"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/cohorts/${cohortId}/insights`] });
       toast({
@@ -49,10 +49,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
   
   const updateInsightStatusMutation = useMutation({
     mutationFn: ({ insightId, status }: { insightId: string; status: string }) =>
-      apiRequest(`/api/cohorts/insights/${insightId}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      }),
+      apiRequest(`/api/cohorts/insights/${insightId}/status`, "PATCH", { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/cohorts/${cohortId}/insights`] });
     },

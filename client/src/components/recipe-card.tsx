@@ -72,7 +72,7 @@ export const RecipeCard = React.memo(function RecipeCard({
   const updateMutation = useMutation({
     mutationFn: async (updates: { isFavorite?: boolean; rating?: number }) => {
       if (!id) throw new Error("Recipe ID required");
-      return await apiRequest("PATCH", `/api/recipes/${id}`, updates);
+      return await apiRequest(`/api/recipes/${id}`, "PATCH", updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
@@ -154,7 +154,7 @@ export const RecipeCard = React.memo(function RecipeCard({
 
     setIsAddingToShoppingList(true);
     try {
-      const response = await apiRequest("POST", "/api/shopping-list/add-missing", {
+      const response = await apiRequest("/api/shopping-list/add-missing", "POST", {
         recipeId: id,
         ingredients: missingItems,
       });

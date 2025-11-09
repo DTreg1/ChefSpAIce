@@ -81,7 +81,7 @@ export function NotificationSettings() {
         });
 
         // Send subscription to backend
-        await apiRequest("POST", "/api/push-tokens/register", {
+        await apiRequest("/api/push-tokens/register", "POST", {
           subscription: subscription.toJSON(),
           platform: "web",
         });
@@ -118,7 +118,7 @@ export function NotificationSettings() {
   const disableNotifications = async () => {
     try {
       // Unregister from backend
-      await apiRequest("DELETE", "/api/push-tokens/unregister", {
+      await apiRequest("/api/push-tokens/unregister", "DELETE", {
         platform: "web",
       });
 

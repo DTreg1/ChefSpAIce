@@ -22,12 +22,9 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
 
   const implementWinner = useMutation({
     mutationFn: async (variant: 'A' | 'B') => {
-      return apiRequest("/api/ab/implement", {
-        method: "POST",
-        body: JSON.stringify({ 
-          testId: test.id, 
-          variant 
-        }),
+      return apiRequest("/api/ab/implement", "POST", { 
+        testId: test.id, 
+        variant 
       });
     },
     onSuccess: () => {

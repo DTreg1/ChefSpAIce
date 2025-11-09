@@ -57,10 +57,7 @@ export function BatchProcessor({
   // Batch extraction mutation
   const batchExtractMutation = useMutation({
     mutationFn: async (data: { texts: string[], templateId: string }) => {
-      return apiRequest('/api/extract/batch', {
-        method: 'POST',
-        body: data
-      });
+      return apiRequest('/api/extract/batch', 'POST', data);
     },
     onSuccess: (data) => {
       // Update batch items with results

@@ -61,10 +61,7 @@ export function PriceSimulator({
   // Simulation mutation
   const simulationMutation = useMutation({
     mutationFn: async (data: { productId: string; scenarios: SimulationScenario[] }) => {
-      return apiRequest('/api/pricing/simulate', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      return apiRequest('/api/pricing/simulate', 'POST', data);
     },
     onSuccess: (data: any) => {
       setResults(data.scenarios);

@@ -83,10 +83,7 @@ export function MaintenanceCalendar() {
   // Complete maintenance mutation
   const completeMutation = useMutation({
     mutationFn: (data: any) =>
-      apiRequest('/api/maintenance/complete', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('/api/maintenance/complete', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/maintenance/schedule'] });
       toast({
@@ -100,10 +97,7 @@ export function MaintenanceCalendar() {
   // Update prediction status mutation
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
-      apiRequest(`/api/maintenance/predictions/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status })
-      }),
+      apiRequest(`/api/maintenance/predictions/${id}/status`, 'PATCH', { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/maintenance/schedule'] });
       toast({

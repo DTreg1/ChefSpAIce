@@ -243,7 +243,7 @@ export default function Storage() {
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       const promises = ids.map(id => 
-        apiRequest("DELETE", `/api/food-items/${id}`, null)
+        apiRequest(`/api/food-items/${id}`, "DELETE")
       );
       return await Promise.all(promises);
     },
@@ -270,7 +270,7 @@ export default function Storage() {
   const bulkMoveMutation = useMutation({
     mutationFn: async ({ ids, locationId }: { ids: string[], locationId: string }) => {
       const promises = ids.map(id => 
-        apiRequest("PATCH", `/api/food-items/${id}`, { storageLocationId: locationId })
+        apiRequest(`/api/food-items/${id}`, "PATCH", { storageLocationId: locationId })
       );
       return await Promise.all(promises);
     },
@@ -297,7 +297,7 @@ export default function Storage() {
   const bulkUpdateExpirationMutation = useMutation({
     mutationFn: async ({ ids, date }: { ids: string[], date: string }) => {
       const promises = ids.map(id => 
-        apiRequest("PATCH", `/api/food-items/${id}`, { expirationDate: date })
+        apiRequest(`/api/food-items/${id}`, "PATCH", { expirationDate: date })
       );
       return await Promise.all(promises);
     },
