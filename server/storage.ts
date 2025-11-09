@@ -13553,7 +13553,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(cohorts.id, cohortId))
         .returning();
 
