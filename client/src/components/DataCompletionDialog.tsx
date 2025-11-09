@@ -426,7 +426,7 @@ export function DataCompletionDialog({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {storageLocations?.map((location: any) => (
+                            {(storageLocations || []).map((location: any) => (
                               <SelectItem key={location.id} value={location.id}>
                                 {location.name}
                               </SelectItem>

@@ -315,10 +315,10 @@ export function createDataCompletionRoutes(storage: IStorage) {
         expirationDate: completedItem.expirationDate,
         foodCategory: completedItem.foodCategory,
         barcode: completedItem.barcode,
-        fdcId: completedItem.fdcId,
+        usdaData: completedItem.fdcId ? { fdcId: completedItem.fdcId } : undefined,
         nutrition: completedItem.nutrition ? JSON.stringify(completedItem.nutrition) : undefined,
         servingSize: completedItem.servingSize,
-        servingUnit: completedItem.servingUnit,
+        servingSizeUnit: completedItem.servingUnit,
         imageUrl: completedItem.imageUrl,
       });
       
