@@ -8690,51 +8690,57 @@ export const abTestInsights = pgTable("ab_test_insights", {
 
 /**
  * Insert schema for abTests table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertAbTestSchema = createInsertSchema(abTests, {
-  metadata: abTestConfigurationSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  status: true,
-  targetAudience: true,
-  successMetric: true,
-});
+export const insertAbTestSchema = createInsertSchema(abTests)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    status: true,
+    targetAudience: true,
+    successMetric: true,
+  })
+  .extend({
+    metadata: abTestConfigurationSchema.optional(),
+  });
 
 /**
  * Insert schema for abTestResults table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertAbTestResultSchema = createInsertSchema(abTestResults, {
-  variant: z.enum(["A", "B"]),
-  metadata: abTestMetricsSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  conversions: true,
-  visitors: true,
-  revenue: true,
-  sampleSize: true,
-});
+export const insertAbTestResultSchema = createInsertSchema(abTestResults)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    conversions: true,
+    visitors: true,
+    revenue: true,
+    sampleSize: true,
+  })
+  .extend({
+    variant: z.enum(["A", "B"]),
+    metadata: abTestMetricsSchema.optional(),
+  });
 
 /**
  * Insert schema for abTestInsights table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertAbTestInsightSchema = createInsertSchema(abTestInsights, {
-  winner: z.enum(["A", "B", "inconclusive"]).optional(),
-  recommendation: z.enum(["implement", "continue", "stop", "iterate"]),
-  insights: abTestInsightsSchema.optional(),
-  statisticalAnalysis: abTestStatisticalAnalysisSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  generatedBy: true,
-});
+export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    generatedBy: true,
+  })
+  .extend({
+    winner: z.enum(["A", "B", "inconclusive"]).optional(),
+    recommendation: z.enum(["implement", "continue", "stop", "iterate"]),
+    insights: abTestInsightsSchema.optional(),
+    statisticalAnalysis: abTestStatisticalAnalysisSchema.optional(),
+  });
 
 export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
 export type AbTest = typeof abTests.$inferSelect;
