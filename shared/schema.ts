@@ -6203,19 +6203,21 @@ export const moderationLogs = pgTable("moderation_logs", {
 
 /**
  * Insert schema for moderationLogs table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertModerationLogSchema = createInsertSchema(moderationLogs, {
-  toxicityScores: moderationResultSchema,
-  actionTaken: z.enum(["approved", "blocked", "flagged", "warning"]),
-  severity: z.enum(["low", "medium", "high", "critical"]),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  confidence: true,
-  manualReview: true,
-});
+export const insertModerationLogSchema = createInsertSchema(moderationLogs)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    confidence: true,
+    manualReview: true,
+  })
+  .extend({
+    toxicityScores: moderationResultSchema,
+    actionTaken: z.enum(["approved", "blocked", "flagged", "warning"]),
+    severity: z.enum(["low", "medium", "high", "critical"]),
+  });
 
 export type InsertModerationLog = z.infer<typeof insertModerationLogSchema>;
 export type ModerationLog = typeof moderationLogs.$inferSelect;
