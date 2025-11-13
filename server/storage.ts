@@ -13115,7 +13115,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateAbTest(
     testId: string,
-    update: Partial<InsertAbTest>,
+    update: Partial<Omit<AbTest, 'id' | 'createdAt' | 'updatedAt'>>,
   ): Promise<AbTest> {
     try {
       const [updatedTest] = await db
@@ -14805,10 +14805,10 @@ export class DatabaseStorage implements IStorage {
       const conditions = [];
 
       if (startDate) {
-        conditions.push(gte(ticketRouting.assigned_at, startDate));
+        conditions.push(gte(ticketRouting.createdAt, startDate));
       }
       if (endDate) {
-        conditions.push(lte(ticketRouting.assigned_at, endDate));
+        conditions.push(lte(ticketRouting.createdAt, endDate));
       }
 
       const routings =
@@ -14956,7 +14956,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateExtractionTemplate(
     id: string,
-    template: Partial<InsertExtractionTemplate>,
+    template: Partial<Omit<ExtractionTemplate, 'id' | 'createdAt' | 'updatedAt'>>,
   ): Promise<ExtractionTemplate> {
     try {
       const result = await db
@@ -14967,14 +14967,6 @@ export class DatabaseStorage implements IStorage {
 
       if (!result[0]) {
         throw new Error("Template not found");
-      }
-
-      // Increment usage count if template is being used
-      if (template.usageCount !== undefined) {
-        await db
-          .update(extractionTemplates)
-          .set({ usageCount: sql`${extractionTemplates.usageCount} + 1` })
-          .where(eq(extractionTemplates.id, id));
       }
 
       return result[0];
