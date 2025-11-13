@@ -4480,10 +4480,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(notificationFeedback)
-        .values({
-          ...feedback,
-          deviceInfo: feedback.deviceInfo as any,
-        })
+        .values(feedback)
         .returning();
 
       // Invalidate engagement cache for this user
@@ -8484,7 +8481,7 @@ export class DatabaseStorage implements IStorage {
           embedding: embeddingArray,
           embeddingModel: embedding.embeddingModel || "text-embedding-ada-002",
           contentText: embedding.contentText,
-          metadata: embedding.metadata as any,
+          metadata: embedding.metadata,
         })
         .onConflictDoUpdate({
           target: [
@@ -8497,7 +8494,7 @@ export class DatabaseStorage implements IStorage {
             embeddingModel:
               embedding.embeddingModel || "text-embedding-ada-002",
             contentText: embedding.contentText,
-            metadata: embedding.metadata as any,
+            metadata: embedding.metadata,
             updatedAt: sql`now()`,
           },
         })
@@ -9048,10 +9045,7 @@ export class DatabaseStorage implements IStorage {
       // Insert new cache entry
       const [result] = await db
         .insert(relatedContentCache)
-        .values({
-          ...cache,
-          relatedItems: cache.relatedItems as any, // Cast array properly for jsonb
-        })
+        .values(cache)
         .returning();
 
       return result;
