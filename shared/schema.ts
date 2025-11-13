@@ -82,6 +82,60 @@ import { z } from "zod";
 
 // ==================== TypeScript Interfaces for JSON Columns ====================
 
+// -------------------- Common/Shared Interfaces --------------------
+
+/**
+ * Generic time-series data point
+ * Reusable for any time-series data visualization
+ */
+export interface TimeSeriesPoint {
+  /** Date/timestamp in ISO format */
+  date: string;
+  /** Numeric value for this point */
+  value: number;
+  /** Optional label or category for this point */
+  label?: string;
+}
+
+/**
+ * Common metadata fields used across multiple entities
+ * Provides consistent structure for tags, descriptions, and custom data
+ */
+export interface MetadataBase {
+  /** Description or notes */
+  description?: string;
+  /** Tags for categorization and filtering */
+  tags?: string[];
+  /** Custom fields with dynamic keys */
+  customFields?: Record<string, any>;
+}
+
+/**
+ * Confidence or probability score with classification
+ * Used for ML models, predictions, and statistical analysis
+ */
+export interface ConfidenceScore {
+  /** Numeric score (typically 0-1) */
+  score: number;
+  /** Confidence level classification */
+  level?: 'low' | 'medium' | 'high' | 'very_high';
+  /** Optional threshold that was used */
+  threshold?: number;
+}
+
+/**
+ * Generic segment breakdown structure
+ * Provides counts or metrics broken down by segment
+ */
+export interface SegmentBreakdown<T = number> {
+  /** Segment identifier or name */
+  segment: string;
+  /** Value for this segment (count, percentage, score, etc.) */
+  value: T;
+  /** Percentage of total (0-100) */
+  percentage?: number;
+}
+
 // -------------------- Sentiment Analysis Interfaces --------------------
 
 /**
@@ -339,7 +393,7 @@ export interface AnalyticsInsightData {
   /** Percentage change from previous period */
   percentageChange?: number;
   /** Time series data points for visualization */
-  dataPoints?: Array<{ date: string; value: number }>;
+  dataPoints?: TimeSeriesPoint[];
   /** Average value over the period */
   average?: number;
   /** Minimum value in the period */
@@ -379,11 +433,7 @@ export interface PredictionData {
  */
 export interface TrendData {
   /** Time series data for trend visualization */
-  timeSeries?: Array<{ 
-    date: string; 
-    value: number; 
-    label?: string; 
-  }>;
+  timeSeries?: TimeSeriesPoint[];
   /** Keywords associated with the trend */
   keywords?: string[];
   /** Named entities extracted from trend data */
@@ -417,7 +467,7 @@ export interface TrendData {
  * Defines test setup, hypothesis, and requirements
  * Maps to abTests.metadata JSONB column
  */
-export interface AbTestConfiguration {
+export interface AbTestConfiguration extends Partial<MetadataBase> {
   /** Hypothesis being tested (e.g., "Blue button increases conversions by 15%") */
   hypothesis?: string;
   /** Feature area being tested (e.g., "checkout", "onboarding", "pricing") */
@@ -428,8 +478,6 @@ export interface AbTestConfiguration {
   confidenceLevel?: number;
   /** Type of A/B test being conducted */
   testType?: 'split' | 'multivariate' | 'redirect';
-  /** Tags for categorization and filtering */
-  tags?: string[];
 }
 
 /**
@@ -525,6 +573,12 @@ export interface AbTestSegmentResults {
   customMetrics?: Record<string, number>;
 }
 
+/**
+ * Helper type for common segment breakdown pattern
+ * Maps segment names to their values
+ */
+export type SegmentBreakdownMap<T = number> = Record<string, T>;
+
 // -------------------- Cohort Analysis Interfaces --------------------
 
 /**
@@ -562,15 +616,11 @@ export interface CohortDefinition {
  * Provides context and visualization hints
  * Maps to cohorts.metadata JSONB column
  */
-export interface CohortMetadata {
-  /** Human-readable description of the cohort */
-  description?: string;
+export interface CohortMetadata extends MetadataBase {
   /** Hex color code for UI visualization (e.g., '#4F46E5') */
   color?: string;
   /** Icon identifier for UI display */
   icon?: string;
-  /** Tags for categorization and filtering */
-  tags?: string[];
   /** Business context explaining why this cohort matters */
   businessContext?: string;
   /** Hypothesis being tested with this cohort */
@@ -618,13 +668,11 @@ export interface CohortSegmentData {
  * Additional information about system performance metrics
  * Maps to systemMetrics.metadata JSONB column
  */
-export interface MaintenanceMetrics {
+export interface MaintenanceMetrics extends Partial<MetadataBase> {
   /** Unit of measurement for the metric (ms, %, MB, etc.) */
   unit?: string;
   /** Source system or component that generated the metric */
   source?: string;
-  /** Tags for categorization and filtering */
-  tags?: string[];
   /** Additional context about the metric */
   context?: Record<string, any>;
 }
