@@ -9812,8 +9812,6 @@ export class DatabaseStorage implements IStorage {
     },
   ): Promise<ModerationLog[]> {
     try {
-      let query = db.select().from(moderationLogs);
-
       // Build where conditions
       const conditions = [];
 
@@ -9833,13 +9831,11 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(moderationLogs.contentType, filters.contentType));
       }
 
-      // Apply conditions if any
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-
-      // Order by creation date (newest first)
-      const result = await query.orderBy(desc(moderationLogs.createdAt));
+      // Build and execute query
+      const query = db.select().from(moderationLogs);
+      const result = conditions.length > 0
+        ? await query.where(and(...conditions)).orderBy(desc(moderationLogs.createdAt))
+        : await query.orderBy(desc(moderationLogs.createdAt));
 
       return result;
     } catch (error) {
@@ -9948,11 +9944,10 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Get all moderation logs within time range
-      let logsQuery = db.select().from(moderationLogs);
-      if (conditions.length > 0) {
-        logsQuery = logsQuery.where(and(...conditions));
-      }
-      const logs = await logsQuery;
+      const logsQuery = db.select().from(moderationLogs);
+      const logs = conditions.length > 0
+        ? await logsQuery.where(and(...conditions))
+        : await logsQuery;
 
       // Calculate statistics
       const totalChecked = logs.length;
@@ -9964,16 +9959,15 @@ export class DatabaseStorage implements IStorage {
       ).length;
 
       // Get appeals statistics
-      let appealsQuery = db.select().from(moderationAppeals);
-      if (timeRange) {
-        appealsQuery = appealsQuery.where(
-          and(
-            gte(moderationAppeals.createdAt, timeRange.start),
-            lte(moderationAppeals.createdAt, timeRange.end),
-          ),
-        );
-      }
-      const appeals = await appealsQuery;
+      const appealsQuery = db.select().from(moderationAppeals);
+      const appeals = timeRange
+        ? await appealsQuery.where(
+            and(
+              gte(moderationAppeals.createdAt, timeRange.start),
+              lte(moderationAppeals.createdAt, timeRange.end),
+            ),
+          )
+        : await appealsQuery;
       const totalAppeals = appeals.length;
       const appealsApproved = appeals.filter(
         (appeal) => appeal.status === "approved",
@@ -9983,7 +9977,7 @@ export class DatabaseStorage implements IStorage {
       const categoriesBreakdown: { [key: string]: number } = {};
       logs.forEach((log) => {
         if (log.categories) {
-          log.categories.forEach((category: any) => {
+          log.categories.forEach((category) => {
             categoriesBreakdown[category] =
               (categoriesBreakdown[category] || 0) + 1;
           });
