@@ -924,7 +924,7 @@ export const segmentBreakdownSchema = z.object({
  * - maintenanceMetricsSchema uses metadataBaseSchema.extend()
  * - analyticsInsightDataSchema uses z.array(timeSeriesPointSchema)
  * - trendDataSchema uses z.array(timeSeriesPointSchema)
- */"
+ */
 
 // -------------------- Sentiment Analysis Schemas --------------------
 
