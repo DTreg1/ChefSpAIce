@@ -3352,6 +3352,8 @@ export const insertFeedbackSchema = createInsertSchema(userFeedback, {
   sentiment: z.enum(['positive', 'negative', 'neutral']).optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   status: z.enum(['pending', 'in_review', 'in_progress', 'resolved', 'closed', 'wont_fix']).default('pending'),
+  attachments: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
 }).omit({
   id: true,
   createdAt: true,
@@ -4528,7 +4530,11 @@ export const onboardingInventory = pgTable("onboarding_inventory", {
   index("onboarding_inventory_food_category_idx").on(table.foodCategory),
 ]);
 
-export const insertOnboardingInventorySchema = createInsertSchema(onboardingInventory).omit({
+export const insertOnboardingInventorySchema = createInsertSchema(onboardingInventory, {
+  nutrition: z.any().optional(),
+  usdaData: z.any().optional(),
+  barcodeLookupData: z.any().optional(),
+}).omit({
   id: true,
   lastUpdated: true,
 });
@@ -5194,7 +5200,9 @@ export const generatedDrafts = pgTable("generated_drafts", {
   index("generated_drafts_original_message_id_idx").on(table.originalMessageId),
 ]);
 
-export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts).omit({
+export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts, {
+  metadata: z.record(z.any()).optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -6097,7 +6105,14 @@ export const altTextQuality = pgTable("alt_text_quality", {
   index("alt_text_quality_wcag_idx").on(table.wcagLevel),
 ]);
 
-export const insertAltTextQualitySchema = createInsertSchema(altTextQuality).omit({
+export const insertAltTextQualitySchema = createInsertSchema(altTextQuality, {
+  metadata: z.object({
+    wordCount: z.number().optional(),
+    readabilityScore: z.number().optional(),
+    sentimentScore: z.number().optional(),
+    technicalTerms: z.array(z.string()).optional(),
+  }).optional(),
+}).omit({
   id: true,
   lastAnalyzedAt: true,
   createdAt: true,
