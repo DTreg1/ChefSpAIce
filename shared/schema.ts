@@ -8992,48 +8992,42 @@ const cohortInsightSupportingDataSchema = z.object({
  * Insert schema for cohorts table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertCohortSchema = createInsertSchema(cohorts)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    definition: cohortDefinitionSchema,
-    metadata: cohortMetadataSchema.optional(),
-  });
+export const insertCohortSchema = createInsertSchema(cohorts, {
+  definition: cohortDefinitionSchema,
+  metadata: cohortMetadataSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 /**
  * Insert schema for cohortMetrics table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertCohortMetricSchema = createInsertSchema(cohortMetrics)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    segmentData: cohortSegmentDataSchema.optional(),
-    comparisonData: cohortComparisonDataSchema.optional(),
-  });
+export const insertCohortMetricSchema = createInsertSchema(cohortMetrics, {
+  segmentData: cohortSegmentDataSchema.optional(),
+  comparisonData: cohortComparisonDataSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
 
 /**
  * Insert schema for cohortInsights table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertCohortInsightSchema = createInsertSchema(cohortInsights)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    importance: true,
-    confidenceScore: true,
-    status: true,
-    generatedBy: true,
-  })
-  .extend({
-    supportingData: cohortInsightSupportingDataSchema.optional(),
-  });
+export const insertCohortInsightSchema = createInsertSchema(cohortInsights, {
+  supportingData: cohortInsightSupportingDataSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  importance: true,
+  confidenceScore: true,
+  status: true,
+  generatedBy: true,
+});
 
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type Cohort = typeof cohorts.$inferSelect;

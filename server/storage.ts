@@ -13491,7 +13491,7 @@ export class DatabaseStorage implements IStorage {
 
   async createCohort(cohort: InsertCohort): Promise<Cohort> {
     try {
-      const [newCohort] = await db.insert(cohorts).values(cohort as any).returning();
+      const [newCohort] = await db.insert(cohorts).values(cohort).returning();
 
       // Refresh membership immediately for new cohort
       await this.refreshCohortMembership(newCohort.id);
@@ -13533,7 +13533,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
+        query = query.where(and(...conditions));
       }
 
       return await query;
@@ -13553,7 +13553,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           updatedAt: new Date(),
-        } as any)
+        })
         .where(eq(cohorts.id, cohortId))
         .returning();
 
@@ -13584,7 +13584,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const recorded = await db
         .insert(cohortMetrics)
-        .values(metrics as any)
+        .values(metrics)
         .returning();
       return recorded;
     } catch (error) {
@@ -13637,7 +13637,7 @@ export class DatabaseStorage implements IStorage {
         );
       }
 
-      query = query.where(and(...conditions)) as any;
+      query = query.where(and(...conditions));
       return await query;
     } catch (error) {
       console.error("Error getting cohort metrics:", error);
@@ -13760,7 +13760,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newInsight] = await db
         .insert(cohortInsights)
-        .values(insight as any)
+        .values(insight)
         .returning();
       return newInsight;
     } catch (error) {
@@ -13793,7 +13793,7 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(cohortInsights.category, filters.category));
       }
 
-      query = query.where(and(...conditions)) as any;
+      query = query.where(and(...conditions));
       return await query.orderBy(desc(cohortInsights.createdAt));
     } catch (error) {
       console.error("Error getting cohort insights:", error);
@@ -13849,7 +13849,7 @@ export class DatabaseStorage implements IStorage {
       // For demo purposes, we'll simulate with user metadata
 
       if (conditions.length > 0) {
-        userQuery = userQuery.where(and(...conditions)) as any;
+        userQuery = userQuery.where(and(...conditions));
       }
 
       const cohortUsers = await userQuery;
