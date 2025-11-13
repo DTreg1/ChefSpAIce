@@ -12501,7 +12501,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newPrediction] = await db
         .insert(userPredictions)
-        .values([prediction as any])
+        .values(prediction)
         .returning();
       return newPrediction;
     } catch (error) {
@@ -12724,7 +12724,7 @@ export class DatabaseStorage implements IStorage {
 
   async createTrend(trend: InsertTrend): Promise<Trend> {
     try {
-      const [newTrend] = await db.insert(trends).values(trend as any).returning();
+      const [newTrend] = await db.insert(trends).values(trend).returning();
       return newTrend;
     } catch (error) {
       console.error("Error creating trend:", error);
@@ -12742,7 +12742,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...update,
           updatedAt: new Date(),
-        } as any)
+        })
         .where(eq(trends.id, trendId))
         .returning();
       return updatedTrend;
@@ -12795,11 +12795,11 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(trends.strength), desc(trends.createdAt));
 
       if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as typeof query;
+        query = query.where(and(...conditions));
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit) as typeof query;
+        query = query.limit(filters.limit);
       }
 
       return await query;
@@ -12891,7 +12891,7 @@ export class DatabaseStorage implements IStorage {
 
   async createTrendAlert(alert: InsertTrendAlert): Promise<TrendAlert> {
     try {
-      const [newAlert] = await db.insert(trendAlerts).values(alert as any).returning();
+      const [newAlert] = await db.insert(trendAlerts).values(alert).returning();
       return newAlert;
     } catch (error) {
       console.error("Error creating trend alert:", error);
@@ -12909,7 +12909,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...update,
           updatedAt: new Date(),
-        } as any)
+        })
         .where(eq(trendAlerts.id, alertId))
         .returning();
       return updatedAlert;

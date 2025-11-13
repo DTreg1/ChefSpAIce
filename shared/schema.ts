@@ -8285,28 +8285,24 @@ export const predictionAccuracy = pgTable("prediction_accuracy", {
  * Insert schema for userPredictions table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertUserPredictionSchema = createInsertSchema(userPredictions)
-  .omit({
-    id: true,
-    createdAt: true,
-    status: true,
-  })
-  .extend({
-    factors: predictionDataSchema,
-  });
+export const insertUserPredictionSchema = createInsertSchema(userPredictions, {
+  factors: predictionDataSchema,
+}).omit({
+  id: true,
+  createdAt: true,
+  status: true,
+});
 
 /**
  * Insert schema for predictionAccuracy table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertPredictionAccuracySchema = createInsertSchema(predictionAccuracy)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    modelFeedback: predictionAccuracyModelFeedbackSchema.optional(),
-  });
+export const insertPredictionAccuracySchema = createInsertSchema(predictionAccuracy, {
+  modelFeedback: predictionAccuracyModelFeedbackSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
 
 export type InsertUserPrediction = z.infer<typeof insertUserPredictionSchema>;
 export type UserPrediction = typeof userPredictions.$inferSelect;
@@ -8510,33 +8506,31 @@ export const trendAlerts = pgTable("trend_alerts", {
  * Insert schema for trends table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertTrendSchema = createInsertSchema(trends)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    status: true,
-  })
-  .extend({
-    dataPoints: trendDataSchema,
-    recommendations: z.array(z.string()).optional(),
-    metadata: z.record(z.any()).optional(),
-  });
+export const insertTrendSchema = createInsertSchema(trends, {
+  dataPoints: trendDataSchema,
+  recommendations: z.array(z.string()).optional(),
+  metadata: z.record(z.any()).optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+});
 
 /**
  * Insert schema for trendAlerts table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertTrendAlertSchema = createInsertSchema(trendAlerts)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    conditions: trendAlertConditionsSchema.optional(),
-    metadata: z.record(z.any()).optional(),
-  });
+export const insertTrendAlertSchema = createInsertSchema(trendAlerts, {
+  alertType: z.enum(["threshold", "emergence", "acceleration", "peak", "decline", "anomaly"]),
+  priority: z.enum(["low", "medium", "high", "critical"]),
+  conditions: trendAlertConditionsSchema.optional(),
+  metadata: z.record(z.any()).optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export type InsertTrend = z.infer<typeof insertTrendSchema>;
 export type Trend = typeof trends.$inferSelect;
