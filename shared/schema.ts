@@ -167,6 +167,36 @@ export interface EmotionScores {
   [emotion: string]: number | undefined;
 }
 
+/**
+ * Key phrase extraction result
+ * Represents important phrases identified in analyzed content
+ */
+export interface KeyPhrase {
+  /** The extracted phrase text */
+  phrase: string;
+  /** Relevance score (0-1, higher = more relevant) */
+  relevance: number;
+  /** Position in the original text (character offset) */
+  position?: number;
+  /** Sentiment associated with this phrase */
+  sentiment?: 'positive' | 'negative' | 'neutral';
+}
+
+/**
+ * Contextual factors affecting sentiment analysis
+ * Environmental and situational context that influences sentiment interpretation
+ */
+export interface ContextFactor {
+  /** Type of context (e.g., 'temporal', 'cultural', 'situational', 'demographic') */
+  type: string;
+  /** Description of the context factor */
+  description: string;
+  /** Impact weight on overall sentiment (0-1) */
+  weight: number;
+  /** Whether this factor increases or decreases sentiment intensity */
+  effect?: 'amplify' | 'dampen' | 'neutral';
+}
+
 // -------------------- Content Moderation Interfaces --------------------
 
 /**
@@ -5674,10 +5704,11 @@ export type InsertSentimentSegments = z.infer<typeof insertSentimentSegmentsSche
 export type SentimentSegments = typeof sentimentSegments.$inferSelect;
 
 /**
- * Sentiment Analysis Table
+ * Sentiment Results Table
  * 
- * Stores sentiment analysis results for user-generated content using AI.
+ * Stores comprehensive sentiment analysis results for user-generated content using AI.
  * Combines TensorFlow.js for basic sentiment and OpenAI for nuanced emotion detection.
+ * Includes key phrase extraction and contextual factors for enhanced analysis.
  * 
  * Fields:
  * - id: UUID primary key
@@ -5691,21 +5722,25 @@ export type SentimentSegments = typeof sentimentSegments.$inferSelect;
  *   - 'neutral': Neither positive nor negative
  *   - 'mixed': Contains both positive and negative elements
  * - confidence: Confidence score for sentiment (0.0 to 1.0)
- * - sentimentScores: Detailed sentiment probability scores
- *   - positive: Probability of positive sentiment (0-1)
- *   - negative: Probability of negative sentiment (0-1)
- *   - neutral: Probability of neutral sentiment (0-1)
- * - emotions: JSONB with detected emotions and intensities
- *   - happy: Intensity score (0-1)
- *   - sad: Intensity score (0-1)
- *   - angry: Intensity score (0-1)
- *   - fearful: Intensity score (0-1)
- *   - surprised: Intensity score (0-1)
- *   - disgusted: Intensity score (0-1)
- *   - excited: Intensity score (0-1)
- *   - frustrated: Intensity score (0-1)
- *   - satisfied: Intensity score (0-1)
- *   - disappointed: Intensity score (0-1)
+ * - sentimentData: Comprehensive sentiment analysis data (SentimentData interface)
+ *   - overallScore: Overall sentiment score from -1 to 1
+ *   - polarity: Sentiment classification
+ *   - subjectivity: Subjectivity score (0-1)
+ *   - documentScore: Document-level metrics
+ *   - aspectScores: Aspect-based sentiment scores
+ * - emotionScores: Emotion detection scores (EmotionScores interface)
+ *   - joy, sadness, anger, fear, surprise, disgust
+ *   - Extensible for additional emotions
+ * - keyPhrases: Extracted key phrases with relevance scores (KeyPhrase[] interface)
+ *   - phrase: The extracted phrase text
+ *   - relevance: Relevance score (0-1)
+ *   - position: Character offset in text
+ *   - sentiment: Phrase-level sentiment
+ * - contextFactors: Contextual factors affecting sentiment (ContextFactor[] interface)
+ *   - type: Context type (temporal, cultural, etc.)
+ *   - description: Factor description
+ *   - weight: Impact weight (0-1)
+ *   - effect: How it affects sentiment
  * - topics: Array of identified topics/themes in the content
  * - keywords: Array of significant keywords extracted
  * - aspectSentiments: JSONB with aspect-based sentiment analysis
@@ -5728,15 +5763,15 @@ export type SentimentSegments = typeof sentimentSegments.$inferSelect;
  * - Mixed sentiment when positive and negative both > 0.3
  * 
  * Indexes:
- * - sentiment_analysis_user_id_idx: User's sentiment history
- * - sentiment_analysis_content_id_idx: Lookup by content
- * - sentiment_analysis_sentiment_idx: Filter by sentiment
- * - sentiment_analysis_analyzed_at_idx: Time-based queries
+ * - sentiment_results_user_id_idx: User's sentiment history
+ * - sentiment_results_content_id_idx: Lookup by content
+ * - sentiment_results_sentiment_idx: Filter by sentiment
+ * - sentiment_results_analyzed_at_idx: Time-based queries
  * 
  * Relationships:
- * - users → sentimentAnalysis: CASCADE
+ * - users → sentimentResults: CASCADE
  */
-export const sentimentAnalysis = pgTable("sentiment_analysis", {
+export const sentimentResults = pgTable("sentiment_results", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   contentId: varchar("content_id").notNull(),
   userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
@@ -5747,26 +5782,17 @@ export const sentimentAnalysis = pgTable("sentiment_analysis", {
   sentiment: text("sentiment").notNull().$type<"positive" | "negative" | "neutral" | "mixed">(),
   confidence: real("confidence").notNull(),
   
-  // Detailed scores
-  sentimentScores: jsonb("sentiment_scores").$type<{
-    positive: number;
-    negative: number;
-    neutral: number;
-  }>(),
+  // Comprehensive sentiment analysis (using SentimentData interface)
+  sentimentData: jsonb("sentiment_data").$type<SentimentData>(),
   
-  // Emotion detection
-  emotions: jsonb("emotions").$type<{
-    happy?: number;
-    sad?: number;
-    angry?: number;
-    fearful?: number;
-    surprised?: number;
-    disgusted?: number;
-    excited?: number;
-    frustrated?: number;
-    satisfied?: number;
-    disappointed?: number;
-  }>(),
+  // Emotion detection (using EmotionScores interface)
+  emotionScores: jsonb("emotion_scores").$type<EmotionScores>(),
+  
+  // Key phrase extraction (using KeyPhrase[] interface)
+  keyPhrases: jsonb("key_phrases").$type<KeyPhrase[]>(),
+  
+  // Contextual factors (using ContextFactor[] interface)
+  contextFactors: jsonb("context_factors").$type<ContextFactor[]>(),
   
   // Content analysis
   topics: text("topics").array(),
@@ -5781,10 +5807,10 @@ export const sentimentAnalysis = pgTable("sentiment_analysis", {
   
   analyzedAt: timestamp("analyzed_at").notNull().defaultNow(),
 }, (table) => [
-  index("sentiment_analysis_user_id_idx").on(table.userId),
-  index("sentiment_analysis_content_id_idx").on(table.contentId),
-  index("sentiment_analysis_sentiment_idx").on(table.sentiment),
-  index("sentiment_analysis_analyzed_at_idx").on(table.analyzedAt),
+  index("sentiment_results_user_id_idx").on(table.userId),
+  index("sentiment_results_content_id_idx").on(table.contentId),
+  index("sentiment_results_sentiment_idx").on(table.sentiment),
+  index("sentiment_results_analyzed_at_idx").on(table.analyzedAt),
 ]);
 
 /**
@@ -5882,7 +5908,7 @@ export const sentimentTrends = pgTable("sentiment_trends", {
 ]);
 
 // Schema types for sentiment analysis
-export const insertSentimentAnalysisSchema = createInsertSchema(sentimentAnalysis).omit({
+export const insertSentimentResultsSchema = createInsertSchema(sentimentResults).omit({
   id: true,
   analyzedAt: true,
   modelVersion: true,
@@ -5893,8 +5919,8 @@ export const insertSentimentTrendSchema = createInsertSchema(sentimentTrends).om
   createdAt: true,
 });
 
-export type InsertSentimentAnalysis = z.infer<typeof insertSentimentAnalysisSchema>;
-export type SentimentAnalysis = typeof sentimentAnalysis.$inferSelect;
+export type InsertSentimentResults = z.infer<typeof insertSentimentResultsSchema>;
+export type SentimentResults = typeof sentimentResults.$inferSelect;
 
 export type InsertSentimentTrend = z.infer<typeof insertSentimentTrendSchema>;
 export type SentimentTrend = typeof sentimentTrends.$inferSelect;
