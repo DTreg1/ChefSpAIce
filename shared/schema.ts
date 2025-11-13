@@ -6188,33 +6188,82 @@ export const fraudDetectionResults = pgTable("fraud_detection_results", {
   index("fraud_detection_results_analyzed_at_idx").on(table.analyzedAt),
 ]);
 
-// Schema types for fraud detection
-export const insertFraudScoreSchema = createInsertSchema(fraudScores).omit({
-  id: true,
-  timestamp: true,
-  modelVersion: true
+// ==================== Schema Types for Fraud Detection ====================
+
+/**
+ * Zod schema for fraud review restrictions
+ * Validates restriction settings applied to flagged users
+ */
+const fraudReviewRestrictionsSchema = z.object({
+  canPost: z.boolean().optional(),
+  canMessage: z.boolean().optional(),
+  canTransaction: z.boolean().optional(),
+  dailyLimit: z.number().int().nonnegative().optional(),
+  requiresVerification: z.boolean().optional(),
 });
 
-export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActivities).omit({
-  id: true,
-  detectedAt: true,
-  status: true,
-  autoBlocked: true
-});
+/**
+ * Insert schema for fraudScores table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertFraudScoreSchema = createInsertSchema(fraudScores)
+  .omit({
+    id: true,
+    timestamp: true,
+    modelVersion: true,
+  })
+  .extend({
+    factors: fraudRiskFactorSchema,
+  });
 
-export const insertFraudReviewSchema = createInsertSchema(fraudReviews).omit({
-  id: true,
-  reviewedAt: true
-});
+/**
+ * Insert schema for suspiciousActivities table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActivities)
+  .omit({
+    id: true,
+    detectedAt: true,
+    status: true,
+    autoBlocked: true,
+  })
+  .extend({
+    details: fraudEvidenceDetailSchema,
+  });
 
-export const insertFraudDetectionResultsSchema = createInsertSchema(fraudDetectionResults).omit({
-  id: true,
-  analyzedAt: true,
-  modelVersion: true,
-  status: true,
-  autoBlocked: true,
-  reviewRequired: true,
-});
+/**
+ * Insert schema for fraudReviews table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertFraudReviewSchema = createInsertSchema(fraudReviews)
+  .omit({
+    id: true,
+    reviewedAt: true,
+  })
+  .extend({
+    restrictions: fraudReviewRestrictionsSchema.optional(),
+  });
+
+/**
+ * Insert schema for fraudDetectionResults table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertFraudDetectionResultsSchema = createInsertSchema(fraudDetectionResults)
+  .omit({
+    id: true,
+    analyzedAt: true,
+    modelVersion: true,
+    status: true,
+    autoBlocked: true,
+    reviewRequired: true,
+  })
+  .extend({
+    riskFactors: z.array(fraudRiskFactorSchema).optional(),
+    evidenceDetails: z.array(fraudEvidenceDetailSchema).optional(),
+    deviceInfo: fraudDeviceInfoSchema.optional(),
+    behaviorData: fraudBehaviorDataSchema.optional(),
+    metadata: z.record(z.any()).optional(),
+  });
 
 export type InsertFraudScore = z.infer<typeof insertFraudScoreSchema>;
 export type FraudScore = typeof fraudScores.$inferSelect;
