@@ -7965,24 +7965,58 @@ export const abTestInsights = pgTable("ab_test_insights", {
   index("ab_test_insights_confidence_idx").on(table.confidence),
 ]);
 
-// Insert schemas and types for A/B testing
-export const insertAbTestSchema = createInsertSchema(abTests).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+// ==================== Insert Schemas for A/B Testing ====================
 
-export const insertAbTestResultSchema = createInsertSchema(abTestResults).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+/**
+ * Insert schema for abTests table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertAbTestSchema = createInsertSchema(abTests)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    status: true,
+    targetAudience: true,
+    successMetric: true,
+  })
+  .extend({
+    metadata: abTestConfigurationSchema.optional(),
+  });
 
-export const insertAbTestInsightSchema = createInsertSchema(abTestInsights).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+/**
+ * Insert schema for abTestResults table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertAbTestResultSchema = createInsertSchema(abTestResults)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    conversions: true,
+    visitors: true,
+    revenue: true,
+    sampleSize: true,
+  })
+  .extend({
+    metadata: abTestMetricsSchema.optional(),
+  });
+
+/**
+ * Insert schema for abTestInsights table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    generatedBy: true,
+  })
+  .extend({
+    insights: abTestInsightsSchema.optional(),
+    statisticalAnalysis: abTestStatisticalAnalysisSchema.optional(),
+  });
 
 export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
 export type AbTest = typeof abTests.$inferSelect;
