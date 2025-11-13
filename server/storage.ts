@@ -8188,20 +8188,20 @@ export class DatabaseStorage implements IStorage {
         conditions.push(lte(activityLogs.timestamp, filters.endDate));
       }
 
-      // Build and execute query
-      let baseQuery = db.select().from(activityLogs);
+      // Build and execute query using $dynamic() for type-safe chaining
+      let baseQuery = db.select().from(activityLogs).$dynamic();
 
       if (conditions.length > 0) {
-        baseQuery = baseQuery.where(and(...conditions)) as any;
+        baseQuery = baseQuery.where(and(...conditions));
       }
 
-      baseQuery = baseQuery.orderBy(desc(activityLogs.timestamp)) as any;
+      baseQuery = baseQuery.orderBy(desc(activityLogs.timestamp));
 
       if (filters?.limit) {
-        baseQuery = baseQuery.limit(filters.limit) as any;
+        baseQuery = baseQuery.limit(filters.limit);
       }
       if (filters?.offset) {
-        baseQuery = baseQuery.offset(filters.offset) as any;
+        baseQuery = baseQuery.offset(filters.offset);
       }
 
       return await baseQuery;
@@ -12310,10 +12310,11 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(analyticsInsights)
         .where(and(...conditions))
-        .orderBy(desc(analyticsInsights.createdAt));
+        .orderBy(desc(analyticsInsights.createdAt))
+        .$dynamic();
 
       if (filters?.limit) {
-        query = query.limit(filters.limit) as any;
+        query = query.limit(filters.limit);
       }
 
       return await query;
@@ -13199,10 +13200,10 @@ export class DatabaseStorage implements IStorage {
       // Get the most recent results for each variant
       const results = await this.getAbTestResults(testId);
 
-      // Aggregate results by variant
+      // Aggregate results by variant using properly typed reduce
       const variantA = results
         .filter((r) => r.variant === "A")
-        .reduce(
+        .reduce<AbTestResult | undefined>(
           (acc, r) => ({
             ...r,
             conversions: (acc?.conversions || 0) + r.conversions,
@@ -13210,12 +13211,12 @@ export class DatabaseStorage implements IStorage {
             revenue: (acc?.revenue || 0) + r.revenue,
             sampleSize: (acc?.sampleSize || 0) + r.sampleSize,
           }),
-          null as any,
+          undefined,
         );
 
       const variantB = results
         .filter((r) => r.variant === "B")
-        .reduce(
+        .reduce<AbTestResult | undefined>(
           (acc, r) => ({
             ...r,
             conversions: (acc?.conversions || 0) + r.conversions,
@@ -13223,7 +13224,7 @@ export class DatabaseStorage implements IStorage {
             revenue: (acc?.revenue || 0) + r.revenue,
             sampleSize: (acc?.sampleSize || 0) + r.sampleSize,
           }),
-          null as any,
+          undefined,
         );
 
       return {
@@ -13880,8 +13881,8 @@ export class DatabaseStorage implements IStorage {
         throw new Error(`Cohort ${cohortId} not found`);
       }
 
-      // Build query based on cohort definition
-      let userQuery = db.select().from(users);
+      // Build query based on cohort definition using $dynamic() for type-safe chaining
+      let userQuery = db.select().from(users).$dynamic();
       const conditions: any[] = [];
 
       // Apply signup date range filter
@@ -13896,7 +13897,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (conditions.length > 0) {
-        userQuery = userQuery.where(and(...conditions)) as any;
+        userQuery = userQuery.where(and(...conditions));
       }
 
       // Get total count
