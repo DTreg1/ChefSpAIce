@@ -7261,14 +7261,10 @@ export const abTests = pgTable("ab_tests", {
   status: text("status").notNull().default('draft'), // 'draft', 'active', 'completed', 'paused'
   targetAudience: real("target_audience").notNull().default(0.5), // Percentage as decimal
   successMetric: text("success_metric").notNull().default('conversion'), // 'conversion', 'revenue', 'engagement'
-  metadata: jsonb("metadata").$type<{
-    hypothesis?: string;
-    featureArea?: string;
-    minimumSampleSize?: number;
-    confidenceLevel?: number;
-    testType?: string; // 'split', 'multivariate', 'redirect'
-    tags?: string[];
-  }>(),
+  
+  // A/B test configuration (using AbTestConfiguration interface)
+  metadata: jsonb("metadata").$type<AbTestConfiguration>(),
+  
   createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -7323,13 +7319,10 @@ export const abTestResults = pgTable("ab_test_results", {
   bounceRate: real("bounce_rate"),
   avgSessionDuration: real("avg_session_duration"),
   sampleSize: integer("sample_size").notNull().default(0),
-  metadata: jsonb("metadata").$type<{
-    deviceBreakdown?: Record<string, number>;
-    geoBreakdown?: Record<string, number>;
-    referrerBreakdown?: Record<string, number>;
-    customMetrics?: Record<string, number>;
-    segments?: Record<string, any>;
-  }>(),
+  
+  // Performance metrics with segment breakdowns (using AbTestMetrics interface)
+  metadata: jsonb("metadata").$type<AbTestMetrics>(),
+  
   periodStart: timestamp("period_start").notNull(),
   periodEnd: timestamp("period_end").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -7381,26 +7374,13 @@ export const abTestInsights = pgTable("ab_test_insights", {
   liftPercentage: real("lift_percentage"),
   recommendation: text("recommendation").notNull(), // 'implement', 'continue', 'stop', 'iterate'
   explanation: text("explanation").notNull(),
-  insights: jsonb("insights").$type<{
-    keyFindings?: string[];
-    segmentInsights?: Record<string, string>;
-    bestPractices?: string[];
-    nextSteps?: string[];
-    warnings?: string[];
-    learnings?: string[];
-  }>(),
-  statisticalAnalysis: jsonb("statistical_analysis").$type<{
-    sampleSizeA?: number;
-    sampleSizeB?: number;
-    conversionRateA?: number;
-    conversionRateB?: number;
-    standardErrorA?: number;
-    standardErrorB?: number;
-    zScore?: number;
-    confidenceInterval?: { lower: number; upper: number };
-    minimumDetectableEffect?: number;
-    power?: number;
-  }>(),
+  
+  // AI-generated insights and recommendations (using AbTestInsights interface)
+  insights: jsonb("insights").$type<AbTestInsights>(),
+  
+  // Statistical analysis data (using AbTestStatisticalAnalysis interface)
+  statisticalAnalysis: jsonb("statistical_analysis").$type<AbTestStatisticalAnalysis>(),
+  
   generatedBy: text("generated_by").notNull().default('gpt-3.5-turbo'),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
