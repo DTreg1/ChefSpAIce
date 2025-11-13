@@ -7613,12 +7613,10 @@ export const systemMetrics = pgTable("system_metrics", {
   metricName: text("metric_name").notNull(), // 'query_time', 'cpu_usage', 'memory_usage', 'error_rate'
   value: real("value").notNull(),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
-  metadata: jsonb("metadata").$type<{
-    unit?: string;
-    source?: string;
-    tags?: string[];
-    context?: Record<string, any>;
-  }>(),
+  
+  // System metric metadata and context (using MaintenanceMetrics interface)
+  metadata: jsonb("metadata").$type<MaintenanceMetrics>(),
+  
   anomalyScore: real("anomaly_score"), // 0-1 score from LSTM autoencoder
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
@@ -7671,12 +7669,10 @@ export const maintenancePredictions = pgTable("maintenance_predictions", {
   estimatedDowntime: integer("estimated_downtime"), // minutes
   preventiveActions: jsonb("preventive_actions").$type<string[]>(),
   modelVersion: text("model_version").notNull().default('v1.0.0'),
-  features: jsonb("features").$type<{
-    trendSlope?: number;
-    seasonality?: Record<string, number>;
-    recentAnomalies?: number;
-    historicalPatterns?: any[];
-  }>(),
+  
+  // ML features for failure prediction (using MaintenanceFeatures interface)
+  features: jsonb("features").$type<MaintenanceFeatures>(),
+  
   status: text("status").notNull().default('active'), // 'active', 'scheduled', 'completed', 'dismissed'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -7730,16 +7726,13 @@ export const maintenanceHistory = pgTable("maintenance_history", {
   downtimeMinutes: integer("downtime_minutes").notNull(),
   performedActions: jsonb("performed_actions").$type<string[]>(),
   outcome: text("outcome").notNull(), // 'successful', 'partial', 'failed'
-  performanceMetrics: jsonb("performance_metrics").$type<{
-    before?: Record<string, number>;
-    after?: Record<string, number>;
-    improvement?: number; // percentage
-  }>(),
-  cost: jsonb("cost").$type<{
-    laborHours?: number;
-    resourceCost?: number;
-    opportunityCost?: number;
-  }>(),
+  
+  // Before/after performance comparison (using MaintenancePerformanceMetrics interface)
+  performanceMetrics: jsonb("performance_metrics").$type<MaintenancePerformanceMetrics>(),
+  
+  // Cost breakdown (using MaintenanceCost interface)
+  cost: jsonb("cost").$type<MaintenanceCost>(),
+  
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
