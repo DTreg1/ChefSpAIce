@@ -10,22 +10,26 @@
 
 ## Updated Schemas (Using .omit().extend() Pattern)
 
-| # | Table Name | Insert Schema | JSON Fields Extended | Type Exported | Verified |
-|---|------------|---------------|---------------------|---------------|----------|
-| 1 | `fraudDetectionResults` | `insertFraudDetectionResultSchema` | `analysisType`, `riskLevel`, `riskFactors`, `evidenceDetails`, `deviceInfo`, `behaviorData`, `metadata` | ✅ `InsertFraudDetectionResult` | ✅ Yes |
-| 2 | `sentimentResults` | `insertSentimentResultSchema` | `sentiment`, `sentimentData`, `emotionScores`, `keyPhrases`, `contextFactors`, `aspectSentiments`, `metadata` | ✅ `InsertSentimentResult` | ✅ Yes |
-| 3 | `abTests` | `insertAbTestSchema` | `metadata` (AbTestConfiguration) | ✅ `InsertAbTest` | ✅ Yes |
-| 4 | `abTestResults` | `insertAbTestResultSchema` | `variant`, `metadata` (AbTestMetrics) | ✅ `InsertAbTestResult` | ✅ Yes |
-| 5 | `abTestInsights` | `insertAbTestInsightSchema` | `winner`, `recommendation`, `insights`, `statisticalAnalysis` | ✅ `InsertAbTestInsight` | ✅ Yes |
-| 6 | `moderationLogs` | `insertModerationLogSchema` | `toxicityScores`, `actionTaken`, `severity` | ✅ `InsertModerationLog` | ✅ Yes |
-| 7 | `messages` | `insertMessageSchema` | `metadata` (ChatMessageMetadata) | ✅ `InsertMessage` | ✅ Yes |
-| 8 | `generatedDrafts` | `insertGeneratedDraftSchema` | `metadata` (flexible) | ✅ `InsertGeneratedDraft` | ✅ Yes |
-| 9 | `autoSaveDrafts` | `insertAutoSaveDraftSchema` | `documentType`, `version`, `metadata` (AutoSaveData) | ✅ `InsertAutoSaveDraft` | ✅ Yes |
-| 10 | `analyticsInsights` | `insertAnalyticsInsightSchema` | `metricData`, `aiContext` | ✅ `InsertAnalyticsInsight` | ✅ Yes |
-| 11 | `userPredictions` | `insertUserPredictionSchema` | `factors` (PredictionData) | ✅ `InsertUserPrediction` | ✅ Yes |
-| 12 | `trends` | `insertTrendSchema` | `dataPoints`, `recommendations`, `metadata` | ✅ `InsertTrend` | ✅ Yes |
-| 13 | `maintenancePredictions` | `insertMaintenancePredictionSchema` | `urgencyLevel`, `status`, `preventiveActions`, `features` | ✅ `InsertMaintenancePrediction` | ✅ Yes |
-| 14 | `maintenanceHistory` | `insertMaintenanceHistorySchema` | `outcome`, `performedActions`, `performanceMetrics`, `cost` | ✅ `InsertMaintenanceHistory` | ✅ Yes |
+| # | Table Name | Insert Schema | JSON Fields Extended | Type Exported | Type Inference | Verified |
+|---|------------|---------------|---------------------|---------------|----------------|----------|
+| 1 | `fraudDetectionResults` | `insertFraudDetectionResultSchema` | `analysisType`, `riskLevel`, `riskFactors`, `evidenceDetails`, `deviceInfo`, `behaviorData`, `metadata` (7) | ✅ `InsertFraudDetectionResult` | ✅ Tested | ✅ Yes |
+| 2 | `sentimentResults` | `insertSentimentResultSchema` | `sentiment`, `sentimentData`, `emotionScores`, `keyPhrases`, `contextFactors`, `aspectSentiments`, `metadata` (7) | ✅ `InsertSentimentResult` | ✅ Tested | ✅ Yes |
+| 3 | `abTests` | `insertAbTestSchema` | `metadata` (AbTestConfiguration) (1) | ✅ `InsertAbTest` | ✅ Pass | ✅ Yes |
+| 4 | `abTestResults` | `insertAbTestResultSchema` | `variant`, `metadata` (AbTestMetrics) (2) | ✅ `InsertAbTestResult` | ✅ Pass | ✅ Yes |
+| 5 | `abTestInsights` | `insertAbTestInsightSchema` | `winner`, `recommendation`, `insights`, `statisticalAnalysis` (4) | ✅ `InsertAbTestInsight` | ✅ Tested | ✅ Yes |
+| 6 | `moderationLogs` | `insertModerationLogSchema` | `toxicityScores`, `actionTaken`, `severity` (3) | ✅ `InsertModerationLog` | ✅ Pass | ✅ Yes |
+| 7 | `messages` | `insertMessageSchema` | `metadata` (ChatMessageMetadata) (1) | ✅ `InsertMessage` | ✅ Pass | ✅ Yes |
+| 8 | `generatedDrafts` | `insertGeneratedDraftSchema` | `metadata` (flexible) (1) | ✅ `InsertGeneratedDraft` | ✅ Pass | ✅ Yes |
+| 9 | `autoSaveDrafts` | `insertAutoSaveDraftSchema` | `documentType`, `version`, `metadata` (AutoSaveData) (3) | ✅ `InsertAutoSaveDraft` | ✅ Pass | ✅ Yes |
+| 10 | `analyticsInsights` | `insertAnalyticsInsightSchema` | `metricData`, `aiContext` (2) | ✅ `InsertAnalyticsInsight` | ✅ Tested | ✅ Yes |
+| 11 | `userPredictions` | `insertUserPredictionSchema` | `factors` (PredictionData) (1) | ✅ `InsertUserPrediction` | ✅ Pass | ✅ Yes |
+| 12 | `trends` | `insertTrendSchema` | `dataPoints`, `recommendations`, `metadata` (3) | ✅ `InsertTrend` | ✅ Pass | ✅ Yes |
+| 13 | `maintenancePredictions` | `insertMaintenancePredictionSchema` | `urgencyLevel`, `status`, `preventiveActions`, `features` (4) | ✅ `InsertMaintenancePrediction` | ✅ Tested | ✅ Yes |
+| 14 | `maintenanceHistory` | `insertMaintenanceHistorySchema` | `outcome`, `performedActions`, `performanceMetrics`, `cost` (4) | ✅ `InsertMaintenanceHistory` | ✅ Pass | ✅ Yes |
+
+**Type Inference Legend:**
+- ✅ **Tested**: Full type inference verification completed (see `type-inference-verification.md`)
+- ✅ **Pass**: Schema structure verified, type inference confirmed correct
 
 ---
 

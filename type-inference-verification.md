@@ -1,160 +1,20 @@
-# Type Inference Verification Report
+# Insert Schema Type Inference Verification
 
-## Overview
-This document verifies that the `.extend()` pattern correctly preserves JSON type information in insert schemas. All 5 verified schemas passed TypeScript type checking with **zero LSP errors**.
+## Date: 2025-01-13
 
----
-
-## Verification Methodology
-
-1. ✅ Use `z.infer<typeof insertSchemaName>` to get the inferred type
-2. ✅ Check that JSON fields are **no longer `unknown`**
-3. ✅ Verify optional fields show as `field?: Type`
-4. ✅ Verify required fields show as `field: Type`
-5. ✅ Check that omitted fields (id, createdAt) are **not present**
-
-**Result**: ✅ **All type checks passed with zero TypeScript errors**
+This document verifies that insert schemas properly infer TypeScript types with:
+- JSON fields that are NOT `unknown`
+- Optional fields showing as `field?: Type`
+- Required fields showing as `field: Type`
+- Omitted fields (id, createdAt) not present in the type
 
 ---
 
-## 1. ✅ insertCohortMetricSchema - Optional JSON Fields
+## Test 1: insertFraudDetectionResultSchema
 
-### Schema Definition
+### Schema Definition (Lines 6699-6716)
 ```typescript
-export const insertCohortMetricSchema = createInsertSchema(cohortMetrics)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    segmentData: cohortSegmentDataSchema.optional(),
-    comparisonData: cohortComparisonDataSchema.optional(),
-  });
-```
-
-### Inferred Type
-```typescript
-type InferredCohortMetric = z.infer<typeof insertCohortMetricSchema>;
-
-// Actual inferred structure:
-{
-  cohortId: string;
-  metricName: string;
-  period: string;
-  periodDate: string;
-  value: number;
-  metricType: string;
-  segmentData?: CohortSegmentData;      // ✅ Optional with full type
-  comparisonData?: CohortComparisonData; // ✅ Optional with full type
-}
-```
-
-### ✅ Verification Results
-| Check | Status | Details |
-|-------|--------|---------|
-| JSON fields typed | ✅ Pass | `segmentData` and `comparisonData` have full types, not `unknown` |
-| Optional fields | ✅ Pass | Both JSON fields marked with `?:` |
-| Omitted fields | ✅ Pass | `id` and `createdAt` not present in type |
-| TypeScript compile | ✅ Pass | No errors when using type |
-
-### Example Usage (Compiles Successfully)
-```typescript
-const metric: InferredCohortMetric = {
-  cohortId: "cohort-123",
-  metricName: "retention_rate",
-  period: "day",
-  periodDate: "2024-01-15",
-  value: 0.85,
-  metricType: "retention",
-  segmentData: {
-    byDevice: { mobile: 0.82, desktop: 0.88 },
-    byRegion: { US: 0.86, EU: 0.84 },
-  },
-};
-
-// ✅ TypeScript correctly prevents accessing omitted fields
-metric.id = "should-error";        // ❌ Compile error: Property 'id' does not exist
-metric.createdAt = new Date();     // ❌ Compile error: Property 'createdAt' does not exist
-```
-
----
-
-## 2. ✅ insertUserPredictionSchema - Required JSON Field
-
-### Schema Definition
-```typescript
-export const insertUserPredictionSchema = createInsertSchema(userPredictions)
-  .omit({
-    id: true,
-    createdAt: true,
-    status: true, // Has default
-  })
-  .extend({
-    factors: predictionDataSchema, // REQUIRED - no .optional()
-  });
-```
-
-### Inferred Type
-```typescript
-type InferredUserPrediction = z.infer<typeof insertUserPredictionSchema>;
-
-// Actual inferred structure:
-{
-  userId: string;
-  predictionType: string;
-  probability: number;
-  predictedDate: Date;
-  factors: PredictionData;  // ✅ REQUIRED - no question mark
-  interventionSuggested?: string;
-  interventionTaken?: string;
-  modelVersion: string;
-  resolvedAt?: Date;
-}
-```
-
-### ✅ Verification Results
-| Check | Status | Details |
-|-------|--------|---------|
-| JSON fields typed | ✅ Pass | `factors` has full `PredictionData` type, not `unknown` |
-| Required fields | ✅ Pass | `factors` has NO `?:` - must be provided |
-| Optional fields | ✅ Pass | Other nullable fields have `?:` |
-| Omitted fields | ✅ Pass | `id`, `createdAt`, `status` not present |
-| TypeScript compile | ✅ Pass | Enforces required field |
-
-### Example Usage (Compiles Successfully)
-```typescript
-// ✅ Valid - includes required factors field
-const prediction: InferredUserPrediction = {
-  userId: "user-456",
-  predictionType: "churn_risk",
-  probability: 0.75,
-  predictedDate: new Date("2024-02-15"),
-  modelVersion: "v2.1",
-  factors: {
-    activityPattern: "declining",
-    engagementScore: 0.3,
-    lastActiveDate: "2024-01-10",
-  },
-};
-
-// ❌ TypeScript correctly prevents missing required field
-const invalid: InferredUserPrediction = {
-  userId: "user-456",
-  predictionType: "churn_risk",
-  probability: 0.75,
-  predictedDate: new Date("2024-02-15"),
-  modelVersion: "v2.1",
-  // Missing 'factors' - Compile error: Property 'factors' is missing
-};
-```
-
----
-
-## 3. ✅ insertFraudDetectionResultsSchema - Multiple JSON Fields
-
-### Schema Definition
-```typescript
-export const insertFraudDetectionResultsSchema = createInsertSchema(fraudDetectionResults)
+export const insertFraudDetectionResultSchema = createInsertSchema(fraudDetectionResults)
   .omit({
     id: true,
     analyzedAt: true,
@@ -164,299 +24,371 @@ export const insertFraudDetectionResultsSchema = createInsertSchema(fraudDetecti
     reviewRequired: true,
   })
   .extend({
+    analysisType: z.enum(["account_creation", "transaction", "content_posting", "account_takeover", "behavioral"]),
+    riskLevel: z.enum(["low", "medium", "high", "critical"]),
     riskFactors: z.array(fraudRiskFactorSchema).optional(),
     evidenceDetails: z.array(fraudEvidenceDetailSchema).optional(),
     deviceInfo: fraudDeviceInfoSchema.optional(),
     behaviorData: fraudBehaviorDataSchema.optional(),
     metadata: z.record(z.any()).optional(),
   });
+
+export type InsertFraudDetectionResult = z.infer<typeof insertFraudDetectionResultSchema>;
 ```
 
-### Inferred Type
+### Inferred Type Structure
 ```typescript
-type InferredFraudDetectionResults = z.infer<typeof insertFraudDetectionResultsSchema>;
-
-// Actual inferred structure:
-{
+type InsertFraudDetectionResult = {
+  // Required fields
   userId: string;
-  analysisType: string;
+  analysisType: "account_creation" | "transaction" | "content_posting" | "account_takeover" | "behavioral";
   overallRiskScore: number;
   riskLevel: "low" | "medium" | "high" | "critical";
-  riskFactors?: FraudRiskFactor[];       // ✅ Optional array with full type
-  evidenceDetails?: FraudEvidenceDetail[]; // ✅ Optional array with full type
-  deviceInfo?: FraudDeviceInfo;          // ✅ Optional with full type
-  behaviorData?: FraudBehaviorData;      // ✅ Optional with full type
-  metadata?: Record<string, any>;        // ✅ Optional
-  reviewedAt?: Date;
+  
+  // Nullable field from createInsertSchema (database allows NULL)
+  reviewedAt?: Date | null;  // nullable in DB, auto-inferred by createInsertSchema
+  
+  // Optional JSON fields (with .optional() in .extend())
+  riskFactors?: FraudRiskFactor[];       // .optional() = can be omitted
+  evidenceDetails?: FraudEvidenceDetail[];  // .optional() = can be omitted
+  deviceInfo?: FraudDeviceInfo;          // .optional() = can be omitted
+  behaviorData?: FraudBehaviorData;      // .optional() = can be omitted
+  metadata?: Record<string, any>;        // .optional() = can be omitted
+  
+  // Omitted fields (NOT present)
+  // ❌ id - correctly omitted
+  // ❌ analyzedAt - correctly omitted
+  // ❌ modelVersion - correctly omitted
+  // ❌ status - correctly omitted
+  // ❌ autoBlocked - correctly omitted
+  // ❌ reviewRequired - correctly omitted
 }
 ```
 
-### ✅ Verification Results
+**Note:** The `reviewedAt` field is nullable in the database and automatically inferred by `createInsertSchema()` as `Date | null`. JSON fields use `.optional()` in `.extend()` which makes them omittable (`field?: Type`), not explicitly nullable.
+
+### Verification Results
+
 | Check | Status | Details |
 |-------|--------|---------|
-| JSON fields typed | ✅ Pass | All 5 JSON fields have full types, not `unknown` |
-| Optional fields | ✅ Pass | All JSON fields marked with `?:` |
-| Array types | ✅ Pass | `riskFactors[]` and `evidenceDetails[]` properly typed |
-| Omitted fields | ✅ Pass | `id`, `analyzedAt`, `modelVersion`, etc. not present |
-| TypeScript compile | ✅ Pass | No errors when using type |
+| JSON fields not `unknown` | ✅ Pass | `riskFactors`, `evidenceDetails`, `deviceInfo`, `behaviorData`, `metadata` all properly typed |
+| Optional fields use `?` | ✅ Pass | All 5 JSON fields + `reviewedAt` show as optional |
+| Required fields don't use `?` | ✅ Pass | `userId`, `analysisType`, `overallRiskScore`, `riskLevel` are required |
+| Omitted fields not present | ✅ Pass | `id`, `analyzedAt`, `modelVersion`, `status`, `autoBlocked`, `reviewRequired` not in type |
+| Type export exists | ✅ Pass | `InsertFraudDetectionResult` exported |
 
-### Example Usage (Compiles Successfully)
-```typescript
-const fraudResult: InferredFraudDetectionResults = {
-  userId: "user-789",
-  analysisType: "transaction",
-  overallRiskScore: 0.85,
-  riskLevel: "high",
-  riskFactors: [{
-    behaviorScore: 0.8,
-    accountAgeScore: 0.6,
-    transactionVelocityScore: 0.9,
-    details: { suspicious_pattern: "rapid_transactions" },
-  }],
-  deviceInfo: {
-    fingerprint: "abc123",
-    deviceType: "mobile",
-    ipAddress: "192.168.1.1",
-    isProxy: false,
-  },
-};
-```
+**Overall: ✅ PASS**
 
 ---
 
-## 4. ✅ insertModerationLogSchema - Required JSON Field
+## Test 2: insertSentimentResultSchema
 
-### Schema Definition
+### Schema Definition (Lines 7175-7189)
 ```typescript
-export const insertModerationLogSchema = createInsertSchema(moderationLogs)
+export const insertSentimentResultSchema = createInsertSchema(sentimentResults)
   .omit({
     id: true,
-    createdAt: true,
-    updatedAt: true,
-    confidence: true,
-    manualReview: true,
+    analyzedAt: true,
+    modelVersion: true,
   })
   .extend({
-    toxicityScores: moderationResultSchema, // REQUIRED - no .optional()
+    sentiment: z.enum(["positive", "negative", "neutral", "mixed"]),
+    sentimentData: sentimentDataSchema.optional(),
+    emotionScores: emotionScoresSchema.optional(),
+    keyPhrases: z.array(keyPhraseSchema).optional(),
+    contextFactors: z.array(contextFactorSchema).optional(),
+    aspectSentiments: z.record(z.string()).optional(),
+    metadata: z.record(z.any()).optional(),
   });
+
+export type InsertSentimentResult = z.infer<typeof insertSentimentResultSchema>;
 ```
 
-### Inferred Type
+### Inferred Type Structure
 ```typescript
-type InferredModerationLog = z.infer<typeof insertModerationLogSchema>;
-
-// Actual inferred structure:
-{
+type InsertSentimentResult = {
+  // Required fields
   contentId: string;
-  contentType: string;
-  userId: string;
   content: string;
-  toxicityScores: ModerationResult;  // ✅ REQUIRED - no question mark
-  actionTaken: string;
-  modelUsed: string;
-  categories?: string[];
-  severity: string;
-  reviewedBy?: string;
-  reviewNotes?: string;
-  overrideReason?: string;
-  reviewedAt?: Date;
+  sentiment: "positive" | "negative" | "neutral" | "mixed";
+  confidence: number;
+  
+  // Nullable fields from createInsertSchema (database allows NULL)
+  // Note: createInsertSchema automatically infers nullable columns
+  userId?: string | null;        // nullable in DB, auto-inferred
+  contentType?: string | null;   // nullable in DB, auto-inferred
+  topics?: string[] | null;      // nullable in DB, auto-inferred
+  keywords?: string[] | null;    // nullable in DB, auto-inferred
+  
+  // Optional JSON fields (with .optional() in .extend())
+  sentimentData?: SentimentData;
+  emotionScores?: EmotionScores;
+  keyPhrases?: KeyPhrase[];
+  contextFactors?: ContextFactor[];
+  aspectSentiments?: Record<string, string>;
+  metadata?: Record<string, any>;
+  
+  // Omitted fields (NOT present)
+  // ❌ id - correctly omitted
+  // ❌ analyzedAt - correctly omitted
+  // ❌ modelVersion - correctly omitted
 }
 ```
 
-### ✅ Verification Results
+**Note:** The `createInsertSchema()` function automatically infers nullable columns from the table definition. Columns without `.notNull()` become `field?: Type | null` in the insert type. Fields in `.extend()` use `.optional()` which makes them `field?: Type` (can be omitted, becomes undefined).
+
+### Verification Results
+
 | Check | Status | Details |
 |-------|--------|---------|
-| JSON fields typed | ✅ Pass | `toxicityScores` has full `ModerationResult` type |
-| Required fields | ✅ Pass | `toxicityScores` has NO `?:` - must be provided |
-| Omitted fields | ✅ Pass | `id`, `createdAt`, `updatedAt`, `confidence` not present |
-| TypeScript compile | ✅ Pass | Enforces required field |
+| JSON fields not `unknown` | ✅ Pass | All 6 JSON fields properly typed with schemas |
+| Optional fields use `?` | ✅ Pass | All 6 JSON fields + nullable fields show as optional |
+| Required fields don't use `?` | ✅ Pass | `contentId`, `content`, `sentiment`, `confidence` are required |
+| Omitted fields not present | ✅ Pass | `id`, `analyzedAt`, `modelVersion` not in type |
+| Type export exists | ✅ Pass | `InsertSentimentResult` exported |
 
-### Example Usage (Compiles Successfully)
-```typescript
-const moderationLog: InferredModerationLog = {
-  contentId: "post-123",
-  contentType: "comment",
-  userId: "user-456",
-  content: "Test content",
-  actionTaken: "blocked",
-  modelUsed: "both",
-  severity: "high",
-  toxicityScores: {
-    toxicity: 0.85,
-    severeToxicity: 0.92,
-    identityAttack: 0.15,
-    insult: 0.78,
-    profanity: 0.65,
-    threat: 0.12,
-    harassment: 0.45,
-  },
-};
-```
+**Overall: ✅ PASS**
 
 ---
 
-## 5. ✅ insertTrendSchema - Mixed Required and Optional JSON Fields
+## Test 3: insertAbTestInsightSchema
 
-### Schema Definition
+### Schema Definition (Lines 8734-8746)
 ```typescript
-export const insertTrendSchema = createInsertSchema(trends)
+export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
   .omit({
     id: true,
     createdAt: true,
     updatedAt: true,
+    generatedBy: true,
+  })
+  .extend({
+    winner: z.enum(["A", "B", "inconclusive"]).optional(),
+    recommendation: z.enum(["implement", "continue", "stop", "iterate"]),
+    insights: abTestInsightsSchema.optional(),
+    statisticalAnalysis: abTestStatisticalAnalysisSchema.optional(),
+  });
+
+export type InsertAbTestInsight = z.infer<typeof insertAbTestInsightSchema>;
+```
+
+### Inferred Type Structure
+```typescript
+type InsertAbTestInsight = {
+  // Required fields
+  testId: string;
+  confidence: number;
+  recommendation: "implement" | "continue" | "stop" | "iterate";
+  explanation: string;
+  
+  // Optional fields (using .optional() - can be omitted)
+  winner?: "A" | "B" | "inconclusive";  // undefined when omitted, not null
+  pValue?: number;
+  liftPercentage?: number;
+  
+  // Optional JSON fields (with ?)
+  insights?: AbTestInsights;
+  statisticalAnalysis?: AbTestStatisticalAnalysis;
+  
+  // Omitted fields (NOT present)
+  // ❌ id - correctly omitted
+  // ❌ createdAt - correctly omitted
+  // ❌ updatedAt - correctly omitted
+  // ❌ generatedBy - correctly omitted
+}
+```
+
+**Note:** The database columns `winner`, `pValue`, and `liftPercentage` are nullable (no `.notNull()` constraint), but the insert schema uses `.optional()` rather than `.nullable()`. This means these fields can be **omitted** when inserting (resulting in `undefined`), but cannot be **explicitly set to `null`**. The database will store `NULL` when the field is omitted.
+
+### Verification Results
+
+| Check | Status | Details |
+|-------|--------|---------|
+| JSON fields not `unknown` | ✅ Pass | `insights`, `statisticalAnalysis` properly typed |
+| Optional fields use `?` | ✅ Pass | `winner`, `insights`, `statisticalAnalysis`, `pValue`, `liftPercentage` are optional |
+| Required fields don't use `?` | ✅ Pass | `testId`, `confidence`, `recommendation`, `explanation` are required |
+| Omitted fields not present | ✅ Pass | `id`, `createdAt`, `updatedAt`, `generatedBy` not in type |
+| Type export exists | ✅ Pass | `InsertAbTestInsight` exported |
+
+**Overall: ✅ PASS**
+
+---
+
+## Test 4: insertAnalyticsInsightSchema
+
+### Schema Definition (Lines 8122-8133)
+```typescript
+export const insertAnalyticsInsightSchema = createInsertSchema(analyticsInsights)
+  .omit({
+    id: true,
+    createdAt: true,
+    importance: true,
+    category: true,
+    isRead: true,
+  })
+  .extend({
+    metricData: analyticsInsightDataSchema.optional(),
+    aiContext: z.record(z.any()).optional(),
+  });
+
+export type InsertAnalyticsInsight = z.infer<typeof insertAnalyticsInsightSchema>;
+```
+
+### Inferred Type Structure
+```typescript
+type InsertAnalyticsInsight = {
+  // Required fields
+  metricName: string;
+  insightText: string;
+  period: string;
+  
+  // Nullable field from createInsertSchema (database allows NULL)
+  userId?: string | null;  // nullable in DB, auto-inferred
+  
+  // Optional JSON fields (with .optional() in .extend())
+  metricData?: AnalyticsInsightData;  // .optional() = can be omitted
+  aiContext?: Record<string, any>;     // .optional() = can be omitted
+  
+  // Omitted fields (NOT present)
+  // ❌ id - correctly omitted
+  // ❌ createdAt - correctly omitted
+  // ❌ importance - correctly omitted (has default)
+  // ❌ category - correctly omitted (has default)
+  // ❌ isRead - correctly omitted (has default)
+}
+```
+
+**Note:** The `userId` field is nullable in the database and automatically inferred by `createInsertSchema()`. JSON fields use `.optional()` which allows omission but not explicit `null` values.
+
+### Verification Results
+
+| Check | Status | Details |
+|-------|--------|---------|
+| JSON fields not `unknown` | ✅ Pass | `metricData`, `aiContext` properly typed |
+| Optional fields use `?` | ✅ Pass | Both JSON fields are optional |
+| Required fields don't use `?` | ✅ Pass | `metricName`, `insightText`, `period` are required |
+| Omitted fields not present | ✅ Pass | `id`, `createdAt`, `importance`, `category`, `isRead` not in type |
+| Type export exists | ✅ Pass | `InsertAnalyticsInsight` exported |
+
+**Overall: ✅ PASS**
+
+---
+
+## Test 5: insertMaintenancePredictionSchema
+
+### Schema Definition (Lines 9216-9230)
+```typescript
+export const insertMaintenancePredictionSchema = createInsertSchema(maintenancePredictions)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    urgencyLevel: true,
+    modelVersion: true,
     status: true,
   })
   .extend({
-    dataPoints: trendDataSchema,             // REQUIRED
-    recommendations: z.array(z.string()).optional(), // Optional
-    metadata: z.record(z.any()).optional(),  // Optional
+    urgencyLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
+    status: z.enum(["active", "scheduled", "completed", "dismissed"]).optional(),
+    preventiveActions: z.array(z.string()).optional(),
+    features: maintenanceFeaturesSchema.optional(),
   });
+
+export type InsertMaintenancePrediction = z.infer<typeof insertMaintenancePredictionSchema>;
 ```
 
-### Inferred Type
+### Inferred Type Structure
 ```typescript
-type InferredTrend = z.infer<typeof insertTrendSchema>;
-
-// Actual inferred structure:
-{
-  trendName: string;
-  trendType: string;
-  strength: number;
-  confidence: number;
-  growthRate?: number;
-  startDate: Date;
-  peakDate?: Date;
-  endDate?: Date;
-  dataPoints: TrendData;           // ✅ REQUIRED - no question mark
-  interpretation?: string;
-  businessImpact?: string;
-  recommendations?: string[];      // ✅ Optional array
-  metadata?: Record<string, any>; // ✅ Optional
+type InsertMaintenancePrediction = {
+  // Required fields
+  component: string;
+  predictedIssue: string;
+  probability: number;
+  recommendedDate: Date;
+  
+  // Nullable field from createInsertSchema (database allows NULL)
+  estimatedDowntime?: number | null;  // nullable in DB, auto-inferred
+  
+  // Optional enum fields (overridden in .extend() as .optional())
+  urgencyLevel?: "low" | "medium" | "high" | "critical";  // .optional() in .extend()
+  status?: "active" | "scheduled" | "completed" | "dismissed";  // .optional() in .extend()
+  
+  // Optional JSON fields (with .optional() in .extend())
+  preventiveActions?: string[];      // .optional() = can be omitted
+  features?: MaintenanceFeatures;    // .optional() = can be omitted
+  
+  // Omitted fields (NOT present)
+  // ❌ id - correctly omitted
+  // ❌ createdAt - correctly omitted
+  // ❌ updatedAt - correctly omitted
+  // ❌ modelVersion - correctly omitted (has default)
 }
 ```
 
-### ✅ Verification Results
+**Note:** The `estimatedDowntime` field is nullable in the database and automatically inferred by `createInsertSchema()`. Fields in `.extend()` use `.optional()` which allows omission (becomes `undefined`) but not explicit `null` values.
+
+### Verification Results
+
 | Check | Status | Details |
 |-------|--------|---------|
-| JSON fields typed | ✅ Pass | All 3 JSON fields have full types |
-| Required fields | ✅ Pass | `dataPoints` has NO `?:` - must be provided |
-| Optional fields | ✅ Pass | `recommendations` and `metadata` have `?:` |
-| Array types | ✅ Pass | `recommendations: string[]` properly typed |
-| Omitted fields | ✅ Pass | `id`, `createdAt`, `updatedAt`, `status` not present |
-| TypeScript compile | ✅ Pass | Enforces required field |
+| JSON fields not `unknown` | ✅ Pass | `preventiveActions`, `features` properly typed |
+| Optional fields use `?` | ✅ Pass | All JSON fields and enums are optional |
+| Required fields don't use `?` | ✅ Pass | `component`, `predictedIssue`, `probability`, `recommendedDate` are required |
+| Omitted fields not present | ✅ Pass | `id`, `createdAt`, `updatedAt`, `modelVersion` not in type |
+| Type export exists | ✅ Pass | `InsertMaintenancePrediction` exported |
 
-### Example Usage (Compiles Successfully)
-```typescript
-const trend: InferredTrend = {
-  trendName: "AI Adoption Surge",
-  trendType: "topic",
-  strength: 0.85,
-  confidence: 0.92,
-  startDate: new Date("2024-01-01"),
-  dataPoints: {
-    timeSeries: [
-      { timestamp: "2024-01-01", value: 100 },
-      { timestamp: "2024-01-15", value: 145 },
-    ],
-    keywords: ["AI", "machine learning"],
-    sources: ["twitter", "news"],
-  },
-  recommendations: [
-    "Increase AI-related content",
-    "Launch AI features course",
-  ],
-};
-```
+**Overall: ✅ PASS**
 
 ---
 
-## Summary of Results
+## Summary of Verification
 
-### ✅ All Verifications Passed
-
-| Schema | JSON Fields | Required | Optional | Omitted Fields | LSP Errors |
-|--------|-------------|----------|----------|----------------|------------|
-| `insertCohortMetricSchema` | 2 | 0 | 2 | 2 | ✅ 0 |
-| `insertUserPredictionSchema` | 1 | 1 | 0 | 3 | ✅ 0 |
-| `insertFraudDetectionResultsSchema` | 5 | 0 | 5 | 6 | ✅ 0 |
-| `insertModerationLogSchema` | 1 | 1 | 0 | 5 | ✅ 0 |
-| `insertTrendSchema` | 3 | 1 | 2 | 4 | ✅ 0 |
-| **TOTAL** | **12** | **3** | **9** | **20** | **✅ 0** |
+| Schema | JSON Fields Typed | Optional Correct | Required Correct | Omitted Fields Excluded | Type Exported | Overall |
+|--------|-------------------|------------------|------------------|------------------------|---------------|---------|
+| `insertFraudDetectionResultSchema` | ✅ 5 fields | ✅ Yes | ✅ Yes | ✅ 6 fields | ✅ Yes | ✅ PASS |
+| `insertSentimentResultSchema` | ✅ 6 fields | ✅ Yes | ✅ Yes | ✅ 3 fields | ✅ Yes | ✅ PASS |
+| `insertAbTestInsightSchema` | ✅ 2 fields | ✅ Yes | ✅ Yes | ✅ 4 fields | ✅ Yes | ✅ PASS |
+| `insertAnalyticsInsightSchema` | ✅ 2 fields | ✅ Yes | ✅ Yes | ✅ 5 fields | ✅ Yes | ✅ PASS |
+| `insertMaintenancePredictionSchema` | ✅ 2 fields | ✅ Yes | ✅ Yes | ✅ 4 fields | ✅ Yes | ✅ PASS |
 
 ---
 
 ## Key Findings
 
-### ✅ Type Safety Improvements
+### ✅ Strengths
 
-1. **JSON Fields Are Strongly Typed**
-   - Before: `unknown` (requires manual type assertions)
-   - After: Full interface types (e.g., `CohortSegmentData`, `PredictionData`)
-   - Impact: ✅ Autocomplete and type checking in IDEs
+1. **No `unknown` Types**: All JSON fields are properly typed with their respective Zod schemas
+2. **Correct Optionality**: Fields marked as `.optional()` appear as `field?: Type` in the inferred type
+3. **Required Fields**: Non-optional fields correctly appear as `field: Type` (no `?`)
+4. **Proper Omission**: Auto-generated and default fields are correctly excluded from insert types
+5. **Type Exports**: All schemas export corresponding TypeScript types using `z.infer<typeof schema>`
 
-2. **Required vs Optional Correctly Enforced**
-   - Required fields (no `.optional()`): TypeScript prevents omission
-   - Optional fields (with `.optional()`): Can be safely omitted
-   - Impact: ✅ Compile-time validation of data structure
+### 🎯 Benefits
 
-3. **Auto-Generated Fields Properly Omitted**
-   - `id`, `createdAt`, `updatedAt` not in insert types
-   - Fields with defaults can still be overridden
-   - Impact: ✅ Prevents accidental field inclusion
+1. **Full IntelliSense**: Developers get autocomplete for all nested JSON properties
+2. **Compile-Time Safety**: TypeScript catches type errors before runtime
+3. **Runtime Validation**: Zod validates data at runtime, preventing bad data
+4. **Self-Documenting**: Types serve as living documentation
+5. **Refactoring Safety**: Changes to schemas automatically update types
 
-4. **Array Types Preserved**
-   - `riskFactors?: FraudRiskFactor[]` (not `unknown[]`)
-   - `recommendations?: string[]` (not `any[]`)
-   - Impact: ✅ Full type safety for array elements
+### 📊 Pattern Success
 
----
-
-## Before vs After Comparison
-
-### ❌ Before (Without `.extend()`)
-```typescript
-// JSON field typed as unknown
-const data: InsertCohort = {
-  cohortId: "123",
-  definition: { ... }, // Type: unknown ❌
-};
-
-// Requires manual type assertion
-const def = data.definition as CohortDefinition;
-```
-
-### ✅ After (With `.extend()`)
-```typescript
-// JSON field fully typed
-const data: InsertCohort = {
-  cohortId: "123",
-  definition: {
-    rules: [...],      // ✅ Autocomplete works
-    filters: [...],    // ✅ Type checked
-  },
-};
-
-// No type assertion needed
-const rules = data.definition.rules; // ✅ Correctly typed
-```
+The `.omit().extend()` pattern successfully achieves:
+- ✅ Clean separation of concerns
+- ✅ Type-safe JSON column handling
+- ✅ Proper field omission
+- ✅ Backward compatibility
+- ✅ No LSP errors
 
 ---
 
 ## Conclusion
 
-**Status**: ✅ **All type inference verifications passed**
+**All 5 tested insert schemas pass verification** with:
+- 17 total JSON fields properly typed
+- 22 fields correctly omitted
+- 5 type exports working correctly
+- **Zero type mismatches found**
 
-The `.extend()` pattern successfully:
-- ✅ Preserves full type information for JSONB columns
-- ✅ Enforces required vs optional field semantics
-- ✅ Removes auto-generated fields from insert types
-- ✅ Provides IDE autocomplete for nested JSON structures
-- ✅ Catches type errors at compile time instead of runtime
+The `.omit().extend()` pattern is working correctly and providing full type safety for JSON columns.
 
-**TypeScript Compiler Result**: **0 errors** across all 5 verified schemas
-
----
-
-**Last Updated**: 2025-11-13  
-**Verification File**: `verify-insert-types.ts`  
-**LSP Status**: ✅ No errors
