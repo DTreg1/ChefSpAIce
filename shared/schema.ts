@@ -9208,32 +9208,39 @@ export const insertSystemMetricSchema = createInsertSchema(systemMetrics, {
 
 /**
  * Insert schema for maintenancePredictions table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertMaintenancePredictionSchema = createInsertSchema(maintenancePredictions, {
-  urgencyLevel: z.enum(["low", "medium", "high", "critical"]),
-  status: z.enum(["active", "scheduled", "completed", "dismissed"]),
-  preventiveActions: z.array(z.string()).optional(),
-  features: maintenanceFeaturesSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertMaintenancePredictionSchema = createInsertSchema(maintenancePredictions)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    urgencyLevel: true,
+    modelVersion: true,
+    status: true,
+  })
+  .extend({
+    urgencyLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
+    status: z.enum(["active", "scheduled", "completed", "dismissed"]).optional(),
+    preventiveActions: z.array(z.string()).optional(),
+    features: maintenanceFeaturesSchema.optional(),
+  });
 
 /**
  * Insert schema for maintenanceHistory table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertMaintenanceHistorySchema = createInsertSchema(maintenanceHistory, {
-  outcome: z.enum(["successful", "partial", "failed"]),
-  performedActions: z.array(z.string()).optional(),
-  performanceMetrics: maintenancePerformanceMetricsSchema.optional(),
-  cost: maintenanceCostSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertMaintenanceHistorySchema = createInsertSchema(maintenanceHistory)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    outcome: z.enum(["successful", "partial", "failed"]),
+    performedActions: z.array(z.string()).optional(),
+    performanceMetrics: maintenancePerformanceMetricsSchema.optional(),
+    cost: maintenanceCostSchema.optional(),
+  });
 
 export type InsertSystemMetric = z.infer<typeof insertSystemMetricSchema>;
 export type SystemMetric = typeof systemMetrics.$inferSelect;
