@@ -985,6 +985,63 @@ export const fraudBehaviorDataSchema = z.object({
 
 // -------------------- Cohort Analysis Schemas --------------------
 
+/**
+ * Zod schema for CohortDefinition interface
+ * Validates cohort definition criteria and filtering rules
+ */
+export const cohortDefinitionSchema = z.object({
+  signupDateRange: z.object({
+    start: z.string().describe("Start date for user signup filtering (ISO string)"),
+    end: z.string().describe("End date for user signup filtering (ISO string)"),
+  }).optional().describe("Date range for user signup filtering"),
+  userAttributes: z.record(z.string(), z.any()).optional().describe("User attribute filters (e.g., plan type, location, source)"),
+  behaviorCriteria: z.object({
+    events: z.array(z.string()).optional().describe("List of required events (e.g., ['login', 'purchase', 'share'])"),
+    minSessionCount: z.number().int().nonnegative().optional().describe("Minimum number of sessions required"),
+    minEngagementScore: z.number().nonnegative().optional().describe("Minimum engagement score threshold"),
+    customMetrics: z.record(z.string(), z.any()).optional().describe("Custom metrics for advanced filtering"),
+  }).optional().describe("Behavioral patterns and criteria for cohort membership"),
+  customQueries: z.array(z.string()).optional().describe("Custom SQL conditions for complex filtering"),
+  source: z.string().optional().describe("Acquisition source (e.g., 'product_hunt', 'organic', 'paid_ads')"),
+});
+
+/**
+ * Zod schema for CohortMetadata interface
+ * Validates descriptive metadata about the cohort
+ */
+export const cohortMetadataSchema = z.object({
+  description: z.string().optional().describe("Description or notes about the cohort"),
+  tags: z.array(z.string()).optional().describe("Tags for categorization and filtering"),
+  customFields: z.record(z.string(), z.any()).optional().describe("Custom fields with dynamic keys"),
+  color: z.string().optional().describe("Hex color code for UI visualization (e.g., '#4F46E5')"),
+  icon: z.string().optional().describe("Icon identifier for UI display"),
+  businessContext: z.string().optional().describe("Business context explaining why this cohort matters"),
+  hypothesis: z.string().optional().describe("Hypothesis being tested with this cohort"),
+});
+
+/**
+ * Zod schema for CohortComparisonData interface
+ * Validates period-over-period comparison metrics
+ */
+export const cohortComparisonDataSchema = z.object({
+  previousPeriod: z.number().optional().describe("Metric value from the previous period"),
+  percentageChange: z.number().optional().describe("Percentage change from previous period (-100 to +100+)"),
+  trend: z.enum(['increasing', 'decreasing', 'stable']).optional().describe("Trend direction classification"),
+  significance: z.number().min(0).max(1).optional().describe("Statistical significance score (0-1, higher = more significant)"),
+});
+
+/**
+ * Zod schema for CohortSegmentData interface
+ * Validates segment breakdown with user counts and percentages
+ */
+export const cohortSegmentDataSchema = z.object({
+  byDevice: z.record(z.string(), z.number()).optional().describe("Breakdown by device type (e.g., {mobile: 150, desktop: 320, tablet: 30})"),
+  bySource: z.record(z.string(), z.number()).optional().describe("Breakdown by acquisition source (e.g., {organic: 200, paid: 150, referral: 150})"),
+  byFeature: z.record(z.string(), z.number()).optional().describe("Breakdown by feature usage (e.g., {feature_a: 350, feature_b: 200})"),
+  byUserAttribute: z.record(z.string(), z.number()).optional().describe("Breakdown by user attribute (e.g., {premium: 100, free: 400})"),
+  custom: z.record(z.string(), z.any()).optional().describe("Custom segment breakdowns with dynamic keys"),
+});
+
 // -------------------- Predictive Maintenance Schemas --------------------
 
 // ==================== End of Zod Validation Schemas ====================
