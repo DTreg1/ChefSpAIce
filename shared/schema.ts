@@ -1813,11 +1813,15 @@ export const authProviders = pgTable("auth_providers", {
   uniqueIndex("auth_providers_provider_id_idx").on(table.provider, table.providerId),
 ]);
 
-export const insertAuthProviderSchema = createInsertSchema(authProviders).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertAuthProviderSchema = createInsertSchema(authProviders)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    metadata: z.record(z.any()).optional(),
+  });
 
 export type InsertAuthProvider = z.infer<typeof insertAuthProviderSchema>;
 export type AuthProvider = typeof authProviders.$inferSelect;
@@ -5660,11 +5664,31 @@ export const excerpts = pgTable("excerpts", {
   index("excerpts_active_idx").on(table.isActive, table.contentId),
 ]);
 
-export const insertExcerptSchema = createInsertSchema(excerpts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertExcerptSchema = createInsertSchema(excerpts)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    generationParams: z.object({
+      tone: z.string().optional(),
+      style: z.string().optional(),
+      targetAudience: z.string().optional(),
+      callToAction: z.boolean().optional(),
+      hashtags: z.boolean().optional(),
+      emojis: z.boolean().optional(),
+      temperature: z.number().optional(),
+      model: z.string().optional(),
+    }).optional(),
+    socialMetadata: z.object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      imageUrl: z.string().optional(),
+      twitterCard: z.enum(['summary', 'summary_large_image']).optional(),
+      ogType: z.string().optional(),
+    }).optional(),
+  });
 
 export type InsertExcerpt = z.infer<typeof insertExcerptSchema>;
 export type Excerpt = typeof excerpts.$inferSelect;
@@ -5732,11 +5756,39 @@ export const excerptPerformance = pgTable("excerpt_performance", {
   uniqueIndex("excerpt_performance_unique_idx").on(table.excerptId, table.date),
 ]);
 
-export const insertExcerptPerformanceSchema = createInsertSchema(excerptPerformance).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertExcerptPerformanceSchema = createInsertSchema(excerptPerformance)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    platformMetrics: z.object({
+      twitter: z.object({
+        impressions: z.number().optional(),
+        retweets: z.number().optional(),
+        likes: z.number().optional(),
+        replies: z.number().optional(),
+      }).optional(),
+      linkedin: z.object({
+        impressions: z.number().optional(),
+        reactions: z.number().optional(),
+        comments: z.number().optional(),
+        reposts: z.number().optional(),
+      }).optional(),
+      facebook: z.object({
+        reach: z.number().optional(),
+        reactions: z.number().optional(),
+        comments: z.number().optional(),
+        shares: z.number().optional(),
+      }).optional(),
+      email: z.object({
+        opens: z.number().optional(),
+        clicks: z.number().optional(),
+        forwards: z.number().optional(),
+      }).optional(),
+    }).optional(),
+  });
 
 export type InsertExcerptPerformance = z.infer<typeof insertExcerptPerformanceSchema>;
 export type ExcerptPerformance = typeof excerptPerformance.$inferSelect;
@@ -5802,11 +5854,21 @@ export const translations = pgTable("translations", {
   uniqueIndex("translations_unique_idx").on(table.contentId, table.languageCode),
 ]);
 
-export const insertTranslationSchema = createInsertSchema(translations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTranslationSchema = createInsertSchema(translations)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    translationMetadata: z.object({
+      model: z.string().optional(),
+      confidence: z.number().optional(),
+      context: z.string().optional(),
+      preservedFormatting: z.any().optional(),
+      sourceLanguage: z.string().optional(),
+    }).optional(),
+  });
 
 export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
 export type Translation = typeof translations.$inferSelect;
@@ -7308,12 +7370,27 @@ export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts)
     metadata: autoSaveDataSchema.optional(),
   });
 
-export const insertSavePatternSchema = createInsertSchema(savePatterns).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  lastAnalyzed: true,
-});
+export const insertSavePatternSchema = createInsertSchema(savePatterns)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    lastAnalyzed: true,
+  })
+  .extend({
+    patternData: z.object({
+      pauseHistogram: z.array(z.number()).optional(),
+      keystrokeIntervals: z.array(z.number()).optional(),
+      burstLengths: z.array(z.number()).optional(),
+      timeOfDayPreferences: z.record(z.number()).optional(),
+      contentTypePatterns: z.record(z.any()).optional(),
+    }).optional(),
+    modelWeights: z.object({
+      weights: z.array(z.array(z.number())).optional(),
+      bias: z.array(z.number()).optional(),
+      version: z.string().optional(),
+    }).optional(),
+  });
 
 export type InsertAutoSaveDraft = z.infer<typeof insertAutoSaveDraftSchema>;
 export type AutoSaveDraft = typeof autoSaveDrafts.$inferSelect;
