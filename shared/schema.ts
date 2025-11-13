@@ -6230,17 +6230,17 @@ export const moderationLogs = pgTable("moderation_logs", {
  * Insert schema for moderationLogs table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertModerationLogSchema = createInsertSchema(moderationLogs)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    confidence: true,
-    manualReview: true,
-  })
-  .extend({
-    toxicityScores: moderationResultSchema,
-  });
+export const insertModerationLogSchema = createInsertSchema(moderationLogs, {
+  toxicityScores: moderationResultSchema,
+  actionTaken: z.enum(["approved", "blocked", "flagged", "warning"]),
+  severity: z.enum(["low", "medium", "high", "critical"]),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  confidence: true,
+  manualReview: true,
+});
 
 export type InsertModerationLog = z.infer<typeof insertModerationLogSchema>;
 export type ModerationLog = typeof moderationLogs.$inferSelect;
@@ -6322,21 +6322,19 @@ export const blockedContent = pgTable("blocked_content", {
  * Insert schema for blockedContent table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertBlockedContentSchema = createInsertSchema(blockedContent)
-  .omit({
-    id: true,
-    timestamp: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    metadata: z.object({
-      originalLocation: z.string().optional(),
-      targetUsers: z.array(z.string()).optional(),
-      context: z.string().optional(),
-      previousViolations: z.number().int().nonnegative().optional(),
-    }).optional(),
-  });
+export const insertBlockedContentSchema = createInsertSchema(blockedContent, {
+  metadata: z.object({
+    originalLocation: z.string().optional(),
+    targetUsers: z.array(z.string()).optional(),
+    context: z.string().optional(),
+    previousViolations: z.number().int().nonnegative().optional(),
+  }).optional(),
+}).omit({
+  id: true,
+  timestamp: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export type InsertBlockedContent = z.infer<typeof insertBlockedContentSchema>;
 export type BlockedContent = typeof blockedContent.$inferSelect;

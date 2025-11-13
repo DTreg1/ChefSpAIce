@@ -9775,7 +9775,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(moderationLogs)
-        .values(log as any)
+        .values(log)
         .returning();
       return result;
     } catch (error) {
@@ -9794,7 +9794,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           updatedAt: new Date(),
-        } as any)
+        })
         .where(eq(moderationLogs.id, id));
     } catch (error) {
       console.error("Error updating moderation log:", error);
@@ -9835,7 +9835,7 @@ export class DatabaseStorage implements IStorage {
 
       // Apply conditions if any
       if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as typeof query;
+        query = query.where(and(...conditions));
       }
 
       // Order by creation date (newest first)
@@ -9854,7 +9854,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(blockedContent)
-        .values([content as any])
+        .values(content)
         .returning();
       return result;
     } catch (error) {
@@ -9950,7 +9950,7 @@ export class DatabaseStorage implements IStorage {
       // Get all moderation logs within time range
       let logsQuery = db.select().from(moderationLogs);
       if (conditions.length > 0) {
-        logsQuery = logsQuery.where(and(...conditions)) as typeof logsQuery;
+        logsQuery = logsQuery.where(and(...conditions));
       }
       const logs = await logsQuery;
 
@@ -9971,7 +9971,7 @@ export class DatabaseStorage implements IStorage {
             gte(moderationAppeals.createdAt, timeRange.start),
             lte(moderationAppeals.createdAt, timeRange.end),
           ),
-        ) as typeof appealsQuery;
+        );
       }
       const appeals = await appealsQuery;
       const totalAppeals = appeals.length;
