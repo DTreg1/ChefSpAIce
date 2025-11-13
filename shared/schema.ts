@@ -891,6 +891,92 @@ export const contextFactorSchema = z.object({
 
 // -------------------- Fraud Detection Schemas --------------------
 
+/**
+ * Zod schema for FraudRiskFactor interface
+ * Validates individual fraud risk factors with scores and weights
+ */
+export const fraudRiskFactorSchema = z.object({
+  behaviorScore: z.number().min(0).max(1).describe("Behavior pattern analysis score (0-1, higher = more suspicious)"),
+  accountAgeScore: z.number().min(0).max(1).describe("Account age risk score (0-1, newer accounts = higher risk)"),
+  transactionVelocityScore: z.number().min(0).max(1).describe("Transaction velocity risk score (0-1, rapid transactions = higher risk)"),
+  contentPatternScore: z.number().min(0).max(1).describe("Content pattern analysis score (0-1, spam/bot-like = higher risk)"),
+  networkScore: z.number().min(0).max(1).describe("Network reputation score (0-1, bad IP/proxy = higher risk)"),
+  deviceScore: z.number().min(0).max(1).describe("Device fingerprint analysis score (0-1, suspicious device = higher risk)"),
+  geoScore: z.number().min(0).max(1).describe("Geographic anomaly score (0-1, unusual location = higher risk)"),
+  details: z.record(z.string(), z.any()).describe("Additional detailed scoring information"),
+});
+
+/**
+ * Zod schema for FraudEvidenceDetail interface
+ * Validates evidence supporting fraud detection
+ */
+export const fraudEvidenceDetailSchema = z.object({
+  description: z.string().describe("Human-readable description of the suspicious activity"),
+  evidence: z.array(z.string()).describe("Array of evidence items supporting the fraud detection"),
+  relatedActivities: z.array(z.string()).optional().describe("Related activity IDs for correlation"),
+  ipAddress: z.string().optional().describe("IP address of the suspicious activity"),
+  userAgent: z.string().optional().describe("User agent string from the request"),
+  location: z.object({
+    lat: z.number().describe("Latitude coordinate"),
+    lng: z.number().describe("Longitude coordinate"),
+    country: z.string().describe("Country code or name"),
+  }).optional().describe("Geographic location information"),
+  metadata: z.record(z.string(), z.any()).optional().describe("Additional metadata about the evidence"),
+});
+
+/**
+ * Zod schema for FraudDeviceInfo interface
+ * Validates device fingerprint and network information for fraud detection
+ */
+export const fraudDeviceInfoSchema = z.object({
+  fingerprint: z.string().optional().describe("Unique device fingerprint hash"),
+  deviceType: z.string().optional().describe("Device type (mobile, desktop, tablet, etc.)"),
+  os: z.string().optional().describe("Operating system information"),
+  browser: z.string().optional().describe("Browser information"),
+  screenResolution: z.string().optional().describe("Screen resolution"),
+  timezone: z.string().optional().describe("Timezone offset"),
+  language: z.string().optional().describe("Language preferences"),
+  ipAddress: z.string().optional().describe("IP address"),
+  isp: z.string().optional().describe("ISP (Internet Service Provider)"),
+  isProxy: z.boolean().optional().describe("VPN/Proxy detection flag"),
+  isTor: z.boolean().optional().describe("TOR network detection flag"),
+  location: z.object({
+    country: z.string().optional().describe("Country name or code"),
+    region: z.string().optional().describe("Region or state"),
+    city: z.string().optional().describe("City name"),
+    lat: z.number().optional().describe("Latitude coordinate"),
+    lng: z.number().optional().describe("Longitude coordinate"),
+  }).optional().describe("Geographic location data"),
+  metadata: z.record(z.string(), z.any()).optional().describe("Additional device metadata"),
+});
+
+/**
+ * Zod schema for FraudBehaviorData interface
+ * Validates user behavior patterns and activity data for fraud analysis
+ */
+export const fraudBehaviorDataSchema = z.object({
+  sessionCount: z.number().int().nonnegative().optional().describe("Session count in the analyzed period"),
+  avgSessionDuration: z.number().nonnegative().optional().describe("Average session duration in seconds"),
+  transactionCount: z.number().int().nonnegative().optional().describe("Transaction count in the analyzed period"),
+  transactionVelocity: z.number().nonnegative().optional().describe("Transaction velocity (transactions per hour)"),
+  postingFrequency: z.number().nonnegative().optional().describe("Content posting frequency (posts per hour)"),
+  failedLoginAttempts: z.number().int().nonnegative().optional().describe("Failed login attempts"),
+  accountCreatedAt: z.string().optional().describe("Account creation date (ISO string)"),
+  accountAge: z.number().int().nonnegative().optional().describe("Days since account creation"),
+  activityTimeDistribution: z.record(z.string(), z.number()).optional().describe("Activity time distribution (by hour of day)"),
+  deviceSwitchCount: z.number().int().nonnegative().optional().describe("Device switching frequency (unique devices used)"),
+  locationSwitchCount: z.number().int().nonnegative().optional().describe("Location switching frequency (unique locations)"),
+  contentSimilarity: z.number().min(0).max(1).optional().describe("Content similarity score (0-1, for spam detection)"),
+  interactionPatterns: z.object({
+    clickRate: z.number().optional().describe("Click rate metric"),
+    scrollDepth: z.number().optional().describe("Scroll depth metric"),
+    formSubmissionRate: z.number().optional().describe("Form submission rate"),
+    timeToFirstAction: z.number().optional().describe("Time to first action in seconds"),
+  }).optional().describe("User interaction patterns"),
+  historicalBaseline: z.record(z.string(), z.any()).optional().describe("Historical behavior baseline for comparison"),
+  metadata: z.record(z.string(), z.any()).optional().describe("Additional behavioral metadata"),
+});
+
 // -------------------- Chat & Communication Schemas --------------------
 
 // -------------------- Analytics & Insights Schemas --------------------
