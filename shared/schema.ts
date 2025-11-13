@@ -179,6 +179,89 @@ export interface FraudEvidenceDetail {
 
 // -------------------- Cohort Analysis Interfaces --------------------
 
+/**
+ * Cohort definition criteria
+ * Defines how users are grouped into a cohort
+ * Maps to cohorts.definition JSONB column
+ */
+export interface CohortDefinition {
+  /** Date range for user signup filtering */
+  signupDateRange?: {
+    start: string;
+    end: string;
+  };
+  /** User attribute filters (e.g., plan type, location, source) */
+  userAttributes?: Record<string, any>;
+  /** Behavioral patterns and criteria for cohort membership */
+  behaviorCriteria?: {
+    /** List of required events (e.g., ['login', 'purchase', 'share']) */
+    events?: string[];
+    /** Minimum number of sessions required */
+    minSessionCount?: number;
+    /** Minimum engagement score threshold */
+    minEngagementScore?: number;
+    /** Custom metrics for advanced filtering */
+    customMetrics?: Record<string, any>;
+  };
+  /** Custom SQL conditions for complex filtering */
+  customQueries?: string[];
+  /** Acquisition source (e.g., 'product_hunt', 'organic', 'paid_ads') */
+  source?: string;
+}
+
+/**
+ * Descriptive metadata about the cohort
+ * Provides context and visualization hints
+ * Maps to cohorts.metadata JSONB column
+ */
+export interface CohortMetadata {
+  /** Human-readable description of the cohort */
+  description?: string;
+  /** Hex color code for UI visualization (e.g., '#4F46E5') */
+  color?: string;
+  /** Icon identifier for UI display */
+  icon?: string;
+  /** Tags for categorization and filtering */
+  tags?: string[];
+  /** Business context explaining why this cohort matters */
+  businessContext?: string;
+  /** Hypothesis being tested with this cohort */
+  hypothesis?: string;
+}
+
+/**
+ * Period-over-period comparison metrics
+ * Tracks changes in cohort metrics over time
+ * Maps to cohortMetrics.comparisonData JSONB column
+ */
+export interface CohortComparisonData {
+  /** Metric value from the previous period */
+  previousPeriod?: number;
+  /** Percentage change from previous period (-100 to +100+) */
+  percentageChange?: number;
+  /** Trend direction classification */
+  trend?: 'increasing' | 'decreasing' | 'stable';
+  /** Statistical significance score (0-1, higher = more significant) */
+  significance?: number;
+}
+
+/**
+ * Segment breakdown with user counts and percentages
+ * Provides granular analysis of cohort composition
+ * Maps to cohortMetrics.segmentData JSONB column
+ */
+export interface CohortSegmentData {
+  /** Breakdown by device type (e.g., {mobile: 150, desktop: 320, tablet: 30}) */
+  byDevice?: Record<string, number>;
+  /** Breakdown by acquisition source (e.g., {organic: 200, paid: 150, referral: 150}) */
+  bySource?: Record<string, number>;
+  /** Breakdown by feature usage (e.g., {feature_a: 350, feature_b: 200}) */
+  byFeature?: Record<string, number>;
+  /** Breakdown by user attribute (e.g., {premium: 100, free: 400}) */
+  byUserAttribute?: Record<string, number>;
+  /** Custom segment breakdowns with dynamic keys */
+  custom?: Record<string, any>;
+}
 
 // -------------------- Predictive Maintenance Interfaces --------------------
 
