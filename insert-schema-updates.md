@@ -19,9 +19,10 @@ This document verifies that all insert schemas with JSONB columns use the `.exte
 |-----------|---------------|---------------------|---------------|----------|
 | **Sentiment Analysis** |
 | `sentimentResults` | `insertSentimentResultsSchema` | `sentimentData`, `emotionScores`, `keyPhrases`, `contextFactors`, `aspectSentiments`, `metadata` | `InsertSentimentResults` | ✅ Yes |
-| `sentimentMetrics` | `insertSentimentMetricsSchema` | `categories`, `painPoints`, `metadata` | `InsertSentimentMetrics` | ❌ No - Needs update |
-| `sentimentAlerts` | `insertSentimentAlertsSchema` | `metadata` | `InsertSentimentAlerts` | ❌ No - Needs update |
-| `sentimentTrends` | `insertSentimentTrendSchema` | `sentimentCounts`, `dominantEmotions`, `contentTypes`, `metadata` | `InsertSentimentTrend` | ❌ No - Needs update |
+| `sentimentMetrics` | `insertSentimentMetricsSchema` | `categories`, `painPoints`, `metadata` | `InsertSentimentMetrics` | ✅ Yes |
+| `sentimentAlerts` | `insertSentimentAlertsSchema` | `metadata` | `InsertSentimentAlerts` | ✅ Yes |
+| `sentimentSegments` | `insertSentimentSegmentSchema` | `topIssues`, `topPraises`, `metadata` | `InsertSentimentSegment` | ✅ Yes |
+| `sentimentTrends` | `insertSentimentTrendSchema` | `sentimentCounts`, `dominantEmotions`, `contentTypes`, `metadata` | `InsertSentimentTrend` | ✅ Yes |
 | **Fraud Detection** |
 | `fraudScores` | `insertFraudScoreSchema` | `factors` | `InsertFraudScore` | ✅ Yes |
 | `suspiciousActivities` | `insertSuspiciousActivitySchema` | `details` | `InsertSuspiciousActivity` | ✅ Yes |
@@ -40,7 +41,7 @@ This document verifies that all insert schemas with JSONB columns use the `.exte
 | `blockedContent` | `insertBlockedContentSchema` | `metadata` | `InsertBlockedContent` | ❌ No - Needs update |
 | **Chat & Messaging** |
 | `messages` | `insertMessageSchema` | `metadata` | `InsertMessage` | ✅ Yes |
-| `conversationContext` | `insertConversationContextSchema` | `keyFacts` | `InsertConversationContext` | ❌ No - Needs update |
+| `conversationContext` | `insertConversationContextSchema` | `keyFacts` | `InsertConversationContext` | ✅ Yes |
 | **Auto-Save** |
 | `autoSaveDrafts` | `insertAutoSaveDraftSchema` | `metadata` | `InsertAutoSaveDraft` | ✅ Yes |
 | `savePatterns` | `insertSavePatternSchema` | `patternData`, `modelWeights` | `InsertSavePattern` | ❌ No - Needs update |
@@ -48,40 +49,41 @@ This document verifies that all insert schemas with JSONB columns use the `.exte
 | `analyticsInsights` | `insertAnalyticsInsightSchema` | `metricData`, `aiContext` | `InsertAnalyticsInsight` | ✅ Yes |
 | `analyticsEvents` | `insertAnalyticsEventSchema` | `properties` | `InsertAnalyticsEvent` | ❌ No - Needs update |
 | `userPredictions` | `insertUserPredictionSchema` | `factors` | `InsertUserPrediction` | ✅ Yes |
-| `predictionAccuracy` | `insertPredictionAccuracySchema` | `modelFeedback` | `InsertPredictionAccuracy` | ❌ No - Needs update |
+| `predictionAccuracy` | `insertPredictionAccuracySchema` | `modelFeedback` | `InsertPredictionAccuracy` | ✅ Yes |
 | `trends` | `insertTrendSchema` | `dataPoints`, `recommendations`, `metadata` | `InsertTrend` | ✅ Yes |
-| `trendAlerts` | `insertTrendAlertSchema` | `conditions`, `metadata` | `InsertTrendAlert` | ❌ No - Needs update |
+| `trendAlerts` | `insertTrendAlertSchema` | `conditions`, `metadata` | `InsertTrendAlert` | ✅ Yes |
 | **Predictive Maintenance** |
 | `systemMetrics` | `insertSystemMetricSchema` | `metadata` | `InsertSystemMetric` | ✅ Yes |
 | `maintenancePredictions` | `insertMaintenancePredictionSchema` | `preventiveActions`, `features` | `InsertMaintenancePrediction` | ✅ Yes |
 | `maintenanceHistory` | `insertMaintenanceHistorySchema` | `performedActions`, `performanceMetrics`, `cost` | `InsertMaintenanceHistory` | ✅ Yes |
 | **Content & Search** |
-| `contentEmbeddings` | `insertContentEmbeddingSchema` | `embedding`, `metadata` | `InsertContentEmbedding` | ❌ No - Needs update |
-| `relatedContentCache` | `insertRelatedContentCacheSchema` | `relatedItems` | `InsertRelatedContentCache` | ❌ No - Needs update |
-| `queryLogs` | `insertQueryLogSchema` | `metadata` | `InsertQueryLog` | ❌ No - Needs update |
+| `contentEmbeddings` | `insertContentEmbeddingSchema` | `embedding`, `metadata` | `InsertContentEmbedding` | ✅ Yes |
+| `relatedContentCache` | `insertRelatedContentCacheSchema` | `relatedItems` | `InsertRelatedContentCache` | ✅ Yes |
+| `queryLogs` | `insertQueryLogSchema` | `metadata` | `InsertQueryLog` | ✅ Yes |
 | **User Feedback** |
-| `userFeedback` | `insertFeedbackSchema` | `upvotes`, `responses`, `attachments`, `tags` | `InsertFeedback` | ❌ No - Needs update |
+| `userFeedback` | `insertFeedbackSchema` | `upvotes`, `responses`, `attachments`, `tags` | `InsertFeedback` | ✅ Yes |
 | **Recipes & Nutrition** |
-| `userInventory` | `insertUserInventorySchema` | `usdaData`, `barcodeData` | `InsertUserInventory` | ❌ No - Needs update |
-| `userRecipes` | `insertRecipeSchema` | `dietaryInfo`, `nutrition`, `tags`, `neededEquipment` | `InsertRecipe` | ❌ No - Needs update |
-| `fdcCache` | `insertFdcCacheSchema` | `nutrients`, `fullData` | `InsertFdcCache` | ❌ No - Needs update |
-| `onboardingInventory` | `insertOnboardingInventorySchema` | `nutrition`, `usdaData`, `barcodeLookupData` | `InsertOnboardingInventory` | ❌ No - Needs update |
+| `userInventory` | `insertUserInventorySchema` | `usdaData`, `barcodeData` | `InsertUserInventory` | ✅ Yes |
+| `userRecipes` | `insertRecipeSchema` | `dietaryInfo`, `nutrition`, `tags`, `neededEquipment` | `InsertRecipe` | ✅ Yes |
+| `fdcCache` | `insertFdcCacheSchema` | `nutrients`, `fullData` | `InsertFdcCache` | ✅ Yes |
+| `onboardingInventory` | `insertOnboardingInventorySchema` | `nutrition`, `usdaData`, `barcodeLookupData` | `InsertOnboardingInventory` | ✅ Yes |
 | **Notifications** |
-| `notificationPreferences` | `insertNotificationPreferencesSchema` | `notificationTypes`, `quietHours` | `InsertNotificationPreferences` | ❌ No - Needs update |
-| `notificationScores` | `insertNotificationScoresSchema` | `features` | `InsertNotificationScores` | ❌ No - Needs update |
-| `notificationHistory` | `insertNotificationHistorySchema` | `data`, `deviceInfo` | `InsertNotificationHistory` | ❌ No - Needs update |
+| `notificationPreferences` | `insertNotificationPreferencesSchema` | `notificationTypes`, `quietHours` | `InsertNotificationPreferences` | ✅ Yes |
+| `notificationScores` | `insertNotificationScoresSchema` | `features` | `InsertNotificationScores` | ✅ Yes |
+| `notificationFeedback` | `insertNotificationFeedbackSchema` | `deviceInfo` | `InsertNotificationFeedback` | ✅ Yes |
+| `notificationHistory` | `insertNotificationHistorySchema` | `data`, `deviceInfo` | `InsertNotificationHistory` | ✅ Yes |
 | **Push Tokens** |
-| `pushTokens` | `insertPushTokenSchema` | `deviceInfo` | `InsertPushToken` | ❌ No - Needs update |
+| `pushTokens` | `insertPushTokenSchema` | `deviceInfo` | `InsertPushToken` | ✅ Yes |
 | **Auth & Storage** |
 | `authProviders` | `insertAuthProviderSchema` | `metadata` | `InsertAuthProvider` | ❌ No - Needs update |
 | **User Sessions** |
 | `userSessions` | `insertUserSessionSchema` | `goalCompletions` | `InsertUserSession` | ❌ No - Needs update |
 | **Writing & Drafts** |
-| `draftTemplates` | `insertDraftTemplateSchema` | `metadata` | `InsertDraftTemplate` | ❌ No - Needs update |
-| `writingSessions` | `insertWritingSessionSchema` | `improvementsApplied` | `InsertWritingSession` | ❌ No - Needs update |
+| `draftTemplates` | `insertDraftTemplateSchema` | `metadata` | `InsertDraftTemplate` | ✅ Yes |
+| `writingSessions` | `insertWritingSessionSchema` | `improvementsApplied` | `InsertWritingSession` | ✅ Yes |
 | **Activity & Summaries** |
-| `activityLogs` | `insertActivityLogSchema` | `metadata` | `InsertActivityLog` | ❌ No - Needs update |
-| `summaries` | `insertSummarySchema` | `metadata` | `InsertSummary` | ❌ No - Needs update |
+| `activityLogs` | `insertActivityLogSchema` | `metadata` | `InsertActivityLog` | ✅ Yes |
+| `summaries` | `insertSummarySchema` | `metadata` | `InsertSummary` | ✅ Yes |
 | `excerpts` | `insertExcerptSchema` | `generationParams`, `socialMetadata` | `InsertExcerpt` | ❌ No - Needs update |
 | `excerptPerformance` | `insertExcerptPerformanceSchema` | `platformMetrics` | `InsertExcerptPerformance` | ❌ No - Needs update |
 | **Translations** |
@@ -100,8 +102,8 @@ This document verifies that all insert schemas with JSONB columns use the `.exte
 ## Summary Statistics
 
 - **Total Tables with JSONB columns**: ~64
-- **Verified with `.extend()`**: 20 (31%)
-- **Needs Update**: 44 (69%)
+- **Verified with `.extend()`**: 48 (75%)
+- **Needs Update**: 16 (25%)
 
 ---
 
