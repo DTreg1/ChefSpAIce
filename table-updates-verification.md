@@ -366,9 +366,9 @@ All 5 previously untyped JSONB columns have been updated with proper type annota
 
 ## Verification Results
 
-### ✅ Properly Typed: 191 columns
+### ✅ Properly Typed: 166 columns
 ### ❌ Missing Types: 0 columns
-### Total JSONB Columns: 191
+### Total JSONB Columns: 166
 
 **Completion Rate:** 100% ✅
 
