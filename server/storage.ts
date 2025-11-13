@@ -375,6 +375,7 @@ import {
   isNull,
   isNotNull,
   ne,
+  type SQL,
 } from "drizzle-orm";
 import {
   matchIngredientWithInventory,
@@ -13922,7 +13923,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<SystemMetric[]> {
     try {
       let query = db.select().from(systemMetrics);
-      const conditions: any[] = [];
+      const conditions: SQL<unknown>[] = [];
 
       if (component) {
         conditions.push(eq(systemMetrics.component, component));
@@ -13966,7 +13967,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<MaintenancePrediction[]> {
     try {
       let query = db.select().from(maintenancePredictions);
-      const conditions: any[] = [];
+      const conditions: SQL<unknown>[] = [];
 
       if (status) {
         conditions.push(eq(maintenancePredictions.status, status));
