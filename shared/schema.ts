@@ -9199,44 +9199,41 @@ export const maintenanceHistory = pgTable("maintenance_history", {
  * Insert schema for systemMetrics table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertSystemMetricSchema = createInsertSchema(systemMetrics)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    metadata: maintenanceMetricsSchema.optional(),
-  });
+export const insertSystemMetricSchema = createInsertSchema(systemMetrics, {
+  metadata: maintenanceMetricsSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
 
 /**
  * Insert schema for maintenancePredictions table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertMaintenancePredictionSchema = createInsertSchema(maintenancePredictions)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    preventiveActions: z.array(z.string()).optional(),
-    features: maintenanceFeaturesSchema.optional(),
-  });
+export const insertMaintenancePredictionSchema = createInsertSchema(maintenancePredictions, {
+  urgencyLevel: z.enum(["low", "medium", "high", "critical"]),
+  status: z.enum(["active", "scheduled", "completed", "dismissed"]),
+  preventiveActions: z.array(z.string()).optional(),
+  features: maintenanceFeaturesSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 /**
  * Insert schema for maintenanceHistory table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertMaintenanceHistorySchema = createInsertSchema(maintenanceHistory)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    performedActions: z.array(z.string()).optional(),
-    performanceMetrics: maintenancePerformanceMetricsSchema.optional(),
-    cost: maintenanceCostSchema.optional(),
-  });
+export const insertMaintenanceHistorySchema = createInsertSchema(maintenanceHistory, {
+  outcome: z.enum(["successful", "partial", "failed"]),
+  performedActions: z.array(z.string()).optional(),
+  performanceMetrics: maintenancePerformanceMetricsSchema.optional(),
+  cost: maintenanceCostSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
 
 export type InsertSystemMetric = z.infer<typeof insertSystemMetricSchema>;
 export type SystemMetric = typeof systemMetrics.$inferSelect;

@@ -13956,7 +13956,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
+        query = query.where(and(...conditions));
       }
 
       return await query.orderBy(desc(systemMetrics.timestamp)).limit(limit);
@@ -13997,7 +13997,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
+        query = query.where(and(...conditions));
       }
 
       return await query.orderBy(asc(maintenancePredictions.recommendedDate));
@@ -14059,7 +14059,7 @@ export class DatabaseStorage implements IStorage {
       let query = db.select().from(maintenanceHistory);
 
       if (component) {
-        query = query.where(eq(maintenanceHistory.component, component)) as any;
+        query = query.where(eq(maintenanceHistory.component, component));
       }
 
       return await query
