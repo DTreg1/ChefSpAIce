@@ -3856,6 +3856,46 @@ export class DatabaseStorage implements IStorage {
     keysToDelete.forEach((key) => this.cache.delete(key));
   }
 
+  private async insertSingle<T extends Record<string, any>, R>(
+    table: any,
+    value: T,
+  ): Promise<R> {
+    const [result] = await db.insert(table).values(value).returning();
+    return result as R;
+  }
+
+  private async insertMany<T extends Record<string, any>, R>(
+    table: any,
+    values: T[],
+  ): Promise<R[]> {
+    const results = await db.insert(table).values(values).returning();
+    return results as unknown as R[];
+  }
+
+  private async updateById<T extends Record<string, any>, R>(
+    table: any,
+    id: string,
+    values: T,
+    idColumn: any,
+  ): Promise<R> {
+    const [result] = await db
+      .update(table)
+      .set(values)
+      .where(eq(idColumn, id))
+      .returning();
+    return result as R;
+  }
+
+  private coerceNullToUndefined<T extends Record<string, any>>(
+    obj: T,
+  ): { [K in keyof T]: T[K] extends null ? undefined : T[K] } {
+    const result: any = {};
+    for (const key in obj) {
+      result[key] = obj[key] === null ? undefined : obj[key];
+    }
+    return result;
+  }
+
   private async ensureDefaultDataForUser(userId: string) {
     // Fast path: already initialized
     if (this.userInitialized.has(userId)) return;
@@ -4409,11 +4449,10 @@ export class DatabaseStorage implements IStorage {
     score: InsertNotificationScores,
   ): Promise<NotificationScores> {
     try {
-      const [result] = await db
-        .insert(notificationScores)
-        .values(score)
-        .returning();
-      return result;
+      return await this.insertSingle<InsertNotificationScores, NotificationScores>(
+        notificationScores,
+        score,
+      );
     } catch (error) {
       console.error("Error creating notification score:", error);
       throw new Error("Failed to create notification score");
@@ -11408,11 +11447,10 @@ export class DatabaseStorage implements IStorage {
     trend: InsertSentimentTrend,
   ): Promise<SentimentTrend> {
     try {
-      const [result] = await db
-        .insert(sentimentTrends)
-        .values(trend)
-        .returning();
-      return result;
+      return await this.insertSingle<InsertSentimentTrend, SentimentTrend>(
+        sentimentTrends,
+        trend,
+      );
     } catch (error) {
       console.error("Error creating sentiment trend:", error);
       throw new Error("Failed to create sentiment trend");
@@ -14196,11 +14234,10 @@ export class DatabaseStorage implements IStorage {
     suggestions: InsertMeetingSuggestions,
   ): Promise<MeetingSuggestions> {
     try {
-      const [created] = await db
-        .insert(meetingSuggestions)
-        .values(suggestions)
-        .returning();
-      return created;
+      return await this.insertSingle<InsertMeetingSuggestions, MeetingSuggestions>(
+        meetingSuggestions,
+        suggestions,
+      );
     } catch (error) {
       console.error("Error creating meeting suggestions:", error);
       throw error;
@@ -14520,8 +14557,10 @@ export class DatabaseStorage implements IStorage {
 
   async createTicket(ticket: InsertTicket): Promise<Ticket> {
     try {
-      const [newTicket] = await db.insert(tickets).values(ticket).returning();
-      return newTicket;
+      return await this.insertSingle<InsertTicket, Ticket>(
+        tickets,
+        ticket,
+      );
     } catch (error) {
       console.error("Error creating ticket:", error);
       throw error;
@@ -14581,8 +14620,10 @@ export class DatabaseStorage implements IStorage {
 
   async createRoutingRule(rule: InsertRoutingRule): Promise<RoutingRule> {
     try {
-      const [newRule] = await db.insert(routingRules).values(rule).returning();
-      return newRule;
+      return await this.insertSingle<InsertRoutingRule, RoutingRule>(
+        routingRules,
+        rule,
+      );
     } catch (error) {
       console.error("Error creating routing rule:", error);
       throw error;
@@ -14635,11 +14676,10 @@ export class DatabaseStorage implements IStorage {
     routing: InsertTicketRouting,
   ): Promise<TicketRouting> {
     try {
-      const [newRouting] = await db
-        .insert(ticketRouting)
-        .values(routing)
-        .returning();
-      return newRouting;
+      return await this.insertSingle<InsertTicketRouting, TicketRouting>(
+        ticketRouting,
+        routing,
+      );
     } catch (error) {
       console.error("Error creating ticket routing:", error);
       throw error;
