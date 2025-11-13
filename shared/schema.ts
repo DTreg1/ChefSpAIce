@@ -6647,12 +6647,26 @@ export const sentimentTrends = pgTable("sentiment_trends", {
   uniqueIndex("sentiment_trends_unique_idx").on(table.userId, table.timePeriod, table.periodType),
 ]);
 
-// Schema types for sentiment analysis
-export const insertSentimentResultsSchema = createInsertSchema(sentimentResults).omit({
-  id: true,
-  analyzedAt: true,
-  modelVersion: true,
-});
+// ==================== Schema Types for Sentiment Analysis ====================
+
+/**
+ * Insert schema for sentimentResults table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertSentimentResultsSchema = createInsertSchema(sentimentResults)
+  .omit({
+    id: true,
+    analyzedAt: true,
+    modelVersion: true,
+  })
+  .extend({
+    sentimentData: sentimentDataSchema.optional(),
+    emotionScores: emotionScoresSchema.optional(),
+    keyPhrases: z.array(keyPhraseSchema).optional(),
+    contextFactors: z.array(contextFactorSchema).optional(),
+    aspectSentiments: z.record(z.string()).optional(),
+    metadata: z.record(z.any()).optional(),
+  });
 
 export const insertSentimentTrendSchema = createInsertSchema(sentimentTrends).omit({
   id: true,
