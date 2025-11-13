@@ -4066,12 +4066,9 @@ export const messages = pgTable("messages", {
   content: text("content").notNull(),
   tokensUsed: integer("tokens_used").default(0),
   timestamp: timestamp("timestamp").defaultNow(),
-  metadata: jsonb("metadata").$type<{
-    functionCall?: string;
-    citedSources?: string[];
-    sentiment?: string;
-    feedback?: { rating: number; comment?: string };
-  }>(),
+  
+  // Message metadata (using ChatMessageMetadata interface)
+  metadata: jsonb("metadata").$type<ChatMessageMetadata>(),
 }, (table) => [
   index("messages_conversation_id_idx").on(table.conversationId),
   index("messages_timestamp_idx").on(table.timestamp),
@@ -4277,13 +4274,10 @@ export const generatedDrafts = pgTable("generated_drafts", {
   editedContent: text("edited_content"),
   tone: text("tone"), // 'formal', 'casual', 'friendly', 'apologetic', 'solution-focused', 'empathetic'
   contextType: text("context_type"), // 'email', 'message', 'comment'
-  metadata: jsonb("metadata").$type<{
-    model?: string;
-    temperature?: number;
-    tokensUsed?: number;
-    processingTime?: number;
-    templateId?: string;
-  }>(),
+  
+  // Generation metadata (flexible structure)
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -6140,17 +6134,8 @@ export const autoSaveDrafts = pgTable("auto_save_drafts", {
   contentHash: varchar("content_hash"),
   version: integer("version").notNull().default(1),
   
-  metadata: jsonb("metadata").$type<{
-    cursorPosition?: number;
-    scrollPosition?: number;
-    selectedText?: string;
-    editorState?: any;
-    deviceInfo?: {
-      browser?: string;
-      os?: string;
-      screenSize?: string;
-    };
-  }>(),
+  // Editor state and device information (using AutoSaveData interface)
+  metadata: jsonb("metadata").$type<AutoSaveData>(),
   
   savedAt: timestamp("saved_at").notNull().defaultNow(),
   isAutoSave: boolean("is_auto_save").notNull().default(true),
