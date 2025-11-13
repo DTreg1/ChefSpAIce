@@ -4648,10 +4648,19 @@ export const messages = pgTable("messages", {
   index("messages_timestamp_idx").on(table.timestamp),
 ]);
 
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  timestamp: true,
-});
+/**
+ * Insert schema for messages table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertMessageSchema = createInsertSchema(messages)
+  .omit({
+    id: true,
+    timestamp: true,
+    tokensUsed: true,
+  })
+  .extend({
+    metadata: chatMessageMetadataSchema.optional(),
+  });
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
@@ -6873,11 +6882,23 @@ export const savePatterns = pgTable("save_patterns", {
   index("save_patterns_analyzed_idx").on(table.lastAnalyzed),
 ]);
 
-// Schema types for auto-save
-export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts).omit({
-  id: true,
-  savedAt: true,
-});
+// ==================== Insert Schemas for Auto-Save ====================
+
+/**
+ * Insert schema for autoSaveDrafts table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts)
+  .omit({
+    id: true,
+    savedAt: true,
+    version: true,
+    isAutoSave: true,
+    conflictResolved: true,
+  })
+  .extend({
+    metadata: autoSaveDataSchema.optional(),
+  });
 
 export const insertSavePatternSchema = createInsertSchema(savePatterns).omit({
   id: true,
