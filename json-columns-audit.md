@@ -570,4 +570,317 @@ Composition pattern for API responses
 
 ---
 
+## Prioritized Refactoring Plan
+
+Based on TypeScript compilation errors in `server/storage.ts` (41 errors) and architectural review, JSON columns are categorized into three priority levels:
+
+---
+
+### Priority 1 (High) - Blocking Compilation Errors
+
+**Status:** 🔴 **CRITICAL** - Prevents compilation, blocks deployment  
+**Count:** 21 columns causing 41 TypeScript errors  
+**Timeline:** Fix immediately (Week 1)
+
+These columns have type mismatches between `shared/schema.ts` annotations and `server/storage.ts` usage, causing hard compilation failures.
+
+#### Analytics & Insights (2 columns)
+| Table | Column | Issue | Action Required |
+|-------|--------|-------|-----------------|
+| analyticsInsights | metricData | Type mismatch on insert - missing proper interface | Define `MetricData` interface with `{currentValue?, previousValue?, percentageChange?, trend?, dataPoints?: Array<{date, value}>}` |
+| analyticsInsights | aiContext | Type mismatch - needs proper structure | Define `AIContext` interface with `{reasoning?, confidence?, suggestedActions?, relatedMetrics?, model?}` |
+
+#### Predictive Maintenance (4 columns)
+| Table | Column | Issue | Action Required |
+|-------|--------|-------|-----------------|
+| systemMetrics | metadata | Type mismatch on insert | Define `SystemMetricMetadata` interface with `{unit?, source?, tags?: string[], context?: Record<string, any>}` |
+| maintenancePredictions | features | Type mismatch - complex object | Define `PredictionFeatures` interface with `{trendSlope?, seasonality?, recentAnomalies?, historicalPatterns?: Record<string, any>}` |
+| maintenanceHistory | performedActions | Array type mismatch | Ensure `string[]` type consistency |
+| maintenanceHistory | performanceMetrics | Type mismatch | Define `PerformanceComparison` interface with `{before?: Record<string, number>, after?: Record<string, number>, improvement?: number}` |
+| maintenanceHistory | cost | Type mismatch | Define `MaintenanceCost` interface with `{laborHours?, resourceCost?, opportunityCost?}` |
+
+#### Intelligent Scheduling (10 columns)
+| Table | Column | Issue | Action Required |
+|-------|--------|-------|-----------------|
+| schedulingPreferences | preferredTimes | Complex nested object type mismatch | Define `WeeklyPreferences` with day-of-week keys → time slot arrays |
+| schedulingPreferences | blockedTimes | Array type mismatch | Define `BlockedTimeSlot` interface with `{start, end, recurring, daysOfWeek?, reason?}` |
+| schedulingPatterns | meetingFrequency | Type mismatch - expects specific structure | Define `MeetingFrequencyStats` with `{daily, weekly, monthly, averagePerDay, peakDays: number[], peakHours: number[]}` |
+| schedulingPatterns | commonMeetingTimes | Array type mismatch | Define `CommonMeetingPattern` with `{dayOfWeek, timeOfDay, duration, frequency, lastUsed}` |
+| schedulingPatterns | patternData | Type mismatch - complex nested | Define `SchedulingPatternData` with `{recurringMeetings?, typicalDuration?: Record<string, number>, preferredGaps?, batchingPreference?}` |
+| meetingSuggestions | suggestedTimes | **Most complex** - 4 levels deep | Define `SuggestedTimeSlot` with nested `conflicts` array and `optimality` object |
+| meetingSuggestions | confidenceScores | Type mismatch | Define `ConfidenceBreakdown` with `{overall, timeZoneAlignment, preferenceAlignment, scheduleOptimization}` |
+| meetingSuggestions | constraints | Type mismatch | Define `MeetingConstraints` with `{duration, mustBeWithin?, avoidDates?, allowWeekends?, preferredTimeOfDay?}` |
+| meetingSuggestions | optimizationFactors | Type mismatch | Define `OptimizationWeights` with `{weightTimeZone, weightPreferences, weightAvailability, weightScheduleDisruption}` |
+| meetingEvents | metadata | Type mismatch | Define `MeetingEventMetadata` with `{isRecurring?, recurringPattern?, source?, importance?, calendarId?}` |
+
+#### Image Processing (2 columns - **EXACT DUPLICATES**)
+| Table | Column | Issue | Action Required |
+|-------|--------|-------|-----------------|
+| imageProcessing | operations | 150-line duplicate structure, type mismatch | **🔴 Extract `ImageOperations` interface** with `{backgroundRemoval?, autoCrop?, filters?: Array<FilterConfig>, resize?, format?, compression?}` |
+| imagePresets | operations | **Identical to imageProcessing.operations** | **Use same `ImageOperations` interface** |
+
+#### Data Extraction & Privacy (2 columns)
+| Table | Column | Issue | Action Required |
+|-------|--------|-------|-----------------|
+| extractionTemplates | schema | Type mismatch on validation schema | Define proper Zod schema type or JSON schema interface |
+| privacySettings | excludedFaces | Array type mismatch | Ensure `string[]` type consistency |
+
+**Immediate Actions:**
+1. ✅ Define all missing interfaces in `shared/schema.ts`
+2. ✅ Extract `ImageOperations` interface (eliminates 150-line duplication)
+3. ✅ Update insert schemas to use new interfaces
+4. ✅ Verify compilation passes after fixes
+5. ✅ Test affected storage.ts methods
+
+---
+
+### Priority 2 (Medium) - Complex Structures Needing Type Safety
+
+**Status:** 🟡 **Important** - No compilation errors but high refactoring value  
+**Count:** ~45 columns  
+**Timeline:** Address by domain (Weeks 2-4)
+
+These columns have complex nested structures that would significantly benefit from explicit interfaces. Group by domain for efficient refactoring.
+
+#### Domain: Analytics & Trends (8 columns)
+| Table | Column | Complexity | Refactoring Value |
+|-------|--------|------------|-------------------|
+| trends | dataPoints | Complex - multiple 3-level nested arrays | **HIGH** - Extract `TrendDataPoints` with typed arrays for timeSeries, keywords, entities, volumeData, sentimentData |
+| userPredictions | factors | Medium - dynamic Record keys | **MEDIUM** - Define `PredictionFactors` base interface |
+| predictionAccuracy | modelFeedback | Medium - nested Records | **MEDIUM** - Define `ModelPerformanceFeedback` |
+| trendAlerts | conditions | Simple-Medium | **LOW** - Already works well |
+| trendAlerts | metadata | Simple-Medium | **LOW** - Generic metadata OK |
+| abTests | metadata | Simple-Medium | **LOW** - Test configuration metadata |
+| abTestResults | metrics | Simple-Medium | **MEDIUM** - Could standardize performance metrics |
+| userSessions | pageViews | Simple array | **LOW** - Works fine |
+
+#### Domain: Sentiment Analysis (10 columns)
+| Table | Column | Complexity | Refactoring Value |
+|-------|--------|------------|-------------------|
+| sentimentAnalysis | sentimentScores | Simple - 3 fields | **HIGH** - Extract `SentimentScores` interface (reusable) |
+| sentimentAnalysis | emotions | Medium - 10+ optional fields | **HIGH** - Extract `EmotionScores` interface (reusable) |
+| sentimentAnalysis | aspectSentiments | Simple - Record | **MEDIUM** - Standardize aspect mapping |
+| sentimentTrends | sentimentCounts | Simple - 4 fields | **MEDIUM** - Use `SentimentScores` + mixed |
+| sentimentTrends | dominantEmotions | Simple array | **LOW** - Works fine |
+| sentimentTrends | contentTypes | Medium - dynamic keys | **LOW** - Generic Record OK |
+| sentimentSegments | topIssues | Simple array | **LOW** - Works fine |
+| sentimentSegments | topPraises | Simple array | **LOW** - Works fine |
+| sentimentAlerts | metadata | Simple-Medium | **LOW** - Alert context OK |
+| moderationLogs | toxicityScores | Simple - 6 fields | **MEDIUM** - Standardize toxicity structure |
+
+#### Domain: Notifications (5 columns)
+| Table | Column | Complexity | Refactoring Value |
+|-------|--------|------------|-------------------|
+| notificationPreferences | notificationTypes | **Complex** - 10+ notification configs | **HIGH** - Extract `NotificationTypeConfig` interface |
+| notificationPreferences | quietHours | Medium - array of periods | **MEDIUM** - Extract `QuietHoursConfig` |
+| notificationScores | features | Medium - ML features | **MEDIUM** - Standardize ML feature structure |
+| pushTokens | deviceInfo | Simple - 4 fields | **HIGH** - Extract `DeviceInfo` (duplicate with autoSaveDrafts) |
+
+#### Domain: Form Intelligence (7 columns)
+| Table | Column | Complexity | Refactoring Value |
+|-------|--------|------------|-------------------|
+| formCompletions | commonValues | Medium - array with nested Record | **MEDIUM** - Extract `CommonValueEntry` |
+| formCompletions | patterns | Simple array | **LOW** - Works fine |
+| formCompletions | contextRules | Medium - array with nested array | **MEDIUM** - Extract `ContextRule` |
+| userFormHistory | valuesUsed | Simple array | **LOW** - Works fine |
+| userFormHistory | frequencyMap | Simple Record | **LOW** - Works fine |
+| validationRules | rule | Simple object | **LOW** - Works fine |
+| validationErrors | fieldErrors | Simple array | **LOW** - Works fine |
+
+#### Domain: Content Generation (6 columns)
+| Table | Column | Complexity | Refactoring Value |
+|-------|--------|------------|-------------------|
+| excerpts | generationParams | Medium - 7+ optional fields | **MEDIUM** - Standardize generation config |
+| excerpts | socialMetadata | Medium - OG/Twitter metadata | **MEDIUM** - Extract `SocialMediaMetadata` |
+| excerptPerformance | platformMetrics | **Complex** - nested platform objects | **HIGH** - Extract `PlatformMetrics` with `SocialMediaEngagement` |
+| translations | translationMetadata | Simple-Medium | **LOW** - Works fine |
+| writingSessions | improvementMetrics | Medium | **MEDIUM** - Standardize quality metrics |
+| generatedDrafts | metadata | Simple | **LOW** - Works fine |
+
+#### Domain: OCR & Transcription (4 columns)
+| Table | Column | Complexity | Refactoring Value |
+|-------|--------|------------|-------------------|
+| ocrResults | boundingBoxes | Medium - 2 levels with bbox | **HIGH** - Extract `BoundingBox` interface (reusable) |
+| ocrCorrections | boundingBox | Simple - same as above | **HIGH** - Use same `BoundingBox` |
+| transcriptions | segments | Medium - array with timestamps | **MEDIUM** - Extract `TranscriptSegment` |
+| transcriptEdits | timestamps | Simple - start/end | **MEDIUM** - Extract `TimeRange` (reusable) |
+
+#### Domain: Face Detection (2 columns)
+| Table | Column | Complexity | Refactoring Value |
+|-------|--------|------------|-------------------|
+| faceDetections | faceCoordinates | **Complex** - 4 levels with landmarks | **HIGH** - Extract `FaceCoordinate` with `FaceLandmarks` |
+| faceDetections | metadata | Simple-Medium | **LOW** - Works fine with optional fields |
+
+#### Domain: Dynamic Pricing (3 columns)
+| Table | Column | Complexity | Refactoring Value |
+|-------|--------|------------|-------------------|
+| pricingRules | rules | Medium - pricing algorithm config | **MEDIUM** - Standardize pricing rules |
+| priceHistory | changes | Medium - nested competitor data | **MEDIUM** - Extract `PriceChangeDetails` |
+| pricingPerformance | metrics | Medium - 7+ performance fields | **MEDIUM** - Standardize performance metrics |
+
+**Refactoring Strategy:**
+1. ✅ Group by domain (as listed above)
+2. ✅ Extract HIGH-value interfaces first (SentimentScores, EmotionScores, BoundingBox, DeviceInfo)
+3. ✅ Address one domain at a time to avoid churn
+4. ✅ Sequence based on active feature development
+
+---
+
+### Priority 3 (Low) - Simple Columns Working Fine
+
+**Status:** 🟢 **Stable** - No immediate action needed  
+**Count:** ~85 columns  
+**Timeline:** Address opportunistically or when touched by features
+
+These columns use simple structures (string[], basic objects with optional fields) that work well without explicit interfaces. Fix only when:
+- Adding new features that touch these columns
+- Standardizing similar patterns across the application
+- Team decides to eliminate ALL `any` types as part of strict typing initiative
+
+#### Categories of Priority 3 Columns:
+
+**Simple Arrays:**
+- `userRecipes.dietaryInfo` - `string[]`
+- `userRecipes.tags` - `string[]`
+- `userRecipes.neededEquipment` - `string[]`
+- `userFeedback.attachments` - `string[]`
+- `userFeedback.tags` - `string[]`
+- `trends.recommendations` - `string[]`
+- `maintenancePredictions.preventiveActions` - `string[]`
+- `contentEmbeddings.embedding` - `number[]` (vector)
+- And ~15 more similar simple arrays
+
+**Simple Metadata Objects:**
+- `contentEmbeddings.metadata` - `{title?, category?, tags?, description?}`
+- `messages.metadata` - `{functionCall?, citedSources?, sentiment?, feedback?}`
+- `generatedDrafts.metadata` - `{model?, temperature?, tokensUsed?, processingTime?}`
+- `imageMetadata.dimensions` - `{width?, height?}` (though duplication should be fixed)
+- `altTextQuality.metadata` - `{wordCount?, readabilityScore?, sentimentScore?}`
+- And ~30 more similar simple metadata objects
+
+**Simple Structured Objects:**
+- `conversationContext.keyFacts` - `Array<{fact, category, timestamp}>`
+- `relatedContentCache.relatedItems` - `Array<{id, type, title, score}>`
+- `userSessions.pageViews` - `Array<{url, title, timestamp}>`
+- `ticketRouting.matchedConditions` - `Array<{ruleId, ruleName, matchScore}>`
+- And ~25 more similar simple structured arrays
+
+**Generic Record Types (Intentionally Flexible):**
+- `analyticsEvents.properties` - `Record<string, any>` - Event-specific data varies widely
+- `tickets.metadata.customFields` - Dynamic ticket fields
+- `userFormHistory.frequencyMap` - Value frequency mapping
+- And ~15 more intentionally flexible Record types
+
+**Recommendation:** These columns are **not broken**. Leave them as-is unless:
+1. A specific feature requires stronger typing
+2. You're already refactoring the surrounding code
+3. Part of a broader "eliminate all `any`" initiative
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: Critical Fixes (Week 1)
+**Goal:** Fix all 41 compilation errors
+
+- [ ] Day 1-2: Define all Priority 1 interfaces in `shared/schema.ts`
+  - [ ] Analytics: `MetricData`, `AIContext`
+  - [ ] Maintenance: `SystemMetricMetadata`, `PredictionFeatures`, `PerformanceComparison`, `MaintenanceCost`
+  - [ ] Scheduling: `WeeklyPreferences`, `BlockedTimeSlot`, `MeetingFrequencyStats`, etc.
+  - [ ] **Image: `ImageOperations`** (eliminates duplicate)
+  - [ ] Privacy: Ensure `excludedFaces` type consistency
+
+- [ ] Day 3: Update `insertSchemas` to use new interfaces
+- [ ] Day 4: Update `server/storage.ts` to fix all type errors
+- [ ] Day 5: Verify compilation, run tests, deploy
+
+**Success Criteria:** `npx tsc --noEmit` passes with 0 errors
+
+---
+
+### Phase 2: High-Value Refactoring (Weeks 2-4)
+
+**Week 2: Analytics & Sentiment Domain**
+- [ ] Extract `SentimentScores`, `EmotionScores` (reusable across 5+ tables)
+- [ ] Extract `TrendDataPoints` for trends.dataPoints
+- [ ] Standardize analytics metric structures
+
+**Week 3: Content & Media Domain**
+- [ ] Extract `BoundingBox` interface (OCR + face detection)
+- [ ] Extract `SocialMediaMetadata`, `PlatformMetrics`
+- [ ] Extract `FaceCoordinate`, `FaceLandmarks`
+- [ ] Extract `DeviceInfo` (eliminate duplicate)
+- [ ] Extract `ImageDimensions` (eliminate duplicate)
+
+**Week 4: Forms & Notifications Domain**
+- [ ] Extract `NotificationTypeConfig`, `QuietHoursConfig`
+- [ ] Standardize form completion interfaces
+- [ ] Extract `TranscriptSegment`, `TimeRange`
+
+**Success Criteria:** All Priority 2 HIGH-value extractions complete, type safety improved significantly
+
+---
+
+### Phase 3: Long-term Maintenance (Ongoing)
+
+- [ ] Establish JSON column guidelines (require `.$type`, prefer shared interfaces)
+- [ ] Code review checklist for new JSON columns
+- [ ] Opportunistic Priority 3 refactoring when touched by features
+- [ ] Regular audits to prevent new duplicates/generic types
+
+---
+
+## Architecture Patterns & Best Practices
+
+Based on this audit, establish these guidelines for future JSON columns:
+
+### ✅ DO:
+1. **Always use `.$type<...>()`** for type annotations
+2. **Extract shared interfaces** when structure appears in 2+ places
+3. **Use specific types** instead of `any` or `Record<string, any>` when possible
+4. **Document dynamic keys** in Record types with JSDoc examples
+5. **Prefer shallow structures** (2 levels) over deeply nested (4+ levels)
+6. **Use arrays of typed objects** instead of parallel arrays
+7. **Include optional fields** for future extensibility
+
+### ❌ DON'T:
+1. **Don't duplicate structures** - extract interface immediately
+2. **Don't use `any`** without strong justification
+3. **Don't nest beyond 3 levels** - consider flattening or separate table
+4. **Don't omit type annotations** - even for "simple" columns
+5. **Don't create 150-line inline types** - extract to interface
+6. **Don't use inconsistent shapes** for similar concepts across tables
+
+### Example: Good vs. Bad
+
+**❌ BAD:**
+```typescript
+// Duplicate structures
+imageProcessing: jsonb("operations").$type<{
+  backgroundRemoval?: boolean;
+  filters?: Array<{type: string; /* 150 more lines */}>
+}>()
+
+imagePresets: jsonb("operations").$type<{
+  backgroundRemoval?: boolean;  // EXACT DUPLICATE
+  filters?: Array<{type: string; /* 150 more lines */}>
+}>()
+```
+
+**✅ GOOD:**
+```typescript
+// Shared interface
+export interface ImageOperations {
+  backgroundRemoval?: boolean;
+  filters?: Array<FilterConfig>;
+  // ... rest of fields
+}
+
+// Use in both tables
+imageProcessing: jsonb("operations").$type<ImageOperations>().notNull().default({})
+imagePresets: jsonb("operations").$type<ImageOperations>().notNull()
+```
+
+---
+
 *This audit provides a complete inventory of JSON column usage and serves as a roadmap for schema optimization and type safety improvements.*
