@@ -838,6 +838,94 @@ export interface MaintenanceCost {
 
 // ==================== Zod Validation Schemas for JSON Columns ====================
 
+// -------------------- Common/Shared Schemas --------------------
+
+/**
+ * Zod schema for TimeSeriesPoint interface
+ * Reusable schema for any time-series data visualization
+ */
+export const timeSeriesPointSchema = z.object({
+  date: z.string().describe("Date/timestamp in ISO format"),
+  value: z.number().describe("Numeric value for this point"),
+  label: z.string().optional().describe("Optional label or category for this point"),
+});
+
+/**
+ * Zod schema for MetadataBase interface
+ * Provides consistent structure for tags, descriptions, and custom data
+ */
+export const metadataBaseSchema = z.object({
+  description: z.string().optional().describe("Description or notes"),
+  tags: z.array(z.string()).optional().describe("Tags for categorization and filtering"),
+  customFields: z.record(z.string(), z.any()).optional().describe("Custom fields with dynamic keys"),
+});
+
+/**
+ * Zod schema for ConfidenceScore interface
+ * Used for ML models, predictions, and statistical analysis
+ */
+export const confidenceScoreSchema = z.object({
+  score: z.number().describe("Numeric score (typically 0-1)"),
+  level: z.enum(['low', 'medium', 'high', 'very_high']).optional().describe("Confidence level classification"),
+  threshold: z.number().optional().describe("Optional threshold that was used"),
+});
+
+/**
+ * Zod schema for SegmentBreakdown interface
+ * Generic segment breakdown structure with counts or metrics by segment
+ */
+export const segmentBreakdownSchema = z.object({
+  segment: z.string().describe("Segment identifier or name"),
+  value: z.number().describe("Value for this segment (count, percentage, score, etc.)"),
+  percentage: z.number().min(0).max(100).optional().describe("Percentage of total (0-100)"),
+});
+
+/**
+ * SCHEMA COMPOSITION EXAMPLES
+ * 
+ * The common schemas above can be composed into larger schemas using:
+ * - .extend() - Adds new fields to an existing schema
+ * - .merge() - Combines two schemas together
+ * 
+ * Example 1: Using .extend() to add fields to metadataBaseSchema
+ * 
+ *   export const customMetadataSchema = metadataBaseSchema.extend({
+ *     color: z.string().optional(),
+ *     icon: z.string().optional(),
+ *   });
+ * 
+ * Example 2: Using .merge() to combine schemas
+ * 
+ *   const baseSchema = z.object({
+ *     id: z.string(),
+ *     createdAt: z.string(),
+ *   });
+ * 
+ *   export const enrichedSchema = baseSchema.merge(metadataBaseSchema);
+ *   // Result: { id, createdAt, description?, tags?, customFields? }
+ * 
+ * Example 3: Using timeSeriesPointSchema in arrays
+ * 
+ *   export const chartDataSchema = z.object({
+ *     title: z.string(),
+ *     data: z.array(timeSeriesPointSchema),
+ *   });
+ * 
+ * Example 4: Combining confidence scores with results
+ * 
+ *   export const aiPredictionSchema = z.object({
+ *     prediction: z.string(),
+ *     confidence: confidenceScoreSchema,
+ *   });
+ * 
+ * Real examples in this file:
+ * - abTestConfigurationSchema uses metadataBaseSchema.extend()
+ * - cohortMetadataSchema uses metadataBaseSchema.extend()
+ * - maintenanceMetricsSchema uses metadataBaseSchema.extend()
+ * - analyticsInsightDataSchema uses z.array(timeSeriesPointSchema)
+ * - trendDataSchema uses z.array(timeSeriesPointSchema)
+ */"
+
 // -------------------- Sentiment Analysis Schemas --------------------
 
 /**
@@ -1090,16 +1178,6 @@ export const typingPatternDataSchema = z.object({
 // -------------------- Analytics & Insights Schemas --------------------
 
 /**
- * Zod schema for TimeSeriesPoint interface
- * Validates generic time-series data points
- */
-export const timeSeriesPointSchema = z.object({
-  date: z.string().describe("Date/timestamp in ISO format"),
-  value: z.number().describe("Numeric value for this point"),
-  label: z.string().optional().describe("Optional label or category for this point"),
-});
-
-/**
  * Zod schema for AnalyticsInsightData interface
  * Validates analytics insight metric data with trends and comparisons
  */
@@ -1159,11 +1237,9 @@ export const trendDataSchema = z.object({
 /**
  * Zod schema for AbTestConfiguration interface
  * Validates A/B test configuration and metadata
+ * Extends metadataBaseSchema (description, tags, customFields)
  */
-export const abTestConfigurationSchema = z.object({
-  description: z.string().optional().describe("Description or notes about the test"),
-  tags: z.array(z.string()).optional().describe("Tags for categorization and filtering"),
-  customFields: z.record(z.string(), z.any()).optional().describe("Custom fields with dynamic keys"),
+export const abTestConfigurationSchema = metadataBaseSchema.extend({
   hypothesis: z.string().optional().describe("Hypothesis being tested (e.g., 'Blue button increases conversions by 15%')"),
   featureArea: z.string().optional().describe("Feature area being tested (e.g., 'checkout', 'onboarding', 'pricing')"),
   minimumSampleSize: z.number().int().positive().optional().describe("Minimum sample size required for statistical validity"),
@@ -1256,11 +1332,9 @@ export const cohortDefinitionSchema = z.object({
 /**
  * Zod schema for CohortMetadata interface
  * Validates descriptive metadata about the cohort
+ * Extends metadataBaseSchema (description, tags, customFields)
  */
-export const cohortMetadataSchema = z.object({
-  description: z.string().optional().describe("Description or notes about the cohort"),
-  tags: z.array(z.string()).optional().describe("Tags for categorization and filtering"),
-  customFields: z.record(z.string(), z.any()).optional().describe("Custom fields with dynamic keys"),
+export const cohortMetadataSchema = metadataBaseSchema.extend({
   color: z.string().optional().describe("Hex color code for UI visualization (e.g., '#4F46E5')"),
   icon: z.string().optional().describe("Icon identifier for UI display"),
   businessContext: z.string().optional().describe("Business context explaining why this cohort matters"),
@@ -1295,11 +1369,9 @@ export const cohortSegmentDataSchema = z.object({
 /**
  * Zod schema for MaintenanceMetrics interface
  * Validates system metric metadata and context
+ * Extends metadataBaseSchema (description, tags, customFields)
  */
-export const maintenanceMetricsSchema = z.object({
-  description: z.string().optional().describe("Description or notes about the metric"),
-  tags: z.array(z.string()).optional().describe("Tags for categorization and filtering"),
-  customFields: z.record(z.string(), z.any()).optional().describe("Custom fields with dynamic keys"),
+export const maintenanceMetricsSchema = metadataBaseSchema.extend({
   unit: z.string().optional().describe("Unit of measurement for the metric (ms, %, MB, etc.)"),
   source: z.string().optional().describe("Source system or component that generated the metric"),
   context: z.record(z.string(), z.any()).optional().describe("Additional context about the metric"),
