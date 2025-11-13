@@ -9257,7 +9257,36 @@ export const schedulingPreferences = pgTable("scheduling_preferences", {
   index("scheduling_preferences_user_id_idx").on(table.userId),
 ]);
 
-export const insertSchedulingPreferencesSchema = createInsertSchema(schedulingPreferences).omit({
+export const insertSchedulingPreferencesSchema = createInsertSchema(schedulingPreferences, {
+  preferredTimes: z.object({
+    monday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+    tuesday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+    wednesday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+    thursday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+    friday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+    saturday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+    sunday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+  }).optional(),
+  workingHours: z.object({
+    start: z.string(),
+    end: z.string(),
+    daysOfWeek: z.array(z.number()),
+  }).optional(),
+  blockedTimes: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    recurring: z.boolean(),
+    daysOfWeek: z.array(z.number()).optional(),
+    reason: z.string().optional(),
+  })).optional(),
+  meetingPreferences: z.object({
+    preferInPerson: z.boolean().optional(),
+    preferVideo: z.boolean().optional(),
+    maxDailyMeetings: z.number().optional(),
+    preferredDuration: z.number().optional(),
+    avoidBackToBack: z.boolean().optional(),
+  }).optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -9342,7 +9371,41 @@ export const meetingSuggestions = pgTable("meeting_suggestions", {
   index("meeting_suggestions_status_idx").on(table.status),
 ]);
 
-export const insertMeetingSuggestionsSchema = createInsertSchema(meetingSuggestions).omit({
+export const insertMeetingSuggestionsSchema = createInsertSchema(meetingSuggestions, {
+  suggestedTimes: z.array(z.object({
+    start: z.string(),
+    end: z.string(),
+    timezone: z.string(),
+    score: z.number(),
+    conflicts: z.array(z.object({ userId: z.string(), severity: z.string(), description: z.string() })),
+    optimality: z.object({ timeZoneFit: z.number(), preferenceMatch: z.number(), scheduleDisruption: z.number() }),
+  })).optional(),
+  confidenceScores: z.object({
+    overall: z.number(),
+    timeZoneAlignment: z.number(),
+    preferenceAlignment: z.number(),
+    conflictAvoidance: z.number(),
+  }).optional(),
+  constraints: z.object({
+    duration: z.number(),
+    mustBeWithin: z.object({ start: z.string(), end: z.string() }).optional(),
+    avoidDates: z.array(z.string()).optional(),
+    requireAllAttendees: z.boolean(),
+    allowWeekends: z.boolean().optional(),
+    preferredTimeOfDay: z.string().optional(),
+  }).optional(),
+  optimizationFactors: z.object({
+    weightTimeZone: z.number(),
+    weightPreferences: z.number(),
+    weightMinimalDisruption: z.number(),
+    weightAvoidConflicts: z.number(),
+  }).optional(),
+  selectedTime: z.object({
+    start: z.string(),
+    end: z.string(),
+    timezone: z.string(),
+  }).optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -9413,7 +9476,34 @@ export const schedulingPatterns = pgTable("scheduling_patterns", {
   index("scheduling_patterns_type_idx").on(table.patternType),
 ]);
 
-export const insertSchedulingPatternsSchema = createInsertSchema(schedulingPatterns).omit({
+export const insertSchedulingPatternsSchema = createInsertSchema(schedulingPatterns, {
+  commonMeetingTimes: z.array(z.object({
+    dayOfWeek: z.number(),
+    timeOfDay: z.string(),
+    duration: z.number(),
+    frequency: z.number(),
+    lastUsed: z.string(),
+  })).optional(),
+  meetingFrequency: z.object({
+    daily: z.number(),
+    weekly: z.number(),
+    monthly: z.number(),
+    averagePerDay: z.number(),
+    peakDays: z.array(z.number()),
+    peakHours: z.array(z.number()),
+  }).optional(),
+  patternData: z.object({
+    recurringMeetings: z.array(z.object({
+      title: z.string(),
+      dayOfWeek: z.number(),
+      time: z.string(),
+      participants: z.array(z.string()),
+    })).optional(),
+    typicalDuration: z.record(z.number()).optional(),
+    preferredGaps: z.number().optional(),
+    batchingPreference: z.boolean().optional(),
+  }).optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -9470,7 +9560,15 @@ export const meetingEvents = pgTable("meeting_events", {
   index("meeting_events_status_idx").on(table.status),
 ]);
 
-export const insertMeetingEventsSchema = createInsertSchema(meetingEvents).omit({
+export const insertMeetingEventsSchema = createInsertSchema(meetingEvents, {
+  metadata: z.object({
+    isRecurring: z.boolean().optional(),
+    recurringPattern: z.string().optional(),
+    parentEventId: z.string().optional(),
+    source: z.string().optional(),
+    importance: z.string().optional(),
+  }).optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
