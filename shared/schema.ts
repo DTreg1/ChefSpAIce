@@ -866,7 +866,7 @@ export const sessions = pgTable(
   "sessions",
   {
     sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
+    sess: jsonb("sess").$type<Record<string, any>>().notNull(),
     expire: timestamp("expire").notNull(),
   },
   (table) => [index("IDX_session_expire").on(table.expire)],
@@ -1002,7 +1002,7 @@ export const authProviders = pgTable("auth_providers", {
   refreshToken: text("refresh_token"),
   tokenExpiry: timestamp("token_expiry"),
   isPrimary: boolean("is_primary").default(false),
-  metadata: jsonb("metadata"), // Provider-specific additional data
+  metadata: jsonb("metadata").$type<Record<string, any>>(), // Provider-specific additional data
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -3611,8 +3611,8 @@ export const onboardingInventory = pgTable("onboarding_inventory", {
   foodCategory: text("food_category"), // Normalized to 5 major groups
   
   // USDA enriched data
-  nutrition: jsonb("nutrition"), // Nutrition data from USDA
-  usdaData: jsonb("usda_data"), // Full USDA data object
+  nutrition: jsonb("nutrition").$type<any>(), // Nutrition data from USDA
+  usdaData: jsonb("usda_data").$type<any>(), // Full USDA data object
   brandOwner: text("brand_owner"),
   ingredients: text("ingredients"),
   servingSize: text("serving_size"),
@@ -3620,7 +3620,7 @@ export const onboardingInventory = pgTable("onboarding_inventory", {
   
   // Image data
   imageUrl: text("image_url"),
-  barcodeLookupData: jsonb("barcode_lookup_data"),
+  barcodeLookupData: jsonb("barcode_lookup_data").$type<any>(),
   
   // Metadata
   lastUpdated: timestamp("last_updated").notNull().defaultNow(),
