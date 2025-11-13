@@ -836,6 +836,26 @@ export interface MaintenanceCost {
 
 // ==================== End of TypeScript Interfaces ====================
 
+// ==================== Zod Validation Schemas for JSON Columns ====================
+
+// -------------------- Sentiment Analysis Schemas --------------------
+
+// -------------------- Content Moderation Schemas --------------------
+
+// -------------------- Fraud Detection Schemas --------------------
+
+// -------------------- Chat & Communication Schemas --------------------
+
+// -------------------- Analytics & Insights Schemas --------------------
+
+// -------------------- A/B Testing Schemas --------------------
+
+// -------------------- Cohort Analysis Schemas --------------------
+
+// -------------------- Predictive Maintenance Schemas --------------------
+
+// ==================== End of Zod Validation Schemas ====================
+
 /**
  * Sessions Table
  * 
