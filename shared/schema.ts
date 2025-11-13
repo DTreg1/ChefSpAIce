@@ -115,6 +115,84 @@ export interface EmotionScores {
 
 // -------------------- Content Moderation Interfaces --------------------
 
+/**
+ * Content moderation toxicity scores
+ * Combines TensorFlow.js and OpenAI moderation scores
+ * Maps to moderationLogs.toxicityScores JSONB column
+ */
+export interface ModerationResult {
+  /** General toxicity score (0-1, higher = more toxic) */
+  toxicity?: number;
+  /** Severe toxicity score (0-1) */
+  severeToxicity?: number;
+  /** Identity-based attack score (0-1) */
+  identityAttack?: number;
+  /** Insult score (0-1) */
+  insult?: number;
+  /** Profanity score (0-1) */
+  profanity?: number;
+  /** Threat score (0-1) */
+  threat?: number;
+  /** Sexually explicit content score (0-1) */
+  sexuallyExplicit?: number;
+  /** Obscene content score (0-1) */
+  obscene?: number;
+  /** Harassment score (0-1) - OpenAI specific */
+  harassment?: number;
+  /** Threatening harassment score (0-1) - OpenAI specific */
+  harassmentThreatening?: number;
+  /** Hate speech score (0-1) - OpenAI specific */
+  hate?: number;
+  /** Threatening hate speech score (0-1) - OpenAI specific */
+  hateThreatening?: number;
+  /** Self-harm content score (0-1) - OpenAI specific */
+  selfHarm?: number;
+  /** Self-harm intent score (0-1) - OpenAI specific */
+  selfHarmIntent?: number;
+  /** Self-harm instruction score (0-1) - OpenAI specific */
+  selfHarmInstruction?: number;
+  /** Sexual content score (0-1) - OpenAI specific */
+  sexual?: number;
+  /** Sexual content involving minors score (0-1) - OpenAI specific */
+  sexualMinors?: number;
+  /** Violence score (0-1) - OpenAI specific */
+  violence?: number;
+  /** Graphic violence score (0-1) - OpenAI specific */
+  violenceGraphic?: number;
+}
+
+/**
+ * Specific violation categories detected
+ * Used for detailed moderation reporting
+ * Array of category strings from moderationLogs.categories
+ */
+export type ModerationCategory = 
+  | 'profanity' 
+  | 'harassment' 
+  | 'hate_speech' 
+  | 'sexual' 
+  | 'violence' 
+  | 'self_harm' 
+  | 'spam' 
+  | 'misinformation'
+  | 'identity_attack'
+  | 'threat';
+
+/**
+ * Additional context about blocked content
+ * Provides context for moderation decisions
+ * Maps to blockedContent.metadata JSONB column
+ */
+export interface ModerationMetadata {
+  /** Original location where content was posted */
+  originalLocation?: string;
+  /** User IDs of target users (for directed harassment) */
+  targetUsers?: string[];
+  /** Additional context about the content */
+  context?: string;
+  /** Number of previous violations by this user */
+  previousViolations?: number;
+}
 
 // -------------------- Fraud Detection Interfaces --------------------
 
@@ -170,9 +248,167 @@ export interface FraudEvidenceDetail {
 
 // -------------------- Chat & Communication Interfaces --------------------
 
+/**
+ * Message metadata for chat messages
+ * Includes function calls, citations, sentiment, and user feedback
+ * Maps to messages.metadata JSONB column
+ */
+export interface ChatMessageMetadata {
+  /** Function or tool call made during this message */
+  functionCall?: string;
+  /** Array of cited sources (URLs, document IDs, etc.) */
+  citedSources?: string[];
+  /** Sentiment of the message ('positive' | 'negative' | 'neutral') */
+  sentiment?: string;
+  /** User feedback on the message */
+  feedback?: {
+    rating: number;
+    comment?: string;
+  };
+}
+
+/**
+ * Draft content structure for auto-saved documents
+ * Used within autoSaveDrafts table
+ */
+export interface DraftContent {
+  /** The actual text content of the draft */
+  content: string;
+  /** Hash of content for change detection */
+  contentHash?: string;
+  /** Version number of this draft */
+  version: number;
+  /** Document identifier */
+  documentId: string;
+  /** Type of document being edited */
+  documentType: 'chat' | 'recipe' | 'note' | 'meal_plan' | 'shopping_list' | 'other';
+}
+
+/**
+ * Auto-save editor state and device information
+ * Preserves editor context for seamless restoration
+ * Maps to autoSaveDrafts.metadata JSONB column
+ */
+export interface AutoSaveData {
+  /** Cursor position in the editor (character offset) */
+  cursorPosition?: number;
+  /** Scroll position (pixels from top) */
+  scrollPosition?: number;
+  /** Currently selected text */
+  selectedText?: string;
+  /** Editor-specific state (Draft.js, ProseMirror, etc.) */
+  editorState?: any;
+  /** Device information for cross-device sync */
+  deviceInfo?: {
+    browser?: string;
+    os?: string;
+    screenSize?: string;
+  };
+}
+
+/**
+ * Typing pattern data for intelligent auto-save
+ * Machine learning features for personalized save timing
+ * Maps to savePatterns.patternData JSONB column
+ */
+export interface TypingPatternData {
+  /** Histogram of pause durations between keystrokes */
+  pauseHistogram?: number[];
+  /** Array of keystroke intervals (milliseconds) */
+  keystrokeIntervals?: number[];
+  /** Array of typing burst lengths (characters per burst) */
+  burstLengths?: number[];
+  /** Time-of-day preferences for editing sessions */
+  timeOfDayPreferences?: Record<string, number>;
+  /** Patterns by content type (e.g., code vs prose) */
+  contentTypePatterns?: Record<string, any>;
+}
 
 // -------------------- Analytics & Insights Interfaces --------------------
 
+/**
+ * Analytics insight metric data with trends and comparisons
+ * Contains time series data and statistical analysis
+ * Maps to analyticsInsights.metricData JSONB column
+ */
+export interface AnalyticsInsightData {
+  /** Current value of the metric */
+  currentValue?: number;
+  /** Previous period value for comparison */
+  previousValue?: number;
+  /** Percentage change from previous period */
+  percentageChange?: number;
+  /** Time series data points for visualization */
+  dataPoints?: Array<{ date: string; value: number }>;
+  /** Average value over the period */
+  average?: number;
+  /** Minimum value in the period */
+  min?: number;
+  /** Maximum value in the period */
+  max?: number;
+  /** Trend direction */
+  trend?: 'up' | 'down' | 'stable';
+}
+
+/**
+ * User behavior prediction data and features
+ * Machine learning features for churn prediction, engagement, etc.
+ * Maps to userPredictions.factors JSONB column
+ */
+export interface PredictionData {
+  /** User's activity pattern classification */
+  activityPattern?: string;
+  /** Engagement score (0-1 or 0-100) */
+  engagementScore?: number;
+  /** Last time user was active (ISO date string) */
+  lastActiveDate?: string;
+  /** Feature usage statistics by feature name */
+  featureUsage?: Record<string, number>;
+  /** Session frequency (sessions per time period) */
+  sessionFrequency?: number;
+  /** Content interaction metrics */
+  contentInteraction?: Record<string, any>;
+  /** Historical behavior patterns for comparison */
+  historicalBehavior?: any[];
+}
+
+/**
+ * Trend detection data with time series and entities
+ * Comprehensive trend analysis including keywords, entities, and sentiment
+ * Maps to trends.dataPoints JSONB column
+ */
+export interface TrendData {
+  /** Time series data for trend visualization */
+  timeSeries?: Array<{ 
+    date: string; 
+    value: number; 
+    label?: string; 
+  }>;
+  /** Keywords associated with the trend */
+  keywords?: string[];
+  /** Named entities extracted from trend data */
+  entities?: Array<{ 
+    name: string; 
+    type: string; 
+    relevance: number; 
+  }>;
+  /** Data sources contributing to the trend */
+  sources?: string[];
+  /** Additional metrics related to the trend */
+  metrics?: Record<string, any>;
+  /** Volume data over time */
+  volumeData?: Array<{ 
+    date: string; 
+    count: number; 
+  }>;
+  /** Sentiment distribution over time */
+  sentimentData?: Array<{ 
+    date: string; 
+    positive: number; 
+    negative: number; 
+    neutral: number; 
+  }>;
+}
 
 // -------------------- A/B Testing Interfaces --------------------
 
@@ -377,6 +613,65 @@ export interface CohortSegmentData {
 
 // -------------------- Predictive Maintenance Interfaces --------------------
 
+/**
+ * System metric metadata and context
+ * Additional information about system performance metrics
+ * Maps to systemMetrics.metadata JSONB column
+ */
+export interface MaintenanceMetrics {
+  /** Unit of measurement for the metric (ms, %, MB, etc.) */
+  unit?: string;
+  /** Source system or component that generated the metric */
+  source?: string;
+  /** Tags for categorization and filtering */
+  tags?: string[];
+  /** Additional context about the metric */
+  context?: Record<string, any>;
+}
+
+/**
+ * Predictive maintenance features and patterns
+ * Machine learning features for failure prediction
+ * Maps to maintenancePredictions.features JSONB column
+ */
+export interface MaintenanceFeatures {
+  /** Trend slope indicating degradation rate */
+  trendSlope?: number;
+  /** Seasonality patterns (day-of-week, time-of-day) */
+  seasonality?: Record<string, number>;
+  /** Number of recent anomalies detected */
+  recentAnomalies?: number;
+  /** Historical pattern data for comparison */
+  historicalPatterns?: any[];
+}
+
+/**
+ * Maintenance performance comparison metrics
+ * Before/after metrics for evaluating maintenance impact
+ * Maps to maintenanceHistory.performanceMetrics JSONB column
+ */
+export interface MaintenancePerformanceMetrics {
+  /** Performance metrics before maintenance */
+  before?: Record<string, number>;
+  /** Performance metrics after maintenance */
+  after?: Record<string, number>;
+  /** Percentage improvement from maintenance */
+  improvement?: number;
+}
+
+/**
+ * Maintenance cost breakdown
+ * Tracks the full cost of maintenance activities
+ * Maps to maintenanceHistory.cost JSONB column
+ */
+export interface MaintenanceCost {
+  /** Labor hours spent on maintenance */
+  laborHours?: number;
+  /** Direct resource costs (parts, licenses, etc.) */
+  resourceCost?: number;
+  /** Opportunity cost from downtime */
+  opportunityCost?: number;
+}
 
 // ==================== End of TypeScript Interfaces ====================
 
