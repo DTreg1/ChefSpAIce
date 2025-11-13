@@ -80,6 +80,34 @@ import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, real
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// ==================== TypeScript Interfaces for JSON Columns ====================
+
+// -------------------- Sentiment Analysis Interfaces --------------------
+
+
+// -------------------- Content Moderation Interfaces --------------------
+
+
+// -------------------- Fraud Detection Interfaces --------------------
+
+
+// -------------------- Chat & Communication Interfaces --------------------
+
+
+// -------------------- Analytics & Insights Interfaces --------------------
+
+
+// -------------------- A/B Testing Interfaces --------------------
+
+
+// -------------------- Cohort Analysis Interfaces --------------------
+
+
+// -------------------- Predictive Maintenance Interfaces --------------------
+
+
+// ==================== End of TypeScript Interfaces ====================
+
 /**
  * Sessions Table
  * 
