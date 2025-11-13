@@ -7170,21 +7170,26 @@ export const sentimentTrends = pgTable("sentiment_trends", {
 
 /**
  * Insert schema for sentimentResults table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertSentimentResultsSchema = createInsertSchema(sentimentResults, {
-  sentiment: z.enum(["positive", "negative", "neutral", "mixed"]),
-  sentimentData: sentimentDataSchema.optional(),
-  emotionScores: emotionScoresSchema.optional(),
-  keyPhrases: z.array(keyPhraseSchema).optional(),
-  contextFactors: z.array(contextFactorSchema).optional(),
-  aspectSentiments: z.record(z.string()).optional(),
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  analyzedAt: true,
-  modelVersion: true,
-});
+export const insertSentimentResultSchema = createInsertSchema(sentimentResults)
+  .omit({
+    id: true,
+    analyzedAt: true,
+    modelVersion: true,
+  })
+  .extend({
+    sentiment: z.enum(["positive", "negative", "neutral", "mixed"]),
+    sentimentData: sentimentDataSchema.optional(),
+    emotionScores: emotionScoresSchema.optional(),
+    keyPhrases: z.array(keyPhraseSchema).optional(),
+    contextFactors: z.array(contextFactorSchema).optional(),
+    aspectSentiments: z.record(z.string()).optional(),
+    metadata: z.record(z.any()).optional(),
+  });
+
+// Backward compatibility - keep plural name as alias
+export const insertSentimentResultsSchema = insertSentimentResultSchema;
 
 /**
  * Insert schema for sentimentTrends table
@@ -7208,8 +7213,12 @@ export const insertSentimentTrendSchema = createInsertSchema(sentimentTrends, {
   createdAt: true,
 });
 
-export type InsertSentimentResults = z.infer<typeof insertSentimentResultsSchema>;
-export type SentimentResults = typeof sentimentResults.$inferSelect;
+export type InsertSentimentResult = z.infer<typeof insertSentimentResultSchema>;
+export type SentimentResult = typeof sentimentResults.$inferSelect;
+
+// Backward compatibility - keep plural types as aliases
+export type InsertSentimentResults = InsertSentimentResult;
+export type SentimentResults = SentimentResult;
 
 export type InsertSentimentTrend = z.infer<typeof insertSentimentTrendSchema>;
 export type SentimentTrend = typeof sentimentTrends.$inferSelect;
