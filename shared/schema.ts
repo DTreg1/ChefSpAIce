@@ -4977,15 +4977,17 @@ export const messages = pgTable("messages", {
 
 /**
  * Insert schema for messages table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertMessageSchema = createInsertSchema(messages, {
-  metadata: chatMessageMetadataSchema.optional(),
-}).omit({
-  id: true,
-  timestamp: true,
-  tokensUsed: true,
-});
+export const insertMessageSchema = createInsertSchema(messages)
+  .omit({
+    id: true,
+    timestamp: true,
+    tokensUsed: true,
+  })
+  .extend({
+    metadata: chatMessageMetadataSchema.optional(),
+  });
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
@@ -5200,13 +5202,17 @@ export const generatedDrafts = pgTable("generated_drafts", {
   index("generated_drafts_original_message_id_idx").on(table.originalMessageId),
 ]);
 
-export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts, {
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    selected: true,
+    edited: true,
+  })
+  .extend({
+    metadata: z.record(z.any()).optional(),
+  });
 
 export type InsertGeneratedDraft = z.infer<typeof insertGeneratedDraftSchema>;
 export type GeneratedDraft = typeof generatedDrafts.$inferSelect;
@@ -7381,17 +7387,20 @@ export const savePatterns = pgTable("save_patterns", {
 
 /**
  * Insert schema for autoSaveDrafts table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts, {
-  version: z.number().int().optional(),
-  metadata: autoSaveDataSchema.optional(),
-}).omit({
-  id: true,
-  savedAt: true,
-  isAutoSave: true,
-  conflictResolved: true,
-});
+export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts)
+  .omit({
+    id: true,
+    savedAt: true,
+    isAutoSave: true,
+    conflictResolved: true,
+  })
+  .extend({
+    documentType: z.enum(["chat", "recipe", "note", "meal_plan", "shopping_list", "other"]).optional(),
+    version: z.number().int().optional(),
+    metadata: autoSaveDataSchema.optional(),
+  });
 
 export const insertSavePatternSchema = createInsertSchema(savePatterns, {
   patternData: z.object({
