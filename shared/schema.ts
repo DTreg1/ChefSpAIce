@@ -6727,23 +6727,13 @@ export const analyticsInsights = pgTable("analytics_insights", {
   insightText: text("insight_text").notNull(),
   importance: integer("importance").notNull().default(3), // 1-5 scale
   period: text("period").notNull(), // "daily", "weekly", "monthly", "custom"
-  metricData: jsonb("metric_data").$type<{
-    currentValue?: number;
-    previousValue?: number;
-    percentageChange?: number;
-    dataPoints?: Array<{ date: string; value: number }>;
-    average?: number;
-    min?: number;
-    max?: number;
-    trend?: "up" | "down" | "stable";
-  }>(),
-  aiContext: jsonb("ai_context").$type<{
-    reasoning?: string;
-    confidence?: number;
-    suggestedActions?: string[];
-    relatedMetrics?: string[];
-    model?: string;
-  }>(),
+  
+  // Metric data with trends and comparisons (using AnalyticsInsightData interface)
+  metricData: jsonb("metric_data").$type<AnalyticsInsightData>(),
+  
+  // AI reasoning and context (flexible structure)
+  aiContext: jsonb("ai_context").$type<Record<string, any>>(),
+  
   category: text("category").notNull().default("trend"), // "trend", "anomaly", "prediction", "comparison"
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -6864,15 +6854,10 @@ export const userPredictions = pgTable("user_predictions", {
   predictionType: text("prediction_type").notNull(), // 'churn_risk', 'next_action', 'engagement_level', etc.
   probability: real("probability").notNull(), // 0-1 confidence score
   predictedDate: timestamp("predicted_date").notNull(),
-  factors: jsonb("factors").$type<{
-    activityPattern?: string;
-    engagementScore?: number;
-    lastActiveDate?: string;
-    featureUsage?: Record<string, number>;
-    sessionFrequency?: number;
-    contentInteraction?: Record<string, any>;
-    historicalBehavior?: any[];
-  }>().notNull(),
+  
+  // Prediction factors and features (using PredictionData interface)
+  factors: jsonb("factors").$type<PredictionData>().notNull(),
+  
   interventionSuggested: text("intervention_suggested"), // 'email_campaign', 'in_app_message', 'special_offer', etc.
   interventionTaken: text("intervention_taken"),
   status: text("status").notNull().default('pending'), // 'pending', 'correct', 'incorrect', 'intervened'
@@ -7031,26 +7016,17 @@ export const trends = pgTable("trends", {
   peakDate: timestamp("peak_date"),
   endDate: timestamp("end_date"),
   status: text("status").notNull().default('emerging'), // 'emerging', 'active', 'peaking', 'declining', 'ended'
-  dataPoints: jsonb("data_points").$type<{
-    timeSeries?: Array<{ date: string; value: number; label?: string }>;
-    keywords?: string[];
-    entities?: Array<{ name: string; type: string; relevance: number }>;
-    sources?: string[];
-    metrics?: Record<string, any>;
-    volumeData?: Array<{ date: string; count: number }>;
-    sentimentData?: Array<{ date: string; positive: number; negative: number; neutral: number }>;
-  }>().notNull(),
+  
+  // Trend data with time series and analysis (using TrendData interface)
+  dataPoints: jsonb("data_points").$type<TrendData>().notNull(),
+  
   interpretation: text("interpretation"), // AI-generated explanation
   businessImpact: text("business_impact"), // Impact assessment
   recommendations: jsonb("recommendations").$type<string[]>(), // AI recommendations
-  metadata: jsonb("metadata").$type<{
-    detectionMethod?: string;
-    modelVersion?: string;
-    dataWindow?: { start: string; end: string };
-    sampleSize?: number;
-    correlatedTrends?: string[];
-    categoryDistribution?: Record<string, number>;
-  }>(),
+  
+  // Trend metadata (flexible structure)
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => [
