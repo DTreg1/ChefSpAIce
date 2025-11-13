@@ -84,6 +84,34 @@ import { z } from "zod";
 
 // -------------------- Sentiment Analysis Interfaces --------------------
 
+/**
+ * Main sentiment analysis data structure
+ */
+export interface SentimentData {
+  /** Overall sentiment score from -1 (very negative) to 1 (very positive) */
+  overallScore: number;
+  /** Sentiment polarity classification */
+  polarity: 'positive' | 'negative' | 'neutral';
+  /** Subjectivity score from 0 (objective) to 1 (subjective) */
+  subjectivity: number;
+  /** Document-level sentiment metrics */
+  documentScore?: number;
+  /** Aspect-based sentiment scores */
+  aspectScores?: Record<string, number>;
+}
+
+/**
+ * Emotion detection scores
+ */
+export interface EmotionScores {
+  joy?: number;
+  sadness?: number;
+  anger?: number;
+  fear?: number;
+  surprise?: number;
+  disgust?: number;
+  [emotion: string]: number | undefined;
+}
 
 // -------------------- Content Moderation Interfaces --------------------
 
