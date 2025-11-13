@@ -118,6 +118,55 @@ export interface EmotionScores {
 
 // -------------------- Fraud Detection Interfaces --------------------
 
+/**
+ * Individual fraud risk factor with score and weight
+ * Used to break down overall fraud risk into component factors
+ * Maps to fraudScores.factors JSONB column
+ */
+export interface FraudRiskFactor {
+  /** Behavior pattern analysis score (0-1, higher = more suspicious) */
+  behaviorScore: number;
+  /** Account age risk score (0-1, newer accounts = higher risk) */
+  accountAgeScore: number;
+  /** Transaction velocity risk score (0-1, rapid transactions = higher risk) */
+  transactionVelocityScore: number;
+  /** Content pattern analysis score (0-1, spam/bot-like = higher risk) */
+  contentPatternScore: number;
+  /** Network reputation score (0-1, bad IP/proxy = higher risk) */
+  networkScore: number;
+  /** Device fingerprint analysis score (0-1, suspicious device = higher risk) */
+  deviceScore: number;
+  /** Geographic anomaly score (0-1, unusual location = higher risk) */
+  geoScore: number;
+  /** Additional detailed scoring information */
+  details: Record<string, any>;
+}
+
+/**
+ * Evidence supporting fraud detection
+ * Documents suspicious activities and related information
+ * Maps to suspiciousActivities.details JSONB column
+ */
+export interface FraudEvidenceDetail {
+  /** Human-readable description of the suspicious activity */
+  description: string;
+  /** Array of evidence items supporting the fraud detection */
+  evidence: string[];
+  /** Related activity IDs for correlation */
+  relatedActivities?: string[];
+  /** IP address of the suspicious activity */
+  ipAddress?: string;
+  /** User agent string from the request */
+  userAgent?: string;
+  /** Geographic location information */
+  location?: {
+    lat: number;
+    lng: number;
+    country: string;
+  };
+  /** Additional metadata about the evidence */
+  metadata?: Record<string, any>;
+}
 
 // -------------------- Chat & Communication Interfaces --------------------
 
