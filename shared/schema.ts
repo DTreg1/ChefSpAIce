@@ -4239,15 +4239,22 @@ export const analyticsEvents = pgTable("analytics_events", {
   index("analytics_events_timestamp_idx").on(table.timestamp),
 ]);
 
-export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
-  id: true,
-  timestamp: true,
-}).extend({
-  eventType: z.string(),
-  eventCategory: z.string(),
-  eventAction: z.string(),
-  sessionId: z.string(),
-});
+/**
+ * Insert schema for analyticsEvents table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents)
+  .omit({
+    id: true,
+    timestamp: true,
+  })
+  .extend({
+    eventType: z.string(),
+    eventCategory: z.string(),
+    eventAction: z.string(),
+    sessionId: z.string(),
+    properties: z.record(z.any()).optional(),
+  });
 
 export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
@@ -4377,10 +4384,18 @@ export const userSessions = pgTable("user_sessions", {
   index("user_sessions_start_time_idx").on(table.startTime),
 ]);
 
-export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
-  id: true,
-  startTime: true,
-});
+/**
+ * Insert schema for userSessions table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertUserSessionSchema = createInsertSchema(userSessions)
+  .omit({
+    id: true,
+    startTime: true,
+  })
+  .extend({
+    goalCompletions: z.array(z.string()).optional(),
+  });
 
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
@@ -6292,12 +6307,25 @@ export const blockedContent = pgTable("blocked_content", {
   index("blocked_content_timestamp_idx").on(table.timestamp),
 ]);
 
-export const insertBlockedContentSchema = createInsertSchema(blockedContent).omit({
-  id: true,
-  timestamp: true,
-  createdAt: true,
-  updatedAt: true,
-});
+/**
+ * Insert schema for blockedContent table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertBlockedContentSchema = createInsertSchema(blockedContent)
+  .omit({
+    id: true,
+    timestamp: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    metadata: z.object({
+      originalLocation: z.string().optional(),
+      targetUsers: z.array(z.string()).optional(),
+      context: z.string().optional(),
+      previousViolations: z.number().int().nonnegative().optional(),
+    }).optional(),
+  });
 
 export type InsertBlockedContent = z.infer<typeof insertBlockedContentSchema>;
 export type BlockedContent = typeof blockedContent.$inferSelect;
