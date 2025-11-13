@@ -11663,7 +11663,7 @@ export class DatabaseStorage implements IStorage {
         return latestDraft;
       }
 
-      // Save the draft with incremented version
+      // Save the draft with incremented version (contentHash is auto-managed)
       const [savedDraft] = await db
         .insert(autoSaveDrafts)
         .values({
@@ -13032,7 +13032,7 @@ export class DatabaseStorage implements IStorage {
   async subscribeTrendAlerts(
     userId: string,
     conditions: InsertTrendAlert["conditions"],
-    alertType: string,
+    alertType: "threshold" | "emergence" | "acceleration" | "peak" | "decline" | "anomaly",
   ): Promise<TrendAlert> {
     try {
       const alert: InsertTrendAlert = {
@@ -13254,6 +13254,10 @@ export class DatabaseStorage implements IStorage {
           visitors: 0,
           revenue: 0,
           sampleSize: 0,
+          metadata: null,
+          avgSessionDuration: null,
+          engagementScore: null,
+          bounceRate: null,
           periodStart: new Date(),
           periodEnd: new Date(),
           createdAt: new Date(),
@@ -13267,6 +13271,10 @@ export class DatabaseStorage implements IStorage {
           visitors: 0,
           revenue: 0,
           sampleSize: 0,
+          metadata: null,
+          avgSessionDuration: null,
+          engagementScore: null,
+          bounceRate: null,
           periodStart: new Date(),
           periodEnd: new Date(),
           createdAt: new Date(),
@@ -13491,6 +13499,7 @@ export class DatabaseStorage implements IStorage {
             implementationDate: new Date().toISOString(),
             implementedVariant: variant,
           },
+          statisticalAnalysis: insight.statisticalAnalysis || undefined,
         });
       }
 
@@ -13651,8 +13660,8 @@ export class DatabaseStorage implements IStorage {
         );
       }
 
-      query = query.where(and(...conditions));
-      return await query;
+      const finalQuery = query.where(and(...conditions));
+      return await finalQuery;
     } catch (error) {
       console.error("Error getting cohort metrics:", error);
       throw error;
@@ -14314,8 +14323,8 @@ export class DatabaseStorage implements IStorage {
         const [created] = await db
           .insert(schedulingPatterns)
           .values({
-            ...pattern,
             userId,
+            ...pattern,
           })
           .returning();
         return created;
@@ -15156,9 +15165,9 @@ export class DatabaseStorage implements IStorage {
         .returning();
 
       // Update template usage counts
-      const templateIds = [
-        ...new Set(dataList.map((d) => d.templateId).filter(Boolean)),
-      ];
+      const templateIds = Array.from(
+        new Set(dataList.map((d) => d.templateId).filter(Boolean))
+      );
       for (const templateId of templateIds) {
         const count = dataList.filter(
           (d) => d.templateId === templateId,

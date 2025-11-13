@@ -9830,7 +9830,18 @@ export const agentExpertise = pgTable("agent_expertise", {
   index("agent_expertise_availability_idx").on(table.availability),
 ]);
 
-export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise).omit({
+export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise, {
+  metadata: z.object({
+    team: z.string().optional(),
+    department: z.string().optional(),
+    shift_hours: z.object({
+      start: z.string(),
+      end: z.string(),
+    }).optional(),
+    escalation_contact: z.boolean().optional(),
+    auto_assign_enabled: z.boolean().optional(),
+  }).optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -9916,7 +9927,19 @@ export const extractionTemplates = pgTable("extraction_templates", {
   index("extraction_templates_is_active_idx").on(table.isActive),
 ]);
 
-export const insertExtractionTemplateSchema = createInsertSchema(extractionTemplates).omit({
+export const insertExtractionTemplateSchema = createInsertSchema(extractionTemplates, {
+  schema: z.object({
+    fields: z.array(z.object({
+      name: z.string(),
+      type: z.enum(['string', 'number', 'date', 'boolean', 'array', 'object']),
+      description: z.string(),
+      required: z.boolean().optional(),
+      validation: z.any().optional(),
+      examples: z.array(z.string()).optional(),
+    })),
+    outputFormat: z.enum(['json', 'table', 'csv']).optional(),
+  }),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -9995,7 +10018,16 @@ export const extractedData = pgTable("extracted_data", {
   index("extracted_data_extracted_at_idx").on(table.extractedAt),
 ]);
 
-export const insertExtractedDataSchema = createInsertSchema(extractedData).omit({
+export const insertExtractedDataSchema = createInsertSchema(extractedData, {
+  metadata: z.object({
+    processingTime: z.number().optional(),
+    modelUsed: z.string().optional(),
+    tokenCount: z.number().optional(),
+    retryCount: z.number().optional(),
+    batchId: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+  }).optional(),
+}).omit({
   id: true,
   extractedAt: true,
 });
@@ -10148,7 +10180,15 @@ export const pricingPerformance = pgTable("pricing_performance", {
 ]);
 
 // Pricing Rules Schemas
-export const insertPricingRulesSchema = createInsertSchema(pricingRules).omit({
+export const insertPricingRulesSchema = createInsertSchema(pricingRules, {
+  metadata: z.object({
+    category: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    competitors: z.array(z.string()).optional(),
+    updateFrequency: z.string().optional(),
+    lastOptimized: z.string().optional(),
+  }).optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -10158,7 +10198,23 @@ export type InsertPricingRules = z.infer<typeof insertPricingRulesSchema>;
 export type PricingRules = typeof pricingRules.$inferSelect;
 
 // Price History Schemas
-export const insertPriceHistorySchema = createInsertSchema(priceHistory).omit({
+export const insertPriceHistorySchema = createInsertSchema(priceHistory, {
+  metadata: z.object({
+    demandMetrics: z.object({
+      views: z.number().optional(),
+      clicks: z.number().optional(),
+      conversions: z.number().optional(),
+      cartAdds: z.number().optional(),
+    }).optional(),
+    competitorData: z.array(z.object({
+      name: z.string(),
+      price: z.number(),
+      source: z.string(),
+    })).optional(),
+    weatherImpact: z.string().optional(),
+    eventImpact: z.string().optional(),
+  }).optional(),
+}).omit({
   id: true,
   changedAt: true,
 });
