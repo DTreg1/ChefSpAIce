@@ -12772,7 +12772,8 @@ export class DatabaseStorage implements IStorage {
       let query = db
         .select()
         .from(trends)
-        .orderBy(desc(trends.strength), desc(trends.createdAt));
+        .orderBy(desc(trends.strength), desc(trends.createdAt))
+        .$dynamic();
 
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
@@ -13496,8 +13497,8 @@ export class DatabaseStorage implements IStorage {
     createdBy?: string;
   }): Promise<Cohort[]> {
     try {
-      let query = db.select().from(cohorts);
-      const conditions: any[] = [];
+      let query = db.select().from(cohorts).$dynamic();
+      const conditions: SQL<unknown>[] = [];
 
       if (filters?.isActive !== undefined) {
         conditions.push(eq(cohorts.isActive, filters.isActive));
@@ -13753,8 +13754,8 @@ export class DatabaseStorage implements IStorage {
     },
   ): Promise<CohortInsight[]> {
     try {
-      let query = db.select().from(cohortInsights);
-      const conditions: any[] = [eq(cohortInsights.cohortId, cohortId)];
+      let query = db.select().from(cohortInsights).$dynamic();
+      const conditions: SQL<unknown>[] = [eq(cohortInsights.cohortId, cohortId)];
 
       if (filters?.status) {
         conditions.push(eq(cohortInsights.status, filters.status));
@@ -13806,8 +13807,8 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Build query based on cohort definition
-      let userQuery = db.select().from(users);
-      const conditions: any[] = [];
+      let userQuery = db.select().from(users).$dynamic();
+      const conditions: SQL<unknown>[] = [];
 
       // Apply signup date range filter
       if (cohort.definition.signupDateRange) {
@@ -13922,7 +13923,7 @@ export class DatabaseStorage implements IStorage {
     limit: number = 100,
   ): Promise<SystemMetric[]> {
     try {
-      let query = db.select().from(systemMetrics);
+      let query = db.select().from(systemMetrics).$dynamic();
       const conditions: SQL<unknown>[] = [];
 
       if (component) {
@@ -13966,7 +13967,7 @@ export class DatabaseStorage implements IStorage {
     component?: string,
   ): Promise<MaintenancePrediction[]> {
     try {
-      let query = db.select().from(maintenancePredictions);
+      let query = db.select().from(maintenancePredictions).$dynamic();
       const conditions: SQL<unknown>[] = [];
 
       if (status) {
@@ -14036,7 +14037,7 @@ export class DatabaseStorage implements IStorage {
     limit: number = 50,
   ): Promise<MaintenanceHistory[]> {
     try {
-      let query = db.select().from(maintenanceHistory);
+      let query = db.select().from(maintenanceHistory).$dynamic();
 
       if (component) {
         query = query.where(eq(maintenanceHistory.component, component));
