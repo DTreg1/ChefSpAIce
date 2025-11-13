@@ -12139,12 +12139,12 @@ export class DatabaseStorage implements IStorage {
     feedback: InsertCompletionFeedback,
   ): Promise<CompletionFeedback> {
     try {
-      const result = await db
+      const [result] = await db
         .insert(completionFeedback)
-        .values(feedback as any)
+        .values(feedback)
         .returning();
 
-      return result[0];
+      return result;
     } catch (error) {
       console.error("Error recording completion feedback:", error);
       throw error;
@@ -12604,7 +12604,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newAccuracy] = await db
         .insert(predictionAccuracy)
-        .values([accuracy as any])
+        .values(accuracy)
         .returning();
       return newAccuracy;
     } catch (error) {
@@ -14173,21 +14173,17 @@ export class DatabaseStorage implements IStorage {
     status?: string,
   ): Promise<MeetingSuggestions[]> {
     try {
-      let query = db
-        .select()
-        .from(meetingSuggestions)
-        .where(eq(meetingSuggestions.createdBy, userId));
+      const conditions = [eq(meetingSuggestions.createdBy, userId)];
 
       if (status) {
-        query = query.where(
-          and(
-            eq(meetingSuggestions.createdBy, userId),
-            eq(meetingSuggestions.status, status),
-          ),
-        ) as any;
+        conditions.push(eq(meetingSuggestions.status, status));
       }
 
-      return await query.orderBy(desc(meetingSuggestions.createdAt));
+      return await db
+        .select()
+        .from(meetingSuggestions)
+        .where(and(...conditions))
+        .orderBy(desc(meetingSuggestions.createdAt));
     } catch (error) {
       console.error("Error getting user meeting suggestions:", error);
       throw error;
@@ -14780,8 +14776,7 @@ export class DatabaseStorage implements IStorage {
 
       // Filter for routings with outcomes recorded
       return routings.filter((routing) => {
-        const metadata = routing.metadata as any;
-        return metadata?.outcome_recorded === true;
+        return (routing.metadata as { outcome_recorded?: boolean })?.outcome_recorded === true;
       });
     } catch (error) {
       console.error("Error getting routings with outcomes:", error);
@@ -15754,7 +15749,7 @@ export class DatabaseStorage implements IStorage {
       const conditions = [eq(imageProcessing.userId, userId)];
 
       if (status) {
-        conditions.push(eq(imageProcessing.status, status as any));
+        conditions.push(eq(imageProcessing.status, status));
       }
 
       const jobs = await db
@@ -15866,7 +15861,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (category) {
-        conditions.push(eq(imagePresets.category, category as any));
+        conditions.push(eq(imagePresets.category, category));
       }
 
       const presets = await db
@@ -16461,7 +16456,7 @@ export class DatabaseStorage implements IStorage {
       const conditions = [eq(transcriptions.userId, userId)];
 
       if (status) {
-        conditions.push(eq(transcriptions.status, status as any));
+        conditions.push(eq(transcriptions.status, status));
       }
 
       let query = db
@@ -16494,7 +16489,7 @@ export class DatabaseStorage implements IStorage {
       const conditions = [eq(transcriptions.userId, userId)];
 
       if (status) {
-        conditions.push(eq(transcriptions.status, status as any));
+        conditions.push(eq(transcriptions.status, status));
       }
 
       const offset = (page - 1) * limit;
