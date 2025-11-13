@@ -6021,12 +6021,23 @@ export const imageMetadata = pgTable("image_metadata", {
   index("image_metadata_uploaded_at_idx").on(table.uploadedAt),
 ]);
 
-export const insertImageMetadataSchema = createInsertSchema(imageMetadata).omit({
-  id: true,
-  uploadedAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
+/**
+ * Insert schema for imageMetadata table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertImageMetadataSchema = createInsertSchema(imageMetadata)
+  .omit({
+    id: true,
+    uploadedAt: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    dimensions: z.object({
+      width: z.number().int().positive().optional(),
+      height: z.number().int().positive().optional(),
+    }).optional(),
+  });
 
 export type InsertImageMetadata = z.infer<typeof insertImageMetadataSchema>;
 export type ImageMetadata = typeof imageMetadata.$inferSelect;
@@ -7626,22 +7637,85 @@ export const completionFeedback = pgTable("completion_feedback", {
 ]);
 
 // Schema types for form completions
-export const insertFormCompletionSchema = createInsertSchema(formCompletions).omit({
-  id: true,
-  createdAt: true,
-  lastUpdated: true,
-});
 
-export const insertUserFormHistorySchema = createInsertSchema(userFormHistory).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+/**
+ * Insert schema for formCompletions table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertFormCompletionSchema = createInsertSchema(formCompletions)
+  .omit({
+    id: true,
+    createdAt: true,
+    lastUpdated: true,
+  })
+  .extend({
+    commonValues: z.array(z.object({
+      value: z.string(),
+      count: z.number().int().nonnegative(),
+      lastUsed: z.string(),
+      metadata: z.record(z.any()).optional(),
+    })).optional(),
+    patterns: z.array(z.object({
+      regex: z.string(),
+      description: z.string(),
+      priority: z.number().int(),
+    })).optional(),
+    contextRules: z.array(z.object({
+      condition: z.string(),
+      suggestions: z.array(z.string()),
+      priority: z.number().int(),
+    })).optional(),
+  });
 
-export const insertCompletionFeedbackSchema = createInsertSchema(completionFeedback).omit({
-  id: true,
-  createdAt: true,
-});
+/**
+ * Insert schema for userFormHistory table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertUserFormHistorySchema = createInsertSchema(userFormHistory)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    valuesUsed: z.array(z.object({
+      value: z.string(),
+      count: z.number().int().nonnegative(),
+      lastUsed: z.string(),
+      context: z.record(z.any()).optional(),
+    })).optional(),
+    frequencyMap: z.record(z.number()).optional(),
+    lastSequence: z.array(z.object({
+      fieldName: z.string(),
+      value: z.string(),
+      timestamp: z.string(),
+    })).optional(),
+    preferences: z.object({
+      autoFillEnabled: z.boolean().optional(),
+      rememberValues: z.boolean().optional(),
+      suggestSimilar: z.boolean().optional(),
+      privacyMode: z.boolean().optional(),
+    }).optional(),
+  });
+
+/**
+ * Insert schema for completionFeedback table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertCompletionFeedbackSchema = createInsertSchema(completionFeedback)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    context: z.object({
+      pageUrl: z.string().optional(),
+      formId: z.string().optional(),
+      otherFields: z.record(z.string()).optional(),
+      deviceType: z.string().optional(),
+      timestamp: z.string().optional(),
+    }).optional(),
+  });
 
 export type InsertFormCompletion = z.infer<typeof insertFormCompletionSchema>;
 export type FormCompletion = typeof formCompletions.$inferSelect;
@@ -7854,16 +7928,108 @@ export const validationErrors = pgTable("validation_errors", {
 ]);
 
 // Schema types for validation system
-export const insertValidationRuleSchema = createInsertSchema(validationRules).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
 
-export const insertValidationErrorSchema = createInsertSchema(validationErrors).omit({
-  id: true,
-  createdAt: true,
-});
+/**
+ * Insert schema for validationRules table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertValidationRuleSchema = createInsertSchema(validationRules)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    rules: z.object({
+      patterns: z.array(z.object({
+        regex: z.string(),
+        flags: z.string().optional(),
+        description: z.string().optional(),
+      })),
+      formatters: z.array(z.object({
+        from: z.string(),
+        to: z.string(),
+      })).optional(),
+      validators: z.array(z.object({
+        type: z.string(),
+        params: z.any().optional(),
+      })).optional(),
+      lengthConstraints: z.object({
+        min: z.number().int().nonnegative().optional(),
+        max: z.number().int().positive().optional(),
+      }).optional(),
+      characterConstraints: z.object({
+        allowed: z.string().optional(),
+        forbidden: z.string().optional(),
+      }).optional(),
+    }),
+    errorMessages: z.object({
+      default: z.string().optional(),
+      tooShort: z.string().optional(),
+      tooLong: z.string().optional(),
+      invalidFormat: z.string().optional(),
+      missing: z.string().optional(),
+    }).catchall(z.string()),
+    suggestions: z.object({
+      autoCorrect: z.array(z.object({
+        pattern: z.string(),
+        replacement: z.string(),
+      })).optional(),
+      formatHints: z.array(z.string()).optional(),
+      commonMistakes: z.array(z.object({
+        mistake: z.string(),
+        correction: z.string(),
+      })).optional(),
+      quickFixes: z.array(z.object({
+        label: z.string(),
+        action: z.string(),
+        value: z.string().optional(),
+      })).optional(),
+    }),
+    aiConfig: z.object({
+      useAI: z.boolean().optional(),
+      model: z.string().optional(),
+      temperature: z.number().optional(),
+      maxSuggestions: z.number().int().positive().optional(),
+      contextFields: z.array(z.string()).optional(),
+    }),
+  });
+
+/**
+ * Insert schema for validationErrors table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertValidationErrorSchema = createInsertSchema(validationErrors)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    context: z.object({
+      formId: z.string().optional(),
+      pageUrl: z.string().optional(),
+      otherFields: z.record(z.any()).optional(),
+      sessionId: z.string().optional(),
+      deviceInfo: z.object({
+        userAgent: z.string().optional(),
+        viewport: z.object({
+          width: z.number().int().positive(),
+          height: z.number().int().positive(),
+        }).optional(),
+        locale: z.string().optional(),
+      }).optional(),
+    }).optional(),
+    aiSuggestions: z.object({
+      suggestions: z.array(z.object({
+        value: z.string(),
+        confidence: z.number(),
+        reasoning: z.string().optional(),
+      })).optional(),
+      selectedIndex: z.number().int().nonnegative().optional(),
+      model: z.string().optional(),
+      processingTime: z.number().int().nonnegative().optional(),
+    }).optional(),
+  });
 
 export type InsertValidationRule = z.infer<typeof insertValidationRuleSchema>;
 export type ValidationRule = typeof validationRules.$inferSelect;
