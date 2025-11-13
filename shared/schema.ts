@@ -5178,29 +5178,8 @@ export const moderationLogs = pgTable("moderation_logs", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   
-  // Toxicity analysis
-  toxicityScores: jsonb("toxicity_scores").$type<{
-    toxicity?: number;
-    severeToxicity?: number;
-    identityAttack?: number;
-    insult?: number;
-    profanity?: number;
-    threat?: number;
-    sexuallyExplicit?: number;
-    obscene?: number;
-    // OpenAI specific scores
-    harassment?: number;
-    harassmentThreatening?: number;
-    hate?: number;
-    hateThreatening?: number;
-    selfHarm?: number;
-    selfHarmIntent?: number;
-    selfHarmInstruction?: number;
-    sexual?: number;
-    sexualMinors?: number;
-    violence?: number;
-    violenceGraphic?: number;
-  }>().notNull(),
+  // Toxicity analysis (using ModerationResult interface)
+  toxicityScores: jsonb("toxicity_scores").$type<ModerationResult>().notNull(),
   
   // Moderation decision
   actionTaken: varchar("action_taken", { length: 20 }).notNull(), // 'approved', 'blocked', 'flagged', 'warning'
@@ -5287,12 +5266,10 @@ export const blockedContent = pgTable("blocked_content", {
   // Blocking details
   blockedCategories: text("blocked_categories").array(),
   toxicityLevel: real("toxicity_level"),
-  metadata: jsonb("metadata").$type<{
-    originalLocation?: string;
-    targetUsers?: string[];
-    context?: string;
-    previousViolations?: number;
-  }>(),
+  
+  // Additional context about the block (using ModerationMetadata interface)
+  metadata: jsonb("metadata").$type<ModerationMetadata>(),
+  
   autoBlocked: boolean("auto_blocked").notNull().default(true),
   
   // Resolution
