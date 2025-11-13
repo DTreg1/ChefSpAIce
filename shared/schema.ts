@@ -6691,22 +6691,29 @@ export const insertFraudReviewSchema = createInsertSchema(fraudReviews, {
 
 /**
  * Insert schema for fraudDetectionResults table
- * Uses column overrides to preserve JSON type information for JSONB columns
+ * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertFraudDetectionResultsSchema = createInsertSchema(fraudDetectionResults, {
-  riskFactors: z.array(fraudRiskFactorSchema).optional(),
-  evidenceDetails: z.array(fraudEvidenceDetailSchema).optional(),
-  deviceInfo: fraudDeviceInfoSchema.optional(),
-  behaviorData: fraudBehaviorDataSchema.optional(),
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  analyzedAt: true,
-  modelVersion: true,
-  status: true,
-  autoBlocked: true,
-  reviewRequired: true,
-});
+export const insertFraudDetectionResultSchema = createInsertSchema(fraudDetectionResults)
+  .omit({
+    id: true,
+    analyzedAt: true,
+    modelVersion: true,
+    status: true,
+    autoBlocked: true,
+    reviewRequired: true,
+  })
+  .extend({
+    analysisType: z.enum(["account_creation", "transaction", "content_posting", "account_takeover", "behavioral"]),
+    riskLevel: z.enum(["low", "medium", "high", "critical"]),
+    riskFactors: z.array(fraudRiskFactorSchema).optional(),
+    evidenceDetails: z.array(fraudEvidenceDetailSchema).optional(),
+    deviceInfo: fraudDeviceInfoSchema.optional(),
+    behaviorData: fraudBehaviorDataSchema.optional(),
+    metadata: z.record(z.any()).optional(),
+  });
+
+// Backward compatibility - keep plural name as alias
+export const insertFraudDetectionResultsSchema = insertFraudDetectionResultSchema;
 
 export type InsertFraudScore = z.infer<typeof insertFraudScoreSchema>;
 export type FraudScore = typeof fraudScores.$inferSelect;
@@ -6717,8 +6724,12 @@ export type SuspiciousActivity = typeof suspiciousActivities.$inferSelect;
 export type InsertFraudReview = z.infer<typeof insertFraudReviewSchema>;
 export type FraudReview = typeof fraudReviews.$inferSelect;
 
-export type InsertFraudDetectionResults = z.infer<typeof insertFraudDetectionResultsSchema>;
-export type FraudDetectionResults = typeof fraudDetectionResults.$inferSelect;
+export type InsertFraudDetectionResult = z.infer<typeof insertFraudDetectionResultSchema>;
+export type FraudDetectionResult = typeof fraudDetectionResults.$inferSelect;
+
+// Backward compatibility - keep plural types as aliases
+export type InsertFraudDetectionResults = InsertFraudDetectionResult;
+export type FraudDetectionResults = FraudDetectionResult;
 
 // ============================================================================
 // Sentiment Analysis Tables
