@@ -7814,7 +7814,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(sentimentMetrics)
-        .values(metrics as any)
+        .values(metrics)
         .returning();
       return result;
     } catch (error) {
@@ -7864,7 +7864,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(sentimentAlerts)
-        .values(alert as any)
+        .values(alert)
         .returning();
       return result;
     } catch (error) {
@@ -7916,7 +7916,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(sentimentSegments)
-        .values(segment as any)
+        .values(segment)
         .returning();
       return result;
     } catch (error) {
@@ -7979,7 +7979,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(sentimentAnalysis)
-        .values([analysis as any])
+        .values([analysis])
         .returning();
       return result;
     } catch (error) {
@@ -11404,7 +11404,7 @@ export class DatabaseStorage implements IStorage {
     try {
       await db
         .update(sentimentAnalysis)
-        .set(data as any)
+        .set(data)
         .where(eq(sentimentAnalysis.id, id));
     } catch (error) {
       console.error("Error updating sentiment analysis:", error);
@@ -11436,7 +11436,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(sentimentTrends)
-        .values(trend as any)
+        .values(trend)
         .returning();
       return result;
     } catch (error) {
