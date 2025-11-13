@@ -330,6 +330,89 @@ export interface FraudEvidenceDetail {
   metadata?: Record<string, any>;
 }
 
+/**
+ * Device fingerprint and network information for fraud detection
+ * Tracks device characteristics and network context
+ * Maps to fraudDetectionResults.deviceInfo JSONB column
+ */
+export interface FraudDeviceInfo {
+  /** Unique device fingerprint hash */
+  fingerprint?: string;
+  /** Device type (mobile, desktop, tablet, etc.) */
+  deviceType?: string;
+  /** Operating system information */
+  os?: string;
+  /** Browser information */
+  browser?: string;
+  /** Screen resolution */
+  screenResolution?: string;
+  /** Timezone offset */
+  timezone?: string;
+  /** Language preferences */
+  language?: string;
+  /** IP address */
+  ipAddress?: string;
+  /** ISP (Internet Service Provider) */
+  isp?: string;
+  /** VPN/Proxy detection flag */
+  isProxy?: boolean;
+  /** TOR network detection flag */
+  isTor?: boolean;
+  /** Geographic location data */
+  location?: {
+    country?: string;
+    region?: string;
+    city?: string;
+    lat?: number;
+    lng?: number;
+  };
+  /** Additional device metadata */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * User behavior patterns and activity data for fraud analysis
+ * Tracks behavioral metrics and activity timelines
+ * Maps to fraudDetectionResults.behaviorData JSONB column
+ */
+export interface FraudBehaviorData {
+  /** Session count in the analyzed period */
+  sessionCount?: number;
+  /** Average session duration (seconds) */
+  avgSessionDuration?: number;
+  /** Transaction count in the analyzed period */
+  transactionCount?: number;
+  /** Transaction velocity (transactions per hour) */
+  transactionVelocity?: number;
+  /** Content posting frequency (posts per hour) */
+  postingFrequency?: number;
+  /** Failed login attempts */
+  failedLoginAttempts?: number;
+  /** Account creation date (ISO string) */
+  accountCreatedAt?: string;
+  /** Days since account creation */
+  accountAge?: number;
+  /** Activity time distribution (by hour of day) */
+  activityTimeDistribution?: Record<string, number>;
+  /** Device switching frequency (unique devices used) */
+  deviceSwitchCount?: number;
+  /** Location switching frequency (unique locations) */
+  locationSwitchCount?: number;
+  /** Content similarity score (0-1, for spam detection) */
+  contentSimilarity?: number;
+  /** User interaction patterns */
+  interactionPatterns?: {
+    clickRate?: number;
+    scrollDepth?: number;
+    formSubmissionRate?: number;
+    timeToFirstAction?: number;
+  };
+  /** Historical behavior baseline for comparison */
+  historicalBaseline?: Record<string, any>;
+  /** Additional behavioral metadata */
+  metadata?: Record<string, any>;
+}
+
 // -------------------- Chat & Communication Interfaces --------------------
 
 /**
@@ -5351,17 +5434,8 @@ export const fraudScores = pgTable("fraud_scores", {
   // Risk score (0.0 = safe, 1.0 = definite fraud)
   score: real("score").notNull(),
   
-  // Detailed scoring factors
-  factors: jsonb("factors").notNull().$type<{
-    behaviorScore: number;      // Based on user behavior patterns
-    accountAgeScore: number;     // New accounts are higher risk
-    transactionVelocityScore: number; // Rapid transactions are suspicious
-    contentPatternScore: number; // Spam or bot-like content
-    networkScore: number;        // IP/device reputation
-    deviceScore: number;         // Device fingerprint analysis
-    geoScore: number;           // Geographic anomalies
-    details: { [key: string]: any };
-  }>(),
+  // Detailed scoring factors (using FraudRiskFactor interface)
+  factors: jsonb("factors").notNull().$type<FraudRiskFactor>(),
   
   modelVersion: varchar("model_version", { length: 20 }).notNull().default("v1.0"),
   timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow()
@@ -5387,16 +5461,8 @@ export const suspiciousActivities = pgTable("suspicious_activities", {
   activityType: varchar("activity_type", { length: 50 }).notNull(), 
   // Types: 'rapid_transactions', 'unusual_pattern', 'fake_profile', 'bot_behavior', 'account_takeover'
   
-  // Detailed information about the activity
-  details: jsonb("details").notNull().$type<{
-    description: string;
-    evidence: string[];
-    relatedActivities?: string[];
-    ipAddress?: string;
-    userAgent?: string;
-    location?: { lat: number; lng: number; country: string };
-    metadata?: { [key: string]: any };
-  }>(),
+  // Detailed information about the activity (using FraudEvidenceDetail interface)
+  details: jsonb("details").notNull().$type<FraudEvidenceDetail>(),
   
   riskLevel: varchar("risk_level", { length: 20 }).notNull().$type<"low" | "medium" | "high" | "critical">(),
   status: varchar("status", { length: 20 })
@@ -5460,6 +5526,123 @@ export const fraudReviews = pgTable("fraud_reviews", {
   index("fraud_reviews_reviewed_at_idx").on(table.reviewedAt)
 ]);
 
+/**
+ * Fraud Detection Results Table
+ * 
+ * Comprehensive fraud detection analysis results combining risk scoring,
+ * evidence collection, device fingerprinting, and behavioral analysis.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Foreign key to users.id (CASCADE delete)
+ * - analysisType: Type of fraud analysis performed
+ *   - 'account_creation': New account signup analysis
+ *   - 'transaction': Transaction-based fraud detection
+ *   - 'content_posting': Content spam/bot detection
+ *   - 'account_takeover': Suspicious login/access patterns
+ *   - 'behavioral': Behavioral pattern analysis
+ * - overallRiskScore: Overall fraud risk score (0.0-1.0)
+ * - riskLevel: Risk classification (low, medium, high, critical)
+ * - riskFactors: Array of detailed risk factor breakdowns (FraudRiskFactor[])
+ *   - Behavior, account age, velocity, content, network, device, geo scores
+ * - evidenceDetails: Array of evidence supporting fraud detection (FraudEvidenceDetail[])
+ *   - Descriptions, evidence items, related activities, network info
+ * - deviceInfo: Device fingerprint and network information (FraudDeviceInfo)
+ *   - Fingerprint, device type, OS, browser, IP, ISP, proxy/VPN detection
+ * - behaviorData: User behavior patterns and metrics (FraudBehaviorData)
+ *   - Session metrics, transaction velocity, activity patterns, baselines
+ * - status: Detection result status
+ *   - 'pending': Awaiting review
+ *   - 'cleared': No fraud detected
+ *   - 'flagged': Requires manual review
+ *   - 'blocked': Automatically blocked
+ *   - 'reviewed': Manually reviewed
+ * - autoBlocked: Whether the system automatically blocked the activity
+ * - reviewRequired: Whether manual review is required
+ * - modelVersion: Version of the fraud detection model used
+ * - metadata: Additional analysis metadata
+ * - analyzedAt: Timestamp of when analysis was performed
+ * - reviewedAt: Timestamp of manual review (if applicable)
+ * 
+ * Use Cases:
+ * - Real-time fraud detection during user actions
+ * - Batch analysis of historical user behavior
+ * - Account security monitoring
+ * - Transaction fraud prevention
+ * - Bot and spam detection
+ * - Account takeover prevention
+ * 
+ * Business Rules:
+ * - Auto-block if overallRiskScore > 0.85 (critical risk)
+ * - Require review if overallRiskScore > 0.70 (high risk)
+ * - Monitor if overallRiskScore > 0.50 (medium risk)
+ * - Clear if overallRiskScore < 0.30 (low risk)
+ * - Retain results for audit trail and ML model training
+ * 
+ * Indexes:
+ * - fraud_detection_results_user_id_idx: User's fraud history
+ * - fraud_detection_results_risk_score_idx: Risk score filtering
+ * - fraud_detection_results_risk_level_idx: Risk level filtering
+ * - fraud_detection_results_status_idx: Status filtering
+ * - fraud_detection_results_analyzed_at_idx: Time-based queries
+ * 
+ * Relationships:
+ * - users → fraudDetectionResults: CASCADE
+ */
+export const fraudDetectionResults = pgTable("fraud_detection_results", {
+  id: varchar("id", { length: 50 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 50 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  
+  // Analysis metadata
+  analysisType: varchar("analysis_type", { length: 50 })
+    .notNull()
+    .$type<"account_creation" | "transaction" | "content_posting" | "account_takeover" | "behavioral">(),
+  
+  // Overall risk assessment
+  overallRiskScore: real("overall_risk_score").notNull(), // 0.0 = safe, 1.0 = definite fraud
+  riskLevel: varchar("risk_level", { length: 20 })
+    .notNull()
+    .$type<"low" | "medium" | "high" | "critical">(),
+  
+  // Detailed risk factors array (using FraudRiskFactor[] interface)
+  riskFactors: jsonb("risk_factors").$type<FraudRiskFactor[]>(),
+  
+  // Evidence supporting the detection (using FraudEvidenceDetail[] interface)
+  evidenceDetails: jsonb("evidence_details").$type<FraudEvidenceDetail[]>(),
+  
+  // Device and network information (using FraudDeviceInfo interface)
+  deviceInfo: jsonb("device_info").$type<FraudDeviceInfo>(),
+  
+  // Behavioral analysis data (using FraudBehaviorData interface)
+  behaviorData: jsonb("behavior_data").$type<FraudBehaviorData>(),
+  
+  // Status and review
+  status: varchar("status", { length: 20 })
+    .notNull()
+    .default("pending")
+    .$type<"pending" | "cleared" | "flagged" | "blocked" | "reviewed">(),
+  autoBlocked: boolean("auto_blocked").notNull().default(false),
+  reviewRequired: boolean("review_required").notNull().default(false),
+  
+  // Metadata
+  modelVersion: varchar("model_version", { length: 20 }).notNull().default("v1.0"),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  
+  // Timestamps
+  analyzedAt: timestamp("analyzed_at", { withTimezone: true }).notNull().defaultNow(),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+}, (table) => [
+  index("fraud_detection_results_user_id_idx").on(table.userId),
+  index("fraud_detection_results_risk_score_idx").on(table.overallRiskScore),
+  index("fraud_detection_results_risk_level_idx").on(table.riskLevel),
+  index("fraud_detection_results_status_idx").on(table.status),
+  index("fraud_detection_results_analyzed_at_idx").on(table.analyzedAt),
+]);
+
 // Schema types for fraud detection
 export const insertFraudScoreSchema = createInsertSchema(fraudScores).omit({
   id: true,
@@ -5479,6 +5662,15 @@ export const insertFraudReviewSchema = createInsertSchema(fraudReviews).omit({
   reviewedAt: true
 });
 
+export const insertFraudDetectionResultsSchema = createInsertSchema(fraudDetectionResults).omit({
+  id: true,
+  analyzedAt: true,
+  modelVersion: true,
+  status: true,
+  autoBlocked: true,
+  reviewRequired: true,
+});
+
 export type InsertFraudScore = z.infer<typeof insertFraudScoreSchema>;
 export type FraudScore = typeof fraudScores.$inferSelect;
 
@@ -5487,6 +5679,9 @@ export type SuspiciousActivity = typeof suspiciousActivities.$inferSelect;
 
 export type InsertFraudReview = z.infer<typeof insertFraudReviewSchema>;
 export type FraudReview = typeof fraudReviews.$inferSelect;
+
+export type InsertFraudDetectionResults = z.infer<typeof insertFraudDetectionResultsSchema>;
+export type FraudDetectionResults = typeof fraudDetectionResults.$inferSelect;
 
 // ============================================================================
 // Sentiment Analysis Tables
