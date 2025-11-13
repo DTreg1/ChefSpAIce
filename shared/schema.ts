@@ -840,6 +840,53 @@ export interface MaintenanceCost {
 
 // -------------------- Sentiment Analysis Schemas --------------------
 
+/**
+ * Zod schema for SentimentData interface
+ * Validates main sentiment analysis data structure
+ */
+export const sentimentDataSchema = z.object({
+  overallScore: z.number().min(-1).max(1).describe("Overall sentiment score from -1 (very negative) to 1 (very positive)"),
+  polarity: z.enum(['positive', 'negative', 'neutral']).describe("Sentiment polarity classification"),
+  subjectivity: z.number().min(0).max(1).describe("Subjectivity score from 0 (objective) to 1 (subjective)"),
+  documentScore: z.number().optional().describe("Document-level sentiment metrics"),
+  aspectScores: z.record(z.string(), z.number()).optional().describe("Aspect-based sentiment scores"),
+});
+
+/**
+ * Zod schema for EmotionScores interface
+ * Validates emotion detection scores
+ */
+export const emotionScoresSchema = z.object({
+  joy: z.number().optional(),
+  sadness: z.number().optional(),
+  anger: z.number().optional(),
+  fear: z.number().optional(),
+  surprise: z.number().optional(),
+  disgust: z.number().optional(),
+}).catchall(z.number()).describe("Emotion detection scores with optional custom emotions");
+
+/**
+ * Zod schema for KeyPhrase interface
+ * Validates key phrase extraction results
+ */
+export const keyPhraseSchema = z.object({
+  phrase: z.string().describe("The extracted phrase text"),
+  relevance: z.number().min(0).max(1).describe("Relevance score (0-1, higher = more relevant)"),
+  position: z.number().int().nonnegative().optional().describe("Position in the original text (character offset)"),
+  sentiment: z.enum(['positive', 'negative', 'neutral']).optional().describe("Sentiment associated with this phrase"),
+});
+
+/**
+ * Zod schema for ContextFactor interface
+ * Validates contextual factors affecting sentiment analysis
+ */
+export const contextFactorSchema = z.object({
+  type: z.string().describe("Type of context (e.g., 'temporal', 'cultural', 'situational', 'demographic')"),
+  description: z.string().describe("Description of the context factor"),
+  weight: z.number().min(0).max(1).describe("Impact weight on overall sentiment (0-1)"),
+  effect: z.enum(['amplify', 'dampen', 'neutral']).optional().describe("Whether this factor increases or decreases sentiment intensity"),
+});
+
 // -------------------- Content Moderation Schemas --------------------
 
 // -------------------- Fraud Detection Schemas --------------------
