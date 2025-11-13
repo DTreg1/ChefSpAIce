@@ -13041,7 +13041,7 @@ export class DatabaseStorage implements IStorage {
 
   async createAbTest(test: InsertAbTest): Promise<AbTest> {
     try {
-      const [newTest] = await db.insert(abTests).values(test as any).returning();
+      const [newTest] = await db.insert(abTests).values(test).returning();
       return newTest;
     } catch (error) {
       console.error("Error creating A/B test:", error);
@@ -13109,7 +13109,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...update,
           updatedAt: new Date(),
-        } as any)
+        })
         .where(eq(abTests.id, testId))
         .returning();
       return updatedTest;
@@ -13151,7 +13151,7 @@ export class DatabaseStorage implements IStorage {
           .set({
             ...result,
             updatedAt: new Date(),
-          } as any)
+          })
           .where(eq(abTestResults.id, existing[0].id))
           .returning();
         return updated;
@@ -13159,7 +13159,7 @@ export class DatabaseStorage implements IStorage {
         // Create new
         const [created] = await db
           .insert(abTestResults)
-          .values(result as any)
+          .values(result)
           .returning();
         return created;
       }
@@ -13283,7 +13283,7 @@ export class DatabaseStorage implements IStorage {
           .set({
             ...insight,
             updatedAt: new Date(),
-          } as any)
+          })
           .where(eq(abTestInsights.id, existing[0].id))
           .returning();
         return updated;
@@ -13291,7 +13291,7 @@ export class DatabaseStorage implements IStorage {
         // Create new
         const [created] = await db
           .insert(abTestInsights)
-          .values(insight as any)
+          .values(insight)
           .returning();
         return created;
       }
@@ -13476,7 +13476,7 @@ export class DatabaseStorage implements IStorage {
             ...insight.insights,
             implementationDate: new Date().toISOString(),
             implementedVariant: variant,
-          } as any,
+          } as AbTestInsights,
         });
       }
 

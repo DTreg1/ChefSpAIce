@@ -8725,52 +8725,49 @@ export const abTestInsights = pgTable("ab_test_insights", {
  * Insert schema for abTests table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertAbTestSchema = createInsertSchema(abTests)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    status: true,
-    targetAudience: true,
-    successMetric: true,
-  })
-  .extend({
-    metadata: abTestConfigurationSchema.optional(),
-  });
+export const insertAbTestSchema = createInsertSchema(abTests, {
+  metadata: abTestConfigurationSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  targetAudience: true,
+  successMetric: true,
+});
 
 /**
  * Insert schema for abTestResults table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertAbTestResultSchema = createInsertSchema(abTestResults)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    conversions: true,
-    visitors: true,
-    revenue: true,
-    sampleSize: true,
-  })
-  .extend({
-    metadata: abTestMetricsSchema.optional(),
-  });
+export const insertAbTestResultSchema = createInsertSchema(abTestResults, {
+  variant: z.enum(["A", "B"]),
+  metadata: abTestMetricsSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  conversions: true,
+  visitors: true,
+  revenue: true,
+  sampleSize: true,
+});
 
 /**
  * Insert schema for abTestInsights table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    generatedBy: true,
-  })
-  .extend({
-    insights: abTestInsightsSchema.optional(),
-    statisticalAnalysis: abTestStatisticalAnalysisSchema.optional(),
-  });
+export const insertAbTestInsightSchema = createInsertSchema(abTestInsights, {
+  winner: z.enum(["A", "B", "inconclusive"]).optional(),
+  recommendation: z.enum(["implement", "continue", "stop", "iterate"]),
+  insights: abTestInsightsSchema.optional(),
+  statisticalAnalysis: abTestStatisticalAnalysisSchema.optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  generatedBy: true,
+});
 
 export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
 export type AbTest = typeof abTests.$inferSelect;
