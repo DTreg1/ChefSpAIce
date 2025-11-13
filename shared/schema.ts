@@ -6696,29 +6696,27 @@ export const insertFraudScoreSchema = createInsertSchema(fraudScores)
  * Insert schema for suspiciousActivities table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActivities)
-  .omit({
-    id: true,
-    detectedAt: true,
-    status: true,
-    autoBlocked: true,
-  })
-  .extend({
-    details: fraudEvidenceDetailSchema,
-  });
+export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActivities, {
+  details: fraudEvidenceDetailSchema,
+  riskLevel: z.enum(["low", "medium", "high", "critical"]),
+}).omit({
+  id: true,
+  detectedAt: true,
+  status: true,
+  autoBlocked: true,
+});
 
 /**
  * Insert schema for fraudReviews table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertFraudReviewSchema = createInsertSchema(fraudReviews)
-  .omit({
-    id: true,
-    reviewedAt: true,
-  })
-  .extend({
-    restrictions: fraudReviewRestrictionsSchema.optional(),
-  });
+export const insertFraudReviewSchema = createInsertSchema(fraudReviews, {
+  decision: z.enum(["cleared", "flagged", "banned", "restricted", "monitor"]),
+  restrictions: fraudReviewRestrictionsSchema.optional(),
+}).omit({
+  id: true,
+  reviewedAt: true,
+});
 
 /**
  * Insert schema for fraudDetectionResults table

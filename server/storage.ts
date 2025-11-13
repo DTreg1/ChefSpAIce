@@ -10068,7 +10068,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(suspiciousActivities)
-        .values([activity as any])
+        .values(activity)
         .returning();
       return result;
     } catch (error) {
@@ -10128,7 +10128,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(fraudReviews)
-        .values([review as any])
+        .values(review)
         .returning();
       return result;
     } catch (error) {
