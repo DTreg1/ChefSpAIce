@@ -6946,46 +6946,45 @@ export const sentimentSegments = pgTable("sentiment_segments", {
  * Insert schema for sentimentMetrics table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertSentimentMetricsSchema = createInsertSchema(sentimentMetrics)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    categories: z.record(z.string(), sentimentCategorySchema).optional(),
-    painPoints: z.array(painPointSchema).optional(),
-    metadata: z.record(z.any()).optional(),
-  });
+export const insertSentimentMetricsSchema = createInsertSchema(sentimentMetrics, {
+  periodType: z.enum(["day", "week", "month"]),
+  categories: z.record(z.string(), sentimentCategorySchema).optional(),
+  painPoints: z.array(painPointSchema).optional(),
+  metadata: z.record(z.any()).optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
 
 /**
  * Insert schema for sentimentAlerts table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertSentimentAlertsSchema = createInsertSchema(sentimentAlerts)
-  .omit({
-    id: true,
-    triggeredAt: true,
-    status: true,
-    notificationSent: true,
-  })
-  .extend({
-    metadata: sentimentAlertMetadataSchema.optional(),
-  });
+export const insertSentimentAlertsSchema = createInsertSchema(sentimentAlerts, {
+  alertType: z.enum(["sentiment_drop", "sustained_negative", "volume_spike", "category_issue"]),
+  severity: z.enum(["low", "medium", "high", "critical"]),
+  metadata: sentimentAlertMetadataSchema.optional(),
+}).omit({
+  id: true,
+  triggeredAt: true,
+  status: true,
+  notificationSent: true,
+});
 
 /**
  * Insert schema for sentimentSegments table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertSentimentSegmentsSchema = createInsertSchema(sentimentSegments)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    topIssues: z.array(sentimentIssueSchema).optional(),
-    topPraises: z.array(sentimentPraiseSchema).optional(),
-    metadata: z.record(z.any()).optional(),
-  });
+export const insertSentimentSegmentsSchema = createInsertSchema(sentimentSegments, {
+  periodType: z.enum(["day", "week", "month"]),
+  trendDirection: z.enum(["up", "down", "stable"]).optional(),
+  topIssues: z.array(sentimentIssueSchema).optional(),
+  topPraises: z.array(sentimentPraiseSchema).optional(),
+  metadata: z.record(z.any()).optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
 
 export type InsertSentimentMetrics = z.infer<typeof insertSentimentMetricsSchema>;
 export type SentimentMetrics = typeof sentimentMetrics.$inferSelect;
@@ -7206,43 +7205,41 @@ export const sentimentTrends = pgTable("sentiment_trends", {
  * Insert schema for sentimentResults table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertSentimentResultsSchema = createInsertSchema(sentimentResults)
-  .omit({
-    id: true,
-    analyzedAt: true,
-    modelVersion: true,
-  })
-  .extend({
-    sentimentData: sentimentDataSchema.optional(),
-    emotionScores: emotionScoresSchema.optional(),
-    keyPhrases: z.array(keyPhraseSchema).optional(),
-    contextFactors: z.array(contextFactorSchema).optional(),
-    aspectSentiments: z.record(z.string()).optional(),
-    metadata: z.record(z.any()).optional(),
-  });
+export const insertSentimentResultsSchema = createInsertSchema(sentimentResults, {
+  sentiment: z.enum(["positive", "negative", "neutral", "mixed"]),
+  sentimentData: sentimentDataSchema.optional(),
+  emotionScores: emotionScoresSchema.optional(),
+  keyPhrases: z.array(keyPhraseSchema).optional(),
+  contextFactors: z.array(contextFactorSchema).optional(),
+  aspectSentiments: z.record(z.string()).optional(),
+  metadata: z.record(z.any()).optional(),
+}).omit({
+  id: true,
+  analyzedAt: true,
+  modelVersion: true,
+});
 
 /**
  * Insert schema for sentimentTrends table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertSentimentTrendSchema = createInsertSchema(sentimentTrends)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    sentimentCounts: z.record(z.number()).optional(),
-    dominantEmotions: z.array(z.object({
-      emotion: z.string(),
-      count: z.number().int().nonnegative(),
-      avgIntensity: z.number(),
-    })).optional(),
-    contentTypes: z.record(z.object({
-      count: z.number().int().nonnegative(),
-      avgSentiment: z.number(),
-    })).optional(),
-    metadata: z.record(z.any()).optional(),
-  });
+export const insertSentimentTrendSchema = createInsertSchema(sentimentTrends, {
+  periodType: z.enum(["hour", "day", "week", "month", "quarter", "year"]),
+  sentimentCounts: z.record(z.number()).optional(),
+  dominantEmotions: z.array(z.object({
+    emotion: z.string(),
+    count: z.number().int().nonnegative(),
+    avgIntensity: z.number(),
+  })).optional(),
+  contentTypes: z.record(z.object({
+    count: z.number().int().nonnegative(),
+    avgSentiment: z.number(),
+  })).optional(),
+  metadata: z.record(z.any()).optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
 
 export type InsertSentimentResults = z.infer<typeof insertSentimentResultsSchema>;
 export type SentimentResults = typeof sentimentResults.$inferSelect;
