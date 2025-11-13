@@ -889,6 +889,60 @@ export const contextFactorSchema = z.object({
 
 // -------------------- Content Moderation Schemas --------------------
 
+/**
+ * Zod schema for ModerationResult interface
+ * Validates content moderation toxicity scores from TensorFlow.js and OpenAI
+ */
+export const moderationResultSchema = z.object({
+  toxicity: z.number().min(0).max(1).optional().describe("General toxicity score (0-1, higher = more toxic)"),
+  severeToxicity: z.number().min(0).max(1).optional().describe("Severe toxicity score (0-1)"),
+  identityAttack: z.number().min(0).max(1).optional().describe("Identity-based attack score (0-1)"),
+  insult: z.number().min(0).max(1).optional().describe("Insult score (0-1)"),
+  profanity: z.number().min(0).max(1).optional().describe("Profanity score (0-1)"),
+  threat: z.number().min(0).max(1).optional().describe("Threat score (0-1)"),
+  sexuallyExplicit: z.number().min(0).max(1).optional().describe("Sexually explicit content score (0-1)"),
+  obscene: z.number().min(0).max(1).optional().describe("Obscene content score (0-1)"),
+  harassment: z.number().min(0).max(1).optional().describe("Harassment score (0-1) - OpenAI specific"),
+  harassmentThreatening: z.number().min(0).max(1).optional().describe("Threatening harassment score (0-1) - OpenAI specific"),
+  hate: z.number().min(0).max(1).optional().describe("Hate speech score (0-1) - OpenAI specific"),
+  hateThreatening: z.number().min(0).max(1).optional().describe("Threatening hate speech score (0-1) - OpenAI specific"),
+  selfHarm: z.number().min(0).max(1).optional().describe("Self-harm content score (0-1) - OpenAI specific"),
+  selfHarmIntent: z.number().min(0).max(1).optional().describe("Self-harm intent score (0-1) - OpenAI specific"),
+  selfHarmInstruction: z.number().min(0).max(1).optional().describe("Self-harm instruction score (0-1) - OpenAI specific"),
+  sexual: z.number().min(0).max(1).optional().describe("Sexual content score (0-1) - OpenAI specific"),
+  sexualMinors: z.number().min(0).max(1).optional().describe("Sexual content involving minors score (0-1) - OpenAI specific"),
+  violence: z.number().min(0).max(1).optional().describe("Violence score (0-1) - OpenAI specific"),
+  violenceGraphic: z.number().min(0).max(1).optional().describe("Graphic violence score (0-1) - OpenAI specific"),
+});
+
+/**
+ * Zod schema for ModerationCategory type
+ * Validates specific violation categories detected
+ */
+export const moderationCategorySchema = z.enum([
+  'profanity',
+  'harassment',
+  'hate_speech',
+  'sexual',
+  'violence',
+  'self_harm',
+  'spam',
+  'misinformation',
+  'identity_attack',
+  'threat',
+]).describe("Specific violation category detected");
+
+/**
+ * Zod schema for ModerationMetadata interface
+ * Validates additional context about blocked content
+ */
+export const moderationMetadataSchema = z.object({
+  originalLocation: z.string().optional().describe("Original location where content was posted"),
+  targetUsers: z.array(z.string()).optional().describe("User IDs of target users (for directed harassment)"),
+  context: z.string().optional().describe("Additional context about the content"),
+  previousViolations: z.number().int().nonnegative().optional().describe("Number of previous violations by this user"),
+});
+
 // -------------------- Fraud Detection Schemas --------------------
 
 /**
@@ -979,7 +1033,126 @@ export const fraudBehaviorDataSchema = z.object({
 
 // -------------------- Chat & Communication Schemas --------------------
 
+/**
+ * Zod schema for ChatMessageMetadata interface
+ * Validates message metadata for chat messages
+ */
+export const chatMessageMetadataSchema = z.object({
+  functionCall: z.string().optional().describe("Function or tool call made during this message"),
+  citedSources: z.array(z.string()).optional().describe("Array of cited sources (URLs, document IDs, etc.)"),
+  sentiment: z.string().optional().describe("Sentiment of the message ('positive' | 'negative' | 'neutral')"),
+  feedback: z.object({
+    rating: z.number().describe("User rating for the message"),
+    comment: z.string().optional().describe("Optional comment on the message"),
+  }).optional().describe("User feedback on the message"),
+});
+
+/**
+ * Zod schema for DraftContent interface
+ * Validates draft content structure for auto-saved documents
+ */
+export const draftContentSchema = z.object({
+  content: z.string().describe("The actual text content of the draft"),
+  contentHash: z.string().optional().describe("Hash of content for change detection"),
+  version: z.number().int().positive().describe("Version number of this draft"),
+  documentId: z.string().describe("Document identifier"),
+  documentType: z.enum(['chat', 'recipe', 'note', 'meal_plan', 'shopping_list', 'other']).describe("Type of document being edited"),
+});
+
+/**
+ * Zod schema for AutoSaveData interface
+ * Validates auto-save editor state and device information
+ */
+export const autoSaveDataSchema = z.object({
+  cursorPosition: z.number().int().nonnegative().optional().describe("Cursor position in the editor (character offset)"),
+  scrollPosition: z.number().nonnegative().optional().describe("Scroll position (pixels from top)"),
+  selectedText: z.string().optional().describe("Currently selected text"),
+  editorState: z.any().optional().describe("Editor-specific state (Draft.js, ProseMirror, etc.)"),
+  deviceInfo: z.object({
+    browser: z.string().optional().describe("Browser name"),
+    os: z.string().optional().describe("Operating system"),
+    screenSize: z.string().optional().describe("Screen dimensions"),
+  }).optional().describe("Device information for cross-device sync"),
+});
+
+/**
+ * Zod schema for TypingPatternData interface
+ * Validates typing pattern data for intelligent auto-save
+ */
+export const typingPatternDataSchema = z.object({
+  pauseHistogram: z.array(z.number()).optional().describe("Histogram of pause durations between keystrokes"),
+  keystrokeIntervals: z.array(z.number()).optional().describe("Array of keystroke intervals (milliseconds)"),
+  burstLengths: z.array(z.number()).optional().describe("Array of typing burst lengths (characters per burst)"),
+  timeOfDayPreferences: z.record(z.string(), z.number()).optional().describe("Time-of-day preferences for editing sessions"),
+  contentTypePatterns: z.record(z.string(), z.any()).optional().describe("Patterns by content type (e.g., code vs prose)"),
+});
+
 // -------------------- Analytics & Insights Schemas --------------------
+
+/**
+ * Zod schema for TimeSeriesPoint interface
+ * Validates generic time-series data points
+ */
+export const timeSeriesPointSchema = z.object({
+  date: z.string().describe("Date/timestamp in ISO format"),
+  value: z.number().describe("Numeric value for this point"),
+  label: z.string().optional().describe("Optional label or category for this point"),
+});
+
+/**
+ * Zod schema for AnalyticsInsightData interface
+ * Validates analytics insight metric data with trends and comparisons
+ */
+export const analyticsInsightDataSchema = z.object({
+  currentValue: z.number().optional().describe("Current value of the metric"),
+  previousValue: z.number().optional().describe("Previous period value for comparison"),
+  percentageChange: z.number().optional().describe("Percentage change from previous period"),
+  dataPoints: z.array(timeSeriesPointSchema).optional().describe("Time series data points for visualization"),
+  average: z.number().optional().describe("Average value over the period"),
+  min: z.number().optional().describe("Minimum value in the period"),
+  max: z.number().optional().describe("Maximum value in the period"),
+  trend: z.enum(['up', 'down', 'stable']).optional().describe("Trend direction"),
+});
+
+/**
+ * Zod schema for PredictionData interface
+ * Validates user behavior prediction data and features
+ */
+export const predictionDataSchema = z.object({
+  activityPattern: z.string().optional().describe("User's activity pattern classification"),
+  engagementScore: z.number().optional().describe("Engagement score (0-1 or 0-100)"),
+  lastActiveDate: z.string().optional().describe("Last time user was active (ISO date string)"),
+  featureUsage: z.record(z.string(), z.number()).optional().describe("Feature usage statistics by feature name"),
+  sessionFrequency: z.number().optional().describe("Session frequency (sessions per time period)"),
+  contentInteraction: z.record(z.string(), z.any()).optional().describe("Content interaction metrics"),
+  historicalBehavior: z.array(z.any()).optional().describe("Historical behavior patterns for comparison"),
+});
+
+/**
+ * Zod schema for TrendData interface
+ * Validates trend detection data with time series and entities
+ */
+export const trendDataSchema = z.object({
+  timeSeries: z.array(timeSeriesPointSchema).optional().describe("Time series data for trend visualization"),
+  keywords: z.array(z.string()).optional().describe("Keywords associated with the trend"),
+  entities: z.array(z.object({
+    name: z.string().describe("Entity name"),
+    type: z.string().describe("Entity type"),
+    relevance: z.number().describe("Relevance score"),
+  })).optional().describe("Named entities extracted from trend data"),
+  sources: z.array(z.string()).optional().describe("Data sources contributing to the trend"),
+  metrics: z.record(z.string(), z.any()).optional().describe("Additional metrics related to the trend"),
+  volumeData: z.array(z.object({
+    date: z.string().describe("Date in ISO format"),
+    count: z.number().int().nonnegative().describe("Volume count"),
+  })).optional().describe("Volume data over time"),
+  sentimentData: z.array(z.object({
+    date: z.string().describe("Date in ISO format"),
+    positive: z.number().describe("Positive sentiment count or score"),
+    negative: z.number().describe("Negative sentiment count or score"),
+    neutral: z.number().describe("Neutral sentiment count or score"),
+  })).optional().describe("Sentiment distribution over time"),
+});
 
 // -------------------- A/B Testing Schemas --------------------
 
@@ -1118,6 +1291,50 @@ export const cohortSegmentDataSchema = z.object({
 });
 
 // -------------------- Predictive Maintenance Schemas --------------------
+
+/**
+ * Zod schema for MaintenanceMetrics interface
+ * Validates system metric metadata and context
+ */
+export const maintenanceMetricsSchema = z.object({
+  description: z.string().optional().describe("Description or notes about the metric"),
+  tags: z.array(z.string()).optional().describe("Tags for categorization and filtering"),
+  customFields: z.record(z.string(), z.any()).optional().describe("Custom fields with dynamic keys"),
+  unit: z.string().optional().describe("Unit of measurement for the metric (ms, %, MB, etc.)"),
+  source: z.string().optional().describe("Source system or component that generated the metric"),
+  context: z.record(z.string(), z.any()).optional().describe("Additional context about the metric"),
+});
+
+/**
+ * Zod schema for MaintenanceFeatures interface
+ * Validates predictive maintenance features and patterns
+ */
+export const maintenanceFeaturesSchema = z.object({
+  trendSlope: z.number().optional().describe("Trend slope indicating degradation rate"),
+  seasonality: z.record(z.string(), z.number()).optional().describe("Seasonality patterns (day-of-week, time-of-day)"),
+  recentAnomalies: z.number().int().nonnegative().optional().describe("Number of recent anomalies detected"),
+  historicalPatterns: z.array(z.any()).optional().describe("Historical pattern data for comparison"),
+});
+
+/**
+ * Zod schema for MaintenancePerformanceMetrics interface
+ * Validates maintenance performance comparison metrics
+ */
+export const maintenancePerformanceMetricsSchema = z.object({
+  before: z.record(z.string(), z.number()).optional().describe("Performance metrics before maintenance"),
+  after: z.record(z.string(), z.number()).optional().describe("Performance metrics after maintenance"),
+  improvement: z.number().optional().describe("Percentage improvement from maintenance"),
+});
+
+/**
+ * Zod schema for MaintenanceCost interface
+ * Validates maintenance cost breakdown
+ */
+export const maintenanceCostSchema = z.object({
+  laborHours: z.number().nonnegative().optional().describe("Labor hours spent on maintenance"),
+  resourceCost: z.number().nonnegative().optional().describe("Direct resource costs (parts, licenses, etc.)"),
+  opportunityCost: z.number().nonnegative().optional().describe("Opportunity cost from downtime"),
+});
 
 // ==================== End of Zod Validation Schemas ====================
 
