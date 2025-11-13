@@ -5773,11 +5773,21 @@ export const moderationLogs = pgTable("moderation_logs", {
   index("moderation_logs_created_at_idx").on(table.createdAt),
 ]);
 
-export const insertModerationLogSchema = createInsertSchema(moderationLogs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+/**
+ * Insert schema for moderationLogs table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertModerationLogSchema = createInsertSchema(moderationLogs)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    confidence: true,
+    manualReview: true,
+  })
+  .extend({
+    toxicityScores: moderationResultSchema,
+  });
 
 export type InsertModerationLog = z.infer<typeof insertModerationLogSchema>;
 export type ModerationLog = typeof moderationLogs.$inferSelect;
