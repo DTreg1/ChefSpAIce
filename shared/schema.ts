@@ -629,6 +629,10 @@ export interface AbTestInsights {
   warnings?: string[];
   /** Lessons learned that can inform future tests */
   learnings?: string[];
+  /** ISO timestamp when the test winner was implemented */
+  implementationDate?: string;
+  /** Which variant was implemented ('A' or 'B') */
+  implementedVariant?: "A" | "B";
 }
 
 /**
@@ -1499,6 +1503,8 @@ export const abTestInsightsSchema = z.object({
   nextSteps: z.array(z.string()).optional().describe("Suggested next steps based on test outcome"),
   warnings: z.array(z.string()).optional().describe("Warnings or caveats about the results"),
   learnings: z.array(z.string()).optional().describe("Lessons learned that can inform future tests"),
+  implementationDate: z.string().optional().describe("ISO timestamp when the test winner was implemented"),
+  implementedVariant: z.enum(["A", "B"]).optional().describe("Which variant was implemented"),
 });
 
 /**

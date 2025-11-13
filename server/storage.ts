@@ -13450,7 +13450,7 @@ export class DatabaseStorage implements IStorage {
             ...insight.insights,
             implementationDate: new Date().toISOString(),
             implementedVariant: variant,
-          } as AbTestInsights,
+          },
         });
       }
 
