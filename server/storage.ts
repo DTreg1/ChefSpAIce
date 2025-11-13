@@ -8598,9 +8598,9 @@ export class DatabaseStorage implements IStorage {
         .set({
           clickedResultId: feedback.clickedResultId,
           clickedResultType: feedback.clickedResultType,
-          click_position: feedback.clickPosition,
-          time_to_click: feedback.timeToClick,
-        } as any)
+          clickPosition: feedback.clickPosition,
+          timeToClick: feedback.timeToClick,
+        })
         .where(eq(searchLogs.id, searchLogId))
         .returning();
 
@@ -9449,7 +9449,7 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...metadataInput,
           userId,
-        } as any)
+        })
         .returning();
 
       return result[0];
@@ -9470,7 +9470,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           updatedAt: new Date(),
-        } as any)
+        })
         .where(
           and(eq(imageMetadata.userId, userId), eq(imageMetadata.id, imageId)),
         )
@@ -10360,7 +10360,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(messages)
-        .values([message as any])
+        .values(message)
         .returning();
 
       // Update conversation's updatedAt
@@ -10720,8 +10720,6 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...summary,
           userId,
-          keyPoints: summary.keyPoints as any, // Cast array properly
-          metadata: summary.metadata as any, // Cast metadata properly
         })
         .returning();
       return result;
@@ -10742,8 +10740,6 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           updatedAt: new Date(),
-          keyPoints: updates.keyPoints as any, // Cast array properly
-          metadata: updates.metadata as any, // Cast metadata properly
         })
         .where(and(eq(summaries.userId, userId), eq(summaries.id, summaryId)))
         .returning();
@@ -10842,8 +10838,6 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...excerpt,
           userId,
-          generationParams: excerpt.generationParams as any,
-          socialMetadata: excerpt.socialMetadata as any,
         })
         .returning();
       return result;
@@ -10864,8 +10858,6 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           updatedAt: new Date(),
-          generationParams: updates.generationParams as any,
-          socialMetadata: updates.socialMetadata as any,
         })
         .where(and(eq(excerpts.userId, userId), eq(excerpts.id, excerptId)))
         .returning();
@@ -10942,7 +10934,6 @@ export class DatabaseStorage implements IStorage {
           ctr,
           shareRate,
           engagementRate,
-          platformMetrics: performance.platformMetrics as any,
         })
         .onConflictDoUpdate({
           target: [excerptPerformance.excerptId, excerptPerformance.date],
@@ -11275,7 +11266,6 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...log,
           userId,
-          metadata: log.metadata as any, // Cast metadata properly
         })
         .returning();
       return result;
@@ -11647,7 +11637,7 @@ export class DatabaseStorage implements IStorage {
           ...draft,
           version: nextVersion,
           contentHash,
-        } as any)
+        })
         .returning();
 
       // Clean up old versions (keep only last 10)
@@ -11832,7 +11822,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...patterns,
           updatedAt: new Date(),
-        } as any)
+        })
         .where(eq(savePatterns.userId, userId))
         .returning();
 
