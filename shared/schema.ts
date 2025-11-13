@@ -8116,16 +8116,18 @@ export const insightFeedback = pgTable("insight_feedback", {
  * Insert schema for analyticsInsights table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertAnalyticsInsightSchema = createInsertSchema(analyticsInsights, {
-  metricData: analyticsInsightDataSchema.optional(),
-  aiContext: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  importance: true,
-  category: true,
-  isRead: true,
-});
+export const insertAnalyticsInsightSchema = createInsertSchema(analyticsInsights)
+  .omit({
+    id: true,
+    createdAt: true,
+    importance: true,
+    category: true,
+    isRead: true,
+  })
+  .extend({
+    metricData: analyticsInsightDataSchema.optional(),
+    aiContext: z.record(z.any()).optional(),
+  });
 
 export const insertInsightFeedbackSchema = createInsertSchema(insightFeedback).omit({
   id: true,
@@ -8273,13 +8275,15 @@ export const predictionAccuracy = pgTable("prediction_accuracy", {
  * Insert schema for userPredictions table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertUserPredictionSchema = createInsertSchema(userPredictions, {
-  factors: predictionDataSchema,
-}).omit({
-  id: true,
-  createdAt: true,
-  status: true,
-});
+export const insertUserPredictionSchema = createInsertSchema(userPredictions)
+  .omit({
+    id: true,
+    createdAt: true,
+    status: true,
+  })
+  .extend({
+    factors: predictionDataSchema,
+  });
 
 /**
  * Insert schema for predictionAccuracy table
@@ -8494,16 +8498,18 @@ export const trendAlerts = pgTable("trend_alerts", {
  * Insert schema for trends table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertTrendSchema = createInsertSchema(trends, {
-  dataPoints: trendDataSchema,
-  recommendations: z.array(z.string()).optional(),
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  status: true,
-});
+export const insertTrendSchema = createInsertSchema(trends)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    status: true,
+  })
+  .extend({
+    dataPoints: trendDataSchema,
+    recommendations: z.array(z.string()).optional(),
+    metadata: z.record(z.any()).optional(),
+  });
 
 /**
  * Insert schema for trendAlerts table
