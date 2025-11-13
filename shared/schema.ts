@@ -8183,23 +8183,69 @@ export const cohortInsights = pgTable("cohort_insights", {
   index("cohort_insights_created_at_idx").on(table.createdAt),
 ]);
 
-// Insert schemas and types for cohort analysis
-export const insertCohortSchema = createInsertSchema(cohorts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+// ==================== Schema Types for Cohort Analysis ====================
+
+/**
+ * Zod schema for cohort insight supporting data
+ * Validates evidence and metrics backing AI-generated insights
+ */
+const cohortInsightSupportingDataSchema = z.object({
+  metrics: z.record(z.any()).optional(),
+  comparisons: z.record(z.any()).optional(),
+  trends: z.array(z.object({
+    date: z.string(),
+    value: z.number(),
+  })).optional(),
+  segments: z.record(z.any()).optional(),
+  evidence: z.array(z.string()).optional(),
 });
 
-export const insertCohortMetricSchema = createInsertSchema(cohortMetrics).omit({
-  id: true,
-  createdAt: true,
-});
+/**
+ * Insert schema for cohorts table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertCohortSchema = createInsertSchema(cohorts)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    definition: cohortDefinitionSchema,
+    metadata: cohortMetadataSchema.optional(),
+  });
 
-export const insertCohortInsightSchema = createInsertSchema(cohortInsights).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+/**
+ * Insert schema for cohortMetrics table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertCohortMetricSchema = createInsertSchema(cohortMetrics)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    segmentData: cohortSegmentDataSchema.optional(),
+    comparisonData: cohortComparisonDataSchema.optional(),
+  });
+
+/**
+ * Insert schema for cohortInsights table
+ * Uses .extend() to preserve JSON type information for JSONB columns
+ */
+export const insertCohortInsightSchema = createInsertSchema(cohortInsights)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    importance: true,
+    confidenceScore: true,
+    status: true,
+    generatedBy: true,
+  })
+  .extend({
+    supportingData: cohortInsightSupportingDataSchema.optional(),
+  });
 
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type Cohort = typeof cohorts.$inferSelect;
