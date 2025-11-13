@@ -10494,7 +10494,7 @@ export class DatabaseStorage implements IStorage {
       const draftsWithUserId = drafts.map((draft) => ({ ...draft, userId }));
       const result = await db
         .insert(generatedDrafts)
-        .values(draftsWithUserId as any)
+        .values(draftsWithUserId)
         .returning();
       return result;
     } catch (error) {
@@ -10529,10 +10529,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(writingSessions)
-        .values({
-          ...session,
-          improvementsApplied: session.improvementsApplied as any, // Cast array properly for jsonb
-        })
+        .values(session)
         .returning();
       return result;
     } catch (error) {
@@ -11121,7 +11118,6 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...draft,
           userId,
-          metadata: draft.metadata as any,
         })
         .returning();
       return result;
@@ -11171,7 +11167,6 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           updatedAt: new Date(),
-          metadata: updates.metadata as any,
         })
         .where(
           and(

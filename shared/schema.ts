@@ -5276,14 +5276,12 @@ export const writingSessions = pgTable("writing_sessions", {
  * Insert schema for writingSessions table
  * Uses .extend() to preserve JSON type information for JSONB columns
  */
-export const insertWritingSessionSchema = createInsertSchema(writingSessions)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
-  .extend({
-    improvementsApplied: z.array(z.string()).optional(),
-  });
+export const insertWritingSessionSchema = createInsertSchema(writingSessions, {
+  improvementsApplied: z.array(z.string()).optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
 
 export type InsertWritingSession = z.infer<typeof insertWritingSessionSchema>;
 export type WritingSession = typeof writingSessions.$inferSelect;
