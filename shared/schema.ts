@@ -7475,30 +7475,18 @@ export type AbTestInsight = typeof abTestInsights.$inferSelect;
 export const cohorts = pgTable("cohorts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().unique(),
-  definition: jsonb("definition").notNull().$type<{
-    signupDateRange?: { start: string; end: string };
-    userAttributes?: Record<string, any>;
-    behaviorCriteria?: {
-      events?: string[];
-      minSessionCount?: number;
-      minEngagementScore?: number;
-      customMetrics?: Record<string, any>;
-    };
-    customQueries?: string[];
-    source?: string; // e.g., 'product_hunt', 'organic', 'paid_ads'
-  }>(),
+  
+  // Cohort definition criteria (using CohortDefinition interface)
+  definition: jsonb("definition").notNull().$type<CohortDefinition>(),
+  
   userCount: integer("user_count").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
   refreshFrequency: text("refresh_frequency").notNull().default('daily'), // 'hourly', 'daily', 'weekly', 'manual'
   lastRefreshed: timestamp("last_refreshed"),
-  metadata: jsonb("metadata").$type<{
-    description?: string;
-    color?: string; // For UI visualization
-    icon?: string;
-    tags?: string[];
-    businessContext?: string;
-    hypothesis?: string;
-  }>(),
+  
+  // Cohort metadata (using CohortMetadata interface)
+  metadata: jsonb("metadata").$type<CohortMetadata>(),
+  
   createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -7553,19 +7541,13 @@ export const cohortMetrics = pgTable("cohort_metrics", {
   periodDate: date("period_date").notNull(),
   value: real("value").notNull(),
   metricType: text("metric_type").notNull(), // 'retention', 'engagement', 'conversion', 'revenue', 'custom'
-  segmentData: jsonb("segment_data").$type<{
-    byDevice?: Record<string, number>;
-    bySource?: Record<string, number>;
-    byFeature?: Record<string, number>;
-    byUserAttribute?: Record<string, number>;
-    custom?: Record<string, any>;
-  }>(),
-  comparisonData: jsonb("comparison_data").$type<{
-    previousPeriod?: number;
-    percentageChange?: number;
-    trend?: 'increasing' | 'decreasing' | 'stable';
-    significance?: number;
-  }>(),
+  
+  // Segment breakdown data (using CohortSegmentData interface)
+  segmentData: jsonb("segment_data").$type<CohortSegmentData>(),
+  
+  // Period-over-period comparison (using CohortComparisonData interface)
+  comparisonData: jsonb("comparison_data").$type<CohortComparisonData>(),
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => [
   index("cohort_metrics_cohort_id_idx").on(table.cohortId),
