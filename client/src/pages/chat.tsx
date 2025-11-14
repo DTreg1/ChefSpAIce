@@ -15,7 +15,16 @@ import { ChefHat, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceConversation } from "@/hooks/useVoiceConversation";
-import type { ChatMessage as ChatMessageType, Recipe } from "@shared/schema";
+import type { Recipe } from "@shared/schema";
+
+// Define ChatMessageType locally since it's not exported from schema
+type ChatMessageType = {
+  id: string;
+  userId: string;
+  role: string;
+  content: string;
+  createdAt: Date | null;
+};
 import { ExpirationTicker } from "@/components/expiration-ticker";
 import { useStreamedContent } from "@/hooks/use-streamed-content";
 

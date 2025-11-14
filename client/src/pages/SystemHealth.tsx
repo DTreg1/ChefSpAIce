@@ -125,25 +125,25 @@ export default function SystemHealthDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   // Fetch system health
-  const { data: health, isLoading: healthLoading, refetch: refetchHealth } = useQuery({
+  const { data: health, isLoading: healthLoading, refetch: refetchHealth } = useQuery<SystemHealth>({
     queryKey: ['/api/maintenance/health'],
     refetchInterval: autoRefresh ? 30000 : false // Auto-refresh every 30s if enabled
   });
 
   // Fetch components status
-  const { data: components, isLoading: componentsLoading } = useQuery({
+  const { data: components, isLoading: componentsLoading } = useQuery<{ components: ComponentStatus[] }>({
     queryKey: ['/api/maintenance/components'],
     refetchInterval: autoRefresh ? 30000 : false
   });
 
   // Fetch predictions
-  const { data: predictions, isLoading: predictionsLoading } = useQuery({
+  const { data: predictions, isLoading: predictionsLoading } = useQuery<{ predictions: MaintenancePrediction[]; grouped: Record<string, MaintenancePrediction[]> }>({
     queryKey: ['/api/maintenance/predict'],
     refetchInterval: autoRefresh ? 60000 : false // Auto-refresh every minute
   });
 
   // Fetch recent metrics
-  const { data: metrics } = useQuery({
+  const { data: metrics } = useQuery<{ metrics: SystemMetric[] }>({
     queryKey: ['/api/maintenance/metrics', { limit: 100 }],
     refetchInterval: autoRefresh ? 10000 : false // Auto-refresh every 10s
   });
@@ -295,12 +295,12 @@ export default function SystemHealthDashboard() {
             <CardDescription>AI-powered insights for system optimization</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {health?.criticalIssues > 0 && (
+            {(health?.criticalIssues || 0) > 0 && (
               <Alert className="border-red-200">
                 <AlertTriangle className="h-4 w-4 text-red-500" />
                 <AlertTitle>Critical Issues Detected</AlertTitle>
                 <AlertDescription>
-                  {health.criticalIssues} critical maintenance issues require immediate attention.
+                  {health?.criticalIssues || 0} critical maintenance issues require immediate attention.
                 </AlertDescription>
               </Alert>
             )}

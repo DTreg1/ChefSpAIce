@@ -163,7 +163,7 @@ export function useAutoSave(
                   return tf.tensor(weightData.values, weightData.shape);
                 }
                 return null;
-              }).filter(Boolean);
+              }).filter((t): t is tf.Tensor => t !== null);
               
               if (tensorWeights.length > 0) {
                 // Load the weights into the model

@@ -42,12 +42,19 @@ export default function RetentionDashboard() {
   });
 
   // Get user segments
-  const { data: segmentsData, isLoading: segmentsLoading } = useQuery({
+  const { data: segmentsData, isLoading: segmentsLoading } = useQuery<{ segments: any[] }>({
     queryKey: ['/api/predict/segments'],
   });
 
   // Get accuracy statistics
-  const { data: accuracyData, isLoading: accuracyLoading } = useQuery({
+  const { data: accuracyData, isLoading: accuracyLoading } = useQuery<{ 
+    stats: { 
+      averageAccuracy: number;
+      totalPredictions?: number;
+      correctPredictions?: number;
+      accuracyByType?: Record<string, number>;
+    } 
+  }>({
     queryKey: ['/api/predict/accuracy/stats', 'month'],
   });
 
