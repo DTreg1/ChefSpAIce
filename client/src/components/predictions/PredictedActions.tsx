@@ -142,7 +142,7 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
                     </div>
                     <div>
                       <p className="text-sm font-medium">
-                        {action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        {action.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {ACTION_DESCRIPTIONS[action] || 'User action predicted'}

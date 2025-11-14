@@ -3860,7 +3860,7 @@ export class DatabaseStorage implements IStorage {
     table: any,
     value: T,
   ): Promise<R> {
-    const results: any[] = await db.insert(table).values(value).returning();
+    const results = await db.insert(table).values(value).returning() as any[];
     return results[0] as R;
   }
 
@@ -15781,7 +15781,7 @@ export class DatabaseStorage implements IStorage {
    */
   async getImageProcessingJobs(
     userId: string,
-    status?: string,
+    status?: "processing" | "completed" | "failed",
   ): Promise<ImageProcessing[]> {
     try {
       const conditions = [eq(imageProcessing.userId, userId)];
@@ -15883,7 +15883,7 @@ export class DatabaseStorage implements IStorage {
    */
   async getImagePresets(
     userId?: string,
-    category?: string,
+    category?: "product" | "portrait" | "landscape" | "document" | "social_media" | "custom",
   ): Promise<ImagePresets[]> {
     try {
       const conditions = [];

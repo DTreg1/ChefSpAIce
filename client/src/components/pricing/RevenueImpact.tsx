@@ -44,7 +44,14 @@ export function RevenueImpact({
 
   // Generate projection data (30 days)
   const projectionData = useMemo(() => {
-    const data = [];
+    const data: Array<{
+      day: number;
+      current: number;
+      projected: number;
+      optimistic: number;
+      pessimistic: number;
+      cumulative: number;
+    }> = [];
     const baseRevenue = 1000; // Base daily revenue
     const days = 30;
     
