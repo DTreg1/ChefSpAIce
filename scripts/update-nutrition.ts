@@ -78,45 +78,46 @@ async function updateMissingNutrition() {
           }
         }
 
-        if (nutrition) {
-          // Parse and validate nutrition data before saving
-          let nutritionData: any;
-          let weightInGrams: number | null = null;
+        if (!nutrition) {
+          failed++;
+          console.log(`  ❌ No nutrition data found\n`);
+          continue;
+        }
+        
+        // Parse and validate nutrition data before saving
+        let nutritionData: any;
+        let weightInGrams: number | null = null;
+        
+        try {
+          nutritionData = JSON.parse(nutrition);
+          const quantity = parseFloat(item.quantity) || 1;
+          const servingSize = parseFloat(nutritionData.servingSize) || 100;
+          weightInGrams = quantity * servingSize;
           
-          try {
-            nutritionData = JSON.parse(nutrition);
-            const quantity = parseFloat(item.quantity) || 1;
-            const servingSize = parseFloat(nutritionData.servingSize) || 100;
-            weightInGrams = quantity * servingSize;
-            
-            // Validate the nutrition data
-            if (!isNutritionDataValid(nutritionData, item.name)) {
-              console.log(`  ⚠️ Skipping item due to invalid nutrition data\n`);
-              failed++;
-              continue;
-            }
-          } catch (e) {
-            console.error("  ! Error parsing/validating nutrition:", e);
+          // Validate the nutrition data
+          if (!isNutritionDataValid(nutritionData, item.name)) {
+            console.log(`  ⚠️ Skipping item due to invalid nutrition data\n`);
             failed++;
             continue;
           }
-
-          // Update the item only if nutrition data is valid
-          await db
-            .update(userInventory)
-            .set({
-              nutrition,
-              usdaData,
-              weightInGrams,
-            })
-            .where(eq(userInventory.id, item.id));
-
-          updated++;
-          console.log(`  ✅ Updated successfully\n`);
-        } else {
+        } catch (e) {
+          console.error("  ! Error parsing/validating nutrition:", e);
           failed++;
-          console.log(`  ❌ No nutrition data found\n`);
+          continue;
         }
+
+        // Update the item only if nutrition data is valid
+        await db
+          .update(userInventory)
+          .set({
+            nutrition,
+            usdaData,
+            weightInGrams,
+          })
+          .where(eq(userInventory.id, item.id));
+
+        updated++;
+        console.log(`  ✅ Updated successfully\n`);
 
         // Add a small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 500));

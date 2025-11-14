@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { searchUSDAFoods as originalSearchUSDAFoods, USDASearchOptions } from "../usda";
+import { searchUSDAFoods as originalSearchUSDAFoods, USDASearchOptions, isNutritionDataValid } from "../usda";
 import type { USDASearchResponse, USDAFoodItem } from "@shared/schema";
 import { ApiCacheService, apiCache } from "./ApiCacheService";
 
@@ -114,6 +114,18 @@ export async function searchUSDAFoodsCached(
     if (response && response.foods && response.foods.length > 0) {
       // Cache individual foods in both ApiCache and database
       const cachePromises = response.foods.map(async (food) => {
+        // Check if food has nutrition data
+        if (!food.nutrition) {
+          console.warn(`[USDA Cache] Skipping cache for "${food.description}" - missing nutrition data`);
+          return null;
+        }
+        
+        // Validate nutrition data
+        if (!isNutritionDataValid(food.nutrition, food.description)) {
+          console.warn(`[USDA Cache] Skipping cache for "${food.description}" - invalid nutrition data`);
+          return null;
+        }
+        
         // Cache in memory
         apiCache.set(`usda.food:${food.fdcId}`, food, undefined, food.brandOwner ? 'usda.branded' : 'usda.food');
         
