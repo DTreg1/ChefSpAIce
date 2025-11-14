@@ -185,7 +185,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">Suggested Actions</h4>
                     <ul className="space-y-1">
-                      {insight.aiContext.suggestedActions.map((action, idx) => (
+                      {insight.aiContext.suggestedActions.map((action: string, idx: number) => (
                         <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
                           <span className="text-primary mt-0.5">•</span>
                           <span data-testid={`text-action-${insight.id}-${idx}`}>{action}</span>
@@ -208,7 +208,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">Related Metrics</h4>
                     <div className="flex flex-wrap gap-2">
-                      {insight.aiContext.relatedMetrics.map((metric, idx) => (
+                      {insight.aiContext.relatedMetrics.map((metric: string, idx: number) => (
                         <Badge key={idx} variant="outline" className="text-xs">
                           {metric.replace(/_/g, " ")}
                         </Badge>

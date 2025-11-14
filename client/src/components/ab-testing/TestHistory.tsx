@@ -299,11 +299,11 @@ export default function TestHistory({ tests }: TestHistoryProps) {
                         )}
                       </TableCell>
                       <TableCell>
-                        {test.insight?.liftPercentage !== undefined ? (
+                        {test.insight?.liftPercentage !== undefined && test.insight?.liftPercentage !== null ? (
                           <div className="flex items-center gap-1">
-                            {getLiftIcon(test.insight.liftPercentage)}
+                            {getLiftIcon(test.insight.liftPercentage ?? 0)}
                             <span className="text-sm font-medium">
-                              {test.insight.liftPercentage.toFixed(1)}%
+                              {(test.insight.liftPercentage ?? 0).toFixed(1)}%
                             </span>
                           </div>
                         ) : (

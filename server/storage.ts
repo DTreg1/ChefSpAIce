@@ -14320,7 +14320,7 @@ export class DatabaseStorage implements IStorage {
           .values({
             ...pattern,
             userId,
-          })
+          } as any)
           .returning();
         return created;
       }
@@ -14727,14 +14727,14 @@ export class DatabaseStorage implements IStorage {
           .set({
             ...agent,
             updatedAt: new Date(),
-          })
+          } as any)
           .where(eq(agentExpertise.agent_id, agent.agent_id))
           .returning();
         return updatedAgent;
       } else {
         const [newAgent] = await db
           .insert(agentExpertise)
-          .values(agent)
+          .values(agent as any)
           .returning();
         return newAgent;
       }
@@ -14920,7 +14920,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db
         .insert(extractionTemplates)
-        .values(template)
+        .values(template as any)
         .returning();
       return result[0];
     } catch (error) {
@@ -14994,7 +14994,7 @@ export class DatabaseStorage implements IStorage {
 
   async createExtractedData(data: InsertExtractedData): Promise<ExtractedData> {
     try {
-      const result = await db.insert(extractedData).values(data).returning();
+      const result = await db.insert(extractedData).values(data as any).returning();
 
       // Update template usage count
       if (data.templateId) {
@@ -15156,7 +15156,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db
         .insert(extractedData)
-        .values(dataList)
+        .values(dataList as any)
         .returning();
 
       // Update template usage counts
@@ -15235,7 +15235,7 @@ export class DatabaseStorage implements IStorage {
 
   async createPricingRule(rule: InsertPricingRules): Promise<PricingRules> {
     try {
-      const [result] = await db.insert(pricingRules).values(rule).returning();
+      const [result] = await db.insert(pricingRules).values(rule as any).returning();
       return result;
     } catch (error) {
       console.error("Error creating pricing rule:", error);
@@ -15253,7 +15253,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...rule,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(pricingRules.id, id))
         .returning();
       return result;
@@ -15351,7 +15351,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [result] = await db
         .insert(pricingPerformance)
-        .values(performance)
+        .values(performance as any)
         .returning();
       return result;
     } catch (error) {
@@ -15828,7 +15828,7 @@ export class DatabaseStorage implements IStorage {
     data: InsertImageProcessing,
   ): Promise<ImageProcessing> {
     try {
-      const [job] = await db.insert(imageProcessing).values(data).returning();
+      const [job] = await db.insert(imageProcessing).values(data as any).returning();
 
       return job;
     } catch (error) {
@@ -15850,7 +15850,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...data,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(imageProcessing.id, id))
         .returning();
 
@@ -15938,7 +15938,7 @@ export class DatabaseStorage implements IStorage {
    */
   async createImagePreset(data: InsertImagePresets): Promise<ImagePresets> {
     try {
-      const [preset] = await db.insert(imagePresets).values(data).returning();
+      const [preset] = await db.insert(imagePresets).values(data as any).returning();
 
       return preset;
     } catch (error) {
@@ -15960,7 +15960,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...data,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(imagePresets.id, id))
         .returning();
 
@@ -16021,7 +16021,7 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...detection,
           userId,
-        })
+        } as any)
         .returning();
 
       return created;
@@ -16093,7 +16093,7 @@ export class DatabaseStorage implements IStorage {
         .set({
           ...updates,
           updatedAt: new Date(),
-        })
+        } as any)
         .where(
           and(
             eq(faceDetections.id, detectionId),
@@ -16176,13 +16176,13 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...settings,
           userId,
-        })
+        } as any)
         .onConflictDoUpdate({
           target: privacySettings.userId,
           set: {
             ...settings,
             updatedAt: new Date(),
-          },
+          } as any,
         })
         .returning();
 
@@ -16239,7 +16239,7 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...result,
           userId,
-        })
+        } as any)
         .returning();
       return created;
     } catch (error) {

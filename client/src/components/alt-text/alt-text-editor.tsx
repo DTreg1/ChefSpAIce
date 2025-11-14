@@ -40,7 +40,7 @@ export function AltTextEditor({
   const { toast } = useToast();
 
   // Get suggestions
-  const suggestionsQuery = useQuery({
+  const suggestionsQuery = useQuery<{ suggestions: string[] }>({
     queryKey: [`/api/images/${imageId}/suggestions`],
     enabled: !!imageId,
   });
