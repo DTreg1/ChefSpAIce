@@ -117,13 +117,26 @@ export async function searchUSDAFoodsCached(
       // Cache individual foods in both ApiCache and database
       const cachePromises = response.foods.map(async (food) => {
         // Check if food has nutrition data
-        if (!food.nutrition) {
+        if (!food.foodNutrients || food.foodNutrients.length === 0) {
           skippedCount++;
           return null;
         }
         
+        // Extract nutrition from foodNutrients array for validation
+        const getNutrientValue = (nutrientId: number): number => {
+          const nutrient = food.foodNutrients?.find(n => n.nutrientId === nutrientId);
+          return nutrient?.value || 0;
+        };
+        
+        const nutrition = {
+          calories: getNutrientValue(1008), // Energy
+          protein: getNutrientValue(1003),  // Protein
+          carbs: getNutrientValue(1005),    // Carbohydrates
+          fat: getNutrientValue(1004),      // Total lipid (fat)
+        };
+        
         // Validate nutrition data
-        if (!isNutritionDataValid(food.nutrition, food.description)) {
+        if (!isNutritionDataValid(nutrition, food.description)) {
           skippedCount++;
           return null;
         }
