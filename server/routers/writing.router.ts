@@ -21,7 +21,6 @@ import OpenAI from "openai";
 // Using simple word tokenization without the natural library
 import { syllable } from "syllable";
 import Sentiment from "sentiment";
-// @ts-ignore
 import rs from "text-readability";
 import { insertWritingSessionSchema, insertWritingSuggestionSchema } from "@shared/schema";
 import type { WritingSession, WritingSuggestion } from "@shared/schema";

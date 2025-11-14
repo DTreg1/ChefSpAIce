@@ -13086,7 +13086,7 @@ export class DatabaseStorage implements IStorage {
       let query = db.select().from(abTests);
 
       if (filters) {
-        const conditions = [];
+        const conditions: SQL<unknown>[] = [];
         if (filters.status) {
           conditions.push(eq(abTests.status, filters.status));
         }
@@ -13101,7 +13101,6 @@ export class DatabaseStorage implements IStorage {
         }
 
         if (conditions.length > 0) {
-          // @ts-ignore - Dynamic where conditions
           query = query.where(and(...conditions));
         }
       }
@@ -13188,20 +13187,16 @@ export class DatabaseStorage implements IStorage {
     variant?: string,
   ): Promise<AbTestResult[]> {
     try {
-      let query = db
+      const baseConditions: SQL<unknown>[] = [eq(abTestResults.testId, testId)];
+      
+      if (variant) {
+        baseConditions.push(eq(abTestResults.variant, variant));
+      }
+
+      const query = db
         .select()
         .from(abTestResults)
-        .where(eq(abTestResults.testId, testId));
-
-      if (variant) {
-        // @ts-ignore
-        query = query.where(
-          and(
-            eq(abTestResults.testId, testId),
-            eq(abTestResults.variant, variant),
-          ),
-        );
-      }
+        .where(and(...baseConditions));
 
       return await query.orderBy(desc(abTestResults.periodEnd));
     } catch (error) {
