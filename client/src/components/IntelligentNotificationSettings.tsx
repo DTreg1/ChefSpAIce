@@ -124,6 +124,9 @@ export function IntelligentNotificationSettings() {
     queryKey: ['/api/notifications/insights'],
   });
   
+  // Derive safe fallback for recent notifications
+  const recentNotifications = insights?.recentNotifications ?? [];
+  
   // Update preferences mutation
   const updatePreferences = useMutation({
     mutationFn: async (prefs: NotificationPreferences) => {
@@ -336,9 +339,9 @@ export function IntelligentNotificationSettings() {
             
             <TabsContent value="center" className="space-y-4">
               <ScrollArea className="h-96">
-                {insights?.recentNotifications?.length > 0 ? (
+                {recentNotifications.length > 0 ? (
                   <div className="space-y-2">
-                    {insights?.recentNotifications?.map((notif: NotificationScore) => {
+                    {recentNotifications.map((notif: NotificationScore) => {
                       const Icon = notificationTypeIcons[notif.type as keyof typeof notificationTypeIcons] || Bell;
                       
                       return (

@@ -7477,41 +7477,36 @@ export const savePatterns = pgTable("save_patterns", {
  * Insert schema for autoSaveDrafts table
  * Uses .omit().extend() pattern to preserve JSON type information for JSONB columns
  */
-export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts)
-  .omit({
-    id: true,
-    savedAt: true,
-    isAutoSave: true,
-    conflictResolved: true,
-  })
-  .extend({
-    documentType: z.enum(["chat", "recipe", "note", "meal_plan", "shopping_list", "other"]).optional(),
-    version: z.number().int().optional(),
-    metadata: autoSaveDataSchema.optional(),
-  });
+export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts, {
+  documentType: z.enum(["chat", "recipe", "note", "meal_plan", "shopping_list", "other"]).optional(),
+  version: z.number().int().optional(),
+  metadata: autoSaveDataSchema.optional(),
+}).omit({
+  id: true,
+  savedAt: true,
+  isAutoSave: true,
+  conflictResolved: true,
+});
 
-export const insertSavePatternSchema = createInsertSchema(savePatterns)
-  .omit({
-    id: true,
-    lastUpdated: true,
-    lastAnalyzed: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    patternData: z.object({
-      pauseHistogram: z.array(z.number()).optional(),
-      keystrokeIntervals: z.array(z.number()).optional(),
-      burstLengths: z.array(z.number()).optional(),
-      timeOfDayPreferences: z.record(z.number()).optional(),
-      contentTypePatterns: z.record(z.any()).optional(),
-    }).optional(),
-    modelWeights: z.object({
-      weights: z.array(z.array(z.number())).optional(),
-      bias: z.array(z.number()).optional(),
-      version: z.string().optional(),
-    }).optional(),
-  });
+export const insertSavePatternSchema = createInsertSchema(savePatterns, {
+  patternData: z.object({
+    pauseHistogram: z.array(z.number()).optional(),
+    keystrokeIntervals: z.array(z.number()).optional(),
+    burstLengths: z.array(z.number()).optional(),
+    timeOfDayPreferences: z.record(z.number()).optional(),
+    contentTypePatterns: z.record(z.any()).optional(),
+  }).optional(),
+  modelWeights: z.object({
+    weights: z.array(z.array(z.number())).optional(),
+    bias: z.array(z.number()).optional(),
+    version: z.string().optional(),
+  }).optional(),
+}).omit({
+  id: true,
+  lastAnalyzed: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export type InsertAutoSaveDraft = z.infer<typeof insertAutoSaveDraftSchema>;
 export type AutoSaveDraft = typeof autoSaveDrafts.$inferSelect;
@@ -7724,23 +7719,17 @@ export const completionFeedback = pgTable("completion_feedback", {
  * Insert schema for formCompletions table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertFormCompletionSchema = createInsertSchema(formCompletions)
-  .omit({
-    id: true,
-    lastUpdated: true,
-    createdAt: true,
-  })
-  .extend({
-    commonValues: z.array(z.object({
-      value: z.string(),
-      count: z.number().int().nonnegative(),
-      lastUsed: z.string(),
-      metadata: z.record(z.any()).optional(),
-    })).optional(),
-    patterns: z.array(z.object({
-      regex: z.string(),
-      description: z.string(),
-      priority: z.number().int(),
+export const insertFormCompletionSchema = createInsertSchema(formCompletions, {
+  commonValues: z.array(z.object({
+    value: z.string(),
+    count: z.number().int().nonnegative(),
+    lastUsed: z.string(),
+    metadata: z.record(z.any()).optional(),
+  })).optional(),
+  patterns: z.array(z.object({
+    regex: z.string(),
+    description: z.string(),
+    priority: z.number().int(),
   })).optional(),
   contextRules: z.array(z.object({
     condition: z.string(),
@@ -7757,23 +7746,17 @@ export const insertFormCompletionSchema = createInsertSchema(formCompletions)
  * Insert schema for userFormHistory table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertUserFormHistorySchema = createInsertSchema(userFormHistory)
-  .omit({
-    id: true,
-    lastUpdated: true,
-    createdAt: true,
-  })
-  .extend({
-    valuesUsed: z.array(z.object({
-      value: z.string(),
-      count: z.number().int().nonnegative(),
-      lastUsed: z.string(),
-      context: z.record(z.any()).optional(),
-    })).optional(),
-    frequencyMap: z.record(z.number()).optional(),
-    lastSequence: z.array(z.object({
-      fieldName: z.string(),
-      value: z.string(),
+export const insertUserFormHistorySchema = createInsertSchema(userFormHistory, {
+  valuesUsed: z.array(z.object({
+    value: z.string(),
+    count: z.number().int().nonnegative(),
+    lastUsed: z.string(),
+    context: z.record(z.any()).optional(),
+  })).optional(),
+  frequencyMap: z.record(z.number()).optional(),
+  lastSequence: z.array(z.object({
+    fieldName: z.string(),
+    value: z.string(),
     timestamp: z.string(),
   })).optional(),
   preferences: z.object({

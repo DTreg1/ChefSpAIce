@@ -62,7 +62,7 @@ export function TagInput({
   }, [inputValue]);
 
   // Fetch tag suggestions
-  const { data: suggestions } = useQuery<TagSearchResponse>({
+  const { data: suggestions = { tags: [] } } = useQuery<TagSearchResponse>({
     queryKey: ["/api/ml/tags/search", searchQuery],
     enabled: searchQuery.length > 0 && !disabled,
     staleTime: 1000 * 60, // Cache for 1 minute

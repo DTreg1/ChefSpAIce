@@ -54,7 +54,7 @@ export function TagEditor({
   const [generatedSuggestions, setGeneratedSuggestions] = useState<any[]>([]);
 
   // Fetch existing tags
-  const { data: existingTags, isLoading: tagsLoading } = useQuery<ContentTagsResponse>({
+  const { data: existingTags = { tags: [] }, isLoading: tagsLoading } = useQuery<ContentTagsResponse>({
     queryKey: [`/api/ml/content/${contentId}/tags`, contentType],
     staleTime: 1000 * 60, // Cache for 1 minute
   });
@@ -365,7 +365,7 @@ export function TagEditor({
 
 // Component for displaying related tags
 function RelatedTagsList({ tagId }: { tagId: string }) {
-  const { data: relatedTags, isLoading } = useQuery({
+  const { data: relatedTags = { tags: [] }, isLoading } = useQuery<ContentTagsResponse>({
     queryKey: [`/api/ml/tags/related/${tagId}`],
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
