@@ -1,8 +1,8 @@
 # Migration Batch 1: Schemas 15-24
 
-**Status:** 🔴 Not Started  
+**Status:** ✅ Complete  
 **Schemas:** 10  
-**Progress:** 0/10 (0%)
+**Progress:** 10/10 (100%)
 
 ---
 
@@ -448,12 +448,12 @@ export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 
 After migrating all 10 schemas:
 
-- [ ] All schemas use `.omit().extend()` pattern
-- [ ] All auto-generated fields are in `.omit()`
-- [ ] All JSON columns have explicit Zod schemas in `.extend()`
-- [ ] All schemas export TypeScript types
-- [ ] Run `get_latest_lsp_diagnostics` on shared/schema.ts - should show 0 errors
-- [ ] Test type inference on 2-3 schemas to verify no `unknown` types
+- [x] All schemas use `.omit().extend()` pattern
+- [x] All auto-generated fields are in `.omit()`
+- [x] All JSON columns have explicit Zod schemas in `.extend()`
+- [x] All schemas export TypeScript types
+- [x] Run `get_latest_lsp_diagnostics` on shared/schema.ts - should show 0 errors
+- [x] Test type inference on 2-3 schemas to verify no `unknown` types
 
 ---
 
@@ -461,16 +461,16 @@ After migrating all 10 schemas:
 
 | Schema | Migrated | Type Exported | LSP Clean | Verified |
 |--------|----------|---------------|-----------|----------|
-| 15. insertAuthProviderSchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 16. insertUserStorageSchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 17. insertPushTokenSchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 18. insertNotificationPreferencesSchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 19. insertNotificationScoresSchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 20. insertNotificationFeedbackSchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 21. insertNotificationHistorySchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 22. insertUserApplianceSchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 23. insertUserInventorySchema | ⬜ | ⬜ | ⬜ | ⬜ |
-| 24. insertRecipeSchema | ⬜ | ⬜ | ⬜ | ⬜ |
+| 15. insertAuthProviderSchema | ✅ | ✅ | ✅ | ✅ |
+| 16. insertUserStorageSchema | ✅ | ✅ | ✅ | ✅ |
+| 17. insertPushTokenSchema | ✅ | ✅ | ✅ | ✅ |
+| 18. insertNotificationPreferencesSchema | ✅ | ✅ | ✅ | ✅ |
+| 19. insertNotificationScoresSchema | ✅ | ✅ | ✅ | ✅ |
+| 20. insertNotificationFeedbackSchema | ✅ | ✅ | ✅ | ✅ |
+| 21. insertNotificationHistorySchema | ✅ | ✅ | ✅ | ✅ |
+| 22. insertUserApplianceSchema | ✅ | ✅ | ✅ | ✅ |
+| 23. insertUserInventorySchema | ✅ | ✅ | ✅ | ✅ |
+| 24. insertRecipeSchema | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
