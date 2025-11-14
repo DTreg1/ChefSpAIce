@@ -1,3 +1,6 @@
+// MUST be imported first to suppress TensorFlow logs before any TF imports
+import "./suppress-logs";
+
 import express, { type Request, Response, NextFunction } from "express";
 import compression from "compression";
 // Use modular routes instead of monolithic routes.ts
@@ -101,32 +104,25 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`🚀 Server running on port ${port}`);
     
-    // Validate push notification services on startup
+    // Initialize background services silently
     PushStatusService.validateOnStartup();
-    
-    // Start the log retention service
     logRetentionService.start();
-    log("Log retention service started");
     
     // Warm up USDA cache with common searches (non-blocking)
     if (process.env.CACHE_ENABLED !== 'false') {
-      preloadCommonSearches().catch(error => {
-        console.error("[Cache Warming] Failed to preload common searches:", error);
+      preloadCommonSearches().catch(() => {
+        // Silently handle preload failures
       });
-      log("Cache warming initiated for USDA common searches");
     }
     
     // Initialize the cooking term detector
-    termDetector.initialize().then(() => {
-      log("✓ Cooking term detector initialized");
-    }).catch(error => {
+    termDetector.initialize().catch(error => {
       console.error("[Term Detector] Failed to initialize:", error);
     });
     
     // Start the intelligent notification scheduler
     notificationScheduler.start();
-    log("✓ Intelligent notification scheduler started");
   });
 })();

@@ -112,17 +112,19 @@ export async function searchUSDAFoodsCached(
     
     // Cache the search results
     if (response && response.foods && response.foods.length > 0) {
+      let skippedCount = 0;
+      
       // Cache individual foods in both ApiCache and database
       const cachePromises = response.foods.map(async (food) => {
         // Check if food has nutrition data
         if (!food.nutrition) {
-          console.warn(`[USDA Cache] Skipping cache for "${food.description}" - missing nutrition data`);
+          skippedCount++;
           return null;
         }
         
         // Validate nutrition data
         if (!isNutritionDataValid(food.nutrition, food.description)) {
-          console.warn(`[USDA Cache] Skipping cache for "${food.description}" - invalid nutrition data`);
+          skippedCount++;
           return null;
         }
         
@@ -146,6 +148,11 @@ export async function searchUSDAFoodsCached(
       
       await Promise.all(cachePromises);
       
+      // Log aggregated data quality issues
+      if (skippedCount > 0) {
+        console.warn(`[USDA Cache] Skipped ${skippedCount}/${response.foods.length} items due to invalid/missing nutrition data for query: "${searchOptions.query}"`);
+      }
+      
       // Cache the search query with full foods
       const cacheEntry: SearchCacheEntry = {
         query: searchOptions.query,
@@ -155,7 +162,6 @@ export async function searchUSDAFoodsCached(
       };
       
       apiCache.set(cacheKey, cacheEntry, undefined, 'usda.search');
-      // console.log(`[USDA Cache] Cached ${response.foods.length} foods for query: "${searchOptions.query}"`);
     }
     
     return response;
@@ -203,7 +209,7 @@ export async function preloadCommonSearches(): Promise<void> {
     'milk', 'eggs', 'cheese', 'tomato', 'potato'
   ];
   
-  // console.log('[USDA Cache] Preloading common searches...');
+  let failedSearches = 0;
   
   for (const query of commonSearches) {
     try {
@@ -217,11 +223,14 @@ export async function preloadCommonSearches(): Promise<void> {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error) {
-      console.error(`[USDA Cache] Failed to preload "${query}":`, error);
+      failedSearches++;
     }
   }
   
-  // console.log('[USDA Cache] Preloading complete');
+  // Log a summary if there were failures
+  if (failedSearches > 0) {
+    console.warn(`[USDA Cache] Failed to preload ${failedSearches}/${commonSearches.length} common searches`);
+  }
 }
 
 // Clear old cache entries

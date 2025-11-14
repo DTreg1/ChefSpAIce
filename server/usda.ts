@@ -150,17 +150,17 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
     const isAllowed = allowedZeroMacros.some(term => descLower.includes(term));
     
     if (!isAllowed) {
-      console.error(`Invalid nutrition data for "${foodDescription}": all macronutrients are zero`);
+      // Silently reject - this is common with USDA data
       return false;
     }
-    console.warn(`Low/zero nutrition accepted for "${foodDescription}" (water/seasoning category)`);
+    // Silently accept water/seasoning with zero macros
     return true;
   }
   
   // Reject if calories present but all macros are zero (physically impossible)
   if (nutrition.calories && nutrition.calories > 10 && 
       nutrition.protein === 0 && nutrition.carbs === 0 && nutrition.fat === 0) {
-    console.error(`Invalid nutrition data for "${foodDescription}": ${nutrition.calories} calories but zero macros`);
+    // Silently reject invalid data
     return false;
   }
 
@@ -171,7 +171,7 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
   // Only flag as invalid if they have calories but no fat (truly suspicious)
   if ((descLower.includes('oil') || descLower.includes('butter') || descLower.includes('lard')) && 
       nutrition.fat === 0 && nutrition.calories && nutrition.calories > 50) {
-    console.warn(`Invalid nutrition data for "${foodDescription}": oil/fat product with zero fat but ${nutrition.calories} calories`);
+    // Silently reject invalid oil/fat data
     return false;
   }
 
@@ -182,8 +182,7 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
        descLower.includes('beef') || descLower.includes('pork') || 
        descLower.includes('fish') || descLower.includes('egg')) && 
       nutrition.protein === 0 && nutrition.calories && nutrition.calories > 100) {
-    console.warn(`Invalid nutrition data for "${foodDescription}": protein food with zero protein but ${nutrition.calories} calories`);
-    // Reject this data as it's clearly incorrect
+    // Silently reject invalid protein food data
     return false;
   }
 
