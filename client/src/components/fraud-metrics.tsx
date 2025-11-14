@@ -64,14 +64,25 @@ export function FraudMetrics({
     autoBlockedCount: 0,
     reviewsCount: 0,
     riskDistribution: [],
-    topActivityTypes: []
-  }, isLoading, refetch } = useQuery({
+    topActivityTypes: [],
+    alerts: []
+  }, isLoading, refetch } = useQuery<{
+    averageScore: number;
+    totalScores: number;
+    highRiskCount: number;
+    suspiciousActivitiesCount: number;
+    autoBlockedCount: number;
+    reviewsCount: number;
+    riskDistribution: any[];
+    topActivityTypes: any[];
+    alerts: any[];
+  }>({
     queryKey: ["/api/fraud/report", timeRange],
     refetchInterval: isLive ? refreshInterval : false
   });
 
   // Fetch current alerts
-  const { data: alertData = { alerts: [] } } = useQuery({
+  const { data: alertData = { alerts: [] } } = useQuery<{ alerts: any[] }>({
     queryKey: ["/api/fraud/alerts"],
     refetchInterval: isLive ? refreshInterval : false
   });

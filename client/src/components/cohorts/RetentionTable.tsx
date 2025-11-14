@@ -163,7 +163,7 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
             <tbody>
               {cohorts.map((cohort, cohortIndex) => {
                 const cohortRetention = retentionData[cohortIndex];
-                const baseCount = cohortRetention?.retention?.find(r => r.period === 0)?.count || cohort.userCount || 100;
+                const baseCount = cohortRetention?.retention?.find((r: any) => r.period === 0)?.count || cohort.userCount || 100;
                 
                 return (
                   <tr key={cohort.id} className="border-b" data-testid={`row-cohort-${cohort.id}`}>
@@ -182,11 +182,11 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
                       </Badge>
                     </td>
                     {periods.map((period, periodIndex) => {
-                      const retentionPoint = cohortRetention?.retention?.find(r => r.period === period);
+                      const retentionPoint = cohortRetention?.retention?.find((r: any) => r.period === period);
                       const rate = retentionPoint?.rate || 0;
                       const count = retentionPoint?.count || 0;
                       const previousPoint = periodIndex > 0 ? 
-                        cohortRetention?.retention?.find(r => r.period === periods[periodIndex - 1]) : 
+                        cohortRetention?.retention?.find((r: any) => r.period === periods[periodIndex - 1]) : 
                         null;
                       
                       return (

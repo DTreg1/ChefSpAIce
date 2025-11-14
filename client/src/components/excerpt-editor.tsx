@@ -132,7 +132,7 @@ export function ExcerptEditor({
   };
 
   // Mock excerpt for preview
-  const previewExcerpt: Excerpt = {
+  const previewExcerpt: any = {
     id: 'preview',
     userId: 'preview',
     contentId: 'preview',
@@ -147,6 +147,7 @@ export function ExcerptEditor({
     createdAt: new Date(),
     updatedAt: new Date(),
     originalContent: initialContent,
+    socialMetadata: null,
     generationParams: {
       tone,
       style,

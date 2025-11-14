@@ -143,7 +143,7 @@ export function DataValidator({ className }: DataValidatorProps) {
   };
 
   const extractions = historyData?.data || [];
-  const stats = statsData?.stats || {
+  const stats = (statsData as any)?.stats || {
     total: 0,
     validated: 0,
     pending: 0,

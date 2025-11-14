@@ -226,7 +226,7 @@ export function ExcerptTester({
                         htmlFor={`variant-${stat.excerpt.id}`}
                         className="text-base font-medium cursor-pointer"
                       >
-                        {getVariantLabel(stat.excerpt.variant)}
+                        {getVariantLabel(stat.excerpt.variant ?? '')}
                       </Label>
                       {isLeading && (
                         <Badge className="bg-green-500 text-white">

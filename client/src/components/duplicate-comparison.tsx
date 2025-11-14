@@ -18,12 +18,12 @@ import {
   ArrowRight,
   ArrowLeft
 } from "lucide-react";
-import { Recipe, ChatMessage } from "@shared/schema";
+import { Recipe } from "@shared/schema";
 import { format } from "date-fns";
 
 interface DuplicateComparisonProps {
-  content1: Recipe | ChatMessage | any;
-  content2: Recipe | ChatMessage | any;
+  content1: Recipe | any;
+  content2: Recipe | any;
   contentType: 'recipe' | 'chat' | 'inventory';
   similarity: number;
   onMerge?: (keepId: string, mergeFromId: string) => void;
@@ -77,7 +77,7 @@ export function DuplicateComparison({
     );
   };
 
-  const renderChatComparison = (chat1: ChatMessage, chat2: ChatMessage) => {
+  const renderChatComparison = (chat1: any, chat2: any) => {
     return (
       <div className="grid grid-cols-2 gap-6">
         <ChatCard
@@ -303,7 +303,7 @@ function ContentCard({
 }
 
 function ChatCard({ content, isSelected, onSelect, side }: any) {
-  const chat = content as ChatMessage;
+  const chat = content;
   
   return (
     <Card 

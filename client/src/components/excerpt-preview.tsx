@@ -121,7 +121,7 @@ export function ExcerptPreview({
                   Active
                 </Badge>
               )}
-              <Badge variant="outline" className={`${getPlatformColor(excerpt.targetPlatform)} text-white`}>
+              <Badge variant="outline" className={`${getPlatformColor(excerpt.targetPlatform ?? '')} text-white`}>
                 {excerpt.targetPlatform}
               </Badge>
             </div>
@@ -175,7 +175,7 @@ export function ExcerptPreview({
           </div>
           <div className="flex items-center gap-2">
             {getTypeIcon(excerpt.excerptType)}
-            <Badge variant="outline" className={`${getPlatformColor(excerpt.targetPlatform)} text-white`}>
+            <Badge variant="outline" className={`${getPlatformColor(excerpt.targetPlatform ?? '')} text-white`}>
               {excerpt.targetPlatform}
             </Badge>
           </div>

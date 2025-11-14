@@ -45,7 +45,7 @@ export function CohortBuilder() {
   const [behaviorEvent, setBehaviorEvent] = useState("");
   const [behaviorMinCount, setBehaviorMinCount] = useState("");
   const [behaviorTimeframe, setBehaviorTimeframe] = useState("");
-  const [customFilters, setCustomFilters] = useState<CohortDefinition["customFilters"]>([]);
+  const [customFilters, setCustomFilters] = useState<Array<{ field: string; operator: string; value: string | number; }>>([]);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -106,13 +106,13 @@ export function CohortBuilder() {
       return;
     }
     
-    const definition: CohortDefinition = {};
+    const definition: any = {};
     
     // Add date range if specified
-    if (startDate || endDate) {
+    if (startDate && endDate) {
       definition.signupDateRange = {
-        ...(startDate && { start: startDate.toISOString() }),
-        ...(endDate && { end: endDate.toISOString() }),
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
       };
     }
     

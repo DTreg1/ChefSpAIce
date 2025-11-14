@@ -349,7 +349,7 @@ export function TemplateBuilder({
                                 onClick={() => removeExample(index, i)}
                               >
                                 {example}
-                                <X className="w-3 h-3 ml-1" />
+                                <span className="w-3 h-3 ml-1">×</span>
                               </Badge>
                             ))}
                           </div>

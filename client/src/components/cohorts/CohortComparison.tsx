@@ -118,8 +118,8 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
   // Prepare data for charts
   const barChartData = selectedMetrics.map(metric => ({
     metric: METRICS.find(m => m.key === metric)?.label || metric,
-    ...cohorts.reduce((acc, cohort, index) => {
-      const cohortData = comparisonData.find(d => d.cohortId === cohort.id);
+    ...cohorts.reduce((acc: any, cohort: any, index: number) => {
+      const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
       return {
         ...acc,
         [cohort.name]: cohortData?.metrics[metric] || 0,
@@ -127,8 +127,8 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
     }, {}),
   }));
   
-  const lineChartData = cohorts.map((cohort, index) => {
-    const cohortData = comparisonData.find(d => d.cohortId === cohort.id);
+  const lineChartData = cohorts.map((cohort: any, index: number) => {
+    const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
     return {
       name: cohort.name,
       ...selectedMetrics.reduce((acc, metric) => ({
@@ -140,8 +140,8 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
   
   const radarChartData = selectedMetrics.map(metric => ({
     metric: METRICS.find(m => m.key === metric)?.label || metric,
-    ...cohorts.reduce((acc, cohort) => {
-      const cohortData = comparisonData.find(d => d.cohortId === cohort.id);
+    ...cohorts.reduce((acc: any, cohort: any) => {
+      const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
       return {
         ...acc,
         [cohort.name]: cohortData?.metrics[metric] || 0,
@@ -267,7 +267,7 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
         {/* Summary Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
           {cohorts.map((cohort, index) => {
-            const cohortData = comparisonData.find(d => d.cohortId === cohort.id);
+            const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
             const metrics = cohortData?.metrics || {};
             
             // Calculate average performance
