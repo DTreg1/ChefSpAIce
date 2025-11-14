@@ -3860,7 +3860,7 @@ export class DatabaseStorage implements IStorage {
     table: any,
     value: T,
   ): Promise<R> {
-    const results = await db.insert(table).values(value).returning();
+    const results: any[] = await db.insert(table).values(value).returning();
     return results[0] as R;
   }
 
@@ -12323,7 +12323,7 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(analyticsInsights.isRead, filters.isRead));
       }
 
-      let query = db
+      const query = db
         .select()
         .from(analyticsInsights)
         .where(and(...conditions))
@@ -12331,7 +12331,7 @@ export class DatabaseStorage implements IStorage {
         .$dynamic();
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        return await query.limit(filters.limit);
       }
 
       return await query;
@@ -12807,18 +12807,18 @@ export class DatabaseStorage implements IStorage {
         );
       }
 
-      let query = db
+      const query = db
         .select()
         .from(trends)
         .orderBy(desc(trends.strength), desc(trends.createdAt))
         .$dynamic();
 
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
+      if (conditions.length > 0 && filters?.limit) {
+        return await query.where(and(...conditions)).limit(filters.limit);
+      } else if (conditions.length > 0) {
+        return await query.where(and(...conditions));
+      } else if (filters?.limit) {
+        return await query.limit(filters.limit);
       }
 
       return await query;
@@ -13083,7 +13083,7 @@ export class DatabaseStorage implements IStorage {
     endDate?: Date;
   }): Promise<AbTest[]> {
     try {
-      let query = db.select().from(abTests);
+      const query = db.select().from(abTests);
 
       if (filters) {
         const conditions: SQL<unknown>[] = [];
@@ -13101,7 +13101,7 @@ export class DatabaseStorage implements IStorage {
         }
 
         if (conditions.length > 0) {
-          query = query.where(and(...conditions));
+          return await query.where(and(...conditions)).orderBy(desc(abTests.createdAt));
         }
       }
 
@@ -15328,17 +15328,17 @@ export class DatabaseStorage implements IStorage {
         conditions.push(lte(priceHistory.changedAt, params.endDate));
       }
 
-      let query = db
+      const query = db
         .select()
         .from(priceHistory)
-        .where(and(...conditions));
+        .where(and(...conditions))
+        .orderBy(desc(priceHistory.changedAt));
 
       if (params?.limit) {
-        query = query.limit(params.limit);
+        return await query.limit(params.limit);
       }
 
-      const result = await query.orderBy(desc(priceHistory.changedAt));
-      return result;
+      return await query;
     } catch (error) {
       console.error("Error getting price history:", error);
       throw error;
@@ -16487,7 +16487,7 @@ export class DatabaseStorage implements IStorage {
    */
   async getTranscriptions(
     userId: string,
-    status?: string,
+    status?: "processing" | "completed" | "failed",
     limit?: number,
   ): Promise<Transcription[]> {
     try {
@@ -16497,14 +16497,14 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(transcriptions.status, status));
       }
 
-      let query = db
+      const query = db
         .select()
         .from(transcriptions)
         .where(and(...conditions))
         .orderBy(desc(transcriptions.createdAt));
 
       if (limit) {
-        query = query.limit(limit);
+        return await query.limit(limit);
       }
 
       return await query;
@@ -16521,7 +16521,7 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     page: number = 1,
     limit: number = 10,
-    status?: string,
+    status?: "processing" | "completed" | "failed",
   ): Promise<PaginatedResponse<Transcription>> {
     try {
       const conditions = [eq(transcriptions.userId, userId)];
