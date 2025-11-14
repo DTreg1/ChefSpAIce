@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { type InsertAbTest } from "@shared/schema";
+import { type InsertAbTest, type AbTestConfiguration } from "@shared/schema";
 
 interface CreateTestDialogProps {
   open: boolean;
@@ -21,9 +21,15 @@ interface CreateTestDialogProps {
   onSuccess: () => void;
 }
 
+interface FormData extends InsertAbTest {
+  status?: string;
+  successMetric?: string;
+  targetAudience?: number;
+}
+
 export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTestDialogProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<Partial<InsertAbTest>>({
+  const [formData, setFormData] = useState<Partial<FormData>>({
     name: "",
     variantA: "",
     variantB: "",
@@ -37,11 +43,11 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
       featureArea: "",
       minimumSampleSize: 1000,
       confidenceLevel: 0.95
-    }
+    } as AbTestConfiguration
   });
 
   const createTest = useMutation({
-    mutationFn: async (data: Partial<InsertAbTest>) => {
+    mutationFn: async (data: Partial<FormData>) => {
       return apiRequest("/api/ab/create", "POST", data);
     },
     onSuccess: () => {
