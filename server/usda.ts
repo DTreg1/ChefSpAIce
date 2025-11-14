@@ -58,7 +58,7 @@ const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
 const API_KEY = process.env.USDA_FDC_API_KEY;
 
 
-interface FDCFoodNutrient {
+export interface FDCFoodNutrient {
   nutrientNumber?: string;
   nutrientName?: string;
   value?: number;
@@ -71,7 +71,7 @@ interface FDCFoodNutrient {
   };
 }
 
-interface FDCLabelNutrients {
+export interface FDCLabelNutrients {
   fat?: { value: number };
   saturatedFat?: { value: number };
   transFat?: { value: number };
@@ -86,7 +86,7 @@ interface FDCLabelNutrients {
   calories?: { value: number };
 }
 
-interface FDCFood {
+export interface FDCFood {
   fdcId: number;
   description: string;
   dataType: string;
@@ -212,10 +212,8 @@ export function isNutritionDataValid(nutrition: NutritionInfo, foodDescription: 
  * - Validates extracted data using isNutritionDataValid()
  * - Returns undefined for invalid or incomplete data
  * - Handles both 'value' and 'amount' field names (API inconsistency)
- * 
- * @private
  */
-function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
+export function extractNutritionInfo(food: FDCFood): NutritionInfo | undefined {
   // First try labelNutrients (Branded Foods)
   if (food.labelNutrients) {
     const label = food.labelNutrients;

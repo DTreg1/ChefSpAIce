@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { searchUSDAFoods as originalSearchUSDAFoods, USDASearchOptions, isNutritionDataValid } from "../usda";
+import { searchUSDAFoods as originalSearchUSDAFoods, USDASearchOptions, isNutritionDataValid, extractNutritionInfo, type FDCFood } from "../usda";
 import type { USDASearchResponse, USDAFoodItem } from "@shared/schema";
 import { ApiCacheService, apiCache } from "./ApiCacheService";
 
@@ -122,21 +122,13 @@ export async function searchUSDAFoodsCached(
           return null;
         }
         
-        // Extract nutrition from foodNutrients array for validation
-        const getNutrientValue = (nutrientId: number): number => {
-          const nutrient = food.foodNutrients?.find(n => n.nutrientId === nutrientId);
-          return nutrient?.value || 0;
-        };
-        
-        const nutrition = {
-          calories: getNutrientValue(1008), // Energy
-          protein: getNutrientValue(1003),  // Protein
-          carbs: getNutrientValue(1005),    // Carbohydrates
-          fat: getNutrientValue(1004),      // Total lipid (fat)
-        };
+        // Use the same extraction logic as the main USDA module
+        // This properly handles nutrientNumber (strings) vs nutrientId (numbers)
+        const fdcFood = food as unknown as FDCFood;
+        const nutrition = extractNutritionInfo(fdcFood);
         
         // Validate nutrition data
-        if (!isNutritionDataValid(nutrition, food.description)) {
+        if (!nutrition) {
           skippedCount++;
           return null;
         }
