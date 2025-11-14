@@ -74,24 +74,27 @@ export function TranslatedContent({
   const [copiedLanguage, setCopiedLanguage] = useState<string | null>(null);
 
   // Fetch user's language preferences
-  const { data: preferences } = useQuery({
+  const { data: preferences = { autoTranslate: false, preferredLanguages: [] } } = useQuery<{
+    autoTranslate: boolean;
+    preferredLanguages: string[];
+  }>({
     queryKey: ['/api/languages/preferences']
   });
 
   // Fetch existing translations
   const { 
-    data: translationsData, 
+    data: translationsData = { translations: [] }, 
     isLoading: isLoadingTranslations,
     refetch: refetchTranslations 
-  } = useQuery({
+  } = useQuery<{ translations: Translation[] }>({
     queryKey: [`/api/content/${contentId}/translations`],
     enabled: !!contentId,
   });
 
-  const translations: Translation[] = translationsData?.translations || [];
+  const translations: Translation[] = translationsData.translations;
 
   // Fetch supported languages
-  const { data: languages = [] } = useQuery({
+  const { data: languages = [] } = useQuery<Array<{ code: string; name: string }>>({
     queryKey: ['/api/languages/supported'],
     staleTime: 60 * 60 * 1000, // Cache for 1 hour
   });
@@ -179,7 +182,7 @@ export function TranslatedContent({
 
   // Get language name from code
   const getLanguageName = (code: string) => {
-    const lang = languages.find(l => l.code === code);
+    const lang = languages.find((l: { code: string; name: string }) => l.code === code);
     return lang?.name || code.toUpperCase();
   };
 

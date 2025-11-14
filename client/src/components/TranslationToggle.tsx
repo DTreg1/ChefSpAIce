@@ -1,6 +1,6 @@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Globe, GlobeOff } from "lucide-react";
+import { Globe } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,10 @@ export function TranslationToggle({ className }: TranslationToggleProps) {
   const { toast } = useToast();
   
   // Fetch current language preferences
-  const { data: preferences, isLoading } = useQuery({
+  const { data: preferences = { autoTranslate: false, preferredLanguages: [] }, isLoading } = useQuery<{
+    autoTranslate: boolean;
+    preferredLanguages: string[];
+  }>({
     queryKey: ['/api/languages/preferences']
   });
 
@@ -29,7 +32,7 @@ export function TranslationToggle({ className }: TranslationToggleProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/languages/preferences'] });
       toast({
         title: "Translation settings updated",
-        description: preferences?.autoTranslate 
+        description: preferences.autoTranslate 
           ? "Auto-translation disabled" 
           : "Auto-translation enabled",
       });
@@ -53,14 +56,10 @@ export function TranslationToggle({ className }: TranslationToggleProps) {
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
-      {preferences?.autoTranslate ? (
-        <Globe className="h-4 w-4 text-primary" />
-      ) : (
-        <GlobeOff className="h-4 w-4 text-muted-foreground" />
-      )}
+      <Globe className={preferences.autoTranslate ? "h-4 w-4 text-primary" : "h-4 w-4 text-muted-foreground"} />
       <Switch
         id="auto-translate"
-        checked={preferences?.autoTranslate ?? true}
+        checked={preferences.autoTranslate}
         onCheckedChange={handleToggle}
         disabled={updatePreferences.isPending}
         data-testid="toggle-auto-translate"
