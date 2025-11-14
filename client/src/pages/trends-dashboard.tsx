@@ -62,19 +62,19 @@ export default function TrendsDashboard() {
   const [selectedTrend, setSelectedTrend] = useState<Trend | null>(null);
 
   // Fetch current trends
-  const { data: currentTrends, isLoading: loadingCurrent } = useQuery({
+  const { data: currentTrends, isLoading: loadingCurrent } = useQuery<{ trends: Trend[] }>({
     queryKey: ["/api/trends/current"],
     refetchInterval: 60000, // Refresh every minute
   });
 
   // Fetch emerging trends
-  const { data: emergingTrends, isLoading: loadingEmerging } = useQuery({
+  const { data: emergingTrends, isLoading: loadingEmerging } = useQuery<{ trends: Trend[] }>({
     queryKey: ["/api/trends/emerging"],
     refetchInterval: 60000,
   });
 
   // Fetch user's trend alerts
-  const { data: userAlerts, isLoading: loadingAlerts } = useQuery({
+  const { data: userAlerts, isLoading: loadingAlerts } = useQuery<{ alerts: TrendAlert[] }>({
     queryKey: ["/api/trends/alerts"],
   });
 
@@ -308,9 +308,9 @@ export default function TrendsDashboard() {
                     <Skeleton key={i} className="h-20 w-full" />
                   ))}
                 </div>
-              ) : currentTrends?.trends?.length > 0 ? (
+              ) : (currentTrends?.trends?.length || 0) > 0 ? (
                 <div className="space-y-2">
-                  {currentTrends.trends.map((trend: Trend) => (
+                  {currentTrends?.trends?.map((trend: Trend) => (
                     <div
                       key={trend.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover-elevate cursor-pointer"
@@ -347,12 +347,12 @@ export default function TrendsDashboard() {
           {/* Trending Topics Component */}
           <TrendingTopics 
             trends={currentTrends?.trends || []}
-            onTrendClick={setSelectedTrend}
+            onTrendClick={(trend: any) => setSelectedTrend(trend as Trend)}
           />
 
           {/* Alerts Component */}
-          {userAlerts?.alerts?.length > 0 && (
-            <TrendAlert alerts={userAlerts.alerts} />
+          {(userAlerts?.alerts?.length || 0) > 0 && (
+            <TrendAlert alerts={userAlerts?.alerts || []} />
           )}
         </TabsContent>
 
@@ -372,9 +372,9 @@ export default function TrendsDashboard() {
                     <Skeleton key={i} className="h-24 w-full" />
                   ))}
                 </div>
-              ) : emergingTrends?.trends?.length > 0 ? (
+              ) : (emergingTrends?.trends?.length || 0) > 0 ? (
                 <div className="space-y-4">
-                  {emergingTrends.trends.map((trend: Trend) => (
+                  {emergingTrends?.trends?.map((trend: Trend) => (
                     <Card key={trend.id} className="hover-elevate">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">

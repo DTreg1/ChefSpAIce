@@ -98,7 +98,7 @@ export default function FraudDashboard() {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
 
   // Fetch fraud alerts
-  const { data: alertData, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery({
+  const { data: alertData, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery<{ alerts: SuspiciousActivity[] }>({
     queryKey: ["/api/fraud/alerts"]
   });
 
@@ -108,7 +108,7 @@ export default function FraudDashboard() {
   });
 
   // Fetch fraud patterns
-  const { data: patternsData } = useQuery({
+  const { data: patternsData } = useQuery<{ topRiskFactors: Array<{ factor: string; score: number; trend: string }> }>({
     queryKey: ["/api/fraud/patterns"],
     refetchInterval: 60000 // Refresh every minute
   });

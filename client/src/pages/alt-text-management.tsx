@@ -29,7 +29,7 @@ export default function AltTextManagement() {
   const [selectedImage, setSelectedImage] = useState<any>(null);
   
   // Fetch user's images
-  const imagesQuery = useQuery({
+  const imagesQuery = useQuery<{ data: any[]; total: number }>({
     queryKey: ["/api/images"],
   });
 

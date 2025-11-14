@@ -94,6 +94,7 @@ export default function OCRPage() {
   const [structuredData, setStructuredData] = useState<any>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [corrections, setCorrections] = useState<OcrCorrection[]>([]);
+  const [currentResultId, setCurrentResultId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Fetch supported languages
@@ -187,6 +188,7 @@ export default function OCRPage() {
       setExtractedText(result.text || '');
       setConfidence(result.confidence || 0);
       setBoundingBoxes(result.boundingBoxes || []);
+      setCurrentResultId(result.id || null);
       
       if (result.structuredData) {
         setStructuredData(result.structuredData);
@@ -215,20 +217,34 @@ export default function OCRPage() {
     }
   }, [selectedFile, selectedLanguage, extractMutation, toast]);
 
-  // Save correction
-  const handleSaveCorrection = useCallback((correction: Omit<OcrCorrection, "id">) => {
-    correctionMutation.mutate({
-      ...correction,
-      documentId: selectedFile?.name || "unknown",
-    });
+  // Save correction - only send required fields per backend insert schema
+  const handleSaveCorrection = useCallback((correction: { 
+    originalText: string;
+    correctedText: string;
+    correctionType: "spelling" | "formatting" | "structure" | "other";
+    confidence: number;
+  }) => {
+    if (!currentResultId) {
+      toast({
+        title: "Cannot save correction",
+        description: "No OCR result available. Please extract text first.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Add to local corrections list
-    setCorrections(prev => [...prev, { 
-      ...correction, 
-      id: Date.now().toString(),
-      documentId: selectedFile?.name || "unknown",
-    } as OCRCorrection]);
-  }, [selectedFile, correctionMutation]);
+    // Backend insert schema: only required fields, omit optional boundingBox
+    // userId extracted from auth, id/createdAt/updatedAt auto-generated
+    const ocrCorrection = {
+      originalText: correction.originalText,
+      correctedText: correction.correctedText,
+      correctionType: correction.correctionType,
+      confidence: correction.confidence,
+      resultId: currentResultId,
+    };
+    
+    correctionMutation.mutate(ocrCorrection);
+  }, [currentResultId, correctionMutation, toast]);
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">

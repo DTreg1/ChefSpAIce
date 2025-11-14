@@ -31,7 +31,7 @@ export default function ExtractionPage() {
   const [latestExtraction, setLatestExtraction] = useState<any>(null);
 
   // Fetch templates
-  const { data: templatesData, isLoading: templatesLoading } = useQuery({
+  const { data: templatesData, isLoading: templatesLoading } = useQuery<{ templates: any[] }>({
     queryKey: ['/api/extract/templates']
   });
 

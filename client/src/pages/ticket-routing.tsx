@@ -126,22 +126,22 @@ export default function TicketRouting() {
   const [activeTab, setActiveTab] = useState("tickets");
 
   // Queries
-  const { data: tickets, isLoading: loadingTickets } = useQuery({
+  const { data: tickets, isLoading: loadingTickets } = useQuery<{ tickets: Ticket[] }>({
     queryKey: ["/api/routing/tickets"],
     enabled: activeTab === "tickets",
   });
 
-  const { data: rules, isLoading: loadingRules } = useQuery({
+  const { data: rules, isLoading: loadingRules } = useQuery<{ rules: RoutingRule[] }>({
     queryKey: ["/api/routing/rules"],
     enabled: activeTab === "rules",
   });
 
-  const { data: agents, isLoading: loadingAgents } = useQuery({
+  const { data: agents, isLoading: loadingAgents } = useQuery<{ agents: Agent[] }>({
     queryKey: ["/api/routing/agents"],
     enabled: activeTab === "agents",
   });
 
-  const { data: metrics, isLoading: loadingMetrics } = useQuery({
+  const { data: metrics, isLoading: loadingMetrics } = useQuery<{ metrics: RoutingMetrics }>({
     queryKey: ["/api/routing/performance"],
     enabled: activeTab === "dashboard",
   });
@@ -451,9 +451,9 @@ export default function TicketRouting() {
                 </Card>
               ))}
             </div>
-          ) : tickets?.tickets?.length > 0 ? (
+          ) : (tickets?.tickets?.length || 0) > 0 ? (
             <div className="grid gap-4">
-              {tickets.tickets.map((ticket: Ticket) => (
+              {tickets?.tickets?.map((ticket: Ticket) => (
                 <Card key={ticket.id} className="hover-elevate cursor-pointer" onClick={() => setSelectedTicket(ticket)}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -557,9 +557,9 @@ export default function TicketRouting() {
                 </Card>
               ))}
             </div>
-          ) : agents?.agents?.length > 0 ? (
+          ) : (agents?.agents?.length || 0) > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {agents.agents.map((agent: Agent) => (
+              {agents?.agents?.map((agent: Agent) => (
                 <Card key={agent.agent_id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
@@ -632,9 +632,9 @@ export default function TicketRouting() {
                 </Card>
               ))}
             </div>
-          ) : rules?.rules?.length > 0 ? (
+          ) : (rules?.rules?.length || 0) > 0 ? (
             <div className="space-y-4">
-              {rules.rules.map((rule: RoutingRule) => (
+              {rules?.rules?.map((rule: RoutingRule) => (
                 <Card key={rule.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
