@@ -69,19 +69,50 @@ export function UserRiskProfile({ userId, className, onClose }: UserRiskProfileP
   const [actionNotes, setActionNotes] = useState("");
 
   // Fetch user data
-  const { data: userData } = useQuery({
+  const { data: userData = { 
+    createdAt: null, 
+    status: null
+  } } = useQuery<{
+    createdAt?: string | null;
+    status?: string | null;
+  }>({
     queryKey: ["/api/users", userId],
     enabled: !!userId
   });
 
   // Fetch fraud alerts for this user
-  const { data: alertData, isLoading: alertsLoading } = useQuery({
+  const { data: alertData, isLoading: alertsLoading } = useQuery<{
+    recentScores: any[];
+    alerts: any[];
+    createdAt?: string;
+    status?: string;
+    loginFrequency?: any;
+    transactionPattern?: any;
+    contentQuality?: any;
+    networkRisk?: any;
+    knownDevices?: any[];
+    locationHistory?: any[];
+  }>({
     queryKey: ["/api/fraud/alerts", userId],
     enabled: !!userId
   });
 
   // Fetch fraud report for this user
-  const { data: reportData } = useQuery({
+  const { data: reportData = {
+    loginFrequency: null,
+    transactionPattern: null,
+    contentQuality: null,
+    networkRisk: null,
+    knownDevices: [],
+    locationHistory: []
+  } } = useQuery<{
+    loginFrequency?: string | null;
+    transactionPattern?: string | null;
+    contentQuality?: string | null;
+    networkRisk?: string | null;
+    knownDevices?: any[];
+    locationHistory?: any[];
+  }>({
     queryKey: ["/api/fraud/report", "week", userId],
     enabled: !!userId
   });

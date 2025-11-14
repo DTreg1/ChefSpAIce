@@ -82,13 +82,13 @@ export function EmotionTags({
           return (
             <TagWrapper
               key={emotionData.emotion}
-              {... (animated && tagVariants ? {
+              {...(animated && tagVariants ? {
                 variants: tagVariants,
                 initial: "hidden" as const,
                 animate: "visible" as const,
                 exit: "exit" as const,
                 transition: { delay: index * 0.05 },
-              } : undefined)}
+              } as any : {})}
             >
               <Badge
                 variant="outline"

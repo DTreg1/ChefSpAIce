@@ -3,7 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Brain, Target, TrendingUp, AlertTriangle, Lightbulb, ChevronRight } from "lucide-react";
+import { Brain, Target, TrendingUp, AlertTriangle, Lightbulb, ChevronRight, BarChart3 } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 interface Trend {
@@ -30,7 +30,7 @@ export function TrendPredictor({ currentTrends, historicalData }: TrendPredictor
       const growthFactor = trend.growthRate / 100;
       
       // Generate future data points
-      const futurePoints = [];
+      const futurePoints: any[] = [];
       let value = currentValue;
       
       for (let i = 1; i <= 7; i++) {

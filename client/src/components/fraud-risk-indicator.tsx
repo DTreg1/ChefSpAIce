@@ -33,7 +33,7 @@ export function FraudRiskIndicator({
   className
 }: FraudRiskIndicatorProps) {
   // Fetch latest fraud alerts
-  const { data: alertData = { recentScores: [], alerts: [] }, isLoading } = useQuery({
+  const { data: alertData = { recentScores: [], alerts: [] }, isLoading } = useQuery<{ recentScores: any[]; alerts: any[] }>({
     queryKey: ["/api/fraud/alerts", userId],
     enabled: !!userId,
   });

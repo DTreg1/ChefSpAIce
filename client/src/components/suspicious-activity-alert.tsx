@@ -35,7 +35,7 @@ export function SuspiciousActivityAlert({
   const [isVisible, setIsVisible] = useState(true);
 
   // Fetch fraud alerts
-  const { data: alertData, isLoading } = useQuery({
+  const { data: alertData, isLoading } = useQuery<{ alerts: any[] }>({
     queryKey: ["/api/fraud/alerts"],
     refetchInterval: 30000 // Refresh every 30 seconds
   });
@@ -77,7 +77,7 @@ export function SuspiciousActivityAlert({
   }, [mostCriticalAlert, autoHideDelay, isVisible]);
 
   const handleDismiss = (alertId: string) => {
-    setDismissed(prev => new Set([...prev, alertId]));
+    setDismissed(prev => new Set(Array.from(prev).concat([alertId])));
     
     // If this was the last alert, hide the component
     if (activeAlerts.length <= 1) {

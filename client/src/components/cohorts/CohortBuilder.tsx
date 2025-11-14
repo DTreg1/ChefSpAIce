@@ -140,7 +140,7 @@ export function CohortBuilder() {
       description,
       definition,
       isActive,
-    });
+    } as any);
   };
   
   return (
