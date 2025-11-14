@@ -1819,13 +1819,15 @@ export const authProviders = pgTable("auth_providers", {
   uniqueIndex("auth_providers_provider_id_idx").on(table.provider, table.providerId),
 ]);
 
-export const insertAuthProviderSchema = createInsertSchema(authProviders, {
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertAuthProviderSchema = createInsertSchema(authProviders)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    metadata: z.record(z.any()).optional(),
+  });
 
 export type InsertAuthProvider = z.infer<typeof insertAuthProviderSchema>;
 export type AuthProvider = typeof authProviders.$inferSelect;
@@ -1961,13 +1963,15 @@ export const pushTokens = pgTable("push_tokens", {
  * Insert schema for pushTokens table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertPushTokenSchema = createInsertSchema(pushTokens, {
-  deviceInfo: pushTokenDeviceInfoSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertPushTokenSchema = createInsertSchema(pushTokens)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    deviceInfo: pushTokenDeviceInfoSchema.optional(),
+  });
 
 export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 export type PushToken = typeof pushTokens.$inferSelect;
@@ -2195,14 +2199,16 @@ export const notificationFeedback = pgTable("notification_feedback", {
  * Insert schema for notificationPreferences table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences, {
-  notificationTypes: notificationTypesSchema.optional(),
-  quietHours: quietHoursSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    notificationTypes: notificationTypesSchema.optional(),
+    quietHours: quietHoursSchema.optional(),
+  });
 
 export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
 export type NotificationPreferences = typeof notificationPreferences.$inferSelect;
@@ -2211,12 +2217,14 @@ export type NotificationPreferences = typeof notificationPreferences.$inferSelec
  * Insert schema for notificationScores table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertNotificationScoresSchema = createInsertSchema(notificationScores, {
-  features: notificationFeaturesSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertNotificationScoresSchema = createInsertSchema(notificationScores)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    features: notificationFeaturesSchema.optional(),
+  });
 
 export type InsertNotificationScores = z.infer<typeof insertNotificationScoresSchema>;
 export type NotificationScores = typeof notificationScores.$inferSelect;
@@ -2225,13 +2233,15 @@ export type NotificationScores = typeof notificationScores.$inferSelect;
  * Insert schema for notificationFeedback table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertNotificationFeedbackSchema = createInsertSchema(notificationFeedback, {
-  deviceInfo: notificationFeedbackDeviceInfoSchema.optional(),
-}).omit({
-  id: true,
-  actionAt: true,
-  createdAt: true,
-});
+export const insertNotificationFeedbackSchema = createInsertSchema(notificationFeedback)
+  .omit({
+    id: true,
+    actionAt: true,
+    createdAt: true,
+  })
+  .extend({
+    deviceInfo: notificationFeedbackDeviceInfoSchema.optional(),
+  });
 
 export type InsertNotificationFeedback = z.infer<typeof insertNotificationFeedbackSchema>;
 export type NotificationFeedback = typeof notificationFeedback.$inferSelect;
@@ -2240,12 +2250,14 @@ export type NotificationFeedback = typeof notificationFeedback.$inferSelect;
  * Insert schema for notificationHistory table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertNotificationHistorySchema = createInsertSchema(notificationHistory, {
-  data: z.any().optional(),
-}).omit({
-  id: true,
-  sentAt: true,
-});
+export const insertNotificationHistorySchema = createInsertSchema(notificationHistory)
+  .omit({
+    id: true,
+    sentAt: true,
+  })
+  .extend({
+    data: z.any().optional(),
+  });
 
 export type InsertNotificationHistory = z.infer<typeof insertNotificationHistorySchema>;
 export type NotificationHistory = typeof notificationHistory.$inferSelect;
@@ -2329,11 +2341,13 @@ export const userAppliances = pgTable("user_appliances", {
   index("user_appliances_appliance_library_id_idx").on(table.applianceLibraryId),
 ]);
 
-export const insertUserApplianceSchema = createInsertSchema(userAppliances).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertUserApplianceSchema = createInsertSchema(userAppliances)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertUserAppliance = z.infer<typeof insertUserApplianceSchema>;
 export type UserAppliance = typeof userAppliances.$inferSelect;
@@ -2436,14 +2450,16 @@ export const userInventory = pgTable("user_inventory", {
  * Insert schema for userInventory table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertUserInventorySchema = createInsertSchema(userInventory, {
-  usdaData: z.any().optional(),
-  barcodeData: z.any().optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertUserInventorySchema = createInsertSchema(userInventory)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    usdaData: z.any().optional(),
+    barcodeData: z.any().optional(),
+  });
 
 export type InsertUserInventory = z.infer<typeof insertUserInventorySchema>;
 export type UserInventory = typeof userInventory.$inferSelect;
@@ -2571,16 +2587,18 @@ export const userRecipes = pgTable("user_recipes", {
  * Insert schema for userRecipes table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertRecipeSchema = createInsertSchema(userRecipes, {
-  dietaryInfo: z.array(z.string()).optional(),
-  nutrition: z.any().optional(),
-  tags: z.array(z.string()).optional(),
-  neededEquipment: z.array(z.string()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertRecipeSchema = createInsertSchema(userRecipes)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    dietaryInfo: z.array(z.string()).optional(),
+    nutrition: z.any().optional(),
+    tags: z.array(z.string()).optional(),
+    neededEquipment: z.array(z.string()).optional(),
+  });
 
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Recipe = typeof userRecipes.$inferSelect;
