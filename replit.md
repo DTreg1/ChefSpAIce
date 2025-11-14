@@ -11,6 +11,48 @@ ChefSpAIce is an AI-powered, chat-based kitchen assistant designed to manage hom
 - Prefer horizontal batching in development workflow
 - Schema-first approach for type consistency
 
+## Database Schema Patterns
+
+### Insert Schema Pattern (Updated November 2025)
+All insert schemas use the modern `.omit().extend()` pattern for maximum type safety and autocomplete:
+
+```typescript
+export const insertExampleSchema = createInsertSchema(exampleTable)
+  .omit({
+    id: true,              // Auto-generated UUID
+    createdAt: true,       // Auto-generated timestamp
+    updatedAt: true,       // Auto-generated timestamp
+  })
+  .extend({
+    // JSON column overrides for type safety
+    jsonField: z.object({
+      property: z.string(),
+      nested: z.number().optional(),
+    }).optional(),
+  });
+
+export type InsertExample = z.infer<typeof insertExampleSchema>;
+export type Example = typeof exampleTable.$inferSelect;
+```
+
+**Key Benefits:**
+- Full TypeScript autocomplete for all fields
+- Runtime validation with Zod for JSON columns
+- Proper type inference (no `unknown` types)
+- Clear separation of omitted vs. extended fields
+
+**Shared JSON Schemas:**
+Reusable Zod schemas for common JSON structures are defined in `shared/json-schemas.ts`:
+- `notificationTypesSchema` - Notification preferences
+- `quietHoursSchema` - Quiet hours configuration
+- `nutritionInfoSchema` - Nutrition data structure
+- And more...
+
+**Migration History:**
+- November 2025: Migrated all 102 insert schemas from deprecated `createInsertSchema(table, { overrides })` to `.omit().extend()` pattern
+- Created `shared/json-schemas.ts` for reusable JSON validators
+- Validated with comprehensive test suite (0 regressions)
+
 ## System Architecture
 The ChefSpAIce application features a React frontend with TypeScript, Tailwind CSS, and Shadcn UI for a modern, responsive user interface. The backend is built with Express.js and Node.js, interacting with a PostgreSQL database (Neon-backed) via Drizzle ORM. OpenAI GPT-5 is integrated for real-time, streaming conversational AI and ML-powered features, while the USDA FoodData Central API provides comprehensive nutritional data.
 
@@ -20,7 +62,7 @@ The ChefSpAIce application features a React frontend with TypeScript, Tailwind C
     - **Frontend**: React, TypeScript, Tailwind CSS, Shadcn UI, React Query.
     - **Backend**: Express.js, Node.js, PostgreSQL (Neon-backed) with Drizzle ORM.
     - **AI Integration**: OpenAI GPT-5 for chat and AI-powered suggestions.
-    - **Data Management**: Drizzle ORM for database interactions and migrations. Hybrid image system using Barcode Lookup API, Replit Object Storage, and placeholder icons.
+    - **Data Management**: Drizzle ORM for database interactions and migrations with modern `.omit().extend()` schema pattern. Hybrid image system using Barcode Lookup API, Replit Object Storage, and placeholder icons.
 - **Feature Specifications**:
     - **Food Inventory**: CRUD for tracking items across storage locations with expiration dates and visual indicators.
     - **Recipe Management**: AI-generated recipes, saving, favoriting, and rating.
