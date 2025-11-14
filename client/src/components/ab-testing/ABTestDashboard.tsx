@@ -45,9 +45,10 @@ export default function ABTestDashboard() {
 
   // Calculate overall metrics
   const totalTests = tests?.length || 0;
-  const averageConfidence = tests
-    ?.filter(t => t.insight?.confidence)
-    .reduce((acc, t) => acc + (t.insight?.confidence || 0), 0) / (tests?.filter(t => t.insight?.confidence).length || 1) || 0;
+  const testsWithConfidence = tests?.filter(t => t.insight?.confidence) || [];
+  const averageConfidence = testsWithConfidence.length > 0
+    ? testsWithConfidence.reduce((acc, t) => acc + (t.insight?.confidence || 0), 0) / testsWithConfidence.length
+    : 0;
 
   const totalConversions = tests
     ?.flatMap(t => t.results || [])
@@ -269,7 +270,7 @@ interface TestCardProps {
 }
 
 function TestCard({ test, onSelect, selected }: TestCardProps) {
-  const getLiftIcon = (lift?: number) => {
+  const getLiftIcon = (lift?: number | null) => {
     if (!lift) return <Minus className="h-4 w-4" />;
     if (lift > 0) return <TrendingUp className="h-4 w-4 text-green-500" />;
     return <TrendingDown className="h-4 w-4 text-red-500" />;
