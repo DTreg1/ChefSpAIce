@@ -3860,8 +3860,8 @@ export class DatabaseStorage implements IStorage {
     table: any,
     value: T,
   ): Promise<R> {
-    const [result] = await db.insert(table).values(value).returning();
-    return result as R;
+    const results = await db.insert(table).values(value).returning();
+    return results[0] as R;
   }
 
   private async insertMany<T extends Record<string, any>, R>(
@@ -14318,8 +14318,8 @@ export class DatabaseStorage implements IStorage {
         const [created] = await db
           .insert(schedulingPatterns)
           .values({
-            userId,
             ...pattern,
+            userId,
           })
           .returning();
         return created;

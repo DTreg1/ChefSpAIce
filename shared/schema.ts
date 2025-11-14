@@ -79,6 +79,12 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, real, uniqueIndex, date, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import {
+  nutritionInfoSchema,
+  usdaFoodDataSchema,
+  barcodeDataSchema,
+  genericMetadataSchema,
+} from "./json-schemas";
 
 // ==================== TypeScript Interfaces for JSON Columns ====================
 
@@ -2037,7 +2043,7 @@ export const notificationHistory = pgTable("notification_history", {
   type: text("type").notNull(), // 'expiring-food', 'recipe-suggestion', 'meal-reminder', 'test'
   title: text("title").notNull(),
   body: text("body").notNull(),
-  data: jsonb("data").$type<any>(),
+  data: jsonb("data").$type<Record<string, any>>(),
   status: text("status").notNull().default('sent'), // 'sent', 'delivered', 'opened', 'dismissed', 'failed'
   platform: text("platform").notNull(), // 'ios', 'android', 'web'
   pushTokenId: varchar("push_token_id").references(() => pushTokens.id, { onDelete: "set null" }),
@@ -2256,7 +2262,7 @@ export const insertNotificationHistorySchema = createInsertSchema(notificationHi
     sentAt: true,
   })
   .extend({
-    data: z.any().optional(),
+    data: genericMetadataSchema.optional(),
   });
 
 export type InsertNotificationHistory = z.infer<typeof insertNotificationHistorySchema>;
@@ -2432,8 +2438,8 @@ export const userInventory = pgTable("user_inventory", {
   barcode: text("barcode"),
   notes: text("notes"),
   nutrition: text("nutrition"), // JSON string for nutrition data
-  usdaData: jsonb("usda_data").$type<any>(), // Full USDA FoodData Central data
-  barcodeData: jsonb("barcode_data").$type<any>(), // Full barcode lookup data
+  usdaData: jsonb("usda_data").$type<z.infer<typeof usdaFoodDataSchema>>(), // Full USDA FoodData Central data
+  barcodeData: jsonb("barcode_data").$type<z.infer<typeof barcodeDataSchema>>(), // Full barcode lookup data
   servingSize: text("serving_size"),
   servingSizeUnit: text("serving_size_unit"),
   weightInGrams: real("weight_in_grams"),
@@ -2457,8 +2463,8 @@ export const insertUserInventorySchema = createInsertSchema(userInventory)
     updatedAt: true,
   })
   .extend({
-    usdaData: z.any().optional(),
-    barcodeData: z.any().optional(),
+    usdaData: usdaFoodDataSchema.optional(),
+    barcodeData: barcodeDataSchema.optional(),
   });
 
 export type InsertUserInventory = z.infer<typeof insertUserInventorySchema>;
@@ -2570,7 +2576,7 @@ export const userRecipes = pgTable("user_recipes", {
   aiPrompt: text("ai_prompt"), // If AI generated, store the prompt
   rating: integer("rating"), // 1-5 rating
   notes: text("notes"),
-  nutrition: jsonb("nutrition").$type<any>(),
+  nutrition: jsonb("nutrition").$type<z.infer<typeof nutritionInfoSchema>>(),
   tags: jsonb("tags").$type<string[]>(),
   neededEquipment: jsonb("needed_equipment").$type<string[]>(), // Required appliances, cookware, bakeware
   isFavorite: boolean("is_favorite").notNull().default(false),
@@ -2886,8 +2892,8 @@ export const fdcCache = pgTable("fdc_cache", {
   ingredients: text("ingredients"),
   servingSize: real("serving_size"),
   servingSizeUnit: text("serving_size_unit"),
-  nutrients: jsonb("nutrients").$type<any>(),  // Changed from foodNutrients to match database
-  fullData: jsonb("full_data").$type<any>(),  // Nullable to match database
+  nutrients: jsonb("nutrients").$type<z.infer<typeof nutritionInfoSchema>>(),  // Changed from foodNutrients to match database
+  fullData: jsonb("full_data").$type<z.infer<typeof usdaFoodDataSchema>>(),  // Nullable to match database
   cachedAt: timestamp("cached_at").notNull(),
   lastAccessed: timestamp("last_accessed").notNull(),  // Added to match database
 }, (table) => [
@@ -2906,8 +2912,8 @@ export const insertFdcCacheSchema = createInsertSchema(fdcCache)
     lastAccessed: true,
   })
   .extend({
-    nutrients: z.any().optional(),
-    fullData: z.any().optional(),
+    nutrients: nutritionInfoSchema.optional(),
+    fullData: usdaFoodDataSchema.optional(),
   });
 
 export type InsertFdcCache = z.infer<typeof insertFdcCacheSchema>;
@@ -4562,8 +4568,8 @@ export const onboardingInventory = pgTable("onboarding_inventory", {
   foodCategory: text("food_category"), // Normalized to 5 major groups
   
   // USDA enriched data
-  nutrition: jsonb("nutrition").$type<any>(), // Nutrition data from USDA
-  usdaData: jsonb("usda_data").$type<any>(), // Full USDA data object
+  nutrition: jsonb("nutrition").$type<z.infer<typeof nutritionInfoSchema>>(), // Nutrition data from USDA
+  usdaData: jsonb("usda_data").$type<z.infer<typeof usdaFoodDataSchema>>(), // Full USDA data object
   brandOwner: text("brand_owner"),
   ingredients: text("ingredients"),
   servingSize: text("serving_size"),
@@ -4571,7 +4577,7 @@ export const onboardingInventory = pgTable("onboarding_inventory", {
   
   // Image data
   imageUrl: text("image_url"),
-  barcodeLookupData: jsonb("barcode_lookup_data").$type<any>(),
+  barcodeLookupData: jsonb("barcode_lookup_data").$type<z.infer<typeof barcodeDataSchema>>(),
   
   // Metadata
   lastUpdated: timestamp("last_updated").notNull().defaultNow(),
@@ -4590,9 +4596,9 @@ export const insertOnboardingInventorySchema = createInsertSchema(onboardingInve
     lastUpdated: true,
   })
   .extend({
-    nutrition: z.any().optional(),
-    usdaData: z.any().optional(),
-    barcodeLookupData: z.any().optional(),
+    nutrition: nutritionInfoSchema.optional(),
+    usdaData: usdaFoodDataSchema.optional(),
+    barcodeLookupData: barcodeDataSchema.optional(),
   });
 
 export type InsertOnboardingInventory = z.infer<typeof insertOnboardingInventorySchema>;
