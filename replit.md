@@ -35,6 +35,28 @@ export type InsertExample = z.infer<typeof insertExampleSchema>;
 export type Example = typeof exampleTable.$inferSelect;
 ```
 
+### Column Type Patterns (Critical for TypeScript Compilation)
+
+**JSON Columns:**
+Always define JSON columns with proper type annotations using Zod schemas:
+```typescript
+// CORRECT - Type-safe JSON column
+jsonb("metadata").$type<z.infer<typeof metadataSchema>>()
+
+// WRONG - Will cause TypeScript errors
+jsonb("metadata").$type<any>()
+```
+
+**Array Columns:**
+Use the `.array()` method for native PostgreSQL arrays:
+```typescript
+// CORRECT - Native array column
+text("tags").array()
+
+// WRONG - Don't use array wrapper
+array(text("tags"))  // This syntax is incorrect
+```
+
 **Key Benefits:**
 - Full TypeScript autocomplete for all fields
 - Runtime validation with Zod for JSON columns
@@ -46,12 +68,17 @@ Reusable Zod schemas for common JSON structures are defined in `shared/json-sche
 - `notificationTypesSchema` - Notification preferences
 - `quietHoursSchema` - Quiet hours configuration
 - `nutritionInfoSchema` - Nutrition data structure
+- `genericMetadataSchema` - Generic metadata structure
+- `barcodeDataSchema` - Barcode product data
+- `usdaFoodDataSchema` - USDA food database structure
 - And more...
 
 **Migration History:**
 - November 2025: Migrated all 102 insert schemas from deprecated `createInsertSchema(table, { overrides })` to `.omit().extend()` pattern
 - Created `shared/json-schemas.ts` for reusable JSON validators
-- Validated with comprehensive test suite (0 regressions)
+- Fixed all JSON column type definitions to use proper Zod schema inference
+- Corrected array column syntax to use `.array()` method
+- Resolved all TypeScript compilation errors (0 LSP diagnostics)
 
 ## System Architecture
 The ChefSpAIce application features a React frontend with TypeScript, Tailwind CSS, and Shadcn UI for a modern, responsive user interface. The backend is built with Express.js and Node.js, interacting with a PostgreSQL database (Neon-backed) via Drizzle ORM. OpenAI GPT-5 is integrated for real-time, streaming conversational AI and ML-powered features, while the USDA FoodData Central API provides comprehensive nutritional data.
