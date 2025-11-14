@@ -9088,42 +9088,48 @@ const cohortInsightSupportingDataSchema = z.object({
  * Insert schema for cohorts table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertCohortSchema = createInsertSchema(cohorts, {
-  definition: cohortDefinitionSchema,
-  metadata: cohortMetadataSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertCohortSchema = createInsertSchema(cohorts)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    definition: cohortDefinitionSchema,
+    metadata: cohortMetadataSchema.optional(),
+  });
 
 /**
  * Insert schema for cohortMetrics table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertCohortMetricSchema = createInsertSchema(cohortMetrics, {
-  segmentData: cohortSegmentDataSchema.optional(),
-  comparisonData: cohortComparisonDataSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertCohortMetricSchema = createInsertSchema(cohortMetrics)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    segmentData: cohortSegmentDataSchema.optional(),
+    comparisonData: cohortComparisonDataSchema.optional(),
+  });
 
 /**
  * Insert schema for cohortInsights table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertCohortInsightSchema = createInsertSchema(cohortInsights, {
-  supportingData: cohortInsightSupportingDataSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  importance: true,
-  confidenceScore: true,
-  status: true,
-  generatedBy: true,
-});
+export const insertCohortInsightSchema = createInsertSchema(cohortInsights)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    importance: true,
+    confidenceScore: true,
+    status: true,
+    generatedBy: true,
+  })
+  .extend({
+    supportingData: cohortInsightSupportingDataSchema.optional(),
+  });
 
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type Cohort = typeof cohorts.$inferSelect;
@@ -9308,12 +9314,14 @@ export const maintenanceHistory = pgTable("maintenance_history", {
  * Insert schema for systemMetrics table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertSystemMetricSchema = createInsertSchema(systemMetrics, {
-  metadata: maintenanceMetricsSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSystemMetricSchema = createInsertSchema(systemMetrics)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    metadata: maintenanceMetricsSchema.optional(),
+  });
 
 /**
  * Insert schema for maintenancePredictions table
@@ -9431,40 +9439,42 @@ export const schedulingPreferences = pgTable("scheduling_preferences", {
   index("scheduling_preferences_user_id_idx").on(table.userId),
 ]);
 
-export const insertSchedulingPreferencesSchema = createInsertSchema(schedulingPreferences, {
-  preferredTimes: z.object({
-    monday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
-    tuesday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
-    wednesday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
-    thursday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
-    friday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
-    saturday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
-    sunday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
-  }).optional(),
-  workingHours: z.object({
-    start: z.string(),
-    end: z.string(),
-    daysOfWeek: z.array(z.number()),
-  }).optional(),
-  blockedTimes: z.array(z.object({
-    start: z.string(),
-    end: z.string(),
-    recurring: z.boolean(),
-    daysOfWeek: z.array(z.number()).optional(),
-    reason: z.string().optional(),
-  })).optional(),
-  meetingPreferences: z.object({
-    preferInPerson: z.boolean().optional(),
-    preferVideo: z.boolean().optional(),
-    maxDailyMeetings: z.number().optional(),
-    preferredDuration: z.number().optional(),
-    avoidBackToBack: z.boolean().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertSchedulingPreferencesSchema = createInsertSchema(schedulingPreferences)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    preferredTimes: z.object({
+      monday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+      tuesday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+      wednesday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+      thursday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+      friday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+      saturday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+      sunday: z.array(z.object({ start: z.string(), end: z.string(), preference: z.number() })).optional(),
+    }).optional(),
+    workingHours: z.object({
+      start: z.string(),
+      end: z.string(),
+      daysOfWeek: z.array(z.number()),
+    }).optional(),
+    blockedTimes: z.array(z.object({
+      start: z.string(),
+      end: z.string(),
+      recurring: z.boolean(),
+      daysOfWeek: z.array(z.number()).optional(),
+      reason: z.string().optional(),
+    })).optional(),
+    meetingPreferences: z.object({
+      preferInPerson: z.boolean().optional(),
+      preferVideo: z.boolean().optional(),
+      maxDailyMeetings: z.number().optional(),
+      preferredDuration: z.number().optional(),
+      avoidBackToBack: z.boolean().optional(),
+    }).optional(),
+  });
 
 export type InsertSchedulingPreferences = z.infer<typeof insertSchedulingPreferencesSchema>;
 export type SchedulingPreferences = typeof schedulingPreferences.$inferSelect;
@@ -9545,45 +9555,47 @@ export const meetingSuggestions = pgTable("meeting_suggestions", {
   index("meeting_suggestions_status_idx").on(table.status),
 ]);
 
-export const insertMeetingSuggestionsSchema = createInsertSchema(meetingSuggestions, {
-  suggestedTimes: z.array(z.object({
-    start: z.string(),
-    end: z.string(),
-    timezone: z.string(),
-    score: z.number(),
-    conflicts: z.array(z.object({ userId: z.string(), severity: z.string(), description: z.string() })),
-    optimality: z.object({ timeZoneFit: z.number(), preferenceMatch: z.number(), scheduleDisruption: z.number() }),
-  })).optional(),
-  confidenceScores: z.object({
-    overall: z.number(),
-    timeZoneAlignment: z.number(),
-    preferenceAlignment: z.number(),
-    conflictAvoidance: z.number(),
-  }).optional(),
-  constraints: z.object({
-    duration: z.number(),
-    mustBeWithin: z.object({ start: z.string(), end: z.string() }).optional(),
-    avoidDates: z.array(z.string()).optional(),
-    requireAllAttendees: z.boolean(),
-    allowWeekends: z.boolean().optional(),
-    preferredTimeOfDay: z.string().optional(),
-  }).optional(),
-  optimizationFactors: z.object({
-    weightTimeZone: z.number(),
-    weightPreferences: z.number(),
-    weightMinimalDisruption: z.number(),
-    weightAvoidConflicts: z.number(),
-  }).optional(),
-  selectedTime: z.object({
-    start: z.string(),
-    end: z.string(),
-    timezone: z.string(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertMeetingSuggestionsSchema = createInsertSchema(meetingSuggestions)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    suggestedTimes: z.array(z.object({
+      start: z.string(),
+      end: z.string(),
+      timezone: z.string(),
+      score: z.number(),
+      conflicts: z.array(z.object({ userId: z.string(), severity: z.string(), description: z.string() })),
+      optimality: z.object({ timeZoneFit: z.number(), preferenceMatch: z.number(), scheduleDisruption: z.number() }),
+    })).optional(),
+    confidenceScores: z.object({
+      overall: z.number(),
+      timeZoneAlignment: z.number(),
+      preferenceAlignment: z.number(),
+      conflictAvoidance: z.number(),
+    }).optional(),
+    constraints: z.object({
+      duration: z.number(),
+      mustBeWithin: z.object({ start: z.string(), end: z.string() }).optional(),
+      avoidDates: z.array(z.string()).optional(),
+      requireAllAttendees: z.boolean(),
+      allowWeekends: z.boolean().optional(),
+      preferredTimeOfDay: z.string().optional(),
+    }).optional(),
+    optimizationFactors: z.object({
+      weightTimeZone: z.number(),
+      weightPreferences: z.number(),
+      weightMinimalDisruption: z.number(),
+      weightAvoidConflicts: z.number(),
+    }).optional(),
+    selectedTime: z.object({
+      start: z.string(),
+      end: z.string(),
+      timezone: z.string(),
+    }).optional(),
+  });
 
 export type InsertMeetingSuggestions = z.infer<typeof insertMeetingSuggestionsSchema>;
 export type MeetingSuggestions = typeof meetingSuggestions.$inferSelect;
@@ -9650,38 +9662,40 @@ export const schedulingPatterns = pgTable("scheduling_patterns", {
   index("scheduling_patterns_type_idx").on(table.patternType),
 ]);
 
-export const insertSchedulingPatternsSchema = createInsertSchema(schedulingPatterns, {
-  commonMeetingTimes: z.array(z.object({
-    dayOfWeek: z.number(),
-    timeOfDay: z.string(),
-    duration: z.number(),
-    frequency: z.number(),
-    lastUsed: z.string(),
-  })).optional(),
-  meetingFrequency: z.object({
-    daily: z.number(),
-    weekly: z.number(),
-    monthly: z.number(),
-    averagePerDay: z.number(),
-    peakDays: z.array(z.number()),
-    peakHours: z.array(z.number()),
-  }).optional(),
-  patternData: z.object({
-    recurringMeetings: z.array(z.object({
-      title: z.string(),
+export const insertSchedulingPatternsSchema = createInsertSchema(schedulingPatterns)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    commonMeetingTimes: z.array(z.object({
       dayOfWeek: z.number(),
-      time: z.string(),
-      participants: z.array(z.string()),
+      timeOfDay: z.string(),
+      duration: z.number(),
+      frequency: z.number(),
+      lastUsed: z.string(),
     })).optional(),
-    typicalDuration: z.record(z.number()).optional(),
-    preferredGaps: z.number().optional(),
-    batchingPreference: z.boolean().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+    meetingFrequency: z.object({
+      daily: z.number(),
+      weekly: z.number(),
+      monthly: z.number(),
+      averagePerDay: z.number(),
+      peakDays: z.array(z.number()),
+      peakHours: z.array(z.number()),
+    }).optional(),
+    patternData: z.object({
+      recurringMeetings: z.array(z.object({
+        title: z.string(),
+        dayOfWeek: z.number(),
+        time: z.string(),
+        participants: z.array(z.string()),
+      })).optional(),
+      typicalDuration: z.record(z.number()).optional(),
+      preferredGaps: z.number().optional(),
+      batchingPreference: z.boolean().optional(),
+    }).optional(),
+  });
 
 export type InsertSchedulingPatterns = z.infer<typeof insertSchedulingPatternsSchema>;
 export type SchedulingPatterns = typeof schedulingPatterns.$inferSelect;
@@ -9734,19 +9748,21 @@ export const meetingEvents = pgTable("meeting_events", {
   index("meeting_events_status_idx").on(table.status),
 ]);
 
-export const insertMeetingEventsSchema = createInsertSchema(meetingEvents, {
-  metadata: z.object({
-    isRecurring: z.boolean().optional(),
-    recurringPattern: z.string().optional(),
-    parentEventId: z.string().optional(),
-    source: z.string().optional(),
-    importance: z.string().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertMeetingEventsSchema = createInsertSchema(meetingEvents)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    metadata: z.object({
+      isRecurring: z.boolean().optional(),
+      recurringPattern: z.string().optional(),
+      parentEventId: z.string().optional(),
+      source: z.string().optional(),
+      importance: z.string().optional(),
+    }).optional(),
+  });
 
 export type InsertMeetingEvents = z.infer<typeof insertMeetingEventsSchema>;
 export type MeetingEvents = typeof meetingEvents.$inferSelect;
@@ -9792,11 +9808,13 @@ export const tickets = pgTable("tickets", {
   index("tickets_priority_idx").on(table.priority),
 ]);
 
-export const insertTicketSchema = createInsertSchema(tickets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTicketSchema = createInsertSchema(tickets)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
@@ -9856,11 +9874,13 @@ export const routingRules = pgTable("routing_rules", {
   index("routing_rules_is_active_idx").on(table.isActive),
 ]);
 
-export const insertRoutingRuleSchema = createInsertSchema(routingRules).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertRoutingRuleSchema = createInsertSchema(routingRules)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertRoutingRule = z.infer<typeof insertRoutingRuleSchema>;
 export type RoutingRule = typeof routingRules.$inferSelect;
@@ -9920,10 +9940,12 @@ export const ticketRouting = pgTable("ticket_routing", {
   index("ticket_routing_created_at_idx").on(table.createdAt),
 ]);
 
-export const insertTicketRoutingSchema = createInsertSchema(ticketRouting).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertTicketRoutingSchema = createInsertSchema(ticketRouting)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertTicketRouting = z.infer<typeof insertTicketRoutingSchema>;
 export type TicketRouting = typeof ticketRouting.$inferSelect;
@@ -9989,22 +10011,24 @@ export const agentExpertise = pgTable("agent_expertise", {
   index("agent_expertise_availability_idx").on(table.availability),
 ]);
 
-export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise, {
-  metadata: z.object({
-    team: z.string().optional(),
-    department: z.string().optional(),
-    shift_hours: z.object({
-      start: z.string(),
-      end: z.string(),
+export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    metadata: z.object({
+      team: z.string().optional(),
+      department: z.string().optional(),
+      shift_hours: z.object({
+        start: z.string(),
+        end: z.string(),
+      }).optional(),
+      escalation_contact: z.boolean().optional(),
+      auto_assign_enabled: z.boolean().optional(),
     }).optional(),
-    escalation_contact: z.boolean().optional(),
-    auto_assign_enabled: z.boolean().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+  });
 
 export type InsertAgentExpertise = z.infer<typeof insertAgentExpertiseSchema>;
 export type AgentExpertise = typeof agentExpertise.$inferSelect;
@@ -10086,24 +10110,26 @@ export const extractionTemplates = pgTable("extraction_templates", {
   index("extraction_templates_is_active_idx").on(table.isActive),
 ]);
 
-export const insertExtractionTemplateSchema = createInsertSchema(extractionTemplates, {
-  schema: z.object({
-    fields: z.array(z.object({
-      name: z.string(),
-      type: z.enum(['string', 'number', 'date', 'boolean', 'array', 'object']),
-      description: z.string(),
-      required: z.boolean().optional(),
-      validation: z.any().optional(),
-      examples: z.array(z.string()).optional(),
-    })),
-    outputFormat: z.enum(['json', 'table', 'csv']).optional(),
-  }),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  usageCount: true,
-});
+export const insertExtractionTemplateSchema = createInsertSchema(extractionTemplates)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    usageCount: true,
+  })
+  .extend({
+    schema: z.object({
+      fields: z.array(z.object({
+        name: z.string(),
+        type: z.enum(['string', 'number', 'date', 'boolean', 'array', 'object']),
+        description: z.string(),
+        required: z.boolean().optional(),
+        validation: z.any().optional(),
+        examples: z.array(z.string()).optional(),
+      })),
+      outputFormat: z.enum(['json', 'table', 'csv']).optional(),
+    }),
+  });
 
 export type InsertExtractionTemplate = z.infer<typeof insertExtractionTemplateSchema>;
 export type ExtractionTemplate = typeof extractionTemplates.$inferSelect;
@@ -10177,19 +10203,21 @@ export const extractedData = pgTable("extracted_data", {
   index("extracted_data_extracted_at_idx").on(table.extractedAt),
 ]);
 
-export const insertExtractedDataSchema = createInsertSchema(extractedData, {
-  metadata: z.object({
-    processingTime: z.number().optional(),
-    modelUsed: z.string().optional(),
-    tokenCount: z.number().optional(),
-    retryCount: z.number().optional(),
-    batchId: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  extractedAt: true,
-});
+export const insertExtractedDataSchema = createInsertSchema(extractedData)
+  .omit({
+    id: true,
+    extractedAt: true,
+  })
+  .extend({
+    metadata: z.object({
+      processingTime: z.number().optional(),
+      modelUsed: z.string().optional(),
+      tokenCount: z.number().optional(),
+      retryCount: z.number().optional(),
+      batchId: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+    }).optional(),
+  });
 
 export type InsertExtractedData = z.infer<typeof insertExtractedDataSchema>;
 export type ExtractedData = typeof extractedData.$inferSelect;
@@ -10339,53 +10367,59 @@ export const pricingPerformance = pgTable("pricing_performance", {
 ]);
 
 // Pricing Rules Schemas
-export const insertPricingRulesSchema = createInsertSchema(pricingRules, {
-  metadata: z.object({
-    category: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    competitors: z.array(z.string()).optional(),
-    updateFrequency: z.string().optional(),
-    lastOptimized: z.string().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertPricingRulesSchema = createInsertSchema(pricingRules)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    metadata: z.object({
+      category: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+      competitors: z.array(z.string()).optional(),
+      updateFrequency: z.string().optional(),
+      lastOptimized: z.string().optional(),
+    }).optional(),
+  });
 
 export type InsertPricingRules = z.infer<typeof insertPricingRulesSchema>;
 export type PricingRules = typeof pricingRules.$inferSelect;
 
 // Price History Schemas
-export const insertPriceHistorySchema = createInsertSchema(priceHistory, {
-  metadata: z.object({
-    demandMetrics: z.object({
-      views: z.number().optional(),
-      clicks: z.number().optional(),
-      conversions: z.number().optional(),
-      cartAdds: z.number().optional(),
+export const insertPriceHistorySchema = createInsertSchema(priceHistory)
+  .omit({
+    id: true,
+    changedAt: true,
+  })
+  .extend({
+    metadata: z.object({
+      demandMetrics: z.object({
+        views: z.number().optional(),
+        clicks: z.number().optional(),
+        conversions: z.number().optional(),
+        cartAdds: z.number().optional(),
+      }).optional(),
+      competitorData: z.array(z.object({
+        name: z.string(),
+        price: z.number(),
+        source: z.string(),
+      })).optional(),
+      weatherImpact: z.string().optional(),
+      eventImpact: z.string().optional(),
     }).optional(),
-    competitorData: z.array(z.object({
-      name: z.string(),
-      price: z.number(),
-      source: z.string(),
-    })).optional(),
-    weatherImpact: z.string().optional(),
-    eventImpact: z.string().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  changedAt: true,
-});
+  });
 
 export type InsertPriceHistory = z.infer<typeof insertPriceHistorySchema>;
 export type PriceHistory = typeof priceHistory.$inferSelect;
 
 // Pricing Performance Schemas
-export const insertPricingPerformanceSchema = createInsertSchema(pricingPerformance).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertPricingPerformanceSchema = createInsertSchema(pricingPerformance)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertPricingPerformance = z.infer<typeof insertPricingPerformanceSchema>;
 export type PricingPerformance = typeof pricingPerformance.$inferSelect;
@@ -10527,21 +10561,25 @@ export const imagePresets = pgTable("image_presets", {
 ]);
 
 // Image Processing Schemas
-export const insertImageProcessingSchema = createInsertSchema(imageProcessing).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertImageProcessingSchema = createInsertSchema(imageProcessing)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertImageProcessing = z.infer<typeof insertImageProcessingSchema>;
 export type ImageProcessing = typeof imageProcessing.$inferSelect;
 
 // Image Presets Schemas
-export const insertImagePresetsSchema = createInsertSchema(imagePresets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertImagePresetsSchema = createInsertSchema(imagePresets)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertImagePresets = z.infer<typeof insertImagePresetsSchema>;
 export type ImagePresets = typeof imagePresets.$inferSelect;
@@ -10668,21 +10706,25 @@ export const privacySettings = pgTable("privacy_settings", {
 ]);
 
 // Face Detections Schemas
-export const insertFaceDetectionSchema = createInsertSchema(faceDetections).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertFaceDetectionSchema = createInsertSchema(faceDetections)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertFaceDetection = z.infer<typeof insertFaceDetectionSchema>;
 export type FaceDetection = typeof faceDetections.$inferSelect;
 
 // Privacy Settings Schemas
-export const insertPrivacySettingsSchema = createInsertSchema(privacySettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertPrivacySettingsSchema = createInsertSchema(privacySettings)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertPrivacySettings = z.infer<typeof insertPrivacySettingsSchema>;
 export type PrivacySettings = typeof privacySettings.$inferSelect;
@@ -10811,21 +10853,25 @@ export const ocrCorrections = pgTable("ocr_corrections", {
 ]);
 
 // OCR Results Schemas
-export const insertOcrResultSchema = createInsertSchema(ocrResults).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertOcrResultSchema = createInsertSchema(ocrResults)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertOcrResult = z.infer<typeof insertOcrResultSchema>;
 export type OcrResult = typeof ocrResults.$inferSelect;
 
 // OCR Corrections Schemas
-export const insertOcrCorrectionSchema = createInsertSchema(ocrCorrections).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertOcrCorrectionSchema = createInsertSchema(ocrCorrections)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertOcrCorrection = z.infer<typeof insertOcrCorrectionSchema>;
 export type OcrCorrection = typeof ocrCorrections.$inferSelect;
@@ -10946,21 +10992,25 @@ export const transcriptEdits = pgTable("transcript_edits", {
 ]);
 
 // Transcriptions Schemas
-export const insertTranscriptionSchema = createInsertSchema(transcriptions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTranscriptionSchema = createInsertSchema(transcriptions)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertTranscription = z.infer<typeof insertTranscriptionSchema>;
 export type Transcription = typeof transcriptions.$inferSelect;
 
 // Transcript Edits Schemas
-export const insertTranscriptEditSchema = createInsertSchema(transcriptEdits).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTranscriptEditSchema = createInsertSchema(transcriptEdits)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertTranscriptEdit = z.infer<typeof insertTranscriptEditSchema>;
 export type TranscriptEdit = typeof transcriptEdits.$inferSelect;
