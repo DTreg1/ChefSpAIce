@@ -33,7 +33,7 @@ export function FraudRiskIndicator({
   className
 }: FraudRiskIndicatorProps) {
   // Fetch latest fraud alerts
-  const { data: alertData, isLoading } = useQuery({
+  const { data: alertData = { recentScores: [], alerts: [] }, isLoading } = useQuery({
     queryKey: ["/api/fraud/alerts", userId],
     enabled: !!userId,
   });
@@ -131,7 +131,6 @@ export function FraudRiskIndicator({
         <Progress 
           value={score * 100} 
           className="h-2"
-          indicatorClassName={getProgressColor(score)}
         />
       </div>
 

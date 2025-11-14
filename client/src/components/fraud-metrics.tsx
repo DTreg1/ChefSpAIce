@@ -56,13 +56,22 @@ export function FraudMetrics({
   const [isLive, setIsLive] = useState(false);
 
   // Fetch fraud report data
-  const { data: reportData, isLoading, refetch } = useQuery({
+  const { data: reportData = {
+    averageScore: 0,
+    totalScores: 0,
+    highRiskCount: 0,
+    suspiciousActivitiesCount: 0,
+    autoBlockedCount: 0,
+    reviewsCount: 0,
+    riskDistribution: [],
+    topActivityTypes: []
+  }, isLoading, refetch } = useQuery({
     queryKey: ["/api/fraud/report", timeRange],
     refetchInterval: isLive ? refreshInterval : false
   });
 
   // Fetch current alerts
-  const { data: alertData } = useQuery({
+  const { data: alertData = { alerts: [] } } = useQuery({
     queryKey: ["/api/fraud/alerts"],
     refetchInterval: isLive ? refreshInterval : false
   });
@@ -297,7 +306,6 @@ export function FraudMetrics({
                     <Progress
                       value={percentage}
                       className="h-2"
-                      indicatorClassName={getColor()}
                     />
                   </div>
                 );
