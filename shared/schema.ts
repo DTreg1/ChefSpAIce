@@ -2698,10 +2698,12 @@ export const mealPlans = pgTable("meal_plans", {
   index("meal_plans_meal_type_idx").on(table.mealType),
 ]);
 
-export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertMealPlanSchema = createInsertSchema(mealPlans)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
 export type MealPlan = typeof mealPlans.$inferSelect;
@@ -2789,10 +2791,12 @@ export const apiUsageLogs = pgTable("api_usage_logs", {
   index("api_usage_logs_success_idx").on(table.success),
 ]);
 
-export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs).omit({
-  id: true,
-  timestamp: true,
-});
+export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs)
+  .omit({
+    id: true,
+    timestamp: true,
+  })
+  .extend({});
 
 export type InsertApiUsageLog = z.infer<typeof insertApiUsageLogSchema>;
 export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
@@ -2895,14 +2899,16 @@ export const fdcCache = pgTable("fdc_cache", {
  * Insert schema for fdcCache table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertFdcCacheSchema = createInsertSchema(fdcCache, {
-  nutrients: z.any().optional(),
-  fullData: z.any().optional(),
-}).omit({
-  id: true,
-  cachedAt: true,
-  lastAccessed: true,
-});
+export const insertFdcCacheSchema = createInsertSchema(fdcCache)
+  .omit({
+    id: true,
+    cachedAt: true,
+    lastAccessed: true,
+  })
+  .extend({
+    nutrients: z.any().optional(),
+    fullData: z.any().optional(),
+  });
 
 export type InsertFdcCache = z.infer<typeof insertFdcCacheSchema>;
 export type FdcCache = typeof fdcCache.$inferSelect;
@@ -2997,10 +3003,12 @@ export const userShopping = pgTable("user_shopping", {
   index("user_shopping_list_items_recipe_id_idx").on(table.recipeId),
 ]);
 
-export const insertShoppingListItemSchema = createInsertSchema(userShopping).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertShoppingListItemSchema = createInsertSchema(userShopping)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertShoppingListItem = z.infer<typeof insertShoppingListItemSchema>;
 export type ShoppingListItem = typeof userShopping.$inferSelect;
@@ -3365,21 +3373,23 @@ export const userFeedback = pgTable("user_feedback", {
   index("user_feedback_created_at_idx").on(table.createdAt),
 ]);
 
-export const insertFeedbackSchema = createInsertSchema(userFeedback, {
-  type: z.enum(['bug', 'feature_request', 'improvement', 'praise', 'other']),
-  sentiment: z.enum(['positive', 'negative', 'neutral']).optional(),
-  priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-  status: z.enum(['pending', 'in_review', 'in_progress', 'resolved', 'closed', 'wont_fix']).default('pending'),
-  attachments: z.array(z.string()).optional(),
-  tags: z.array(z.string()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  resolvedAt: true,
-  upvotes: true,
-  responses: true,
-});
+export const insertFeedbackSchema = createInsertSchema(userFeedback)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    resolvedAt: true,
+    upvotes: true,
+    responses: true,
+  })
+  .extend({
+    type: z.enum(['bug', 'feature_request', 'improvement', 'praise', 'other']),
+    sentiment: z.enum(['positive', 'negative', 'neutral']).optional(),
+    priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+    status: z.enum(['pending', 'in_review', 'in_progress', 'resolved', 'closed', 'wont_fix']).default('pending'),
+    attachments: z.array(z.string()).optional(),
+    tags: z.array(z.string()).optional(),
+  });
 
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof userFeedback.$inferSelect & {
@@ -3513,11 +3523,13 @@ export const donations = pgTable("donations", {
   index("donations_created_at_idx").on(table.createdAt),
 ]);
 
-export const insertDonationSchema = createInsertSchema(donations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertDonationSchema = createInsertSchema(donations)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertDonation = z.infer<typeof insertDonationSchema>;
 export type Donation = typeof donations.$inferSelect;
@@ -3639,16 +3651,18 @@ export const webVitals = pgTable("web_vitals", {
   index("web_vitals_rating_idx").on(table.rating),
 ]);
 
-export const insertWebVitalSchema = createInsertSchema(webVitals, {
-  name: z.enum(['LCP', 'FID', 'CLS', 'FCP', 'TTFB', 'INP']),
-  rating: z.enum(['good', 'needs-improvement', 'poor']),
-  value: z.number(),
-  delta: z.number(),
-  metricId: z.string(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertWebVitalSchema = createInsertSchema(webVitals)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    name: z.enum(['LCP', 'FID', 'CLS', 'FCP', 'TTFB', 'INP']),
+    rating: z.enum(['good', 'needs-improvement', 'poor']),
+    value: z.number(),
+    delta: z.number(),
+    metricId: z.string(),
+  });
 
 export type InsertWebVital = z.infer<typeof insertWebVitalSchema>;
 export type WebVital = typeof webVitals.$inferSelect;
@@ -3705,14 +3719,16 @@ export const contentEmbeddings = pgTable("content_embeddings", {
  * Insert schema for contentEmbeddings table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertContentEmbeddingSchema = createInsertSchema(contentEmbeddings, {
-  embedding: z.array(z.number()),
-  metadata: contentEmbeddingMetadataSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertContentEmbeddingSchema = createInsertSchema(contentEmbeddings)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    embedding: z.array(z.number()),
+    metadata: contentEmbeddingMetadataSchema.optional(),
+  });
 
 export type InsertContentEmbedding = z.infer<typeof insertContentEmbeddingSchema>;
 export type ContentEmbedding = typeof contentEmbeddings.$inferSelect;
@@ -3755,10 +3771,12 @@ export const searchLogs = pgTable("search_logs", {
   index("search_logs_timestamp_idx").on(table.timestamp),
 ]);
 
-export const insertSearchLogSchema = createInsertSchema(searchLogs).omit({
-  id: true,
-  timestamp: true,
-});
+export const insertSearchLogSchema = createInsertSchema(searchLogs)
+  .omit({
+    id: true,
+    timestamp: true,
+  })
+  .extend({});
 
 export type InsertSearchLog = z.infer<typeof insertSearchLogSchema>;
 export type SearchLog = typeof searchLogs.$inferSelect;
@@ -3802,10 +3820,12 @@ export const categories = pgTable("categories", {
   uniqueIndex("categories_name_idx").on(table.name),
 ]);
 
-export const insertCategorySchema = createInsertSchema(categories).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertCategorySchema = createInsertSchema(categories)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
