@@ -3862,10 +3862,12 @@ export const contentCategories = pgTable("content_categories", {
   uniqueIndex("content_categories_unique_idx").on(table.contentId, table.contentType, table.categoryId, table.userId),
 ]);
 
-export const insertContentCategorySchema = createInsertSchema(contentCategories).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertContentCategorySchema = createInsertSchema(contentCategories)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertContentCategory = z.infer<typeof insertContentCategorySchema>;
 export type ContentCategory = typeof contentCategories.$inferSelect;
@@ -3898,10 +3900,12 @@ export const tags = pgTable("tags", {
   uniqueIndex("tags_slug_idx").on(table.slug),
 ]);
 
-export const insertTagSchema = createInsertSchema(tags).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertTagSchema = createInsertSchema(tags)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertTag = z.infer<typeof insertTagSchema>;
 export type Tag = typeof tags.$inferSelect;
@@ -3937,10 +3941,12 @@ export const contentTags = pgTable("content_tags", {
   uniqueIndex("content_tags_unique_idx").on(table.contentId, table.contentType, table.tagId, table.userId),
 ]);
 
-export const insertContentTagSchema = createInsertSchema(contentTags).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertContentTagSchema = createInsertSchema(contentTags)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertContentTag = z.infer<typeof insertContentTagSchema>;
 export type ContentTag = typeof contentTags.$inferSelect;
@@ -3981,10 +3987,12 @@ export const duplicatePairs = pgTable("duplicate_pairs", {
   index("duplicate_pairs_score_idx").on(table.similarityScore),
 ]);
 
-export const insertDuplicatePairSchema = createInsertSchema(duplicatePairs).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertDuplicatePairSchema = createInsertSchema(duplicatePairs)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertDuplicatePair = z.infer<typeof insertDuplicatePairSchema>;
 export type DuplicatePair = typeof duplicatePairs.$inferSelect;
@@ -4026,12 +4034,14 @@ export const relatedContentCache = pgTable("related_content_cache", {
  * Insert schema for relatedContentCache table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertRelatedContentCacheSchema = createInsertSchema(relatedContentCache, {
-  relatedItems: z.array(relatedContentItemSchema),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertRelatedContentCacheSchema = createInsertSchema(relatedContentCache)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    relatedItems: z.array(relatedContentItemSchema),
+  });
 
 export type InsertRelatedContentCache = z.infer<typeof insertRelatedContentCacheSchema>;
 export type RelatedContentCache = typeof relatedContentCache.$inferSelect;
@@ -4091,12 +4101,14 @@ export const queryLogs = pgTable("query_logs", {
  * Insert schema for queryLogs table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertQueryLogSchema = createInsertSchema(queryLogs, {
-  metadata: queryLogMetadataSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertQueryLogSchema = createInsertSchema(queryLogs)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    metadata: queryLogMetadataSchema.optional(),
+  });
 
 export type InsertQueryLog = z.infer<typeof insertQueryLogSchema>;
 export type QueryLog = typeof queryLogs.$inferSelect;
@@ -4265,16 +4277,18 @@ export const analyticsEvents = pgTable("analytics_events", {
  * Insert schema for analyticsEvents table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents, {
-  eventType: z.string(),
-  eventCategory: z.string(),
-  eventAction: z.string(),
-  sessionId: z.string(),
-  properties: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  timestamp: true,
-});
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents)
+  .omit({
+    id: true,
+    timestamp: true,
+  })
+  .extend({
+    eventType: z.string(),
+    eventCategory: z.string(),
+    eventAction: z.string(),
+    sessionId: z.string(),
+    properties: z.record(z.any()).optional(),
+  });
 
 export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
@@ -4408,12 +4422,14 @@ export const userSessions = pgTable("user_sessions", {
  * Insert schema for userSessions table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertUserSessionSchema = createInsertSchema(userSessions, {
-  goalCompletions: z.array(z.string()).optional(),
-}).omit({
-  id: true,
-  startTime: true,
-});
+export const insertUserSessionSchema = createInsertSchema(userSessions)
+  .omit({
+    id: true,
+    startTime: true,
+  })
+  .extend({
+    goalCompletions: z.array(z.string()).optional(),
+  });
 
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
@@ -4568,14 +4584,16 @@ export const onboardingInventory = pgTable("onboarding_inventory", {
   index("onboarding_inventory_food_category_idx").on(table.foodCategory),
 ]);
 
-export const insertOnboardingInventorySchema = createInsertSchema(onboardingInventory, {
-  nutrition: z.any().optional(),
-  usdaData: z.any().optional(),
-  barcodeLookupData: z.any().optional(),
-}).omit({
-  id: true,
-  lastUpdated: true,
-});
+export const insertOnboardingInventorySchema = createInsertSchema(onboardingInventory)
+  .omit({
+    id: true,
+    lastUpdated: true,
+  })
+  .extend({
+    nutrition: z.any().optional(),
+    usdaData: z.any().optional(),
+    barcodeLookupData: z.any().optional(),
+  });
 
 export type InsertOnboardingInventory = z.infer<typeof insertOnboardingInventorySchema>;
 export type OnboardingInventory = typeof onboardingInventory.$inferSelect;
@@ -4747,11 +4765,13 @@ export const cookingTerms = pgTable("cooking_terms", {
   index("cooking_terms_category_idx").on(table.category),
 ]);
 
-export const insertCookingTermSchema = createInsertSchema(cookingTerms).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertCookingTermSchema = createInsertSchema(cookingTerms)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertCookingTerm = z.infer<typeof insertCookingTermSchema>;
 export type CookingTerm = typeof cookingTerms.$inferSelect;
@@ -5946,11 +5966,13 @@ export const languagePreferences = pgTable("language_preferences", {
   index("language_preferences_user_id_idx").on(table.userId),
 ]);
 
-export const insertLanguagePreferenceSchema = createInsertSchema(languagePreferences).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertLanguagePreferenceSchema = createInsertSchema(languagePreferences)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertLanguagePreference = z.infer<typeof insertLanguagePreferenceSchema>;
 export type LanguagePreference = typeof languagePreferences.$inferSelect;
@@ -6039,17 +6061,19 @@ export const imageMetadata = pgTable("image_metadata", {
  * Insert schema for imageMetadata table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertImageMetadataSchema = createInsertSchema(imageMetadata, {
-  dimensions: z.object({
-    width: z.number().int().positive().optional(),
-    height: z.number().int().positive().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  uploadedAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertImageMetadataSchema = createInsertSchema(imageMetadata)
+  .omit({
+    id: true,
+    uploadedAt: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    dimensions: z.object({
+      width: z.number().int().positive().optional(),
+      height: z.number().int().positive().optional(),
+    }).optional(),
+  });
 
 export type InsertImageMetadata = z.infer<typeof insertImageMetadataSchema>;
 export type ImageMetadata = typeof imageMetadata.$inferSelect;
@@ -6149,19 +6173,21 @@ export const altTextQuality = pgTable("alt_text_quality", {
   index("alt_text_quality_wcag_idx").on(table.wcagLevel),
 ]);
 
-export const insertAltTextQualitySchema = createInsertSchema(altTextQuality, {
-  metadata: z.object({
-    wordCount: z.number().optional(),
-    readabilityScore: z.number().optional(),
-    sentimentScore: z.number().optional(),
-    technicalTerms: z.array(z.string()).optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  lastAnalyzedAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertAltTextQualitySchema = createInsertSchema(altTextQuality)
+  .omit({
+    id: true,
+    lastAnalyzedAt: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    metadata: z.object({
+      wordCount: z.number().optional(),
+      readabilityScore: z.number().optional(),
+      sentimentScore: z.number().optional(),
+      technicalTerms: z.array(z.string()).optional(),
+    }).optional(),
+  });
 
 export type InsertAltTextQuality = z.infer<typeof insertAltTextQualitySchema>;
 export type AltTextQuality = typeof altTextQuality.$inferSelect;
@@ -6343,19 +6369,21 @@ export const blockedContent = pgTable("blocked_content", {
  * Insert schema for blockedContent table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertBlockedContentSchema = createInsertSchema(blockedContent, {
-  metadata: z.object({
-    originalLocation: z.string().optional(),
-    targetUsers: z.array(z.string()).optional(),
-    context: z.string().optional(),
-    previousViolations: z.number().int().nonnegative().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  timestamp: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertBlockedContentSchema = createInsertSchema(blockedContent)
+  .omit({
+    id: true,
+    timestamp: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    metadata: z.object({
+      originalLocation: z.string().optional(),
+      targetUsers: z.array(z.string()).optional(),
+      context: z.string().optional(),
+      previousViolations: z.number().int().nonnegative().optional(),
+    }).optional(),
+  });
 
 export type InsertBlockedContent = z.infer<typeof insertBlockedContentSchema>;
 export type BlockedContent = typeof blockedContent.$inferSelect;
@@ -6446,11 +6474,13 @@ export const moderationAppeals = pgTable("moderation_appeals", {
   index("moderation_appeals_assigned_idx").on(table.assignedTo),
 ]);
 
-export const insertModerationAppealSchema = createInsertSchema(moderationAppeals).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertModerationAppealSchema = createInsertSchema(moderationAppeals)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({});
 
 export type InsertModerationAppeal = z.infer<typeof insertModerationAppealSchema>;
 export type ModerationAppeal = typeof moderationAppeals.$inferSelect;
@@ -6701,39 +6731,45 @@ const fraudReviewRestrictionsSchema = z.object({
  * Insert schema for fraudScores table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertFraudScoreSchema = createInsertSchema(fraudScores, {
-  factors: fraudRiskFactorSchema,
-}).omit({
-  id: true,
-  timestamp: true,
-  modelVersion: true,
-});
+export const insertFraudScoreSchema = createInsertSchema(fraudScores)
+  .omit({
+    id: true,
+    timestamp: true,
+    modelVersion: true,
+  })
+  .extend({
+    factors: fraudRiskFactorSchema,
+  });
 
 /**
  * Insert schema for suspiciousActivities table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActivities, {
-  details: fraudEvidenceDetailSchema,
-  riskLevel: z.enum(["low", "medium", "high", "critical"]),
-}).omit({
-  id: true,
-  detectedAt: true,
-  status: true,
-  autoBlocked: true,
-});
+export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActivities)
+  .omit({
+    id: true,
+    detectedAt: true,
+    status: true,
+    autoBlocked: true,
+  })
+  .extend({
+    details: fraudEvidenceDetailSchema,
+    riskLevel: z.enum(["low", "medium", "high", "critical"]),
+  });
 
 /**
  * Insert schema for fraudReviews table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertFraudReviewSchema = createInsertSchema(fraudReviews, {
-  decision: z.enum(["cleared", "flagged", "banned", "restricted", "monitor"]),
-  restrictions: fraudReviewRestrictionsSchema.optional(),
-}).omit({
-  id: true,
-  reviewedAt: true,
-});
+export const insertFraudReviewSchema = createInsertSchema(fraudReviews)
+  .omit({
+    id: true,
+    reviewedAt: true,
+  })
+  .extend({
+    decision: z.enum(["cleared", "flagged", "banned", "restricted", "monitor"]),
+    restrictions: fraudReviewRestrictionsSchema.optional(),
+  });
 
 /**
  * Insert schema for fraudDetectionResults table
@@ -6970,45 +7006,51 @@ export const sentimentSegments = pgTable("sentiment_segments", {
  * Insert schema for sentimentMetrics table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertSentimentMetricsSchema = createInsertSchema(sentimentMetrics, {
-  periodType: z.enum(["day", "week", "month"]),
-  categories: z.record(z.string(), sentimentCategorySchema).optional(),
-  painPoints: z.array(painPointSchema).optional(),
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSentimentMetricsSchema = createInsertSchema(sentimentMetrics)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    periodType: z.enum(["day", "week", "month"]),
+    categories: z.record(z.string(), sentimentCategorySchema).optional(),
+    painPoints: z.array(painPointSchema).optional(),
+    metadata: z.record(z.any()).optional(),
+  });
 
 /**
  * Insert schema for sentimentAlerts table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertSentimentAlertsSchema = createInsertSchema(sentimentAlerts, {
-  alertType: z.enum(["sentiment_drop", "sustained_negative", "volume_spike", "category_issue"]),
-  severity: z.enum(["low", "medium", "high", "critical"]),
-  metadata: sentimentAlertMetadataSchema.optional(),
-}).omit({
-  id: true,
-  triggeredAt: true,
-  status: true,
-  notificationSent: true,
-});
+export const insertSentimentAlertsSchema = createInsertSchema(sentimentAlerts)
+  .omit({
+    id: true,
+    triggeredAt: true,
+    status: true,
+    notificationSent: true,
+  })
+  .extend({
+    alertType: z.enum(["sentiment_drop", "sustained_negative", "volume_spike", "category_issue"]),
+    severity: z.enum(["low", "medium", "high", "critical"]),
+    metadata: sentimentAlertMetadataSchema.optional(),
+  });
 
 /**
  * Insert schema for sentimentSegments table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertSentimentSegmentsSchema = createInsertSchema(sentimentSegments, {
-  periodType: z.enum(["day", "week", "month"]),
-  trendDirection: z.enum(["up", "down", "stable"]).optional(),
-  topIssues: z.array(sentimentIssueSchema).optional(),
-  topPraises: z.array(sentimentPraiseSchema).optional(),
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSentimentSegmentsSchema = createInsertSchema(sentimentSegments)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    periodType: z.enum(["day", "week", "month"]),
+    trendDirection: z.enum(["up", "down", "stable"]).optional(),
+    topIssues: z.array(sentimentIssueSchema).optional(),
+    topPraises: z.array(sentimentPraiseSchema).optional(),
+    metadata: z.record(z.any()).optional(),
+  });
 
 export type InsertSentimentMetrics = z.infer<typeof insertSentimentMetricsSchema>;
 export type SentimentMetrics = typeof sentimentMetrics.$inferSelect;
@@ -7252,23 +7294,25 @@ export const insertSentimentResultsSchema = insertSentimentResultSchema;
  * Insert schema for sentimentTrends table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertSentimentTrendSchema = createInsertSchema(sentimentTrends, {
-  periodType: z.enum(["hour", "day", "week", "month", "quarter", "year"]),
-  sentimentCounts: z.record(z.number()).optional(),
-  dominantEmotions: z.array(z.object({
-    emotion: z.string(),
-    count: z.number().int().nonnegative(),
-    avgIntensity: z.number(),
-  })).optional(),
-  contentTypes: z.record(z.object({
-    count: z.number().int().nonnegative(),
-    avgSentiment: z.number(),
-  })).optional(),
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertSentimentTrendSchema = createInsertSchema(sentimentTrends)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    periodType: z.enum(["hour", "day", "week", "month", "quarter", "year"]),
+    sentimentCounts: z.record(z.number()).optional(),
+    dominantEmotions: z.array(z.object({
+      emotion: z.string(),
+      count: z.number().int().nonnegative(),
+      avgIntensity: z.number(),
+    })).optional(),
+    contentTypes: z.record(z.object({
+      count: z.number().int().nonnegative(),
+      avgSentiment: z.number(),
+    })).optional(),
+    metadata: z.record(z.any()).optional(),
+  });
 
 export type InsertSentimentResult = z.infer<typeof insertSentimentResultSchema>;
 export type SentimentResult = typeof sentimentResults.$inferSelect;
@@ -7440,25 +7484,28 @@ export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts)
     metadata: autoSaveDataSchema.optional(),
   });
 
-export const insertSavePatternSchema = createInsertSchema(savePatterns, {
-  patternData: z.object({
-    pauseHistogram: z.array(z.number()).optional(),
-    keystrokeIntervals: z.array(z.number()).optional(),
-    burstLengths: z.array(z.number()).optional(),
-    timeOfDayPreferences: z.record(z.number()).optional(),
-    contentTypePatterns: z.record(z.any()).optional(),
-  }).optional(),
-  modelWeights: z.object({
-    weights: z.array(z.array(z.number())).optional(),
-    bias: z.array(z.number()).optional(),
-    version: z.string().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  lastAnalyzed: true,
-});
+export const insertSavePatternSchema = createInsertSchema(savePatterns)
+  .omit({
+    id: true,
+    lastUpdated: true,
+    lastAnalyzed: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    patternData: z.object({
+      pauseHistogram: z.array(z.number()).optional(),
+      keystrokeIntervals: z.array(z.number()).optional(),
+      burstLengths: z.array(z.number()).optional(),
+      timeOfDayPreferences: z.record(z.number()).optional(),
+      contentTypePatterns: z.record(z.any()).optional(),
+    }).optional(),
+    modelWeights: z.object({
+      weights: z.array(z.array(z.number())).optional(),
+      bias: z.array(z.number()).optional(),
+      version: z.string().optional(),
+    }).optional(),
+  });
 
 export type InsertAutoSaveDraft = z.infer<typeof insertAutoSaveDraftSchema>;
 export type AutoSaveDraft = typeof autoSaveDrafts.$inferSelect;
@@ -7671,17 +7718,23 @@ export const completionFeedback = pgTable("completion_feedback", {
  * Insert schema for formCompletions table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertFormCompletionSchema = createInsertSchema(formCompletions, {
-  commonValues: z.array(z.object({
-    value: z.string(),
-    count: z.number().int().nonnegative(),
-    lastUsed: z.string(),
-    metadata: z.record(z.any()).optional(),
-  })).optional(),
-  patterns: z.array(z.object({
-    regex: z.string(),
-    description: z.string(),
-    priority: z.number().int(),
+export const insertFormCompletionSchema = createInsertSchema(formCompletions)
+  .omit({
+    id: true,
+    lastUpdated: true,
+    createdAt: true,
+  })
+  .extend({
+    commonValues: z.array(z.object({
+      value: z.string(),
+      count: z.number().int().nonnegative(),
+      lastUsed: z.string(),
+      metadata: z.record(z.any()).optional(),
+    })).optional(),
+    patterns: z.array(z.object({
+      regex: z.string(),
+      description: z.string(),
+      priority: z.number().int(),
   })).optional(),
   contextRules: z.array(z.object({
     condition: z.string(),
@@ -7698,17 +7751,23 @@ export const insertFormCompletionSchema = createInsertSchema(formCompletions, {
  * Insert schema for userFormHistory table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertUserFormHistorySchema = createInsertSchema(userFormHistory, {
-  valuesUsed: z.array(z.object({
-    value: z.string(),
-    count: z.number().int().nonnegative(),
-    lastUsed: z.string(),
-    context: z.record(z.any()).optional(),
-  })).optional(),
-  frequencyMap: z.record(z.number()).optional(),
-  lastSequence: z.array(z.object({
-    fieldName: z.string(),
-    value: z.string(),
+export const insertUserFormHistorySchema = createInsertSchema(userFormHistory)
+  .omit({
+    id: true,
+    lastUpdated: true,
+    createdAt: true,
+  })
+  .extend({
+    valuesUsed: z.array(z.object({
+      value: z.string(),
+      count: z.number().int().nonnegative(),
+      lastUsed: z.string(),
+      context: z.record(z.any()).optional(),
+    })).optional(),
+    frequencyMap: z.record(z.number()).optional(),
+    lastSequence: z.array(z.object({
+      fieldName: z.string(),
+      value: z.string(),
     timestamp: z.string(),
   })).optional(),
   preferences: z.object({
@@ -7727,17 +7786,19 @@ export const insertUserFormHistorySchema = createInsertSchema(userFormHistory, {
  * Insert schema for completionFeedback table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertCompletionFeedbackSchema = createInsertSchema(completionFeedback, {
-  context: z.object({
-    pageUrl: z.string().optional(),
-    formId: z.string().optional(),
-    otherFields: z.record(z.string()).optional(),
-    deviceType: z.string().optional(),
-    timestamp: z.string().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
+export const insertCompletionFeedbackSchema = createInsertSchema(completionFeedback)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    context: z.object({
+      pageUrl: z.string().optional(),
+      formId: z.string().optional(),
+      otherFields: z.record(z.string()).optional(),
+      deviceType: z.string().optional(),
+      timestamp: z.string().optional(),
+    }).optional(),
 });
 
 export type InsertFormCompletion = z.infer<typeof insertFormCompletionSchema>;
@@ -7956,22 +8017,28 @@ export const validationErrors = pgTable("validation_errors", {
  * Insert schema for validationRules table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertValidationRuleSchema = createInsertSchema(validationRules, {
-  rules: z.object({
-    patterns: z.array(z.object({
-      regex: z.string(),
-      flags: z.string().optional(),
-      description: z.string().optional(),
-    })),
-    formatters: z.array(z.object({
-      from: z.string(),
-      to: z.string(),
-    })).optional(),
-    validators: z.array(z.object({
-      type: z.string(),
-      params: z.any().optional(),
-    })).optional(),
-    lengthConstraints: z.object({
+export const insertValidationRuleSchema = createInsertSchema(validationRules)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    rules: z.object({
+      patterns: z.array(z.object({
+        regex: z.string(),
+        flags: z.string().optional(),
+        description: z.string().optional(),
+      })),
+      formatters: z.array(z.object({
+        from: z.string(),
+        to: z.string(),
+      })).optional(),
+      validators: z.array(z.object({
+        type: z.string(),
+        params: z.any().optional(),
+      })).optional(),
+      lengthConstraints: z.object({
       min: z.number().int().nonnegative().optional(),
       max: z.number().int().positive().optional(),
     }).optional(),
@@ -8003,52 +8070,50 @@ export const insertValidationRuleSchema = createInsertSchema(validationRules, {
       value: z.string().optional(),
     })).optional(),
   }),
-  aiConfig: z.object({
-    useAI: z.boolean().optional(),
-    model: z.string().optional(),
-    temperature: z.number().optional(),
-    maxSuggestions: z.number().int().positive().optional(),
-    contextFields: z.array(z.string()).optional(),
-  }),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+    aiConfig: z.object({
+      useAI: z.boolean().optional(),
+      model: z.string().optional(),
+      temperature: z.number().optional(),
+      maxSuggestions: z.number().int().positive().optional(),
+      contextFields: z.array(z.string()).optional(),
+    }),
+  });
 
 /**
  * Insert schema for validationErrors table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertValidationErrorSchema = createInsertSchema(validationErrors, {
-  context: z.object({
-    formId: z.string().optional(),
-    pageUrl: z.string().optional(),
-    otherFields: z.record(z.any()).optional(),
-    sessionId: z.string().optional(),
-    deviceInfo: z.object({
-      userAgent: z.string().optional(),
-      viewport: z.object({
-        width: z.number().int().positive(),
-        height: z.number().int().positive(),
+export const insertValidationErrorSchema = createInsertSchema(validationErrors)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    context: z.object({
+      formId: z.string().optional(),
+      pageUrl: z.string().optional(),
+      otherFields: z.record(z.any()).optional(),
+      sessionId: z.string().optional(),
+      deviceInfo: z.object({
+        userAgent: z.string().optional(),
+        viewport: z.object({
+          width: z.number().int().positive(),
+          height: z.number().int().positive(),
+        }).optional(),
+        locale: z.string().optional(),
       }).optional(),
-      locale: z.string().optional(),
     }).optional(),
-  }).optional(),
-  aiSuggestions: z.object({
-    suggestions: z.array(z.object({
-      value: z.string(),
-      confidence: z.number(),
-      reasoning: z.string().optional(),
-    })).optional(),
-    selectedIndex: z.number().int().nonnegative().optional(),
-    model: z.string().optional(),
-    processingTime: z.number().int().nonnegative().optional(),
-  }).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+    aiSuggestions: z.object({
+      suggestions: z.array(z.object({
+        value: z.string(),
+        confidence: z.number(),
+        reasoning: z.string().optional(),
+      })).optional(),
+      selectedIndex: z.number().int().nonnegative().optional(),
+      model: z.string().optional(),
+      processingTime: z.number().int().nonnegative().optional(),
+    }).optional(),
+  });
 
 export type InsertValidationRule = z.infer<typeof insertValidationRuleSchema>;
 export type ValidationRule = typeof validationRules.$inferSelect;
@@ -8167,10 +8232,12 @@ export const insertAnalyticsInsightSchema = createInsertSchema(analyticsInsights
     aiContext: z.record(z.any()).optional(),
   });
 
-export const insertInsightFeedbackSchema = createInsertSchema(insightFeedback).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertInsightFeedbackSchema = createInsertSchema(insightFeedback)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({});
 
 export type InsertAnalyticsInsight = z.infer<typeof insertAnalyticsInsightSchema>;
 export type AnalyticsInsight = typeof analyticsInsights.$inferSelect;
@@ -8327,12 +8394,14 @@ export const insertUserPredictionSchema = createInsertSchema(userPredictions)
  * Insert schema for predictionAccuracy table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertPredictionAccuracySchema = createInsertSchema(predictionAccuracy, {
-  modelFeedback: predictionAccuracyModelFeedbackSchema.optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-});
+export const insertPredictionAccuracySchema = createInsertSchema(predictionAccuracy)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    modelFeedback: predictionAccuracyModelFeedbackSchema.optional(),
+  });
 
 export type InsertUserPrediction = z.infer<typeof insertUserPredictionSchema>;
 export type UserPrediction = typeof userPredictions.$inferSelect;
@@ -8553,16 +8622,18 @@ export const insertTrendSchema = createInsertSchema(trends)
  * Insert schema for trendAlerts table
  * Uses column overrides to preserve JSON type information for JSONB columns
  */
-export const insertTrendAlertSchema = createInsertSchema(trendAlerts, {
-  alertType: z.enum(["threshold", "emergence", "acceleration", "peak", "decline", "anomaly"]),
-  priority: z.enum(["low", "medium", "high", "critical"]),
-  conditions: trendAlertConditionsSchema.optional(),
-  metadata: z.record(z.any()).optional(),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertTrendAlertSchema = createInsertSchema(trendAlerts)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    alertType: z.enum(["threshold", "emergence", "acceleration", "peak", "decline", "anomaly"]),
+    priority: z.enum(["low", "medium", "high", "critical"]),
+    conditions: trendAlertConditionsSchema.optional(),
+    metadata: z.record(z.any()).optional(),
+  });
 
 export type InsertTrend = z.infer<typeof insertTrendSchema>;
 export type Trend = typeof trends.$inferSelect;
