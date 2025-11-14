@@ -338,7 +338,7 @@ export function IntelligentNotificationSettings() {
               <ScrollArea className="h-96">
                 {insights?.recentNotifications?.length > 0 ? (
                   <div className="space-y-2">
-                    {insights.recentNotifications.map((notif: NotificationScore) => {
+                    {insights?.recentNotifications?.map((notif: NotificationScore) => {
                       const Icon = notificationTypeIcons[notif.type as keyof typeof notificationTypeIcons] || Bell;
                       
                       return (

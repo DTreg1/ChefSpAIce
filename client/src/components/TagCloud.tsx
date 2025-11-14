@@ -22,6 +22,10 @@ interface TagData {
   usageCount: number;
 }
 
+interface TrendingTagsResponse {
+  tags: TagData[];
+}
+
 interface TagCloudProps {
   onTagClick?: (tag: TagData) => void;
   selectedTags?: string[];
@@ -36,7 +40,7 @@ export function TagCloud({
   className,
 }: TagCloudProps) {
   // Fetch trending tags
-  const { data: trendingTags, isLoading } = useQuery({
+  const { data: trendingTags, isLoading } = useQuery<TrendingTagsResponse>({
     queryKey: ["/api/ml/tags/trending", limit],
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });

@@ -23,6 +23,12 @@ import { LanguageSelector } from "./LanguageSelector";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
+interface Language {
+  code: string;
+  name: string;
+  nativeName: string;
+}
+
 interface LanguagePreference {
   preferredLanguages: string[];
   autoTranslate: boolean;
@@ -45,12 +51,12 @@ export function LanguagePreferences() {
   });
 
   // Fetch current preferences
-  const { data: currentPrefs, isLoading } = useQuery({
+  const { data: currentPrefs, isLoading } = useQuery<LanguagePreference>({
     queryKey: ['/api/languages/preferences']
   });
 
   // Fetch supported languages
-  const { data: languages = [] } = useQuery({
+  const { data: languages = [] } = useQuery<Language[]>({
     queryKey: ['/api/languages/supported'],
     staleTime: 60 * 60 * 1000,
   });

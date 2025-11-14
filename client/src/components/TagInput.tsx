@@ -19,6 +19,15 @@ import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+interface TagSearchResult {
+  id: string;
+  name: string;
+}
+
+interface TagSearchResponse {
+  tags: TagSearchResult[];
+}
+
 interface TagInputProps {
   value: Array<{ id: string; name: string }>;
   onChange: (tags: Array<{ id: string; name: string }>) => void;
@@ -53,7 +62,7 @@ export function TagInput({
   }, [inputValue]);
 
   // Fetch tag suggestions
-  const { data: suggestions = [] } = useQuery({
+  const { data: suggestions } = useQuery<TagSearchResponse>({
     queryKey: ["/api/ml/tags/search", searchQuery],
     enabled: searchQuery.length > 0 && !disabled,
     staleTime: 1000 * 60, // Cache for 1 minute

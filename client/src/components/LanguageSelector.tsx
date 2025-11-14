@@ -9,6 +9,12 @@ import { Languages } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 
+interface Language {
+  code: string;
+  name: string;
+  nativeName: string;
+}
+
 interface LanguageSelectorProps {
   value: string;
   onChange: (value: string) => void;
@@ -25,7 +31,7 @@ export function LanguageSelector({
   placeholder = "Select language"
 }: LanguageSelectorProps) {
   // Fetch supported languages
-  const { data: languages = [], isLoading } = useQuery({
+  const { data: languages = [], isLoading } = useQuery<Language[]>({
     queryKey: ['/api/languages/supported'],
     staleTime: 60 * 60 * 1000, // Cache for 1 hour
   });

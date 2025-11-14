@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { UserStorage } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -101,7 +102,7 @@ export function DataCompletionDialog({
   });
 
   // Fetch storage locations
-  const { data: storageLocations } = useQuery({
+  const { data: storageLocations } = useQuery<UserStorage[]>({
     queryKey: ['/api/storage-locations', userId],
   });
 

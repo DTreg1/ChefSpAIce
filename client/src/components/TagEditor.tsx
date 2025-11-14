@@ -25,6 +25,16 @@ import { TagInput } from "./TagInput";
 import { TagCloud } from "./TagCloud";
 import { TagSuggestions } from "./TagSuggestions";
 
+interface ContentTagData {
+  id: string;
+  name: string;
+  relevanceScore?: number;
+}
+
+interface ContentTagsResponse {
+  tags: ContentTagData[];
+}
+
 interface TagEditorProps {
   contentId: string;
   contentType: string;
@@ -44,7 +54,7 @@ export function TagEditor({
   const [generatedSuggestions, setGeneratedSuggestions] = useState<any[]>([]);
 
   // Fetch existing tags
-  const { data: existingTags, isLoading: tagsLoading } = useQuery({
+  const { data: existingTags, isLoading: tagsLoading } = useQuery<ContentTagsResponse>({
     queryKey: [`/api/ml/content/${contentId}/tags`, contentType],
     staleTime: 1000 * 60, // Cache for 1 minute
   });
