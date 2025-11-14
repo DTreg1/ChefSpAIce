@@ -112,24 +112,15 @@ export async function searchUSDAFoodsCached(
     
     // Cache the search results
     if (response && response.foods && response.foods.length > 0) {
-      let skippedCount = 0;
+      // Note: Foods from searchUSDAFoods have already been validated and transformed
+      // by mapFDCFoodToUSDAItem, which calls extractNutritionInfo and isNutritionDataValid.
+      // Foods without valid nutrition data have already been filtered out during mapping.
+      // If foodNutrients is present, the food has valid nutrition data.
       
       // Cache individual foods in both ApiCache and database
       const cachePromises = response.foods.map(async (food) => {
-        // Check if food has nutrition data
+        // Foods with foodNutrients have already been validated
         if (!food.foodNutrients || food.foodNutrients.length === 0) {
-          skippedCount++;
-          return null;
-        }
-        
-        // Use the same extraction logic as the main USDA module
-        // This properly handles nutrientNumber (strings) vs nutrientId (numbers)
-        const fdcFood = food as unknown as FDCFood;
-        const nutrition = extractNutritionInfo(fdcFood);
-        
-        // Validate nutrition data
-        if (!nutrition) {
-          skippedCount++;
           return null;
         }
         
@@ -153,9 +144,9 @@ export async function searchUSDAFoodsCached(
       
       await Promise.all(cachePromises);
       
-      // Log aggregated data quality issues
-      if (skippedCount > 0) {
-        console.warn(`[USDA Cache] Skipped ${skippedCount}/${response.foods.length} items due to invalid/missing nutrition data for query: "${searchOptions.query}"`);
+      const cachedCount = cachePromises.length;
+      if (cachedCount > 0) {
+        // console.log(`[USDA Cache] Cached ${cachedCount} items for query: "${searchOptions.query}"`);
       }
       
       // Cache the search query with full foods
