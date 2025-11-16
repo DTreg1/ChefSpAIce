@@ -108,22 +108,11 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 /**
  * Get authenticated user ID
  * 
- * Extracts the user ID from the request object, supporting both authentication patterns:
- * - req.user.id (standard field, always present when authenticated)
- * - req.user.claims.sub (legacy OAuth pattern for backward compatibility)
+ * Extracts the user ID from the request object.
+ * In our unified OAuth system, all authenticated users have req.user.id set.
  * 
  * @param req - Express request with user session
  * @returns User ID string if authenticated, null otherwise
- * 
- * Pattern Support:
- * - Prefers req.user.id (defined as required field in Express.User interface)
- * - Falls back to req.user.claims.sub for backward compatibility
- * - Returns null if user is not authenticated or ID unavailable
- * 
- * Use Cases:
- * - Extracting user ID in route handlers
- * - Consistent user identification across authentication methods
- * - Avoiding duplicate null checks and fallback logic
  * 
  * @example
  * // In a protected route
@@ -137,7 +126,7 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
  * });
  */
 export function getAuthenticatedUserId(req: Request): string | null {
-  return req.user?.id ?? req.user?.claims?.sub ?? null;
+  return req.user?.id ?? null;
 }
 
 /**
