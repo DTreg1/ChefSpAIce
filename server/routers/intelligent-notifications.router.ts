@@ -24,16 +24,16 @@ router.get('/test', async (_req: Request, res: Response) => {
   try {
     // Test that the service is initialized
     const testNotification = {
-      userId: 'test-user',
-      type: 'expiringFood' as const,
+      type: 'expiring_food' as const,
       title: 'Test Notification',
-      content: 'This is a test of the intelligent notification system',
+      body: 'This is a test of the intelligent notification system',
       data: { foodItemId: 'test-item' },
+      urgency: 'medium' as const,
     };
     
     // Score the test notification
     const score = await intelligentNotificationService.scoreNotificationRelevance(
-      testNotification.userId,
+      'test-user',
       testNotification
     );
     

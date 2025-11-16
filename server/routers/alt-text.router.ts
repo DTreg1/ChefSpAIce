@@ -264,7 +264,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
         imageMetadata.context || undefined
       );
       
-      await storage.upsertAltTextQuality(imageId, quality);
+      await storage.upsertAltTextQuality(imageId, quality as Omit<any, 'imageId'>);
 
       res.json({
         success: true,

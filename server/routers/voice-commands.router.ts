@@ -332,8 +332,9 @@ async function processVoiceCommand(text: string, userId: string): Promise<{
         } else if (result.parameters.list === "inventory") {
           await storage.createFoodItem(userId, {
             name: result.parameters.item,
-            quantity: result.parameters.quantity || 1,
+            quantity: (result.parameters.quantity || 1).toString(),
             unit: "units",
+            storageLocationId: "default",
             expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
           });
         }

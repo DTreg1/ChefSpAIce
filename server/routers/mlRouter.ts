@@ -707,11 +707,10 @@ router.post("/query/save", async (req: Request, res: Response) => {
     const { naturalQuery, generatedSql, resultCount } = schema.parse(req.body);
     const userId = req.user!.id;
 
-    const log = await storage.createQueryLog({
+    const log = await storage.createQueryLog(userId, {
       naturalQuery,
       generatedSql,
       resultCount,
-      userId,
     });
 
     res.json({ success: true, log });

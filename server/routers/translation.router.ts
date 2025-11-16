@@ -192,7 +192,7 @@ router.post("/translate", isAuthenticated, async (req, res) => {
           );
 
           // Store translation
-          const [translation] = await db
+          const [translationResult] = await db
             .insert(translations)
             .values({
               contentId: actualContentId,
@@ -225,20 +225,20 @@ router.post("/translate", isAuthenticated, async (req, res) => {
             })
             .returning();
 
-          return translation;
+          return translationResult;
         } catch (error) {
           console.error(`Failed to translate to ${targetLang}:`, error);
           return null;
         }
       });
 
-    const translations = (await Promise.all(translationPromises)).filter((t): t is NonNullable<typeof t> => t !== null);
+    const translationResults = (await Promise.all(translationPromises)).filter((t): t is NonNullable<typeof t> => t !== null);
 
     res.json({
       contentId: actualContentId,
       sourceLanguage,
-      translations,
-      totalTranslations: translations.length
+      translations: translationResults,
+      totalTranslations: translationResults.length
     });
   } catch (error) {
     console.error("Translation error:", error);
