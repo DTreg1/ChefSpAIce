@@ -46,7 +46,7 @@ class TrendAnalyzerService {
   /**
    * Analyze trends in the specified data source
    */
-  async analyzeTrends(config: TrendAnalysisConfig): Promise<InsertTrend[]> {
+  async analyzeTrends(config: TrendAnalysisConfig): Promise<any[]> {
     const trends: InsertTrend[] = [];
     
     try {
@@ -120,8 +120,8 @@ class TrendAnalyzerService {
     try {
       if (config.dataSource === 'analytics' || config.dataSource === 'all') {
         // Fetch analytics events
-        const events = await storage.getAnalyticsEvents({
-          dateRange: { start: startDate, end: endDate }
+        const events = await storage.getAnalyticsEvents(undefined, {
+          startDate, endDate
         });
         
         // Group events by type and create time series
@@ -137,21 +137,18 @@ class TrendAnalyzerService {
       }
       
       if (config.dataSource === 'feedback' || config.dataSource === 'all') {
-        // Fetch user feedback
-        const feedback = await storage.getFeedback({
-          dateRange: { start: startDate, end: endDate }
-        });
+        // Fetch user feedback - use getAllFeedback for trend analysis
+        const feedbackPage = await storage.getAllFeedback(1, 1000);
         
         // Analyze feedback sentiment and topics
-        const feedbackSeries = this.processFeedbackData(feedback);
+        const feedbackSeries = this.processFeedbackData(feedbackPage.data);
         data.push(...feedbackSeries);
       }
       
       if (config.dataSource === 'inventory' || config.dataSource === 'all') {
         // Fetch inventory changes
-        const activityLogs = await storage.getActivityLogs({
-          dateRange: { start: startDate, end: endDate },
-          actionTypes: ['item_added', 'item_removed', 'item_updated']
+        const activityLogs = await storage.getActivityLogs(null, {
+          action: ['item_added', 'item_removed', 'item_updated']
         });
         
         // Create time series from inventory activities
@@ -161,9 +158,8 @@ class TrendAnalyzerService {
       
       if (config.dataSource === 'recipes' || config.dataSource === 'all') {
         // Fetch recipe interactions
-        const recipeLogs = await storage.getActivityLogs({
-          dateRange: { start: startDate, end: endDate },
-          actionTypes: ['recipe_viewed', 'recipe_created', 'recipe_favorited']
+        const recipeLogs = await storage.getActivityLogs(null, {
+          action: ['recipe_viewed', 'recipe_created', 'recipe_favorited']
         });
         
         // Analyze recipe trends
@@ -228,75 +224,46 @@ class TrendAnalyzerService {
   
   /**
    * Detect change points in time series data
+   * Note: Simplified version without TensorFlow (lightweight detection)
    */
   private async detectChangePoints(data: TimeSeriesData): Promise<DetectedTrend | null> {
-    if (!this.model || data.values.length < 20) return null;
+    // Lightweight change point detection using statistical methods
+    if (data.values.length < 20) return null;
     
     try {
-      // Normalize data
-      const normalized = this.normalizeData(data.values);
+      // Use cumulative sum (CUSUM) for change point detection
+      const mean = data.values.reduce((a, b) => a + b, 0) / data.values.length;
+      let cusum = 0;
+      let maxCusum = 0;
+      let changePointIndex = 0;
       
-      // Prepare data for LSTM
-      const sequenceLength = 10;
-      const sequences = [];
-      const targets = [];
-      
-      for (let i = 0; i < normalized.length - sequenceLength; i++) {
-        sequences.push(normalized.slice(i, i + sequenceLength));
-        targets.push(normalized[i + sequenceLength]);
+      for (let i = 0; i < data.values.length; i++) {
+        cusum += (data.values[i] - mean);
+        if (Math.abs(cusum) > Math.abs(maxCusum)) {
+          maxCusum = cusum;
+          changePointIndex = i;
+        }
       }
       
-      if (sequences.length === 0) return null;
-      
-      // Create tensors
-      const xs = tf.tensor3d(sequences, [sequences.length, sequenceLength, 1]);
-      const ys = tf.tensor2d(targets, [targets.length, 1]);
-      
-      // Train model briefly on this specific data
-      await this.model.fit(xs, ys, {
-        epochs: 10,
-        batchSize: 32,
-        verbose: 0
-      });
-      
-      // Predict future values
-      const lastSequence = tf.tensor3d(
-        [normalized.slice(-sequenceLength)],
-        [1, sequenceLength, 1]
-      );
-      const prediction = this.model.predict(lastSequence) as tf.Tensor;
-      const predictedValue = (await prediction.data())[0];
-      
-      // Calculate prediction error to detect change points
-      const actualLast = normalized[normalized.length - 1];
-      const error = Math.abs(predictedValue - actualLast);
-      
-      // Clean up tensors
-      xs.dispose();
-      ys.dispose();
-      lastSequence.dispose();
-      prediction.dispose();
-      
-      // If error is significant, we have a change point
-      if (error > 0.3) {
-        const growthRate = ((data.values[data.values.length - 1] - data.values[data.values.length - 10]) / 
-                           data.values[data.values.length - 10]) * 100;
+      // Calculate significance of change
+      const threshold = mean * 0.3;
+      if (Math.abs(maxCusum) > threshold && changePointIndex > 10) {
+        const growthRate = ((data.values[data.values.length - 1] - data.values[changePointIndex]) / 
+                           data.values[changePointIndex]) * 100;
         
         return {
           name: `Significant change detected in ${data.labels?.[0] || 'pattern'}`,
           type: 'change_point',
-          strength: Math.min(error, 1),
+          strength: Math.min(Math.abs(maxCusum) / threshold, 1),
           confidence: 0.65,
           growthRate,
-          startDate: data.dates[data.dates.length - 10],
+          startDate: data.dates[changePointIndex],
           dataPoints: {
             timeSeries: data.dates.slice(-20).map((date, i) => ({
               date: date.toISOString(),
-              value: data.values[data.values.length - 20 + i],
-              predicted: i === 19 ? predictedValue * this.getDataScale(data.values) : undefined
+              value: data.values[data.values.length - 20 + i]
             })),
-            changePoint: data.dates[data.dates.length - 1].toISOString(),
-            predictionError: error
+            changePoint: data.dates[changePointIndex].toISOString()
           }
         };
       }
@@ -406,17 +373,7 @@ class TrendAnalyzerService {
    * Format trend for database storage
    */
   private async formatTrendForStorage(trend: DetectedTrend): Promise<InsertTrend> {
-    // Determine status based on trend characteristics
-    let status: 'emerging' | 'active' | 'peaking' | 'declining' | 'ended' = 'emerging';
-    
-    if (trend.strength > 0.7) {
-      status = 'active';
-    } else if (trend.growthRate < -20) {
-      status = 'declining';
-    } else if (trend.peakDate && 
-               new Date().getTime() - trend.peakDate.getTime() > 7 * 24 * 60 * 60 * 1000) {
-      status = 'declining';
-    }
+    // Note: status is auto-generated in the database, omitted from InsertTrend
     
     return {
       trendName: trend.name,
@@ -426,7 +383,6 @@ class TrendAnalyzerService {
       growthRate: trend.growthRate,
       startDate: trend.startDate,
       peakDate: trend.peakDate,
-      status,
       dataPoints: trend.dataPoints,
       metadata: {
         detectionMethod: trend.type,
