@@ -2,7 +2,8 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateBody } from "../middleware";
-import { storage } from "../storage";
+import { inventoryStorage } from "../storage/domains/inventory.storage";
+import { storage } from "../storage"; // Keep for shopping list operations temporarily
 import { insertUserInventorySchema, insertShoppingListItemSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -19,25 +20,32 @@ router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, a
     
     switch (type) {
       case "items": {
-        // Get food items with optional filtering (now using server-side filtering)
-        const items = await storage.getFoodItems(
-          userId, 
-          location && location !== "all" ? location : undefined,
-          category ? category : undefined
-        );
+        // Get food items with optional filtering
+        // Note: The new inventoryStorage doesn't support location/category filtering yet
+        // This will be implemented next
+        const items = await inventoryStorage.getFoodItems(userId);
+        
+        // Apply client-side filtering temporarily until domain storage supports it
+        let filteredItems = items;
+        if (location && location !== "all") {
+          filteredItems = filteredItems.filter((item: any) => item.storageLocationId === location);
+        }
+        if (category) {
+          filteredItems = filteredItems.filter((item: any) => item.foodCategory === category);
+        }
         
         // Standardized pagination response
         const startIndex = (Number(page) - 1) * Number(limit);
         const endIndex = startIndex + Number(limit);
-        const paginatedItems = items.slice(startIndex, endIndex);
+        const paginatedItems = filteredItems.slice(startIndex, endIndex);
         
         res.json({
           data: paginatedItems,
           pagination: {
             page: Number(page),
             limit: Number(limit),
-            total: items.length,
-            totalPages: Math.ceil(items.length / Number(limit))
+            total: filteredItems.length,
+            totalPages: Math.ceil(filteredItems.length / Number(limit))
           },
           type: "items"
         });
@@ -67,7 +75,7 @@ router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, a
       
       case "locations": {
         // Get storage locations
-        const locations = await storage.getStorageLocations(userId);
+        const locations = await inventoryStorage.getStorageLocations(userId);
         res.json({
           data: locations,
           type: "locations"
@@ -124,7 +132,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
     switch (type) {
       case "item": {
         // Verify storage location
-        const locations = await storage.getStorageLocations(userId);
+        const locations = await inventoryStorage.getStorageLocations(userId);
         const locationExists = locations.some((loc: any) => loc.id === data.storageLocationId);
         
         if (!locationExists) {
@@ -146,7 +154,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
           expirationDate = expDate.toISOString().split("T")[0];
         }
         
-        const item = await storage.createFoodItem(userId, {
+        const item = await inventoryStorage.createFoodItem(userId, {
           ...data,
           expirationDate: expirationDate || new Date().toISOString().split("T")[0],
         });
@@ -162,7 +170,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
       }
       
       case "location": {
-        const newLocation = await storage.createStorageLocation(userId, data);
+        const newLocation = await inventoryStorage.createStorageLocation(userId, data);
         res.json({ data: newLocation, type: "location" });
         break;
       }
@@ -250,14 +258,14 @@ router.put("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any, an
     switch (type) {
       case "item": {
         // Verify item ownership
-        const items = await storage.getFoodItems(userId);
+        const items = await inventoryStorage.getFoodItems(userId);
         const existing = items.find((item: any) => item.id === itemId);
         
         if (!existing) {
           return res.status(404).json({ error: "Item not found" });
         }
         
-        const updated = await storage.updateFoodItem(userId, itemId, req.body);
+        const updated = await inventoryStorage.updateFoodItem(userId, itemId, req.body);
         res.json({ data: updated, type: "item" });
         break;
       }
@@ -301,14 +309,14 @@ router.delete("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any,
     switch (type) {
       case "item": {
         // Verify ownership
-        const items = await storage.getFoodItems(userId);
+        const items = await inventoryStorage.getFoodItems(userId);
         const existing = items.find((item: any) => item.id === itemId);
         
         if (!existing) {
           return res.status(404).json({ error: "Item not found" });
         }
         
-        await storage.deleteFoodItem(itemId, userId);
+        await inventoryStorage.deleteFoodItem(userId, itemId);
         res.json({ message: "Item deleted successfully", type: "item" });
         break;
       }

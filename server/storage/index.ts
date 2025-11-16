@@ -14,6 +14,8 @@
 
 // Import domain storage modules
 import { inventoryStorage } from "./domains/inventory.storage";
+import { userAuthStorage } from "./domains/user-auth.storage";
+import { recipesStorage } from "./domains/recipes.storage";
 
 // Import the legacy monolithic storage for methods not yet migrated
 import { storage as legacyStorage } from "../storage";
@@ -44,14 +46,36 @@ export const storage = {
   // Onboarding
   getOnboardingInventory: inventoryStorage.getOnboardingInventory.bind(inventoryStorage),
   
-  // ============= Legacy Methods (TO BE MIGRATED) =============
+  // ============= User/Auth Domain (MIGRATED) =============
   // Users & Auth
-  getUser: legacyStorage.getUser.bind(legacyStorage),
-  getUserByEmail: legacyStorage.getUserByEmail.bind(legacyStorage),
-  createUser: legacyStorage.createUser.bind(legacyStorage),
-  updateUserPreferences: legacyStorage.updateUserPreferences.bind(legacyStorage),
+  getUser: userAuthStorage.getUserById.bind(userAuthStorage),
+  getUserById: userAuthStorage.getUserById.bind(userAuthStorage),
+  getUserByEmail: userAuthStorage.getUserByEmail.bind(userAuthStorage),
+  createUser: userAuthStorage.createUser.bind(userAuthStorage),
+  updateUser: userAuthStorage.updateUser.bind(userAuthStorage),
+  updateUserPreferences: userAuthStorage.updateUserPreferences.bind(userAuthStorage),
+  updateUserNotificationPreferences: userAuthStorage.updateUserNotificationPreferences.bind(userAuthStorage),
+  deleteUser: userAuthStorage.deleteUser.bind(userAuthStorage),
+  markOnboardingComplete: userAuthStorage.markOnboardingComplete.bind(userAuthStorage),
+  
+  // Session Management
+  createSession: userAuthStorage.createSession.bind(userAuthStorage),
+  getSession: userAuthStorage.getSession.bind(userAuthStorage),
+  updateSession: userAuthStorage.updateSession.bind(userAuthStorage),
+  deleteSession: userAuthStorage.deleteSession.bind(userAuthStorage),
+  cleanupExpiredSessions: userAuthStorage.cleanupExpiredSessions.bind(userAuthStorage),
+  
+  // OAuth Provider Management
+  linkOAuthProvider: userAuthStorage.linkOAuthProvider.bind(userAuthStorage),
+  unlinkOAuthProvider: userAuthStorage.unlinkOAuthProvider.bind(userAuthStorage),
+  
+  // Analytics
+  getUserCount: userAuthStorage.getUserCount.bind(userAuthStorage),
+  getActiveUserCount: userAuthStorage.getActiveUserCount.bind(userAuthStorage),
+  getUsersByProvider: userAuthStorage.getUsersByProvider.bind(userAuthStorage),
+  
+  // Legacy methods still needed (TO BE MIGRATED)
   updateUserAdminStatus: legacyStorage.updateUserAdminStatus.bind(legacyStorage),
-  deleteUser: legacyStorage.deleteUser.bind(legacyStorage),
   getUserPreferences: legacyStorage.getUserPreferences.bind(legacyStorage),
   getAllUsers: legacyStorage.getAllUsers.bind(legacyStorage),
   getAdminCount: legacyStorage.getAdminCount.bind(legacyStorage),
@@ -78,21 +102,40 @@ export const storage = {
   getConversationContext: legacyStorage.getConversationContext.bind(legacyStorage),
   updateConversationContext: legacyStorage.updateConversationContext.bind(legacyStorage),
   
+  // ============= Recipes Domain (MIGRATED) =============
   // Recipes
-  getRecipes: legacyStorage.getRecipes.bind(legacyStorage),
-  getRecipesPaginated: legacyStorage.getRecipesPaginated.bind(legacyStorage),
-  getRecipe: legacyStorage.getRecipe.bind(legacyStorage),
-  createRecipe: legacyStorage.createRecipe.bind(legacyStorage),
-  updateRecipe: legacyStorage.updateRecipe.bind(legacyStorage),
-  deleteRecipe: legacyStorage.deleteRecipe.bind(legacyStorage),
+  getRecipes: recipesStorage.getRecipes.bind(recipesStorage),
+  getRecipesPaginated: recipesStorage.getRecipesPaginated.bind(recipesStorage),
+  getRecipe: recipesStorage.getRecipe.bind(recipesStorage),
+  searchRecipes: recipesStorage.searchRecipes.bind(recipesStorage),
+  searchRecipesByIngredients: recipesStorage.searchRecipesByIngredients.bind(recipesStorage),
+  createRecipe: recipesStorage.createRecipe.bind(recipesStorage),
+  updateRecipe: recipesStorage.updateRecipe.bind(recipesStorage),
+  deleteRecipe: recipesStorage.deleteRecipe.bind(recipesStorage),
+  toggleRecipeFavorite: recipesStorage.toggleRecipeFavorite.bind(recipesStorage),
+  rateRecipe: recipesStorage.rateRecipe.bind(recipesStorage),
+  findSimilarRecipes: recipesStorage.findSimilarRecipes.bind(recipesStorage),
+  
+  // Recipe Analytics
+  getMostUsedRecipes: recipesStorage.getMostUsedRecipes.bind(recipesStorage),
+  getRecipeCategories: recipesStorage.getRecipeCategories.bind(recipesStorage),
+  getRecipeCuisines: recipesStorage.getRecipeCuisines.bind(recipesStorage),
+  
+  // Recipe Suggestions
+  getRecipeSuggestionsBasedOnInventory: recipesStorage.getRecipeSuggestionsBasedOnInventory.bind(recipesStorage),
+  getRecipeSuggestionsBasedOnExpiring: recipesStorage.getRecipeSuggestionsBasedOnExpiring.bind(recipesStorage),
+  
+  // Legacy method still needed (TO BE MIGRATED)
   getRecipesWithInventoryMatching: legacyStorage.getRecipesWithInventoryMatching.bind(legacyStorage),
   
   // Meal Planning
-  getMealPlans: legacyStorage.getMealPlans.bind(legacyStorage),
-  getMealPlan: legacyStorage.getMealPlan.bind(legacyStorage),
-  createMealPlan: legacyStorage.createMealPlan.bind(legacyStorage),
-  updateMealPlan: legacyStorage.updateMealPlan.bind(legacyStorage),
-  deleteMealPlan: legacyStorage.deleteMealPlan.bind(legacyStorage),
+  getMealPlans: recipesStorage.getMealPlans.bind(recipesStorage),
+  getMealPlansByDate: recipesStorage.getMealPlansByDate.bind(recipesStorage),
+  getMealPlan: recipesStorage.getMealPlan.bind(recipesStorage),
+  createMealPlan: recipesStorage.createMealPlan.bind(recipesStorage),
+  updateMealPlan: recipesStorage.updateMealPlan.bind(recipesStorage),
+  deleteMealPlan: recipesStorage.deleteMealPlan.bind(recipesStorage),
+  markMealPlanCompleted: recipesStorage.markMealPlanCompleted.bind(recipesStorage),
   
   // Shopping Lists
   getShoppingListItems: legacyStorage.getShoppingListItems.bind(legacyStorage),
