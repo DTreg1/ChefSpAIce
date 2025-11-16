@@ -8,7 +8,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
 import { predictionService } from "../services/predictionService";
@@ -53,7 +53,7 @@ router.get(
   "/user/:userId",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const requestingUserId = req.user?.claims?.sub;
+    const requestingUserId = getAuthenticatedUserId(req);
     if (!requestingUserId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -102,7 +102,7 @@ router.post(
   "/churn",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -161,7 +161,7 @@ router.post(
   "/intervention",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const requestingUserId = req.user?.claims?.sub;
+    const requestingUserId = getAuthenticatedUserId(req);
     if (!requestingUserId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -227,7 +227,7 @@ router.get(
   "/segments",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -268,7 +268,7 @@ router.post(
   "/accuracy",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -334,7 +334,7 @@ router.get(
   "/accuracy/stats",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }

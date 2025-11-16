@@ -106,6 +106,41 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
+ * Get authenticated user ID
+ * 
+ * Extracts the user ID from the request object, supporting both authentication patterns:
+ * - req.user.id (standard field, always present when authenticated)
+ * - req.user.claims.sub (legacy OAuth pattern for backward compatibility)
+ * 
+ * @param req - Express request with user session
+ * @returns User ID string if authenticated, null otherwise
+ * 
+ * Pattern Support:
+ * - Prefers req.user.id (defined as required field in Express.User interface)
+ * - Falls back to req.user.claims.sub for backward compatibility
+ * - Returns null if user is not authenticated or ID unavailable
+ * 
+ * Use Cases:
+ * - Extracting user ID in route handlers
+ * - Consistent user identification across authentication methods
+ * - Avoiding duplicate null checks and fallback logic
+ * 
+ * @example
+ * // In a protected route
+ * router.get('/api/profile', isAuthenticated, async (req, res) => {
+ *   const userId = getAuthenticatedUserId(req);
+ *   if (!userId) {
+ *     return res.status(401).json({ error: "Authentication required" });
+ *   }
+ *   const user = await storage.getUser(userId);
+ *   res.json(user);
+ * });
+ */
+export function getAuthenticatedUserId(req: Request): string | null {
+  return req.user?.id ?? req.user?.claims?.sub ?? null;
+}
+
+/**
  * Admin-only access control
  * 
  * Verifies user is authenticated AND has admin privileges.

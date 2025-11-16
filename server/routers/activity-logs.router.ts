@@ -7,8 +7,7 @@
 
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
-import { isAuthenticated } from "../middleware/auth.middleware";
-import { adminOnly } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { ApiError } from "../apiError";
 
@@ -31,7 +30,7 @@ router.get(
   "/activity-logs",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
     }
@@ -78,7 +77,7 @@ router.get(
   "/activity-logs/timeline",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
     }
@@ -107,7 +106,7 @@ router.get(
   "/activity-logs/stats",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
     }
@@ -135,7 +134,7 @@ router.get(
   "/activity-logs/export",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
     }
@@ -363,7 +362,7 @@ router.delete(
   "/activity-logs",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       throw new ApiError("User not authenticated", 401);
     }

@@ -1,6 +1,6 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { insertAnalyticsInsightSchema, insertInsightFeedbackSchema } from "@shared/schema";
 import { AnalyticsService } from "../services/analytics.service";
@@ -10,7 +10,7 @@ const analyticsService = new AnalyticsService();
 
 // Generate insights from data
 router.post("/generate", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -37,7 +37,7 @@ router.post("/generate", isAuthenticated, asyncHandler(async (req: ExpressReques
 
 // Get daily insight summary
 router.get("/daily", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -55,7 +55,7 @@ router.get("/daily", isAuthenticated, asyncHandler(async (req: ExpressRequest<an
 
 // Explain specific metric
 router.post("/explain", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -77,7 +77,7 @@ router.post("/explain", isAuthenticated, asyncHandler(async (req: ExpressRequest
 
 // Get all insights
 router.get("/", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -103,7 +103,7 @@ router.get("/", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, an
 
 // Mark insight as read
 router.patch("/:insightId/read", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -121,7 +121,7 @@ router.patch("/:insightId/read", isAuthenticated, asyncHandler(async (req: Expre
 
 // Submit feedback for an insight
 router.post("/:insightId/feedback", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -165,7 +165,7 @@ router.get("/:insightId/feedback", isAuthenticated, asyncHandler(async (req: Exp
 
 // Subscribe to insights
 router.post("/subscribe", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -187,7 +187,7 @@ router.post("/subscribe", isAuthenticated, asyncHandler(async (req: ExpressReque
 
 // Get analytics statistics
 router.get("/stats", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }

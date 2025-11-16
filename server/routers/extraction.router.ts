@@ -8,7 +8,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
 import OpenAI from "openai";
@@ -184,7 +184,7 @@ router.post(
   "/template",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -336,7 +336,7 @@ router.post(
   "/data",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -422,7 +422,7 @@ router.post(
   "/batch",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -553,7 +553,7 @@ router.post(
   "/correct",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }

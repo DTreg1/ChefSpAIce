@@ -2,7 +2,7 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { z } from "zod";
 import { storage } from "../storage";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { validateBody } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import type { StorageLocation } from "@shared/schema";
@@ -11,7 +11,7 @@ const router = Router();
 
 // Get authenticated user
 router.get("/user", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = (req.user as any)?.id;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const user = await storage.getUser(userId);
   res.json(user);
@@ -19,7 +19,7 @@ router.get("/user", isAuthenticated, asyncHandler(async (req: ExpressRequest<any
 
 // Get user preferences  
 router.get("/user/preferences", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = (req.user as any)?.id;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const preferences = await storage.getUserPreferences(userId);
   res.json(preferences);
@@ -50,7 +50,7 @@ router.put(
   isAuthenticated,
   validateBody(userPreferencesUpdateSchema),
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const preferences = await storage.updateUserPreferences(userId, req.body);
     res.json(preferences);
@@ -59,7 +59,7 @@ router.put(
 
 // Reset user data
 router.post("/user/reset", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = (req.user as any)?.id;
+  const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   await storage.resetUserData(userId);
   res.json({ success: true, message: "Account data reset successfully" });
@@ -137,7 +137,7 @@ router.get("/health", asyncHandler(async (req: ExpressRequest<any, any, any, any
 
 // Session diagnostics
 router.get("/diagnostics", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = (req.user as any)?.id;
+  const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const user = req.user as any;
 
@@ -279,7 +279,7 @@ router.post("/force-refresh", asyncHandler(async (req: ExpressRequest<any, any, 
   }
 
   // Create a unique key for this user's refresh operation
-  const userId = user.claims?.sub || "unknown";
+  const userId = getAuthenticatedUserId(req) || "unknown";
   const refreshKey = `${userId}-${user.refresh_token.substring(0, 10)}`;
 
   // Clean up stale refreshes periodically
@@ -414,7 +414,7 @@ router.post(
   isAuthenticated,
   validateBody(onboardingCompleteSchema),
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { preferences, customStorageAreas, selectedCommonItems  } = req.body || {};
 

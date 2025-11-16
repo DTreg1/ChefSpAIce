@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { asyncHandler } from "../middleware/error.middleware";
+import { getAuthenticatedUserId, isAuthenticated } from "../middleware/auth.middleware";
 import { insertCohortSchema, insertCohortInsightSchema } from "@shared/schema";
 import OpenAI from "openai";
 
@@ -14,8 +15,11 @@ const openai = new OpenAI({
 });
 
 // Create a new cohort
-router.post("/", asyncHandler(async (req, res) => {
-  const userId = req.user?.claims?.sub || null;
+router.post("/", isAuthenticated, asyncHandler(async (req, res) => {
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
   
   const cohortData = insertCohortSchema.parse({
     ...req.body,

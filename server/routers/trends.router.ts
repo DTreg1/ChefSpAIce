@@ -8,7 +8,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
 import { trendAnalyzer } from "../services/trend-analyzer.service";
@@ -165,7 +165,7 @@ router.post(
   "/analyze",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -255,7 +255,7 @@ router.post(
   "/subscribe",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -304,7 +304,7 @@ router.get(
   "/alerts",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -339,7 +339,7 @@ router.post(
   "/alerts/acknowledge",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }

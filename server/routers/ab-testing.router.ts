@@ -1,6 +1,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { storage } from "../storage";
 import { asyncHandler } from "../middleware/error.middleware";
+import { getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { insertAbTestSchema, insertAbTestResultSchema } from "@shared/schema";
 import OpenAI from "openai";
 
@@ -8,7 +9,7 @@ const router = Router();
 
 // Create new A/B test
 router.post("/create", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -242,10 +243,10 @@ router.post("/analyze", asyncHandler(async (req: ExpressRequest<any, any, any, a
 
 // Get recommendations
 router.get("/recommendations", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   
   try {
-    const recommendations = await storage.getAbTestRecommendations(userId);
+    const recommendations = await storage.getAbTestRecommendations(userId ?? undefined);
     res.json(recommendations);
   } catch (error: any) {
     console.error("Error fetching recommendations:", error);
@@ -256,7 +257,7 @@ router.get("/recommendations", asyncHandler(async (req: ExpressRequest<any, any,
 // Implement test winner
 router.post("/implement", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const { testId, variant } = req.body;
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -299,7 +300,7 @@ router.post("/implement", asyncHandler(async (req: ExpressRequest<any, any, any,
 // Update test
 router.put("/:id", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const { id } = req.params;
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });
@@ -330,7 +331,7 @@ router.put("/:id", asyncHandler(async (req: ExpressRequest<any, any, any, any>, 
 // Delete test
 router.delete("/:id", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   const { id } = req.params;
-  const userId = req.user?.claims?.sub;
+  const userId = getAuthenticatedUserId(req);
   
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });

@@ -8,6 +8,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { isAuthenticated } from "../auth/unified-auth";
+import { getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { insertAutoSaveDraftSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -16,7 +17,7 @@ const router = Router();
 // POST /api/autosave/draft - Save draft version
 router.post("/draft", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -74,7 +75,7 @@ router.post("/draft", isAuthenticated, async (req: any, res) => {
 // GET /api/autosave/restore - Get latest draft
 router.get("/restore", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -109,7 +110,7 @@ router.get("/restore", isAuthenticated, async (req: any, res) => {
 // GET /api/autosave/versions - List draft versions
 router.get("/versions", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -140,7 +141,7 @@ router.get("/versions", isAuthenticated, async (req: any, res) => {
 // DELETE /api/autosave/draft/:id - Delete specific draft
 router.delete("/draft/:id", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -169,7 +170,7 @@ router.delete("/draft/:id", isAuthenticated, async (req: any, res) => {
 // DELETE /api/autosave/document/:documentId - Delete all drafts for a document
 router.delete("/document/:documentId", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -198,7 +199,7 @@ router.delete("/document/:documentId", isAuthenticated, async (req: any, res) =>
 // POST /api/autosave/cleanup - Clean up old drafts
 router.post("/cleanup", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -221,7 +222,7 @@ router.post("/cleanup", isAuthenticated, async (req: any, res) => {
 // GET /api/autosave/patterns - Get user typing patterns
 router.get("/patterns", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -243,7 +244,7 @@ router.get("/patterns", isAuthenticated, async (req: any, res) => {
 // PUT /api/autosave/patterns - Update typing patterns
 router.put("/patterns", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -265,7 +266,7 @@ router.put("/patterns", isAuthenticated, async (req: any, res) => {
 // POST /api/autosave/typing-event - Record typing event
 router.post("/typing-event", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -303,7 +304,7 @@ router.post("/typing-event", isAuthenticated, async (req: any, res) => {
 // POST /api/autosave/check-conflicts - Check for conflicting edits
 router.post("/check-conflicts", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }

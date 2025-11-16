@@ -2,6 +2,7 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { storage } from "../storage";
 import { analyticsRateLimit } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
+import { getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { insertWebVitalSchema, insertAnalyticsEventSchema } from "@shared/schema";
 import { retryWithBackoff } from "../utils/retry-handler";
 
@@ -10,7 +11,7 @@ const router = Router();
 // Web Vitals Analytics endpoint
 router.post("/", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   // Get user ID if authenticated, otherwise null for anonymous tracking
-  const userId = req.user?.claims?.sub || null;
+  const userId = getAuthenticatedUserId(req);
 
   // Capture request metadata
   const userAgent = req.headers["user-agent"] || null;
@@ -30,7 +31,7 @@ router.post("/", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any
     // Validate using Zod schema
     const validated = insertWebVitalSchema.parse({
       ...req.body,
-      userId,
+      userId: userId ?? undefined,
       metricId: req.body.id, // Map 'id' from web-vitals to 'metricId'
       navigationType: req.body.navigationType || null,
       userAgent,
@@ -67,7 +68,7 @@ router.post("/", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any
 
 // Analytics Events endpoint - batch processing
 router.post("/events", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = req.user?.claims?.sub || null;
+  const userId = getAuthenticatedUserId(req);
   const { events  } = req.body || {};
   
   if (!events || !Array.isArray(events)) {
@@ -83,7 +84,7 @@ router.post("/events", analyticsRateLimit, asyncHandler(async (req: ExpressReque
         // Validate each event using the schema
         const validated = insertAnalyticsEventSchema.parse({
           ...event,
-          userId,
+          userId: userId ?? undefined,
           // Server-side timestamp will be set by the database default
         });
         validatedEvents.push(validated);
@@ -113,10 +114,10 @@ router.post("/events", analyticsRateLimit, asyncHandler(async (req: ExpressReque
 
 // Session start endpoint
 router.post("/sessions/start", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = req.user?.claims?.sub || null;
+  const userId = getAuthenticatedUserId(req);
   const sessionData = {
     ...req.body,
-    userId,
+    userId: userId ?? undefined,
   };
   
   try {
@@ -130,7 +131,7 @@ router.post("/sessions/start", asyncHandler(async (req: ExpressRequest<any, any,
 
 // Session end endpoint
 router.post("/sessions/end", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-  const userId = req.user?.claims?.sub || null;
+  const userId = getAuthenticatedUserId(req);
   const { sessionId, exitPage  } = req.body || {};
   
   if (!sessionId) {
@@ -141,7 +142,7 @@ router.post("/sessions/end", asyncHandler(async (req: ExpressRequest<any, any, a
     const endTime = new Date();
     
     // Get session to calculate duration - scoped to current user for security
-    const sessions = await storage.getUserSessions(userId || undefined, { limit: 100 });
+    const sessions = await storage.getUserSessions(userId ?? undefined, { limit: 100 });
     const session = sessions.find(s => s.sessionId === sessionId);
     
     if (!session) {
@@ -210,7 +211,7 @@ router.get(
 router.get(
   "/api-health",
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     const { days } = req.query;
     
     // Validate days parameter

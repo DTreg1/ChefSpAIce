@@ -16,6 +16,7 @@
 import express, { Router } from "express";
 import { storage } from "../storage";
 import { isAuthenticated } from "../auth/unified-auth";
+import { getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { insertCompletionFeedbackSchema } from "@shared/schema";
 import z from "zod";
 import OpenAI from "openai";
@@ -68,7 +69,7 @@ async function getPatternModel(): Promise<tf.LayersModel> {
 router.get("/suggestions", isAuthenticated, async (req: any, res) => {
   try {
     const { fieldName, query = "" } = req.query;
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     
     if (!fieldName || typeof fieldName !== "string") {
       return res.status(400).json({ error: "Field name is required" });
@@ -78,7 +79,7 @@ router.get("/suggestions", isAuthenticated, async (req: any, res) => {
     const suggestions = await storage.getFieldSuggestions(
       fieldName,
       query as string,
-      userId
+      userId ?? undefined
     );
     
     // Apply ML ranking if we have enough suggestions
@@ -134,7 +135,7 @@ router.get("/suggestions", isAuthenticated, async (req: any, res) => {
 router.post("/context", isAuthenticated, async (req: any, res) => {
   try {
     const { fieldName, context } = req.body;
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     
     if (!fieldName) {
       return res.status(400).json({ error: "Field name is required" });
@@ -144,7 +145,7 @@ router.post("/context", isAuthenticated, async (req: any, res) => {
     const basicSuggestions = await storage.getContextualSuggestions(
       fieldName,
       context || {},
-      userId
+      userId ?? undefined
     );
     
     // Enhance with OpenAI if API key is available
@@ -205,7 +206,7 @@ router.post("/context", isAuthenticated, async (req: any, res) => {
 router.post("/learn", isAuthenticated, async (req: any, res) => {
   try {
     const { fieldName, value, context } = req.body;
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     
     if (!userId || !fieldName || !value) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -227,7 +228,7 @@ router.post("/learn", isAuthenticated, async (req: any, res) => {
  */
 router.post("/feedback", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     
     // Validate request body
     const feedbackData = insertCompletionFeedbackSchema.parse({
@@ -259,7 +260,7 @@ router.post("/feedback", isAuthenticated, async (req: any, res) => {
  */
 router.get("/history", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     const { fieldName } = req.query;
     
     if (!userId) {
@@ -284,7 +285,7 @@ router.get("/history", isAuthenticated, async (req: any, res) => {
  */
 router.delete("/history", isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user?.id || req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });

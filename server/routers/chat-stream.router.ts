@@ -12,7 +12,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import type { Request, Response } from "express";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { openai } from "../openai";
 import { storage } from "../storage";
 import { batchedApiLogger } from "../batchedApiLogger";
@@ -96,7 +96,7 @@ router.post(
     let accumulatedContent = '';
     
     try {
-      const userId = (req.user as any)?.id;
+      const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const { message, includeInventory, streamingEnabled = true  } = req.body || {};
 
@@ -291,9 +291,10 @@ router.post(
       }
       
       // Log failed API usage
-      if (req.user?.claims?.sub) {
+      const errorUserId = getAuthenticatedUserId(req);
+      if (errorUserId) {
         const aiError = error instanceof AIError ? error : handleOpenAIError(error);
-        await batchedApiLogger.logApiUsage((req.user as any).id, {
+        await batchedApiLogger.logApiUsage(errorUserId, {
           apiName: "openai",
           endpoint: "chat-stream",
           queryParams: `error=${aiError.code}`,
@@ -346,7 +347,7 @@ router.get("/health", isAuthenticated, (req: ExpressRequest, res: ExpressRespons
 router.post("/reset", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
     // Check if user is admin (you may want to implement proper admin check)
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     // Reset circuit breaker

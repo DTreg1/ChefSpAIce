@@ -8,7 +8,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
 import { sentimentService } from "../services/sentimentService";
@@ -41,7 +41,7 @@ router.post(
   "/analyze",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -116,7 +116,7 @@ router.get(
   "/user/:userId",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const currentUserId = req.user?.claims?.sub;
+    const currentUserId = getAuthenticatedUserId(req);
     const requestedUserId = req.params.userId;
     
     if (!currentUserId) {
@@ -158,7 +158,7 @@ router.get(
   "/trends",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -205,7 +205,7 @@ router.get(
   "/insights",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -268,7 +268,7 @@ router.get(
       }
 
       // Check if user has access to this analysis
-      const userId = req.user?.claims?.sub;
+      const userId = getAuthenticatedUserId(req);
       if (analysis.userId !== userId) {
         if (!userId) {
           return res.status(401).json({ error: "Authentication required" });
@@ -300,7 +300,7 @@ router.get(
   "/dashboard",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -358,7 +358,7 @@ router.get(
   "/alerts/active",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -434,7 +434,7 @@ router.patch(
   "/alerts/:alertId",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -482,7 +482,7 @@ router.get(
   "/breakdown",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -524,7 +524,7 @@ router.get(
   "/report",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -565,7 +565,7 @@ router.post(
   "/batch",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
