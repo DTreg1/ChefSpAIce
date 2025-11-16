@@ -15,31 +15,52 @@ import { notificationScheduler } from "./services/notification-scheduler.service
 /**
  * Sanitizes response data for logging by removing sensitive information
  * @param data Response data to sanitize
+ * @param depth Current recursion depth (to prevent infinite loops)
  * @returns Sanitized data safe for logging
  */
-function sanitizeResponseForLogging(data: any): any {
+function sanitizeResponseForLogging(data: any, depth: number = 0): any {
+  // Prevent infinite recursion
+  if (depth > 10) {
+    return '[DEPTH_LIMIT]';
+  }
+  
   if (!data || typeof data !== 'object') {
     return data;
   }
   
-  const sensitiveKeys = [
-    'password', 'token', 'secret', 'apiKey', 'api_key', 
-    'authorization', 'cookie', 'session', 'creditCard',
-    'ssn', 'email', 'phone', 'address', 'birthDate',
-    'paymentMethod', 'stripeToken', 'stripe_token'
+  // More specific sensitive patterns to avoid over-redaction
+  const sensitivePatterns = [
+    /^password$/i,
+    /^(api[_\-]?)?key$/i,
+    /^(auth|access|refresh)[_\-]?token$/i,
+    /^secret$/i,
+    /^authorization$/i,
+    /^cookie$/i,
+    /^session[_\-]?(id|token)?$/i,
+    /^credit[_\-]?card/i,
+    /^ssn$/i,
+    /^stripe[_\-]?(token|key)/i,
+    /^private[_\-]?key$/i,
+    /^client[_\-]?secret$/i
   ];
   
+  // Clone the object to avoid mutation
   const sanitized: any = Array.isArray(data) ? [] : {};
   
   for (const key in data) {
-    const lowerKey = key.toLowerCase();
+    if (!data.hasOwnProperty(key)) continue;
     
-    // Check if key contains sensitive data
-    if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive.toLowerCase()))) {
+    // Check if key matches sensitive patterns
+    const isSensitive = sensitivePatterns.some(pattern => pattern.test(key));
+    
+    if (isSensitive) {
       sanitized[key] = '[REDACTED]';
     } else if (typeof data[key] === 'object' && data[key] !== null) {
-      // Recursively sanitize nested objects
-      sanitized[key] = sanitizeResponseForLogging(data[key]);
+      // Recursively sanitize nested objects and arrays
+      sanitized[key] = sanitizeResponseForLogging(data[key], depth + 1);
+    } else if (typeof data[key] === 'string' && data[key].length > 500) {
+      // Truncate very long strings
+      sanitized[key] = data[key].substring(0, 100) + '...[truncated]';
     } else {
       sanitized[key] = data[key];
     }

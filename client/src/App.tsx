@@ -19,14 +19,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import ErrorBoundary from "@/components/ErrorBoundary";
-// Import lazy-loaded providers
-import {
-  LazyAnimatedBackground,
-  LazyPushNotificationHandler,
-  LazyChatWidget,
-  LazyVoiceControl,
-  LazyFeedbackWidget
-} from "@/components/lazy/LazyProviders";
+// Keep critical providers eagerly loaded for proper initialization
+import { PushNotificationHandler } from "@/components/PushNotificationHandler";
+import { VoiceControl } from "@/components/voice/VoiceControl";
+import { ChatWidget } from "@/components/ChatWidget";
+import { FeedbackWidget } from "@/components/feedback-widget";
+// Only lazy load non-critical visual components
+import { LazyAnimatedBackground } from "@/components/lazy/LazyProviders";
 
 // Eagerly loaded pages (critical path)
 import Landing from "@/pages/landing";
@@ -267,11 +266,12 @@ function AppContent() {
   // Show app layout with header (with or without sidebar based on onboarding status)
   return (
     <>
-      {/* Lazy-loaded animated background */}
+      {/* Lazy-loaded animated background only on chat pages */}
       <LazyAnimatedBackground />
       
-      {/* Lazy-loaded push notification handler */}
-      <LazyPushNotificationHandler />
+      {/* Critical providers - eagerly loaded for proper initialization */}
+      <PushNotificationHandler />
+      <ChatWidget />
       
       <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <UnifiedRecipeDialog
@@ -279,11 +279,8 @@ function AppContent() {
         onOpenChange={setRecipeDialogOpen}
       />
       
-      {/* Lazy-loaded feedback widget */}
-      <LazyFeedbackWidget />
-      
-      {/* Lazy-loaded chat widget */}
-      <LazyChatWidget />
+      {/* Conditionally show feedback widget on non-chat pages */}
+      {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
       
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
@@ -317,7 +314,7 @@ function AppContent() {
             </div>
             {!showOnboarding && (
               <div className="ml-auto flex items-center gap-2">
-                <LazyVoiceControl />
+                <VoiceControl />
                 <QuickActionsBar
                   onAddFood={() => setAddFoodOpen(true)}
                   onGenerateRecipe={() => setRecipeDialogOpen(true)}
