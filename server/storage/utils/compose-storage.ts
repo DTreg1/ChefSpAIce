@@ -18,19 +18,25 @@ export function composeStorageModules<T extends Record<string, any>>(
   const conflicts = new Map<string, string[]>();
   const result: any = {};
   
-  // Helper to add methods and track conflicts
+  // Helper to add properties (both functions and non-functions) and track conflicts
   const addMethods = (source: any, sourceName: string) => {
     for (const key in source) {
-      if (typeof source[key] === 'function') {
-        if (result[key]) {
-          // Track conflict
+      const value = source[key];
+      
+      if (typeof value === 'function') {
+        // Track conflicts for functions
+        if (result[key] && typeof result[key] === 'function') {
           if (!conflicts.has(key)) {
             conflicts.set(key, []);
           }
           conflicts.get(key)!.push(sourceName);
         }
         // Bind function to preserve context
-        result[key] = source[key].bind ? source[key].bind(source) : source[key];
+        result[key] = value.bind ? value.bind(source) : value;
+      } else if (value !== undefined) {
+        // Preserve non-function properties (constants, objects, etc.)
+        // Only override if the new value is different from undefined
+        result[key] = value;
       }
     }
   };
