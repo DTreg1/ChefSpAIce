@@ -54,14 +54,8 @@ const getMetricsSchema = z.object({
 /**
  * Initialize predictive maintenance models
  */
-router.post("/api/maintenance/initialize", isAuthenticated, async (req, res, next) => {
+router.post("/api/maintenance/initialize", isAuthenticated, adminOnly, async (req, res, next) => {
   try {
-    // Admin check commented out - User type doesn't have isAdmin property
-    // TODO: Implement proper admin access control
-    // if (!req.user?.isAdmin) {
-    //   return res.status(403).json({ error: "Admin access required" });
-    // }
-
     await predictiveMaintenanceService.initialize();
     
     res.json({ 
