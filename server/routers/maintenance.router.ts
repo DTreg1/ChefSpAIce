@@ -315,14 +315,8 @@ router.get("/api/maintenance/history", isAuthenticated, async (req, res, next) =
  * POST /api/maintenance/simulate
  * Simulate metrics for testing (development only)
  */
-router.post("/api/maintenance/simulate", isAuthenticated, async (req, res, next) => {
+router.post("/api/maintenance/simulate", isAuthenticated, adminOnly, async (req, res, next) => {
   try {
-    // Admin check commented out - User type doesn't have isAdmin property
-    // TODO: Implement proper admin access control
-    // if (!req.user?.isAdmin) {
-    //   return res.status(403).json({ error: "Admin access required" });
-    // }
-
     const { component = 'database', anomaly = false } = req.body;
     
     // Generate simulated metrics
