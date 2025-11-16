@@ -1,7 +1,7 @@
-import { Storage } from "./storage";
+import { storage as defaultStorage } from "./storage";
 import { InsertCohort, InsertCohortMetric, InsertCohortInsight } from "@shared/schema";
 
-export async function seedCohorts(storage: Storage) {
+export async function seedCohorts(storage: typeof defaultStorage) {
   console.log("🎯 Seeding cohort analysis data...");
   
   try {
@@ -217,7 +217,7 @@ export async function seedCohorts(storage: Storage) {
       {
         cohortId: januaryCohort.id,
         insight: "January signups show exceptional 50% higher retention than February cohort. The organic acquisition channel appears to attract more engaged users who find genuine value in the product.",
-        importance: "high",
+        
         category: "retention",
         status: "active",
         actionRecommended: "Focus marketing efforts on organic channels like SEO and content marketing to replicate January's success",
@@ -238,7 +238,7 @@ export async function seedCohorts(storage: Storage) {
       {
         cohortId: januaryCohort.id,
         insight: "Users from January cohort demonstrate strong product adoption patterns with 7-minute average sessions, suggesting they're finding value in core features.",
-        importance: "medium",
+        
         category: "behavior",
         status: "active",
         actionRecommended: "Interview January users to understand what drove their engagement and document their use cases",
@@ -261,7 +261,7 @@ export async function seedCohorts(storage: Storage) {
       {
         cohortId: februaryCohort.id,
         insight: "February cohort shows concerning 35% 30-day retention, indicating potential mismatch between paid ad messaging and actual product value. Early churn risk is critical.",
-        importance: "critical",
+        
         category: "risk",
         status: "active",
         actionRecommended: "Immediately review and align paid search ad copy with actual product capabilities. Implement better onboarding for paid acquisition users.",
@@ -282,7 +282,7 @@ export async function seedCohorts(storage: Storage) {
       {
         cohortId: februaryCohort.id,
         insight: "Despite higher acquisition volume (200 users vs 150), February's paid search cohort generates lower overall value due to poor retention and engagement.",
-        importance: "high",
+        
         category: "comparison",
         status: "active",
         actionRecommended: "Re-evaluate paid search ROI considering lifetime value, not just acquisition cost. Consider shifting budget to organic channels.",
@@ -306,7 +306,7 @@ export async function seedCohorts(storage: Storage) {
       {
         cohortId: marchCohort.id,
         insight: "March's social media acquisition shows moderate performance between January's organic and February's paid search, suggesting potential for optimization.",
-        importance: "medium",
+        
         category: "opportunity",
         status: "active",
         actionRecommended: "Test different social media platforms and content types to identify which drive higher-quality users similar to January's organic cohort.",
@@ -352,14 +352,13 @@ export async function seedCohorts(storage: Storage) {
 import { Router } from "express";
 
 // Create endpoint for seeding cohorts
-export function createCohortSeedEndpoint(storage: Storage) {
+export function createCohortSeedEndpoint(storage: typeof defaultStorage) {
   const router = Router();
   
   router.post("/seed-cohorts", async (req: any, res: any) => {
     try {
       const result = await seedCohorts(storage);
       res.json({
-        success: true,
         message: "Cohort analysis data seeded successfully",
         ...result
       });

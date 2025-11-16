@@ -416,7 +416,6 @@ router.post(
         currentValue: threshold, // Will be updated when triggered
         severity,
         message: `Alert configured for ${alertType} with threshold ${threshold}`,
-        status: "active",
         metadata: {
           suggestedActions: [`Monitor ${alertType} patterns`, 'Review threshold if needed'],
         },
