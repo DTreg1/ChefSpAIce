@@ -1,4 +1,4 @@
-import * as storage from "./storage";
+import { storage } from "./storage";
 
 async function seedTemplates() {
   const templates = [
@@ -57,7 +57,8 @@ async function seedTemplates() {
   for (const template of templates) {
     try {
       await storage.createDraftTemplate({
-        ...template,
+        contextType: template.context,
+        templatePrompt: template.content,
         isActive: true,
       });
       console.log(`✓ Created template: ${template.name}`);
