@@ -12,6 +12,42 @@ import { preloadCommonSearches } from "./utils/usdaCache";
 import { termDetector } from "./services/term-detector.service";
 import { notificationScheduler } from "./services/notification-scheduler.service";
 
+/**
+ * Sanitizes response data for logging by removing sensitive information
+ * @param data Response data to sanitize
+ * @returns Sanitized data safe for logging
+ */
+function sanitizeResponseForLogging(data: any): any {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+  
+  const sensitiveKeys = [
+    'password', 'token', 'secret', 'apiKey', 'api_key', 
+    'authorization', 'cookie', 'session', 'creditCard',
+    'ssn', 'email', 'phone', 'address', 'birthDate',
+    'paymentMethod', 'stripeToken', 'stripe_token'
+  ];
+  
+  const sanitized: any = Array.isArray(data) ? [] : {};
+  
+  for (const key in data) {
+    const lowerKey = key.toLowerCase();
+    
+    // Check if key contains sensitive data
+    if (sensitiveKeys.some(sensitive => lowerKey.includes(sensitive.toLowerCase()))) {
+      sanitized[key] = '[REDACTED]';
+    } else if (typeof data[key] === 'object' && data[key] !== null) {
+      // Recursively sanitize nested objects
+      sanitized[key] = sanitizeResponseForLogging(data[key]);
+    } else {
+      sanitized[key] = data[key];
+    }
+  }
+  
+  return sanitized;
+}
+
 const app = express();
 
 // Enable gzip compression for better performance
@@ -47,12 +83,18 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      
+      // Only log response body in development mode and sanitize sensitive data
+      if (app.get("env") === "development" && capturedJsonResponse) {
+        // Create a sanitized copy of the response
+        const sanitized = sanitizeResponseForLogging(capturedJsonResponse);
+        if (sanitized) {
+          logLine += ` :: ${JSON.stringify(sanitized)}`;
+        }
       }
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      if (logLine.length > 200) {
+        logLine = logLine.slice(0, 199) + "…";
       }
 
       log(logLine);

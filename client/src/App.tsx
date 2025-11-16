@@ -11,19 +11,22 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ProgressiveDisclosureProvider } from "@/contexts/ProgressiveDisclosureContext";
 import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
-import { ChatWidget } from "@/components/ChatWidget";
 import { UnifiedAddFood } from "@/components/unified-add-food";
 import { UnifiedRecipeDialog } from "@/components/unified-recipe-dialog";
-import { FeedbackWidget } from "@/components/feedback-widget";
-import { AnimatedBackground } from "@/components/animated-background";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { RouteLoading } from "@/components/route-loading";
-import { PushNotificationHandler } from "@/components/PushNotificationHandler";
-import { VoiceControl } from "@/components/voice/VoiceControl";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import ErrorBoundary from "@/components/ErrorBoundary";
+// Import lazy-loaded providers
+import {
+  LazyAnimatedBackground,
+  LazyPushNotificationHandler,
+  LazyChatWidget,
+  LazyVoiceControl,
+  LazyFeedbackWidget
+} from "@/components/lazy/LazyProviders";
 
 // Eagerly loaded pages (critical path)
 import Landing from "@/pages/landing";
@@ -264,25 +267,23 @@ function AppContent() {
   // Show app layout with header (with or without sidebar based on onboarding status)
   return (
     <>
-      {/* Only show animated background on chat/home page */}
-      {(location === "/" || location === "/chat") && (
-        <AnimatedBackground
-          variant="both"
-          gradientType="primary"
-          particleCount={1000}
-        />
-      )}
-      <PushNotificationHandler />
+      {/* Lazy-loaded animated background */}
+      <LazyAnimatedBackground />
+      
+      {/* Lazy-loaded push notification handler */}
+      <LazyPushNotificationHandler />
+      
       <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <UnifiedRecipeDialog
         open={recipeDialogOpen}
         onOpenChange={setRecipeDialogOpen}
       />
-      {/* Only show floating FeedbackWidget on non-chat pages */}
-      {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
       
-      {/* Add ChatWidget for global AI assistant access */}
-      <ChatWidget />
+      {/* Lazy-loaded feedback widget */}
+      <LazyFeedbackWidget />
+      
+      {/* Lazy-loaded chat widget */}
+      <LazyChatWidget />
       
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
@@ -316,7 +317,7 @@ function AppContent() {
             </div>
             {!showOnboarding && (
               <div className="ml-auto flex items-center gap-2">
-                <VoiceControl />
+                <LazyVoiceControl />
                 <QuickActionsBar
                   onAddFood={() => setAddFoodOpen(true)}
                   onGenerateRecipe={() => setRecipeDialogOpen(true)}
