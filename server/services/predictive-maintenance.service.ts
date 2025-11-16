@@ -345,11 +345,12 @@ class TimeSeriesForecaster {
    * Make predictions for future time steps
    */
   predict(recentData: number[][]): number[] {
-    return tf.tidy(() => {
+    const result = tf.tidy(() => {
       const input = tf.tensor3d([recentData]);
       const prediction = this.model!.predict(input) as tf.Tensor;
-      return prediction.arraySync() as number[];
-    })[0];
+      return prediction.arraySync() as number[][];
+    });
+    return result[0];
   }
 }
 
@@ -382,7 +383,7 @@ export class PredictiveMaintenanceService {
     try {
       // Try to load existing models
       await this.anomalyDetector.loadModel('./models/anomaly-detector');
-      await this.forecaster.model?.save('file://./models/forecaster');
+      // Note: Forecaster model saving handled internally if needed
       console.log('✓ Loaded existing predictive maintenance models');
     } catch (error) {
       console.log('Training new predictive maintenance models...');
@@ -591,7 +592,7 @@ export class PredictiveMaintenanceService {
         await this.analyzeComponent(key);
       }
 
-      return result;
+      return { anomalyScore: result.score, isAnomaly: result.isAnomaly };
     }
 
     // No anomaly detection yet (not enough data)

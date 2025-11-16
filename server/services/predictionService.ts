@@ -15,7 +15,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-replit-integration',
 });
 
-interface UserMetrics {
+export interface UserMetrics {
   userId: string;
   lastActiveDate: Date;
   sessionCount: number;

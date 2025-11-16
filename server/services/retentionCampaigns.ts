@@ -8,7 +8,7 @@
 import { storage } from '../storage';
 import { predictionService } from './predictionService';
 import type { UserPrediction, InsertUserPrediction } from '@shared/schema';
-import cron from 'node-cron';
+import cron, { type ScheduledTask } from 'node-cron';
 
 interface EmailCampaign {
   id: string;
@@ -38,7 +38,7 @@ class RetentionCampaignService {
     churnReduction: 0,
     activeUsers: 0,
   };
-  private cronJobs: Map<string, cron.ScheduledTask> = new Map();
+  private cronJobs: Map<string, ScheduledTask> = new Map();
 
   constructor() {
     this.initializeCampaigns();

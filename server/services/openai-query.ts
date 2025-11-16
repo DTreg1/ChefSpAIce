@@ -39,7 +39,7 @@ Columns: ${columns.join(', ')}`;
 // Parse SQL to extract table names
 function extractTableNames(sql: string): string[] {
   const tableRegex = /(?:FROM|JOIN|INTO|UPDATE|DELETE FROM)\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi;
-  const matches = sql.matchAll(tableRegex);
+  const matches = Array.from(sql.matchAll(tableRegex));
   const tables = new Set<string>();
   
   for (const match of matches) {

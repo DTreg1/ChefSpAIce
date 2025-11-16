@@ -545,7 +545,7 @@ export class ModerationService {
    */
   async takeModerationAction(
     moderationLogId: string,
-    action: string,
+    action: 'approved' | 'blocked' | 'flagged' | 'warning',
     reviewedBy: string,
     notes?: string
   ): Promise<void> {

@@ -603,10 +603,9 @@ Return a safe SELECT query and a brief explanation in JSON format:
       }
       
       // Log the query
-      await storage.createQueryLog({
+      await storage.createQueryLog(userId, {
         naturalQuery: query,
         generatedSql: sql,
-        userId,
       });
       
       return {
