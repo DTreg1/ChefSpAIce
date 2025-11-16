@@ -2,7 +2,7 @@
  * OAuth Configuration
  * 
  * Centralized configuration for all OAuth providers.
- * Replace placeholder values with real credentials from each provider.
+ * All sensitive credentials must be provided via environment variables.
  * 
  * Provider Setup Instructions:
  * 
@@ -31,44 +31,59 @@
  * 4. Configure return URL: https://[your-domain]/api/auth/apple/callback
  */
 
+import { getSafeEnvVar } from '../config/env-validator';
+import * as crypto from 'crypto';
+
+// Generate session secret if not provided (development only)
+function getSessionSecret(): string {
+  const secret = getSafeEnvVar('SESSION_SECRET');
+  
+  if (secret) {
+    return secret;
+  }
+  
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET environment variable is required in production');
+  }
+  
+  // Generate a consistent secret for development based on a fixed seed
+  // This ensures sessions persist across server restarts in development
+  const devSecret = crypto.createHash('sha256')
+    .update('dev-session-secret-seed')
+    .digest('hex');
+  
+  console.warn('⚠️  Using development session secret. Set SESSION_SECRET for production.');
+  return devSecret;
+}
+
 export const oauthConfig = {
   google: {
-    clientID: process.env.GOOGLE_CLIENT_ID || "placeholder_google_client_id",
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder_google_client_secret",
+    clientID: getSafeEnvVar('GOOGLE_CLIENT_ID') || '',
+    clientSecret: getSafeEnvVar('GOOGLE_CLIENT_SECRET') || '',
     scope: ["profile", "email"],
   },
   github: {
-    clientID: process.env.GITHUB_CLIENT_ID || "placeholder_github_client_id",
-    clientSecret: process.env.GITHUB_CLIENT_SECRET || "placeholder_github_client_secret",
+    clientID: getSafeEnvVar('GITHUB_CLIENT_ID') || '',
+    clientSecret: getSafeEnvVar('GITHUB_CLIENT_SECRET') || '',
     scope: ["user:email"],
   },
   twitter: {
-    consumerKey: process.env.TWITTER_CONSUMER_KEY || "placeholder_twitter_consumer_key",
-    consumerSecret: process.env.TWITTER_CONSUMER_SECRET || "placeholder_twitter_consumer_secret",
+    consumerKey: getSafeEnvVar('TWITTER_CONSUMER_KEY') || '',
+    consumerSecret: getSafeEnvVar('TWITTER_CONSUMER_SECRET') || '',
   },
   apple: {
-    clientID: process.env.APPLE_CLIENT_ID || "placeholder_apple_client_id",
-    teamID: process.env.APPLE_TEAM_ID || "placeholder_apple_team_id",
-    keyID: process.env.APPLE_KEY_ID || "placeholder_apple_key_id",
-    privateKey: process.env.APPLE_PRIVATE_KEY || "placeholder_apple_private_key",
+    clientID: getSafeEnvVar('APPLE_CLIENT_ID') || '',
+    teamID: getSafeEnvVar('APPLE_TEAM_ID') || '',
+    keyID: getSafeEnvVar('APPLE_KEY_ID') || '',
+    privateKey: getSafeEnvVar('APPLE_PRIVATE_KEY') || '',
   },
   replit: {
-    clientID: process.env.REPLIT_CLIENT_ID || "placeholder_replit_client_id",
-    clientSecret: process.env.REPLIT_CLIENT_SECRET || "placeholder_replit_client_secret",
+    clientID: getSafeEnvVar('REPLIT_CLIENT_ID') || '',
+    clientSecret: getSafeEnvVar('REPLIT_CLIENT_SECRET') || '',
     scope: ["email", "profile", "openid"],
   },
   session: {
-    secret: process.env.SESSION_SECRET || (() => {
-      // Generate a random secret for development/testing
-      // In production, SESSION_SECRET must be explicitly set
-      if (process.env.NODE_ENV === "production") {
-        throw new Error("SESSION_SECRET environment variable is required in production");
-      }
-      const crypto = require("crypto");
-      const secret = crypto.randomBytes(32).toString("hex");
-      console.warn("⚠️  Using auto-generated session secret. Set SESSION_SECRET environment variable for production.");
-      return secret;
-    })(),
+    secret: getSessionSecret(),
   },
 };
 
@@ -78,21 +93,17 @@ export const oauthConfig = {
 export function isOAuthConfigured(provider: string): boolean {
   switch (provider) {
     case "google":
-      return !oauthConfig.google.clientID.includes("placeholder") && 
-             !oauthConfig.google.clientSecret.includes("placeholder");
+      return !!oauthConfig.google.clientID && !!oauthConfig.google.clientSecret;
     case "github":
-      return !oauthConfig.github.clientID.includes("placeholder") && 
-             !oauthConfig.github.clientSecret.includes("placeholder");
+      return !!oauthConfig.github.clientID && !!oauthConfig.github.clientSecret;
     case "twitter":
-      return !oauthConfig.twitter.consumerKey.includes("placeholder") && 
-             !oauthConfig.twitter.consumerSecret.includes("placeholder");
+      return !!oauthConfig.twitter.consumerKey && !!oauthConfig.twitter.consumerSecret;
     case "apple":
-      return !oauthConfig.apple.clientID.includes("placeholder") && 
-             !oauthConfig.apple.teamID.includes("placeholder");
+      return !!oauthConfig.apple.clientID && !!oauthConfig.apple.teamID;
     case "replit":
       // Replit OAuth is configured when client ID and secret are provided
       // OR when running on Replit with REPLIT_DOMAINS available
-      return (!!process.env.REPLIT_CLIENT_ID && !!process.env.REPLIT_CLIENT_SECRET) ||
+      return (!!oauthConfig.replit.clientID && !!oauthConfig.replit.clientSecret) ||
              !!process.env.REPLIT_DOMAINS;
     default:
       return false;

@@ -13,6 +13,8 @@ import { z } from "zod";
 import multer from "multer";
 import fs from "fs/promises";
 import path from "path";
+import { getOpenAIClient } from "../config/openai-config";
+import { getSafeEnvVar } from "../config/env-validator";
 
 const router = Router();
 
@@ -44,15 +46,11 @@ const upload = multer({
 
 // Initialize OpenAI clients
 // Use standard OpenAI for Whisper (requires API key)
-const whisperClient = process.env.OPENAI_API_KEY ? new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-}) : null;
+const whisperApiKey = getSafeEnvVar('OPENAI_API_KEY');
+const whisperClient = whisperApiKey ? new OpenAI({ apiKey: whisperApiKey }) : null;
 
 // Use AI Integrations for chat completions
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "not-needed"
-});
+const openai = getOpenAIClient();
 
 /**
  * GET /api/voice/commands

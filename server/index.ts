@@ -11,6 +11,7 @@ import PushStatusService from "./services/push-status.service";
 import { preloadCommonSearches } from "./utils/usdaCache";
 import { termDetector } from "./services/term-detector.service";
 import { notificationScheduler } from "./services/notification-scheduler.service";
+import { initializeEnvironment } from "./config/env-validator";
 
 /**
  * Sanitizes response data for logging by removing sensitive information
@@ -126,6 +127,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize and validate environment variables
+  initializeEnvironment();
+  
   const server = await registerModularRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

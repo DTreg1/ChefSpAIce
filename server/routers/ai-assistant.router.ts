@@ -8,18 +8,26 @@
 import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import { isAuthenticated } from "../middleware";
 import { storage } from "../storage";
-import OpenAI from "openai";
 import { z } from "zod";
+import { getOpenAIClient } from "../config/openai-config";
 
 const router = Router();
 
-// Initialize OpenAI client using Replit AI Integrations
-// Referenced from blueprint:javascript_openai_ai_integrations
+// Initialize OpenAI client using safe configuration
 // Using GPT-4 model for the AI assistant
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "not-needed"
-});
+const openai = getOpenAIClient();
+
+// Check if OpenAI is configured
+function checkOpenAIConfiguration(res: ExpressResponse): boolean {
+  if (!openai) {
+    res.status(503).json({ 
+      error: "AI service not configured",
+      message: "OpenAI API key is required for this feature. Please configure OPENAI_API_KEY or AI_INTEGRATIONS_OPENAI_API_KEY."
+    });
+    return false;
+  }
+  return true;
+}
 
 /**
  * GET /api/assistant/conversations

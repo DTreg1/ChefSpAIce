@@ -8,17 +8,13 @@
 import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import { isAuthenticated } from "../middleware";
 import { storage } from "../storage";
-import OpenAI from "openai";
 import { z } from "zod";
+import { getOpenAIClient } from "../config/openai-config";
 
 const router = Router();
 
 // Initialize OpenAI client
-// Referenced from blueprint:javascript_openai_ai_integrations
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "not-needed"
-});
+const openai = getOpenAIClient();
 
 /**
  * POST /api/writing/analyze
