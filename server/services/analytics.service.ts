@@ -167,7 +167,7 @@ Example for a traffic spike:
             if (isRateLimitError(error)) {
               throw error; // Retry on rate limit
             }
-            throw new pRetry.AbortError(error);
+            throw error;
           }
         },
         {
@@ -183,9 +183,7 @@ Example for a traffic spike:
         userId,
         metricName: metricData.metricName,
         insightText: response.insightText,
-        importance: response.importance,
         period: metricData.period,
-        category: response.category || (analysis.isAnomaly ? "anomaly" : "trend"),
         metricData: {
           currentValue,
           previousValue,
@@ -231,9 +229,7 @@ Example for a traffic spike:
         userId,
         metricName: metricData.metricName,
         insightText,
-        importance: analysis.isAnomaly ? 4 : 2,
         period: metricData.period,
-        category: analysis.isAnomaly ? "anomaly" : "trend",
         metricData: {
           currentValue,
           percentageChange: analysis.percentageChange,
@@ -291,7 +287,7 @@ Example for "bounce_rate":
             if (isRateLimitError(error)) {
               throw error;
             }
-            throw new pRetry.AbortError(error);
+            throw error;
           }
         },
         {

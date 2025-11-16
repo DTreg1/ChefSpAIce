@@ -8,7 +8,6 @@ export async function seedCohorts(storage: typeof defaultStorage) {
     // Create January 2025 cohort
     const januaryCohort = await storage.createCohort({
       name: "January 2025 Signups",
-      description: "Users who signed up in January 2025",
       definition: {
         signupDateRange: {
           start: "2025-01-01T00:00:00Z",
@@ -24,7 +23,6 @@ export async function seedCohorts(storage: typeof defaultStorage) {
     // Create February 2025 cohort
     const februaryCohort = await storage.createCohort({
       name: "February 2025 Signups", 
-      description: "Users who signed up in February 2025",
       definition: {
         signupDateRange: {
           start: "2025-02-01T00:00:00Z",
@@ -40,7 +38,6 @@ export async function seedCohorts(storage: typeof defaultStorage) {
     // Create March 2025 cohort for comparison
     const marchCohort = await storage.createCohort({
       name: "March 2025 Signups",
-      description: "Users who signed up in March 2025",
       definition: {
         signupDateRange: {
           start: "2025-03-01T00:00:00Z",
@@ -219,9 +216,9 @@ export async function seedCohorts(storage: typeof defaultStorage) {
         insight: "January signups show exceptional 50% higher retention than February cohort. The organic acquisition channel appears to attract more engaged users who find genuine value in the product.",
         
         category: "retention",
-        status: "active",
+        
         actionRecommended: "Focus marketing efforts on organic channels like SEO and content marketing to replicate January's success",
-        confidenceScore: 0.92,
+        
         supportingData: {
           metrics: {
             day7_retention: 72,
@@ -240,9 +237,9 @@ export async function seedCohorts(storage: typeof defaultStorage) {
         insight: "Users from January cohort demonstrate strong product adoption patterns with 7-minute average sessions, suggesting they're finding value in core features.",
         
         category: "behavior",
-        status: "active",
+        
         actionRecommended: "Interview January users to understand what drove their engagement and document their use cases",
-        confidenceScore: 0.85,
+        
         supportingData: {
           metrics: {
             avg_session_time: 420,
@@ -263,9 +260,9 @@ export async function seedCohorts(storage: typeof defaultStorage) {
         insight: "February cohort shows concerning 35% 30-day retention, indicating potential mismatch between paid ad messaging and actual product value. Early churn risk is critical.",
         
         category: "risk",
-        status: "active",
+        
         actionRecommended: "Immediately review and align paid search ad copy with actual product capabilities. Implement better onboarding for paid acquisition users.",
-        confidenceScore: 0.88,
+        
         supportingData: {
           metrics: {
             day1_retention: 65,
@@ -284,9 +281,9 @@ export async function seedCohorts(storage: typeof defaultStorage) {
         insight: "Despite higher acquisition volume (200 users vs 150), February's paid search cohort generates lower overall value due to poor retention and engagement.",
         
         category: "comparison",
-        status: "active",
+        
         actionRecommended: "Re-evaluate paid search ROI considering lifetime value, not just acquisition cost. Consider shifting budget to organic channels.",
-        confidenceScore: 0.82,
+        
         supportingData: {
           metrics: {
             userCount: 200,
@@ -308,9 +305,9 @@ export async function seedCohorts(storage: typeof defaultStorage) {
         insight: "March's social media acquisition shows moderate performance between January's organic and February's paid search, suggesting potential for optimization.",
         
         category: "opportunity",
-        status: "active",
+        
         actionRecommended: "Test different social media platforms and content types to identify which drive higher-quality users similar to January's organic cohort.",
-        confidenceScore: 0.78,
+        
         supportingData: {
           metrics: {
             day7_retention: 60,

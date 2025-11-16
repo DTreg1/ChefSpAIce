@@ -441,8 +441,7 @@ export async function routeTicket(ticketId: string): Promise<{
           technical_indicators: aiAnalysis.technicalIndicators
         },
         metadata: {
-          workload_balanced: !!agentSuggestion,
-          agent_workload: agentSuggestion?.workloadScore
+          
         }
       });
       
@@ -789,7 +788,6 @@ export async function escalateTicket(
       routing_reason: `Escalated: ${reason}`,
       is_escalation: true,
       metadata: {
-        escalation_reason: reason
       }
     });
     

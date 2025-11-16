@@ -221,7 +221,6 @@ export class ChatService {
       conversationId: activeConversationId,
       role: 'user',
       content,
-      tokensUsed: 0 // Will be updated after API call
     };
 
     const [savedUserMessage] = await db.insert(messages)
@@ -259,7 +258,6 @@ export class ChatService {
         conversationId: activeConversationId,
         role: 'assistant',
         content: assistantResponse,
-        tokensUsed: totalTokens
       };
 
       const [savedAssistantMessage] = await db.insert(messages)
@@ -291,7 +289,7 @@ export class ChatService {
         conversationId: activeConversationId,
         role: 'assistant',
         content: 'I apologize, but I encountered an error processing your request. Please try again.',
-        tokensUsed: 0,
+        
         metadata: { functionCall: `Error: ${String(error)}` }
       };
 

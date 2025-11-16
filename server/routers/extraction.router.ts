@@ -158,7 +158,7 @@ Return the extracted data as a valid JSON object with confidence scores for each
           if (isRateLimitError(error)) {
             throw error; // Rethrow to trigger retry
           }
-          throw new pRetry.AbortError(error as Error); // Don't retry non-rate-limit errors
+          throw error as Error; // Don't retry non-rate-limit errors
         }
       },
       {

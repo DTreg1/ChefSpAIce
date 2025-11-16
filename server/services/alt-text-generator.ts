@@ -99,7 +99,7 @@ Respond with a JSON object containing:
           if (isRateLimitError(error)) {
             throw error; // Rethrow to trigger p-retry
           }
-          throw new pRetry.AbortError(error);
+          throw error;
         }
       },
       {

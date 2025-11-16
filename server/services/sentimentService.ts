@@ -179,9 +179,10 @@ class SentimentService {
         const values = await firstLayerWeights.array() as number[][];
         
         // Enhance weights for positive words (indices 1 to positiveEnd)
+        const dim1 = shape[1] || 0;
         for (let i = 0; i < Math.min(this.sentimentBoundaries.positiveEnd, shape[0]); i++) {
           if (values[i]) {
-            for (let j = 0; j < Math.min(10, shape[1]); j++) {
+            for (let j = 0; j < Math.min(10, dim1); j++) {
               values[i][j] = values[i][j] * 1.5 + 0.3; // Boost positive signal
             }
           }
@@ -190,14 +191,14 @@ class SentimentService {
         // Enhance weights for negative words
         for (let i = this.sentimentBoundaries.positiveEnd; i < Math.min(this.sentimentBoundaries.negativeEnd, shape[0]); i++) {
           if (values[i]) {
-            for (let j = 10; j < Math.min(20, shape[1]); j++) {
+            for (let j = 10; j < Math.min(20, dim1); j++) {
               values[i][j] = values[i][j] * 1.5 - 0.3; // Boost negative signal
             }
           }
         }
         
         // Set modified weights back
-        const newWeights = tf.tensor2d(values, shape);
+        const newWeights = tf.tensor2d(values, [shape[0], dim1] as [number, number]);
         weights[0] = newWeights;
         tfModel.setWeights(weights);
       }
@@ -328,8 +329,6 @@ class SentimentService {
       content,
       sentiment,
       confidence,
-      sentimentScores: combinedScores,
-      emotions: emotionAnalysis.emotions,
       topics,
       keywords,
       aspectSentiments,
@@ -565,21 +564,25 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
       .filter(token => token.length > 3 && !stopWords.has(token))
       .slice(0, 5);
     
-    return [...new Set(topics)];
+    return Array.from(new Set(topics));
   }
 
   /**
    * Extract keywords from content
    */
   private extractKeywords(content: string): string[] {
-    const extraction = keywordExtractor.extract(content, {
-      language: 'english',
-      remove_digits: true,
-      return_changed_case: true,
-      remove_duplicates: true
-    });
-    
-    return extraction.slice(0, 10);
+    try {
+      const extraction = (keywordExtractor as any).extract(content, {
+        language: 'english',
+        remove_digits: true,
+        return_changed_case: true,
+        remove_duplicates: true
+      });
+      
+      return extraction.slice(0, 10);
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -791,8 +794,8 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
       
       // Update emotions tracking
       const dominantEmotions = currentTrend.dominantEmotions || [];
-      if (analysis.emotions) {
-        Object.entries(analysis.emotions).forEach(([emotion, intensity]) => {
+      if ((analysis as any).emotions) {
+        Object.entries((analysis as any).emotions).forEach(([emotion, intensity]) => {
           if (typeof intensity === 'number' && intensity > 0.3) {
             const existing = dominantEmotions.find(e => e.emotion === emotion);
             if (existing) {
@@ -823,8 +826,8 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
       counts[analysis.sentiment] = 1;
       
       const dominantEmotions: any[] = [];
-      if (analysis.emotions) {
-        Object.entries(analysis.emotions).forEach(([emotion, intensity]) => {
+      if ((analysis as any).emotions) {
+        Object.entries((analysis as any).emotions).forEach(([emotion, intensity]) => {
           if (typeof intensity === 'number' && intensity > 0.3) {
             dominantEmotions.push({ emotion, count: 1, avgIntensity: intensity });
           }

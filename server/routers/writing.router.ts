@@ -210,11 +210,6 @@ function checkGrammarAndSpelling(text: string): WritingSuggestion[] {
         originalSnippet,
         suggestedSnippet,
         reason,
-        category,
-        severity: type === 'spelling' ? 'error' : 'warning',
-        position: match.index,
-        length: originalSnippet.length,
-        confidence: 0.9,
         accepted: false,
         createdAt: new Date(),
       });
@@ -240,14 +235,14 @@ router.post("/analyze", isAuthenticated, async (req: ExpressRequest, res: Expres
       return res.status(400).json({ error: validation.error.flatten() });
     }
     
-    const { text, options = {} } = validation.data;
+    const { text, options } = validation.data;
     const {
       checkGrammar = true,
       checkSpelling = true,
       checkStyle = true,
       suggestTone = true,
       targetTone,
-    } = options;
+    } = options || {};
     
     // Calculate text metrics
     const wordCount = countWords(text);
@@ -258,14 +253,7 @@ router.post("/analyze", isAuthenticated, async (req: ExpressRequest, res: Expres
     const session = await storage.createWritingSession({
       userId,
       originalText: text,
-      wordCount,
-      readabilityScore,
-      tone: detectedTone,
-      targetTone: targetTone || detectedTone,
-      metadata: {
-        sentenceCount: (text.match(/[.!?]+/g) || []).length,
-        avgWordsPerSentence: wordCount / ((text.match(/[.!?]+/g) || []).length || 1),
-      },
+      documentId: null,
     });
     
     const suggestions: Omit<WritingSuggestion, "id" | "sessionId" | "createdAt">[] = [];
@@ -564,11 +552,6 @@ router.post("/session/:sessionId/accept", isAuthenticated, async (req: ExpressRe
       improvedText,
       suggestionIds
     );
-    
-    // Mark suggestions as accepted
-    for (const suggestionId of suggestionIds) {
-      await storage.acceptSuggestion(suggestionId);
-    }
     
     res.json({
       session: updatedSession,
