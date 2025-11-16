@@ -96,9 +96,9 @@ class PredictionService {
       userId: metrics.userId,
       predictionType: 'churn_risk',
       probability,
+      predictedDate: new Date(),
       factors,
-      status: 'pending',
-      createdAt: new Date(),
+      modelVersion: 'v1.0',
     };
   }
 
@@ -156,9 +156,9 @@ class PredictionService {
       userId: metrics.userId,
       predictionType: 'churn_risk',
       probability,
+      predictedDate: new Date(),
       factors,
-      status: 'pending',
-      createdAt: new Date(),
+      modelVersion: 'v1.0',
     };
   }
 
@@ -192,9 +192,9 @@ class PredictionService {
       userId: metrics.userId,
       predictionType: 'next_action',
       probability: mostLikely.probability,
-      factors: { predictedAction: mostLikely.action },
-      status: 'pending',
-      createdAt: new Date(),
+      predictedDate: new Date(),
+      factors: { activityPattern: mostLikely.action },
+      modelVersion: 'v1.0',
     };
   }
 
@@ -233,13 +233,12 @@ class PredictionService {
         userId: metrics.userId,
         predictionType: 'engagement_drop',
         probability: 1 - probability, // Invert for drop probability
+        predictedDate: new Date(),
         factors: {
-          currentEngagement: probability,
-          trend: metrics.activityTrend,
-          riskLevel: probability < 0.3 ? 'high' : 'medium',
+          engagementScore: probability,
+          activityPattern: metrics.activityTrend < -0.3 ? 'declining' : 'stable',
         },
-        status: 'pending',
-        createdAt: new Date(),
+        modelVersion: 'v1.0',
       };
     }
 
