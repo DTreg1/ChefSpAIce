@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { type Storage } from './storage';
+import { storage as defaultStorage } from './storage';
 import { type InsertAbTest, type InsertAbTestResult, type InsertAbTestInsight } from '@shared/schema';
 
-export function createABTestSeedEndpoint(storage: Storage) {
+export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
   const router = Router();
   
   router.post('/ab/seed', async (req, res) => {
@@ -10,7 +10,6 @@ export function createABTestSeedEndpoint(storage: Storage) {
         // Create sample A/B tests
         const tests: InsertAbTest[] = [
           {
-            id: 'test-1',
             name: 'Homepage CTA Button Color Test',
             variantA: 'Blue button with "Sign Up" text',
             variantB: 'Green button with "Get Started" text',
@@ -25,11 +24,8 @@ export function createABTestSeedEndpoint(storage: Storage) {
               minimumSampleSize: 1000,
               confidenceLevel: 0.95
             },
-            createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-            updatedAt: new Date()
           },
           {
-            id: 'test-2',
             name: 'Checkout Form Length Optimization',
             variantA: 'Long form with all fields on one page',
             variantB: 'Multi-step form with progress indicator',
@@ -44,11 +40,8 @@ export function createABTestSeedEndpoint(storage: Storage) {
               minimumSampleSize: 2000,
               confidenceLevel: 0.95
             },
-            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-            updatedAt: new Date()
           },
           {
-            id: 'test-3',
             name: 'Product Card Design Test',
             variantA: 'Grid layout with small images',
             variantB: 'List layout with large images and descriptions',
@@ -63,103 +56,121 @@ export function createABTestSeedEndpoint(storage: Storage) {
               minimumSampleSize: 1500,
               confidenceLevel: 0.95
             },
-            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-            updatedAt: new Date()
           }
         ];
 
-        // Create tests
+        // Create tests and capture IDs
+        const createdTests = [];
         for (const test of tests) {
-          await storage.createAbTest(test);
+          const created = await storage.createAbTest(test);
+          createdTests.push(created);
         }
 
         // Create sample results for active tests
         const results: InsertAbTestResult[] = [
           // Results for test-1 (Homepage CTA)
           {
-            testId: 'test-1',
+            testId: createdTests[0].id,
             variant: 'A',
             visitors: 2500,
             conversions: 125,
             revenue: 12500,
-            date: new Date(),
+            periodStart: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+            periodEnd: new Date(),
             metadata: {
-              avgTimeOnPage: 45,
-              bounceRate: 0.35
+              customMetrics: {
+                avgTimeOnPage: 45,
+                bounceRate: 0.35
+              }
             }
           },
           {
-            testId: 'test-1',
+            testId: createdTests[0].id,
             variant: 'B',
             visitors: 2485,
             conversions: 186,
             revenue: 18600,
-            date: new Date(),
+            periodStart: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+            periodEnd: new Date(),
             metadata: {
-              avgTimeOnPage: 52,
-              bounceRate: 0.28
+              customMetrics: {
+                avgTimeOnPage: 52,
+                bounceRate: 0.28
+              }
             }
           },
           // Results for test-2 (Checkout Form - completed)
           {
-            testId: 'test-2',
+            testId: createdTests[1].id,
             variant: 'A',
             visitors: 5000,
             conversions: 250,
             revenue: 75000,
-            date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+            periodStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            periodEnd: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
             metadata: {
-              avgTimeToComplete: 180,
-              dropoffRate: 0.45
+              customMetrics: {
+                avgTimeToComplete: 180,
+                dropoffRate: 0.45
+              }
             }
           },
           {
-            testId: 'test-2',
+            testId: createdTests[1].id,
             variant: 'B',
             visitors: 4950,
             conversions: 396,
             revenue: 118800,
-            date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+            periodStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            periodEnd: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
             metadata: {
-              avgTimeToComplete: 120,
-              dropoffRate: 0.25
+              customMetrics: {
+                avgTimeToComplete: 120,
+                dropoffRate: 0.25
+              }
             }
           },
           // Results for test-3 (Product Cards)
           {
-            testId: 'test-3',
+            testId: createdTests[2].id,
             variant: 'A',
             visitors: 1200,
             conversions: 84,
             revenue: 4200,
-            date: new Date(),
+            periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            periodEnd: new Date(),
             metadata: {
-              clickThroughRate: 0.07,
-              viewsPerSession: 12
+              customMetrics: {
+                clickThroughRate: 0.07,
+                viewsPerSession: 12
+              }
             }
           },
           {
-            testId: 'test-3',
+            testId: createdTests[2].id,
             variant: 'B',
             visitors: 1180,
             conversions: 94,
             revenue: 5640,
-            date: new Date(),
+            periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            periodEnd: new Date(),
             metadata: {
-              clickThroughRate: 0.08,
-              viewsPerSession: 15
+              customMetrics: {
+                clickThroughRate: 0.08,
+                viewsPerSession: 15
+              }
             }
           }
         ];
 
         // Add results
         for (const result of results) {
-          await storage.addAbTestResult(result);
+          await storage.upsertAbTestResult(result);
         }
 
         // Create insights for completed test
         const insight: InsertAbTestInsight = {
-          testId: 'test-2',
+          testId: createdTests[1].id,
           pValue: 0.0001,
           confidence: 0.9999,
           winner: 'B',
@@ -186,18 +197,15 @@ export function createABTestSeedEndpoint(storage: Storage) {
             ]
           },
           statisticalAnalysis: {
-            chiSquare: 45.2,
             zScore: 3.98,
             sampleSizeA: 5000,
             sampleSizeB: 4950,
             conversionRateA: 0.05,
             conversionRateB: 0.08
-          },
-          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-          updatedAt: new Date()
+          }
         };
 
-        await storage.saveAbTestInsight(insight);
+        await storage.upsertAbTestInsight(insight);
 
         res.json({ 
           success: true, 

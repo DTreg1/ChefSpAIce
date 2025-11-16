@@ -6286,13 +6286,13 @@ export const insertModerationLogSchema = createInsertSchema(moderationLogs)
     id: true,
     createdAt: true,
     updatedAt: true,
-    confidence: true,
-    manualReview: true,
   })
   .extend({
     toxicityScores: moderationResultSchema,
     actionTaken: z.enum(["approved", "blocked", "flagged", "warning"]),
     severity: z.enum(["low", "medium", "high", "critical"]),
+    confidence: z.number().optional(),
+    manualReview: z.boolean().optional(),
   });
 
 export type InsertModerationLog = z.infer<typeof insertModerationLogSchema>;
@@ -8812,12 +8812,12 @@ export const insertAbTestSchema = createInsertSchema(abTests)
     id: true,
     createdAt: true,
     updatedAt: true,
-    status: true,
-    targetAudience: true,
-    successMetric: true,
   })
   .extend({
     metadata: abTestConfigurationSchema.optional(),
+    status: z.enum(["draft", "active", "completed", "paused"]).optional(),
+    targetAudience: z.number().optional(),
+    successMetric: z.string().optional(),
   });
 
 /**
@@ -8829,14 +8829,14 @@ export const insertAbTestResultSchema = createInsertSchema(abTestResults)
     id: true,
     createdAt: true,
     updatedAt: true,
-    conversions: true,
-    visitors: true,
-    revenue: true,
-    sampleSize: true,
   })
   .extend({
     variant: z.enum(["A", "B"]),
     metadata: abTestMetricsSchema.optional(),
+    conversions: z.number().optional(),
+    visitors: z.number().optional(),
+    revenue: z.number().optional(),
+    sampleSize: z.number().optional(),
   });
 
 /**

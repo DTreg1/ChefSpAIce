@@ -192,6 +192,7 @@ async function removeBackground(imagePath: string, apiKey: string): Promise<Buff
  * Auto-enhance image with AI
  */
 router.post("/enhance", upload.single("image"), async (req: any, res: any) => {
+  let job: any;
   try {
   const userId = req.session?.user?.id;
   if (!userId) {
@@ -213,7 +214,7 @@ router.post("/enhance", upload.single("image"), async (req: any, res: any) => {
   const inputPath = await saveUploadedFile(req.file);
   
   // Create processing job
-  const job = await storage.createImageProcessingJob({
+  job = await storage.createImageProcessingJob({
     userId,
     originalUrl: inputPath,
     operations,
@@ -280,6 +281,7 @@ router.post("/enhance", upload.single("image"), async (req: any, res: any) => {
  * Remove background using Remove.bg API
  */
 router.post("/background", upload.single("image"), async (req: any, res: any) => {
+  let job: any;
   try {
   const userId = req.session?.user?.id;
   if (!userId) {
@@ -301,7 +303,7 @@ router.post("/background", upload.single("image"), async (req: any, res: any) =>
   const inputPath = await saveUploadedFile(req.file);
   
   // Create processing job
-  const job = await storage.createImageProcessingJob({
+  job = await storage.createImageProcessingJob({
     userId,
     originalUrl: inputPath,
     operations: { backgroundRemoval: true },
@@ -370,6 +372,7 @@ router.post("/background", upload.single("image"), async (req: any, res: any) =>
  * Smart crop to subject
  */
 router.post("/crop", upload.single("image"), async (req: any, res: any) => {
+  let job: any;
   try {
   const userId = req.session?.user?.id;
   if (!userId) {
@@ -386,7 +389,7 @@ router.post("/crop", upload.single("image"), async (req: any, res: any) => {
   const inputPath = await saveUploadedFile(req.file);
   
   // Create processing job
-  const job = await storage.createImageProcessingJob({
+  job = await storage.createImageProcessingJob({
     userId,
     originalUrl: inputPath,
     operations: { autoCrop: true },

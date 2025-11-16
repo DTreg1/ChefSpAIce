@@ -226,8 +226,9 @@ router.post("/extract", upload.single("file"), async (req: any, res: any) => {
 
     if (req.file.mimetype === "application/pdf") {
       // Handle PDF files
-      const pdfParse = await import("pdf-parse");
-      const pdfData = await pdfParse.default(req.file.buffer);
+      const pdfParse = (await import("pdf-parse")) as any;
+      const parseFn = pdfParse.default || pdfParse;
+      const pdfData = await parseFn(req.file.buffer);
       extractionResult = {
         text: pdfData.text,
         confidence: 95, // PDFs usually have high confidence
@@ -311,8 +312,9 @@ router.post("/document", upload.single("document"), async (req: any, res: any) =
     }
 
     // Extract text from PDF
-    const pdfParse = await import("pdf-parse");
-    const pdfData = await pdfParse.default(req.file.buffer);
+    const pdfParse = (await import("pdf-parse")) as any;
+    const parseFn = pdfParse.default || pdfParse;
+    const pdfData = await parseFn(req.file.buffer);
     const processingTime = Date.now() - startTime;
 
     // Save OCR result to database

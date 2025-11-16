@@ -324,19 +324,17 @@ async function processVoiceCommand(text: string, userId: string): Promise<{
       case "add":
         actionTaken = `Add ${result.parameters.quantity || 1} ${result.parameters.item} to ${result.parameters.list}`;
         if (result.parameters.list === "shopping" || result.parameters.list === "shopping list") {
-          await storage.createShoppingItem({
-            userId,
-            name: result.parameters.item,
-            quantity: result.parameters.quantity || 1,
+          await storage.createShoppingListItem(userId, {
+            ingredient: result.parameters.item,
+            quantity: (result.parameters.quantity || 1).toString(),
             isChecked: false
           });
         } else if (result.parameters.list === "inventory") {
-          await storage.addFoodItem({
-            userId,
+          await storage.createFoodItem(userId, {
             name: result.parameters.item,
             quantity: result.parameters.quantity || 1,
             unit: "units",
-            expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // Default 7 days
+            expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
           });
         }
         break;

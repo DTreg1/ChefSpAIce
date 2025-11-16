@@ -548,7 +548,7 @@ router.get("/report", asyncHandler(async (req: any, res: any) => {
           "Low conversion rates - review pricing strategy" : null,
         productReports.some(p => p.inventoryScore > 80) ?
           "High inventory on some products - consider promotional pricing" : null,
-        productReports.some(p => p.demandTrend === 'increasing' && p.currentPrice === p.averagePrice) ?
+        productReports.some(p => p.demandTrend === 'increasing' && Number(p.currentPrice) === Number(p.averagePrice)) ?
           "Opportunity to increase prices on trending products" : null
       ].filter(Boolean)
     });

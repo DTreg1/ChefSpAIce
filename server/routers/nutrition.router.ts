@@ -163,11 +163,11 @@ router.get(
       const dailyNutrition = {
         date,
         meals: todaysMeals.length,
-        totalCalories: 0,
-        totalProtein: 0,
-        totalCarbs: 0,
-        totalFat: 0,
-        totalFiber: 0,
+        totalCalories: 0 as number,
+        totalProtein: 0 as number,
+        totalCarbs: 0 as number,
+        totalFat: 0 as number,
+        totalFiber: 0 as number,
         mealBreakdown: [] as Array<{
           mealType: string;
           recipeName: string;
@@ -188,21 +188,21 @@ router.get(
           const nutrition = recipe.nutrition;
           const servingMultiplier = plan.servings || 1;
           
-          dailyNutrition.totalCalories += (nutrition.calories || 0) * servingMultiplier;
-          dailyNutrition.totalProtein += (nutrition.protein || 0) * servingMultiplier;
-          dailyNutrition.totalCarbs += (nutrition.carbs || 0) * servingMultiplier;
-          dailyNutrition.totalFat += (nutrition.fat || 0) * servingMultiplier;
-          dailyNutrition.totalFiber += (nutrition.fiber || 0) * servingMultiplier;
+          dailyNutrition.totalCalories += Number(nutrition.calories || 0) * servingMultiplier;
+          dailyNutrition.totalProtein += Number(nutrition.protein || 0) * servingMultiplier;
+          dailyNutrition.totalCarbs += Number(nutrition.carbs || 0) * servingMultiplier;
+          dailyNutrition.totalFat += Number(nutrition.fat || 0) * servingMultiplier;
+          dailyNutrition.totalFiber += Number(nutrition.fiber || 0) * servingMultiplier;
           
           dailyNutrition.mealBreakdown.push({
             mealType: plan.mealType,
             recipeName: recipe.title,
             servings: servingMultiplier,
             nutrition: {
-              calories: (nutrition.calories || 0) * servingMultiplier,
-              protein: (nutrition.protein || 0) * servingMultiplier,
-              carbs: (nutrition.carbs || 0) * servingMultiplier,
-              fat: (nutrition.fat || 0) * servingMultiplier,
+              calories: Number(nutrition.calories || 0) * servingMultiplier,
+              protein: Number(nutrition.protein || 0) * servingMultiplier,
+              carbs: Number(nutrition.carbs || 0) * servingMultiplier,
+              fat: Number(nutrition.fat || 0) * servingMultiplier,
             },
           });
         }

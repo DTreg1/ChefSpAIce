@@ -69,7 +69,7 @@ router.get("/", requireAuth, async (req: any, res: any) => {
       req.user.id,
       parseInt(page as string),
       parseInt(limit as string),
-      status as string
+      status as "processing" | "completed" | "failed" | undefined
     );
     
     res.json(result);
@@ -138,7 +138,7 @@ router.post("/audio", requireAuth, upload.single("audio"), async (req: any, res:
 
       // Save transcription to database
       const savedTranscription = await storage.createTranscription(req.user.id, {
-        audio_url: `/uploads/audio/${req.file.filename}`, // Store reference to audio file
+        audioUrl: `/uploads/audio/${req.file.filename}`, // Store reference to audio file
         transcript: transcription.text,
         language: transcription.language || language,
         duration: transcription.duration || 0,
@@ -192,7 +192,7 @@ router.post("/stream", requireAuth, async (req: any, res: any) => {
 
     // Create initial transcription record
     const transcription = await storage.createTranscription(req.user.id, {
-      audio_url: "",
+      audioUrl: "",
       transcript: "",
       language,
       duration: 0,

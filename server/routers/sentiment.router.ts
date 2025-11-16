@@ -119,9 +119,16 @@ router.get(
     const currentUserId = req.user?.claims?.sub;
     const requestedUserId = req.params.userId;
     
+    if (!currentUserId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
     // Users can only access their own sentiment history unless admin
-    if (currentUserId !== requestedUserId && !req.user?.isAdmin) {
-      return res.status(403).json({ error: "Access denied" });
+    if (currentUserId !== requestedUserId) {
+      const user = await storage.getUser(currentUserId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Access denied" });
+      }
     }
 
     const limit = parseInt(req.query.limit as string) || 50;
@@ -213,7 +220,8 @@ router.get(
     }
 
     const { startDate, endDate } = validation.data;
-    const isGlobal = req.query.global === 'true' && req.user?.isAdmin;
+    const user = await storage.getUser(userId);
+    const isGlobal = req.query.global === 'true' && user?.isAdmin;
 
     try {
       const insights = await storage.getSentimentInsights(
@@ -261,8 +269,14 @@ router.get(
 
       // Check if user has access to this analysis
       const userId = req.user?.claims?.sub;
-      if (analysis.userId !== userId && !req.user?.isAdmin) {
-        return res.status(403).json({ error: "Access denied" });
+      if (analysis.userId !== userId) {
+        if (!userId) {
+          return res.status(401).json({ error: "Authentication required" });
+        }
+        const user = await storage.getUser(userId);
+        if (!user?.isAdmin) {
+          return res.status(403).json({ error: "Access denied" });
+        }
       }
 
       res.json({
@@ -287,7 +301,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
     const userId = req.user?.claims?.sub;
-    if (!userId && !req.user?.isAdmin) {
+    if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
@@ -345,7 +359,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
     const userId = req.user?.claims?.sub;
-    if (!userId && !req.user?.isAdmin) {
+    if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
@@ -377,7 +391,12 @@ router.post(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
     const userId = req.user?.claims?.sub;
-    if (!req.user?.isAdmin) {
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -399,8 +418,7 @@ router.post(
         message: `Alert configured for ${alertType} with threshold ${threshold}`,
         status: "active",
         metadata: {
-          configuredBy: userId,
-          configuredAt: new Date().toISOString(),
+          suggestedActions: [`Monitor ${alertType} patterns`, 'Review threshold if needed'],
         },
       });
 
@@ -475,7 +493,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
     const userId = req.user?.claims?.sub;
-    if (!userId && !req.user?.isAdmin) {
+    if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
 
@@ -517,7 +535,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
     const userId = req.user?.claims?.sub;
-    if (!userId && !req.user?.isAdmin) {
+    if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
 

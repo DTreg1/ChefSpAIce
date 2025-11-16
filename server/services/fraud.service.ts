@@ -192,11 +192,11 @@ export class FraudDetectionService {
             relatedActivities: [],
             metadata: {
               fraudScore,
-              timestamp: new Date()
+              timestamp: new Date(),
+              autoBlocked: shouldBlock
             }
           },
-          riskLevel: activity.riskLevel,
-          autoBlocked: shouldBlock
+          riskLevel: activity.riskLevel
         });
       }
       
@@ -258,7 +258,7 @@ export class FraudDetectionService {
           timestamp: a.timestamp,
           hasDetails: !!a.details
         })),
-        activityTypes: [...new Set(userBehavior.activities.map(a => a.type))],
+        activityTypes: Array.from(new Set(userBehavior.activities.map(a => a.type))),
         timeDistribution: this.getTimeDistribution(userBehavior.activities),
         patterns: this.extractPatterns(userBehavior.activities)
       };
@@ -579,7 +579,7 @@ export class FraudDetectionService {
       }
     });
     
-    return [...new Set(recommendations)]; // Remove duplicates
+    return Array.from(new Set(recommendations)); // Remove duplicates
   }
   
   /**
@@ -771,10 +771,12 @@ export class FraudDetectionService {
             contentPatternScore: fraudScore,
             networkScore: 0.5,
             deviceScore: 0.5,
-            geoScore: transactionType === 'geo_hopping' ? fraudScore : 0.5
+            geoScore: transactionType === 'geo_hopping' ? fraudScore : 0.5,
+            details: {}
           },
           riskLevel: fraudScore > 0.9 ? 'critical' : fraudScore > 0.75 ? 'high' : 'medium',
-          description: `High-risk ${transactionType.replace(/_/g, ' ')} detected`
+          suspiciousActivities: [],
+          recommendations: [`High-risk ${transactionType.replace(/_/g, ' ')} detected`]
         };
       }
       
@@ -816,10 +818,12 @@ export class FraudDetectionService {
             contentPatternScore: 0.1,
             networkScore: 0.1,
             deviceScore: 0.1,
-            geoScore: 0.1
+            geoScore: 0.1,
+            details: {}
           },
           riskLevel: 'low',
-          description: 'Transaction appears legitimate'
+          suspiciousActivities: [],
+          recommendations: ['Transaction appears legitimate']
         };
       }
       
@@ -847,7 +851,8 @@ export class FraudDetectionService {
         requiresManualReview: analysis.fraudScore > 0.75 && analysis.fraudScore <= 0.9,
         factors: analysis.factors,
         riskLevel: analysis.riskLevel,
-        description: analysis.recommendations?.[0] || 'Risk assessment complete'
+        suspiciousActivities: analysis.suspiciousActivities,
+        recommendations: analysis.recommendations
       };
     } catch (error) {
       console.error('Error analyzing transaction:', error);
@@ -855,9 +860,20 @@ export class FraudDetectionService {
       return {
         fraudScore: 0.5,
         riskLevel: 'medium',
-        factors: { error: 'Analysis error occurred' },
-        action: 'review',
-        message: 'Transaction requires review due to analysis error'
+        shouldBlock: false,
+        requiresManualReview: true,
+        factors: {
+          behaviorScore: 0.5,
+          accountAgeScore: 0.5,
+          transactionVelocityScore: 0.5,
+          contentPatternScore: 0.5,
+          networkScore: 0.5,
+          deviceScore: 0.5,
+          geoScore: 0.5,
+          details: { error: 'Analysis error occurred' }
+        },
+        suspiciousActivities: [],
+        recommendations: ['Transaction requires manual review due to analysis error']
       };
     }
   }

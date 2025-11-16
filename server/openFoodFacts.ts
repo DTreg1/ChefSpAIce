@@ -180,6 +180,7 @@ function extractOFFNutrition(product: OFFProduct): NutritionInfo | undefined {
  */
 export async function searchOFFByBarcode(barcode: string): Promise<{
   name: string;
+  barcode?: string;
   brand?: string;
   category?: string;
   nutrition?: NutritionInfo;

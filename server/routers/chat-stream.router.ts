@@ -149,7 +149,7 @@ router.post(
           role: "system",
           content: `You are ChefSpAIce, a helpful cooking assistant. You provide recipe suggestions, cooking tips, and meal planning advice. Be concise but friendly.${inventoryContext}`,
         },
-        ...history.reverse().map((msg: Message) => ({
+        ...history.reverse().map((msg: any) => ({
           role: msg.role,
           content: msg.content,
         })),

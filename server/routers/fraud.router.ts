@@ -45,10 +45,11 @@ router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
     // Run fraud analysis
     const analysisResult = await fraudService.analyzeTransaction(
       userId,
-      validatedData.amount,
-      validatedData.paymentMethod,
-      validatedData.recipientId,
+      'transaction',
       {
+        amount: validatedData.amount,
+        paymentMethod: validatedData.paymentMethod,
+        recipientId: validatedData.recipientId,
         ...validatedData.metadata,
         ipAddress: validatedData.ipAddress || req.ip
       }

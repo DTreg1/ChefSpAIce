@@ -349,7 +349,13 @@ router.post(
   "/rules",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    if (!req.user?.isAdmin) {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -385,7 +391,13 @@ router.put(
   "/rules/:id",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    if (!req.user?.isAdmin) {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -413,7 +425,13 @@ router.delete(
   "/rules/:id",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    if (!req.user?.isAdmin) {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
