@@ -154,7 +154,6 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: ExpressR
       conversationId,
       role: "user",
       content,
-      tokensUsed: 0
     });
     
     // Get conversation history
@@ -194,7 +193,6 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: ExpressR
       conversationId,
       role: "assistant",
       content: aiResponse,
-      tokensUsed
     });
     
     // Update context if needed (every 10 messages)

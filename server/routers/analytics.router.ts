@@ -141,7 +141,7 @@ router.post("/sessions/end", asyncHandler(async (req: ExpressRequest<any, any, a
     const endTime = new Date();
     
     // Get session to calculate duration - scoped to current user for security
-    const sessions = await storage.getUserSessions(userId, { limit: 100 });
+    const sessions = await storage.getUserSessions(userId || undefined, { limit: 100 });
     const session = sessions.find(s => s.sessionId === sessionId);
     
     if (!session) {

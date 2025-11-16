@@ -28,7 +28,7 @@ import {
 } from "../utils/ai-error-handler";
 import { getCircuitBreaker } from "../utils/circuit-breaker";
 import { termDetector } from "../services/term-detector.service";
-import type { ChatMessage } from "@shared/schema";
+import type { Message } from "@shared/schema";
 
 const router = Router();
 
@@ -149,7 +149,7 @@ router.post(
           role: "system",
           content: `You are ChefSpAIce, a helpful cooking assistant. You provide recipe suggestions, cooking tips, and meal planning advice. Be concise but friendly.${inventoryContext}`,
         },
-        ...history.reverse().map((msg: ChatMessage) => ({
+        ...history.reverse().map((msg: Message) => ({
           role: msg.role,
           content: msg.content,
         })),
