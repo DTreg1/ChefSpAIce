@@ -18,11 +18,15 @@ import {
   userInventory,
   userStorage,
   onboardingInventory,
+  shoppingListItems,
+  userRecipes,
   type UserInventory,
   type InsertUserInventory,
   type UserStorage as UserStorageType,
   type InsertUserStorage,
   type OnboardingInventory,
+  type ShoppingListItem,
+  type InsertShoppingListItem,
 } from "@shared/schema";
 import type { IInventoryStorage } from "../interfaces/IInventoryStorage";
 
@@ -523,6 +527,170 @@ export class InventoryDomainStorage implements IInventoryStorage {
     } catch (error) {
       console.error("Error getting onboarding inventory:", error);
       throw new Error("Failed to retrieve onboarding inventory");
+    }
+  }
+
+  // ============= Shopping List Operations =============
+
+  async getShoppingListItems(userId: string): Promise<ShoppingListItem[]> {
+    try {
+      return await db
+        .select()
+        .from(shoppingListItems)
+        .where(eq(shoppingListItems.userId, userId))
+        .orderBy(asc(shoppingListItems.isChecked), asc(shoppingListItems.name));
+    } catch (error) {
+      console.error(`Error getting shopping list items for user ${userId}:`, error);
+      throw new Error("Failed to retrieve shopping list items");
+    }
+  }
+
+  async getGroupedShoppingListItems(userId: string): Promise<{ [category: string]: ShoppingListItem[] }> {
+    try {
+      const items = await this.getShoppingListItems(userId);
+      
+      // Group items by category
+      return items.reduce((grouped, item) => {
+        const category = item.category || 'Other';
+        if (!grouped[category]) {
+          grouped[category] = [];
+        }
+        grouped[category].push(item);
+        return grouped;
+      }, {} as { [category: string]: ShoppingListItem[] });
+    } catch (error) {
+      console.error(`Error getting grouped shopping list items for user ${userId}:`, error);
+      throw new Error("Failed to retrieve grouped shopping list items");
+    }
+  }
+
+  async createShoppingListItem(item: InsertShoppingListItem): Promise<ShoppingListItem> {
+    try {
+      const [newItem] = await db
+        .insert(shoppingListItems)
+        .values(item)
+        .returning();
+      return newItem;
+    } catch (error) {
+      console.error("Error creating shopping list item:", error);
+      throw new Error("Failed to create shopping list item");
+    }
+  }
+
+  async updateShoppingListItem(
+    userId: string,
+    id: string,
+    updates: Partial<ShoppingListItem>
+  ): Promise<ShoppingListItem | undefined> {
+    try {
+      const { id: _id, userId: _userId, ...safeUpdates } = updates;
+      
+      const [updated] = await db
+        .update(shoppingListItems)
+        .set(safeUpdates)
+        .where(
+          and(
+            eq(shoppingListItems.id, id),
+            eq(shoppingListItems.userId, userId)
+          )
+        )
+        .returning();
+      
+      return updated;
+    } catch (error) {
+      console.error(`Error updating shopping list item ${id}:`, error);
+      throw new Error("Failed to update shopping list item");
+    }
+  }
+
+  async deleteShoppingListItem(userId: string, id: string): Promise<void> {
+    try {
+      await db
+        .delete(shoppingListItems)
+        .where(
+          and(
+            eq(shoppingListItems.id, id),
+            eq(shoppingListItems.userId, userId)
+          )
+        );
+    } catch (error) {
+      console.error(`Error deleting shopping list item ${id}:`, error);
+      throw new Error("Failed to delete shopping list item");
+    }
+  }
+
+  async clearCheckedShoppingListItems(userId: string): Promise<number> {
+    try {
+      const result = await db
+        .delete(shoppingListItems)
+        .where(
+          and(
+            eq(shoppingListItems.userId, userId),
+            eq(shoppingListItems.isChecked, true)
+          )
+        );
+      
+      return result.count || 0;
+    } catch (error) {
+      console.error(`Error clearing checked shopping list items for user ${userId}:`, error);
+      throw new Error("Failed to clear checked shopping list items");
+    }
+  }
+
+  async addMissingIngredientsToShoppingList(
+    userId: string,
+    recipeId: string,
+    servings?: number
+  ): Promise<{ added: number; skipped: number }> {
+    try {
+      // Get the recipe
+      const [recipe] = await db
+        .select()
+        .from(userRecipes)
+        .where(
+          and(
+            eq(userRecipes.id, recipeId),
+            eq(userRecipes.userId, userId)
+          )
+        );
+      
+      if (!recipe) {
+        throw new Error("Recipe not found");
+      }
+      
+      const ingredients = recipe.ingredients || [];
+      const servingMultiplier = servings ? (servings / (recipe.servings || 1)) : 1;
+      
+      // Get existing shopping list items
+      const existingItems = await this.getShoppingListItems(userId);
+      const existingNames = new Set(existingItems.map(item => item.name?.toLowerCase()));
+      
+      let added = 0;
+      let skipped = 0;
+      
+      // Add missing ingredients
+      for (const ingredient of ingredients) {
+        const ingredientName = ingredient.toLowerCase();
+        
+        if (existingNames.has(ingredientName)) {
+          skipped++;
+        } else {
+          await this.createShoppingListItem({
+            userId,
+            name: ingredient,
+            quantity: servingMultiplier,
+            category: 'Ingredients',
+            isChecked: false,
+            notes: `From recipe: ${recipe.name}`
+          });
+          added++;
+        }
+      }
+      
+      return { added, skipped };
+    } catch (error) {
+      console.error(`Error adding ingredients to shopping list for recipe ${recipeId}:`, error);
+      throw new Error("Failed to add ingredients to shopping list");
     }
   }
 }

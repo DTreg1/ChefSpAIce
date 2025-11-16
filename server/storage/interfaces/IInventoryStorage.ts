@@ -9,6 +9,8 @@ import type {
   UserStorage,
   InsertUserStorage,
   OnboardingInventory,
+  ShoppingListItem,
+  InsertShoppingListItem,
 } from "@shared/schema";
 
 export interface IInventoryStorage {
@@ -76,4 +78,17 @@ export interface IInventoryStorage {
   
   // Onboarding
   getOnboardingInventory(): Promise<OnboardingInventory[]>;
+  
+  // Shopping List Operations
+  getShoppingListItems(userId: string): Promise<ShoppingListItem[]>;
+  getGroupedShoppingListItems(userId: string): Promise<{ [category: string]: ShoppingListItem[] }>;
+  createShoppingListItem(item: InsertShoppingListItem): Promise<ShoppingListItem>;
+  updateShoppingListItem(userId: string, id: string, updates: Partial<ShoppingListItem>): Promise<ShoppingListItem | undefined>;
+  deleteShoppingListItem(userId: string, id: string): Promise<void>;
+  clearCheckedShoppingListItems(userId: string): Promise<number>;
+  addMissingIngredientsToShoppingList(
+    userId: string, 
+    recipeId: string,
+    servings?: number
+  ): Promise<{ added: number; skipped: number }>;
 }

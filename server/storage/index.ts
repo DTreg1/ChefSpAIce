@@ -16,6 +16,7 @@
 import { inventoryStorage } from "./domains/inventory.storage";
 import { userAuthStorage } from "./domains/user-auth.storage";
 import { recipesStorage } from "./domains/recipes.storage";
+import { chatStorage } from "./domains/chat.storage";
 
 // Import the legacy monolithic storage for methods not yet migrated
 import { storage as legacyStorage } from "../storage";
@@ -86,21 +87,26 @@ export const storage = {
   getActiveUserCount: userAuthStorage.getActiveUserCount.bind(userAuthStorage),
   getUsersByProvider: userAuthStorage.getUsersByProvider.bind(userAuthStorage),
   
-  // Chat
-  getChatMessages: legacyStorage.getChatMessages.bind(legacyStorage),
-  getChatMessagesPaginated: legacyStorage.getChatMessagesPaginated.bind(legacyStorage),
-  createChatMessage: legacyStorage.createChatMessage.bind(legacyStorage),
+  // ============= Chat Domain (MIGRATED) =============
+  // Legacy Chat Messages (backward compatibility)
+  getChatMessages: chatStorage.getChatMessages.bind(chatStorage),
+  getChatMessagesPaginated: chatStorage.getChatMessagesPaginated.bind(chatStorage),
+  createChatMessage: chatStorage.createChatMessage.bind(chatStorage),
   
   // Conversations
-  getConversations: legacyStorage.getConversations.bind(legacyStorage),
-  getConversation: legacyStorage.getConversation.bind(legacyStorage),
-  createConversation: legacyStorage.createConversation.bind(legacyStorage),
-  updateConversation: legacyStorage.updateConversation.bind(legacyStorage),
-  deleteConversation: legacyStorage.deleteConversation.bind(legacyStorage),
-  getMessages: legacyStorage.getMessages.bind(legacyStorage),
-  createMessage: legacyStorage.createMessage.bind(legacyStorage),
-  getConversationContext: legacyStorage.getConversationContext.bind(legacyStorage),
-  updateConversationContext: legacyStorage.updateConversationContext.bind(legacyStorage),
+  getConversations: chatStorage.getConversations.bind(chatStorage),
+  getConversation: chatStorage.getConversation.bind(chatStorage),
+  createConversation: chatStorage.createConversation.bind(chatStorage),
+  updateConversation: chatStorage.updateConversation.bind(chatStorage),
+  deleteConversation: chatStorage.deleteConversation.bind(chatStorage),
+  
+  // Messages
+  getMessages: chatStorage.getMessages.bind(chatStorage),
+  createMessage: chatStorage.createMessage.bind(chatStorage),
+  
+  // Conversation Context
+  getConversationContext: chatStorage.getConversationContext.bind(chatStorage),
+  updateConversationContext: chatStorage.updateConversationContext.bind(chatStorage),
   
   // ============= Recipes Domain (MIGRATED) =============
   // Recipes
