@@ -22,7 +22,7 @@ interface CreateTestDialogProps {
 }
 
 interface FormData extends InsertAbTest {
-  status?: string;
+  status?: "active" | "draft" | "completed" | "paused";
   successMetric?: string;
   targetAudience?: number;
 }
@@ -202,7 +202,7 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                 <Label htmlFor="status">Status</Label>
                 <Select 
                   value={formData.status} 
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  onValueChange={(value) => setFormData({ ...formData, status: value as "active" | "draft" | "completed" | "paused" })}
                 >
                   <SelectTrigger id="status" data-testid="select-status">
                     <SelectValue />
