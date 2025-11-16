@@ -216,7 +216,7 @@ router.get("/auth/user", isAuthenticated, async (req, res) => {
 router.post("/auth/link/:provider", isAuthenticated, (req, res, next) => {
   const { provider } = req.params;
   
-  if (!["google", "github", "twitter", "apple"].includes(provider)) {
+  if (!["google", "github", "twitter", "apple", "replit"].includes(provider)) {
     return res.status(400).json({ error: "Invalid provider" });
   }
   

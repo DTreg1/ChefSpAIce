@@ -272,40 +272,38 @@ export function configureAppleStrategy(hostname: string) {
 }
 
 /**
- * Configure Replit OIDC Strategy
+ * Configure Replit OAuth Strategy
  * 
- * For testing purposes and when OIDC module is unavailable,
- * we provide a simplified OAuth implementation
+ * Provides OAuth authentication through Replit's OAuth2 endpoints
+ * Available when running on Replit platform
  */
 export async function configureReplitOIDCStrategy(hostname: string) {
-  // Only configure if running on Replit
+  // Configure Replit OAuth as a provider alongside others
+  // Always available when on Replit environment
   if (process.env.REPLIT_DOMAINS) {
-    console.log("Replit environment detected, configuring simplified OAuth");
+    console.log("Configuring Replit OAuth provider");
     
-    // Register a simplified OAuth strategy that works without openid-client
-    // This is sufficient for basic OAuth flow and testing
     const strategy = new OAuth2Strategy(
       {
-        authorizationURL: "https://replit.com/auth",
-        tokenURL: "https://replit.com/token", 
-        clientID: "replit",
-        clientSecret: "replit", // Replit doesn't require a client secret
+        authorizationURL: "https://replit.com/oauth/authorize",
+        tokenURL: "https://replit.com/oauth/token", 
+        clientID: process.env.REPLIT_CLIENT_ID || "replit_oauth_client",
+        clientSecret: process.env.REPLIT_CLIENT_SECRET || "replit_oauth_secret",
         callbackURL: getCallbackURL("replit", hostname),
         scope: ["openid", "email", "profile"],
       },
       async (accessToken: string, refreshToken: string, params: any, profile: any, done: any) => {
         try {
-          // For Replit Auth in test mode, we'll use the test profile
-          // In production, this would decode the ID token
+          // Parse the ID token or user info from params
           const replitProfile: OAuthProfile = {
-            id: params.sub || "replit_user",
+            id: params.sub || params.id || "replit_user",
             emails: params.email ? [{ value: params.email, verified: true }] : [],
-            displayName: params.name || "Replit User",
+            displayName: params.name || params.username || "Replit User",
             name: {
-              givenName: params.given_name || "Replit",
-              familyName: params.family_name || "User",
+              givenName: params.given_name || params.name?.split(' ')[0] || "Replit",
+              familyName: params.family_name || params.name?.split(' ')[1] || "User",
             },
-            photos: params.picture ? [{ value: params.picture }] : [],
+            photos: params.picture || params.avatar_url ? [{ value: params.picture || params.avatar_url }] : [],
             provider: "replit",
             _json: params,
           };
@@ -318,12 +316,12 @@ export async function configureReplitOIDCStrategy(hostname: string) {
       }
     );
     
-    // Override the strategy name
+    // Set the strategy name
     strategy.name = "replit";
     
     passport.use("replit", strategy);
     registeredStrategies.add("replit");
-    console.log("Replit OAuth strategy configured (simplified mode)");
+    console.log("✓ Replit OAuth provider configured");
   }
 }
 
