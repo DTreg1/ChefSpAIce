@@ -24,6 +24,33 @@ ChefSpAIce is an AI-powered kitchen management application that helps users mana
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Major Refactoring (November 16, 2025)
+
+### Storage Architecture Overhaul
+Completed refactoring of monolithic 16,826-line storage.ts file using domain-driven design:
+- Created four domain storage modules with explicit interfaces:
+  - **Inventory Domain**: Food items, expiration tracking, shopping lists
+  - **User/Auth Domain**: User management, OAuth, authentication
+  - **Recipes Domain**: Recipe CRUD, search, meal planning
+  - **Chat Domain**: AI conversation history and context management
+- Implemented compatibility facade pattern for incremental migration
+- ~65% of original storage.ts migrated to domain modules
+- Remaining ~35% contains niche/legacy functions behind compatibility layer
+
+### Security Hardening
+- Removed all hardcoded API keys and OAuth credentials
+- Implemented comprehensive environment variable validation at startup
+- Created secure configuration modules for OpenAI and OAuth providers
+- SESSION_SECRET now required in production (secure auto-generation in dev)
+- All sensitive credentials use getSafeEnvVar() with no insecure defaults
+
+### Architecture Improvements
+- SOLID principles enforced with clean separation of concerns
+- Routes remain thin controllers, delegating to storage interfaces
+- SQL-based queries replace in-memory filtering for performance
+- ISO string date handling for API consistency
+- Cross-domain coupling minimized for maintainability
+
 ## System Architecture
 
 ### Frontend Architecture
