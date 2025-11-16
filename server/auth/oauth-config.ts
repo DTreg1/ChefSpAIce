@@ -52,6 +52,11 @@ export const oauthConfig = {
     keyID: process.env.APPLE_KEY_ID || "placeholder_apple_key_id",
     privateKey: process.env.APPLE_PRIVATE_KEY || "placeholder_apple_private_key",
   },
+  replit: {
+    clientID: process.env.REPLIT_CLIENT_ID || "placeholder_replit_client_id",
+    clientSecret: process.env.REPLIT_CLIENT_SECRET || "placeholder_replit_client_secret",
+    scope: ["email", "profile", "openid"],
+  },
   session: {
     secret: process.env.SESSION_SECRET || (() => {
       // Generate a random secret for development/testing
@@ -85,8 +90,10 @@ export function isOAuthConfigured(provider: string): boolean {
       return !oauthConfig.apple.clientID.includes("placeholder") && 
              !oauthConfig.apple.teamID.includes("placeholder");
     case "replit":
-      // Replit is configured automatically when running on Replit
-      return !!process.env.REPLIT_DOMAINS;
+      // Replit OAuth is configured when client ID and secret are provided
+      // OR when running on Replit with REPLIT_DOMAINS available
+      return (!!process.env.REPLIT_CLIENT_ID && !!process.env.REPLIT_CLIENT_SECRET) ||
+             !!process.env.REPLIT_DOMAINS;
     default:
       return false;
   }
