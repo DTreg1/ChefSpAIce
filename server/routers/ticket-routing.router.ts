@@ -8,7 +8,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
 import * as aiRoutingService from "../services/aiRoutingService";
@@ -348,17 +348,8 @@ router.get(
 router.post(
   "/rules",
   isAuthenticated,
+  adminOnly,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-    
-    const user = await storage.getUser(userId);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const validation = createRoutingRuleSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
@@ -390,17 +381,8 @@ router.post(
 router.put(
   "/rules/:id",
   isAuthenticated,
+  adminOnly,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-    
-    const user = await storage.getUser(userId);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     try {
       const updatedRule = await storage.updateRoutingRule(req.params.id, req.body);
       res.json({
@@ -424,17 +406,8 @@ router.put(
 router.delete(
   "/rules/:id",
   isAuthenticated,
+  adminOnly,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-    
-    const user = await storage.getUser(userId);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     try {
       await storage.deleteRoutingRule(req.params.id);
       res.json({
@@ -510,17 +483,8 @@ router.get(
 router.post(
   "/agents",
   isAuthenticated,
+  adminOnly,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
-    const userId = req.user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-    
-    const user = await storage.getUser(userId);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const validation = createAgentSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({

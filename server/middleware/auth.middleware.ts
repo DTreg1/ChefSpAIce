@@ -139,7 +139,8 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
  */
 export async function adminOnly(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated && req.isAuthenticated()) {
-    const userId = req.user?.claims?.sub;
+    // Support both req.user.id and req.user.claims.sub for compatibility
+    const userId = req.user?.id || req.user?.claims?.sub;
     
     if (!userId) {
       return res.status(403).json({ error: "Admin access required" });

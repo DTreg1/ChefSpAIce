@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { validationService } from "../services/validation.service";
-import { isAuthenticated as requireAuth } from "../middleware/auth.middleware";
+import { isAuthenticated as requireAuth, adminOnly } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -239,18 +239,8 @@ router.get("/stats", requireAuth, async (req, res) => {
  * POST /api/validate/rules (Admin only)
  * Create or update validation rules
  */
-router.post("/rules", requireAuth, async (req, res) => {
+router.post("/rules", requireAuth, adminOnly, async (req, res) => {
   try {
-    const user = (req as any).user;
-    
-    // Check if user is admin
-    if (!user?.isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: "Admin access required",
-      });
-    }
-    
     const rule = await validationService.createOrUpdateRule(req.body);
     
     res.json({

@@ -11,7 +11,7 @@ import {
   insertFraudReviewSchema
 } from "@shared/schema";
 import { FraudDetectionService } from "../services/fraud.service";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
 import { and, eq, gte, desc, sql } from "drizzle-orm";
 
 const router = Router();
@@ -206,18 +206,12 @@ router.get("/api/fraud/report/:period", isAuthenticated, async (req, res) => {
 });
 
 // Review and update suspicious activity (admin only)
-router.post("/api/fraud/review", isAuthenticated, async (req, res) => {
+router.post("/api/fraud/review", isAuthenticated, adminOnly, async (req, res) => {
   try {
     const userId = req.user?.id;
     
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    // Get user to check admin status
-    const user = await storage.getUser(userId);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
     }
 
     const validatedData = reviewActivitySchema.parse(req.body);
@@ -263,18 +257,12 @@ router.post("/api/fraud/review", isAuthenticated, async (req, res) => {
 });
 
 // Get fraud patterns for ML training (admin only)
-router.get("/api/fraud/patterns", isAuthenticated, async (req, res) => {
+router.get("/api/fraud/patterns", isAuthenticated, adminOnly, async (req, res) => {
   try {
     const userId = req.user?.id;
     
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    // Get user to check admin status
-    const user = await storage.getUser(userId);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
     }
 
     // Get confirmed fraud cases for pattern analysis

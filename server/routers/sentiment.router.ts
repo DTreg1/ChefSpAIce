@@ -8,7 +8,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
 import { sentimentService } from "../services/sentimentService";
@@ -389,17 +389,8 @@ router.get(
 router.post(
   "/alerts/config",
   isAuthenticated,
+  adminOnly,
   asyncHandler(async (req: ExpressRequest, res) => {
-    const userId = req.user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ error: "Authentication required" });
-    }
-    
-    const user = await storage.getUser(userId);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: "Admin access required" });
-    }
-
     const { alertType, threshold, severity } = req.body;
 
     if (!alertType || !threshold || !severity) {

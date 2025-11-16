@@ -8,7 +8,7 @@
 import { Router, type Request, type Response } from 'express';
 import { storage } from '../storage';
 import { intelligentNotificationService } from '../notifications/intelligent-service';
-import { isAuthenticated } from '../middleware/auth.middleware';
+import { isAuthenticated, adminOnly } from '../middleware/auth.middleware';
 import { z } from 'zod';
 import { insertNotificationPreferencesSchema } from '@shared/schema';
 
@@ -405,14 +405,8 @@ router.get('/insights', isAuthenticated, async (req: Request, res: Response) => 
  * Manually trigger processing of the notification queue
  * (This would normally be called by a cron job)
  */
-router.post('/process-queue', isAuthenticated, async (req: Request, res: Response) => {
+router.post('/process-queue', isAuthenticated, adminOnly, async (req: Request, res: Response) => {
   try {
-    // Check if user is admin  
-    const user = await storage.getUser(req.user!.id);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
     await intelligentNotificationService.processNotificationQueue();
     
     res.json({
