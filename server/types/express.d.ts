@@ -1,5 +1,4 @@
 // Type definitions for Express extensions
-import { UserClaims } from '../replitAuth';
 import 'express-session';
 
 declare module 'express-session' {
@@ -31,7 +30,12 @@ declare global {
       profileImageUrl?: string;
       provider: string;
       providerId: string;
-      claims?: UserClaims;  // Made optional since not all auth methods use claims
+      claims?: {
+        sub?: string;
+        email?: string;
+        name?: string;
+        [key: string]: any;
+      };  // OAuth claims from ID tokens
     }
     
     interface Request {
