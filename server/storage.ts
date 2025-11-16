@@ -16322,7 +16322,7 @@ export class DatabaseStorage implements IStorage {
       const [updated] = await db
         .update(ocrResults)
         .set({
-          ...updates,
+          ...(updates as any),
           updatedAt: new Date(),
         })
         .where(and(eq(ocrResults.userId, userId), eq(ocrResults.id, resultId)))
@@ -16594,7 +16594,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newTranscription] = await db
         .insert(transcriptions)
-        .values({ ...transcription, userId })
+        .values({ ...(transcription as any), userId })
         .returning();
 
       return newTranscription;
