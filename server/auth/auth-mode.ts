@@ -25,52 +25,12 @@ function isReplitTestEnvironment(): boolean {
 
 /**
  * Determines the authentication mode to use
+ * 
+ * Always returns 'oauth' as we've consolidated to a single OAuth-based authentication system
+ * with Replit available as one of the OAuth providers alongside Google, GitHub, Twitter/X, Apple, and email.
  */
 export function getAuthMode(): AuthMode {
-  // Allow explicit mode override
-  const explicitMode = process.env.AUTH_MODE?.toLowerCase();
-  if (explicitMode === 'replit' || explicitMode === 'oauth') {
-    console.log(`📋 Using explicit auth mode: ${explicitMode} (AUTH_MODE env var)`);
-    return explicitMode as AuthMode;
-  }
-  
-  // Auto-detect based on environment
-  if (isReplitTestEnvironment()) {
-    return 'replit';
-  }
-  
-  // Check if we're in a Replit development environment
-  const isReplitEnv = !!(process.env.REPL_ID || process.env.REPLIT_DOMAINS);
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  
-  // In Replit development, prefer Replit Auth for easier development
-  if (isReplitEnv && isDevelopment) {
-    console.log('🏠 Using Replit Auth mode (Replit development environment)');
-    return 'replit';
-  }
-  
-  // Check if OAuth credentials are FULLY configured (both ID and secret)
-  const hasCompleteOAuthConfig = !!(
-    (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) || 
-    (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) || 
-    (process.env.TWITTER_CONSUMER_KEY && process.env.TWITTER_CONSUMER_SECRET) ||
-    (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID)
-  );
-  
-  // In production or non-Replit environments with OAuth config, use OAuth
-  if (hasCompleteOAuthConfig) {
-    console.log('🌐 Using OAuth mode (complete OAuth credentials detected)');
-    return 'oauth';
-  }
-  
-  // Default to Replit Auth for Replit environments
-  if (isReplitEnv) {
-    console.log('🏠 Using Replit Auth mode (Replit environment)');
-    return 'replit';
-  }
-  
-  // Fallback to OAuth for non-Replit environments
-  console.log('📦 Defaulting to OAuth mode');
+  console.log('🌐 Using OAuth mode (unified authentication system)');
   return 'oauth';
 }
 
