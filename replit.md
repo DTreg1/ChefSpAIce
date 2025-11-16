@@ -118,6 +118,7 @@ The ChefSpAIce application features a React frontend with TypeScript, Tailwind C
     - **OCR Text Extraction System**: Extracts text from images, PDFs, and scanned documents using Tesseract.js, with user correction capabilities.
     - **Speech-to-Text Transcription System**: Comprehensive transcription system for voice notes and meetings using OpenAI Whisper API.
 - **Authentication System**: Dual-mode authentication system adapting between **Replit Auth Mode** (for development/testing) and **OAuth Mode** (for production with Google, GitHub, Twitter, Apple, and email/password).
+- **Admin Access Control**: Centralized `adminOnly` middleware (November 2025) provides consistent admin authorization across all protected routes. Supports both authentication patterns (`req.user.id` and `req.user.claims.sub`) for maximum compatibility. All admin-protected routes use the pattern: `isAuthenticated, adminOnly` middleware chain.
 
 ## External Dependencies
 - **Database**: PostgreSQL (Neon-backed)
