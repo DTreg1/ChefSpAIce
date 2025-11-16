@@ -69,22 +69,22 @@ export const storage = {
   linkOAuthProvider: userAuthStorage.linkOAuthProvider.bind(userAuthStorage),
   unlinkOAuthProvider: userAuthStorage.unlinkOAuthProvider.bind(userAuthStorage),
   
+  // Auth Providers (MIGRATED)
+  getAuthProviderByProviderAndId: userAuthStorage.getAuthProviderByProviderAndId.bind(userAuthStorage),
+  getAuthProviderByProviderAndUserId: userAuthStorage.getAuthProviderByProviderAndUserId.bind(userAuthStorage),
+  createAuthProvider: userAuthStorage.createAuthProvider.bind(userAuthStorage),
+  updateAuthProvider: userAuthStorage.updateAuthProvider.bind(userAuthStorage),
+  
+  // Admin Management (MIGRATED)
+  updateUserAdminStatus: userAuthStorage.updateUserAdminStatus.bind(userAuthStorage),
+  getUserPreferences: userAuthStorage.getUserPreferences.bind(userAuthStorage),
+  getAllUsers: userAuthStorage.getAllUsers.bind(userAuthStorage),
+  getAdminCount: userAuthStorage.getAdminCount.bind(userAuthStorage),
+  
   // Analytics
   getUserCount: userAuthStorage.getUserCount.bind(userAuthStorage),
   getActiveUserCount: userAuthStorage.getActiveUserCount.bind(userAuthStorage),
   getUsersByProvider: userAuthStorage.getUsersByProvider.bind(userAuthStorage),
-  
-  // Legacy methods still needed (TO BE MIGRATED)
-  updateUserAdminStatus: legacyStorage.updateUserAdminStatus.bind(legacyStorage),
-  getUserPreferences: legacyStorage.getUserPreferences.bind(legacyStorage),
-  getAllUsers: legacyStorage.getAllUsers.bind(legacyStorage),
-  getAdminCount: legacyStorage.getAdminCount.bind(legacyStorage),
-  
-  // Auth Providers
-  getAuthProviderByProviderAndId: legacyStorage.getAuthProviderByProviderAndId.bind(legacyStorage),
-  getAuthProviderByProviderAndUserId: legacyStorage.getAuthProviderByProviderAndUserId.bind(legacyStorage),
-  createAuthProvider: legacyStorage.createAuthProvider.bind(legacyStorage),
-  updateAuthProvider: legacyStorage.updateAuthProvider.bind(legacyStorage),
   
   // Chat
   getChatMessages: legacyStorage.getChatMessages.bind(legacyStorage),

@@ -59,6 +59,16 @@ export interface IUserAuthStorage {
   // OAuth Provider Management
   linkOAuthProvider(userId: string, provider: string, providerId: string): Promise<void>;
   unlinkOAuthProvider(userId: string, provider: string): Promise<void>;
+  getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<any | undefined>;
+  getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<any | undefined>;
+  createAuthProvider(provider: any): Promise<any>;
+  updateAuthProvider(id: string, updates: any): Promise<any>;
+  
+  // Admin Management
+  updateUserAdminStatus(userId: string, isAdmin: boolean): Promise<User | undefined>;
+  getAdminCount(): Promise<number>;
+  getAllUsers(): Promise<User[]>;
+  getUserPreferences(userId: string): Promise<any | undefined>;
   
   // Analytics
   getUserCount(): Promise<number>;

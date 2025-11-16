@@ -68,11 +68,18 @@ export class RecipesDomainStorage implements IRecipesStorage {
         conditions = eq(userRecipes.userId, userId);
       }
       
-      return await db
+      const rows = await db
         .select()
         .from(userRecipes)
         .where(conditions!)
         .orderBy(desc(userRecipes.createdAt));
+      
+      // Convert Date objects to ISO strings for legacy compatibility
+      return rows.map(row => ({
+        ...row,
+        createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+        updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt
+      })) as Recipe[];
     } catch (error) {
       console.error(`Error getting recipes for user ${userId}:`, error);
       throw new Error("Failed to retrieve recipes");
@@ -189,40 +196,44 @@ export class RecipesDomainStorage implements IRecipesStorage {
   
   async searchRecipesByIngredients(userId: string, ingredients: string[]): Promise<Recipe[]> {
     try {
-      // Get all user recipes
-      const allRecipes = await db
-        .select()
+      if (!ingredients || ingredients.length === 0) {
+        return [];
+      }
+      
+      // Build SQL conditions for ingredient matching using JSONB operators
+      // This searches in the ingredients array for matching strings
+      const ingredientConditions = ingredients.map(ingredient => 
+        sql`EXISTS (
+          SELECT 1 FROM jsonb_array_elements_text(${userRecipes.ingredients}) AS ing
+          WHERE LOWER(ing) LIKE ${'%' + ingredient.toLowerCase() + '%'}
+        )`
+      );
+      
+      // Get all matching recipes with SQL-based filtering
+      const rows = await db
+        .select({
+          recipe: userRecipes,
+          // Count matching ingredients for sorting
+          matchCount: sql<number>`(
+            SELECT COUNT(DISTINCT search_ing.value)
+            FROM jsonb_array_elements_text(${userRecipes.ingredients}) AS recipe_ing,
+                 jsonb_array_elements_text(${JSON.stringify(ingredients)}::jsonb) AS search_ing
+            WHERE LOWER(recipe_ing) LIKE '%' || LOWER(search_ing.value) || '%'
+          )`.as('match_count')
+        })
         .from(userRecipes)
-        .where(eq(userRecipes.userId, userId));
+        .where(and(
+          eq(userRecipes.userId, userId),
+          or(...ingredientConditions)
+        ))
+        .orderBy(desc(sql`match_count`), desc(userRecipes.createdAt));
       
-      // Filter recipes that contain any of the specified ingredients
-      const matchingRecipes = allRecipes.filter((recipe) => {
-        const recipeIngredients = recipe.ingredients || [];
-        return ingredients.some((ingredient) =>
-          recipeIngredients.some((recipeIng) =>
-            recipeIng.toLowerCase().includes(ingredient.toLowerCase())
-          )
-        );
-      });
-      
-      // Sort by how many matching ingredients
-      matchingRecipes.sort((a, b) => {
-        const aMatches = ingredients.filter((ing) =>
-          (a.ingredients || []).some((rIng) =>
-            rIng.toLowerCase().includes(ing.toLowerCase())
-          )
-        ).length;
-        
-        const bMatches = ingredients.filter((ing) =>
-          (b.ingredients || []).some((rIng) =>
-            rIng.toLowerCase().includes(ing.toLowerCase())
-          )
-        ).length;
-        
-        return bMatches - aMatches;
-      });
-      
-      return matchingRecipes;
+      // Extract recipes and convert dates to ISO strings for legacy compatibility
+      return rows.map(({ recipe }) => ({
+        ...recipe,
+        createdAt: recipe.createdAt instanceof Date ? recipe.createdAt.toISOString() : recipe.createdAt,
+        updatedAt: recipe.updatedAt instanceof Date ? recipe.updatedAt.toISOString() : recipe.updatedAt
+      })) as Recipe[];
     } catch (error) {
       console.error(`Error searching recipes by ingredients for user ${userId}:`, error);
       throw new Error("Failed to search recipes by ingredients");
@@ -370,11 +381,19 @@ export class RecipesDomainStorage implements IRecipesStorage {
         conditions = eq(mealPlans.userId, userId);
       }
       
-      return await db
+      const rows = await db
         .select()
         .from(mealPlans)
         .where(conditions)
         .orderBy(asc(mealPlans.date), asc(mealPlans.mealType));
+      
+      // Convert Date objects to ISO strings for legacy compatibility
+      return rows.map(row => ({
+        ...row,
+        date: row.date,  // Already stored as text YYYY-MM-DD
+        createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+        updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt
+      })) as MealPlan[];
     } catch (error) {
       console.error(`Error getting meal plans for user ${userId}:`, error);
       throw new Error("Failed to retrieve meal plans");
@@ -383,7 +402,7 @@ export class RecipesDomainStorage implements IRecipesStorage {
   
   async getMealPlansByDate(userId: string, date: string): Promise<MealPlan[]> {
     try {
-      return await db
+      const rows = await db
         .select()
         .from(mealPlans)
         .where(
@@ -393,6 +412,14 @@ export class RecipesDomainStorage implements IRecipesStorage {
           )
         )
         .orderBy(asc(mealPlans.mealType));
+      
+      // Convert Date objects to ISO strings for legacy compatibility
+      return rows.map(row => ({
+        ...row,
+        date: row.date,  // Already stored as text YYYY-MM-DD
+        createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
+        updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt
+      })) as MealPlan[];
     } catch (error) {
       console.error(`Error getting meal plans for date ${date}:`, error);
       throw new Error("Failed to retrieve meal plans by date");

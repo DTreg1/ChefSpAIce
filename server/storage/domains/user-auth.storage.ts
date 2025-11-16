@@ -306,6 +306,181 @@ export class UserAuthDomainStorage implements IUserAuthStorage {
     }
   }
   
+  async getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<any | undefined> {
+    try {
+      const providerField = `${provider}Id`;
+      const query = db
+        .select()
+        .from(users)
+        .where(sql`${sql.identifier(providerField)} = ${providerId}`)
+        .limit(1);
+      
+      const [user] = await query;
+      
+      return user ? {
+        id: user.id,
+        provider,
+        providerId,
+        userId: user.id,
+        displayName: user.name,
+        email: user.email
+      } : undefined;
+    } catch (error) {
+      console.error(`Error getting auth provider for ${provider}/${providerId}:`, error);
+      throw new Error("Failed to get auth provider");
+    }
+  }
+  
+  async getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<any | undefined> {
+    try {
+      const user = await this.getUserById(userId);
+      
+      if (!user) return undefined;
+      
+      const providerField = `${provider}Id`;
+      const providerId = (user as any)[providerField];
+      
+      return providerId ? {
+        id: user.id,
+        provider,
+        providerId,
+        userId: user.id,
+        displayName: user.name,
+        email: user.email
+      } : undefined;
+    } catch (error) {
+      console.error(`Error getting auth provider for user ${userId}:`, error);
+      throw new Error("Failed to get auth provider");
+    }
+  }
+  
+  async createAuthProvider(provider: any): Promise<any> {
+    try {
+      // This creates or updates a user with provider info
+      const user = await this.getUserByEmail(provider.email);
+      
+      if (user) {
+        // Update existing user with provider info
+        const providerField = `${provider.provider}Id`;
+        const updates: any = {};
+        updates[providerField] = provider.providerId;
+        
+        await this.updateUser(user.id, updates);
+        return { ...provider, userId: user.id };
+      } else {
+        // Create new user with provider info
+        const providerField = `${provider.provider}Id`;
+        const userToCreate: any = {
+          email: provider.email,
+          name: provider.displayName || provider.email,
+          primaryProvider: provider.provider,
+        };
+        userToCreate[providerField] = provider.providerId;
+        
+        const newUser = await this.createUser(userToCreate);
+        return { ...provider, userId: newUser.id };
+      }
+    } catch (error) {
+      console.error("Error creating auth provider:", error);
+      throw new Error("Failed to create auth provider");
+    }
+  }
+  
+  async updateAuthProvider(id: string, updates: any): Promise<any> {
+    try {
+      // Update user with provider changes
+      const user = await this.getUserById(id);
+      
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      if (updates.providerId && updates.provider) {
+        const providerField = `${updates.provider}Id`;
+        const userUpdates: any = {};
+        userUpdates[providerField] = updates.providerId;
+        
+        await this.updateUser(id, userUpdates);
+      }
+      
+      return { ...updates, userId: id };
+    } catch (error) {
+      console.error(`Error updating auth provider for user ${id}:`, error);
+      throw new Error("Failed to update auth provider");
+    }
+  }
+  
+  // ============= Admin Management =============
+  
+  async updateUserAdminStatus(userId: string, isAdmin: boolean): Promise<User | undefined> {
+    try {
+      const [updated] = await db
+        .update(users)
+        .set({ isAdmin })
+        .where(eq(users.id, userId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error(`Error updating admin status for user ${userId}:`, error);
+      throw new Error("Failed to update admin status");
+    }
+  }
+  
+  async getAdminCount(): Promise<number> {
+    try {
+      const [result] = await db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(users)
+        .where(eq(users.isAdmin, true));
+      return result.count;
+    } catch (error) {
+      console.error("Error getting admin count:", error);
+      throw new Error("Failed to get admin count");
+    }
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    try {
+      return await db
+        .select()
+        .from(users)
+        .orderBy(desc(users.createdAt));
+    } catch (error) {
+      console.error("Error getting all users:", error);
+      throw new Error("Failed to get all users");
+    }
+  }
+  
+  async getUserPreferences(userId: string): Promise<any | undefined> {
+    try {
+      const user = await this.getUserById(userId);
+      
+      if (!user) return undefined;
+      
+      // Extract preference fields from user object
+      return {
+        userId: user.id,
+        dietaryRestrictions: user.dietaryRestrictions || [],
+        allergens: user.allergens || [],
+        foodsToAvoid: user.foodsToAvoid || [],
+        favoriteCategories: user.favoriteCategories || [],
+        householdSize: user.householdSize || 1,
+        cookingSkillLevel: user.cookingSkillLevel || "intermediate",
+        preferredUnits: user.preferredUnits || "metric",
+        expirationAlertDays: user.expirationAlertDays || 3,
+        storageAreasEnabled: user.storageAreasEnabled || [],
+        notificationsEnabled: user.notificationsEnabled || false,
+        notifyExpiringFood: user.notifyExpiringFood || false,
+        notifyRecipeSuggestions: user.notifyRecipeSuggestions || false,
+        notifyMealReminders: user.notifyMealReminders || false,
+        notificationTime: user.notificationTime || "09:00",
+      };
+    } catch (error) {
+      console.error(`Error getting preferences for user ${userId}:`, error);
+      throw new Error("Failed to get user preferences");
+    }
+  }
+  
   // ============= Analytics =============
   
   async getUserCount(): Promise<number> {
