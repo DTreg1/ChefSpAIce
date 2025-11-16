@@ -38,16 +38,20 @@ const notificationStorage = new NotificationStorage();
  * 
  * Domain modules are applied in order of precedence (later modules override earlier)
  * Legacy storage has lowest precedence as the fallback
+ * 
+ * NOTE: Analytics, Feedback, and Notification domains temporarily disabled
+ * due to schema column name mismatches that need to be fixed
  */
 export const storage = mergeStorageModules(
   legacyStorage,           // Base/legacy (lowest precedence)
   inventoryStorage,        // Domain: Inventory management
   userAuthStorage,         // Domain: User authentication & management  
   recipesStorage,          // Domain: Recipes & meal planning
-  chatStorage,            // Domain: Chat & conversations
-  analyticsStorage,       // Domain: Analytics & metrics
-  feedbackStorage,        // Domain: Feedback & community
-  notificationStorage     // Domain: Notifications & push tokens
+  chatStorage             // Domain: Chat & conversations
+  // TEMPORARILY DISABLED - schema column name fixes needed:
+  // analyticsStorage,       // Domain: Analytics & metrics
+  // feedbackStorage,        // Domain: Feedback & community
+  // notificationStorage     // Domain: Notifications & push tokens
 );
 
 // Legacy method mappings for backward compatibility
