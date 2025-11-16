@@ -81,7 +81,11 @@ export interface IInventoryStorage {
   
   // Shopping List Operations
   getShoppingListItems(userId: string): Promise<ShoppingListItem[]>;
-  getGroupedShoppingListItems(userId: string): Promise<{ [category: string]: ShoppingListItem[] }>;
+  getGroupedShoppingListItems(userId: string): Promise<{
+    items: ShoppingListItem[];
+    grouped: { [category: string]: ShoppingListItem[] };
+    totals: { category: string; count: number }[];
+  }>;
   createShoppingListItem(item: InsertShoppingListItem): Promise<ShoppingListItem>;
   updateShoppingListItem(userId: string, id: string, updates: Partial<ShoppingListItem>): Promise<ShoppingListItem | undefined>;
   deleteShoppingListItem(userId: string, id: string): Promise<void>;

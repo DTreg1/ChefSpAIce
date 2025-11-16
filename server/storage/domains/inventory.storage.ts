@@ -545,19 +545,35 @@ export class InventoryDomainStorage implements IInventoryStorage {
     }
   }
 
-  async getGroupedShoppingListItems(userId: string): Promise<{ [category: string]: ShoppingListItem[] }> {
+  async getGroupedShoppingListItems(userId: string): Promise<{
+    items: ShoppingListItem[];
+    grouped: { [category: string]: ShoppingListItem[] };
+    totals: { category: string; count: number }[];
+  }> {
     try {
       const items = await this.getShoppingListItems(userId);
       
       // Group items by category
-      return items.reduce((grouped, item) => {
+      const grouped = items.reduce((acc, item) => {
         const category = item.category || 'Other';
-        if (!grouped[category]) {
-          grouped[category] = [];
+        if (!acc[category]) {
+          acc[category] = [];
         }
-        grouped[category].push(item);
-        return grouped;
+        acc[category].push(item);
+        return acc;
       }, {} as { [category: string]: ShoppingListItem[] });
+      
+      // Calculate totals for each category
+      const totals = Object.entries(grouped).map(([category, categoryItems]) => ({
+        category,
+        count: categoryItems.length
+      }));
+      
+      return {
+        items,
+        grouped,
+        totals
+      };
     } catch (error) {
       console.error(`Error getting grouped shopping list items for user ${userId}:`, error);
       throw new Error("Failed to retrieve grouped shopping list items");

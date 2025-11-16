@@ -59,7 +59,7 @@ export class ChatDomainStorage implements IChatStorage {
         role: msg.role,
         content: msg.content,
         similarityHash: null,
-        createdAt: msg.timestamp || new Date(),
+        createdAt: (msg.timestamp ?? new Date()).toISOString(),
       }));
     } catch (error) {
       console.error(`Error getting chat messages for user ${userId}:`, error);
@@ -109,7 +109,7 @@ export class ChatDomainStorage implements IChatStorage {
         role: msg.role,
         content: msg.content,
         similarityHash: null,
-        createdAt: msg.timestamp || new Date(),
+        createdAt: (msg.timestamp ?? new Date()).toISOString(),
       }));
       
       return {
@@ -163,7 +163,7 @@ export class ChatDomainStorage implements IChatStorage {
         role: newMessage.role,
         content: newMessage.content,
         similarityHash: null,
-        createdAt: newMessage.timestamp || new Date(),
+        createdAt: (newMessage.timestamp ?? new Date()).toISOString(),
       };
     } catch (error) {
       console.error(`Error creating chat message for user ${userId}:`, error);
