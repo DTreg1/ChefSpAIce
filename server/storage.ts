@@ -10223,62 +10223,12 @@ export class DatabaseStorage implements IStorage {
     } as Conversation;
   }
 
-  // Legacy function - conversations table has been removed
-  async deleteConversation(
-    userId: string,
-    conversationId: string,
-  ): Promise<void> {
-    console.warn("deleteConversation is deprecated. Conversations table has been removed.");
-    // No-op as the table no longer exists
-  }
-
-  // Legacy function - messages table has been removed
-  async getMessages(
-    conversationId: string,
-    limit: number = 100,
-  ): Promise<Message[]> {
-    console.warn("getMessages is deprecated. Messages table has been removed. Use getUserChats instead.");
-    // Return empty array as the table no longer exists
-    return [];
-  }
-
-  // Legacy function - messages table has been removed
-  async createMessage(message: InsertMessage): Promise<Message> {
-    console.warn("createMessage is deprecated. Messages table has been removed. Use createChatMessage instead.");
-    // Return a dummy message object as the table no longer exists
-    return {
-      id: "",
-      conversationId: message.conversationId,
-      role: message.role,
-      content: message.content,
-      metadata: message.metadata || null,
-      tokensUsed: message.tokensUsed || 0,
-      timestamp: new Date(),
-    } as Message;
-  }
-
-  // Legacy function - conversationContext table has been removed
-  async getConversationContext(
-    conversationId: string,
-  ): Promise<ConversationContext | undefined> {
-    console.warn("getConversationContext is deprecated. ConversationContext table has been removed.");
-    return undefined;
-  }
-
-  // Legacy function - conversationContext table has been removed
-  async updateConversationContext(
-    conversationId: string,
-    context: Partial<ConversationContext>,
-  ): Promise<ConversationContext> {
-    console.warn("updateConversationContext is deprecated. ConversationContext table has been removed.");
-    // Return a dummy context object as the table no longer exists
-    return {
-      conversationId,
-      summary: context.summary || "",
-      recentTopics: context.recentTopics || [],
-      lastSummarized: new Date(),
-    } as ConversationContext;
-  }
+  // Legacy chat functions have been removed - use userChats table methods instead
+  // - deleteConversation -> conversations table removed
+  // - getMessages -> use getUserChats instead  
+  // - createMessage -> use createChatMessage instead
+  // - getConversationContext -> context stored differently now
+  // - updateConversationContext -> context stored differently now
 
   // ==================== Task 8: Voice Commands Implementations ====================
 
