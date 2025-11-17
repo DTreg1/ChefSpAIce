@@ -41,61 +41,9 @@ export interface WritingSessionMetadata {
   [key: string]: any;
 }
 
-// ==================== Legacy Chat Tables ====================
-// TODO: Review if these should be removed or migrated
-
-/**
- * Conversations Table (LEGACY - Consider removing)
- * 
- * Chat conversation containers for AI assistant interactions.
- */
-export const conversations = pgTable("conversations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  title: text("title").notNull().default("New Conversation"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("conversations_user_id_idx").on(table.userId),
-  index("conversations_updated_at_idx").on(table.updatedAt),
-]);
-
-/**
- * Messages Table (LEGACY - Consider removing)
- * 
- * Individual messages within conversations.
- */
-export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
-  role: text("role").notNull(), // 'user', 'assistant', 'system'
-  content: text("content").notNull(),
-  tokensUsed: integer("tokens_used"), // For cost tracking
-  timestamp: timestamp("timestamp").defaultNow(),
-}, (table) => [
-  index("messages_conversation_id_idx").on(table.conversationId),
-  index("messages_timestamp_idx").on(table.timestamp),
-]);
-
-/**
- * Conversation Context Table (LEGACY - Consider removing)
- * 
- * Context and memory for AI conversations.
- */
-export const conversationContext = pgTable("conversation_context", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
-  contextType: text("context_type").notNull(), // 'recipe', 'inventory', 'preference'
-  contextData: jsonb("context_data").$type<Record<string, any>>(),
-  relevanceScore: real("relevance_score"), // 0-1
-  expiresAt: timestamp("expires_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("conversation_context_conversation_id_idx").on(table.conversationId),
-  index("conversation_context_expires_at_idx").on(table.expiresAt),
-]);
-
 // ==================== Active AI/ML Features ====================
+// Note: Legacy chat tables (conversations, messages, conversationContext) have been removed.
+// These were replaced by the newer userChats system in food.ts.
 
 /**
  * Voice Commands Table
@@ -333,26 +281,7 @@ export const summaryTypeSchema = z.enum(['brief', 'detailed', 'bullets', 'abstra
 export const excerptCategorySchema = z.enum(['quote', 'fact', 'opinion', 'conclusion', 'statistic']);
 export const translationQualitySchema = z.enum(['fast', 'balanced', 'high']);
 
-// Legacy chat schemas
-export const insertConversationSchema = createInsertSchema(conversations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertConversation = z.infer<typeof insertConversationSchema>;
-export type Conversation = typeof conversations.$inferSelect;
-
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  timestamp: true,
-}).extend({
-  role: roleSchema,
-  tokensUsed: z.number().nonnegative().optional(),
-});
-
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
+// Note: Legacy chat schemas removed (conversations, messages, conversationContext)
 
 // Active AI/ML feature schemas
 export const insertVoiceCommandSchema = createInsertSchema(voiceCommands).omit({
@@ -448,7 +377,6 @@ export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
 export type Translation = typeof translations.$inferSelect;
 
 // Export other types
-export type ConversationContext = typeof conversationContext.$inferSelect;
 export type Excerpt = typeof excerpts.$inferSelect;
 export type ExcerptPerformance = typeof excerptPerformance.$inferSelect;
 export type LanguagePreference = typeof languagePreferences.$inferSelect;
