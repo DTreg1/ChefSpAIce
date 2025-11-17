@@ -176,16 +176,25 @@ export const userShopping = pgTable("user_shopping", {
  * FDC Cache Table
  * 
  * Cache for USDA FoodData Central API responses to reduce API calls.
+ * Stores individual food items for faster lookup.
  */
 export const fdcCache = pgTable("fdc_cache", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  searchQuery: text("search_query").notNull().unique(),
-  searchResults: jsonb("search_results").$type<any[]>(),
-  createdAt: timestamp("created_at").defaultNow(),
-  expiresAt: timestamp("expires_at").notNull(),
+  id: varchar("id").primaryKey(),
+  fdcId: text("fdc_id").notNull().unique(),
+  description: text("description"),
+  dataType: text("data_type"),
+  brandOwner: text("brand_owner"),
+  brandName: text("brand_name"),
+  ingredients: text("ingredients"),
+  servingSize: real("serving_size"),
+  servingSizeUnit: text("serving_size_unit"),
+  nutrients: jsonb("nutrients").$type<Record<string, any>>(),
+  fullData: jsonb("full_data").$type<Record<string, any>>(),
+  cachedAt: timestamp("cached_at").defaultNow(),
+  lastAccessed: timestamp("last_accessed").defaultNow(),
 }, (table) => [
-  index("fdc_cache_search_query_idx").on(table.searchQuery),
-  index("fdc_cache_expires_at_idx").on(table.expiresAt),
+  index("fdc_cache_fdc_id_idx").on(table.fdcId),
+  index("fdc_cache_cached_at_idx").on(table.cachedAt),
 ]);
 
 /**
