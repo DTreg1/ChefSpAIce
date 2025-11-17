@@ -40,6 +40,7 @@ export * from './billing';
 
 // AI/ML domains
 export * from './ai-ml';
+export * from './images';
 
 // Content & UX domains
 export * from './content';
@@ -49,7 +50,6 @@ export * from './experiments';
 
 // TODO: The following domains are planned but not yet implemented:
 // - sentiment.ts: Sentiment analysis (5 tables)
-// - images.ts: Image processing (7 tables)
 // - transcription.ts: Transcription services (2 tables)
 // - extraction.ts: Data extraction (2 tables)
 // - forms.ts: Form handling (7 tables)
