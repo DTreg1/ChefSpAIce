@@ -376,8 +376,50 @@ export const insertTrendSchema = createInsertSchema(trends)
 export type InsertTrend = z.infer<typeof insertTrendSchema>;
 export type Trend = typeof trends.$inferSelect;
 
-// Export other types
+export const insertQueryLogSchema = createInsertSchema(queryLogs)
+  .omit({
+    id: true,
+    timestamp: true,
+  })
+  .extend({
+    executionTime: z.number().positive(),
+    rowsAffected: z.number().nonnegative().optional(),
+  });
+
+export type InsertQueryLog = z.infer<typeof insertQueryLogSchema>;
 export type QueryLog = typeof queryLogs.$inferSelect;
+
+export const insertInsightFeedbackSchema = createInsertSchema(insightFeedback)
+  .omit({
+    id: true,
+    createdAt: true,
+  });
+
+export type InsertInsightFeedback = z.infer<typeof insertInsightFeedbackSchema>;
 export type InsightFeedback = typeof insightFeedback.$inferSelect;
+
+export const insertPredictionAccuracySchema = createInsertSchema(predictionAccuracy)
+  .omit({
+    id: true,
+    evaluatedAt: true,
+  })
+  .extend({
+    isCorrect: z.boolean().optional(),
+    accuracyScore: z.number().min(0).max(1).optional(),
+  });
+
+export type InsertPredictionAccuracy = z.infer<typeof insertPredictionAccuracySchema>;
 export type PredictionAccuracy = typeof predictionAccuracy.$inferSelect;
+
+export const insertTrendAlertSchema = createInsertSchema(trendAlerts)
+  .omit({
+    id: true,
+    createdAt: true,
+  })
+  .extend({
+    alertType: z.enum(['threshold_exceeded', 'anomaly', 'prediction']),
+    alertLevel: alertLevelSchema,
+  });
+
+export type InsertTrendAlert = z.infer<typeof insertTrendAlertSchema>;
 export type TrendAlert = typeof trendAlerts.$inferSelect;

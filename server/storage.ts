@@ -49,12 +49,10 @@ import {
   type InsertApiUsageLog,
   type FdcCache,
   type InsertFdcCache,
-  type ShoppingListItem,
-  type InsertShoppingListItem,
-  type Feedback,
-  type InsertFeedback,
-  type FeedbackResponse,
-  type FeedbackAnalytics,
+  type ShoppingItem,
+  type InsertShoppingItem,
+  type UserFeedback,
+  type InsertUserFeedback,
   type AnalyticsInsight,
   type InsertAnalyticsInsight,
   type InsightFeedback,
@@ -63,25 +61,23 @@ import {
   type InsertDonation,
   type PushToken,
   type InsertPushToken,
-  type NotificationHistory,
+  type NotificationHistoryItem,
   type WebVital,
   type InsertWebVital,
-  type OnboardingInventory,
-  type InsertOnboardingInventory,
+  type OnboardingInventoryItem,
   type CookingTerm,
-  type InsertCookingTerm,
-  type ApplianceLibrary,
+  type ApplianceLibraryItem,
   type UserAppliance,
   type InsertUserAppliance,
   type InsertAnalyticsEvent,
   type AnalyticsEvent,
   type InsertUserSession,
   type UserSession,
-  type NotificationPreferences,
-  type InsertNotificationPreferences,
-  type NotificationScores,
-  type InsertNotificationScores,
-  type NotificationFeedback,
+  type NotificationPreference,
+  type InsertNotificationPreference,
+  type NotificationScore,
+  type InsertNotificationScore,
+  type NotificationFeedback as NotificationFeedbackItem,
   type InsertNotificationFeedback,
   type ActivityLog,
   type InsertActivityLog,
@@ -111,13 +107,7 @@ import {
   type InsertRelatedContentCache,
   type QueryLog,
   type InsertQueryLog,
-  // Task 7-10 types
-  type Conversation,
-  type InsertConversation,
-  type Message,
-  type InsertMessage,
-  type ConversationContext,
-  type InsertConversationContext,
+  // Task 7-10 types (removed legacy chat types)
   type VoiceCommand,
   type InsertVoiceCommand,
   type DraftTemplate,
@@ -131,13 +121,10 @@ import {
   type Summary,
   type InsertSummary,
   type Excerpt,
-  type InsertExcerpt,
   type ExcerptPerformance,
-  type InsertExcerptPerformance,
   type Translation,
   type InsertTranslation,
   type LanguagePreference,
-  type InsertLanguagePreference,
   users,
   pushTokens,
   summaries,
@@ -333,8 +320,8 @@ import {
   pricingPerformance,
   type ImageProcessing,
   type InsertImageProcessing,
-  type ImagePresets,
-  type InsertImagePresets,
+  type ImagePreset,
+  type InsertImagePreset,
   imageProcessing,
   imagePresets,
   // Face Detection types
@@ -360,6 +347,82 @@ import {
   transcriptEdits,
 } from "@shared/schema";
 import { db } from "./db";
+
+// Type aliases for missing Insert types (these tables don't have explicit Insert type exports)
+export type InsertOnboardingInventory = typeof onboardingInventory.$inferInsert;
+export type InsertCookingTerm = typeof cookingTerms.$inferInsert;
+export type InsertExcerpt = typeof excerpts.$inferInsert;
+export type InsertExcerptPerformance = typeof excerptPerformance.$inferInsert;
+export type InsertLanguagePreference = typeof languagePreferences.$inferInsert;
+
+// Rename NotificationFeedback for clarity
+export type NotificationFeedback = NotificationFeedbackItem;
+
+// Backward compatibility aliases (plural forms to singular)
+export type ShoppingListItem = ShoppingItem;
+export type InsertShoppingListItem = InsertShoppingItem;
+export type ImagePresets = ImagePreset;
+export type InsertImagePresets = InsertImagePreset;
+export type NotificationPreferences = NotificationPreference;
+export type InsertNotificationPreferences = InsertNotificationPreference;
+export type NotificationScores = NotificationScore;
+export type InsertNotificationScores = InsertNotificationScore;
+export type Feedback = UserFeedback;
+export type InsertFeedback = InsertUserFeedback;
+
+// Define missing feedback types (these are local to storage layer)
+export interface FeedbackResponse {
+  id: string;
+  message: string;
+  createdBy: string;
+  createdAt: Date;
+}
+
+export interface FeedbackAnalytics {
+  totalFeedback: number;
+  averageRating: number | null;
+  feedbackByType: Record<string, number>;
+  feedbackByCategory: Record<string, number>;
+  feedbackByStatus: Record<string, number>;
+  feedbackByRating: Record<number, number>;
+  feedbackBySentiment: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  totalUpvotes: number;
+  totalResponses: number;
+  resolutionRate: number;
+  averageResponseTime: number | null;
+}
+
+// Define legacy conversation types (for backward compatibility)
+export interface Conversation {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: Date;
+}
+
+export interface InsertMessage {
+  conversationId: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ConversationContext {
+  conversationId: string;
+  context: any;
+}
 import {
   eq,
   sql,
@@ -390,8 +453,8 @@ export type ApplianceWithCategory = UserAppliance & {
 };
 
 // Type aliases for common food items (onboarding inventory)
-export type CommonFoodItem = OnboardingInventory;
-export type InsertCommonFoodItem = InsertOnboardingInventory;
+export type CommonFoodItem = OnboardingInventoryItem;
+export type InsertCommonFoodItem = typeof onboardingInventory.$inferInsert;
 
 /**
  * Standardized pagination response format
@@ -583,10 +646,10 @@ export interface IStorage {
   ): Promise<UserAppliance[]>;
 
   // UserAppliance Library - Master catalog of all equipment
-  getApplianceLibrary(): Promise<ApplianceLibrary[]>;
-  getApplianceLibraryByCategory(category: string): Promise<ApplianceLibrary[]>;
-  searchApplianceLibrary(query: string): Promise<ApplianceLibrary[]>;
-  getCommonAppliances(): Promise<ApplianceLibrary[]>;
+  getApplianceLibrary(): Promise<ApplianceLibraryItem[]>;
+  getApplianceLibraryByCategory(category: string): Promise<ApplianceLibraryItem[]>;
+  searchApplianceLibrary(query: string): Promise<ApplianceLibraryItem[]>;
+  getCommonAppliances(): Promise<ApplianceLibraryItem[]>;
 
   // User Appliances - What equipment each user owns
   getUserAppliances(userId: string): Promise<ApplianceWithCategory[]>;
@@ -776,7 +839,7 @@ export interface IStorage {
   }>;
 
   // Common Food Items (onboarding inventory)
-  getOnboardingInventory(): Promise<OnboardingInventory[]>;
+  getOnboardingInventory(): Promise<OnboardingInventoryItem[]>;
 
   // Shopping List Items (user-scoped)
   getShoppingListItems(
@@ -4353,7 +4416,7 @@ export class DatabaseStorage implements IStorage {
   async getUndismissedNotifications(
     userId: string,
     limit: number = 50,
-  ): Promise<NotificationHistory[]> {
+  ): Promise<NotificationHistoryItem[]> {
     try {
       return await db
         .select()
@@ -16603,6 +16666,62 @@ export class DatabaseStorage implements IStorage {
       console.error("Error searching transcriptions:", error);
       throw error;
     }
+  }
+
+  // ============= Legacy Conversation Methods =============
+  // These methods are deprecated but kept for backward compatibility
+  // Use the chat methods (createChatMessage, getUserChats) instead
+
+  /**
+   * Delete a conversation (legacy method - deprecated)
+   */
+  async deleteConversation(userId: string, conversationId: string): Promise<void> {
+    // Legacy method - conversations are now handled as chat messages
+    console.warn('deleteConversation is deprecated. Use chat deletion methods instead.');
+    // No-op for now
+  }
+
+  /**
+   * Get messages for a conversation (legacy method - deprecated)
+   */
+  async getMessages(conversationId: string, limit: number = 100): Promise<Message[]> {
+    console.warn('getMessages is deprecated. Use getUserChats instead.');
+    // Return empty array for backward compatibility
+    return [];
+  }
+
+  /**
+   * Create a message (legacy method - deprecated)
+   */
+  async createMessage(message: InsertMessage): Promise<Message> {
+    console.warn('createMessage is deprecated. Use createChatMessage instead.');
+    // Return a dummy message for backward compatibility
+    return {
+      id: 'legacy-message',
+      conversationId: message.conversationId,
+      role: message.role,
+      content: message.content,
+      createdAt: new Date(),
+    };
+  }
+
+  /**
+   * Get conversation context (legacy method - deprecated)
+   */
+  async getConversationContext(conversationId: string): Promise<ConversationContext | null> {
+    console.warn('getConversationContext is deprecated. Context is now stored differently.');
+    return null;
+  }
+
+  /**
+   * Update conversation context (legacy method - deprecated)
+   */
+  async updateConversationContext(
+    conversationId: string,
+    context: any
+  ): Promise<void> {
+    console.warn('updateConversationContext is deprecated. Context is now stored differently.');
+    // No-op for now
   }
 }
 
