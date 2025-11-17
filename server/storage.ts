@@ -177,10 +177,7 @@ import {
   duplicatePairs,
   relatedContentCache,
   queryLogs,
-  // Task 7-10 tables
-  conversations,
-  messages,
-  conversationContext,
+  // Task 7-10 tables (legacy chat tables removed)
   voiceCommands,
   writingSessions,
   writingSuggestions,
@@ -212,17 +209,17 @@ import {
   suspiciousActivities,
   fraudReviews,
   // Sentiment Analysis types
-  type SentimentAnalysis,
-  type InsertSentimentAnalysis,
-  type SentimentTrend,
-  type InsertSentimentTrend,
+  type SentimentResults as SentimentAnalysis,
+  type InsertSentimentResults as InsertSentimentAnalysis,
+  type SentimentTrends as SentimentTrend,
+  type InsertSentimentTrends as InsertSentimentTrend,
   type SentimentMetrics,
   type InsertSentimentMetrics,
   type SentimentAlerts,
   type InsertSentimentAlerts,
   type SentimentSegments,
   type InsertSentimentSegments,
-  sentimentAnalysis,
+  sentimentResults as sentimentAnalysis,
   sentimentTrends,
   sentimentMetrics,
   sentimentAlerts,
@@ -5410,45 +5407,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Chat Messages - Legacy compatibility layer using conversations/messages tables
+  // Chat Messages - Use userChats table from food.ts instead of legacy tables
   async getChatMessages(
     userId: string,
     limit: number = 100,
   ): Promise<ChatMessage[]> {
-    try {
-      // Get the most recent conversation for the user
-      const [conversation] = await db
-        .select()
-        .from(conversations)
-        .where(eq(conversations.userId, userId))
-        .orderBy(desc(conversations.updatedAt))
-        .limit(1);
-
-      if (!conversation) {
-        return [];
-      }
-
-      // Get messages from that conversation
-      const msgs = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.conversationId, conversation.id))
-        .orderBy(desc(messages.timestamp))
-        .limit(limit);
-
-      // Map to ChatMessage format
-      return msgs.map((msg) => ({
-        id: msg.id,
-        userId: userId,
-        role: msg.role,
-        content: msg.content,
-        similarityHash: null,
-        createdAt: msg.timestamp || new Date(),
-      }));
-    } catch (error) {
-      console.error(`Error getting chat messages for user ${userId}:`, error);
-      throw new Error("Failed to retrieve chat messages");
-    }
+    // Legacy conversations/messages tables have been removed
+    // This now uses the userChats table instead
+    return await this.getUserChats(userId, limit);
   }
 
   async getChatMessagesPaginated(
@@ -5459,46 +5425,25 @@ export class DatabaseStorage implements IStorage {
     try {
       const offset = (page - 1) * limit;
 
-      // Get the most recent conversation for the user
-      const [conversation] = await db
-        .select()
-        .from(conversations)
-        .where(eq(conversations.userId, userId))
-        .orderBy(desc(conversations.updatedAt))
-        .limit(1);
-
-      if (!conversation) {
-        return PaginationHelper.createResponse([], 0, page, limit);
-      }
-
       // Get total count
       const [countResult] = await db
         .select({ count: sql<number>`count(*)` })
-        .from(messages)
-        .where(eq(messages.conversationId, conversation.id));
+        .from(userChats)
+        .where(eq(userChats.userId, userId));
 
       const total = Number(countResult?.count || 0);
 
-      // Get paginated messages
+      // Get paginated messages from userChats table
       const msgs = await db
         .select()
-        .from(messages)
-        .where(eq(messages.conversationId, conversation.id))
-        .orderBy(desc(messages.timestamp))
+        .from(userChats)
+        .where(eq(userChats.userId, userId))
+        .orderBy(desc(userChats.createdAt))
         .limit(limit)
         .offset(offset);
 
-      // Map to ChatMessage format
-      const chatMessages: ChatMessage[] = msgs.map((msg) => ({
-        id: msg.id,
-        userId: userId,
-        role: msg.role,
-        content: msg.content,
-        similarityHash: null,
-        createdAt: msg.timestamp || new Date(),
-      }));
-
-      return PaginationHelper.createResponse(chatMessages, total, page, limit);
+      // Messages are already in ChatMessage format
+      return PaginationHelper.createResponse(msgs, total, page, limit);
     } catch (error) {
       console.error(
         `Error getting paginated chat messages for user ${userId}:`,
@@ -5513,52 +5458,16 @@ export class DatabaseStorage implements IStorage {
     message: Omit<InsertChatMessage, "userId">,
   ): Promise<ChatMessage> {
     try {
-      // Get or create the most recent conversation for the user
-      let [conversation] = await db
-        .select()
-        .from(conversations)
-        .where(eq(conversations.userId, userId))
-        .orderBy(desc(conversations.updatedAt))
-        .limit(1);
-
-      if (!conversation) {
-        // Create a new conversation if none exists
-        [conversation] = await db
-          .insert(conversations)
-          .values({
-            userId: userId,
-            title: "Chat Session",
-          })
-          .returning();
-      }
-
-      // Create the message in the messages table
+      // Create the message in the userChats table
       const [newMessage] = await db
-        .insert(messages)
+        .insert(userChats)
         .values({
-          conversationId: conversation.id,
-          role: message.role,
-          content: message.content,
-          metadata: null,
-          tokensUsed: 0,
+          userId: userId,
+          ...message,
         })
         .returning();
 
-      // Update conversation's updatedAt
-      await db
-        .update(conversations)
-        .set({ updatedAt: new Date() })
-        .where(eq(conversations.id, conversation.id));
-
-      // Map to ChatMessage format
-      return {
-        id: newMessage.id,
-        userId: userId,
-        role: newMessage.role,
-        content: newMessage.content,
-        similarityHash: message.similarityHash || null,
-        createdAt: newMessage.timestamp || new Date(),
-      };
+      return newMessage;
     } catch (error) {
       console.error("Error creating chat message:", error);
       throw new Error("Failed to create chat message");
@@ -5567,8 +5476,8 @@ export class DatabaseStorage implements IStorage {
 
   async clearChatMessages(userId: string): Promise<void> {
     try {
-      // Delete all conversations for the user (messages will cascade delete)
-      await db.delete(conversations).where(eq(conversations.userId, userId));
+      // Delete all chat messages for the user from userChats table
+      await db.delete(userChats).where(eq(userChats.userId, userId));
     } catch (error) {
       console.error(`Error clearing chat messages for user ${userId}:`, error);
       throw new Error("Failed to clear chat messages");
@@ -5583,26 +5492,13 @@ export class DatabaseStorage implements IStorage {
       const cutoffDate = new Date();
       cutoffDate.setHours(cutoffDate.getHours() - hoursOld);
 
-      // Get conversations for the user
-      const userConversations = await db
-        .select()
-        .from(conversations)
-        .where(eq(conversations.userId, userId));
-
-      if (userConversations.length === 0) {
-        return 0;
-      }
-
-      // Delete old messages from user's conversations
+      // Delete old messages from userChats table
       const result = await db
-        .delete(messages)
+        .delete(userChats)
         .where(
           and(
-            sql`${messages.conversationId} IN (${sql.join(
-              userConversations.map((c) => sql`${c.id}`),
-              sql`, `,
-            )})`,
-            sql`${messages.timestamp} < ${cutoffDate}`,
+            eq(userChats.userId, userId),
+            sql`${userChats.createdAt} < ${cutoffDate}`,
           ),
         )
         .returning();
@@ -10278,172 +10174,110 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== Task 7: AI Chat Assistant Implementations ====================
 
+  // Legacy function - conversations table has been removed
+  // Use getUserChats instead
   async getConversations(userId: string): Promise<Conversation[]> {
-    try {
-      const result = await db
-        .select()
-        .from(conversations)
-        .where(eq(conversations.userId, userId))
-        .orderBy(desc(conversations.updatedAt));
-      return result;
-    } catch (error) {
-      console.error("Error getting conversations:", error);
-      throw new Error("Failed to get conversations");
-    }
+    console.warn("getConversations is deprecated. Use getUserChats instead.");
+    // Return empty array as conversations table no longer exists
+    return [];
   }
 
+  // Legacy function - conversations table has been removed
   async getConversation(
     userId: string,
     conversationId: string,
   ): Promise<Conversation | undefined> {
-    try {
-      const [result] = await db
-        .select()
-        .from(conversations)
-        .where(
-          and(
-            eq(conversations.userId, userId),
-            eq(conversations.id, conversationId),
-          ),
-        )
-        .limit(1);
-      return result;
-    } catch (error) {
-      console.error("Error getting conversation:", error);
-      throw new Error("Failed to get conversation");
-    }
+    console.warn("getConversation is deprecated. Conversations table has been removed.");
+    return undefined;
   }
 
+  // Legacy function - conversations table has been removed
   async createConversation(
     userId: string,
     title: string,
   ): Promise<Conversation> {
-    try {
-      const [result] = await db
-        .insert(conversations)
-        .values({ userId, title })
-        .returning();
-      return result;
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      throw new Error("Failed to create conversation");
-    }
+    console.warn("createConversation is deprecated. Use createChatMessage instead.");
+    // Return a dummy conversation object as the table no longer exists
+    return {
+      id: "",
+      userId,
+      title,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Conversation;
   }
 
+  // Legacy function - conversations table has been removed
   async updateConversation(
     userId: string,
     conversationId: string,
     updates: Partial<Conversation>,
   ): Promise<Conversation> {
-    try {
-      const [result] = await db
-        .update(conversations)
-        .set({ ...updates, updatedAt: new Date() })
-        .where(
-          and(
-            eq(conversations.userId, userId),
-            eq(conversations.id, conversationId),
-          ),
-        )
-        .returning();
-      return result;
-    } catch (error) {
-      console.error("Error updating conversation:", error);
-      throw new Error("Failed to update conversation");
-    }
+    console.warn("updateConversation is deprecated. Conversations table has been removed.");
+    return {
+      id: conversationId,
+      userId,
+      title: updates.title || "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Conversation;
   }
 
+  // Legacy function - conversations table has been removed
   async deleteConversation(
     userId: string,
     conversationId: string,
   ): Promise<void> {
-    try {
-      await db
-        .delete(conversations)
-        .where(
-          and(
-            eq(conversations.userId, userId),
-            eq(conversations.id, conversationId),
-          ),
-        );
-    } catch (error) {
-      console.error("Error deleting conversation:", error);
-      throw new Error("Failed to delete conversation");
-    }
+    console.warn("deleteConversation is deprecated. Conversations table has been removed.");
+    // No-op as the table no longer exists
   }
 
+  // Legacy function - messages table has been removed
   async getMessages(
     conversationId: string,
     limit: number = 100,
   ): Promise<Message[]> {
-    try {
-      const result = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.conversationId, conversationId))
-        .orderBy(desc(messages.timestamp))
-        .limit(limit);
-      return result.reverse(); // Return in chronological order
-    } catch (error) {
-      console.error("Error getting messages:", error);
-      throw new Error("Failed to get messages");
-    }
+    console.warn("getMessages is deprecated. Messages table has been removed. Use getUserChats instead.");
+    // Return empty array as the table no longer exists
+    return [];
   }
 
+  // Legacy function - messages table has been removed
   async createMessage(message: InsertMessage): Promise<Message> {
-    try {
-      const [result] = await db
-        .insert(messages)
-        .values(message)
-        .returning();
-
-      // Update conversation's updatedAt
-      await db
-        .update(conversations)
-        .set({ updatedAt: new Date() })
-        .where(eq(conversations.id, message.conversationId));
-
-      return result;
-    } catch (error) {
-      console.error("Error creating message:", error);
-      throw new Error("Failed to create message");
-    }
+    console.warn("createMessage is deprecated. Messages table has been removed. Use createChatMessage instead.");
+    // Return a dummy message object as the table no longer exists
+    return {
+      id: "",
+      conversationId: message.conversationId,
+      role: message.role,
+      content: message.content,
+      metadata: message.metadata || null,
+      tokensUsed: message.tokensUsed || 0,
+      timestamp: new Date(),
+    } as Message;
   }
 
+  // Legacy function - conversationContext table has been removed
   async getConversationContext(
     conversationId: string,
   ): Promise<ConversationContext | undefined> {
-    try {
-      const [result] = await db
-        .select()
-        .from(conversationContext)
-        .where(eq(conversationContext.conversationId, conversationId))
-        .limit(1);
-      return result;
-    } catch (error) {
-      console.error("Error getting conversation context:", error);
-      throw new Error("Failed to get conversation context");
-    }
+    console.warn("getConversationContext is deprecated. ConversationContext table has been removed.");
+    return undefined;
   }
 
+  // Legacy function - conversationContext table has been removed
   async updateConversationContext(
     conversationId: string,
     context: Partial<ConversationContext>,
   ): Promise<ConversationContext> {
-    try {
-      const [result] = await db
-        .insert(conversationContext)
-        .values({ conversationId, ...context })
-        .onConflictDoUpdate({
-          target: conversationContext.conversationId,
-          set: { ...context, lastSummarized: new Date() },
-        })
-        .returning();
-      return result;
-    } catch (error) {
-      console.error("Error updating conversation context:", error);
-      throw new Error("Failed to update conversation context");
-    }
+    console.warn("updateConversationContext is deprecated. ConversationContext table has been removed.");
+    // Return a dummy context object as the table no longer exists
+    return {
+      conversationId,
+      summary: context.summary || "",
+      recentTopics: context.recentTopics || [],
+      lastSummarized: new Date(),
+    } as ConversationContext;
   }
 
   // ==================== Task 8: Voice Commands Implementations ====================

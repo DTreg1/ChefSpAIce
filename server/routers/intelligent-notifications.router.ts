@@ -10,7 +10,7 @@ import { storage } from '../storage';
 import { intelligentNotificationService } from '../notifications/intelligent-service';
 import { isAuthenticated, adminOnly } from '../middleware/auth.middleware';
 import { z } from 'zod';
-import { insertNotificationPreferencesSchema } from '@shared/schema';
+import { insertNotificationPreferenceSchema } from '@shared/schema';
 
 const router = Router();
 
@@ -108,7 +108,7 @@ router.put('/preferences', isAuthenticated, async (req: Request, res: Response) 
     const userId = req.user!.id;
     
     // Validate the request body
-    const validatedData = insertNotificationPreferencesSchema
+    const validatedData = insertNotificationPreferenceSchema
       .omit({ userId: true })
       .parse(req.body);
     

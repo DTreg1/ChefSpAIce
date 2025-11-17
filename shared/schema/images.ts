@@ -238,6 +238,51 @@ export const ocrCorrections = pgTable("ocr_corrections", {
   index("ocr_corrections_user_id_idx").on(table.userId),
 ]);
 
+/**
+ * Face Detections Table
+ * 
+ * Stores face detection results from TensorFlow.js BlazeFace model.
+ * Tracks detected faces and their coordinates for privacy features and avatar cropping.
+ */
+export const faceDetections = pgTable("face_detections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  imageId: varchar("image_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  facesDetected: integer("faces_detected").notNull().default(0),
+  faceCoordinates: jsonb("face_coordinates").$type<Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    confidence: number;
+    landmarks?: {
+      leftEye?: { x: number; y: number };
+      rightEye?: { x: number; y: number };
+      nose?: { x: number; y: number };
+      mouth?: { x: number; y: number };
+      leftEar?: { x: number; y: number };
+      rightEar?: { x: number; y: number };
+    };
+  }>>().notNull().default([]),
+  processedImageUrl: text("processed_image_url"),
+  processingType: text("processing_type"),
+  metadata: jsonb("metadata").$type<{
+    modelVersion?: string;
+    processingTime?: number;
+    originalDimensions?: { width: number; height: number };
+    blurIntensity?: number;
+    cropSettings?: { aspectRatio?: string; padding?: number };
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("face_detections_user_id_idx").on(table.userId),
+  index("face_detections_image_id_idx").on(table.imageId),
+  index("face_detections_created_at_idx").on(table.createdAt),
+]);
+
+
 // ==================== Type Definitions ====================
 
 // Image Metadata
@@ -314,3 +359,14 @@ export const insertOcrCorrectionSchema = createInsertSchema(ocrCorrections)
 
 export type InsertOcrCorrection = z.infer<typeof insertOcrCorrectionSchema>;
 export type OcrCorrection = typeof ocrCorrections.$inferSelect;
+
+// Face Detections
+export const insertFaceDetectionSchema = createInsertSchema(faceDetections)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
+export type InsertFaceDetection = z.infer<typeof insertFaceDetectionSchema>;
+export type FaceDetection = typeof faceDetections.$inferSelect;

@@ -341,7 +341,7 @@ export const insertMeetingEventsSchema = createInsertSchema(meetingEvents)
     updatedAt: true,
   })
   .extend({
-    status: statusSchema.default("confirmed"),
+    status: meetingStatusSchema.default("confirmed"),
     timezone: z.string().default("America/New_York"),
     participants: z.array(z.string()).default([]),
   });

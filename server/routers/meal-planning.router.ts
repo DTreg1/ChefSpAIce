@@ -2,9 +2,9 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { storage } from "../storage";
 import { 
   insertMealPlanSchema, 
-  insertShoppingListItemSchema,
+  insertShoppingItemSchema,
   type MealPlan, 
-  type ShoppingListItem 
+  type ShoppingItem 
 } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
@@ -132,7 +132,7 @@ router.post(
     try {
       const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertShoppingListItemSchema.safeParse(req.body as any);
+      const validation = insertShoppingItemSchema.safeParse(req.body as any);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -198,7 +198,7 @@ router.patch(
       
       // Get current item
       const items = await storage.getShoppingListItems(userId);
-      const item = items.find((i: ShoppingListItem) => i.id === itemId);
+      const item = items.find((i: ShoppingItem) => i.id === itemId);
       
       if (!item) {
         return res.status(404).json({ error: "Shopping list item not found" });
@@ -224,7 +224,7 @@ router.delete("/shopping-list/:id", isAuthenticated, async (req: ExpressRequest<
     
     // Verify item belongs to user
     const items = await storage.getShoppingListItems(userId);
-    const existing = items.find((i: ShoppingListItem) => i.id === itemId);
+    const existing = items.find((i: ShoppingItem) => i.id === itemId);
     
     if (!existing) {
       return res.status(404).json({ error: "Shopping list item not found" });
@@ -245,10 +245,10 @@ router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: Expre
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const items = await storage.getShoppingListItems(userId);
     
-    const checkedItems = items.filter((i: ShoppingListItem) => i.isChecked);
+    const checkedItems = items.filter((i: ShoppingItem) => i.isChecked);
     
     await Promise.all(
-      checkedItems.map((item: ShoppingListItem) =>
+      checkedItems.map((item: ShoppingItem) =>
         storage.deleteShoppingListItem(item.id, userId)
       )
     );

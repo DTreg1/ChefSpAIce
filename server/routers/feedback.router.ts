@@ -1,7 +1,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
-import { insertFeedbackSchema, type Feedback } from "@shared/schema";
+import { insertUserFeedbackSchema, type UserFeedback } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateQuery, paginationQuerySchema } from "../middleware";
@@ -16,7 +16,7 @@ router.post(
     try {
       const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertFeedbackSchema.safeParse(req.body as any);
+      const validation = insertUserFeedbackSchema.safeParse(req.body as any);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -53,11 +53,11 @@ router.get(
       
       // Apply filters
       if (category) {
-        feedbacks = feedbacks.filter((f: Feedback) => f.category === category);
+        feedbacks = feedbacks.filter((f: UserFeedback) => f.category === category);
       }
       
       if (status) {
-        feedbacks = feedbacks.filter((f: Feedback) => f.status === status);
+        feedbacks = feedbacks.filter((f: UserFeedback) => f.status === status);
       }
       
       // Paginate

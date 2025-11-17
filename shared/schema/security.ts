@@ -614,7 +614,7 @@ export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActiv
     detectedAt: true,
   })
   .extend({
-    riskLevel: riskLevelSchema,
+    riskLevel: fraudRiskLevelSchema,
     status: activityStatusSchema.default("pending"),
     autoBlocked: z.boolean().default(false),
   });
@@ -644,7 +644,7 @@ export const insertFraudDetectionResultSchema = createInsertSchema(fraudDetectio
   .extend({
     analysisType: analysisTypeSchema,
     overallRiskScore: z.number().min(0).max(1),
-    riskLevel: riskLevelSchema,
+    riskLevel: fraudRiskLevelSchema,
     confidence: z.number().min(0).max(1),
     modelVersion: z.string().default("v1.0"),
   });
