@@ -115,9 +115,14 @@ export const notificationScores = pgTable("notification_scores", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   notificationType: text("notification_type").notNull(),
   score: real("score").notNull(), // 0-1 relevance score
+  relevanceScore: real("relevance_score"), // Alias for score for compatibility
   factors: jsonb("factors").$type<Record<string, number>>(), // Individual scoring factors
   confidence: real("confidence"), // Model confidence 0-1
   modelVersion: text("model_version"),
+  urgencyLevel: integer("urgency_level"), // 1-5 urgency scale
+  holdUntil: timestamp("hold_until"), // Delay notification until this time
+  actualSentAt: timestamp("actual_sent_at"), // When notification was actually sent
+  createdAt: timestamp("created_at").defaultNow(), // Alias for calculatedAt
   calculatedAt: timestamp("calculated_at").defaultNow(),
   expiresAt: timestamp("expires_at"), // When score should be recalculated
 }, (table) => [

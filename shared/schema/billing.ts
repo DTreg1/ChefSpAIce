@@ -82,6 +82,7 @@ export const donations = pgTable("donations", {
   recurringInterval: text("recurring_interval"), // 'month', 'year'
   metadata: jsonb("metadata").$type<DonationMetadata>(),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
   completedAt: timestamp("completed_at"),
   refundedAt: timestamp("refunded_at"),
   refundAmount: integer("refund_amount"), // Partial refunds supported

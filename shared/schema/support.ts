@@ -58,6 +58,7 @@ export const userFeedback = pgTable("user_feedback", {
   priority: text("priority"), // 'low', 'medium', 'high', 'urgent'
   sentiment: real("sentiment"), // -1 to 1 sentiment score
   rating: integer("rating"), // 1-5 star rating
+  upvotes: jsonb("upvotes").$type<Array<{ userId: string; createdAt: string }>>().default([]), // Community upvotes
   userEmail: text("user_email"),
   userAgent: text("user_agent"),
   pageUrl: text("page_url"),

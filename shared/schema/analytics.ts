@@ -260,6 +260,7 @@ export const trendAlerts = pgTable("trend_alerts", {
   alertType: text("alert_type").notNull(), // 'threshold_exceeded', 'anomaly', 'prediction'
   alertLevel: text("alert_level").notNull(), // 'info', 'warning', 'critical'
   message: text("message").notNull(),
+  conditions: jsonb("conditions").$type<Record<string, any>>(), // Alert trigger conditions
   isAcknowledged: boolean("is_acknowledged").notNull().default(false),
   acknowledgedBy: varchar("acknowledged_by"),
   acknowledgedAt: timestamp("acknowledged_at"),

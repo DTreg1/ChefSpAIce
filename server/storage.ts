@@ -4466,31 +4466,17 @@ export class DatabaseStorage implements IStorage {
     preferences: Omit<InsertNotificationPreferences, "userId">,
   ): Promise<NotificationPreferences> {
     try {
-      // Ensure quietHours.periods.days is a proper array
-      const normalizedPreferences = {
-        ...preferences,
-        quietHours: preferences.quietHours
-          ? {
-              ...preferences.quietHours,
-              periods: preferences.quietHours.periods?.map((period: any) => ({
-                ...period,
-                days: Array.isArray(period.days) ? [...period.days] : [],
-              })),
-            }
-          : preferences.quietHours,
-      };
-
       const [result] = await db
         .insert(notificationPreferences)
         .values({
-          ...normalizedPreferences,
+          ...preferences,
           userId,
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: notificationPreferences.userId,
           set: {
-            ...normalizedPreferences,
+            ...preferences,
             updatedAt: new Date(),
           },
         })
@@ -7174,7 +7160,7 @@ export class DatabaseStorage implements IStorage {
       const vitals = await db
         .select()
         .from(webVitals)
-        .orderBy(sql`${webVitals.createdAt} DESC`)
+        .orderBy(sql`${webVitals.timestamp} DESC`)
         .limit(limit)
         .offset(offset);
 
@@ -7197,8 +7183,8 @@ export class DatabaseStorage implements IStorage {
       return await db
         .select()
         .from(webVitals)
-        .where(eq(webVitals.name, metricName))
-        .orderBy(sql`${webVitals.createdAt} DESC`)
+        .where(eq(webVitals.metric, metricName))
+        .orderBy(sql`${webVitals.timestamp} DESC`)
         .limit(limit);
     } catch (error) {
       console.error("Error getting web vitals by metric:", error);
@@ -7224,10 +7210,10 @@ export class DatabaseStorage implements IStorage {
 
       const whereClause = metricName
         ? and(
-            eq(webVitals.name, metricName),
-            sql`${webVitals.createdAt} >= ${dateThreshold.toISOString()}`,
+            eq(webVitals.metric, metricName),
+            sql`${webVitals.timestamp} >= ${dateThreshold.toISOString()}`,
           )
-        : sql`${webVitals.createdAt} >= ${dateThreshold.toISOString()}`;
+        : sql`${webVitals.timestamp} >= ${dateThreshold.toISOString()}`;
 
       const stats = await db
         .select({
@@ -7260,7 +7246,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Common Food Items Methods
-  async getOnboardingInventory(): Promise<OnboardingInventory[]> {
+  async getOnboardingInventory(): Promise<OnboardingInventoryItem[]> {
     try {
       return db.select().from(onboardingInventory);
     } catch (error) {
@@ -7271,7 +7257,7 @@ export class DatabaseStorage implements IStorage {
 
   async getOnboardingInventoryByName(
     displayName: string,
-  ): Promise<OnboardingInventory | undefined> {
+  ): Promise<OnboardingInventoryItem | undefined> {
     try {
       const [item] = await db
         .select()
@@ -7286,7 +7272,7 @@ export class DatabaseStorage implements IStorage {
 
   async getOnboardingInventoryByNames(
     displayNames: string[],
-  ): Promise<OnboardingInventory[]> {
+  ): Promise<OnboardingInventoryItem[]> {
     try {
       if (displayNames.length === 0) return [];
       // Use a parameterized query with ARRAY constructor
