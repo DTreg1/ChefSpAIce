@@ -185,12 +185,6 @@ export const routingReasonSchema = z.enum(['manual', 'rule', 'escalation', 'work
 export const availabilitySchema = z.enum(['available', 'busy', 'away', 'offline']);
 
 export const insertUserFeedbackSchema = createInsertSchema(userFeedback)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    respondedAt: true,
-  })
   .extend({
     type: feedbackTypeSchema,
     category: feedbackCategorySchema.optional(),
@@ -204,13 +198,7 @@ export type InsertUserFeedback = z.infer<typeof insertUserFeedbackSchema>;
 export type UserFeedback = typeof userFeedback.$inferSelect;
 
 export const insertTicketSchema = createInsertSchema(tickets)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    resolvedAt: true,
-    closedAt: true,
-  })
+  
   .extend({
     ticketNumber: z.string().regex(/^[A-Z]{3}-\d{6}$/), // Format: ABC-123456
     category: ticketCategorySchema,
@@ -223,12 +211,7 @@ export const insertTicketSchema = createInsertSchema(tickets)
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
 
-export const insertRoutingRuleSchema = createInsertSchema(routingRules)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertRoutingRuleSchema = createInsertSchema()
   .extend({
     ruleOrder: z.number().nonnegative().default(0),
     setPriority: prioritySchema.optional(),
@@ -240,10 +223,6 @@ export type InsertRoutingRule = z.infer<typeof insertRoutingRuleSchema>;
 export type RoutingRule = typeof routingRules.$inferSelect;
 
 export const insertTicketRoutingSchema = createInsertSchema(ticketRouting)
-  .omit({
-    id: true,
-    routedAt: true,
-  })
   .extend({
     routingReason: routingReasonSchema.optional(),
   });
@@ -251,12 +230,7 @@ export const insertTicketRoutingSchema = createInsertSchema(ticketRouting)
 export type InsertTicketRouting = z.infer<typeof insertTicketRoutingSchema>;
 export type TicketRouting = typeof ticketRouting.$inferSelect;
 
-export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertAgentExpertiseSchema = createInsertSchema()
   .extend({
     skillLevel: z.number().min(1).max(10),
     maxConcurrentTickets: z.number().positive().default(10),

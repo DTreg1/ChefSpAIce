@@ -100,12 +100,6 @@ export const recurringIntervalSchema = z.enum(['month', 'year', 'week']);
 export const currencySchema = z.enum(['usd', 'eur', 'gbp', 'cad', 'aud']);
 
 export const insertDonationSchema = createInsertSchema(donations)
-  .omit({
-    id: true,
-    createdAt: true,
-    completedAt: true,
-    refundedAt: true,
-  })
   .extend({
     amount: z.number().min(100).max(1000000), // $1 to $10,000 in cents
     currency: currencySchema.default('usd'),

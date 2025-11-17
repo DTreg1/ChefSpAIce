@@ -176,10 +176,6 @@ export const maintenanceTypeSchema = z.enum(['scheduled', 'emergency', 'preventi
 export const maintenanceResultSchema = z.enum(['success', 'partial', 'failed']);
 
 export const insertApiUsageLogSchema = createInsertSchema(apiUsageLogs)
-  .omit({
-    id: true,
-    timestamp: true,
-  })
   .extend({
     apiName: apiNameSchema,
     method: httpMethodSchema,
@@ -193,10 +189,6 @@ export type InsertApiUsageLog = z.infer<typeof insertApiUsageLogSchema>;
 export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs)
-  .omit({
-    id: true,
-    timestamp: true,
-  })
   .extend({
     activityType: activityTypeSchema,
     resourceType: resourceTypeSchema,
@@ -206,10 +198,6 @@ export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 
 export const insertSystemMetricSchema = createInsertSchema(systemMetrics)
-  .omit({
-    id: true,
-    timestamp: true,
-  })
   .extend({
     metricType: metricTypeSchema,
     value: z.number(),
@@ -219,10 +207,6 @@ export type InsertSystemMetric = z.infer<typeof insertSystemMetricSchema>;
 export type SystemMetric = typeof systemMetrics.$inferSelect;
 
 export const insertMaintenancePredictionSchema = createInsertSchema(maintenancePredictions)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
   .extend({
     risk: riskLevelSchema,
     confidence: z.number().min(0).max(1),
@@ -233,9 +217,6 @@ export type InsertMaintenancePrediction = z.infer<typeof insertMaintenancePredic
 export type MaintenancePrediction = typeof maintenancePredictions.$inferSelect;
 
 export const insertMaintenanceHistorySchema = createInsertSchema(maintenanceHistory)
-  .omit({
-    id: true,
-  })
   .extend({
     maintenanceType: maintenanceTypeSchema,
     result: maintenanceResultSchema.optional(),

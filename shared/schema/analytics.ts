@@ -283,10 +283,8 @@ export const timePeriodSchema = z.enum(['hour', 'day', 'week', 'month', 'quarter
 export const alertLevelSchema = z.enum(['info', 'warning', 'critical', 'emergency']);
 
 export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+
+
   .extend({
     eventCategory: eventCategorySchema,
     eventValue: z.number().optional(),
@@ -296,10 +294,8 @@ export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 
 export const insertUserSessionSchema = createInsertSchema(userSessions)
-  .omit({
-    id: true,
-    startedAt: true,
-  })
+
+
   .extend({
     pageViews: z.number().nonnegative().default(0),
     interactions: z.number().nonnegative().default(0),
@@ -310,10 +306,8 @@ export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
 
 export const insertWebVitalSchema = createInsertSchema(webVitals)
-  .omit({
-    id: true,
-    timestamp: true,
-  })
+
+
   .extend({
     metric: metricSchema,
     rating: ratingSchema.optional(),
@@ -324,10 +318,8 @@ export type InsertWebVital = z.infer<typeof insertWebVitalSchema>;
 export type WebVital = typeof webVitals.$inferSelect;
 
 export const insertSearchLogSchema = createInsertSchema(searchLogs)
-  .omit({
-    id: true,
-    timestamp: true,
-  })
+
+
   .extend({
     resultsCount: z.number().nonnegative(),
     clickedResultRank: z.number().positive().optional(),
@@ -338,10 +330,8 @@ export type InsertSearchLog = z.infer<typeof insertSearchLogSchema>;
 export type SearchLog = typeof searchLogs.$inferSelect;
 
 export const insertAnalyticsInsightSchema = createInsertSchema(analyticsInsights)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+
+
   .extend({
     insightType: insightTypeSchema,
     severity: severitySchema.optional(),
@@ -352,10 +342,8 @@ export type InsertAnalyticsInsight = z.infer<typeof insertAnalyticsInsightSchema
 export type AnalyticsInsight = typeof analyticsInsights.$inferSelect;
 
 export const insertUserPredictionSchema = createInsertSchema(userPredictions)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+
+
   .extend({
     confidence: z.number().min(0).max(1),
   });
@@ -364,10 +352,6 @@ export type InsertUserPrediction = z.infer<typeof insertUserPredictionSchema>;
 export type UserPrediction = typeof userPredictions.$inferSelect;
 
 export const insertTrendSchema = createInsertSchema(trends)
-  .omit({
-    id: true,
-    detectedAt: true,
-  })
   .extend({
     trendType: trendTypeSchema,
     timePeriod: timePeriodSchema,
@@ -378,10 +362,8 @@ export type InsertTrend = z.infer<typeof insertTrendSchema>;
 export type Trend = typeof trends.$inferSelect;
 
 export const insertQueryLogSchema = createInsertSchema(queryLogs)
-  .omit({
-    id: true,
-    timestamp: true,
-  })
+
+
   .extend({
     executionTime: z.number().positive(),
     rowsAffected: z.number().nonnegative().optional(),
@@ -390,20 +372,12 @@ export const insertQueryLogSchema = createInsertSchema(queryLogs)
 export type InsertQueryLog = z.infer<typeof insertQueryLogSchema>;
 export type QueryLog = typeof queryLogs.$inferSelect;
 
-export const insertInsightFeedbackSchema = createInsertSchema(insightFeedback)
-  .omit({
-    id: true,
-    createdAt: true,
-  });
+export const insertInsightFeedbackSchema = createInsertSchema(insightFeedback);
 
 export type InsertInsightFeedback = z.infer<typeof insertInsightFeedbackSchema>;
 export type InsightFeedback = typeof insightFeedback.$inferSelect;
 
 export const insertPredictionAccuracySchema = createInsertSchema(predictionAccuracy)
-  .omit({
-    id: true,
-    evaluatedAt: true,
-  })
   .extend({
     isCorrect: z.boolean().optional(),
     accuracyScore: z.number().min(0).max(1).optional(),
@@ -413,10 +387,8 @@ export type InsertPredictionAccuracy = z.infer<typeof insertPredictionAccuracySc
 export type PredictionAccuracy = typeof predictionAccuracy.$inferSelect;
 
 export const insertTrendAlertSchema = createInsertSchema(trendAlerts)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+
+
   .extend({
     alertType: z.enum(['threshold_exceeded', 'anomaly', 'prediction']),
     alertLevel: alertLevelSchema,

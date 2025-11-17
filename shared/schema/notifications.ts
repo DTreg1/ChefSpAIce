@@ -169,11 +169,6 @@ export const notificationChannelSchema = z.enum(['push', 'email', 'sms', 'in-app
 export const notificationFeedbackTypeSchema = z.enum(['useful', 'not_useful', 'wrong_time', 'too_frequent', 'irrelevant']);
 
 export const insertPushTokenSchema = createInsertSchema(pushTokens)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
   .extend({
     deviceInfo: pushTokenDeviceInfoSchema.optional(),
     platform: platformSchema,
@@ -183,13 +178,6 @@ export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 export type PushToken = typeof pushTokens.$inferSelect;
 
 export const insertNotificationHistorySchema = createInsertSchema(notificationHistory)
-  .omit({
-    id: true,
-    sentAt: true,
-    deliveredAt: true,
-    openedAt: true,
-    dismissedAt: true,
-  })
   .extend({
     type: notificationTypeSchema,
     status: notificationStatusSchema.default('sent'),
@@ -200,11 +188,6 @@ export type InsertNotificationHistory = z.infer<typeof insertNotificationHistory
 export type NotificationHistoryItem = typeof notificationHistory.$inferSelect;
 
 export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreferences)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
   .extend({
     notificationType: notificationTypeSchema,
     frequency: notificationFrequencySchema.optional(),
@@ -218,10 +201,6 @@ export type InsertNotificationPreference = z.infer<typeof insertNotificationPref
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 
 export const insertNotificationScoreSchema = createInsertSchema(notificationScores)
-  .omit({
-    id: true,
-    calculatedAt: true,
-  })
   .extend({
     notificationType: notificationTypeSchema,
     score: z.number().min(0).max(1),
@@ -232,10 +211,6 @@ export type InsertNotificationScore = z.infer<typeof insertNotificationScoreSche
 export type NotificationScore = typeof notificationScores.$inferSelect;
 
 export const insertNotificationFeedbackSchema = createInsertSchema(notificationFeedback)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
   .extend({
     feedbackType: notificationFeedbackTypeSchema,
     rating: z.number().min(1).max(5).optional(),

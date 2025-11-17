@@ -295,22 +295,13 @@ export const userAppliances = pgTable("user_appliances", {
 
 // ==================== Zod Schemas & Type Exports ====================
 
-export const insertUserStorageSchema = createInsertSchema(userStorage).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertUserStorageSchema = createInsertSchema(userStorage);
 
 export type InsertUserStorage = z.infer<typeof insertUserStorageSchema>;
 export type UserStorage = typeof userStorage.$inferSelect;
 export type StorageLocation = UserStorage; // Backward compatibility
 
 export const insertUserInventorySchema = createInsertSchema(userInventory)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
   .extend({
     usdaData: usdaFoodDataSchema.optional(),
     barcodeData: barcodeDataSchema.optional(),
@@ -327,11 +318,6 @@ export const mealTypeSchema = z.enum(['breakfast', 'lunch', 'dinner', 'snack']);
 export const recipeSourceSchema = z.enum(['manual', 'ai_generated', 'imported']);
 
 export const insertRecipeSchema = createInsertSchema(userRecipes)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
   .extend({
     nutrition: nutritionInfoSchema.optional(),
     tags: z.array(z.string()).optional(),
@@ -346,11 +332,7 @@ export const insertRecipeSchema = createInsertSchema(userRecipes)
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Recipe = typeof userRecipes.$inferSelect;
 
-export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertMealPlanSchema = createInsertSchema(mealPlans).extend({
   mealType: mealTypeSchema,
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   servings: z.number().positive().default(1),
@@ -359,11 +341,7 @@ export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
 export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
 export type MealPlan = typeof mealPlans.$inferSelect;
 
-export const insertShoppingItemSchema = createInsertSchema(userShopping).omit({
-  id: true,
-  createdAt: true,
-  purchasedAt: true,
-}).extend({
+export const insertShoppingItemSchema = createInsertSchema(userShopping).extend({
   price: z.number().positive().optional(),
   addedFrom: z.enum(['manual', 'recipe', 'inventory']).optional(),
 });
@@ -371,12 +349,7 @@ export const insertShoppingItemSchema = createInsertSchema(userShopping).omit({
 export type InsertShoppingItem = z.infer<typeof insertShoppingItemSchema>;
 export type ShoppingItem = typeof userShopping.$inferSelect;
 
-export const insertUserApplianceSchema = createInsertSchema(userAppliances)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  });
+export const insertUserApplianceSchema = createInsertSchema(userAppliances);
 
 export type InsertUserAppliance = z.infer<typeof insertUserApplianceSchema>;
 export type UserAppliance = typeof userAppliances.$inferSelect;

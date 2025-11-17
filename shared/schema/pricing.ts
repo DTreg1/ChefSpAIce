@@ -180,12 +180,7 @@ export const updateFrequencySchema = z.enum(['hourly', 'daily', 'weekly', 'month
 export const competitivePositionSchema = z.enum(['below_market', 'at_market', 'above_market']);
 
 // Pricing Rules
-export const insertPricingRulesSchema = createInsertSchema(pricingRules)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertPricingRulesSchema = createInsertSchema()
   .extend({
     basePrice: z.number().positive(),
     minPrice: z.number().nonnegative(),
@@ -207,7 +202,6 @@ export const insertPricingRulesSchema = createInsertSchema(pricingRules)
         low: z.number(),
       }).optional(),
     }).default({}),
-  })
   .refine(data => data.minPrice <= data.basePrice && data.basePrice <= data.maxPrice, {
     message: "Price range must satisfy: minPrice <= basePrice <= maxPrice",
   });
@@ -217,10 +211,6 @@ export type PricingRules = typeof pricingRules.$inferSelect;
 
 // Price History
 export const insertPriceHistorySchema = createInsertSchema(priceHistory)
-  .omit({
-    id: true,
-    changedAt: true,
-  })
   .extend({
     price: z.number().positive(),
     previousPrice: z.number().positive().optional(),
@@ -234,11 +224,7 @@ export type InsertPriceHistory = z.infer<typeof insertPriceHistorySchema>;
 export type PriceHistory = typeof priceHistory.$inferSelect;
 
 // Pricing Performance
-export const insertPricingPerformanceSchema = createInsertSchema(pricingPerformance)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+export const insertPricingPerformanceSchema = createInsertSchema()
   .extend({
     pricePoint: z.number().positive(),
     conversionRate: z.number().min(0).max(1).optional(),

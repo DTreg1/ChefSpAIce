@@ -544,12 +544,7 @@ export const analysisTypeSchema = z.enum(['account_creation', 'transaction', 'co
 export const privacyModeSchema = z.enum(['strict', 'balanced', 'minimal']);
 
 // Moderation Logs
-export const insertModerationLogSchema = createInsertSchema(moderationLogs)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertModerationLogSchema = createInsertSchema()
   .extend({
     actionTaken: actionTakenSchema,
     modelUsed: modelUsedSchema,
@@ -562,12 +557,6 @@ export type ModerationLog = typeof moderationLogs.$inferSelect;
 
 // Blocked Content
 export const insertBlockedContentSchema = createInsertSchema(blockedContent)
-  .omit({
-    id: true,
-    timestamp: true,
-    createdAt: true,
-    updatedAt: true,
-  })
   .extend({
     status: blockedStatusSchema.default('blocked'),
     autoBlocked: z.boolean().default(true),
@@ -577,12 +566,7 @@ export type InsertBlockedContent = z.infer<typeof insertBlockedContentSchema>;
 export type BlockedContent = typeof blockedContent.$inferSelect;
 
 // Moderation Appeals
-export const insertModerationAppealSchema = createInsertSchema(moderationAppeals)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertModerationAppealSchema = createInsertSchema()
   .extend({
     status: appealStatusSchema.default('pending'),
     appealType: appealTypeSchema.optional(),
@@ -595,10 +579,6 @@ export type ModerationAppeal = typeof moderationAppeals.$inferSelect;
 
 // Fraud Scores
 export const insertFraudScoreSchema = createInsertSchema(fraudScores)
-  .omit({
-    id: true,
-    timestamp: true,
-  })
   .extend({
     score: z.number().min(0).max(1),
     modelVersion: z.string().default("v1.0"),
@@ -609,10 +589,6 @@ export type FraudScore = typeof fraudScores.$inferSelect;
 
 // Suspicious Activities
 export const insertSuspiciousActivitySchema = createInsertSchema(suspiciousActivities)
-  .omit({
-    id: true,
-    detectedAt: true,
-  })
   .extend({
     riskLevel: fraudRiskLevelSchema,
     status: activityStatusSchema.default("pending"),
@@ -624,10 +600,6 @@ export type SuspiciousActivity = typeof suspiciousActivities.$inferSelect;
 
 // Fraud Reviews
 export const insertFraudReviewSchema = createInsertSchema(fraudReviews)
-  .omit({
-    id: true,
-    reviewedAt: true,
-  })
   .extend({
     decision: fraudDecisionSchema,
   });
@@ -637,10 +609,6 @@ export type FraudReview = typeof fraudReviews.$inferSelect;
 
 // Fraud Detection Results
 export const insertFraudDetectionResultSchema = createInsertSchema(fraudDetectionResults)
-  .omit({
-    id: true,
-    analyzedAt: true,
-  })
   .extend({
     analysisType: analysisTypeSchema,
     overallRiskScore: z.number().min(0).max(1),
@@ -653,12 +621,7 @@ export type InsertFraudDetectionResult = z.infer<typeof insertFraudDetectionResu
 export type FraudDetectionResult = typeof fraudDetectionResults.$inferSelect;
 
 // Privacy Settings
-export const insertPrivacySettingsSchema = createInsertSchema(privacySettings)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertPrivacySettingsSchema = createInsertSchema()
   .extend({
     privacyMode: privacyModeSchema.default("balanced"),
     blurIntensity: z.number().min(0).max(10).default(5),

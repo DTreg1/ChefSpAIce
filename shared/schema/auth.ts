@@ -187,11 +187,6 @@ export const authProviders = pgTable("auth_providers", {
 // ==================== Zod Schemas & Type Exports ====================
 
 export const insertAuthProviderSchema = createInsertSchema(authProviders)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
   .extend({
     metadata: z.record(z.any()).optional(),
     // Add stricter validation for provider field
@@ -206,11 +201,6 @@ export const cookingSkillLevelSchema = z.enum(['beginner', 'intermediate', 'adva
 export const preferredUnitsSchema = z.enum(['imperial', 'metric']);
 
 export const insertUserSchema = createInsertSchema(users)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
   .extend({
     // Add stricter validation for user fields
     email: z.string().email().optional(),

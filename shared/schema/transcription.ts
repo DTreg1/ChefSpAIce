@@ -122,12 +122,7 @@ export const transcriptionStatusSchema = z.enum(["processing", "completed", "fai
 export const editTypeSchema = z.enum(["spelling", "punctuation", "speaker", "content", "other"]);
 
 // Transcriptions
-export const insertTranscriptionSchema = createInsertSchema(transcriptions)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertTranscriptionSchema = createInsertSchema()
   .extend({
     status: transcriptionStatusSchema.default("processing"),
     duration: z.number().positive(),
@@ -146,12 +141,7 @@ export type InsertTranscription = z.infer<typeof insertTranscriptionSchema>;
 export type Transcription = typeof transcriptions.$inferSelect;
 
 // Transcript Edits
-export const insertTranscriptEditSchema = createInsertSchema(transcriptEdits)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertTranscriptEditSchema = createInsertSchema()
   .extend({
     editType: editTypeSchema.default("other"),
     confidence: z.number().min(0).max(100).default(100),

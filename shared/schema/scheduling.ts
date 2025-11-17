@@ -271,12 +271,7 @@ export const importanceSchema = z.enum(["low", "medium", "high"]);
 export const timeOfDaySchema = z.enum(["morning", "afternoon", "evening"]);
 
 // Scheduling Preferences
-export const insertSchedulingPreferencesSchema = createInsertSchema(schedulingPreferences)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertSchedulingPreferencesSchema = createInsertSchema()
   .extend({
     timezone: z.string().default("America/New_York"),
     bufferTime: z.number().min(0).max(120).default(15),
@@ -295,11 +290,7 @@ export type InsertSchedulingPreferences = z.infer<typeof insertSchedulingPrefere
 export type SchedulingPreferences = typeof schedulingPreferences.$inferSelect;
 
 // Meeting Suggestions
-export const insertMeetingSuggestionsSchema = createInsertSchema(meetingSuggestions)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+export const insertMeetingSuggestionsSchema = createInsertSchema()
   .extend({
     constraints: z.object({
       duration: z.number().positive(),
@@ -319,12 +310,6 @@ export type MeetingSuggestions = typeof meetingSuggestions.$inferSelect;
 
 // Scheduling Patterns
 export const insertSchedulingPatternsSchema = createInsertSchema(schedulingPatterns)
-  .omit({
-    id: true,
-    lastAnalyzed: true,
-    createdAt: true,
-    updatedAt: true,
-  })
   .extend({
     patternType: patternTypeSchema,
     accuracyScore: z.number().min(0).max(100).default(0),
@@ -334,12 +319,7 @@ export type InsertSchedulingPatterns = z.infer<typeof insertSchedulingPatternsSc
 export type SchedulingPatterns = typeof schedulingPatterns.$inferSelect;
 
 // Meeting Events
-export const insertMeetingEventsSchema = createInsertSchema(meetingEvents)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertMeetingEventsSchema = createInsertSchema()
   .extend({
     status: meetingStatusSchema.default("confirmed"),
     timezone: z.string().default("America/New_York"),

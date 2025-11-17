@@ -286,23 +286,13 @@ export const faceDetections = pgTable("face_detections", {
 // ==================== Type Definitions ====================
 
 // Image Metadata
-export const insertImageMetadataSchema = createInsertSchema(imageMetadata)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  });
+export const insertImageMetadataSchema = createInsertSchema();
 
 export type InsertImageMetadata = z.infer<typeof insertImageMetadataSchema>;
 export type ImageMetadata = typeof imageMetadata.$inferSelect;
 
 // Alt Text Quality
-export const insertAltTextQualitySchema = createInsertSchema(altTextQuality)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  });
+export const insertAltTextQualitySchema = createInsertSchema();
 
 export type InsertAltTextQuality = z.infer<typeof insertAltTextQualitySchema>;
 export type AltTextQuality = typeof altTextQuality.$inferSelect;
@@ -310,11 +300,7 @@ export type AltTextQuality = typeof altTextQuality.$inferSelect;
 // Image Processing
 export const imageProcessingStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed', 'cancelled']);
 
-export const insertImageProcessingSchema = createInsertSchema(imageProcessing)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+export const insertImageProcessingSchema = createInsertSchema()
   .extend({
     status: imageProcessingStatusSchema,
   });
@@ -323,13 +309,7 @@ export type InsertImageProcessing = z.infer<typeof insertImageProcessingSchema>;
 export type ImageProcessing = typeof imageProcessing.$inferSelect;
 
 // Image Presets
-export const insertImagePresetSchema = createInsertSchema(imagePresets)
-  .omit({
-    id: true,
-    usageCount: true,
-    createdAt: true,
-    updatedAt: true,
-  });
+export const insertImagePresetSchema = createInsertSchema();
 
 export type InsertImagePreset = z.infer<typeof insertImagePresetSchema>;
 export type ImagePreset = typeof imagePresets.$inferSelect;
@@ -337,12 +317,7 @@ export type ImagePreset = typeof imagePresets.$inferSelect;
 // OCR Results
 export const ocrEngineSchema = z.enum(['tesseract', 'google-vision', 'aws-textract', 'azure-ocr']);
 
-export const insertOcrResultSchema = createInsertSchema(ocrResults)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertOcrResultSchema = createInsertSchema()
   .extend({
     engine: ocrEngineSchema,
   });
@@ -351,22 +326,13 @@ export type InsertOcrResult = z.infer<typeof insertOcrResultSchema>;
 export type OcrResult = typeof ocrResults.$inferSelect;
 
 // OCR Corrections
-export const insertOcrCorrectionSchema = createInsertSchema(ocrCorrections)
-  .omit({
-    id: true,
-    createdAt: true,
-  });
+export const insertOcrCorrectionSchema = createInsertSchema();
 
 export type InsertOcrCorrection = z.infer<typeof insertOcrCorrectionSchema>;
 export type OcrCorrection = typeof ocrCorrections.$inferSelect;
 
 // Face Detections
-export const insertFaceDetectionSchema = createInsertSchema(faceDetections)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  });
+export const insertFaceDetectionSchema = createInsertSchema();
 
 export type InsertFaceDetection = z.infer<typeof insertFaceDetectionSchema>;
 export type FaceDetection = typeof faceDetections.$inferSelect;

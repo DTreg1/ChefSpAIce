@@ -446,10 +446,6 @@ export const userResolutionSchema = z.enum(["accepted_suggestion", "manual_corre
 
 // Auto-Save Drafts
 export const insertAutoSaveDraftSchema = createInsertSchema(autoSaveDrafts)
-  .omit({
-    id: true,
-    savedAt: true,
-  })
   .extend({
     documentType: documentTypeSchema.optional(),
     version: z.number().min(1).default(1),
@@ -460,10 +456,6 @@ export type AutoSaveDraft = typeof autoSaveDrafts.$inferSelect;
 
 // Save Patterns
 export const insertSavePatternSchema = createInsertSchema(savePatterns)
-  .omit({
-    id: true,
-    lastUpdated: true,
-  })
   .extend({
     avgPauseDuration: z.number().positive().default(2000),
     typingSpeed: z.number().positive().default(40),
@@ -475,11 +467,6 @@ export type SavePattern = typeof savePatterns.$inferSelect;
 
 // Form Completions
 export const insertFormCompletionSchema = createInsertSchema(formCompletions)
-  .omit({
-    id: true,
-    lastUpdated: true,
-    createdAt: true,
-  })
   .extend({
     globalUsageCount: z.number().nonnegative().default(0),
   });
@@ -489,21 +476,15 @@ export type FormCompletion = typeof formCompletions.$inferSelect;
 
 // User Form History
 export const insertUserFormHistorySchema = createInsertSchema(userFormHistory)
-  .omit({
-    id: true,
+  
     lastUpdated: true,
-    createdAt: true,
   });
 
 export type InsertUserFormHistory = z.infer<typeof insertUserFormHistorySchema>;
 export type UserFormHistory = typeof userFormHistory.$inferSelect;
 
 // Completion Feedback
-export const insertCompletionFeedbackSchema = createInsertSchema(completionFeedback)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+export const insertCompletionFeedbackSchema = createInsertSchema()
   .extend({
     wasSelected: z.boolean(),
     confidence: z.number().min(0).max(1).optional(),
@@ -513,12 +494,7 @@ export type InsertCompletionFeedback = z.infer<typeof insertCompletionFeedbackSc
 export type CompletionFeedback = typeof completionFeedback.$inferSelect;
 
 // Validation Rules
-export const insertValidationRuleSchema = createInsertSchema(validationRules)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertValidationRuleSchema = createInsertSchema()
   .extend({
     priority: z.number().default(0),
     isActive: z.boolean().default(true),
@@ -528,11 +504,7 @@ export type InsertValidationRule = z.infer<typeof insertValidationRuleSchema>;
 export type ValidationRule = typeof validationRules.$inferSelect;
 
 // Validation Errors
-export const insertValidationErrorSchema = createInsertSchema(validationErrors)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+export const insertValidationErrorSchema = createInsertSchema()
   .extend({
     errorType: errorTypeSchema,
     userResolution: userResolutionSchema.optional(),

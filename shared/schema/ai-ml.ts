@@ -284,9 +284,7 @@ export const translationQualitySchema = z.enum(['fast', 'balanced', 'high']);
 // Note: Legacy chat schemas removed (conversations, messages, conversationContext)
 
 // Active AI/ML feature schemas
-export const insertVoiceCommandSchema = createInsertSchema(voiceCommands).omit({
-  id: true,
-  createdAt: true,
+export const insertVoiceCommandSchema = createInsertSchema(voiceCommands)
 }).extend({
   confidence: z.number().min(0).max(1).optional(),
   processingTime: z.number().positive().optional(),
@@ -295,10 +293,7 @@ export const insertVoiceCommandSchema = createInsertSchema(voiceCommands).omit({
 export type InsertVoiceCommand = z.infer<typeof insertVoiceCommandSchema>;
 export type VoiceCommand = typeof voiceCommands.$inferSelect;
 
-export const insertDraftTemplateSchema = createInsertSchema(draftTemplates).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertDraftTemplateSchema = createInsertSchema(draftTemplates)
 }).extend({
   category: templateCategorySchema,
   tone: toneSchema.optional(),
@@ -309,10 +304,7 @@ export const insertDraftTemplateSchema = createInsertSchema(draftTemplates).omit
 export type InsertDraftTemplate = z.infer<typeof insertDraftTemplateSchema>;
 export type DraftTemplate = typeof draftTemplates.$inferSelect;
 
-export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts)
 }).extend({
   rating: z.number().min(1).max(5).optional(),
   tokensUsed: z.number().nonnegative().optional(),
@@ -322,8 +314,7 @@ export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts).om
 export type InsertGeneratedDraft = z.infer<typeof insertGeneratedDraftSchema>;
 export type GeneratedDraft = typeof generatedDrafts.$inferSelect;
 
-export const insertWritingSessionSchema = createInsertSchema(writingSessions).omit({
-  id: true,
+export const insertWritingSessionSchema = createInsertSchema(writingSessions)
   startedAt: true,
 }).extend({
   sessionType: sessionTypeSchema,
@@ -335,9 +326,7 @@ export const insertWritingSessionSchema = createInsertSchema(writingSessions).om
 export type InsertWritingSession = z.infer<typeof insertWritingSessionSchema>;
 export type WritingSession = typeof writingSessions.$inferSelect;
 
-export const insertWritingSuggestionSchema = createInsertSchema(writingSuggestions).omit({
-  id: true,
-  createdAt: true,
+export const insertWritingSuggestionSchema = createInsertSchema(writingSuggestions)
 }).extend({
   suggestionType: suggestionTypeSchema,
   confidence: z.number().min(0).max(1).optional(),
@@ -350,9 +339,7 @@ export const insertWritingSuggestionSchema = createInsertSchema(writingSuggestio
 export type InsertWritingSuggestion = z.infer<typeof insertWritingSuggestionSchema>;
 export type WritingSuggestion = typeof writingSuggestions.$inferSelect;
 
-export const insertSummarySchema = createInsertSchema(summaries).omit({
-  id: true,
-  createdAt: true,
+export const insertSummarySchema = createInsertSchema(summaries)
 }).extend({
   summaryType: summaryTypeSchema.optional(),
   keyPoints: z.array(z.string()).optional(),
@@ -364,9 +351,7 @@ export const insertSummarySchema = createInsertSchema(summaries).omit({
 export type InsertSummary = z.infer<typeof insertSummarySchema>;
 export type Summary = typeof summaries.$inferSelect;
 
-export const insertTranslationSchema = createInsertSchema(translations).omit({
-  id: true,
-  createdAt: true,
+export const insertTranslationSchema = createInsertSchema(translations)
 }).extend({
   confidence: z.number().min(0).max(1).optional(),
   alternativeTranslations: z.array(z.string()).optional(),

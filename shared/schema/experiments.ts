@@ -184,12 +184,7 @@ export const refreshIntervalSchema = z.enum(['hourly', 'daily', 'weekly', 'month
 export const cohortInsightTypeSchema = z.enum(['retention', 'engagement', 'conversion', 'churn', 'growth']);
 export const impactLevelSchema = z.enum(['low', 'medium', 'high', 'critical']);
 
-export const insertAbTestSchema = createInsertSchema(abTests)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
+export const insertAbTestSchema = createInsertSchema()
   .extend({
     status: testStatusSchema.default('draft'),
     targetSampleSize: z.number().positive().optional(),
@@ -200,10 +195,6 @@ export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
 export type AbTest = typeof abTests.$inferSelect;
 
 export const insertAbTestResultSchema = createInsertSchema(abTestResults)
-  .omit({
-    id: true,
-    exposedAt: true,
-  })
   .extend({
     converted: z.boolean().default(false),
     conversionValue: z.number().optional(),
@@ -212,11 +203,7 @@ export const insertAbTestResultSchema = createInsertSchema(abTestResults)
 export type InsertAbTestResult = z.infer<typeof insertAbTestResultSchema>;
 export type AbTestResult = typeof abTestResults.$inferSelect;
 
-export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
-  .omit({
-    id: true,
-    calculatedAt: true,
-  })
+export const insertAbTestInsightSchema = createInsertSchema()
   .extend({
     sampleSize: z.number().positive(),
     conversionRate: z.number().min(0).max(1),
@@ -227,13 +214,7 @@ export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
 export type InsertAbTestInsight = z.infer<typeof insertAbTestInsightSchema>;
 export type AbTestInsight = typeof abTestInsights.$inferSelect;
 
-export const insertCohortSchema = createInsertSchema(cohorts)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    lastRefreshed: true,
-  })
+export const insertCohortSchema = createInsertSchema()
   .extend({
     refreshInterval: refreshIntervalSchema.optional(),
     userCount: z.number().nonnegative().default(0),
@@ -242,11 +223,7 @@ export const insertCohortSchema = createInsertSchema(cohorts)
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type Cohort = typeof cohorts.$inferSelect;
 
-export const insertCohortMetricSchema = createInsertSchema(cohortMetrics)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+export const insertCohortMetricSchema = createInsertSchema()
   .extend({
     value: z.number(),
     previousValue: z.number().optional(),
@@ -256,11 +233,7 @@ export const insertCohortMetricSchema = createInsertSchema(cohortMetrics)
 export type InsertCohortMetric = z.infer<typeof insertCohortMetricSchema>;
 export type CohortMetric = typeof cohortMetrics.$inferSelect;
 
-export const insertCohortInsightSchema = createInsertSchema(cohortInsights)
-  .omit({
-    id: true,
-    createdAt: true,
-  })
+export const insertCohortInsightSchema = createInsertSchema()
   .extend({
     insightType: cohortInsightTypeSchema,
     confidence: z.number().min(0).max(1).optional(),
