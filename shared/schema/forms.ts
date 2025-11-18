@@ -475,16 +475,13 @@ export type InsertFormCompletion = z.infer<typeof insertFormCompletionSchema>;
 export type FormCompletion = typeof formCompletions.$inferSelect;
 
 // User Form History
-export const insertUserFormHistorySchema = createInsertSchema(userFormHistory)
-  
-    lastUpdated: true,
-  });
+export const insertUserFormHistorySchema = createInsertSchema(userFormHistory);
 
 export type InsertUserFormHistory = z.infer<typeof insertUserFormHistorySchema>;
 export type UserFormHistory = typeof userFormHistory.$inferSelect;
 
 // Completion Feedback
-export const insertCompletionFeedbackSchema = createInsertSchema()
+export const insertCompletionFeedbackSchema = createInsertSchema(completionFeedback)
   .extend({
     wasSelected: z.boolean(),
     confidence: z.number().min(0).max(1).optional(),
@@ -494,7 +491,7 @@ export type InsertCompletionFeedback = z.infer<typeof insertCompletionFeedbackSc
 export type CompletionFeedback = typeof completionFeedback.$inferSelect;
 
 // Validation Rules
-export const insertValidationRuleSchema = createInsertSchema()
+export const insertValidationRuleSchema = createInsertSchema(validationRules)
   .extend({
     priority: z.number().default(0),
     isActive: z.boolean().default(true),
@@ -504,7 +501,7 @@ export type InsertValidationRule = z.infer<typeof insertValidationRuleSchema>;
 export type ValidationRule = typeof validationRules.$inferSelect;
 
 // Validation Errors
-export const insertValidationErrorSchema = createInsertSchema()
+export const insertValidationErrorSchema = createInsertSchema(validationErrors)
   .extend({
     errorType: errorTypeSchema,
     userResolution: userResolutionSchema.optional(),
