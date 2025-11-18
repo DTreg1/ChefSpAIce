@@ -544,7 +544,7 @@ export const analysisTypeSchema = z.enum(['account_creation', 'transaction', 'co
 export const privacyModeSchema = z.enum(['strict', 'balanced', 'minimal']);
 
 // Moderation Logs
-export const insertModerationLogSchema = createInsertSchema()
+export const insertModerationLogSchema = createInsertSchema(moderationLogs)
   .extend({
     actionTaken: actionTakenSchema,
     modelUsed: modelUsedSchema,
@@ -566,7 +566,7 @@ export type InsertBlockedContent = z.infer<typeof insertBlockedContentSchema>;
 export type BlockedContent = typeof blockedContent.$inferSelect;
 
 // Moderation Appeals
-export const insertModerationAppealSchema = createInsertSchema()
+export const insertModerationAppealSchema = createInsertSchema(moderationAppeals)
   .extend({
     status: appealStatusSchema.default('pending'),
     appealType: appealTypeSchema.optional(),
@@ -621,7 +621,7 @@ export type InsertFraudDetectionResult = z.infer<typeof insertFraudDetectionResu
 export type FraudDetectionResult = typeof fraudDetectionResults.$inferSelect;
 
 // Privacy Settings
-export const insertPrivacySettingsSchema = createInsertSchema()
+export const insertPrivacySettingsSchema = createInsertSchema(privacySettings)
   .extend({
     privacyMode: privacyModeSchema.default("balanced"),
     blurIntensity: z.number().min(0).max(10).default(5),
