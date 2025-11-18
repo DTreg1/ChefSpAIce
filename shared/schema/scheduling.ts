@@ -271,7 +271,7 @@ export const importanceSchema = z.enum(["low", "medium", "high"]);
 export const timeOfDaySchema = z.enum(["morning", "afternoon", "evening"]);
 
 // Scheduling Preferences
-export const insertSchedulingPreferencesSchema = createInsertSchema()
+export const insertSchedulingPreferencesSchema = createInsertSchema(schedulingPreferences)
   .extend({
     timezone: z.string().default("America/New_York"),
     bufferTime: z.number().min(0).max(120).default(15),
@@ -290,7 +290,7 @@ export type InsertSchedulingPreferences = z.infer<typeof insertSchedulingPrefere
 export type SchedulingPreferences = typeof schedulingPreferences.$inferSelect;
 
 // Meeting Suggestions
-export const insertMeetingSuggestionsSchema = createInsertSchema()
+export const insertMeetingSuggestionsSchema = createInsertSchema(meetingSuggestions)
   .extend({
     constraints: z.object({
       duration: z.number().positive(),
@@ -319,7 +319,7 @@ export type InsertSchedulingPatterns = z.infer<typeof insertSchedulingPatternsSc
 export type SchedulingPatterns = typeof schedulingPatterns.$inferSelect;
 
 // Meeting Events
-export const insertMeetingEventsSchema = createInsertSchema()
+export const insertMeetingEventsSchema = createInsertSchema(meetingEvents)
   .extend({
     status: meetingStatusSchema.default("confirmed"),
     timezone: z.string().default("America/New_York"),
