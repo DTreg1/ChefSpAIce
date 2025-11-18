@@ -184,7 +184,7 @@ export const refreshIntervalSchema = z.enum(['hourly', 'daily', 'weekly', 'month
 export const cohortInsightTypeSchema = z.enum(['retention', 'engagement', 'conversion', 'churn', 'growth']);
 export const impactLevelSchema = z.enum(['low', 'medium', 'high', 'critical']);
 
-export const insertAbTestSchema = createInsertSchema()
+export const insertAbTestSchema = createInsertSchema(abTests)
   .extend({
     status: testStatusSchema.default('draft'),
     targetSampleSize: z.number().positive().optional(),
@@ -203,7 +203,7 @@ export const insertAbTestResultSchema = createInsertSchema(abTestResults)
 export type InsertAbTestResult = z.infer<typeof insertAbTestResultSchema>;
 export type AbTestResult = typeof abTestResults.$inferSelect;
 
-export const insertAbTestInsightSchema = createInsertSchema()
+export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
   .extend({
     sampleSize: z.number().positive(),
     conversionRate: z.number().min(0).max(1),
@@ -214,7 +214,7 @@ export const insertAbTestInsightSchema = createInsertSchema()
 export type InsertAbTestInsight = z.infer<typeof insertAbTestInsightSchema>;
 export type AbTestInsight = typeof abTestInsights.$inferSelect;
 
-export const insertCohortSchema = createInsertSchema()
+export const insertCohortSchema = createInsertSchema(cohorts)
   .extend({
     refreshInterval: refreshIntervalSchema.optional(),
     userCount: z.number().nonnegative().default(0),
@@ -223,7 +223,7 @@ export const insertCohortSchema = createInsertSchema()
 export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type Cohort = typeof cohorts.$inferSelect;
 
-export const insertCohortMetricSchema = createInsertSchema()
+export const insertCohortMetricSchema = createInsertSchema(cohortMetrics)
   .extend({
     value: z.number(),
     previousValue: z.number().optional(),
@@ -233,7 +233,7 @@ export const insertCohortMetricSchema = createInsertSchema()
 export type InsertCohortMetric = z.infer<typeof insertCohortMetricSchema>;
 export type CohortMetric = typeof cohortMetrics.$inferSelect;
 
-export const insertCohortInsightSchema = createInsertSchema()
+export const insertCohortInsightSchema = createInsertSchema(cohortInsights)
   .extend({
     insightType: cohortInsightTypeSchema,
     confidence: z.number().min(0).max(1).optional(),
