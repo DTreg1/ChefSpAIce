@@ -145,7 +145,7 @@ export const validationStatusSchema = z.enum(['pending', 'validated', 'corrected
 export const sourceTypeSchema = z.enum(['email', 'document', 'message', 'web', 'api']);
 
 // Extraction Templates
-export const insertExtractionTemplateSchema = createInsertSchema()
+export const insertExtractionTemplateSchema = createInsertSchema(extractionTemplates)
   .extend({
     schema: z.object({
       fields: z.array(z.object({
@@ -177,7 +177,7 @@ export type InsertExtractionTemplate = z.infer<typeof insertExtractionTemplateSc
 export type ExtractionTemplate = typeof extractionTemplates.$inferSelect;
 
 // Extracted Data
-export const insertExtractedDataSchema = createInsertSchema()
+export const insertExtractedDataSchema = createInsertSchema(extractedData)
   .extend({
     sourceType: sourceTypeSchema,
     validationStatus: validationStatusSchema.default("pending"),
