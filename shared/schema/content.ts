@@ -170,7 +170,7 @@ export const relatedContentCache = pgTable("related_content_cache", {
 export const contentTypeSchema = z.enum(['recipe', 'article', 'product', 'document', 'media']);
 export const embeddingTypeSchema = z.enum(['title', 'description', 'full', 'summary']);
 
-export const insertCategorySchema = createInsertSchema()
+export const insertCategorySchema = createInsertSchema(categories)
   .extend({
     slug: z.string().regex(/^[a-z0-9-]+$/),
     sortOrder: z.number().default(0),
@@ -179,7 +179,7 @@ export const insertCategorySchema = createInsertSchema()
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
-export const insertContentCategorySchema = createInsertSchema()
+export const insertContentCategorySchema = createInsertSchema(contentCategories)
   .extend({
     contentType: contentTypeSchema,
   });
@@ -187,7 +187,7 @@ export const insertContentCategorySchema = createInsertSchema()
 export type InsertContentCategory = z.infer<typeof insertContentCategorySchema>;
 export type ContentCategory = typeof contentCategories.$inferSelect;
 
-export const insertTagSchema = createInsertSchema()
+export const insertTagSchema = createInsertSchema(tags)
   .extend({
     slug: z.string().regex(/^[a-z0-9-]+$/),
     usageCount: z.number().nonnegative().default(0),
@@ -196,7 +196,7 @@ export const insertTagSchema = createInsertSchema()
 export type InsertTag = z.infer<typeof insertTagSchema>;
 export type Tag = typeof tags.$inferSelect;
 
-export const insertContentTagSchema = createInsertSchema()
+export const insertContentTagSchema = createInsertSchema(contentTags)
   .extend({
     contentType: contentTypeSchema,
   });
@@ -204,7 +204,7 @@ export const insertContentTagSchema = createInsertSchema()
 export type InsertContentTag = z.infer<typeof insertContentTagSchema>;
 export type ContentTag = typeof contentTags.$inferSelect;
 
-export const insertContentEmbeddingSchema = createInsertSchema()
+export const insertContentEmbeddingSchema = createInsertSchema(contentEmbeddings)
   .extend({
     contentType: contentTypeSchema,
     embeddingType: embeddingTypeSchema.optional(),
@@ -223,7 +223,7 @@ export const insertDuplicatePairSchema = createInsertSchema(duplicatePairs)
 export type InsertDuplicatePair = z.infer<typeof insertDuplicatePairSchema>;
 export type DuplicatePair = typeof duplicatePairs.$inferSelect;
 
-export const insertRelatedContentCacheSchema = createInsertSchema()
+export const insertRelatedContentCacheSchema = createInsertSchema(relatedContentCache)
   .extend({
     contentType: contentTypeSchema,
   });
