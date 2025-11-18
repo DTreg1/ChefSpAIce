@@ -285,78 +285,77 @@ export const translationQualitySchema = z.enum(['fast', 'balanced', 'high']);
 
 // Active AI/ML feature schemas
 export const insertVoiceCommandSchema = createInsertSchema(voiceCommands)
-}).extend({
-  confidence: z.number().min(0).max(1).optional(),
-  processingTime: z.number().positive().optional(),
-});
+  .extend({
+    confidence: z.number().min(0).max(1).optional(),
+    processingTime: z.number().positive().optional(),
+  });
 
 export type InsertVoiceCommand = z.infer<typeof insertVoiceCommandSchema>;
 export type VoiceCommand = typeof voiceCommands.$inferSelect;
 
 export const insertDraftTemplateSchema = createInsertSchema(draftTemplates)
-}).extend({
-  category: templateCategorySchema,
-  tone: toneSchema.optional(),
-  language: z.string().length(2).default('en'),
-  variables: z.array(z.string()).optional(),
-});
+  .extend({
+    category: templateCategorySchema,
+    tone: toneSchema.optional(),
+    language: z.string().length(2).default('en'),
+    variables: z.array(z.string()).optional(),
+  });
 
 export type InsertDraftTemplate = z.infer<typeof insertDraftTemplateSchema>;
 export type DraftTemplate = typeof draftTemplates.$inferSelect;
 
 export const insertGeneratedDraftSchema = createInsertSchema(generatedDrafts)
-}).extend({
-  rating: z.number().min(1).max(5).optional(),
-  tokensUsed: z.number().nonnegative().optional(),
-  generationTime: z.number().positive().optional(),
-});
+  .extend({
+    rating: z.number().min(1).max(5).optional(),
+    tokensUsed: z.number().nonnegative().optional(),
+    generationTime: z.number().positive().optional(),
+  });
 
 export type InsertGeneratedDraft = z.infer<typeof insertGeneratedDraftSchema>;
 export type GeneratedDraft = typeof generatedDrafts.$inferSelect;
 
 export const insertWritingSessionSchema = createInsertSchema(writingSessions)
-  startedAt: true,
-}).extend({
-  sessionType: sessionTypeSchema,
-  duration: z.number().positive().optional(),
-  suggestionsAccepted: z.number().nonnegative().default(0),
-  suggestionsRejected: z.number().nonnegative().default(0),
-});
+  .extend({
+    sessionType: sessionTypeSchema,
+    duration: z.number().positive().optional(),
+    suggestionsAccepted: z.number().nonnegative().default(0),
+    suggestionsRejected: z.number().nonnegative().default(0),
+  });
 
 export type InsertWritingSession = z.infer<typeof insertWritingSessionSchema>;
 export type WritingSession = typeof writingSessions.$inferSelect;
 
 export const insertWritingSuggestionSchema = createInsertSchema(writingSuggestions)
-}).extend({
-  suggestionType: suggestionTypeSchema,
-  confidence: z.number().min(0).max(1).optional(),
-  position: z.object({
-    start: z.number().nonnegative(),
-    end: z.number().nonnegative(),
-  }).optional(),
-});
+  .extend({
+    suggestionType: suggestionTypeSchema,
+    confidence: z.number().min(0).max(1).optional(),
+    position: z.object({
+      start: z.number().nonnegative(),
+      end: z.number().nonnegative(),
+    }).optional(),
+  });
 
 export type InsertWritingSuggestion = z.infer<typeof insertWritingSuggestionSchema>;
 export type WritingSuggestion = typeof writingSuggestions.$inferSelect;
 
 export const insertSummarySchema = createInsertSchema(summaries)
-}).extend({
-  summaryType: summaryTypeSchema.optional(),
-  keyPoints: z.array(z.string()).optional(),
-  compressionRatio: z.number().positive().optional(),
-  language: z.string().length(2).default('en'),
-  tokensUsed: z.number().nonnegative().optional(),
-});
+  .extend({
+    summaryType: summaryTypeSchema.optional(),
+    keyPoints: z.array(z.string()).optional(),
+    compressionRatio: z.number().positive().optional(),
+    language: z.string().length(2).default('en'),
+    tokensUsed: z.number().nonnegative().optional(),
+  });
 
 export type InsertSummary = z.infer<typeof insertSummarySchema>;
 export type Summary = typeof summaries.$inferSelect;
 
 export const insertTranslationSchema = createInsertSchema(translations)
-}).extend({
-  confidence: z.number().min(0).max(1).optional(),
-  alternativeTranslations: z.array(z.string()).optional(),
-  tokensUsed: z.number().nonnegative().optional(),
-});
+  .extend({
+    confidence: z.number().min(0).max(1).optional(),
+    alternativeTranslations: z.array(z.string()).optional(),
+    tokensUsed: z.number().nonnegative().optional(),
+  });
 
 export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
 export type Translation = typeof translations.$inferSelect;
