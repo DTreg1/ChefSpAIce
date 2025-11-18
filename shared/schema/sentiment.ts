@@ -390,7 +390,7 @@ export const trendDirectionSchema = z.enum(["up", "down", "stable"]);
 export const periodTypeExtendedSchema = z.enum(["hour", "day", "week", "month", "quarter", "year"]);
 
 // Sentiment Metrics
-export const insertSentimentMetricsSchema = createInsertSchema()
+export const insertSentimentMetricsSchema = createInsertSchema(sentimentMetrics)
   .extend({
     periodType: periodTypeSchema,
   });
@@ -410,7 +410,7 @@ export type InsertSentimentAlerts = z.infer<typeof insertSentimentAlertsSchema>;
 export type SentimentAlerts = typeof sentimentAlerts.$inferSelect;
 
 // Sentiment Segments
-export const insertSentimentSegmentsSchema = createInsertSchema()
+export const insertSentimentSegmentsSchema = createInsertSchema(sentimentSegments)
   .extend({
     periodType: periodTypeSchema,
     trendDirection: trendDirectionSchema.optional(),
@@ -420,7 +420,7 @@ export type InsertSentimentSegments = z.infer<typeof insertSentimentSegmentsSche
 export type SentimentSegments = typeof sentimentSegments.$inferSelect;
 
 // Sentiment Results
-export const insertSentimentResultsSchema = createInsertSchema()
+export const insertSentimentResultsSchema = createInsertSchema(sentimentResults)
   .extend({
     sentiment: sentimentSchema,
     confidence: z.number().min(0).max(1),
@@ -430,7 +430,7 @@ export type InsertSentimentResults = z.infer<typeof insertSentimentResultsSchema
 export type SentimentResults = typeof sentimentResults.$inferSelect;
 
 // Sentiment Trends
-export const insertSentimentTrendsSchema = createInsertSchema()
+export const insertSentimentTrendsSchema = createInsertSchema(sentimentTrends)
   .extend({
     periodType: periodTypeExtendedSchema,
     avgSentiment: z.number().min(-1).max(1),
