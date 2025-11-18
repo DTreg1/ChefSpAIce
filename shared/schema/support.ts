@@ -211,7 +211,7 @@ export const insertTicketSchema = createInsertSchema(tickets)
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
 export type Ticket = typeof tickets.$inferSelect;
 
-export const insertRoutingRuleSchema = createInsertSchema()
+export const insertRoutingRuleSchema = createInsertSchema(routingRules)
   .extend({
     ruleOrder: z.number().nonnegative().default(0),
     setPriority: prioritySchema.optional(),
@@ -230,7 +230,7 @@ export const insertTicketRoutingSchema = createInsertSchema(ticketRouting)
 export type InsertTicketRouting = z.infer<typeof insertTicketRoutingSchema>;
 export type TicketRouting = typeof ticketRouting.$inferSelect;
 
-export const insertAgentExpertiseSchema = createInsertSchema()
+export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise)
   .extend({
     skillLevel: z.number().min(1).max(10),
     maxConcurrentTickets: z.number().positive().default(10),
