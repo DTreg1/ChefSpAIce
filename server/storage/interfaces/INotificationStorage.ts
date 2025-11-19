@@ -6,8 +6,8 @@
 import type {
   PushToken,
   InsertPushToken,
-  Notification,
-  InsertNotification,
+  NotificationHistoryItem,
+  InsertNotificationHistory,
   NotificationPreference,
   InsertNotificationPreference,
   NotificationScore,
@@ -31,27 +31,31 @@ export interface INotificationStorage {
   deletePushToken(token: string): Promise<void>;
   deleteUserPushTokens(userId: string, type?: 'web' | 'ios' | 'android'): Promise<void>;
   
-  // Notification Management
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  getNotification(notificationId: string): Promise<Notification | null>;
-  getUserNotifications(userId: string, limit?: number): Promise<Notification[]>;
-  getUndismissedNotifications(userId: string): Promise<Notification[]>;
+  // Notification Management (using notificationHistory table)
+  createNotification(notification: InsertNotificationHistory): Promise<NotificationHistoryItem>;
+  getNotification(notificationId: string): Promise<NotificationHistoryItem | null>;
+  getUserNotifications(userId: string, limit?: number): Promise<NotificationHistoryItem[]>;
+  getUndismissedNotifications(userId: string): Promise<NotificationHistoryItem[]>;
   dismissNotification(notificationId: string): Promise<void>;
   markNotificationRead(notificationId: string): Promise<void>;
-  getPendingNotifications(): Promise<Notification[]>;
+  getPendingNotifications(): Promise<NotificationHistoryItem[]>;
   
-  // Notification Preferences
+  // Notification Preferences (per notification type)
   getNotificationPreferences(userId: string): Promise<NotificationPreference | null>;
+  getAllNotificationPreferences(userId: string): Promise<NotificationPreference[]>;
+  getNotificationPreferenceByType(userId: string, notificationType: string): Promise<NotificationPreference | null>;
   upsertNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference>;
   
   // Notification Scoring & Intelligence
   createNotificationScore(score: InsertNotificationScore): Promise<NotificationScore>;
   getNotificationScores(userId: string): Promise<NotificationScore[]>;
+  getNotificationScoreByType(userId: string, notificationType: string): Promise<NotificationScore | null>;
   updateNotificationScore(scoreId: string, updates: Partial<InsertNotificationScore>): Promise<NotificationScore>;
   
   // Notification Feedback
   createNotificationFeedback(feedback: InsertNotificationFeedback): Promise<NotificationFeedback>;
   getNotificationFeedback(notificationId: string): Promise<NotificationFeedback[]>;
+  getUserNotificationFeedback(userId: string): Promise<NotificationFeedback[]>;
   
   // Analytics
   getRecentUserEngagement(userId: string, days?: number): Promise<{

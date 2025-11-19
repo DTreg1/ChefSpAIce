@@ -39,8 +39,11 @@ const notificationStorage = new NotificationStorage();
  * Domain modules are applied in order of precedence (later modules override earlier)
  * Legacy storage has lowest precedence as the fallback
  * 
- * NOTE: Notification domain temporarily disabled due to schema column name mismatches
- * Active domains: Analytics (80+ methods), Feedback (20+ methods), Inventory, UserAuth, Recipes, Chat
+ * All 7 domains are now ACTIVE with full TypeScript type safety!
+ * - Analytics: 80+ methods for events, sessions, web vitals, insights, predictions, trends
+ * - Feedback: 20+ methods for user feedback, donations, upvotes
+ * - Notifications: 20+ methods for push tokens, notification history, preferences, scoring
+ * - Plus: Inventory, UserAuth, Recipes, Chat domains
  */
 export const storage = mergeStorageModules(
   legacyStorage,           // Base/legacy (lowest precedence)
@@ -49,9 +52,8 @@ export const storage = mergeStorageModules(
   recipesStorage,          // Domain: Recipes & meal planning
   chatStorage,             // Domain: Chat & conversations
   analyticsStorage,        // Domain: Analytics & metrics
-  feedbackStorage          // Domain: Feedback & community
-  // TEMPORARILY DISABLED - schema column name fixes needed:
-  // notificationStorage     // Domain: Notifications & push tokens
+  feedbackStorage,         // Domain: Feedback & community
+  notificationStorage      // Domain: Notifications & push tokens ✓
 );
 
 // Legacy method mappings for backward compatibility

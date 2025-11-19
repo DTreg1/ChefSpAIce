@@ -3,18 +3,18 @@
  * @description Notification and push token domain storage implementation
  */
 
-import { db } from "@db";
+import { db } from "../../db";
 import { eq, and, desc, sql, gte, lte, or, isNull } from "drizzle-orm";
 import {
   pushTokens,
-  notifications,
+  notificationHistory,
   notificationPreferences,
   notificationScores,
   notificationFeedback,
   type PushToken,
   type InsertPushToken,
-  type Notification,
-  type InsertNotification,
+  type NotificationHistoryItem,
+  type InsertNotificationHistory,
   type NotificationPreference,
   type InsertNotificationPreference,
   type NotificationScore,
@@ -42,8 +42,9 @@ export class NotificationStorage implements INotificationStorage {
       await db.update(pushTokens)
         .set({
           userId,
-          type,
-          deviceId,
+          platform: type,
+          deviceInfo: deviceId ? { deviceId } : null,
+          isActive: true,
           updatedAt: new Date()
         })
         .where(eq(pushTokens.token, token));
@@ -52,23 +53,27 @@ export class NotificationStorage implements INotificationStorage {
       await db.insert(pushTokens).values({
         userId,
         token,
-        type,
-        deviceId
+        platform: type,
+        deviceInfo: deviceId ? { deviceId } : null,
+        isActive: true
       });
     }
   }
 
   async getUserPushTokens(userId: string, type?: 'web' | 'ios' | 'android'): Promise<PushToken[]> {
-    let query = db.select().from(pushTokens).where(eq(pushTokens.userId, userId));
+    const conditions = [
+      eq(pushTokens.userId, userId),
+      eq(pushTokens.isActive, true)
+    ];
     
     if (type) {
-      query = query.where(and(
-        eq(pushTokens.userId, userId),
-        eq(pushTokens.type, type)
-      ));
+      conditions.push(eq(pushTokens.platform, type));
     }
     
-    return await query.orderBy(desc(pushTokens.createdAt));
+    return await db.select()
+      .from(pushTokens)
+      .where(and(...conditions))
+      .orderBy(desc(pushTokens.createdAt));
   }
 
   async deletePushToken(token: string): Promise<void> {
@@ -76,93 +81,108 @@ export class NotificationStorage implements INotificationStorage {
   }
 
   async deleteUserPushTokens(userId: string, type?: 'web' | 'ios' | 'android'): Promise<void> {
-    let deleteQuery = db.delete(pushTokens).where(eq(pushTokens.userId, userId));
+    const conditions = [eq(pushTokens.userId, userId)];
     
     if (type) {
-      deleteQuery = deleteQuery.where(and(
-        eq(pushTokens.userId, userId),
-        eq(pushTokens.type, type)
-      ));
+      conditions.push(eq(pushTokens.platform, type));
     }
     
-    await deleteQuery;
+    await db.delete(pushTokens).where(and(...conditions));
   }
   
-  // Notification Management
-  async createNotification(notification: InsertNotification): Promise<Notification> {
-    const [result] = await db.insert(notifications).values(notification).returning();
+  // Notification Management (using notificationHistory table)
+  async createNotification(notification: InsertNotificationHistory): Promise<NotificationHistoryItem> {
+    const [result] = await db.insert(notificationHistory).values(notification).returning();
     return result;
   }
 
-  async getNotification(notificationId: string): Promise<Notification | null> {
+  async getNotification(notificationId: string): Promise<NotificationHistoryItem | null> {
     const [result] = await db.select()
-      .from(notifications)
-      .where(eq(notifications.id, notificationId));
+      .from(notificationHistory)
+      .where(eq(notificationHistory.id, notificationId));
     return result || null;
   }
 
-  async getUserNotifications(userId: string, limit = 50): Promise<Notification[]> {
+  async getUserNotifications(userId: string, limit = 50): Promise<NotificationHistoryItem[]> {
     return await db.select()
-      .from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt))
+      .from(notificationHistory)
+      .where(eq(notificationHistory.userId, userId))
+      .orderBy(desc(notificationHistory.sentAt))
       .limit(limit);
   }
 
-  async getUndismissedNotifications(userId: string): Promise<Notification[]> {
+  async getUndismissedNotifications(userId: string): Promise<NotificationHistoryItem[]> {
     return await db.select()
-      .from(notifications)
+      .from(notificationHistory)
       .where(and(
-        eq(notifications.userId, userId),
-        or(
-          eq(notifications.dismissed, false),
-          isNull(notifications.dismissed)
-        )
+        eq(notificationHistory.userId, userId),
+        isNull(notificationHistory.dismissedAt)
       ))
-      .orderBy(desc(notifications.createdAt));
+      .orderBy(desc(notificationHistory.sentAt));
   }
 
   async dismissNotification(notificationId: string): Promise<void> {
-    await db.update(notifications)
+    await db.update(notificationHistory)
       .set({ 
-        dismissed: true,
+        status: 'dismissed',
         dismissedAt: new Date()
       })
-      .where(eq(notifications.id, notificationId));
+      .where(eq(notificationHistory.id, notificationId));
   }
 
   async markNotificationRead(notificationId: string): Promise<void> {
-    await db.update(notifications)
+    await db.update(notificationHistory)
       .set({ 
-        read: true,
-        readAt: new Date()
+        status: 'opened',
+        openedAt: new Date()
       })
-      .where(eq(notifications.id, notificationId));
+      .where(eq(notificationHistory.id, notificationId));
   }
 
-  async getPendingNotifications(): Promise<Notification[]> {
+  async getPendingNotifications(): Promise<NotificationHistoryItem[]> {
+    // Return notifications that were sent but not yet delivered
     return await db.select()
-      .from(notifications)
-      .where(and(
-        eq(notifications.status, 'pending'),
-        or(
-          isNull(notifications.scheduledFor),
-          lte(notifications.scheduledFor, new Date())
-        )
-      ))
-      .orderBy(notifications.createdAt);
+      .from(notificationHistory)
+      .where(eq(notificationHistory.status, 'sent'))
+      .orderBy(notificationHistory.sentAt);
   }
   
-  // Notification Preferences
+  // Notification Preferences (now per notification type)
   async getNotificationPreferences(userId: string): Promise<NotificationPreference | null> {
+    // Get all preferences for a user and return the first one
+    // This maintains backward compatibility
     const [result] = await db.select()
       .from(notificationPreferences)
-      .where(eq(notificationPreferences.userId, userId));
+      .where(eq(notificationPreferences.userId, userId))
+      .limit(1);
+    return result || null;
+  }
+
+  async getAllNotificationPreferences(userId: string): Promise<NotificationPreference[]> {
+    return await db.select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId))
+      .orderBy(notificationPreferences.notificationType);
+  }
+
+  async getNotificationPreferenceByType(
+    userId: string, 
+    notificationType: string
+  ): Promise<NotificationPreference | null> {
+    const [result] = await db.select()
+      .from(notificationPreferences)
+      .where(and(
+        eq(notificationPreferences.userId, userId),
+        eq(notificationPreferences.notificationType, notificationType)
+      ));
     return result || null;
   }
 
   async upsertNotificationPreferences(preferences: InsertNotificationPreference): Promise<NotificationPreference> {
-    const existing = await this.getNotificationPreferences(preferences.userId);
+    const existing = await this.getNotificationPreferenceByType(
+      preferences.userId, 
+      preferences.notificationType
+    );
     
     if (existing) {
       const [result] = await db.update(notificationPreferences)
@@ -170,7 +190,10 @@ export class NotificationStorage implements INotificationStorage {
           ...preferences,
           updatedAt: new Date()
         })
-        .where(eq(notificationPreferences.userId, preferences.userId))
+        .where(and(
+          eq(notificationPreferences.userId, preferences.userId),
+          eq(notificationPreferences.notificationType, preferences.notificationType)
+        ))
         .returning();
       return result;
     } else {
@@ -194,6 +217,21 @@ export class NotificationStorage implements INotificationStorage {
       .orderBy(desc(notificationScores.createdAt));
   }
 
+  async getNotificationScoreByType(
+    userId: string, 
+    notificationType: string
+  ): Promise<NotificationScore | null> {
+    const [result] = await db.select()
+      .from(notificationScores)
+      .where(and(
+        eq(notificationScores.userId, userId),
+        eq(notificationScores.notificationType, notificationType)
+      ))
+      .orderBy(desc(notificationScores.createdAt))
+      .limit(1);
+    return result || null;
+  }
+
   async updateNotificationScore(scoreId: string, updates: Partial<InsertNotificationScore>): Promise<NotificationScore> {
     const [result] = await db.update(notificationScores)
       .set(updates)
@@ -211,20 +249,35 @@ export class NotificationStorage implements INotificationStorage {
       const notification = await this.getNotification(feedback.notificationId);
       if (notification) {
         // Find and update the associated score
-        const scores = await this.getNotificationScores(notification.userId);
-        const relevantScore = scores.find(s => 
-          s.notificationType === notification.type &&
-          s.channel === notification.channel
+        const score = await this.getNotificationScoreByType(
+          notification.userId,
+          notification.type
         );
         
-        if (relevantScore) {
-          const currentEngagement = relevantScore.engagementScore || 0.5;
-          const adjustment = feedback.wasHelpful ? 0.1 : -0.1;
-          const newScore = Math.max(0, Math.min(1, currentEngagement + adjustment));
+        if (score) {
+          // Adjust score based on feedback type
+          const currentScore = score.score || 0.5;
+          let adjustment = 0;
           
-          await this.updateNotificationScore(relevantScore.id, {
-            engagementScore: newScore,
-            lastInteraction: new Date()
+          switch (feedback.feedbackType) {
+            case 'useful':
+              adjustment = 0.1;
+              break;
+            case 'not_useful':
+            case 'irrelevant':
+              adjustment = -0.1;
+              break;
+            case 'wrong_time':
+            case 'too_frequent':
+              adjustment = -0.05;
+              break;
+          }
+          
+          const newScore = Math.max(0, Math.min(1, currentScore + adjustment));
+          
+          await this.updateNotificationScore(score.id, {
+            score: newScore,
+            relevanceScore: newScore
           });
         }
       }
@@ -239,6 +292,13 @@ export class NotificationStorage implements INotificationStorage {
       .where(eq(notificationFeedback.notificationId, notificationId))
       .orderBy(desc(notificationFeedback.createdAt));
   }
+
+  async getUserNotificationFeedback(userId: string): Promise<NotificationFeedback[]> {
+    return await db.select()
+      .from(notificationFeedback)
+      .where(eq(notificationFeedback.userId, userId))
+      .orderBy(desc(notificationFeedback.createdAt));
+  }
   
   // Analytics
   async getRecentUserEngagement(userId: string, days = 30): Promise<{
@@ -251,46 +311,43 @@ export class NotificationStorage implements INotificationStorage {
     startDate.setDate(startDate.getDate() - days);
     
     const userNotifications = await db.select()
-      .from(notifications)
+      .from(notificationHistory)
       .where(and(
-        eq(notifications.userId, userId),
-        gte(notifications.createdAt, startDate)
+        eq(notificationHistory.userId, userId),
+        gte(notificationHistory.sentAt, startDate)
       ));
     
     return {
       sent: userNotifications.length,
-      opened: userNotifications.filter(n => n.read).length,
-      dismissed: userNotifications.filter(n => n.dismissed).length,
-      clicked: userNotifications.filter(n => n.clickedAt !== null).length
+      opened: userNotifications.filter(n => n.openedAt !== null).length,
+      dismissed: userNotifications.filter(n => n.dismissedAt !== null).length,
+      clicked: userNotifications.filter(n => n.openedAt !== null).length // opened is equivalent to clicked
     };
   }
 
   async getNotificationStats(startDate?: Date, endDate?: Date): Promise<NotificationStats> {
-    let query = db.select().from(notifications);
     const conditions = [];
     
     if (startDate) {
-      conditions.push(gte(notifications.createdAt, startDate));
+      conditions.push(gte(notificationHistory.sentAt, startDate));
     }
     
     if (endDate) {
-      conditions.push(lte(notifications.createdAt, endDate));
+      conditions.push(lte(notificationHistory.sentAt, endDate));
     }
     
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+    const allNotifications = conditions.length > 0
+      ? await db.select().from(notificationHistory).where(and(...conditions))
+      : await db.select().from(notificationHistory);
     
-    const allNotifications = await query;
+    const delivered = allNotifications.filter(n => n.deliveredAt !== null).length;
+    const opened = allNotifications.filter(n => n.openedAt !== null).length;
+    const dismissed = allNotifications.filter(n => n.dismissedAt !== null).length;
     
-    const delivered = allNotifications.filter(n => n.status === 'delivered').length;
-    const opened = allNotifications.filter(n => n.read).length;
-    const dismissed = allNotifications.filter(n => n.dismissed).length;
-    
-    // Calculate engagement scores
+    // Calculate average score
     const scores = await db.select().from(notificationScores);
     const averageEngagementScore = scores.length > 0
-      ? scores.reduce((sum, s) => sum + (s.engagementScore || 0.5), 0) / scores.length
+      ? scores.reduce((sum, s) => sum + (s.score || 0.5), 0) / scores.length
       : 0.5;
     
     return {
