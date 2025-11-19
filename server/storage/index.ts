@@ -20,6 +20,7 @@ import { chatStorage } from "./domains/chat.storage";
 import { AnalyticsStorage } from "./domains/analytics.storage";
 import { FeedbackStorage } from "./domains/feedback.storage";
 import { NotificationStorage } from "./domains/notification.storage";
+import { FoodStorage } from "./domains/food.storage";
 
 // Import the legacy monolithic storage for methods not yet migrated
 import { storage as legacyStorage } from "../storage";
@@ -31,6 +32,7 @@ import { mergeStorageModules } from "./utils/compose-storage";
 const analyticsStorage = new AnalyticsStorage();
 const feedbackStorage = new FeedbackStorage();
 const notificationStorage = new NotificationStorage();
+const foodStorage = new FoodStorage();
 
 /**
  * Compatibility storage object that combines domain modules with legacy storage
@@ -39,10 +41,11 @@ const notificationStorage = new NotificationStorage();
  * Domain modules are applied in order of precedence (later modules override earlier)
  * Legacy storage has lowest precedence as the fallback
  * 
- * All 7 domains are now ACTIVE with full TypeScript type safety!
+ * All 8 domains are now ACTIVE with full TypeScript type safety!
  * - Analytics: 80+ methods for events, sessions, web vitals, insights, predictions, trends
  * - Feedback: 20+ methods for user feedback, donations, upvotes
  * - Notifications: 20+ methods for push tokens, notification history, preferences, scoring
+ * - Food: 25+ methods for food inventory, storage locations, USDA cache, onboarding inventory, cooking terms
  * - Plus: Inventory, UserAuth, Recipes, Chat domains
  */
 export const storage = mergeStorageModules(
@@ -53,7 +56,8 @@ export const storage = mergeStorageModules(
   chatStorage,             // Domain: Chat & conversations
   analyticsStorage,        // Domain: Analytics & metrics
   feedbackStorage,         // Domain: Feedback & community
-  notificationStorage      // Domain: Notifications & push tokens ✓
+  notificationStorage,     // Domain: Notifications & push tokens
+  foodStorage              // Domain: Food inventory & nutrition ✓
 );
 
 // Legacy method mappings for backward compatibility
@@ -83,7 +87,8 @@ export {
   chatStorage,
   analyticsStorage,
   feedbackStorage,
-  notificationStorage
+  notificationStorage,
+  foodStorage
 };
 
 // Export types
@@ -94,3 +99,7 @@ export type { IChatStorage } from "./interfaces/IChatStorage";
 export type { IAnalyticsStorage } from "./interfaces/IAnalyticsStorage";
 export type { IFeedbackStorage } from "./interfaces/IFeedbackStorage";
 export type { INotificationStorage } from "./interfaces/INotificationStorage";
+export type { IFoodStorage } from "./interfaces/IFoodStorage";
+
+// Export shared types from domain modules
+export type { StorageLocationWithCount, InsertCookingTerm } from "./domains/food.storage";
