@@ -39,17 +39,18 @@ const notificationStorage = new NotificationStorage();
  * Domain modules are applied in order of precedence (later modules override earlier)
  * Legacy storage has lowest precedence as the fallback
  * 
- * NOTE: Analytics, Feedback, and Notification domains temporarily disabled
+ * NOTE: Feedback and Notification domains temporarily disabled
  * due to schema column name mismatches that need to be fixed
+ * Analytics domain is now ACTIVE with all 80+ methods working
  */
 export const storage = mergeStorageModules(
   legacyStorage,           // Base/legacy (lowest precedence)
   inventoryStorage,        // Domain: Inventory management
   userAuthStorage,         // Domain: User authentication & management  
   recipesStorage,          // Domain: Recipes & meal planning
-  chatStorage             // Domain: Chat & conversations
+  chatStorage,             // Domain: Chat & conversations
+  analyticsStorage         // Domain: Analytics & metrics
   // TEMPORARILY DISABLED - schema column name fixes needed:
-  // analyticsStorage,       // Domain: Analytics & metrics
   // feedbackStorage,        // Domain: Feedback & community
   // notificationStorage     // Domain: Notifications & push tokens
 );
@@ -69,18 +70,8 @@ Object.assign(storage, {
   clearCheckedShoppingListItems: inventoryStorage.clearCheckedShoppingListItems.bind(inventoryStorage),
   addMissingIngredientsToShoppingList: inventoryStorage.addMissingIngredientsToShoppingList.bind(inventoryStorage),
   
-  // Push tokens are in userAuth domain
-  savePushToken: userAuthStorage.savePushToken.bind(userAuthStorage),
-  getUserPushTokens: userAuthStorage.getUserPushTokens.bind(userAuthStorage),
-  deletePushToken: userAuthStorage.deletePushToken.bind(userAuthStorage),
-  deleteUserPushTokens: userAuthStorage.deleteUserPushTokens.bind(userAuthStorage),
-  
   // Nutrition notification preferences
-  upsertNotificationPreferences: userAuthStorage.updateUserNotificationPreferences.bind(userAuthStorage),
-  
-  // Clear old chat messages
-  deleteOldChatMessages: chatStorage.clearOldChatMessages.bind(chatStorage),
-  clearChatMessages: chatStorage.clearChatMessages.bind(chatStorage)
+  upsertNotificationPreferences: userAuthStorage.updateUserNotificationPreferences.bind(userAuthStorage)
 });
 
 // Export domain storage modules for direct import

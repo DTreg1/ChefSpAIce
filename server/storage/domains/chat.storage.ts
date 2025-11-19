@@ -23,8 +23,9 @@ import {
   type InsertMessage,
   type ConversationContext,
   type InsertConversationContext,
+  type ChatMessage,
+  type InsertChatMessage
 } from "@shared/schema";
-import type { ChatMessage, InsertChatMessage } from "@shared/chat-compatibility";
 import type { IChatStorage } from "../interfaces/IChatStorage";
 
 export class ChatDomainStorage implements IChatStorage {

@@ -37,7 +37,7 @@ import {
   type ChatMessage,
   type InsertChatMessage,
   userChats,
-} from "@shared/chat-compatibility";
+} from "@shared/schema";
 import {
   type User,
   type UpsertUser,

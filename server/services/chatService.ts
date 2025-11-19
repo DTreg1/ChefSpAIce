@@ -3,7 +3,7 @@ import { db } from '../db';
 import { 
   type InsertChatMessage,
   type ChatMessage
-} from '@shared/chat-compatibility';
+} from '@shared/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 
 // Initialize OpenAI client using Replit AI Integrations

@@ -6,9 +6,6 @@
 import type {
   ChatMessage,
   InsertChatMessage,
-} from "@shared/chat-compatibility";
-
-import type {
   Conversation,
   InsertConversation,
   Message,

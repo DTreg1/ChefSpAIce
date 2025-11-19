@@ -3,7 +3,7 @@ import { db } from '../db';
 import { 
   userChats,
   type ChatMessage
-} from '../../shared/chat-compatibility';
+} from '@shared/schema';
 import { 
   contentEmbeddings, 
   duplicatePairs, 

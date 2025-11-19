@@ -37,6 +37,7 @@ export * from './analytics';
 export * from './system';
 export * from './support';
 export * from './billing';
+export * from './chat';
 
 // AI/ML domains
 export * from './ai-ml';
