@@ -3,172 +3,186 @@
  * @description Feedback and community features domain storage implementation
  */
 
-import { db } from "@db";
+import { db } from "../../db";
 import { eq, and, desc, sql, gte, lte, or } from "drizzle-orm";
 import {
-  feedback,
-  feedbackResponses,
-  feedbackUpvotes,
+  userFeedback,
   donations,
-  type Feedback,
-  type InsertFeedback,
-  type FeedbackResponse,
-  type InsertFeedbackResponse,
-  type FeedbackUpvote,
-  type InsertFeedbackUpvote,
+  type UserFeedback,
+  type InsertUserFeedback,
   type Donation,
   type InsertDonation
 } from "@shared/schema";
-import type { IFeedbackStorage, FeedbackAnalytics } from "../interfaces/IFeedbackStorage";
+import type { IFeedbackStorage, FeedbackAnalytics, FeedbackResponse, InsertFeedbackResponse } from "../interfaces/IFeedbackStorage";
 
 export class FeedbackStorage implements IFeedbackStorage {
   // Feedback Management
-  async createFeedback(feedbackData: InsertFeedback): Promise<Feedback> {
-    const [result] = await db.insert(feedback).values(feedbackData).returning();
+  async createFeedback(feedbackData: InsertUserFeedback): Promise<UserFeedback> {
+    const [result] = await db.insert(userFeedback).values(feedbackData).returning();
     return result;
   }
 
-  async getFeedback(feedbackId: string): Promise<Feedback | null> {
+  async getFeedback(feedbackId: string): Promise<UserFeedback | null> {
     const [result] = await db.select()
-      .from(feedback)
-      .where(eq(feedback.id, feedbackId));
+      .from(userFeedback)
+      .where(eq(userFeedback.id, feedbackId));
     return result || null;
   }
 
-  async getUserFeedback(userId: string): Promise<Feedback[]> {
+  async getUserFeedback(userId: string): Promise<UserFeedback[]> {
     return await db.select()
-      .from(feedback)
-      .where(eq(feedback.user_id, userId))
-      .orderBy(desc(feedback.created_at));
+      .from(userFeedback)
+      .where(eq(userFeedback.userId, userId))
+      .orderBy(desc(userFeedback.createdAt));
   }
 
-  async getAllFeedback(status?: string, type?: string): Promise<Feedback[]> {
-    let query = db.select().from(feedback);
+  async getAllFeedback(status?: string, type?: string): Promise<UserFeedback[]> {
     const conditions = [];
     
     if (status) {
-      conditions.push(eq(feedback.status, status));
+      conditions.push(eq(userFeedback.status, status));
     }
     
     if (type) {
-      conditions.push(eq(feedback.type, type));
+      conditions.push(eq(userFeedback.type, type));
     }
     
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      return await db.select()
+        .from(userFeedback)
+        .where(and(...conditions))
+        .orderBy(desc(userFeedback.createdAt));
     }
     
-    return await query.orderBy(desc(feedback.created_at));
+    return await db.select()
+      .from(userFeedback)
+      .orderBy(desc(userFeedback.createdAt));
   }
 
-  async getCommunityFeedback(limit = 20): Promise<Feedback[]> {
+  async getCommunityFeedback(limit = 20): Promise<UserFeedback[]> {
     return await db.select()
-      .from(feedback)
-      .where(eq(feedback.is_public, true))
-      .orderBy(desc(feedback.created_at))
+      .from(userFeedback)
+      .where(eq(userFeedback.isPublic, true))
+      .orderBy(desc(userFeedback.createdAt))
       .limit(limit);
   }
 
-  async getCommunityFeedbackForUser(userId: string, limit = 20): Promise<Feedback[]> {
+  async getCommunityFeedbackForUser(userId: string, limit = 20): Promise<UserFeedback[]> {
     return await db.select()
-      .from(feedback)
+      .from(userFeedback)
       .where(and(
-        eq(feedback.user_id, userId),
-        eq(feedback.is_public, true)
+        eq(userFeedback.userId, userId),
+        eq(userFeedback.isPublic, true)
       ))
-      .orderBy(desc(feedback.created_at))
+      .orderBy(desc(userFeedback.createdAt))
       .limit(limit);
   }
 
-  async updateFeedbackStatus(feedbackId: string, status: string): Promise<Feedback> {
-    const [result] = await db.update(feedback)
+  async updateFeedbackStatus(feedbackId: string, status: string): Promise<UserFeedback> {
+    const [result] = await db.update(userFeedback)
       .set({ 
         status,
-        updated_at: new Date()
+        updatedAt: new Date()
       })
-      .where(eq(feedback.id, feedbackId))
+      .where(eq(userFeedback.id, feedbackId))
       .returning();
     return result;
   }
 
-  async getFeedbackByContext(context: string): Promise<Feedback[]> {
+  async getFeedbackByContext(context: string): Promise<UserFeedback[]> {
     return await db.select()
-      .from(feedback)
-      .where(eq(feedback.context, context))
-      .orderBy(desc(feedback.created_at));
+      .from(userFeedback)
+      .where(eq(userFeedback.pageUrl, context))
+      .orderBy(desc(userFeedback.createdAt));
   }
   
-  // Feedback Responses
-  async addFeedbackResponse(response: InsertFeedbackResponse): Promise<FeedbackResponse> {
-    const [result] = await db.insert(feedbackResponses).values(response).returning();
-    
-    // Update feedback status to responded
-    await db.update(feedback)
+  // Feedback Responses (now embedded in userFeedback table)
+  async addFeedbackResponse(responseData: InsertFeedbackResponse): Promise<FeedbackResponse> {
+    const [result] = await db.update(userFeedback)
       .set({ 
-        status: 'responded',
-        updated_at: new Date()
+        response: responseData.response,
+        respondedAt: new Date(),
+        respondedBy: responseData.respondedBy,
+        status: 'in-review',
+        updatedAt: new Date()
       })
-      .where(eq(feedback.id, response.feedback_id));
+      .where(eq(userFeedback.id, responseData.feedbackId))
+      .returning();
     
-    return result;
+    // Return a response object
+    return {
+      id: result.id,
+      feedbackId: result.id,
+      response: result.response || '',
+      respondedBy: result.respondedBy || '',
+      createdAt: result.respondedAt || new Date()
+    };
   }
 
   async getFeedbackResponses(feedbackId: string): Promise<FeedbackResponse[]> {
-    return await db.select()
-      .from(feedbackResponses)
-      .where(eq(feedbackResponses.feedback_id, feedbackId))
-      .orderBy(feedbackResponses.created_at);
+    const [feedback] = await db.select()
+      .from(userFeedback)
+      .where(eq(userFeedback.id, feedbackId));
+    
+    if (!feedback || !feedback.response) {
+      return [];
+    }
+    
+    // Return the embedded response as an array for compatibility
+    return [{
+      id: feedback.id,
+      feedbackId: feedback.id,
+      response: feedback.response,
+      respondedBy: feedback.respondedBy || '',
+      createdAt: feedback.respondedAt || new Date()
+    }];
   }
   
   // Feedback Analytics
   async getFeedbackAnalytics(startDate?: Date, endDate?: Date): Promise<FeedbackAnalytics> {
-    let query = db.select().from(feedback);
     const conditions = [];
     
     if (startDate) {
-      conditions.push(gte(feedback.created_at, startDate));
+      conditions.push(gte(userFeedback.createdAt, startDate));
     }
     
     if (endDate) {
-      conditions.push(lte(feedback.created_at, endDate));
+      conditions.push(lte(userFeedback.createdAt, endDate));
     }
     
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    const allFeedback = await query;
-    const responses = await db.select().from(feedbackResponses);
-    const upvotes = await db.select().from(feedbackUpvotes);
+    const allFeedback = conditions.length > 0
+      ? await db.select().from(userFeedback).where(and(...conditions))
+      : await db.select().from(userFeedback);
     
     // Calculate analytics
     const feedbackByType: Record<string, number> = {};
     const feedbackByStatus: Record<string, number> = {};
     
-    allFeedback.forEach(f => {
+    allFeedback.forEach((f: UserFeedback) => {
       feedbackByType[f.type] = (feedbackByType[f.type] || 0) + 1;
       feedbackByStatus[f.status] = (feedbackByStatus[f.status] || 0) + 1;
     });
     
     // Calculate average response time for responded feedback
-    const respondedFeedback = allFeedback.filter(f => f.status === 'responded');
+    const respondedFeedback = allFeedback.filter((f: UserFeedback) => f.response && f.respondedAt);
     let totalResponseTime = 0;
-    let responseCount = 0;
     
     for (const f of respondedFeedback) {
-      const response = responses.find(r => r.feedback_id === f.id);
-      if (response) {
-        totalResponseTime += new Date(response.created_at).getTime() - new Date(f.created_at).getTime();
-        responseCount++;
+      if (f.respondedAt && f.createdAt) {
+        totalResponseTime += new Date(f.respondedAt).getTime() - new Date(f.createdAt).getTime();
       }
     }
     
-    const averageResponseTime = responseCount > 0 
-      ? totalResponseTime / responseCount / (1000 * 60 * 60) // Convert to hours
+    const averageResponseTime = respondedFeedback.length > 0 
+      ? totalResponseTime / respondedFeedback.length / (1000 * 60 * 60) // Convert to hours
       : 0;
     
-    // Calculate upvote rate
-    const feedbackWithUpvotes = new Set(upvotes.map(u => u.feedback_id)).size;
+    // Calculate upvote rate (feedback items with at least one upvote)
+    const feedbackWithUpvotes = allFeedback.filter((f: UserFeedback) => {
+      const upvotes = f.upvotes as Array<{ userId: string; createdAt: string }> | null;
+      return upvotes && upvotes.length > 0;
+    }).length;
+    
     const upvoteRate = allFeedback.length > 0 
       ? feedbackWithUpvotes / allFeedback.length 
       : 0;
@@ -188,64 +202,75 @@ export class FeedbackStorage implements IFeedbackStorage {
     };
   }
   
-  // Upvoting System
+  // Upvoting System (now uses JSONB array in userFeedback)
   async upvoteFeedback(userId: string, feedbackId: string): Promise<void> {
-    // Check if already upvoted
-    const existing = await db.select()
-      .from(feedbackUpvotes)
-      .where(and(
-        eq(feedbackUpvotes.user_id, userId),
-        eq(feedbackUpvotes.feedback_id, feedbackId)
-      ));
+    const [feedback] = await db.select()
+      .from(userFeedback)
+      .where(eq(userFeedback.id, feedbackId));
     
-    if (existing.length === 0) {
-      await db.insert(feedbackUpvotes).values({
-        user_id: userId,
-        feedback_id: feedbackId
-      });
+    if (!feedback) return;
+    
+    const currentUpvotes = (feedback.upvotes as Array<{ userId: string; createdAt: string }> | null) || [];
+    
+    // Check if user already upvoted
+    const alreadyUpvoted = currentUpvotes.some((upvote: { userId: string }) => upvote.userId === userId);
+    
+    if (!alreadyUpvoted) {
+      const newUpvotes = [
+        ...currentUpvotes,
+        { userId, createdAt: new Date().toISOString() }
+      ];
       
-      // Update feedback upvote count
-      await db.update(feedback)
+      await db.update(userFeedback)
         .set({ 
-          upvote_count: sql`${feedback.upvote_count} + 1` 
+          upvotes: newUpvotes as any,
+          updatedAt: new Date()
         })
-        .where(eq(feedback.id, feedbackId));
+        .where(eq(userFeedback.id, feedbackId));
     }
   }
 
   async removeUpvote(userId: string, feedbackId: string): Promise<void> {
-    const deleted = await db.delete(feedbackUpvotes)
-      .where(and(
-        eq(feedbackUpvotes.user_id, userId),
-        eq(feedbackUpvotes.feedback_id, feedbackId)
-      ))
-      .returning();
+    const [feedback] = await db.select()
+      .from(userFeedback)
+      .where(eq(userFeedback.id, feedbackId));
     
-    if (deleted.length > 0) {
-      // Update feedback upvote count
-      await db.update(feedback)
+    if (!feedback) return;
+    
+    const currentUpvotes = (feedback.upvotes as Array<{ userId: string; createdAt: string }> | null) || [];
+    
+    const newUpvotes = currentUpvotes.filter((upvote: { userId: string }) => upvote.userId !== userId);
+    
+    if (newUpvotes.length !== currentUpvotes.length) {
+      await db.update(userFeedback)
         .set({ 
-          upvote_count: sql`GREATEST(${feedback.upvote_count} - 1, 0)` 
+          upvotes: newUpvotes as any,
+          updatedAt: new Date()
         })
-        .where(eq(feedback.id, feedbackId));
+        .where(eq(userFeedback.id, feedbackId));
     }
   }
 
   async hasUserUpvoted(userId: string, feedbackId: string): Promise<boolean> {
-    const [result] = await db.select()
-      .from(feedbackUpvotes)
-      .where(and(
-        eq(feedbackUpvotes.user_id, userId),
-        eq(feedbackUpvotes.feedback_id, feedbackId)
-      ));
-    return !!result;
+    const [feedback] = await db.select()
+      .from(userFeedback)
+      .where(eq(userFeedback.id, feedbackId));
+    
+    if (!feedback) return false;
+    
+    const upvotes = (feedback.upvotes as Array<{ userId: string; createdAt: string }> | null) || [];
+    return upvotes.some((upvote: { userId: string }) => upvote.userId === userId);
   }
 
   async getFeedbackUpvoteCount(feedbackId: string): Promise<number> {
-    const [result] = await db.select({ count: sql<number>`count(*)` })
-      .from(feedbackUpvotes)
-      .where(eq(feedbackUpvotes.feedback_id, feedbackId));
-    return result?.count || 0;
+    const [feedback] = await db.select()
+      .from(userFeedback)
+      .where(eq(userFeedback.id, feedbackId));
+    
+    if (!feedback) return 0;
+    
+    const upvotes = (feedback.upvotes as Array<{ userId: string; createdAt: string }> | null) || [];
+    return upvotes.length;
   }
   
   // Donations
@@ -258,7 +283,7 @@ export class FeedbackStorage implements IFeedbackStorage {
     const [result] = await db.update(donations)
       .set({
         ...updates,
-        updated_at: new Date()
+        updatedAt: new Date()
       })
       .where(eq(donations.id, donationId))
       .returning();
@@ -275,25 +300,28 @@ export class FeedbackStorage implements IFeedbackStorage {
   async getDonationByPaymentIntent(paymentIntentId: string): Promise<Donation | null> {
     const [result] = await db.select()
       .from(donations)
-      .where(eq(donations.payment_intent_id, paymentIntentId));
+      .where(eq(donations.stripePaymentIntentId, paymentIntentId));
     return result || null;
   }
 
   async getDonations(status?: string): Promise<Donation[]> {
-    let query = db.select().from(donations);
-    
     if (status) {
-      query = query.where(eq(donations.status, status));
+      return await db.select()
+        .from(donations)
+        .where(eq(donations.status, status))
+        .orderBy(desc(donations.createdAt));
     }
     
-    return await query.orderBy(desc(donations.created_at));
+    return await db.select()
+      .from(donations)
+      .orderBy(desc(donations.createdAt));
   }
 
   async getUserDonations(userId: string): Promise<Donation[]> {
     return await db.select()
       .from(donations)
-      .where(eq(donations.user_id, userId))
-      .orderBy(desc(donations.created_at));
+      .where(eq(donations.userId, userId))
+      .orderBy(desc(donations.createdAt));
   }
 
   async getTotalDonations(): Promise<number> {
