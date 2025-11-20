@@ -67,6 +67,8 @@ export function composeStorageModules<T extends Record<string, any>>(
 /**
  * Type-safe storage module merger that preserves all method types
  * 
+ * Supports up to 18 total modules (1 base + 17 domains)
+ * 
  * @example
  * const storage = mergeStorageModules(
  *   legacyStorage,
@@ -83,7 +85,17 @@ export function mergeStorageModules<
   T5 extends Record<string, any> = {},
   T6 extends Record<string, any> = {},
   T7 extends Record<string, any> = {},
-  T8 extends Record<string, any> = {}
+  T8 extends Record<string, any> = {},
+  T9 extends Record<string, any> = {},
+  T10 extends Record<string, any> = {},
+  T11 extends Record<string, any> = {},
+  T12 extends Record<string, any> = {},
+  T13 extends Record<string, any> = {},
+  T14 extends Record<string, any> = {},
+  T15 extends Record<string, any> = {},
+  T16 extends Record<string, any> = {},
+  T17 extends Record<string, any> = {},
+  T18 extends Record<string, any> = {}
 >(
   base: T1,
   m1?: T2,
@@ -92,12 +104,22 @@ export function mergeStorageModules<
   m4?: T5,
   m5?: T6,
   m6?: T7,
-  m7?: T8
-): T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 {
-  const modules = [m1, m2, m3, m4, m5, m6, m7]
+  m7?: T8,
+  m8?: T9,
+  m9?: T10,
+  m10?: T11,
+  m11?: T12,
+  m12?: T13,
+  m13?: T14,
+  m14?: T15,
+  m15?: T16,
+  m16?: T17,
+  m17?: T18
+): T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 & T12 & T13 & T14 & T15 & T16 & T17 & T18 {
+  const modules = [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17]
     .filter(Boolean) as Record<string, any>[];
   
-  return composeStorageModules(base, ...modules);
+  return composeStorageModules(base, ...modules) as any;
 }
 
 /**
