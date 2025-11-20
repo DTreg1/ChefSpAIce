@@ -86,10 +86,8 @@ export async function seedCommonFoodItems(forceUpdate = false) {
           sortOrder: 0
         };
         
-        // Save to database (using food storage method)
-        // Note: This would need a proper upsert method in the food storage
-        // For now, we'll skip the actual DB operation
-        // await storage.upsertCommonFoodItem(commonItem);
+        // Save to database
+        await storage.upsertOnboardingInventoryItem(commonItem);
         // console.log(`✓ Saved ${displayName}`);
         return { success: true, skipped: false };
       } catch (error: unknown) {

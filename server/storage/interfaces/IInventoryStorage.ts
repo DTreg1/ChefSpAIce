@@ -11,6 +11,7 @@ import type {
   ShoppingItem,
   InsertShoppingItem,
   onboardingInventory,
+  InsertOnboardingInventory,
 } from "@shared/schema";
 
 export interface IInventoryStorage {
@@ -78,6 +79,8 @@ export interface IInventoryStorage {
   
   // Onboarding
   getOnboardingInventory(): Promise<typeof onboardingInventory.$inferSelect[]>;
+  getOnboardingInventoryByName(name: string): Promise<typeof onboardingInventory.$inferSelect | undefined>;
+  upsertOnboardingInventoryItem(item: InsertOnboardingInventory): Promise<typeof onboardingInventory.$inferSelect>;
   
   // Shopping List Operations
   getShoppingItems(userId: string): Promise<ShoppingItem[]>;
@@ -90,6 +93,8 @@ export interface IInventoryStorage {
   updateShoppingItem(userId: string, id: string, updates: Partial<ShoppingItem>): Promise<ShoppingItem | undefined>;
   deleteShoppingItem(userId: string, id: string): Promise<void>;
   clearCheckedShoppingItems(userId: string): Promise<number>;
+  
+  // TODO: Move to IMealPlanningStorage to avoid interface conflict
   addMissingIngredientsToShoppingList(
     userId: string, 
     recipeId: string,

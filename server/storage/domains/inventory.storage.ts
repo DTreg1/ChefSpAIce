@@ -529,6 +529,47 @@ export class InventoryDomainStorage implements IInventoryStorage {
     }
   }
 
+  async getOnboardingInventoryByName(name: string): Promise<typeof onboardingInventory.$inferSelect | undefined> {
+    try {
+      const [item] = await db
+        .select()
+        .from(onboardingInventory)
+        .where(eq(onboardingInventory.name, name))
+        .limit(1);
+      return item;
+    } catch (error) {
+      console.error(`Error getting onboarding inventory item ${name}:`, error);
+      throw new Error("Failed to retrieve onboarding inventory item");
+    }
+  }
+
+  async upsertOnboardingInventoryItem(item: InsertOnboardingInventory): Promise<typeof onboardingInventory.$inferSelect> {
+    try {
+      // Check if item exists by name
+      const existing = await this.getOnboardingInventoryByName(item.name);
+      
+      if (existing) {
+        // Update existing item
+        const [updated] = await db
+          .update(onboardingInventory)
+          .set(item)
+          .where(eq(onboardingInventory.name, item.name))
+          .returning();
+        return updated;
+      } else {
+        // Insert new item
+        const [newItem] = await db
+          .insert(onboardingInventory)
+          .values(item)
+          .returning();
+        return newItem;
+      }
+    } catch (error) {
+      console.error(`Error upserting onboarding inventory item ${item.name}:`, error);
+      throw new Error("Failed to upsert onboarding inventory item");
+    }
+  }
+
   // ============= Shopping List Operations =============
 
   async getShoppingItems(userId: string): Promise<ShoppingItem[]> {
@@ -664,6 +705,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     }
   }
 
+  // TODO: Move to meal planning domain to resolve interface conflict
   async addMissingIngredientsToShoppingList(
     userId: string,
     recipeId: string,
@@ -720,6 +762,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
       throw new Error("Failed to add ingredients to shopping list");
     }
   }
+
 }
 
 // Export singleton instance

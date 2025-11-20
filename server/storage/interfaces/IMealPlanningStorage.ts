@@ -6,9 +6,13 @@
 import type {
   MealPlan,
   InsertMealPlan,
-  ShoppingListItem,
-  InsertShoppingListItem,
+  ShoppingItem,
+  InsertShoppingItem,
 } from "@shared/schema";
+
+// Type aliases for backward compatibility
+type ShoppingListItem = ShoppingItem;
+type InsertShoppingListItem = InsertShoppingItem;
 
 export interface IMealPlanningStorage {
   // Meal Plans
@@ -60,13 +64,10 @@ export interface IMealPlanningStorage {
   
   clearCheckedShoppingListItems(userId: string): Promise<void>;
   
+  // Signature aligned with IInventoryStorage to avoid interface conflict in IStorage
   addMissingIngredientsToShoppingList(
-    userId: string,
+    userId: string, 
     recipeId: string,
-    servings?: number,
-  ): Promise<{
-    added: string[];
-    existing: string[];
-    inInventory: string[];
-  }>;
+    servings?: number
+  ): Promise<{ added: number; skipped: number }>;
 }
