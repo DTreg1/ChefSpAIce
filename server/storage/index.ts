@@ -123,12 +123,12 @@ Object.assign(storage, {
   getUser: userAuthStorage.getUserById.bind(userAuthStorage),
   
   // Shopping list methods are now in inventory domain
-  getShoppingListItems: inventoryStorage.getShoppingListItems.bind(inventoryStorage),
-  getGroupedShoppingListItems: inventoryStorage.getGroupedShoppingListItems.bind(inventoryStorage),
-  createShoppingListItem: inventoryStorage.createShoppingListItem.bind(inventoryStorage),
-  updateShoppingListItem: inventoryStorage.updateShoppingListItem.bind(inventoryStorage),
-  deleteShoppingListItem: inventoryStorage.deleteShoppingListItem.bind(inventoryStorage),
-  clearCheckedShoppingListItems: inventoryStorage.clearCheckedShoppingListItems.bind(inventoryStorage),
+  getShoppingListItems: inventoryStorage.getShoppingItems.bind(inventoryStorage),
+  getGroupedShoppingListItems: inventoryStorage.getGroupedShoppingItems.bind(inventoryStorage),
+  createShoppingListItem: inventoryStorage.createShoppingItem.bind(inventoryStorage),
+  updateShoppingListItem: inventoryStorage.updateShoppingItem.bind(inventoryStorage),
+  deleteShoppingListItem: inventoryStorage.deleteShoppingItem.bind(inventoryStorage),
+  clearCheckedShoppingListItems: inventoryStorage.clearCheckedShoppingItems.bind(inventoryStorage),
   addMissingIngredientsToShoppingList: inventoryStorage.addMissingIngredientsToShoppingList.bind(inventoryStorage),
   
   // Notification preferences

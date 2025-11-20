@@ -24,21 +24,20 @@ import {
   type InsertUserInventory,
   type UserStorage as UserStorageType,
   type InsertUserStorage,
-  type OnboardingInventory,
-  type ShoppingListItem,
-  type InsertShoppingListItem,
+  type ShoppingItem,
+  type InsertShoppingItem,
 } from "@shared/schema";
 import type { IInventoryStorage } from "../interfaces/IInventoryStorage";
 
 export class InventoryDomainStorage implements IInventoryStorage {
-  private defaultDataInitialized = new Set<string>();
+  private defaultInventoryInitialized = new Set<string>();
 
   /**
    * Ensures default storage locations exist for a user
    * Called automatically when accessing inventory data
    */
-  private async ensureDefaultDataForUser(userId: string): Promise<void> {
-    if (this.defaultDataInitialized.has(userId)) {
+  private async ensureDefaultInventoryForUser(userId: string): Promise<void> {
+    if (this.defaultInventoryInitialized.has(userId)) {
       return;
     }
 
@@ -70,7 +69,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
         );
       }
 
-      this.defaultDataInitialized.add(userId);
+      this.defaultInventoryInitialized.add(userId);
     } catch (error) {
       console.error(`Failed to initialize default data for user ${userId}:`, error);
       // Don't throw - allow operation to continue even if defaults fail
@@ -84,7 +83,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     filter?: "all" | "expiring" | "expired",
   ): Promise<UserInventory[]> {
     try {
-      await this.ensureDefaultDataForUser(userId);
+      await this.ensureDefaultInventoryForUser(userId);
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -130,7 +129,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     filter?: "all" | "expiring" | "expired",
   ): Promise<{ items: UserInventory[]; total: number }> {
     try {
-      await this.ensureDefaultDataForUser(userId);
+      await this.ensureDefaultInventoryForUser(userId);
 
       let whereClause = eq(userInventory.userId, userId);
       const today = new Date();
@@ -203,7 +202,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     item: InsertUserInventory,
   ): Promise<UserInventory> {
     try {
-      await this.ensureDefaultDataForUser(userId);
+      await this.ensureDefaultInventoryForUser(userId);
 
       const [newItem] = await db
         .insert(userInventory)
@@ -329,7 +328,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
   async getStorageLocations(userId: string): Promise<UserStorageType[]> {
     try {
-      await this.ensureDefaultDataForUser(userId);
+      await this.ensureDefaultInventoryForUser(userId);
 
       // Get user's storage locations
       const locations = await db
@@ -370,7 +369,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     id: string,
   ): Promise<UserStorageType | undefined> {
     try {
-      await this.ensureDefaultDataForUser(userId);
+      await this.ensureDefaultInventoryForUser(userId);
 
       const [location] = await db
         .select()
@@ -519,7 +518,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
   // ============= Onboarding =============
 
-  async getOnboardingInventory(): Promise<OnboardingInventory[]> {
+  async getOnboardingInventory(): Promise<typeof onboardingInventory.$inferSelect[]> {
     try {
       const items = await db.select().from(onboardingInventory);
       // Sort by name in JavaScript since orderBy isn't working with the table reference
@@ -532,7 +531,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
   // ============= Shopping List Operations =============
 
-  async getShoppingListItems(userId: string): Promise<ShoppingListItem[]> {
+  async getShoppingItems(userId: string): Promise<ShoppingItem[]> {
     try {
       return await db
         .select()
@@ -545,13 +544,13 @@ export class InventoryDomainStorage implements IInventoryStorage {
     }
   }
 
-  async getGroupedShoppingListItems(userId: string): Promise<{
-    items: ShoppingListItem[];
-    grouped: { [category: string]: ShoppingListItem[] };
+  async getGroupedShoppingItems(userId: string): Promise<{
+    items: ShoppingItem[];
+    grouped: { [category: string]: ShoppingItem[] };
     totals: { category: string; count: number }[];
   }> {
     try {
-      const items = await this.getShoppingListItems(userId);
+      const items = await this.getShoppingItems(userId);
       
       // Group items by category
       const grouped = items.reduce((acc, item) => {
@@ -561,7 +560,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
         }
         acc[category].push(item);
         return acc;
-      }, {} as { [category: string]: ShoppingListItem[] });
+      }, {} as { [category: string]: ShoppingItem[] });
       
       // Calculate totals for each category
       const totals = Object.entries(grouped).map(([category, categoryItems]) => ({
@@ -580,7 +579,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     }
   }
 
-  async createShoppingListItem(item: InsertShoppingListItem): Promise<ShoppingListItem> {
+  async createShoppingItem(item: InsertShoppingItem): Promise<ShoppingItem> {
     try {
       const [newItem] = await db
         .insert(userShopping)
@@ -593,11 +592,11 @@ export class InventoryDomainStorage implements IInventoryStorage {
     }
   }
 
-  async updateShoppingListItem(
+  async updateShoppingItem(
     userId: string,
     id: string,
-    updates: Partial<ShoppingListItem>
-  ): Promise<ShoppingListItem | undefined> {
+    updates: Partial<ShoppingItem>
+  ): Promise<ShoppingItem | undefined> {
     try {
       const { id: _id, userId: _userId, ...safeUpdates } = updates;
       
@@ -619,7 +618,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     }
   }
 
-  async deleteShoppingListItem(userId: string, id: string): Promise<void> {
+  async deleteShoppingItem(userId: string, id: string): Promise<void> {
     try {
       await db
         .delete(userShopping)
@@ -635,7 +634,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
     }
   }
 
-  async clearCheckedShoppingListItems(userId: string): Promise<number> {
+  async clearCheckedShoppingItems(userId: string): Promise<number> {
     try {
       const result = await db
         .delete(userShopping)
@@ -678,7 +677,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
       const servingMultiplier = servings ? (servings / (recipe.servings || 1)) : 1;
       
       // Get existing shopping list items
-      const existingItems = await this.getShoppingListItems(userId);
+      const existingItems = await this.getShoppingItems(userId);
       const existingNames = new Set(existingItems.map(item => item.name?.toLowerCase()));
       
       let added = 0;
@@ -691,7 +690,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
         if (existingNames.has(ingredientName)) {
           skipped++;
         } else {
-          await this.createShoppingListItem({
+          await this.createShoppingItem({
             userId,
             name: ingredient,
             quantity: servingMultiplier,

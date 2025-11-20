@@ -8,9 +8,9 @@ import type {
   InsertUserInventory,
   UserStorage,
   InsertUserStorage,
-  OnboardingInventory,
-  ShoppingListItem,
-  InsertShoppingListItem,
+  ShoppingItem,
+  InsertShoppingItem,
+  onboardingInventory,
 } from "@shared/schema";
 
 export interface IInventoryStorage {
@@ -77,19 +77,19 @@ export interface IInventoryStorage {
   deleteStorageLocation(userId: string, id: string): Promise<void>;
   
   // Onboarding
-  getOnboardingInventory(): Promise<OnboardingInventory[]>;
+  getOnboardingInventory(): Promise<typeof onboardingInventory.$inferSelect[]>;
   
   // Shopping List Operations
-  getShoppingListItems(userId: string): Promise<ShoppingListItem[]>;
-  getGroupedShoppingListItems(userId: string): Promise<{
-    items: ShoppingListItem[];
-    grouped: { [category: string]: ShoppingListItem[] };
+  getShoppingItems(userId: string): Promise<ShoppingItem[]>;
+  getGroupedShoppingItems(userId: string): Promise<{
+    items: ShoppingItem[];
+    grouped: { [category: string]: ShoppingItem[] };
     totals: { category: string; count: number }[];
   }>;
-  createShoppingListItem(item: InsertShoppingListItem): Promise<ShoppingListItem>;
-  updateShoppingListItem(userId: string, id: string, updates: Partial<ShoppingListItem>): Promise<ShoppingListItem | undefined>;
-  deleteShoppingListItem(userId: string, id: string): Promise<void>;
-  clearCheckedShoppingListItems(userId: string): Promise<number>;
+  createShoppingItem(item: InsertShoppingItem): Promise<ShoppingItem>;
+  updateShoppingItem(userId: string, id: string, updates: Partial<ShoppingItem>): Promise<ShoppingItem | undefined>;
+  deleteShoppingItem(userId: string, id: string): Promise<void>;
+  clearCheckedShoppingItems(userId: string): Promise<number>;
   addMissingIngredientsToShoppingList(
     userId: string, 
     recipeId: string,
