@@ -361,6 +361,13 @@ export type UserAppliance = typeof userAppliances.$inferSelect;
 export type InsertFdcCache = typeof fdcCache.$inferInsert;
 export type FdcCache = typeof fdcCache.$inferSelect;
 
+export const insertOnboardingInventorySchema = createInsertSchema(onboardingInventory);
+export type InsertOnboardingInventory = z.infer<typeof insertOnboardingInventorySchema>;
 export type OnboardingInventoryItem = typeof onboardingInventory.$inferSelect;
+
 export type CookingTerm = typeof cookingTerms.$inferSelect;
 export type ApplianceLibraryItem = typeof applianceLibrary.$inferSelect;
+
+// Backward compatibility aliases
+export const insertShoppingListItemSchema = insertShoppingItemSchema;
+export type ShoppingListItem = ShoppingItem;

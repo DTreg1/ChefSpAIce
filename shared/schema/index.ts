@@ -40,7 +40,11 @@ export * from './billing';
 export * from './chat';
 
 // Also re-export types from json-schemas that are used by client
-export type { USDAFoodItem } from '../json-schemas';
+export type { 
+  USDAFoodItem, 
+  USDASearchResponse, 
+  NutritionInfo 
+} from '../json-schemas';
 
 // AI/ML domains
 export * from './ai-ml';
