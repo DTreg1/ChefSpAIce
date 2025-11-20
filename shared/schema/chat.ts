@@ -30,6 +30,20 @@ export const insertChatMessageSchema = z.object({
   similarityHash: z.string().nullable().optional(),
 });
 
+/**
+ * Conversation with metadata type
+ * Used for displaying conversation lists with message counts and last activity
+ */
+export type ConversationWithMetadata = {
+  id: string;
+  userId?: string;
+  title?: string | null;
+  lastMessage?: string | null;
+  messageCount: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+};
+
 // Legacy userChats table stub - not actually in database
 // This is a compatibility shim to prevent import errors
 export const userChats = {} as any;
