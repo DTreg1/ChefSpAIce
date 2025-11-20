@@ -210,6 +210,27 @@ export const usdaFoodDataSchema = z.object({
 export type USDAFoodItem = z.infer<typeof usdaFoodDataSchema>;
 
 /**
+ * USDA Search Response (Tier A)
+ * Used by: server/usda.ts, server/utils/usdaCache.ts
+ * 
+ * Response structure from USDA FoodData Central search endpoint.
+ */
+export const usdaSearchResponseSchema = z.object({
+  totalHits: z.number(),
+  currentPage: z.number(),
+  totalPages: z.number(),
+  foods: z.array(usdaFoodDataSchema),
+});
+
+export type USDASearchResponse = z.infer<typeof usdaSearchResponseSchema>;
+
+/**
+ * Nutrition information type (Tier A)
+ * Exported for use in application code.
+ */
+export type NutritionInfo = z.infer<typeof nutritionInfoSchema>;
+
+/**
  * Barcode lookup response (Tier A)
  * Used by: userInventory
  */
