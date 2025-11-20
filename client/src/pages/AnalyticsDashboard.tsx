@@ -98,9 +98,9 @@ export default function AnalyticsDashboard() {
   // Calculate stats
   const stats = {
     totalInsights: insights.length,
-    anomalies: insights.filter((i: AnalyticsInsight) => i.category === "anomaly").length,
+    anomalies: insights.filter((i: AnalyticsInsight) => i.insightType === "anomaly").length,
     unreadInsights: insights.filter((i: AnalyticsInsight) => !i.isRead).length,
-    criticalInsights: insights.filter((i: AnalyticsInsight) => i.importance >= 4).length,
+    criticalInsights: insights.filter((i: AnalyticsInsight) => i.severity === "critical").length,
   };
 
   return (

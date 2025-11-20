@@ -186,15 +186,28 @@ export const usdaFoodDataSchema = z.object({
   fdcId: z.number(),
   description: z.string(),
   dataType: z.string().optional(),
+  brandOwner: z.string().optional(),
+  gtinUpc: z.string().optional(),
+  ingredients: z.string().optional(),
+  foodCategory: z.string().optional(),
   nutrients: z.array(z.object({
     nutrientId: z.number(),
     nutrientName: z.string(),
     value: z.number(),
     unitName: z.string(),
   })).optional(),
+  nutrition: z.object({
+    calories: z.number().optional(),
+    protein: z.number().optional(),
+    carbs: z.number().optional(),
+    fat: z.number().optional(),
+  }).optional(),
   servingSize: z.number().optional(),
   servingSizeUnit: z.string().optional(),
 }).passthrough(); // Allow additional USDA fields
+
+// Export the inferred type for client use
+export type USDAFoodItem = z.infer<typeof usdaFoodDataSchema>;
 
 /**
  * Barcode lookup response (Tier A)

@@ -20,9 +20,17 @@ import { useToast } from "@/hooks/use-toast";
 import { UnifiedFoodSearch } from "@/components/unified-food-search";
 import type {
   StorageLocation,
-  USDASearchResponse,
   InsertUserInventory as InsertFoodItem,
 } from "@shared/schema";
+import type { USDAFoodItem } from "@shared/schema";
+
+// Local type for USDA search response
+interface USDASearchResponse {
+  foods: USDAFoodItem[];
+  totalHits: number;
+  currentPage: number;
+  totalPages: number;
+}
 import type { UploadResult } from "@uppy/core";
 
 interface AddFoodDialogProps {
@@ -916,7 +924,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
               <div className="border border-border rounded-lg max-h-48 overflow-y-auto">
                 {/* Sort foods to prioritize those with complete data */}
                 {searchResults.foods
-                  .sort((a, b) => {
+                  .sort((a: USDAFoodItem, b: USDAFoodItem) => {
                     // Calculate completeness score for each item
                     const scoreA = (a.nutrition ? 3 : 0) + 
                                    (a.servingSize ? 2 : 0) + 
@@ -930,7 +938,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                                    (b.ingredients ? 1 : 0);
                     return scoreB - scoreA; // Higher score first
                   })
-                  .map((food) => (
+                  .map((food: USDAFoodItem) => (
                   <button
                     key={food.fdcId}
                     onClick={() => {

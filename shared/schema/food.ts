@@ -14,6 +14,9 @@ import {
   usdaFoodDataSchema,
   barcodeDataSchema,
 } from "../json-schemas";
+
+// Re-export USDA types for client use
+export type { USDAFoodItem } from "../json-schemas";
 import { users } from "./auth";
 
 /**
