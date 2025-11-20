@@ -6,7 +6,7 @@
  */
 
 import * as cron from "node-cron";
-import { storage } from "../storage";
+import { systemStorage } from "../storage/index";
 
 interface RetentionPolicy {
   name: string;
@@ -175,6 +175,8 @@ class LogRetentionService {
       
       await systemStorage.createActivityLog({
         userId: null, // System action
+        activityType: "system",
+        resourceType: "log_retention",
         action: "log_cleanup_completed",
         entity: "activity_logs",
         metadata,
@@ -194,6 +196,8 @@ class LogRetentionService {
       
       await systemStorage.createActivityLog({
         userId: null,
+        activityType: "system",
+        resourceType: "log_retention",
         action: "log_cleanup_error",
         entity: "activity_logs",
         metadata: errorMetadata,
