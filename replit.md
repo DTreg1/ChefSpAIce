@@ -59,7 +59,7 @@ PostgreSQL, accessed via Drizzle ORM, serves as the primary data store. The sche
 
 Successfully refactored monolithic 16,826-line storage.ts file using domain-driven design:
 
-#### Completed Domain Modules (14 domains, ~100% of functionality)
+#### Completed Domain Modules (15 domains, ~100% of functionality)
 - **Inventory Domain**: Food items, expiration tracking, shopping lists
 - **User/Auth Domain**: User management, OAuth, authentication, sessions
 - **Recipes Domain**: Recipe CRUD, search, meal planning
@@ -74,6 +74,7 @@ Successfully refactored monolithic 16,826-line storage.ts file using domain-driv
 - **Experiments Domain** ✨ **(November 20, 2025)**: A/B testing, cohort analysis, statistical significance, experimentation insights (728 lines, 0 LSP errors)
 - **Security Domain** ✨ **(November 20, 2025)**: Content moderation, fraud detection, suspicious activity tracking, privacy settings (704 lines, 0 LSP errors)
 - **Scheduling Domain** ✨ **(November 20, 2025)**: Meeting preferences, AI time suggestions, pattern learning, calendar conflict detection (550 lines, 0 LSP errors)
+- **Pricing Domain** ✨ **(November 20, 2025)**: Dynamic pricing rules, price history tracking, performance metrics, market intelligence, AI optimization (689 lines, 0 LSP errors)
 
 #### Architecture Improvements
 - Implemented storage composition helper using `mergeStorageModules` for efficient domain aggregation
