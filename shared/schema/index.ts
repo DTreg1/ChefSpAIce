@@ -101,3 +101,28 @@ export interface SegmentBreakdown<T = number> {
   value: T;
   percentage?: number;
 }
+
+/**
+ * Generic pagination response wrapper
+ * Used by: storage interfaces, API endpoints
+ */
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * Chat message type
+ * Compatible with legacy ChatMessage type
+ */
+export interface Message {
+  id: string;
+  userId: string;
+  role: string;
+  content: string;
+  similarityHash?: string | null;
+  createdAt: Date;
+}
