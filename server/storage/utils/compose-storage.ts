@@ -20,7 +20,25 @@ export function composeStorageModules<T extends Record<string, any>>(
   
   // Helper to add properties (both functions and non-functions) and track conflicts
   const addMethods = (source: any, sourceName: string) => {
+    // Get all properties including prototype methods (for class instances)
+    const allKeys = new Set<string>();
+    
+    // Add own properties
     for (const key in source) {
+      allKeys.add(key);
+    }
+    
+    // Add prototype methods (for class instances)
+    if (source.constructor && source.constructor.prototype) {
+      Object.getOwnPropertyNames(source.constructor.prototype).forEach(key => {
+        if (key !== 'constructor') {
+          allKeys.add(key);
+        }
+      });
+    }
+    
+    // Process all discovered keys
+    allKeys.forEach(key => {
       const value = source[key];
       
       if (typeof value === 'function') {
@@ -38,7 +56,7 @@ export function composeStorageModules<T extends Record<string, any>>(
         // Only override if the new value is different from undefined
         result[key] = value;
       }
-    }
+    });
   };
   
   // Add base/legacy methods first (lowest precedence)

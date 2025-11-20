@@ -1,15 +1,15 @@
 /**
- * Storage Compatibility Facade
+ * Unified Storage Layer - Domain-Driven Architecture
  * 
- * This file provides backward compatibility during the migration from
- * monolithic storage.ts to domain-driven storage modules.
+ * This is the central storage facade that combines all domain-specific storage modules
+ * into a single, cohesive interface using the composition pattern.
  * 
- * Migration Strategy:
- * 1. Each domain module exports its storage instance
- * 2. This facade re-exports all methods from domain modules
- * 3. Routers can import from here during transition
- * 4. Eventually, routers will import directly from domain modules
- * 5. Once migration is complete, this file and storage.ts can be removed
+ * Architecture:
+ * 1. Each domain module handles its own data operations with full type safety
+ * 2. This facade composes all domains into a unified storage object
+ * 3. Routers and services can import the unified storage or specific domains
+ * 4. All methods are strongly typed with proper error handling
+ * 5. No monolithic storage file - pure domain-driven design
  * 
  * All 17 Domain Modules:
  * - Inventory: Food items, expiration tracking, shopping lists
@@ -50,9 +50,6 @@ import { SchedulingStorage } from "./domains/scheduling.storage";
 import { PricingStorage } from "./domains/pricing.storage";
 import { ContentStorage } from "./domains/content.storage";
 
-// Import the legacy monolithic storage for methods not yet migrated
-import { storage as legacyStorage } from "../storage";
-
 // Import composition helper
 import { mergeStorageModules } from "./utils/compose-storage";
 
@@ -72,11 +69,10 @@ const pricingStorage = new PricingStorage();
 const contentStorage = new ContentStorage();
 
 /**
- * Compatibility storage object that combines all 17 domain modules with legacy storage
- * This maintains the same interface as the original monolithic storage
+ * Unified storage object combining all 17 domain modules
  * 
- * Domain modules are applied in order of precedence (later modules override earlier)
- * Legacy storage has lowest precedence as the fallback
+ * This is the single source of truth for all storage operations,
+ * providing a clean, domain-driven architecture with full TypeScript type safety.
  * 
  * All 17 domains are ACTIVE with full TypeScript type safety!
  * ✓ Core Domains (8):
@@ -101,7 +97,6 @@ const contentStorage = new ContentStorage();
  *   - Content: Categories, tags, embeddings (839 lines)
  */
 export const storage = mergeStorageModules(
-  legacyStorage,           // Base/legacy (lowest precedence)
   inventoryStorage,        // Domain 1: Inventory management
   userAuthStorage,         // Domain 2: User authentication & management  
   recipesStorage,          // Domain 3: Recipes & meal planning
