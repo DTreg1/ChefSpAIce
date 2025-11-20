@@ -537,7 +537,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
         .select()
         .from(userShopping)
         .where(eq(userShopping.userId, userId))
-        .orderBy(asc(userShopping.isChecked), asc(userShopping.name));
+        .orderBy(asc(userShopping.isPurchased), asc(userShopping.name));
     } catch (error) {
       console.error(`Error getting shopping list items for user ${userId}:`, error);
       throw new Error("Failed to retrieve shopping list items");
@@ -636,16 +636,28 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
   async clearCheckedShoppingItems(userId: string): Promise<number> {
     try {
-      const result = await db
-        .delete(userShopping)
+      const itemsToDelete = await db
+        .select()
+        .from(userShopping)
         .where(
           and(
             eq(userShopping.userId, userId),
-            eq(userShopping.isChecked, true)
+            eq(userShopping.isPurchased, true)
           )
         );
       
-      return result.count || 0;
+      if (itemsToDelete.length > 0) {
+        await db
+          .delete(userShopping)
+          .where(
+            and(
+              eq(userShopping.userId, userId),
+              eq(userShopping.isPurchased, true)
+            )
+          );
+      }
+      
+      return itemsToDelete.length;
     } catch (error) {
       console.error(`Error clearing checked shopping list items for user ${userId}:`, error);
       throw new Error("Failed to clear checked shopping list items");
@@ -693,10 +705,10 @@ export class InventoryDomainStorage implements IInventoryStorage {
           await this.createShoppingItem({
             userId,
             name: ingredient,
-            quantity: servingMultiplier,
+            quantity: servingMultiplier.toString(),
             category: 'Ingredients',
-            isChecked: false,
-            notes: `From recipe: ${recipe.name}`
+            isPurchased: false,
+            notes: `From recipe: ${recipe.title}`
           });
           added++;
         }

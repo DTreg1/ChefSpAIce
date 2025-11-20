@@ -511,13 +511,7 @@ export async function searchUSDAFoods(
       foods: data.foods.map(mapFDCFoodToUSDAItem),
       totalHits: data.totalHits,
       currentPage: data.currentPage,
-      totalPages: data.totalPages,
-      pageList: data.totalPages ? Array.from({ length: Math.min(10, data.totalPages) }, (_, i) => i + 1) : [1],
-      foodSearchCriteria: {
-        query: typeof options === 'string' ? options : options.query,
-        pageNumber: data.currentPage || 1,
-        pageSize: typeof options === 'string' ? 25 : (options.pageSize || 25),
-      },
+      totalPages: data.totalPages
     };
   } catch (error: Error | unknown) {
     if (error instanceof ApiError) {
