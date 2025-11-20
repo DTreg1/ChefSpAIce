@@ -16,7 +16,7 @@
  */
 
 import { openai } from "../openai";
-import { storage } from "../storage";
+import { securityStorage } from "../storage/index";
 import type {
   FraudScore,
   SuspiciousActivity,
@@ -640,7 +640,7 @@ export class FraudDetectionService {
    */
   private async saveFraudScore(score: InsertFraudScore): Promise<void> {
     try {
-      await storage.createFraudScore(score);
+      await securityStorage.createFraudScore(score);
     } catch (error) {
       console.error('Error saving fraud score:', error);
     }
@@ -651,7 +651,7 @@ export class FraudDetectionService {
    */
   private async logSuspiciousActivity(activity: InsertSuspiciousActivity): Promise<void> {
     try {
-      await storage.createSuspiciousActivity(activity);
+      await securityStorage.createSuspiciousActivity(activity);
     } catch (error) {
       console.error('Error logging suspicious activity:', error);
     }
@@ -662,7 +662,7 @@ export class FraudDetectionService {
    */
   async getFraudAlerts(userId?: string, isAdmin: boolean = false): Promise<SuspiciousActivity[]> {
     try {
-      return await storage.getSuspiciousActivities(userId, isAdmin);
+      return await securityStorage.getSuspiciousActivities(userId, isAdmin);
     } catch (error) {
       console.error('Error fetching fraud alerts:', error);
       return [];
@@ -674,7 +674,7 @@ export class FraudDetectionService {
    */
   async submitReview(review: InsertFraudReview): Promise<FraudReview> {
     try {
-      return await storage.createFraudReview(review);
+      return await securityStorage.createFraudReview(review);
     } catch (error) {
       console.error('Error submitting fraud review:', error);
       throw error;
@@ -686,7 +686,7 @@ export class FraudDetectionService {
    */
   async getFraudPatterns(period: 'day' | 'week' | 'month' = 'day'): Promise<any> {
     try {
-      const stats = await storage.getFraudStats(period);
+      const stats = await securityStorage.getFraudStats(period);
       
       // Analyze patterns using AI
       const response = await openai.chat.completions.create({

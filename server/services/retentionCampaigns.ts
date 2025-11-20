@@ -5,7 +5,7 @@
  * Integrates with prediction service to trigger targeted interventions
  */
 
-import { storage } from '../storage';
+import { analyticsStorage } from '../storage/index';
 import { predictionService } from './predictionService';
 import type { UserPrediction, InsertUserPrediction } from '@shared/schema';
 import cron, { type ScheduledTask } from 'node-cron';
@@ -79,7 +79,7 @@ class RetentionCampaignService {
   async assessAndInterveneDailyChurn() {
     try {
       // Get high-risk churn users (>80% probability)
-      const churnRisks = await storage.getChurnRiskUsers(0.8);
+      const churnRisks = await analyticsStorage.getChurnRiskUsers(0.8);
       console.log(`Found ${churnRisks.length} high-risk churn users`);
 
       for (const risk of churnRisks) {
@@ -117,7 +117,7 @@ class RetentionCampaignService {
   async runWeeklyReengagementCampaign() {
     try {
       // Get medium-risk users (60-80% probability)
-      const mediumRisks = await storage.getChurnRiskUsers(0.6);
+      const mediumRisks = await analyticsStorage.getChurnRiskUsers(0.6);
       const targetUsers = mediumRisks.filter(r => r.probability < 0.8);
       
       console.log(`Running re-engagement campaign for ${targetUsers.length} users`);
@@ -196,7 +196,7 @@ class RetentionCampaignService {
 
       // Update prediction status if applicable
       if (campaign.predictionId) {
-        await storage.updatePredictionStatus(
+        await analyticsStorage.updatePredictionStatus(
           campaign.predictionId,
           'intervention_sent',
           campaign.subject
@@ -342,7 +342,7 @@ The Team
   private async recordCampaignResult(campaign: EmailCampaign, success: boolean) {
     if (campaign.predictionId) {
       try {
-        await storage.createPredictionAccuracy({
+        await analyticsStorage.createPredictionAccuracy({
           predictionId: campaign.predictionId,
           actualOutcome: success ? 'intervention_successful' : 'intervention_failed',
           accuracyScore: success ? 0.9 : 0.3,

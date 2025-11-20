@@ -8,7 +8,7 @@
  */
 
 import OpenAI from 'openai';
-import { storage } from '../storage';
+import { supportStorage } from '../storage/index';
 import type { 
   Ticket, 
   RoutingRule, 
@@ -224,7 +224,7 @@ export async function evaluateRoutingRules(
 ): Promise<{ rule: RoutingRule | null; confidence: number }> {
   try {
     // Get active routing rules sorted by priority
-    const rules = await storage.getRoutingRules(true);
+    const rules = await supportStorage.getRoutingRules(true);
     
     for (const rule of rules) {
       let matchScore = 0;
@@ -305,7 +305,7 @@ export async function findBestAgent(
 ): Promise<RoutingSuggestion | null> {
   try {
     // Get all available agents
-    const agents = await storage.getAvailableAgents();
+    const agents = await supportStorage.getAvailableAgents();
     
     // Filter by team if specified
     let candidateAgents = agents;
@@ -401,7 +401,7 @@ export async function routeTicket(ticketId: string): Promise<{
 }> {
   try {
     // Get the ticket
-    const ticket = await storage.getTicket(ticketId);
+    const ticket = await supportStorage.getTicket(ticketId);
     if (!ticket) {
       throw new Error(`Ticket ${ticketId} not found`);
     }
@@ -425,7 +425,7 @@ export async function routeTicket(ticketId: string): Promise<{
         ? (ruleConfidence * 0.7 + agentSuggestion.confidence * 0.3)
         : ruleConfidence;
       
-      await storage.createTicketRouting({
+      await supportStorage.createTicketRouting({
         ticket_id: ticketId,
         routed_to: finalAssignment,
         routing_method: 'rule',
@@ -446,7 +446,7 @@ export async function routeTicket(ticketId: string): Promise<{
       });
       
       // Update ticket assignment
-      await storage.updateTicket(ticketId, {
+      await supportStorage.updateTicket(ticketId, {
         assignedTo: finalAssignment,
         status: 'assigned',
         priority: aiAnalysis.suggestedPriority
@@ -454,7 +454,7 @@ export async function routeTicket(ticketId: string): Promise<{
       
       // Update agent workload if specific agent was selected
       if (agentSuggestion) {
-        await storage.updateAgentWorkload(agentSuggestion.agentId, 1);
+        await supportStorage.updateAgentWorkload(agentSuggestion.agentId, 1);
       }
       
       return {
@@ -471,7 +471,7 @@ export async function routeTicket(ticketId: string): Promise<{
     
     if (agentSuggestion && agentSuggestion.confidence >= 0.6) {
       // Good agent match found
-      await storage.createTicketRouting({
+      await supportStorage.createTicketRouting({
         ticket_id: ticketId,
         routed_to: agentSuggestion.agentId,
         routing_method: 'ai',
@@ -492,13 +492,13 @@ export async function routeTicket(ticketId: string): Promise<{
       });
       
       // Update ticket assignment and agent workload
-      await storage.updateTicket(ticketId, {
+      await supportStorage.updateTicket(ticketId, {
         assignedTo: agentSuggestion.agentId,
         status: 'assigned',
         priority: aiAnalysis.suggestedPriority
       });
       
-      await storage.updateAgentWorkload(agentSuggestion.agentId, 1);
+      await supportStorage.updateAgentWorkload(agentSuggestion.agentId, 1);
       
       return {
         success: true,
@@ -512,7 +512,7 @@ export async function routeTicket(ticketId: string): Promise<{
     // Fallback to default assignment
     const fallbackAssignment = aiAnalysis.recommendedAssignment || 'support-team';
     
-    await storage.createTicketRouting({
+    await supportStorage.createTicketRouting({
       ticket_id: ticketId,
       routed_to: fallbackAssignment,
       routing_method: 'ai',
@@ -532,7 +532,7 @@ export async function routeTicket(ticketId: string): Promise<{
       }
     });
     
-    await storage.updateTicket(ticketId, {
+    await supportStorage.updateTicket(ticketId, {
       assignedTo: fallbackAssignment,
       status: 'assigned',
       priority: aiAnalysis.suggestedPriority
@@ -562,7 +562,7 @@ export async function routeTicket(ticketId: string): Promise<{
  */
 export async function suggestRoutings(ticketId: string): Promise<RoutingSuggestion[]> {
   try {
-    const ticket = await storage.getTicket(ticketId);
+    const ticket = await supportStorage.getTicket(ticketId);
     if (!ticket) {
       throw new Error(`Ticket ${ticketId} not found`);
     }
@@ -571,7 +571,7 @@ export async function suggestRoutings(ticketId: string): Promise<RoutingSuggesti
     const aiAnalysis = await analyzeTicket(ticket);
     
     // Get all available agents
-    const agents = await storage.getAvailableAgents();
+    const agents = await supportStorage.getAvailableAgents();
     
     // Score each agent
     const suggestions: RoutingSuggestion[] = [];
@@ -604,7 +604,7 @@ export async function recordRoutingOutcome(
   notes?: string
 ): Promise<void> {
   try {
-    const routing = await storage.getTicketRouting(ticketId);
+    const routing = await supportStorage.getTicketRouting(ticketId);
     if (!routing || routing.length === 0) {
       console.error(`No routing found for ticket ${ticketId}`);
       return;
@@ -614,7 +614,7 @@ export async function recordRoutingOutcome(
     const metadata = latestRouting.metadata as any || {};
     
     // Update routing with outcome
-    await storage.updateTicketRouting(latestRouting.id, {
+    await supportStorage.updateTicketRouting(latestRouting.id, {
       metadata: {
         ...metadata,
         outcome_recorded: true,
@@ -650,7 +650,7 @@ export async function calculateRoutingAccuracy(
 }> {
   try {
     // Get all routings with outcomes in the date range
-    const routings = await storage.getAllRoutingsWithOutcomes(startDate, endDate);
+    const routings = await supportStorage.getAllRoutingsWithOutcomes(startDate, endDate);
     
     if (routings.length === 0) {
       return {
@@ -753,13 +753,13 @@ export async function escalateTicket(
   targetLevel?: string
 ): Promise<boolean> {
   try {
-    const ticket = await storage.getTicket(ticketId);
+    const ticket = await supportStorage.getTicket(ticketId);
     if (!ticket) {
       throw new Error(`Ticket ${ticketId} not found`);
     }
     
     // Get current routing
-    const routingHistory = await storage.getTicketRouting(ticketId);
+    const routingHistory = await supportStorage.getTicketRouting(ticketId);
     const currentRouting = routingHistory[0];
     
     // Determine escalation target
@@ -767,7 +767,7 @@ export async function escalateTicket(
     
     if (currentRouting) {
       // Try to find an escalation path from routing rules
-      const rules = await storage.getRoutingRules(true);
+      const rules = await supportStorage.getRoutingRules(true);
       const currentRule = rules.find(r => r.assigned_to === currentRouting.routed_to);
       
       if (currentRule) {
@@ -779,7 +779,7 @@ export async function escalateTicket(
     }
     
     // Create escalation routing
-    await storage.createTicketRouting({
+    await supportStorage.createTicketRouting({
       ticket_id: ticketId,
       routed_to: escalationTarget,
       routed_from: currentRouting?.routed_to,
@@ -792,7 +792,7 @@ export async function escalateTicket(
     });
     
     // Update ticket
-    await storage.updateTicket(ticketId, {
+    await supportStorage.updateTicket(ticketId, {
       assignedTo: escalationTarget,
       priority: 'high',
       status: 'assigned'
@@ -800,7 +800,7 @@ export async function escalateTicket(
     
     // Update workload
     if (currentRouting?.routed_to) {
-      await storage.updateAgentWorkload(currentRouting.routed_to, -1);
+      await supportStorage.updateAgentWorkload(currentRouting.routed_to, -1);
     }
     
     return true;

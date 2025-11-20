@@ -776,7 +776,7 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
     analysis: SentimentAnalysis
   ): Promise<void> {
     // Get existing trend or create new one
-    const existing = await storage.getSentimentTrends(userId, periodType, 1);
+    const existing = await analyticsStorage.getSentimentTrends(userId, periodType, 1);
     const currentTrend = existing.find(t => t.timePeriod === timePeriod);
     
     if (currentTrend) {
@@ -834,7 +834,7 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
         });
       }
       
-      await storage.createSentimentTrend({
+      await analyticsStorage.createSentimentTrend({
         userId,
         timePeriod,
         periodType,

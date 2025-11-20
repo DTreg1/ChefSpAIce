@@ -6,7 +6,7 @@
  */
 
 import OpenAI from 'openai';
-import { storage } from '../storage';
+import { analyticsStorage } from '../storage/index';
 import type { UserPrediction, InsertUserPrediction } from '@shared/schema';
 import { predictChurnLightweight } from './lightweightPrediction';
 
@@ -57,21 +57,21 @@ class PredictionService {
       // Generate churn prediction
       const churnPrediction = await this.predictChurn(metrics);
       if (churnPrediction) {
-        const saved = await storage.createUserPrediction(churnPrediction);
+        const saved = await analyticsStorage.createUserPrediction(churnPrediction);
         predictions.push(saved);
       }
 
       // Generate behavior predictions
       const behaviorPrediction = await this.predictNextBehavior(metrics);
       if (behaviorPrediction) {
-        const saved = await storage.createUserPrediction(behaviorPrediction);
+        const saved = await analyticsStorage.createUserPrediction(behaviorPrediction);
         predictions.push(saved);
       }
 
       // Generate engagement prediction
       const engagementPrediction = await this.predictEngagement(metrics);
       if (engagementPrediction) {
-        const saved = await storage.createUserPrediction(engagementPrediction);
+        const saved = await analyticsStorage.createUserPrediction(engagementPrediction);
         predictions.push(saved);
       }
 

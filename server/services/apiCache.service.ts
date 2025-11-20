@@ -1,5 +1,5 @@
 import { BarcodeLookupService } from "./barcodeLookup";
-import { storage } from "../storage";
+import { foodStorage } from "../storage/index";
 
 // Initialize barcode lookup service
 const barcodeLookupService = new BarcodeLookupService();
@@ -24,7 +24,7 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
 export async function cleanupAllCaches(): Promise<void> {
   try {
     // Clean USDA cache
-    await storage.clearOldCache(30);
+    await foodStorage.clearOldCache(30);
     // console.log('[Cache Cleanup] USDA cache cleaned');
     
     // The ApiCacheService (used by BarcodeLookupService) handles its own cleanup automatically
@@ -42,7 +42,7 @@ export async function getCacheStats(): Promise<{
   barcode: { totalEntries: number; oldestEntry: Date | null };
 }> {
   try {
-    const usdaStats = await storage.getUSDACacheStats();
+    const usdaStats = await foodStorage.getUSDACacheStats();
     
     // The barcode cache stats are now managed by ApiCacheService
     // We can't easily access them from here, so returning empty stats for now

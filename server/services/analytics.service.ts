@@ -203,7 +203,7 @@ Example for a traffic spike:
         }
       };
 
-      return await storage.createAnalyticsInsight(insightData);
+      return await analyticsStorage.createAnalyticsInsight(insightData);
     } catch (error) {
       console.error("Failed to generate insight:", error);
       
@@ -238,7 +238,7 @@ Example for a traffic spike:
         }
       };
 
-      return await storage.createAnalyticsInsight(fallbackInsight);
+      return await analyticsStorage.createAnalyticsInsight(fallbackInsight);
     }
   }
 

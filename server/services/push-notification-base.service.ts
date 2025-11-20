@@ -5,7 +5,7 @@
  * Eliminates duplication in token management, error handling, and notification formatting
  */
 
-import { storage } from "../storage";
+import { notificationStorage } from "../storage/index";
 import type { PushToken } from "@shared/schema";
 
 export interface PushNotificationPayload {
@@ -68,7 +68,7 @@ export abstract class BasePushNotificationService {
    */
   async getUserTokens(userId: string): Promise<PushToken[]> {
     try {
-      const tokens = await storage.getPushTokens(userId);
+      const tokens = await notificationStorage.getPushTokens(userId);
       return tokens || [];
     } catch (error) {
       console.error(`[${this.serviceName}] Error fetching user tokens:`, error);
@@ -81,7 +81,7 @@ export abstract class BasePushNotificationService {
    */
   async registerToken(userId: string, token: string, metadata?: any): Promise<void> {
     try {
-      await storage.upsertPushToken(userId, {
+      await notificationStorage.upsertPushToken(userId, {
         token,
         platform: this.serviceName.toLowerCase() as any,
         deviceInfo: metadata,
@@ -99,7 +99,7 @@ export abstract class BasePushNotificationService {
    */
   async removeInvalidToken(userId: string, token: string): Promise<void> {
     try {
-      await storage.deletePushToken(userId, token);
+      await notificationStorage.deletePushToken(userId, token);
       // console.log(`[${this.serviceName}] Removed invalid token for user ${userId}`);
     } catch (error) {
       console.error(`[${this.serviceName}] Error removing invalid token:`, error);
@@ -164,7 +164,7 @@ export abstract class BasePushNotificationService {
             successCount++;
             
             // Update last used timestamp by upserting with new timestamp
-            await storage.upsertPushToken(userId, {
+            await notificationStorage.upsertPushToken(userId, {
               token,
               platform: this.serviceName.toLowerCase() as any,
             });

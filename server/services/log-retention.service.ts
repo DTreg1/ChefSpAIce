@@ -105,7 +105,7 @@ class LogRetentionService {
   private async getLastCleanupTime(): Promise<Date | null> {
     try {
       // Get the most recent system cleanup log
-      const logs = await storage.getSystemActivityLogs({
+      const logs = await systemStorage.getSystemActivityLogs({
         action: "log_cleanup_completed",
         limit: 1,
       });
@@ -173,7 +173,7 @@ class LogRetentionService {
         endTime: endTime.toISOString(),
       };
       
-      await storage.createActivityLog({
+      await systemStorage.createActivityLog({
         userId: null, // System action
         action: "log_cleanup_completed",
         entity: "activity_logs",
@@ -192,7 +192,7 @@ class LogRetentionService {
         startTime: startTime.toISOString(),
       };
       
-      await storage.createActivityLog({
+      await systemStorage.createActivityLog({
         userId: null,
         action: "log_cleanup_error",
         entity: "activity_logs",
@@ -213,7 +213,7 @@ class LogRetentionService {
     try {
       // Delete old logs based on the policy
       // cleanupOldActivityLogs expects retentionDays (how many days to keep)
-      const deletedCount = await storage.cleanupOldActivityLogs(
+      const deletedCount = await systemStorage.cleanupOldActivityLogs(
         policy.retentionDays,
         actionFilter.excludeActions
       );

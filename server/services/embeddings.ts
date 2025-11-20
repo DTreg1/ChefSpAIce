@@ -1,6 +1,6 @@
 import { openai } from "../openai";
 import type { ContentEmbedding, InsertContentEmbedding, RelatedContentCache, InsertRelatedContentCache } from "@shared/schema";
-import type { IStorage } from '../storage';
+import type { IContentStorage } from '../storage/interfaces/IContentStorage';
 
 /**
  * Embeddings Service
@@ -18,7 +18,7 @@ const MAX_TEXT_LENGTH = 8000; // Max text length to avoid token limits
  * Service class for managing content embeddings and recommendations
  */
 export class EmbeddingsService {
-  constructor(private storage: IStorage) {}
+  constructor(private storage: IContentStorage) {}
 
   /**
    * Generate embedding for text content
@@ -66,12 +66,10 @@ export class EmbeddingsService {
 
     const embeddingData: InsertContentEmbedding = {
       contentId,
-      contentType,
+      contentType: contentType as 'recipe' | 'article' | 'product' | 'document' | 'media',
       embedding,
-      embeddingModel: EMBEDDING_MODEL,
-      contentText,
+      embeddingType: 'full',
       metadata,
-      userId,
     };
 
     return await this.storage.upsertContentEmbedding(embeddingData);
@@ -92,15 +90,15 @@ export class EmbeddingsService {
     limit: number = 10
   ): Promise<Array<{ id: string; type: string; title: string; score: number; metadata?: any }>> {
     // Check cache first
-    const cached = await this.storage.getRelatedContent(contentId, contentType, userId);
+    const cached = await this.storage.getRelatedContent(contentId, contentType);
     
     if (cached && new Date(cached.expiresAt) > new Date()) {
       console.log(`Using cached related content for ${contentId}`);
-      return cached.relatedItems;
+      return cached.relatedContent as any;
     }
 
     // Get the embedding for the source content
-    const sourceEmbedding = await this.storage.getContentEmbedding(contentId, contentType, userId);
+    const sourceEmbedding = await this.storage.getContentEmbedding(contentId, contentType);
     
     if (!sourceEmbedding) {
       throw new Error('Source content embedding not found');
@@ -110,7 +108,6 @@ export class EmbeddingsService {
     const results = await this.storage.searchByEmbedding(
       sourceEmbedding.embedding,
       contentType,
-      userId,
       limit + 1 // Get one extra to exclude the source content
     );
 
@@ -130,9 +127,8 @@ export class EmbeddingsService {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await this.storage.cacheRelatedContent({
       contentId,
-      contentType,
-      relatedItems,
-      userId,
+      contentType: contentType as 'recipe' | 'article' | 'product' | 'document' | 'media',
+      relatedContent: relatedItems as any,
       expiresAt,
     });
 
@@ -158,7 +154,6 @@ export class EmbeddingsService {
     const recentEmbeddings = await this.storage.searchByEmbedding(
       new Array(EMBEDDING_DIMENSIONS).fill(0).map(() => Math.random() * 0.1),
       contentType,
-      userId,
       limit
     );
 
