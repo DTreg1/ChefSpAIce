@@ -8,7 +8,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import multer from "multer";
-import type { DatabaseStorage } from "../storage";
+import type { DatabaseStorage } from "../storage/index";
 import {
   generateAltText,
   batchGenerateAltText,
@@ -79,7 +79,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
       const data = generateAltTextSchema.parse(req.body);
 
       // Check if image metadata already exists
-      let imageMetadata = await storage.getImageMetadataByUrl(userId, data.imageUrl);
+      let imageMetadata = await aiMlStorage.getImageMetadataByUrl(userId, data.imageUrl);
 
       // Generate alt text
       const result = await generateAltText(data.imageUrl, data.context);
@@ -87,7 +87,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
       if (data.saveToDb) {
         if (!imageMetadata) {
           // Create new image metadata
-          imageMetadata = await storage.createImageMetadata(userId, {
+          imageMetadata = await aiMlStorage.createImageMetadata(userId, {
             imageUrl: data.imageUrl,
             generatedAlt: result.altText,
             altText: result.altText,
@@ -99,7 +99,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
           });
         } else {
           // Update existing metadata
-          imageMetadata = await storage.updateImageMetadata(userId, imageMetadata.id, {
+          imageMetadata = await aiMlStorage.updateImageMetadata(userId, imageMetadata.id, {
             generatedAlt: result.altText,
             altText: imageMetadata.altText || result.altText, // Don't override user-edited alt text
             aiModel: "gpt-5-vision",
@@ -116,7 +116,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
           data.context
         );
         
-        await storage.upsertAltTextQuality(imageMetadata.id, quality as any);
+        await aiMlStorage.upsertAltTextQuality(imageMetadata.id, quality as any);
       }
 
       res.json({
@@ -170,11 +170,11 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
 
           try {
             // Check if image exists
-            let imageMetadata = await storage.getImageMetadata(userId, imageData.id);
+            let imageMetadata = await aiMlStorage.getImageMetadata(userId, imageData.id);
             
             if (!imageMetadata) {
               // Create new
-              imageMetadata = await storage.createImageMetadata(userId, {
+              imageMetadata = await aiMlStorage.createImageMetadata(userId, {
                 imageUrl: result.imageUrl,
                 generatedAlt: result.altText,
                 altText: result.altText,
@@ -186,7 +186,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
               });
             } else {
               // Update existing
-              imageMetadata = await storage.updateImageMetadata(userId, imageData.id, {
+              imageMetadata = await aiMlStorage.updateImageMetadata(userId, imageData.id, {
                 generatedAlt: result.altText,
                 altText: imageMetadata.altText || result.altText,
                 aiModel: "gpt-5-vision",
@@ -203,7 +203,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
               imageData.context
             );
             
-            await storage.upsertAltTextQuality(imageMetadata.id, quality as any);
+            await aiMlStorage.upsertAltTextQuality(imageMetadata.id, quality as any);
 
             return {
               id: imageMetadata.id,
@@ -251,7 +251,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
       const data = updateAltTextSchema.parse(req.body);
 
       // Update image metadata
-      const imageMetadata = await storage.updateImageMetadata(userId, imageId, {
+      const imageMetadata = await aiMlStorage.updateImageMetadata(userId, imageId, {
         altText: data.altText,
         isDecorative: data.isDecorative,
         title: data.title
@@ -264,7 +264,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
         imageMetadata.context || undefined
       );
       
-      await storage.upsertAltTextQuality(imageId, quality as Omit<any, 'imageId'>);
+      await aiMlStorage.upsertAltTextQuality(imageId, quality as Omit<any, 'imageId'>);
 
       res.json({
         success: true,
@@ -291,7 +291,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
       const userId = req.user!.id;
       const imageId = req.params.id;
 
-      const imageMetadata = await storage.getImageMetadata(userId, imageId);
+      const imageMetadata = await aiMlStorage.getImageMetadata(userId, imageId);
       if (!imageMetadata) {
         return res.status(404).json({
           success: false,
@@ -362,7 +362,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
           }
         : undefined;
 
-      const report = await storage.getAccessibilityReport(userId, {
+      const report = await aiMlStorage.getAccessibilityReport(userId, {
         wcagLevel: filters.wcagLevel,
         minScore: filters.minScore,
         maxScore: filters.maxScore,
@@ -400,7 +400,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
         needsImprovement: req.query.needsImprovement === 'true'
       };
 
-      const result = await storage.getImagesPaginated(userId, page, limit, filters);
+      const result = await aiMlStorage.getImagesPaginated(userId, page, limit, filters);
 
       res.json({
         success: true,
@@ -424,7 +424,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
       const userId = req.user!.id;
       const imageId = req.params.id;
 
-      const imageMetadata = await storage.getImageMetadata(userId, imageId);
+      const imageMetadata = await aiMlStorage.getImageMetadata(userId, imageId);
       if (!imageMetadata) {
         return res.status(404).json({
           success: false,
@@ -432,7 +432,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
         });
       }
 
-      const quality = await storage.getAltTextQuality(imageId);
+      const quality = await aiMlStorage.getAltTextQuality(imageId);
 
       res.json({
         success: true,
@@ -459,7 +459,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
       const userId = req.user!.id;
       const imageId = req.params.id;
 
-      await storage.deleteImageMetadata(userId, imageId);
+      await aiMlStorage.deleteImageMetadata(userId, imageId);
 
       res.json({
         success: true,
@@ -484,7 +484,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
       const imageId = req.params.id;
       const { notes } = req.body;
 
-      const quality = await storage.reviewAltTextQuality(imageId, userId, notes);
+      const quality = await aiMlStorage.reviewAltTextQuality(imageId, userId, notes);
 
       res.json({
         success: true,

@@ -11,7 +11,7 @@
 
 import express from "express";
 import multer from "multer";
-import { storage } from "../storage";
+import { aiMlStorage, systemStorage } from "../storage/index";
 import { FaceDetectionService } from "../services/faceDetection.service";
 
 const router = express.Router();

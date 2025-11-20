@@ -14,7 +14,7 @@
 
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { isAuthenticated } from "../middleware/auth.middleware";
-import { storage } from "../storage";
+import { aiMlStorage } from "../storage/index";
 import { z } from "zod";
 import OpenAI from "openai";
 // Natural language processing tools
@@ -250,7 +250,7 @@ router.post("/analyze", isAuthenticated, async (req: ExpressRequest, res: Expres
     const detectedTone = detectTone(text);
     
     // Create writing session
-    const session = await storage.createWritingSession({
+    const session = await aiMlStorage.createWritingSession({
       userId,
       originalText: text,
       documentId: null,
@@ -336,7 +336,7 @@ Only return valid JSON array, no other text.`;
     
     // Save suggestions to database
     if (suggestions.length > 0) {
-      await storage.addWritingSuggestions(session.id, suggestions as any);
+      await aiMlStorage.addWritingSuggestions(session.id, suggestions as any);
     }
     
     res.json({
@@ -546,7 +546,7 @@ router.post("/session/:sessionId/accept", isAuthenticated, async (req: ExpressRe
     }
     
     // Update session with improved text
-    const updatedSession = await storage.updateWritingSession(
+    const updatedSession = await aiMlStorage.updateWritingSession(
       userId,
       sessionId,
       improvedText,
@@ -572,7 +572,7 @@ router.get("/stats", isAuthenticated, async (req: ExpressRequest, res: ExpressRe
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const stats = await storage.getWritingStats(userId);
+    const stats = await aiMlStorage.getWritingStats(userId);
     
     res.json(stats);
   } catch (error) {

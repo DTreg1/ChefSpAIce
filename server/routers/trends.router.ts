@@ -7,7 +7,7 @@
 
 import { Router } from "express";
 import { z } from "zod";
-import { storage } from "../storage";
+import { analyticsStorage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
@@ -64,7 +64,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
     try {
-      const trends = await storage.getCurrentTrends();
+      const trends = await analyticsStorage.getCurrentTrends();
       
       res.json({
         success: true,
@@ -93,7 +93,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest, res) => {
     try {
-      const trends = await storage.getEmergingTrends();
+      const trends = await analyticsStorage.getEmergingTrends();
       
       res.json({
         success: true,
@@ -136,7 +136,7 @@ router.get(
         end: new Date(end as string)
       };
       
-      const trends = await storage.getHistoricalTrends(dateRange);
+      const trends = await analyticsStorage.getHistoricalTrends(dateRange);
       
       res.json({
         success: true,
@@ -222,7 +222,7 @@ router.post(
           }
           
           // Update trend in storage
-          await storage.updateTrend(trend.id, trend);
+          await analyticsStorage.updateTrend(trend.id, trend);
         }
       }
       
@@ -272,11 +272,11 @@ router.post(
     const { alertType, conditions, notificationChannels } = validation.data;
     
     try {
-      const alert = await storage.subscribeTrendAlerts(userId, conditions, alertType);
+      const alert = await analyticsStorage.subscribeTrendAlerts(userId, conditions, alertType);
       
       // Update notification channels if provided
       if (notificationChannels) {
-        await storage.updateTrendAlert(alert.id, {
+        await analyticsStorage.updateTrendAlert(alert.id, {
           notificationChannels
         });
       }
@@ -310,7 +310,7 @@ router.get(
     }
     
     try {
-      const alerts = await storage.getTrendAlerts(userId);
+      const alerts = await analyticsStorage.getTrendAlerts(userId);
       
       res.json({
         success: true,
@@ -356,7 +356,7 @@ router.post(
     const { alertId, actionTaken } = validation.data;
     
     try {
-      await storage.acknowledgeTrendAlert(alertId, actionTaken);
+      await analyticsStorage.acknowledgeTrendAlert(alertId, actionTaken);
       
       res.json({
         success: true,
@@ -383,7 +383,7 @@ router.get(
     const { trendId } = req.params;
     
     try {
-      const trend = await storage.getTrendById(trendId);
+      const trend = await analyticsStorage.getTrendById(trendId);
       
       if (!trend) {
         return res.status(404).json({
@@ -392,7 +392,7 @@ router.get(
       }
       
       // Get related alerts
-      const alerts = await storage.getTrendAlertsByTrendId(trendId);
+      const alerts = await analyticsStorage.getTrendAlertsByTrendId(trendId);
       
       res.json({
         success: true,
@@ -434,7 +434,7 @@ router.get(
     const filters = validation.data;
     
     try {
-      const trends = await storage.getTrends(filters);
+      const trends = await analyticsStorage.getTrends(filters);
       
       res.json({
         success: true,

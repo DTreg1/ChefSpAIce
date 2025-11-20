@@ -7,7 +7,7 @@
 
 import { Router } from "express";
 import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
-import { storage } from "../storage";
+import { systemStorage } from "../storage/index";
 import { 
   predictiveMaintenanceService,
   MONITORED_COMPONENTS,
@@ -75,7 +75,7 @@ router.get("/api/maintenance/predict", isAuthenticated, async (req, res, next) =
   try {
     const { status = 'active', component } = req.query;
     
-    const predictions = await storage.getMaintenancePredictions(
+    const predictions = await systemStorage.getMaintenancePredictions(
       status as string | undefined,
       component as string | undefined
     );
@@ -111,7 +111,7 @@ router.post("/api/maintenance/analyze", isAuthenticated, async (req, res, next) 
     const predictions = await predictiveMaintenanceService.analyzeComponent(component);
     
     // Get component health
-    const health = await storage.getComponentHealth(component);
+    const health = await systemStorage.getComponentHealth(component);
     
     res.json({
       component,
@@ -174,11 +174,11 @@ router.post("/api/maintenance/complete", isAuthenticated, async (req, res, next)
   try {
     const data = completeMaintenanceSchema.parse(req.body);
     
-    const history = await storage.saveMaintenanceHistory({
+    const history = await systemStorage.saveMaintenanceHistory({
       component: data.component,
       issue: data.issue,
       predictedIssue: data.predictionId ? 
-        (await storage.getMaintenancePredictions(undefined, data.component))
+        (await systemStorage.getMaintenancePredictions(undefined, data.component))
           .find(p => p.id === data.predictionId)?.predictedIssue : 
         undefined,
       predictionId: data.predictionId,
@@ -209,7 +209,7 @@ router.get("/api/maintenance/health", isAuthenticated, async (req, res, next) =>
     const health = await predictiveMaintenanceService.calculateSystemHealth();
     
     // Add additional context
-    const predictions = await storage.getMaintenancePredictions('active');
+    const predictions = await systemStorage.getMaintenancePredictions('active');
     const criticalIssues = predictions.filter(p => p.urgencyLevel === 'critical');
     
     res.json({
@@ -255,7 +255,7 @@ router.get("/api/maintenance/metrics", isAuthenticated, async (req, res, next) =
   try {
     const params = getMetricsSchema.parse(req.query);
     
-    const metrics = await storage.getSystemMetrics(
+    const metrics = await systemStorage.getSystemMetrics(
       params.component,
       params.startDate ? new Date(params.startDate) : undefined,
       params.endDate ? new Date(params.endDate) : undefined,
@@ -289,7 +289,7 @@ router.get("/api/maintenance/history", isAuthenticated, async (req, res, next) =
   try {
     const { component, limit = 50 } = req.query;
     
-    const history = await storage.getMaintenanceHistory(
+    const history = await systemStorage.getMaintenanceHistory(
       component as string | undefined,
       Number(limit)
     );
@@ -361,8 +361,8 @@ router.get("/api/maintenance/components", isAuthenticated, async (req, res, next
   try {
     const components = await Promise.all(
       Object.values(MONITORED_COMPONENTS).map(async (component) => {
-        const health = await storage.getComponentHealth(component);
-        const predictions = await storage.getMaintenancePredictions('active', component);
+        const health = await systemStorage.getComponentHealth(component);
+        const predictions = await systemStorage.getMaintenancePredictions('active', component);
         
         return {
           name: component,

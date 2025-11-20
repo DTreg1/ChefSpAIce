@@ -7,7 +7,7 @@
 
 import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import { isAuthenticated } from "../middleware";
-import { storage } from "../storage";
+import { aiMlStorage } from "../storage/index";
 import { z } from "zod";
 import { getOpenAIClient } from "../config/openai-config";
 
@@ -23,7 +23,7 @@ const openai = getOpenAIClient();
 router.get("/templates", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
     const contextType = req.query.contextType as string | undefined;
-    const templates = await storage.getDraftTemplates(contextType);
+    const templates = await aiMlStorage.getDraftTemplates(contextType);
     res.json(templates);
   } catch (error) {
     console.error("Error fetching templates:", error);
@@ -46,7 +46,7 @@ router.post("/templates", isAuthenticated, async (req: ExpressRequest<any, any, 
     });
     
     const data = schema.parse(req.body);
-    const template = await storage.createDraftTemplate({
+    const template = await aiMlStorage.createDraftTemplate({
       ...data,
       usageCount: 0
     });
@@ -87,7 +87,7 @@ router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, a
     // Save generated drafts with unique message ID and analytics metadata
     const messageId = `msg_${Date.now()}`;
     const savedDrafts = await Promise.all(
-      drafts.map((draft, index) => storage.createGeneratedDraft(userId, {
+      drafts.map((draft, index) => aiMlStorage.createGeneratedDraft(userId, {
         originalMessageId: messageId,
         originalMessage,
         draftContent: draft.content,
@@ -194,15 +194,15 @@ router.post("/feedback", isAuthenticated, async (req: ExpressRequest<any, any, a
     const { draftId, selected, edited, editedContent } = schema.parse(req.body);
     
     if (selected) {
-      await storage.markDraftSelected(userId, draftId);
+      await aiMlStorage.markDraftSelected(userId, draftId);
     }
     
     if (edited && editedContent) {
-      await storage.markDraftEdited(userId, draftId, editedContent);
+      await aiMlStorage.markDraftEdited(userId, draftId, editedContent);
     }
     
     // Log activity
-    await storage.createActivityLog({
+    await aiMlStorage.createActivityLog({
       userId,
       action: selected ? "draft_selected" : "draft_viewed",
       entity: "draft",
@@ -227,7 +227,7 @@ router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const originalMessageId = req.query.messageId as string | undefined;
-    const history = await storage.getGeneratedDrafts(userId, originalMessageId);
+    const history = await aiMlStorage.getGeneratedDrafts(userId, originalMessageId);
     res.json(history);
   } catch (error) {
     console.error("Error fetching draft history:", error);

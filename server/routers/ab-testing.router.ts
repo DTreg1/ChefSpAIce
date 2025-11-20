@@ -1,5 +1,5 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
-import { storage } from "../storage";
+import { experimentsStorage } from "../storage/index";
 import { asyncHandler } from "../middleware/error.middleware";
 import { getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { insertAbTestSchema, insertAbTestResultSchema } from "@shared/schema";
@@ -21,7 +21,7 @@ router.post("/create", asyncHandler(async (req: ExpressRequest<any, any, any, an
       createdBy: userId
     });
 
-    const test = await storage.createAbTest(validated);
+    const test = await experimentsStorage.createAbTest(validated);
     res.json(test);
   } catch (error: any) {
     console.error("Error creating A/B test:", error);
@@ -41,7 +41,7 @@ router.get("/", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res
       filters.createdBy = req.query.createdBy as string;
     }
     
-    const tests = await storage.getAbTests(filters);
+    const tests = await experimentsStorage.getAbTests(filters);
     res.json(tests);
   } catch (error: any) {
     console.error("Error fetching A/B tests:", error);
@@ -54,14 +54,14 @@ router.get("/results/:id", asyncHandler(async (req: ExpressRequest<any, any, any
   const { id } = req.params;
   
   try {
-    const test = await storage.getAbTest(id);
+    const test = await experimentsStorage.getAbTest(id);
     if (!test) {
       return res.status(404).json({ error: "Test not found" });
     }
 
-    const results = await storage.getAbTestResults(id);
-    const aggregated = await storage.getAggregatedAbTestResults(id);
-    const insights = await storage.getAbTestInsights(id);
+    const results = await experimentsStorage.getAbTestResults(id);
+    const aggregated = await experimentsStorage.getAggregatedAbTestResults(id);
+    const insights = await experimentsStorage.getAbTestInsights(id);
     
     res.json({
       test,
@@ -79,7 +79,7 @@ router.get("/results/:id", asyncHandler(async (req: ExpressRequest<any, any, any
 router.post("/results", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
     const validated = insertAbTestResultSchema.parse(req.body);
-    const result = await storage.upsertAbTestResult(validated);
+    const result = await experimentsStorage.upsertAbTestResult(validated);
     res.json(result);
   } catch (error: any) {
     console.error("Error updating test results:", error);
@@ -96,16 +96,16 @@ router.post("/analyze", asyncHandler(async (req: ExpressRequest<any, any, any, a
   }
 
   try {
-    const test = await storage.getAbTest(testId);
+    const test = await experimentsStorage.getAbTest(testId);
     if (!test) {
       return res.status(404).json({ error: "Test not found" });
     }
 
     // Calculate statistical significance
-    const significance = await storage.calculateStatisticalSignificance(testId);
+    const significance = await experimentsStorage.calculateStatisticalSignificance(testId);
     
     // Get aggregated results for AI analysis
-    const aggregated = await storage.getAggregatedAbTestResults(testId);
+    const aggregated = await experimentsStorage.getAggregatedAbTestResults(testId);
     
     // Generate AI insights if OpenAI API key is available
     let aiInsights = null;
@@ -198,7 +198,7 @@ router.post("/analyze", asyncHandler(async (req: ExpressRequest<any, any, any, a
         }
 
         // Save insights to database
-        aiInsights = await storage.upsertAbTestInsight({
+        aiInsights = await experimentsStorage.upsertAbTestInsight({
           testId,
           winner: significance.winner,
           confidence: significance.confidence,
@@ -246,7 +246,7 @@ router.get("/recommendations", asyncHandler(async (req: ExpressRequest<any, any,
   const userId = getAuthenticatedUserId(req);
   
   try {
-    const recommendations = await storage.getAbTestRecommendations(userId ?? undefined);
+    const recommendations = await experimentsStorage.getAbTestRecommendations(userId ?? undefined);
     res.json(recommendations);
   } catch (error: any) {
     console.error("Error fetching recommendations:", error);
@@ -272,20 +272,20 @@ router.post("/implement", asyncHandler(async (req: ExpressRequest<any, any, any,
   }
 
   try {
-    const test = await storage.getAbTest(testId);
+    const test = await experimentsStorage.getAbTest(testId);
     if (!test) {
       return res.status(404).json({ error: "Test not found" });
     }
     
     // Check if user has permission (created the test or is admin)
     if (test.createdBy !== userId) {
-      const user = await storage.getUser(userId);
+      const user = await experimentsStorage.getUser(userId);
       if (!user?.isAdmin) {
         return res.status(403).json({ error: "Permission denied" });
       }
     }
 
-    await storage.implementAbTestWinner(testId, variant);
+    await experimentsStorage.implementAbTestWinner(testId, variant);
     
     res.json({
       success: true,
@@ -307,20 +307,20 @@ router.put("/:id", asyncHandler(async (req: ExpressRequest<any, any, any, any>, 
   }
 
   try {
-    const test = await storage.getAbTest(id);
+    const test = await experimentsStorage.getAbTest(id);
     if (!test) {
       return res.status(404).json({ error: "Test not found" });
     }
     
     // Check permission
     if (test.createdBy !== userId) {
-      const user = await storage.getUser(userId);
+      const user = await experimentsStorage.getUser(userId);
       if (!user?.isAdmin) {
         return res.status(403).json({ error: "Permission denied" });
       }
     }
 
-    const updated = await storage.updateAbTest(id, req.body);
+    const updated = await experimentsStorage.updateAbTest(id, req.body);
     res.json(updated);
   } catch (error: any) {
     console.error("Error updating test:", error);
@@ -338,20 +338,20 @@ router.delete("/:id", asyncHandler(async (req: ExpressRequest<any, any, any, any
   }
 
   try {
-    const test = await storage.getAbTest(id);
+    const test = await experimentsStorage.getAbTest(id);
     if (!test) {
       return res.status(404).json({ error: "Test not found" });
     }
     
     // Check permission
     if (test.createdBy !== userId) {
-      const user = await storage.getUser(userId);
+      const user = await experimentsStorage.getUser(userId);
       if (!user?.isAdmin) {
         return res.status(403).json({ error: "Permission denied" });
       }
     }
 
-    await storage.deleteAbTest(id);
+    await experimentsStorage.deleteAbTest(id);
     res.json({ success: true, message: "Test deleted successfully" });
   } catch (error: any) {
     console.error("Error deleting test:", error);

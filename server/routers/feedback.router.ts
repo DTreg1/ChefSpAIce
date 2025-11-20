@@ -1,6 +1,6 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { z } from "zod";
-import { storage } from "../storage";
+import { feedbackStorage } from "../storage/index";
 import { insertUserFeedbackSchema, type UserFeedback } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
@@ -25,7 +25,7 @@ router.post(
         });
       }
 
-      const feedback = await storage.createFeedback(userId, validation.data);
+      const feedback = await feedbackStorage.createFeedback(userId, validation.data);
       
       res.json(feedback);
     } catch (error) {
@@ -49,7 +49,7 @@ router.get(
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const { page = 1, limit = 10, category, status } = req.query;
       
-      let feedbacks = await storage.getUserFeedback(userId, limit * 10); // Get more for filtering
+      let feedbacks = await feedbackStorage.getUserFeedback(userId, limit * 10); // Get more for filtering
       
       // Apply filters
       if (category) {
@@ -91,7 +91,7 @@ router.patch(
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const feedbackId = req.params.id;
       
-      await storage.upvoteFeedback(userId, feedbackId);
+      await feedbackStorage.upvoteFeedback(userId, feedbackId);
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating feedback:", error);

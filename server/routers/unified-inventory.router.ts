@@ -3,7 +3,7 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateBody } from "../middleware";
 import { inventoryStorage } from "../storage/domains/inventory.storage";
-import { storage } from "../storage"; // Keep for shopping list operations temporarily
+import { storage } from "../storage/index"; // Keep for shopping list operations temporarily
 import { insertUserInventorySchema, insertShoppingListItemSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -54,7 +54,7 @@ router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, a
       
       case "shopping-list": {
         // Get shopping list items with optional status filter
-        const shoppingData = await storage.getGroupedShoppingListItems(userId);
+        const shoppingData = await inventoryStorage.getGroupedShoppingListItems(userId);
         let items = shoppingData.items || [];
         
         if (status === "checked") {
@@ -164,7 +164,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
       }
       
       case "shopping-list": {
-        const item = await storage.createShoppingListItem(userId, data);
+        const item = await inventoryStorage.createShoppingListItem(userId, data);
         res.json({ data: item, type: "shopping-list" });
         break;
       }
@@ -203,7 +203,7 @@ router.post("/inventory/batch", isAuthenticated, async (req: ExpressRequest<any,
           const { recipeId, ingredients  } = req.body || {};
           const createdItems = await Promise.all(
             ingredients.map((ingredient: string) =>
-              storage.createShoppingListItem(userId, {
+              inventoryStorage.createShoppingListItem(userId, {
                 ingredient: ingredient,
                 recipeId,
                 isChecked: false
@@ -220,11 +220,11 @@ router.post("/inventory/batch", isAuthenticated, async (req: ExpressRequest<any,
       case "delete": {
         if (type === "shopping-list" && req.body.filter === "checked") {
           // Clear checked items
-          const items = await storage.getShoppingListItems(userId);
+          const items = await inventoryStorage.getShoppingListItems(userId);
           const checkedItems = items.filter((item: any) => item.isChecked);
           
           for (const item of checkedItems) {
-            await storage.deleteShoppingListItem(item.id, userId);
+            await inventoryStorage.deleteShoppingListItem(item.id, userId);
           }
           
           res.json({ 
@@ -272,14 +272,14 @@ router.put("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any, an
       
       case "shopping-list": {
         // Toggle checked status
-        const items = await storage.getShoppingListItems(userId);
+        const items = await inventoryStorage.getShoppingListItems(userId);
         const item = items.find((i: any) => i.id === itemId);
         
         if (!item) {
           return res.status(404).json({ error: "Shopping list item not found" });
         }
         
-        const updated = await storage.updateShoppingListItem(
+        const updated = await inventoryStorage.updateShoppingListItem(
           itemId,
           userId,
           { isChecked: !item.isChecked }
@@ -323,14 +323,14 @@ router.delete("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any,
       
       case "shopping-list": {
         // Verify ownership
-        const items = await storage.getShoppingListItems(userId);
+        const items = await inventoryStorage.getShoppingListItems(userId);
         const existing = items.find((item: any) => item.id === itemId);
         
         if (!existing) {
           return res.status(404).json({ error: "Shopping list item not found" });
         }
         
-        await storage.deleteShoppingListItem(itemId, userId);
+        await inventoryStorage.deleteShoppingListItem(itemId, userId);
         res.json({ message: "Shopping list item deleted", type: "shopping-list" });
         break;
       }
@@ -358,7 +358,7 @@ router.post("/inventory/shopping-list/add-missing", isAuthenticated, async (req:
     
     const items = await Promise.all(
       ingredients.map((ingredient: string) =>
-        storage.createShoppingListItem(userId, {
+        inventoryStorage.createShoppingListItem(userId, {
           ingredient: ingredient,
           recipeId,
           isChecked: false

@@ -10,7 +10,7 @@
 
 import express from "express";
 import multer from "multer";
-import { storage } from "../storage";
+import { aiMlStorage } from "../storage/index";
 import type { InsertTranscription, InsertTranscriptEdit } from "@shared/schema";
 import { insertTranscriptionSchema, insertTranscriptEditSchema } from "@shared/schema";
 import { z } from "zod";
@@ -65,7 +65,7 @@ router.get("/", requireAuth, async (req: any, res: any) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
     
-    const result = await storage.getTranscriptionsPaginated(
+    const result = await aiMlStorage.getTranscriptionsPaginated(
       req.user.id,
       parseInt(page as string),
       parseInt(limit as string),
@@ -85,7 +85,7 @@ router.get("/", requireAuth, async (req: any, res: any) => {
  */
 router.get("/:id", requireAuth, async (req: any, res: any) => {
   try {
-    const transcription = await storage.getTranscription(req.user.id, req.params.id);
+    const transcription = await aiMlStorage.getTranscription(req.user.id, req.params.id);
     
     if (!transcription) {
       return res.status(404).json({ error: "Transcription not found" });
@@ -137,7 +137,7 @@ router.post("/audio", requireAuth, upload.single("audio"), async (req: any, res:
       fs.unlinkSync(req.file.path);
 
       // Save transcription to database
-      const savedTranscription = await storage.createTranscription(req.user.id, {
+      const savedTranscription = await aiMlStorage.createTranscription(req.user.id, {
         audioUrl: `/uploads/audio/${req.file.filename}`, // Store reference to audio file
         transcript: transcription.text,
         language: transcription.language || language,
@@ -191,7 +191,7 @@ router.post("/stream", requireAuth, async (req: any, res: any) => {
     const { language = "en", title = "" } = req.body;
 
     // Create initial transcription record
-    const transcription = await storage.createTranscription(req.user.id, {
+    const transcription = await aiMlStorage.createTranscription(req.user.id, {
       audioUrl: "",
       transcript: "",
       language,
@@ -244,14 +244,14 @@ router.post("/stream", requireAuth, async (req: any, res: any) => {
       })}\n\n`);
 
       // Update transcription in database
-      await storage.updateTranscription(req.user.id, transcription.id, {
+      await aiMlStorage.updateTranscription(req.user.id, transcription.id, {
         transcript: fullTranscript,
         duration: currentTime,
       });
     }
 
     // Finalize transcription
-    await storage.updateTranscription(req.user.id, transcription.id, {
+    await aiMlStorage.updateTranscription(req.user.id, transcription.id, {
       status: "completed",
     });
 
@@ -284,13 +284,13 @@ router.put("/:id/edit", requireAuth, async (req: any, res: any) => {
     }
 
     // Get the transcription to ensure it exists and belongs to the user
-    const transcription = await storage.getTranscription(req.user.id, req.params.id);
+    const transcription = await aiMlStorage.getTranscription(req.user.id, req.params.id);
     if (!transcription) {
       return res.status(404).json({ error: "Transcription not found" });
     }
 
     // Create transcript edit record
-    const edit = await storage.createTranscriptEdit(req.user.id, {
+    const edit = await aiMlStorage.createTranscriptEdit(req.user.id, {
       transcriptionId: req.params.id,
       timestamp: timestamp || 0,
       originalSegment: original_text,
@@ -305,7 +305,7 @@ router.put("/:id/edit", requireAuth, async (req: any, res: any) => {
       corrected_text
     );
 
-    const updatedTranscription = await storage.updateTranscription(
+    const updatedTranscription = await aiMlStorage.updateTranscription(
       req.user.id,
       req.params.id,
       {
@@ -341,12 +341,12 @@ router.put("/:id/edit", requireAuth, async (req: any, res: any) => {
  */
 router.get("/:id/edits", requireAuth, async (req: any, res: any) => {
   try {
-    const transcription = await storage.getTranscription(req.user.id, req.params.id);
+    const transcription = await aiMlStorage.getTranscription(req.user.id, req.params.id);
     if (!transcription) {
       return res.status(404).json({ error: "Transcription not found" });
     }
 
-    const edits = await storage.getTranscriptEdits(req.params.id);
+    const edits = await aiMlStorage.getTranscriptEdits(req.params.id);
     res.json(edits);
   } catch (error) {
     console.error("Error getting transcript edits:", error);
@@ -362,7 +362,7 @@ router.get("/:id/export", requireAuth, async (req: any, res: any) => {
   try {
     const { format = "txt" } = req.query;
     
-    const transcription = await storage.getTranscription(req.user.id, req.params.id);
+    const transcription = await aiMlStorage.getTranscription(req.user.id, req.params.id);
     if (!transcription) {
       return res.status(404).json({ error: "Transcription not found" });
     }
@@ -437,12 +437,12 @@ router.get("/:id/export", requireAuth, async (req: any, res: any) => {
  */
 router.delete("/:id", requireAuth, async (req: any, res: any) => {
   try {
-    const transcription = await storage.getTranscription(req.user.id, req.params.id);
+    const transcription = await aiMlStorage.getTranscription(req.user.id, req.params.id);
     if (!transcription) {
       return res.status(404).json({ error: "Transcription not found" });
     }
 
-    await storage.deleteTranscription(req.user.id, req.params.id);
+    await aiMlStorage.deleteTranscription(req.user.id, req.params.id);
     res.json({ success: true, message: "Transcription deleted successfully" });
   } catch (error) {
     console.error("Error deleting transcription:", error);
@@ -462,7 +462,7 @@ router.get("/search", requireAuth, async (req: any, res: any) => {
       return res.status(400).json({ error: "Search query is required" });
     }
 
-    const results = await storage.searchTranscriptions(
+    const results = await aiMlStorage.searchTranscriptions(
       req.user.id, 
       q as string,
       parseInt(limit as string)

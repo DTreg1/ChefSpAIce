@@ -12,7 +12,7 @@
 import express from "express";
 import multer from "multer";
 import Tesseract from "tesseract.js";
-import { storage } from "../storage";
+import { aiMlStorage, systemStorage } from "../storage/index";
 import type { InsertOcrResult, InsertOcrCorrection } from "@shared/schema";
 import { insertOcrResultSchema, insertOcrCorrectionSchema } from "@shared/schema";
 import { z } from "zod";

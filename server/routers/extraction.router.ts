@@ -7,7 +7,7 @@
 
 import { Router } from "express";
 import { z } from "zod";
-import { storage } from "../storage";
+import { aiMlStorage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
@@ -199,7 +199,7 @@ router.post(
     }
 
     try {
-      const template = await storage.createExtractionTemplate({
+      const template = await aiMlStorage.createExtractionTemplate({
         ...validation.data,
         createdBy: userId,
       });
@@ -227,7 +227,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     try {
-      const templates = await storage.getExtractionTemplates();
+      const templates = await aiMlStorage.getExtractionTemplates();
       
       res.json({
         success: true,
@@ -254,7 +254,7 @@ router.get(
     const templateId = req.params.id;
     
     try {
-      const template = await storage.getExtractionTemplate(templateId);
+      const template = await aiMlStorage.getExtractionTemplate(templateId);
       
       if (!template) {
         return res.status(404).json({ error: "Template not found" });
@@ -285,7 +285,7 @@ router.put(
     const templateId = req.params.id;
     
     try {
-      const template = await storage.updateExtractionTemplate(templateId, req.body);
+      const template = await aiMlStorage.updateExtractionTemplate(templateId, req.body);
       
       res.json({
         success: true,
@@ -312,7 +312,7 @@ router.delete(
     const templateId = req.params.id;
     
     try {
-      await storage.deleteExtractionTemplate(templateId);
+      await aiMlStorage.deleteExtractionTemplate(templateId);
       
       res.json({
         success: true,
@@ -359,7 +359,7 @@ router.post(
 
       // Get template or use custom schema
       if (templateId) {
-        const template = await storage.getExtractionTemplate(templateId);
+        const template = await aiMlStorage.getExtractionTemplate(templateId);
         if (!template) {
           return res.status(404).json({ error: "Template not found" });
         }
@@ -383,7 +383,7 @@ router.post(
       );
 
       // Save extraction result
-      const extractedData = await storage.createExtractedData({
+      const extractedData = await aiMlStorage.createExtractedData({
         sourceId: sourceId || `source_${Date.now()}`,
         sourceType,
         templateId: templateId || null,
@@ -441,7 +441,7 @@ router.post(
 
     try {
       // Get template
-      const template = await storage.getExtractionTemplate(templateId);
+      const template = await aiMlStorage.getExtractionTemplate(templateId);
       if (!template) {
         return res.status(404).json({ error: "Template not found" });
       }
@@ -487,7 +487,7 @@ router.post(
       const validResults = extractionResults.filter(r => r !== null) as any[];
 
       // Batch save extraction results
-      const savedExtractions = await storage.batchCreateExtractedData(validResults);
+      const savedExtractions = await aiMlStorage.batchCreateExtractedData(validResults);
 
       res.json({
         success: true,
@@ -518,7 +518,7 @@ router.get(
     const extractionId = req.params.id;
     
     try {
-      const extraction = await storage.getExtractedData(extractionId);
+      const extraction = await aiMlStorage.getExtractedData(extractionId);
       
       if (!extraction) {
         return res.status(404).json({ error: "Extraction not found" });
@@ -527,7 +527,7 @@ router.get(
       // Get template if available
       let template = null;
       if (extraction.templateId) {
-        template = await storage.getExtractionTemplate(extraction.templateId);
+        template = await aiMlStorage.getExtractionTemplate(extraction.templateId);
       }
       
       res.json({
@@ -571,7 +571,7 @@ router.post(
 
     try {
       // Update extraction with corrections
-      const updatedExtraction = await storage.updateExtractedData(extractionId, {
+      const updatedExtraction = await aiMlStorage.updateExtractedData(extractionId, {
         corrections,
         validationStatus: 'corrected',
         validatedBy: userId,
@@ -602,7 +602,7 @@ router.get(
     const { page = 1, limit = 20, templateId, validationStatus } = req.query;
     
     try {
-      const paginatedData = await storage.getExtractedDataPaginated({
+      const paginatedData = await aiMlStorage.getExtractedDataPaginated({
         page: Number(page),
         limit: Number(limit),
         templateId: templateId as string,
@@ -632,7 +632,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     try {
-      const stats = await storage.getExtractionStats();
+      const stats = await aiMlStorage.getExtractionStats();
       
       res.json({
         success: true,

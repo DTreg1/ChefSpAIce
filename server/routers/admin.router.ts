@@ -1,7 +1,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { storage } from "../storage";
+import { userAuthStorage, analyticsStorage, systemStorage } from "../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateBody, validateQuery, paginationQuerySchema } from "../middleware";
@@ -19,7 +19,7 @@ const isAdmin = async (req: ExpressRequest<any, any, any, any>, res: ExpressResp
     }
     
     // Check if user exists and has admin privileges
-    const user = await storage.getUser(userId);
+    const user = await userAuthStorage.getUserById(userId);
     if (!user) {
       return res.status(403).json({ error: "Access denied - User not found" });
     }
@@ -54,7 +54,7 @@ router.get(
     try {
       const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = req.query;
       
-      const result = await storage.getAllUsers(
+      const result = await userAuthStorage.getAllUsers(
         Number(page),
         Number(limit),
         sortBy as string,
@@ -85,7 +85,7 @@ router.get(
   async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const { userId } = req.params;
-      const user = await storage.getUser(userId);
+      const user = await userAuthStorage.getUserById(userId);
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -113,7 +113,7 @@ router.patch(
       delete updates.id;
       delete updates.createdAt;
       
-      const updatedUser = await storage.updateUserPreferences(userId, updates);
+      const updatedUser = await userAuthStorage.updateUserPreferences(userId, updates);
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -145,8 +145,8 @@ router.patch(
 
       // If demoting, check if this is the last admin
       if (newAdminStatus === false) {
-        const adminCount = await storage.getAdminCount();
-        const targetUser = await storage.getUser(userId);
+        const adminCount = await userAuthStorage.getAdminCount();
+        const targetUser = await userAuthStorage.getUserById(userId);
         
         // If target user is currently an admin and we're demoting them
         if (targetUser?.isAdmin && adminCount <= 1) {
@@ -157,7 +157,7 @@ router.patch(
       }
 
       // Update admin status
-      const updatedUser = await storage.updateUserAdminStatus(userId, newAdminStatus);
+      const updatedUser = await userAuthStorage.updateUserAdminStatus(userId, newAdminStatus);
       
       res.json({
         success: true,
@@ -191,14 +191,14 @@ router.delete(
       }
 
       // Check if user exists
-      const userToDelete = await storage.getUser(userId);
+      const userToDelete = await userAuthStorage.getUserById(userId);
       if (!userToDelete) {
         return res.status(404).json({ error: "User not found" });
       }
 
       // If deleting an admin, ensure it's not the last admin
       if (userToDelete.isAdmin) {
-        const adminCount = await storage.getAdminCount();
+        const adminCount = await userAuthStorage.getAdminCount();
         if (adminCount <= 1) {
           return res.status(403).json({ 
             error: "Cannot delete the last admin. Please promote another user first." 
@@ -207,7 +207,7 @@ router.delete(
       }
 
       // Delete the user and all their data
-      await storage.deleteUser(userId);
+      await userAuthStorage.deleteUser(userId);
       
       res.json({ 
         success: true,
@@ -288,7 +288,7 @@ router.get(
   async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
     try {
       const stats = getCacheStats();
-      const dbStats = await storage.getUSDACacheStats();
+      const dbStats = await foodStorage.getUSDACacheStats();
       
       res.json({
         memory: stats,
@@ -320,7 +320,7 @@ router.post(
       const invalidatedCount = invalidateCache(pattern);
       
       // Log admin action
-      await storage.logApiUsage((req.user as any).id, {
+      await systemStorage.logApiUsage((req.user as any).id, {
         apiName: "admin-cache-invalidate",
         endpoint: "/api/admin/cache/invalidate",
         statusCode: 200,
@@ -352,10 +352,10 @@ router.post(
       clearAllCache();
       
       // Also clear database cache
-      await storage.clearOldCache(0); // Clear all database cache
+      await foodStorage.clearOldCache(0); // Clear all database cache
       
       // Log admin action
-      await storage.logApiUsage((req.user as any).id, {
+      await systemStorage.logApiUsage((req.user as any).id, {
         apiName: "admin-cache-clear",
         endpoint: "/api/admin/cache/clear",
         statusCode: 200,
@@ -391,7 +391,7 @@ router.post(
       });
       
       // Log admin action
-      await storage.logApiUsage((req.user as any).id, {
+      await systemStorage.logApiUsage((req.user as any).id, {
         apiName: "admin-cache-warm",
         endpoint: "/api/admin/cache/warm",
         statusCode: 202,

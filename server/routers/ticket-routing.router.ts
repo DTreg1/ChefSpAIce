@@ -7,7 +7,7 @@
 
 import { Router } from "express";
 import { z } from "zod";
-import { storage } from "../storage";
+import { supportStorage } from "../storage/index";
 import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request as ExpressRequest } from "express";
@@ -95,7 +95,7 @@ router.post(
     }
 
     try {
-      const ticket = await storage.createTicket(validation.data);
+      const ticket = await supportStorage.createTicket(validation.data);
       res.json({
         success: true,
         ticket,
@@ -126,7 +126,7 @@ router.get(
         category: req.query.category as string,
       };
 
-      const tickets = await storage.getTickets(filters);
+      const tickets = await supportStorage.getTickets(filters);
       res.json({
         success: true,
         tickets,
@@ -151,7 +151,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     try {
-      const ticket = await storage.getTicket(req.params.id);
+      const ticket = await supportStorage.getTicket(req.params.id);
       
       if (!ticket) {
         return res.status(404).json({
@@ -160,7 +160,7 @@ router.get(
       }
 
       // Get routing history
-      const routingHistory = await storage.getTicketRouting(req.params.id);
+      const routingHistory = await supportStorage.getTicketRouting(req.params.id);
 
       res.json({
         success: true,
@@ -194,7 +194,7 @@ router.put(
     }
 
     try {
-      const updatedTicket = await storage.updateTicket(req.params.id, validation.data);
+      const updatedTicket = await supportStorage.updateTicket(req.params.id, validation.data);
       res.json({
         success: true,
         ticket: updatedTicket,
@@ -324,7 +324,7 @@ router.get(
       const isActive = req.query.active === "true" ? true : 
                        req.query.active === "false" ? false : undefined;
       
-      const rules = await storage.getRoutingRules(isActive);
+      const rules = await supportStorage.getRoutingRules(isActive);
       
       res.json({
         success: true,
@@ -359,7 +359,7 @@ router.post(
     }
 
     try {
-      const rule = await storage.createRoutingRule(validation.data);
+      const rule = await supportStorage.createRoutingRule(validation.data);
       res.json({
         success: true,
         rule,
@@ -384,7 +384,7 @@ router.put(
   adminOnly,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     try {
-      const updatedRule = await storage.updateRoutingRule(req.params.id, req.body);
+      const updatedRule = await supportStorage.updateRoutingRule(req.params.id, req.body);
       res.json({
         success: true,
         rule: updatedRule,
@@ -409,7 +409,7 @@ router.delete(
   adminOnly,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     try {
-      await storage.deleteRoutingRule(req.params.id);
+      await supportStorage.deleteRoutingRule(req.params.id);
       res.json({
         success: true,
         message: "Rule deleted successfully",
@@ -433,7 +433,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     try {
-      const agents = await storage.getAgents();
+      const agents = await supportStorage.getAgents();
       
       res.json({
         success: true,
@@ -459,7 +459,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     try {
-      const agents = await storage.getAvailableAgents();
+      const agents = await supportStorage.getAvailableAgents();
       
       res.json({
         success: true,
@@ -494,7 +494,7 @@ router.post(
     }
 
     try {
-      const agent = await storage.upsertAgentExpertise(validation.data);
+      const agent = await supportStorage.upsertAgentExpertise(validation.data);
       res.json({
         success: true,
         agent,
@@ -521,7 +521,7 @@ router.get(
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       
-      const metrics = await storage.getRoutingMetrics(startDate, endDate);
+      const metrics = await supportStorage.getRoutingMetrics(startDate, endDate);
       
       // Get accuracy metrics using the AI routing service
       const accuracyMetrics = await aiRoutingService.calculateRoutingAccuracy(startDate, endDate);

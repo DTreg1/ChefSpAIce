@@ -7,7 +7,7 @@
 
 import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import { isAuthenticated } from "../middleware";
-import { storage } from "../storage";
+import { aiMlStorage } from "../storage/index";
 import { z } from "zod";
 import { getOpenAIClient } from "../config/openai-config";
 
@@ -35,7 +35,7 @@ router.post("/analyze", isAuthenticated, async (req: ExpressRequest<any, any, an
     const { text, type, targetTone, checkFor } = schema.parse(req.body);
     
     // Create writing session
-    const session = await storage.createWritingSession({
+    const session = await aiMlStorage.createWritingSession({
       userId,
       originalText: text
     });
@@ -45,7 +45,7 @@ router.post("/analyze", isAuthenticated, async (req: ExpressRequest<any, any, an
     
     // Save suggestions
     if (analysis.suggestions.length > 0) {
-      await storage.addWritingSuggestions(session.id, analysis.suggestions);
+      await aiMlStorage.addWritingSuggestions(session.id, analysis.suggestions);
     }
     
     res.json({
@@ -157,7 +157,7 @@ router.post("/improve", isAuthenticated, async (req: ExpressRequest<any, any, an
     }
     
     // Get session
-    const session = await storage.getWritingSession(userId, sessionId);
+    const session = await aiMlStorage.getWritingSession(userId, sessionId);
     if (!session) {
       return res.status(404).json({ error: "Session not found" });
     }
@@ -169,7 +169,7 @@ router.post("/improve", isAuthenticated, async (req: ExpressRequest<any, any, an
     if (suggestionIds && suggestionIds.length > 0) {
       // Mark suggestions as accepted
       for (const suggestionId of suggestionIds) {
-        await storage.updateSuggestionStatus(suggestionId, true);
+        await aiMlStorage.updateSuggestionStatus(suggestionId, true);
         improvements.push(suggestionId);
       }
       
@@ -193,7 +193,7 @@ router.post("/improve", isAuthenticated, async (req: ExpressRequest<any, any, an
     }
     
     // Update session
-    const updatedSession = await storage.updateWritingSession(
+    const updatedSession = await aiMlStorage.updateWritingSession(
       userId, 
       sessionId,
       improvedText,
@@ -292,7 +292,7 @@ router.get("/stats", isAuthenticated, async (req: ExpressRequest<any, any, any, 
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const stats = await storage.getWritingStats(userId);
+    const stats = await aiMlStorage.getWritingStats(userId);
     res.json(stats);
   } catch (error) {
     console.error("Error fetching writing stats:", error);
@@ -354,7 +354,7 @@ router.get("/sessions/:id", isAuthenticated, async (req: ExpressRequest<any, any
     
     const { id } = req.params;
     
-    const session = await storage.getWritingSession(userId, id);
+    const session = await aiMlStorage.getWritingSession(userId, id);
     if (!session) {
       return res.status(404).json({ error: "Session not found" });
     }

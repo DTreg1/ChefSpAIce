@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { storage } from "../storage";
+import { experimentsStorage } from "../storage/index";
 import { asyncHandler } from "../middleware/error.middleware";
 import { getAuthenticatedUserId, isAuthenticated } from "../middleware/auth.middleware";
 import { insertCohortSchema, insertCohortInsightSchema } from "@shared/schema";
@@ -26,7 +26,7 @@ router.post("/", isAuthenticated, asyncHandler(async (req, res) => {
     createdBy: userId,
   });
   
-  const cohort = await storage.createCohort(cohortData);
+  const cohort = await experimentsStorage.createCohort(cohortData);
   
   res.json({ success: true, cohort });
 }));
@@ -35,7 +35,7 @@ router.post("/", isAuthenticated, asyncHandler(async (req, res) => {
 router.get("/", asyncHandler(async (req, res) => {
   const { isActive, createdBy } = req.query;
   
-  const cohorts = await storage.getCohorts({
+  const cohorts = await experimentsStorage.getCohorts({
     isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
     createdBy: createdBy as string | undefined,
   });
@@ -47,7 +47,7 @@ router.get("/", asyncHandler(async (req, res) => {
 router.get("/:id", asyncHandler(async (req, res) => {
   const { id } = req.params;
   
-  const cohort = await storage.getCohort(id);
+  const cohort = await experimentsStorage.getCohort(id);
   
   if (!cohort) {
     return res.status(404).json({ error: "Cohort not found" });
@@ -60,7 +60,7 @@ router.get("/:id", asyncHandler(async (req, res) => {
 router.patch("/:id", asyncHandler(async (req, res) => {
   const { id } = req.params;
   
-  const cohort = await storage.updateCohort(id, req.body);
+  const cohort = await experimentsStorage.updateCohort(id, req.body);
   
   res.json({ success: true, cohort });
 }));
@@ -69,7 +69,7 @@ router.patch("/:id", asyncHandler(async (req, res) => {
 router.delete("/:id", asyncHandler(async (req, res) => {
   const { id } = req.params;
   
-  await storage.deleteCohort(id);
+  await experimentsStorage.deleteCohort(id);
   
   res.json({ success: true });
 }));
@@ -79,23 +79,23 @@ router.post("/:id/analyze", asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { startDate, endDate } = req.body;
   
-  const cohort = await storage.getCohort(id);
+  const cohort = await experimentsStorage.getCohort(id);
   
   if (!cohort) {
     return res.status(404).json({ error: "Cohort not found" });
   }
   
   // Get metrics for the cohort
-  const metrics = await storage.getCohortMetrics(id, {
+  const metrics = await experimentsStorage.getCohortMetrics(id, {
     startDate: startDate ? new Date(startDate) : undefined,
     endDate: endDate ? new Date(endDate) : undefined,
   });
   
   // Calculate retention rates
-  const retention = await storage.calculateCohortRetention(id, [1, 7, 30]);
+  const retention = await experimentsStorage.calculateCohortRetention(id, [1, 7, 30]);
   
   // Get AI insights
-  const insights = await storage.getCohortInsights(id);
+  const insights = await experimentsStorage.getCohortInsights(id);
   
   res.json({
     success: true,
@@ -116,7 +116,7 @@ router.post("/compare", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "At least two cohort IDs are required" });
   }
   
-  const comparison = await storage.compareCohorts(cohortIds, metrics);
+  const comparison = await experimentsStorage.compareCohorts(cohortIds, metrics);
   
   res.json({ success: true, comparison });
 }));
@@ -126,7 +126,7 @@ router.post("/:id/retention", asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { periods = [1, 7, 14, 30, 60, 90] } = req.body;
   
-  const retention = await storage.calculateCohortRetention(id, periods);
+  const retention = await experimentsStorage.calculateCohortRetention(id, periods);
   
   res.json({ success: true, retention });
 }));
@@ -135,21 +135,21 @@ router.post("/:id/retention", asyncHandler(async (req, res) => {
 router.post("/:id/insights", asyncHandler(async (req, res) => {
   const { id } = req.params;
   
-  const cohort = await storage.getCohort(id);
+  const cohort = await experimentsStorage.getCohort(id);
   
   if (!cohort) {
     return res.status(404).json({ error: "Cohort not found" });
   }
   
   // Get cohort metrics for context
-  const metrics = await storage.getCohortMetrics(id, {
+  const metrics = await experimentsStorage.getCohortMetrics(id, {
     metricType: 'retention',
   });
   
-  const retention = await storage.calculateCohortRetention(id, [1, 7, 30]);
+  const retention = await experimentsStorage.calculateCohortRetention(id, [1, 7, 30]);
   
   // Get comparison with other cohorts for context
-  const allCohorts = await storage.getCohorts({ isActive: true });
+  const allCohorts = await experimentsStorage.getCohorts({ isActive: true });
   const otherCohortIds = allCohorts
     .filter(c => c.id !== id)
     .slice(0, 2)
@@ -157,7 +157,7 @@ router.post("/:id/insights", asyncHandler(async (req, res) => {
   
   let comparisonContext = '';
   if (otherCohortIds.length > 0) {
-    const comparison = await storage.compareCohorts(
+    const comparison = await experimentsStorage.compareCohorts(
       [id, ...otherCohortIds],
       ['retention_day_7']
     );
@@ -280,7 +280,7 @@ router.post("/:id/insights", asyncHandler(async (req, res) => {
     // Save insights to database
     const savedInsights = await Promise.all(
       insights.map(insight => 
-        storage.createCohortInsight(insertCohortInsightSchema.parse(insight))
+        experimentsStorage.createCohortInsight(insertCohortInsightSchema.parse(insight))
       )
     );
     
@@ -296,7 +296,7 @@ router.get("/:id/insights", asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status, importance, category } = req.query;
   
-  const insights = await storage.getCohortInsights(id, {
+  const insights = await experimentsStorage.getCohortInsights(id, {
     status: status as string | undefined,
     importance: importance as string | undefined,
     category: category as string | undefined,
@@ -314,7 +314,7 @@ router.patch("/insights/:insightId/status", asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Status is required" });
   }
   
-  const insight = await storage.updateCohortInsightStatus(insightId, status);
+  const insight = await experimentsStorage.updateCohortInsightStatus(insightId, status);
   
   res.json({ success: true, insight });
 }));
@@ -323,7 +323,7 @@ router.patch("/insights/:insightId/status", asyncHandler(async (req, res) => {
 router.post("/:id/refresh", asyncHandler(async (req, res) => {
   const { id } = req.params;
   
-  const result = await storage.refreshCohortMembership(id);
+  const result = await experimentsStorage.refreshCohortMembership(id);
   
   res.json({ success: true, ...result });
 }));
@@ -333,7 +333,7 @@ router.get("/:id/members", asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { limit = 100, offset = 0 } = req.query;
   
-  const result = await storage.getCohortMembers(
+  const result = await experimentsStorage.getCohortMembers(
     id,
     Number(limit),
     Number(offset)

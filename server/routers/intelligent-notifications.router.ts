@@ -6,7 +6,7 @@
  */
 
 import { Router, type Request, type Response } from 'express';
-import { storage } from '../storage';
+import { notificationStorage } from '../storage/index';
 import { intelligentNotificationService } from '../notifications/intelligent-service';
 import { isAuthenticated, adminOnly } from '../middleware/auth.middleware';
 import { z } from 'zod';
@@ -69,7 +69,7 @@ router.get('/test', async (_req: Request, res: Response) => {
 router.get('/preferences', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const preferences = await storage.getNotificationPreferences(userId);
+    const preferences = await notificationStorage.getNotificationPreferences(userId);
     
     if (!preferences) {
       // Return default preferences if none exist
@@ -112,7 +112,7 @@ router.put('/preferences', isAuthenticated, async (req: Request, res: Response) 
       .omit({ userId: true })
       .parse(req.body);
     
-    const updated = await storage.upsertNotificationPreferences(userId, validatedData);
+    const updated = await notificationStorage.upsertNotificationPreferences(userId, validatedData);
     res.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -146,7 +146,7 @@ router.post('/smart-send', isAuthenticated, async (req: Request, res: Response) 
     const validatedData = sendNotificationSchema.parse(req.body);
     
     // Check if smart features are enabled
-    const prefs = await storage.getNotificationPreferences(userId);
+    const prefs = await notificationStorage.getNotificationPreferences(userId);
     
     // Process the notification through the intelligent service
     const scoreData = await intelligentNotificationService.processNotification(
@@ -156,13 +156,13 @@ router.post('/smart-send', isAuthenticated, async (req: Request, res: Response) 
     );
     
     // Save the notification score to the database
-    const score = await storage.createNotificationScore(scoreData);
+    const score = await notificationStorage.createNotificationScore(scoreData);
     
     // If immediate urgency or smart timing disabled, send now
     if (validatedData.urgency === 'immediate' || !prefs?.enableSmartTiming) {
       // This would integrate with your existing push notification system
       // For now, we just mark it as ready to send
-      await storage.updateNotificationScore(score.id, {
+      await notificationStorage.updateNotificationScore(score.id, {
         holdUntil: new Date(),
       });
       
@@ -214,7 +214,7 @@ router.post('/feedback', isAuthenticated, async (req: Request, res: Response) =>
     const userId = req.user!.id;
     const validatedData = feedbackSchema.parse(req.body);
     
-    const feedback = await storage.createNotificationFeedback({
+    const feedback = await notificationStorage.createNotificationFeedback({
       userId,
       ...validatedData,
     });
@@ -222,7 +222,7 @@ router.post('/feedback', isAuthenticated, async (req: Request, res: Response) =>
     // Trigger model update with new feedback (async, non-blocking)
     setImmediate(async () => {
       try {
-        const recentFeedback = await storage.getNotificationFeedback(userId);
+        const recentFeedback = await notificationStorage.getNotificationFeedback(userId);
         if (recentFeedback.length >= 20) {
           await intelligentNotificationService.updateModelWithFeedback(recentFeedback);
         }
@@ -255,10 +255,10 @@ router.get('/engagement', isAuthenticated, async (req: Request, res: Response) =
     const userId = req.user!.id;
     const days = parseInt(req.query.days as string) || 7;
     
-    const engagement = await storage.getRecentUserEngagement(userId, days);
+    const engagement = await notificationStorage.getRecentUserEngagement(userId, days);
     
     // Get notification scores for additional insights
-    const scores = await storage.getNotificationScores(userId, 100);
+    const scores = await notificationStorage.getNotificationScores(userId, 100);
     
     // Calculate average relevance scores
     const avgRelevanceScore = scores.length > 0
@@ -298,9 +298,9 @@ router.get('/insights', isAuthenticated, async (req: Request, res: Response) => 
     const userId = req.user!.id;
     
     // Get recent feedback and scores
-    const feedback = await storage.getNotificationFeedback(userId);
-    const scores = await storage.getNotificationScores(userId, 50);
-    const engagement = await storage.getRecentUserEngagement(userId, 30);
+    const feedback = await notificationStorage.getNotificationFeedback(userId);
+    const scores = await notificationStorage.getNotificationScores(userId, 50);
+    const engagement = await notificationStorage.getRecentUserEngagement(userId, 30);
     
     // Analyze patterns
     const insights: any[] = [];

@@ -14,7 +14,7 @@ import type { Request, Response } from "express";
 // Use OAuth authentication middleware
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { openai } from "../openai";
-import { storage } from "../storage";
+import { storage } from "../storage/index";
 import { batchedApiLogger } from "../batchedApiLogger";
 import { cleanupOldMessagesForUser } from "../chatCleanup";
 import rateLimiters from "../middleware/rateLimit";

@@ -1,5 +1,5 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
-import { storage } from "../storage";
+import { schedulingStorage } from "../storage/index";
 import { 
   insertSchedulingPreferencesSchema,
   insertMeetingSuggestionsSchema,
@@ -23,7 +23,7 @@ router.get("/schedule/preferences", isAuthenticated, async (req: ExpressRequest<
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const preferences = await storage.getSchedulingPreferences(userId);
+    const preferences = await schedulingStorage.getSchedulingPreferences(userId);
     
     if (!preferences) {
       // Return default preferences if none exist
@@ -67,7 +67,7 @@ router.put("/schedule/preferences", isAuthenticated, async (req: ExpressRequest<
       });
     }
     
-    const preferences = await storage.upsertSchedulingPreferences(userId, validation.data);
+    const preferences = await schedulingStorage.upsertSchedulingPreferences(userId, validation.data);
     res.json(preferences);
   } catch (error) {
     console.error("Error updating scheduling preferences:", error);
@@ -99,7 +99,7 @@ router.post("/schedule/suggest", isAuthenticated, async (req: ExpressRequest<any
     // Get preferences for all participants
     const allPreferences: SchedulingPreferences[] = [];
     for (const participantId of allParticipants) {
-      const prefs = await storage.getSchedulingPreferences(participantId);
+      const prefs = await schedulingStorage.getSchedulingPreferences(participantId);
       if (prefs) allPreferences.push(prefs);
     }
     
@@ -109,7 +109,7 @@ router.post("/schedule/suggest", isAuthenticated, async (req: ExpressRequest<any
     const futureDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days ahead
     
     for (const participantId of allParticipants) {
-      const events = await storage.getMeetingEvents(participantId, {
+      const events = await schedulingStorage.getMeetingEvents(participantId, {
         startTime: now,
         endTime: futureDate,
         status: "confirmed"
@@ -190,7 +190,7 @@ Return as JSON with format:
     
     // Create meeting suggestion record
     const meetingId = `meeting_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const suggestions = await storage.createMeetingSuggestions({
+    const suggestions = await schedulingStorage.createMeetingSuggestions({
       meetingId,
       suggestedTimes: aiResponse.suggestions || [],
       confidenceScores: aiResponse.confidence || {
@@ -232,7 +232,7 @@ router.get("/schedule/suggestions", isAuthenticated, async (req: ExpressRequest<
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { status } = req.query;
-    const suggestions = await storage.getUserMeetingSuggestions(userId, status as string | undefined);
+    const suggestions = await schedulingStorage.getUserMeetingSuggestions(userId, status as string | undefined);
     res.json(suggestions);
   } catch (error) {
     console.error("Error fetching meeting suggestions:", error);
@@ -250,16 +250,16 @@ router.put("/schedule/suggestions/:meetingId", isAuthenticated, async (req: Expr
     const { status, selectedTime } = req.body;
     
     // Verify the suggestion belongs to the user
-    const suggestion = await storage.getMeetingSuggestions(meetingId);
+    const suggestion = await schedulingStorage.getMeetingSuggestions(meetingId);
     if (!suggestion || suggestion.createdBy !== userId) {
       return res.status(404).json({ error: "Meeting suggestion not found" });
     }
     
-    const updated = await storage.updateMeetingSuggestionStatus(meetingId, status, selectedTime);
+    const updated = await schedulingStorage.updateMeetingSuggestionStatus(meetingId, status, selectedTime);
     
     // If accepted, create actual meeting event
     if (status === "accepted" && selectedTime) {
-      await storage.createMeetingEvent({
+      await schedulingStorage.createMeetingEvent({
         userId,
         title: `Meeting with ${suggestion.participants.length} participants`,
         startTime: new Date(selectedTime.start),
@@ -292,14 +292,14 @@ router.post("/schedule/optimize", isAuthenticated, async (req: ExpressRequest<an
     const { startDate, endDate } = req.body;
     
     // Get user's events in the specified period
-    const events = await storage.getMeetingEvents(userId, {
+    const events = await schedulingStorage.getMeetingEvents(userId, {
       startTime: new Date(startDate),
       endTime: new Date(endDate),
       status: "confirmed"
     });
     
     // Get user preferences
-    const preferences = await storage.getSchedulingPreferences(userId);
+    const preferences = await schedulingStorage.getSchedulingPreferences(userId);
     
     // Use AI to suggest optimizations
     const prompt = `Analyze this schedule and suggest optimizations:
@@ -376,7 +376,7 @@ router.get("/schedule/conflicts", isAuthenticated, async (req: ExpressRequest<an
     // Get conflicts for all participants
     const allConflicts = await Promise.all(
       allParticipants.map(participantId => 
-        storage.findSchedulingConflicts(
+        schedulingStorage.findSchedulingConflicts(
           participantId,
           new Date(startTime as string),
           new Date(endTime as string)
@@ -402,12 +402,12 @@ router.get("/schedule/analytics", isAuthenticated, async (req: ExpressRequest<an
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const analytics = await storage.analyzeSchedulingPatterns(userId);
+    const analytics = await schedulingStorage.analyzeSchedulingPatterns(userId);
     
     // Get additional stats
     const now = new Date();
     const lastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const events = await storage.getMeetingEvents(userId, {
+    const events = await schedulingStorage.getMeetingEvents(userId, {
       startTime: lastMonth,
       endTime: now
     });
@@ -462,7 +462,7 @@ router.get("/schedule/events", isAuthenticated, async (req: ExpressRequest<any, 
     if (endTime) filters.endTime = new Date(endTime as string);
     if (status) filters.status = status as string;
     
-    const events = await storage.getMeetingEvents(userId, filters);
+    const events = await schedulingStorage.getMeetingEvents(userId, filters);
     res.json(events);
   } catch (error) {
     console.error("Error fetching meeting events:", error);
@@ -489,7 +489,7 @@ router.post("/schedule/events", isAuthenticated, async (req: ExpressRequest<any,
     }
     
     // Check for conflicts
-    const conflicts = await storage.findSchedulingConflicts(
+    const conflicts = await schedulingStorage.findSchedulingConflicts(
       userId,
       new Date(validation.data.startTime),
       new Date(validation.data.endTime)
@@ -502,7 +502,7 @@ router.post("/schedule/events", isAuthenticated, async (req: ExpressRequest<any,
       });
     }
     
-    const event = await storage.createMeetingEvent(validation.data);
+    const event = await schedulingStorage.createMeetingEvent(validation.data);
     res.json(event);
   } catch (error) {
     console.error("Error creating meeting event:", error);
@@ -519,14 +519,14 @@ router.put("/schedule/events/:id", isAuthenticated, async (req: ExpressRequest<a
     const { id } = req.params;
     
     // Verify event belongs to user
-    const events = await storage.getMeetingEvents(userId);
+    const events = await schedulingStorage.getMeetingEvents(userId);
     const existing = events.find(e => e.id === id);
     
     if (!existing) {
       return res.status(404).json({ error: "Meeting event not found" });
     }
     
-    const updated = await storage.updateMeetingEvent(id, req.body);
+    const updated = await schedulingStorage.updateMeetingEvent(id, req.body);
     res.json(updated);
   } catch (error) {
     console.error("Error updating meeting event:", error);
@@ -542,7 +542,7 @@ router.delete("/schedule/events/:id", isAuthenticated, async (req: ExpressReques
     
     const { id } = req.params;
     
-    await storage.deleteMeetingEvent(userId, id);
+    await schedulingStorage.deleteMeetingEvent(userId, id);
     res.json({ message: "Meeting event deleted successfully" });
   } catch (error) {
     console.error("Error deleting meeting event:", error);

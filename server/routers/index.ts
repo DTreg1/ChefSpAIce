@@ -59,7 +59,7 @@ import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
 import { createABTestSeedEndpoint } from "../seed-ab-tests";
 import { createCohortSeedEndpoint } from "../seed-cohorts";
 import { createDataCompletionRoutes } from "../dataCompletionEndpoints";
-import { storage } from "../storage";
+import { storage } from "../storage/index";
 
 // Import activity logging middleware
 import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";

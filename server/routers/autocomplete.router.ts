@@ -14,7 +14,7 @@
  */
 
 import express, { Router } from "express";
-import { storage } from "../storage";
+import { aiMlStorage } from "../storage/index";
 import { isAuthenticated } from "../auth/unified-auth";
 import { getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { insertCompletionFeedbackSchema } from "@shared/schema";
@@ -76,7 +76,7 @@ router.get("/suggestions", isAuthenticated, async (req: any, res) => {
     }
     
     // Get suggestions from storage (combines user history and global patterns)
-    const suggestions = await storage.getFieldSuggestions(
+    const suggestions = await aiMlStorage.getFieldSuggestions(
       fieldName,
       query as string,
       userId ?? undefined
@@ -142,7 +142,7 @@ router.post("/context", isAuthenticated, async (req: any, res) => {
     }
     
     // Get basic contextual suggestions from storage
-    const basicSuggestions = await storage.getContextualSuggestions(
+    const basicSuggestions = await aiMlStorage.getContextualSuggestions(
       fieldName,
       context || {},
       userId ?? undefined
@@ -213,7 +213,7 @@ router.post("/learn", isAuthenticated, async (req: any, res) => {
     }
     
     // Record the input for future suggestions
-    await storage.recordFormInput(userId, fieldName, value, context);
+    await aiMlStorage.recordFormInput(userId, fieldName, value, context);
     
     res.json({ success: true });
   } catch (error) {
@@ -237,7 +237,7 @@ router.post("/feedback", isAuthenticated, async (req: any, res) => {
     });
     
     // Record the feedback
-    const feedback = await storage.recordCompletionFeedback(feedbackData);
+    const feedback = await aiMlStorage.recordCompletionFeedback(feedbackData);
     
     // Train model asynchronously if we have enough feedback
     if (Math.random() < 0.1) { // 10% chance to trigger training
@@ -267,7 +267,7 @@ router.get("/history", isAuthenticated, async (req: any, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     
-    const history = await storage.getUserFormHistory(
+    const history = await aiMlStorage.getUserFormHistory(
       userId,
       fieldName as string | undefined
     );
@@ -291,7 +291,7 @@ router.delete("/history", isAuthenticated, async (req: any, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     
-    await storage.clearUserFormHistory(userId);
+    await aiMlStorage.clearUserFormHistory(userId);
     
     res.json({ success: true, message: "Form history cleared" });
   } catch (error) {

@@ -18,7 +18,7 @@ import {
   userInventory,
   userStorage,
   onboardingInventory,
-  shoppingListItems,
+  userShopping,
   userRecipes,
   type UserInventory,
   type InsertUserInventory,
@@ -536,9 +536,9 @@ export class InventoryDomainStorage implements IInventoryStorage {
     try {
       return await db
         .select()
-        .from(shoppingListItems)
-        .where(eq(shoppingListItems.userId, userId))
-        .orderBy(asc(shoppingListItems.isChecked), asc(shoppingListItems.name));
+        .from(userShopping)
+        .where(eq(userShopping.userId, userId))
+        .orderBy(asc(userShopping.isChecked), asc(userShopping.name));
     } catch (error) {
       console.error(`Error getting shopping list items for user ${userId}:`, error);
       throw new Error("Failed to retrieve shopping list items");
@@ -583,7 +583,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
   async createShoppingListItem(item: InsertShoppingListItem): Promise<ShoppingListItem> {
     try {
       const [newItem] = await db
-        .insert(shoppingListItems)
+        .insert(userShopping)
         .values(item)
         .returning();
       return newItem;
@@ -602,12 +602,12 @@ export class InventoryDomainStorage implements IInventoryStorage {
       const { id: _id, userId: _userId, ...safeUpdates } = updates;
       
       const [updated] = await db
-        .update(shoppingListItems)
+        .update(userShopping)
         .set(safeUpdates)
         .where(
           and(
-            eq(shoppingListItems.id, id),
-            eq(shoppingListItems.userId, userId)
+            eq(userShopping.id, id),
+            eq(userShopping.userId, userId)
           )
         )
         .returning();
@@ -622,11 +622,11 @@ export class InventoryDomainStorage implements IInventoryStorage {
   async deleteShoppingListItem(userId: string, id: string): Promise<void> {
     try {
       await db
-        .delete(shoppingListItems)
+        .delete(userShopping)
         .where(
           and(
-            eq(shoppingListItems.id, id),
-            eq(shoppingListItems.userId, userId)
+            eq(userShopping.id, id),
+            eq(userShopping.userId, userId)
           )
         );
     } catch (error) {
@@ -638,11 +638,11 @@ export class InventoryDomainStorage implements IInventoryStorage {
   async clearCheckedShoppingListItems(userId: string): Promise<number> {
     try {
       const result = await db
-        .delete(shoppingListItems)
+        .delete(userShopping)
         .where(
           and(
-            eq(shoppingListItems.userId, userId),
-            eq(shoppingListItems.isChecked, true)
+            eq(userShopping.userId, userId),
+            eq(userShopping.isChecked, true)
           )
         );
       

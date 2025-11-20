@@ -1,7 +1,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { storage } from "../storage";
+import { inventoryStorage } from "../storage/index";
 import { insertUserInventorySchema, type UserInventory as FoodItem } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
@@ -37,7 +37,7 @@ router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, a
     const { location, category, view, page = 1, limit = 50 } = req.query;
     
     // Fetch items from storage with database-level location and category filtering
-    const items = await storage.getFoodItems(
+    const items = await inventoryStorage.getFoodItems(
       userId, 
       location && location !== "all" ? location : undefined,
       category ? category : undefined
@@ -91,7 +91,7 @@ router.get("/storage-locations", isAuthenticated, async (req: ExpressRequest<any
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const locations = await storage.getStorageLocations(userId);
+    const locations = await inventoryStorage.getStorageLocations(userId);
     res.json(locations);
   } catch (error) {
     console.error("Error fetching storage locations:", error);
@@ -112,7 +112,7 @@ router.post(
     try {
       const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const newLocation = await storage.createStorageLocation(userId, req.body);
+      const newLocation = await inventoryStorage.createStorageLocation(userId, req.body);
       res.json(newLocation);
     } catch (error) {
       console.error("Error creating storage location:", error);
@@ -126,7 +126,7 @@ router.get("/food-items", isAuthenticated, async (req: ExpressRequest<any, any, 
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const items = await storage.getFoodItems(userId);
+    const items = await inventoryStorage.getFoodItems(userId);
     res.json(items);
   } catch (error) {
     console.error("Error fetching food items:", error);
@@ -173,7 +173,7 @@ router.post(
 
       // Security check: Ensure storage location belongs to this user
       // Prevents users from adding items to other users' locations
-      const locations = await storage.getStorageLocations(userId);
+      const locations = await inventoryStorage.getStorageLocations(userId);
       const locationExists = locations.some((loc: any) => loc.id === req.body.storageLocationId);
       
       if (!locationExists) {
@@ -214,7 +214,7 @@ router.post(
         expirationDate = expDate.toISOString().split("T")[0];
       }
 
-      const item = await storage.createFoodItem(userId, {
+      const item = await inventoryStorage.createFoodItem(userId, {
         ...validation.data,
         expirationDate: expirationDate || new Date().toISOString().split("T")[0],
         usdaData: nutritionData,
@@ -256,7 +256,7 @@ router.put(
       const itemId = req.params.id;
 
       // Security check: Verify item belongs to authenticated user
-      const items = await storage.getFoodItems(userId);
+      const items = await inventoryStorage.getFoodItems(userId);
       const existing = items.find((item: FoodItem) => item.id === itemId);
 
       if (!existing) {
@@ -266,7 +266,7 @@ router.put(
       // Additional security check when changing storage location
       // Prevents moving items to locations user doesn't own
       if (req.body.storageLocationId) {
-        const locations = await storage.getStorageLocations(userId);
+        const locations = await inventoryStorage.getStorageLocations(userId);
         const locationExists = locations.some((loc: any) => loc.id === req.body.storageLocationId);
         
         if (!locationExists) {
@@ -274,7 +274,7 @@ router.put(
         }
       }
 
-      const updated = await storage.updateFoodItem(userId, itemId, req.body);
+      const updated = await inventoryStorage.updateFoodItem(userId, itemId, req.body);
       res.json(updated);
     } catch (error) {
       console.error("Error updating food item:", error);
@@ -290,14 +290,14 @@ router.delete("/food-items/:id", isAuthenticated, async (req: ExpressRequest<any
     const itemId = req.params.id;
 
     // Verify item belongs to user before deleting
-    const items = await storage.getFoodItems(userId);
+    const items = await inventoryStorage.getFoodItems(userId);
     const existing = items.find((item: FoodItem) => item.id === itemId);
 
     if (!existing) {
       return res.status(404).json({ error: "Food item not found" });
     }
 
-    await storage.deleteFoodItem(userId, itemId);
+    await inventoryStorage.deleteFoodItem(userId, itemId);
     res.json({ message: "Food item deleted successfully" });
   } catch (error) {
     console.error("Error deleting food item:", error);
@@ -596,14 +596,14 @@ router.put("/food-images", isAuthenticated, async (req: ExpressRequest<any, any,
     }
 
     // Verify item belongs to user
-    const items = await storage.getFoodItems(userId);
+    const items = await inventoryStorage.getFoodItems(userId);
     const item = items.find((i: FoodItem) => i.id === itemId);
 
     if (!item) {
       return res.status(404).json({ error: "Food item not found" });
     }
 
-    await storage.updateFoodItem(userId, itemId, { imageUrl });
+    await inventoryStorage.updateFoodItem(userId, itemId, { imageUrl });
     res.json({ message: "Image updated successfully" });
   } catch (error) {
     console.error("Error updating food image:", error);

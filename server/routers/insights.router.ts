@@ -1,5 +1,5 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
-import { storage } from "../storage";
+import { analyticsStorage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { insertAnalyticsInsightSchema, insertInsightFeedbackSchema } from "@shared/schema";
@@ -45,7 +45,7 @@ router.get("/daily", isAuthenticated, asyncHandler(async (req: ExpressRequest<an
   const { date } = req.query;
 
   try {
-    const insights = await storage.getDailyInsightSummary(userId, date as string);
+    const insights = await analyticsStorage.getDailyInsightSummary(userId, date as string);
     res.json(insights);
   } catch (error) {
     console.error("Failed to get daily insights:", error);
@@ -85,7 +85,7 @@ router.get("/", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, an
   const { metricName, period, category, importance, isRead, limit } = req.query;
 
   try {
-    const insights = await storage.getAnalyticsInsights(userId, {
+    const insights = await analyticsStorage.getAnalyticsInsights(userId, {
       metricName: metricName as string,
       period: period as string,
       category: category as string,
@@ -111,7 +111,7 @@ router.patch("/:insightId/read", isAuthenticated, asyncHandler(async (req: Expre
   const { insightId } = req.params;
 
   try {
-    await storage.markInsightAsRead(userId, insightId);
+    await analyticsStorage.markInsightAsRead(userId, insightId);
     res.json({ success: true });
   } catch (error) {
     console.error("Failed to mark insight as read:", error);
@@ -134,7 +134,7 @@ router.post("/:insightId/feedback", isAuthenticated, asyncHandler(async (req: Ex
   }
 
   try {
-    const feedback = await storage.createInsightFeedback({
+    const feedback = await analyticsStorage.createInsightFeedback({
       insightId,
       userId,
       helpfulScore,
@@ -155,7 +155,7 @@ router.get("/:insightId/feedback", isAuthenticated, asyncHandler(async (req: Exp
   const { insightId } = req.params;
 
   try {
-    const feedback = await storage.getInsightFeedback(insightId);
+    const feedback = await analyticsStorage.getInsightFeedback(insightId);
     res.json(feedback);
   } catch (error) {
     console.error("Failed to get feedback:", error);
@@ -177,7 +177,7 @@ router.post("/subscribe", isAuthenticated, asyncHandler(async (req: ExpressReque
   }
 
   try {
-    await storage.subscribeToInsights(userId, subscriptionType);
+    await analyticsStorage.subscribeToInsights(userId, subscriptionType);
     res.json({ success: true, subscriptionType });
   } catch (error) {
     console.error("Failed to update subscription:", error);
@@ -193,7 +193,7 @@ router.get("/stats", isAuthenticated, asyncHandler(async (req: ExpressRequest<an
   }
 
   try {
-    const stats = await storage.getAnalyticsStats(userId);
+    const stats = await analyticsStorage.getAnalyticsStats(userId);
     res.json(stats);
   } catch (error) {
     console.error("Failed to get analytics stats:", error);

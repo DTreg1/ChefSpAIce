@@ -18,7 +18,7 @@
  */
 
 import { Router } from 'express';
-import type { IStorage } from '../storage';
+import type { IStorage } from '../storage/index';
 import { excerptService } from '../services/excerpt.service';
 import { insertExcerptSchema } from '@shared/schema';
 import { z } from 'zod';
@@ -115,7 +115,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       // Save generated excerpts to database
       const savedExcerpts = [];
       for (const generated of generatedExcerpts) {
-        const excerpt = await storage.createExcerpt(userId, {
+        const excerpt = await aiMlStorage.createExcerpt(userId, {
           contentId: validatedData.contentId,
           originalContent: validatedData.content,
           excerptText: generated.text,
@@ -162,7 +162,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       }
 
       // Get all variants for the content
-      const excerpts = await storage.getExcerptsByContent(userId, contentId);
+      const excerpts = await aiMlStorage.getExcerptsByContent(userId, contentId);
       
       if (excerpts.length === 0) {
         return res.status(404).json({ error: 'No excerpts found for this content' });
@@ -212,7 +212,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       const start = startDate ? new Date(startDate as string) : undefined;
       const end = endDate ? new Date(endDate as string) : undefined;
 
-      const performance = await storage.getExcerptPerformance(excerptId, start, end);
+      const performance = await aiMlStorage.getExcerptPerformance(excerptId, start, end);
 
       // Calculate aggregate metrics
       const totals = performance.reduce((acc, perf) => ({
@@ -270,7 +270,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       const validatedData = optimizeExcerptSchema.parse(req.body);
 
       // Get current excerpt
-      const excerpts = await storage.getExcerptsByContent(userId, validatedData.excerptId);
+      const excerpts = await aiMlStorage.getExcerptsByContent(userId, validatedData.excerptId);
       const excerpt = excerpts.find(e => e.id === validatedData.excerptId);
       
       if (!excerpt) {
@@ -278,7 +278,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       }
 
       // Get performance data
-      const performance = await storage.getExcerptPerformance(validatedData.excerptId);
+      const performance = await aiMlStorage.getExcerptPerformance(validatedData.excerptId);
       if (performance.length === 0) {
         return res.status(400).json({ error: 'No performance data available for optimization' });
       }
@@ -305,7 +305,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       );
 
       // Save optimized excerpt as new variant
-      const optimizedExcerpt = await storage.createExcerpt(userId, {
+      const optimizedExcerpt = await aiMlStorage.createExcerpt(userId, {
         contentId: excerpt.contentId,
         originalContent: excerpt.originalContent || '',
         excerptText: optimized.text,
@@ -347,7 +347,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       }
 
       const { contentId } = req.params;
-      const excerpts = await storage.getExcerptsByContent(userId, contentId);
+      const excerpts = await aiMlStorage.getExcerptsByContent(userId, contentId);
 
       res.json({ 
         success: true, 
@@ -378,7 +378,7 @@ export function createExcerptRouter(storage: IStorage): Router {
         return res.status(400).json({ error: 'Content ID is required' });
       }
 
-      await storage.setActiveExcerpt(userId, contentId, excerptId);
+      await aiMlStorage.setActiveExcerpt(userId, contentId, excerptId);
 
       res.json({ 
         success: true, 
@@ -402,7 +402,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       }
 
       const { excerptId } = req.params;
-      await storage.deleteExcerpt(userId, excerptId);
+      await aiMlStorage.deleteExcerpt(userId, excerptId);
 
       res.json({ 
         success: true, 
@@ -424,7 +424,7 @@ export function createExcerptRouter(storage: IStorage): Router {
       const validatedData = trackPerformanceSchema.parse(req.body);
 
       // Record performance data
-      const performance = await storage.recordExcerptPerformance({
+      const performance = await aiMlStorage.recordExcerptPerformance({
         excerptId,
         views: validatedData.views || 0,
         clicks: validatedData.clicks || 0,

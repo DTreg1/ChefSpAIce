@@ -17,7 +17,7 @@
 
 import { Router } from "express";
 import { z } from "zod";
-import { storage } from "../storage";
+import { aiMlStorage } from "../storage/index";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { convertNaturalLanguageToSQL, executeValidatedQuery } from "../services/openai-query";
 
@@ -41,7 +41,7 @@ router.post("/natural", isAuthenticated, async (req, res) => {
     const result = await convertNaturalLanguageToSQL(naturalQuery, req.user!.id);
     
     // Log the query (without executing it yet)
-    const queryLog = await storage.createQueryLog(req.user!.id, {
+    const queryLog = await aiMlStorage.createQueryLog(req.user!.id, {
       naturalQuery,
       generatedSql: result.sql,
       queryType: result.queryType,
@@ -84,7 +84,7 @@ router.post("/execute", isAuthenticated, async (req, res) => {
     const { queryId, sql } = executeQuerySchema.parse(req.body);
     
     // Get the original query log
-    const queryLog = await storage.getQueryLog(req.user!.id, queryId);
+    const queryLog = await aiMlStorage.getQueryLog(req.user!.id, queryId);
     if (!queryLog) {
       return res.status(404).json({ error: "Query not found" });
     }
@@ -100,7 +100,7 @@ router.post("/execute", isAuthenticated, async (req, res) => {
       const executionTime = Date.now() - startTime;
       
       // Update the query log with execution results
-      await storage.updateQueryLog(queryId, {
+      await aiMlStorage.updateQueryLog(queryId, {
         resultCount: rowCount,
         executionTime,
         isSuccessful: true,
@@ -115,7 +115,7 @@ router.post("/execute", isAuthenticated, async (req, res) => {
       const executionTime = Date.now() - startTime;
       
       // Update the query log with error
-      await storage.updateQueryLog(queryId, {
+      await aiMlStorage.updateQueryLog(queryId, {
         executionTime,
         isSuccessful: false,
         error: execError instanceof Error ? execError.message : "Unknown error",
@@ -138,7 +138,7 @@ router.post("/execute", isAuthenticated, async (req, res) => {
 router.get("/history", isAuthenticated, async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-    const history = await storage.getQueryLogs(req.user!.id, limit);
+    const history = await aiMlStorage.getQueryLogs(req.user!.id, limit);
     res.json(history);
   } catch (error) {
     console.error("Error getting query history:", error);
@@ -152,7 +152,7 @@ router.get("/history", isAuthenticated, async (req, res) => {
  */
 router.get("/saved", isAuthenticated, async (req, res) => {
   try {
-    const savedQueries = await storage.getSavedQueries(req.user!.id);
+    const savedQueries = await aiMlStorage.getSavedQueries(req.user!.id);
     res.json(savedQueries);
   } catch (error) {
     console.error("Error getting saved queries:", error);
@@ -173,7 +173,7 @@ router.post("/save", isAuthenticated, async (req, res) => {
   try {
     const { queryId, savedName } = saveQuerySchema.parse(req.body);
     
-    const savedQuery = await storage.saveQuery(req.user!.id, queryId, savedName);
+    const savedQuery = await aiMlStorage.saveQuery(req.user!.id, queryId, savedName);
     res.json(savedQuery);
   } catch (error) {
     console.error("Error saving query:", error);
@@ -189,7 +189,7 @@ router.post("/save", isAuthenticated, async (req, res) => {
  */
 router.get("/:id", isAuthenticated, async (req, res) => {
   try {
-    const query = await storage.getQueryLog(req.user!.id, req.params.id);
+    const query = await aiMlStorage.getQueryLog(req.user!.id, req.params.id);
     if (!query) {
       return res.status(404).json({ error: "Query not found" });
     }
@@ -206,7 +206,7 @@ router.get("/:id", isAuthenticated, async (req, res) => {
  */
 router.delete("/:id", isAuthenticated, async (req, res) => {
   try {
-    const query = await storage.getQueryLog(req.user!.id, req.params.id);
+    const query = await aiMlStorage.getQueryLog(req.user!.id, req.params.id);
     if (!query) {
       return res.status(404).json({ error: "Query not found" });
     }
@@ -217,7 +217,7 @@ router.delete("/:id", isAuthenticated, async (req, res) => {
     }
     
     // Update to mark as unsaved rather than actually deleting
-    await storage.updateQueryLog(req.params.id, {
+    await aiMlStorage.updateQueryLog(req.params.id, {
       isSaved: false,
       savedName: null,
     });

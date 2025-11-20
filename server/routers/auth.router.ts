@@ -1,6 +1,6 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { z } from "zod";
-import { storage } from "../storage";
+import { userAuthStorage } from "../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { validateBody } from "../middleware";
@@ -13,7 +13,7 @@ const router = Router();
 router.get("/user", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  const user = await storage.getUser(userId);
+  const user = await userAuthStorage.getUser(userId);
   res.json(user);
 }));
 
@@ -21,7 +21,7 @@ router.get("/user", isAuthenticated, asyncHandler(async (req: ExpressRequest<any
 router.get("/user/preferences", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  const preferences = await storage.getUserPreferences(userId);
+  const preferences = await userAuthStorage.getUserPreferences(userId);
   res.json(preferences);
 }));
 
@@ -52,7 +52,7 @@ router.put(
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const preferences = await storage.updateUserPreferences(userId, req.body);
+    const preferences = await userAuthStorage.updateUserPreferences(userId, req.body);
     res.json(preferences);
   })
 );
@@ -61,7 +61,7 @@ router.put(
 router.post("/user/reset", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  await storage.resetUserData(userId);
+  await userAuthStorage.resetUserData(userId);
   res.json({ success: true, message: "Account data reset successfully" });
 }));
 
@@ -423,7 +423,7 @@ router.post(
     const createdStorageLocations: StorageLocation[] = [];
 
     // Step 1: Save user preferences
-    const savedPreferences = await storage.updateUserPreferences(userId, {
+    const savedPreferences = await userAuthStorage.updateUserPreferences(userId, {
       ...preferences,
       hasCompletedOnboarding: true,
     });
@@ -431,7 +431,7 @@ router.post(
     // Step 2: Create custom storage locations
     for (const customArea of customStorageAreas || []) {
       try {
-        const location = await storage.createStorageLocation(userId, {
+        const location = await userAuthStorage.createStorageLocation(userId, {
           name: customArea,
           icon: "package",
         });
@@ -445,7 +445,7 @@ router.post(
     }
 
     // Step 3: Get all storage locations to map names to IDs
-    const allLocations = await storage.getStorageLocations(userId);
+    const allLocations = await userAuthStorage.getStorageLocations(userId);
     const locationMap = new Map(
       allLocations.map((loc: any) => [loc.name, loc.id]),
     );
@@ -464,7 +464,7 @@ router.post(
     });
 
     // Step 5: Create selected common food items from pre-populated database
-    const commonItems = await storage.getOnboardingInventoryByNames(
+    const commonItems = await userAuthStorage.getOnboardingInventoryByNames(
       selectedCommonItems || [],
     );
     const commonItemsMap = new Map(
@@ -492,7 +492,7 @@ router.post(
           );
 
           // Create the food item with pre-populated USDA data
-          await storage.createFoodItem(userId, {
+          await userAuthStorage.createFoodItem(userId, {
             name: commonItem.displayName,
             quantity: commonItem.quantity,
             unit: commonItem.unit,
@@ -531,7 +531,7 @@ router.post(
           // Normalize the category from our predefined list
           const foodCategory = normalizeCategory(itemData.category);
 
-          await storage.createFoodItem(userId, {
+          await userAuthStorage.createFoodItem(userId, {
             name: itemData.displayName,
             quantity: itemData.quantity,
             unit: itemData.unit,

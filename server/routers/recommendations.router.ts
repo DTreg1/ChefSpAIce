@@ -1,7 +1,7 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { z } from "zod";
 import { isAuthenticated } from "../middleware";
-import { storage } from "../storage";
+import { storage } from "../storage/index";
 import { EmbeddingsService } from "../services/embeddings";
 import { asyncHandler } from "../middleware/error.middleware";
 
@@ -286,7 +286,7 @@ router.post(
       const queryEmbedding = await embeddingsService.generateEmbedding(validated.query);
 
       // Search for similar content
-      const results = await storage.searchByEmbedding(
+      const results = await aiMlStorage.searchByEmbedding(
         queryEmbedding,
         validated.contentType,
         userId,
@@ -351,7 +351,7 @@ router.delete(
     // For now, we'll set an expired cache entry to effectively clear it
     const expiresAt = new Date(0); // Expired date
 
-    await storage.cacheRelatedContent({
+    await aiMlStorage.cacheRelatedContent({
       contentId: id as string,
       contentType: type as string,
       relatedItems: [],
