@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { storage } from "../storage";
+import { analyticsStorage } from "../storage/index";
 import { AnalyticsInsight, InsertAnalyticsInsight } from "@shared/schema";
 import pRetry from "p-retry";
 
@@ -180,11 +180,14 @@ Example for a traffic spike:
 
       // Create the insight record
       const insightData: InsertAnalyticsInsight = {
-        userId,
-        metricName: metricData.metricName,
-        insightText: response.insightText,
-        period: metricData.period,
-        metricData: {
+        insightType: analysis.isAnomaly ? "anomaly" : "trend",
+        category: "performance",
+        title: `${metricData.metricName} Analysis`,
+        description: response.insightText,
+        severity: analysis.isAnomaly ? "warning" : "info",
+        metrics: {
+          metricName: metricData.metricName,
+          period: metricData.period,
           currentValue,
           previousValue,
           percentageChange: analysis.percentageChange,
@@ -193,14 +196,8 @@ Example for a traffic spike:
           min,
           max,
           trend: analysis.trend
-        },
-        aiContext: {
-          reasoning: response.reasoning,
-          suggestedActions: response.suggestedActions,
-          relatedMetrics: response.relatedMetrics,
-          confidence: 0.85,
-          model: "gpt-5"
-        }
+        } as any,
+        recommendations: response.suggestedActions as any
       };
 
       return await analyticsStorage.createAnalyticsInsight(insightData);
@@ -226,16 +223,19 @@ Example for a traffic spike:
       }
 
       const fallbackInsight: InsertAnalyticsInsight = {
-        userId,
-        metricName: metricData.metricName,
-        insightText,
-        period: metricData.period,
-        metricData: {
+        insightType: analysis.isAnomaly ? "anomaly" : "trend",
+        category: "performance",
+        title: `${metricData.metricName} Analysis`,
+        description: insightText,
+        severity: analysis.isAnomaly ? "warning" : "info",
+        metrics: {
+          metricName: metricData.metricName,
+          period: metricData.period,
           currentValue,
           percentageChange: analysis.percentageChange,
           dataPoints: metricData.dataPoints,
           trend: analysis.trend
-        }
+        } as any
       };
 
       return await analyticsStorage.createAnalyticsInsight(fallbackInsight);

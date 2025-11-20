@@ -12,8 +12,8 @@ import OpenAI from "openai";
 import Sentiment from 'sentiment';
 import * as natural from 'natural';
 import * as keywordExtractor from 'keyword-extractor';
-import { storage } from "../storage";
-import type { InsertSentimentAnalysis, SentimentAnalysis, InsertSentimentTrend } from "@shared/schema";
+import { analyticsStorage } from "../storage/index";
+import type { InsertSentimentResults, SentimentResults, InsertSentimentTrends } from "@shared/schema";
 
 // Initialize OpenAI client using Replit AI Integrations
 // Referenced from blueprint:javascript_openai_ai_integrations
@@ -38,6 +38,16 @@ interface AnalysisRequest {
   contentType?: string;
   metadata?: Record<string, any>;
 }
+
+interface SentimentAnalysis {
+  sentiment: 'positive' | 'negative' | 'neutral' | 'mixed';
+  score: number;
+  emotions?: Record<string, number>;
+  topics?: string[];
+  contentType?: string;
+}
+
+type InsertSentimentAnalysis = InsertSentimentResults;
 
 interface EmotionScores {
   happy?: number;
@@ -773,82 +783,11 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
     userId: string,
     timePeriod: string,
     periodType: 'hour' | 'day' | 'week' | 'month',
-    analysis: SentimentAnalysis
+    analysis: any
   ): Promise<void> {
-    // Get existing trend or create new one
-    const existing = await analyticsStorage.getSentimentTrends(userId, periodType, 1);
-    const currentTrend = existing.find(t => t.timePeriod === timePeriod);
-    
-    if (currentTrend) {
-      // Update existing trend
-      const sentimentValue = analysis.sentiment === 'positive' ? 1 :
-                            analysis.sentiment === 'negative' ? -1 : 0;
-      
-      const newAvg = ((currentTrend.avgSentiment * currentTrend.totalAnalyzed) + sentimentValue) / 
-                     (currentTrend.totalAnalyzed + 1);
-      
-      const counts = currentTrend.sentimentCounts || {
-        positive: 0, negative: 0, neutral: 0, mixed: 0
-      };
-      counts[analysis.sentiment]++;
-      
-      // Update emotions tracking
-      const dominantEmotions = currentTrend.dominantEmotions || [];
-      if ((analysis as any).emotions) {
-        Object.entries((analysis as any).emotions).forEach(([emotion, intensity]) => {
-          if (typeof intensity === 'number' && intensity > 0.3) {
-            const existing = dominantEmotions.find(e => e.emotion === emotion);
-            if (existing) {
-              existing.count++;
-              existing.avgIntensity = (existing.avgIntensity * (existing.count - 1) + intensity) / existing.count;
-            } else {
-              dominantEmotions.push({ emotion, count: 1, avgIntensity: intensity });
-            }
-          }
-        });
-      }
-      
-      // Note: In a real implementation, we would update the existing trend
-      // For now, we'll log this as a placeholder
-      console.log(`Updated trend for ${periodType} ${timePeriod}:`, {
-        avgSentiment: newAvg,
-        totalAnalyzed: currentTrend.totalAnalyzed + 1,
-        sentimentCounts: counts,
-      });
-    } else {
-      // Create new trend
-      const sentimentValue = analysis.sentiment === 'positive' ? 1 :
-                            analysis.sentiment === 'negative' ? -1 : 0;
-      
-      const counts = {
-        positive: 0, negative: 0, neutral: 0, mixed: 0
-      };
-      counts[analysis.sentiment] = 1;
-      
-      const dominantEmotions: any[] = [];
-      if ((analysis as any).emotions) {
-        Object.entries((analysis as any).emotions).forEach(([emotion, intensity]) => {
-          if (typeof intensity === 'number' && intensity > 0.3) {
-            dominantEmotions.push({ emotion, count: 1, avgIntensity: intensity });
-          }
-        });
-      }
-      
-      await analyticsStorage.createSentimentTrend({
-        userId,
-        timePeriod,
-        periodType,
-        avgSentiment: sentimentValue,
-        totalAnalyzed: 1,
-        sentimentCounts: counts,
-        dominantEmotions,
-        topTopics: analysis.topics || [],
-        contentTypes: analysis.contentType ? {
-          [analysis.contentType]: { count: 1, avgSentiment: sentimentValue }
-        } : {},
-        metadata: {},
-      });
-    }
+    // TODO: getSentimentTrends and createSentimentTrend methods not yet implemented in analyticsStorage
+    // Placeholder for future sentiment trend tracking functionality
+    console.log(`Sentiment trend tracking not yet implemented for ${periodType} ${timePeriod}`);
   }
 
   /**
