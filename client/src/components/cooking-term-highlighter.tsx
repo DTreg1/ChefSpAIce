@@ -186,29 +186,22 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
 
             <Separator />
 
-            {/* Long definition */}
+            {/* Definition */}
             <div>
               <h4 className="font-semibold mb-2 text-sm">How to {data.term}</h4>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{data.longDefinition}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{data.definition}</p>
             </div>
 
-            {/* Tools needed */}
-            {data.tools && data.tools.length > 0 && (
+            {/* Example */}
+            {data.example && (
               <>
                 <Separator />
                 <div>
                   <h4 className="font-semibold mb-2 text-sm flex items-center gap-1">
                     <Utensils className="w-4 h-4" />
-                    Tools Needed
+                    Example
                   </h4>
-                  <ul className="text-sm space-y-1">
-                    {data.tools.map((tool, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <span className="w-1 h-1 rounded-full bg-primary" />
-                        {tool}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-sm text-muted-foreground">{data.example}</p>
                 </div>
               </>
             )}

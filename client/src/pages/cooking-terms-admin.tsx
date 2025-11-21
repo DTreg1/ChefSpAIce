@@ -142,7 +142,7 @@ export default function CookingTermsAdmin() {
     }
 
     if (editingTerm) {
-      updateMutation.mutate({ id: editingTerm.id, data: formData as InsertCookingTerm });
+      updateMutation.mutate({ id: String(editingTerm.id), data: formData as InsertCookingTerm });
     } else {
       createMutation.mutate(formData as InsertCookingTerm);
     }
