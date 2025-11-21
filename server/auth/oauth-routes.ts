@@ -207,7 +207,7 @@ router.get("/auth/user", isAuthenticated, async (req, res) => {
     if (!sessionUser || !('id' in sessionUser)) {
       return res.status(401).json({ error: "User not authenticated" });
     }
-    const user = await storage.getUser(sessionUser.id);
+    const user = await storage.getUserById(sessionUser.id);
     res.json(user);
   } catch (error) {
     console.error("Error getting user:", error);

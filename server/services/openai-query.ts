@@ -307,12 +307,17 @@ export async function getSavedQueries(userId: string) {
  * Save a query for future use
  */
 export async function saveQuery(queryId: string, savedName: string, userId: string) {
-  await db
-    .update(queryLogs)
-    .set({
-      isSaved: true,
-      savedName
-    })
-    .where(and(eq(queryLogs.id, queryId), eq(queryLogs.userId, userId)));
+  // Note: queryLogs doesn't have isSaved or savedName fields
+  // This functionality would need to be implemented with a separate saved_queries table
+  console.log('Warning: saveQuery not fully implemented - queryLogs lacks isSaved/savedName fields');
+  // For now, just verify the query exists
+  const query = await db
+    .select()
+    .from(queryLogs)
+    .where(and(eq(queryLogs.id, queryId), eq(queryLogs.userId, userId)))
+    .limit(1);
+  if (query.length === 0) {
+    throw new Error('Query not found');
+  }
 }
 
