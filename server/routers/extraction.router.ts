@@ -484,7 +484,7 @@ router.post(
       );
 
       const extractionResults = await Promise.all(extractionPromises);
-      const validResults = extractionResults.filter(r => r !== null)[];
+      const validResults = extractionResults.filter(r => r !== null);
 
       // Batch save extraction results
       const savedExtractions = await aiMlStorage.batchCreateExtractedData(validResults);
