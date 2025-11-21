@@ -126,7 +126,7 @@ export function DraftingAssistant() {
   };
 
   const handleRegenerateDraft = async (draft: GeneratedDraft) => {
-    const newTone = draft.tone || "formal";
+    const newTone = draft.metadata?.tone || "formal";
     generateDraftsMutation.mutate({
       originalMessage,
       contextType,

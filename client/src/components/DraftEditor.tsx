@@ -25,14 +25,14 @@ const TONE_OPTIONS = [
 ];
 
 export function DraftEditor({ draft, onSave, onCancel, onCopy }: DraftEditorProps) {
-  const [content, setContent] = useState(draft.editedContent || draft.draftContent);
-  const [tone, setTone] = useState(draft.tone || "formal");
+  const [content, setContent] = useState(draft.editedContent || draft.generatedContent);
+  const [tone, setTone] = useState(draft.metadata?.tone || "formal");
   const [copied, setCopied] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   const handleContentChange = (value: string) => {
     setContent(value);
-    setHasChanges(value !== draft.draftContent);
+    setHasChanges(value !== (draft.editedContent || draft.generatedContent));
   };
 
   const handleSave = () => {

@@ -33,7 +33,7 @@ export function DraftSuggestions({
 
   const handleCopyDraft = async (draft: GeneratedDraft) => {
     try {
-      await navigator.clipboard.writeText(draft.draftContent);
+      await navigator.clipboard.writeText(draft.editedContent || draft.generatedContent);
       setCopiedId(draft.id);
       onSelectDraft(draft);
       setTimeout(() => setCopiedId(null), 2000);
@@ -83,10 +83,10 @@ export function DraftSuggestions({
             <div className="flex items-center justify-between gap-2">
               <Badge
                 variant="secondary"
-                className={toneColors[draft.tone || ""] || ""}
-                data-testid={`tone-badge-${draft.tone}`}
+                className={toneColors[draft.metadata?.tone || ""] || ""}
+                data-testid={`tone-badge-${draft.metadata?.tone}`}
               >
-                {draft.tone}
+                {draft.metadata?.tone || "formal"}
               </Badge>
               <Button
                 variant="ghost"
@@ -101,7 +101,7 @@ export function DraftSuggestions({
           </CardHeader>
           <CardContent className="pb-4">
             <p className="text-sm whitespace-pre-wrap line-clamp-6">
-              {draft.draftContent}
+              {draft.editedContent || draft.generatedContent}
             </p>
           </CardContent>
           <CardFooter className="pt-0 gap-2">
