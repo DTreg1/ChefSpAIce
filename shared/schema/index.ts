@@ -39,13 +39,6 @@ export * from './support';
 export * from './billing';
 export * from './chat';
 
-// Also re-export types from json-schemas that are used by client
-export type { 
-  USDAFoodItem, 
-  USDASearchResponse, 
-  NutritionInfo 
-} from '../json-schemas';
-
 // AI/ML domains
 export * from './ai-ml';
 export * from './images';
@@ -76,6 +69,28 @@ import { userPredictions } from './analytics';
 
 // Re-export for backward compatibility
 export { users, userRecipes, pushTokens, analyticsInsights, trends, userPredictions };
+
+// ==================== Type Re-exports from json-schemas ====================
+// Re-export types from json-schemas that are used by client code
+export type { 
+  USDAFoodItem, 
+  USDASearchResponse, 
+  NutritionInfo 
+} from '../json-schemas';
+
+// ==================== Compatibility Aliases ====================
+// These provide backward compatibility for incorrect type names that were used
+
+// Fix notification type name mismatches
+// The correct singular forms from notifications.ts
+import { 
+  type NotificationPreference,
+  type InsertNotificationPreference 
+} from './notifications';
+
+// Export compatibility aliases for incorrect plural names
+export type NotificationPreferences = NotificationPreference;
+export type InsertNotificationPreferences = InsertNotificationPreference;
 
 // ==================== Shared Interfaces ====================
 
