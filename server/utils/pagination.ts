@@ -1,4 +1,15 @@
-import { PaginatedResponse } from "../storage";
+/**
+ * Paginated response structure
+ * @template T - Type of data items
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+  offset: number;
+}
 
 /**
  * Utility class for handling standardized pagination

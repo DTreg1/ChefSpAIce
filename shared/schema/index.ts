@@ -119,6 +119,19 @@ export interface PaginatedResponse<T> {
 }
 
 /**
+ * Alternative pagination response format (used by utils)
+ * @template T - Type of data items
+ */
+export interface PaginatedUtilResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+  offset: number;
+}
+
+/**
  * Chat message type
  * Compatible with legacy ChatMessage type
  */

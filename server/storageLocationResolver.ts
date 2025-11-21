@@ -5,8 +5,9 @@
  * userStorage IDs in the database. Creates default locations if they don't exist.
  */
 
-import { IStorage } from "./storage";
+import { storage } from "./storage";
 import type { UserStorage } from "@shared/schema";
+import type { IStorage } from "./storage/interfaces/IStorage";
 
 /**
  * Standard storage location name mappings

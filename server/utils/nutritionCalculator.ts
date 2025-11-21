@@ -78,7 +78,7 @@ export function extractNutrition(usdaData: any): NutritionInfo | null {
   return {
     calories: nutrients.calories || 0,
     protein: nutrients.protein || 0,
-    carbs: nutrients.carbs || 0,
+    carbohydrates: nutrients.carbohydrates || 0,
     fat: nutrients.fat || 0,
     fiber: nutrients.fiber,
     sugar: nutrients.sugar,
@@ -125,11 +125,11 @@ export function calculateNutrition(
   return {
     calories: Math.round((baseNutrition.calories || 0) * scaleFactor),
     protein: Math.round((baseNutrition.protein || 0) * scaleFactor * 10) / 10,
-    carbs: Math.round((baseNutrition.carbs || 0) * scaleFactor * 10) / 10,
+    carbohydrates: Math.round((baseNutrition.carbohydrates || 0) * scaleFactor * 10) / 10,
     fat: Math.round((baseNutrition.fat || 0) * scaleFactor * 10) / 10,
-    fiber: baseNutrition.fiber ? Math.round(baseNutrition.fiber * scaleFactor * 10) / 10 : undefined,
-    sugar: baseNutrition.sugar ? Math.round(baseNutrition.sugar * scaleFactor * 10) / 10 : undefined,
-    sodium: baseNutrition.sodium ? Math.round(baseNutrition.sodium * scaleFactor) : undefined,
+    fiber: baseNutrition.fiber !== undefined ? Math.round(baseNutrition.fiber * scaleFactor * 10) / 10 : undefined,
+    sugar: baseNutrition.sugar !== undefined ? Math.round(baseNutrition.sugar * scaleFactor * 10) / 10 : undefined,
+    sodium: baseNutrition.sodium !== undefined ? Math.round(baseNutrition.sodium * scaleFactor) : undefined,
     servingSize: String(item.weightInGrams),
     servingUnit: "g",
   };
@@ -159,7 +159,7 @@ export function aggregateNutrition(items: UserInventory[]): NutritionInfo {
   const totals: NutritionInfo = {
     calories: 0,
     protein: 0,
-    carbs: 0,
+    carbohydrates: 0,
     fat: 0,
     fiber: 0,
     sugar: 0,
@@ -174,7 +174,7 @@ export function aggregateNutrition(items: UserInventory[]): NutritionInfo {
         const nutrition = JSON.parse(item.nutrition) as NutritionInfo;
         totals.calories = (totals.calories || 0) + (nutrition.calories || 0);
         totals.protein = (totals.protein || 0) + (nutrition.protein || 0);
-        totals.carbs = (totals.carbs || 0) + (nutrition.carbs || 0);
+        totals.carbohydrates = (totals.carbohydrates || 0) + (nutrition.carbohydrates || 0);
         totals.fat = (totals.fat || 0) + (nutrition.fat || 0);
         totals.fiber = (totals.fiber || 0) + (nutrition.fiber || 0);
         totals.sugar = (totals.sugar || 0) + (nutrition.sugar || 0);
@@ -189,11 +189,11 @@ export function aggregateNutrition(items: UserInventory[]): NutritionInfo {
   return {
     calories: Math.round(totals.calories || 0),
     protein: Math.round((totals.protein || 0) * 10) / 10,
-    carbs: Math.round((totals.carbs || 0) * 10) / 10,
+    carbohydrates: Math.round((totals.carbohydrates || 0) * 10) / 10,
     fat: Math.round((totals.fat || 0) * 10) / 10,
-    fiber: totals.fiber ? Math.round(totals.fiber * 10) / 10 : undefined,
-    sugar: totals.sugar ? Math.round(totals.sugar * 10) / 10 : undefined,
-    sodium: totals.sodium ? Math.round(totals.sodium) : undefined,
+    fiber: totals.fiber !== undefined ? Math.round(totals.fiber * 10) / 10 : undefined,
+    sugar: totals.sugar !== undefined ? Math.round(totals.sugar * 10) / 10 : undefined,
+    sodium: totals.sodium !== undefined ? Math.round(totals.sodium) : undefined,
     servingSize: totals.servingSize,
     servingUnit: totals.servingUnit,
   };

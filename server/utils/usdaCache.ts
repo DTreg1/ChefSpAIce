@@ -50,12 +50,6 @@ export async function searchUSDAFoodsCached(
         totalHits: cachedSearch.totalHits,
         currentPage: searchOptions.pageNumber || 1,
         totalPages: Math.ceil(cachedSearch.totalHits / (searchOptions.pageSize || 20)),
-        pageList: Array.from({ length: Math.min(10, Math.ceil(cachedSearch.totalHits / (searchOptions.pageSize || 20))) }, (_, i) => i + 1),
-        foodSearchCriteria: {
-          query: searchOptions.query,
-          pageNumber: searchOptions.pageNumber || 1,
-          pageSize: searchOptions.pageSize || 20,
-        },
       };
     }
     
@@ -70,7 +64,7 @@ export async function searchUSDAFoodsCached(
         if (cachedFood) return cachedFood;
         
         // Fall back to database cache
-        const dbFood = await storage.getCachedFood(fdcId);
+        const dbFood = await (storage as any).getCachedFood(fdcId);
         if (dbFood && dbFood.fullData) {
           const foodData = dbFood.fullData as USDAFoodItem;
           // Cache in memory for faster access
@@ -96,12 +90,6 @@ export async function searchUSDAFoodsCached(
           totalHits: cachedSearch.totalHits,
           currentPage: searchOptions.pageNumber || 1,
           totalPages: Math.ceil(cachedSearch.totalHits / (searchOptions.pageSize || 20)),
-          pageList: Array.from({ length: Math.min(10, Math.ceil(cachedSearch.totalHits / (searchOptions.pageSize || 20))) }, (_, i) => i + 1),
-          foodSearchCriteria: {
-            query: searchOptions.query,
-            pageNumber: searchOptions.pageNumber || 1,
-            pageSize: searchOptions.pageSize || 20,
-          },
         };
       }
     }
@@ -120,7 +108,7 @@ export async function searchUSDAFoodsCached(
       // Cache individual foods in both ApiCache and database
       const cachePromises = response.foods.map(async (food) => {
         // Foods with foodNutrients have already been validated
-        if (!food.foodNutrients || food.foodNutrients.length === 0) {
+        if (!food.nutrients || food.nutrients.length === 0) {
           return null;
         }
         
@@ -128,16 +116,16 @@ export async function searchUSDAFoodsCached(
         apiCache.set(`usda.food:${food.fdcId}`, food, undefined, food.brandOwner ? 'usda.branded' : 'usda.food');
         
         // Cache in database for persistence
-        return storage.cacheFood({
+        return (storage as any).cacheFood({
           fdcId: String(food.fdcId),
           description: food.description,
           dataType: food.dataType,
           brandOwner: food.brandOwner,
-          brandName: food.brandName,
+          brandName: (food as any).brandName,
           ingredients: food.ingredients,
           servingSize: food.servingSize,
           servingSizeUnit: food.servingSizeUnit,
-          nutrients: food.foodNutrients as any,
+          nutrients: food.nutrients as any,
           fullData: food as any,
         });
       });
@@ -181,7 +169,7 @@ export async function getCachedFoodById(fdcId: number): Promise<any | null> {
     }
     
     // Fall back to database cache
-    const dbCached = await storage.getCachedFood(String(fdcId));
+    const dbCached = await (storage as any).getCachedFood(String(fdcId));
     if (dbCached && dbCached.fullData) {
       // console.log(`[USDA Cache] Database hit for FDC ID: ${fdcId}`);
       const foodData = dbCached.fullData;
@@ -234,7 +222,7 @@ export async function cleanupCache(): Promise<void> {
   try {
     // The ApiCacheService handles its own cleanup automatically
     // Just clear old database cache entries
-    await storage.clearOldCache(30); // Clear database cache older than 30 days
+    await (storage as any).clearOldCache(30); // Clear database cache older than 30 days
     // console.log('[USDA Cache] Database cleanup completed');
   } catch (error) {
     console.error('[USDA Cache] Cleanup failed:', error);
