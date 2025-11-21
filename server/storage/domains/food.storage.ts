@@ -14,8 +14,8 @@ import {
   type UserStorage,
   type InsertUserStorage,
   type CookingTerm,
+  type InsertCookingTerm,
 } from "@shared/schema";
-
 
 import { PaginationHelper, PaginatedResponse } from "../../utils/pagination";
 
@@ -24,32 +24,22 @@ export interface StorageLocationWithCount extends UserStorage {
   itemCount?: number;
 }
 
-// Insert type for cooking terms
-export type InsertCookingTerm = {
-  term: string;
-  category: string;
-  definition: string;
-  example?: string | null;
-  difficulty?: string | null;
-  relatedTerms?: string[] | null;
-  imageUrl?: string | null;
-  videoUrl?: string | null;
-  tips?: string[] | null;
-};
 
 export class FoodStorage {
   // ==================== Food Inventory Methods ====================
-  
+
   async getFoodItems(
     userId: string,
     storageLocationId?: string,
     foodCategory?: string,
-    limit: number = 500
+    limit: number = 500,
   ): Promise<UserInventory[]> {
     const whereConditions = [eq(userInventory.userId, userId)];
 
     if (storageLocationId) {
-      whereConditions.push(eq(userInventory.storageLocationId, storageLocationId));
+      whereConditions.push(
+        eq(userInventory.storageLocationId, storageLocationId),
+      );
     }
 
     if (foodCategory) {
@@ -70,14 +60,16 @@ export class FoodStorage {
     limit: number = 30,
     storageLocationId?: string,
     foodCategory?: string,
-    sortBy: "name" | "expirationDate" | "createdAt" = "expirationDate"
+    sortBy: "name" | "expirationDate" | "createdAt" = "expirationDate",
   ): Promise<PaginatedResponse<UserInventory>> {
     const offset = (page - 1) * limit;
 
     // Build where clause
     const whereConditions = [eq(userInventory.userId, userId)];
     if (storageLocationId && storageLocationId !== "all") {
-      whereConditions.push(eq(userInventory.storageLocationId, storageLocationId));
+      whereConditions.push(
+        eq(userInventory.storageLocationId, storageLocationId),
+      );
     }
     if (foodCategory) {
       whereConditions.push(eq(userInventory.foodCategory, foodCategory));
@@ -121,7 +113,7 @@ export class FoodStorage {
 
   async createFoodItem(
     userId: string,
-    item: Omit<InsertUserInventory, "userId">
+    item: Omit<InsertUserInventory, "userId">,
   ): Promise<UserInventory> {
     const [newItem] = await db
       .insert(userInventory)
@@ -133,13 +125,13 @@ export class FoodStorage {
   async updateFoodItem(
     userId: string,
     id: string,
-    item: Partial<Omit<InsertUserInventory, "userId">>
+    item: Partial<Omit<InsertUserInventory, "userId">>,
   ): Promise<UserInventory> {
     const [updated] = await db
       .update(userInventory)
       .set({
         ...item,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(and(eq(userInventory.id, id), eq(userInventory.userId, userId)))
       .returning();
@@ -163,7 +155,7 @@ export class FoodStorage {
           FROM user_inventory 
           WHERE user_id = ${userId} 
             AND food_category IS NOT NULL 
-          ORDER BY food_category`
+          ORDER BY food_category`,
     );
 
     return results.rows.map((r) => r.food_category);
@@ -171,13 +163,15 @@ export class FoodStorage {
 
   // ==================== Storage Location Methods ====================
 
-  async getStorageLocations(userId: string): Promise<StorageLocationWithCount[]> {
+  async getStorageLocations(
+    userId: string,
+  ): Promise<StorageLocationWithCount[]> {
     // Get user's storage locations
     const locations = await db
       .select()
       .from(userStorage)
       .where(
-        and(eq(userStorage.userId, userId), eq(userStorage.isActive, true))
+        and(eq(userStorage.userId, userId), eq(userStorage.isActive, true)),
       )
       .orderBy(userStorage.sortOrder);
 
@@ -192,7 +186,7 @@ export class FoodStorage {
       .groupBy(userInventory.storageLocationId);
 
     const countMap = new Map(
-      items.map((item) => [item.storageLocationId, item.count])
+      items.map((item) => [item.storageLocationId, item.count]),
     );
 
     // Add itemCount to each location
@@ -202,7 +196,10 @@ export class FoodStorage {
     }));
   }
 
-  async getStorageLocation(userId: string, id: string): Promise<UserStorage | null> {
+  async getStorageLocation(
+    userId: string,
+    id: string,
+  ): Promise<UserStorage | null> {
     const [location] = await db
       .select()
       .from(userStorage)
@@ -210,8 +207,8 @@ export class FoodStorage {
         and(
           eq(userStorage.userId, userId),
           eq(userStorage.id, id),
-          eq(userStorage.isActive, true)
-        )
+          eq(userStorage.isActive, true),
+        ),
       );
 
     return location || null;
@@ -219,7 +216,7 @@ export class FoodStorage {
 
   async createStorageLocation(
     userId: string,
-    location: { name: string; icon?: string }
+    location: { name: string; icon?: string },
   ): Promise<UserStorage> {
     // Get current max sort order for this user
     const [maxSort] = await db
@@ -248,7 +245,7 @@ export class FoodStorage {
   async updateStorageLocation(
     userId: string,
     id: string,
-    updates: Partial<UserStorage>
+    updates: Partial<UserStorage>,
   ): Promise<UserStorage> {
     // Ensure the storage location exists and belongs to the user
     const [existing] = await db
@@ -302,13 +299,13 @@ export class FoodStorage {
       .where(
         and(
           eq(userInventory.userId, userId),
-          eq(userInventory.storageLocationId, id)
-        )
+          eq(userInventory.storageLocationId, id),
+        ),
       );
 
     if (itemCount && Number(itemCount.count) > 0) {
       throw new Error(
-        "Cannot delete storage location with items. Move or delete items first."
+        "Cannot delete storage location with items. Move or delete items first.",
       );
     }
 
@@ -317,7 +314,6 @@ export class FoodStorage {
       .delete(userStorage)
       .where(and(eq(userStorage.userId, userId), eq(userStorage.id, id)));
   }
-
 
   // ==================== Cooking Terms Methods ====================
 
@@ -352,16 +348,19 @@ export class FoodStorage {
     // Ensure required fields are provided
     const termWithDefaults = {
       ...term,
-      shortDefinition: term.shortDefinition || '',
-      longDefinition: term.longDefinition || ''
+      shortDefinition: term.shortDefinition || "",
+      longDefinition: term.longDefinition || "",
     };
-    const [result] = await db.insert(cookingTerms).values(termWithDefaults).returning();
+    const [result] = await db
+      .insert(cookingTerms)
+      .values(termWithDefaults)
+      .returning();
     return result;
   }
 
   async updateCookingTerm(
     id: number,
-    term: Partial<InsertCookingTerm>
+    term: Partial<InsertCookingTerm>,
   ): Promise<CookingTerm> {
     const [result] = await db
       .update(cookingTerms)
@@ -393,7 +392,7 @@ export class FoodStorage {
              OR EXISTS (
                SELECT 1 FROM unnest(${cookingTerms.relatedTerms}) AS related_term
                WHERE LOWER(related_term) LIKE ${`%${lowerSearch}%`}
-             )`
+             )`,
       );
   }
 }
