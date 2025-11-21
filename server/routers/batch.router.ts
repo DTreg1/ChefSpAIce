@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/error.middleware";
 import { inventoryStorage, recipesStorage, userAuthStorage, chatStorage, analyticsStorage, foodStorage } from "../storage/index";
 // Use OAuth authentication middleware
@@ -10,7 +10,7 @@ const router = Router();
  * Batch endpoint to handle multiple API requests in a single HTTP call
  * This reduces network overhead and improves performance with parallel processing
  */
-router.post("/batch", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/batch", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   const { requests  } = req.body || {};
   const userId = req.user?.id;
   

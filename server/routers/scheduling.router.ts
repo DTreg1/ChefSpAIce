@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { schedulingStorage } from "../storage/index";
 import { 
   insertSchedulingPreferencesSchema,
@@ -18,9 +18,9 @@ const router = Router();
 // ==================== Scheduling Preferences ====================
 
 // GET /api/schedule/preferences - Get user's scheduling preferences
-router.get("/schedule/preferences", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/schedule/preferences", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const preferences = await schedulingStorage.getSchedulingPreferences(userId);
@@ -54,12 +54,12 @@ router.get("/schedule/preferences", isAuthenticated, async (req: ExpressRequest<
 });
 
 // PUT /api/schedule/preferences - Update scheduling preferences
-router.put("/schedule/preferences", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.put("/schedule/preferences", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const validation = insertSchedulingPreferencesSchema.safeParse(req.body as any);
+    const validation = insertSchedulingPreferencesSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         error: "Validation error",
@@ -78,9 +78,9 @@ router.put("/schedule/preferences", isAuthenticated, async (req: ExpressRequest<
 // ==================== Meeting Suggestions ====================
 
 // POST /api/schedule/suggest - Suggest meeting times using AI
-router.post("/schedule/suggest", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/schedule/suggest", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const {
@@ -226,9 +226,9 @@ Return as JSON with format:
 });
 
 // GET /api/schedule/suggestions - Get user's meeting suggestions
-router.get("/schedule/suggestions", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/schedule/suggestions", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { status } = req.query;
@@ -241,9 +241,9 @@ router.get("/schedule/suggestions", isAuthenticated, async (req: ExpressRequest<
 });
 
 // PUT /api/schedule/suggestions/:meetingId - Accept/reject a suggestion
-router.put("/schedule/suggestions/:meetingId", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.put("/schedule/suggestions/:meetingId", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { meetingId } = req.params;
@@ -284,9 +284,9 @@ router.put("/schedule/suggestions/:meetingId", isAuthenticated, async (req: Expr
 // ==================== Schedule Optimization ====================
 
 // POST /api/schedule/optimize - Optimize existing schedule
-router.post("/schedule/optimize", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/schedule/optimize", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { startDate, endDate } = req.body;
@@ -358,9 +358,9 @@ Return as JSON with format:
 // ==================== Conflict Detection ====================
 
 // GET /api/schedule/conflicts - Find scheduling conflicts
-router.get("/schedule/conflicts", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/schedule/conflicts", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { startTime, endTime, participants } = req.query;
@@ -397,9 +397,9 @@ router.get("/schedule/conflicts", isAuthenticated, async (req: ExpressRequest<an
 // ==================== Analytics ====================
 
 // GET /api/schedule/analytics - Get scheduling analytics
-router.get("/schedule/analytics", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/schedule/analytics", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const analytics = await schedulingStorage.analyzeSchedulingPatterns(userId);
@@ -450,9 +450,9 @@ router.get("/schedule/analytics", isAuthenticated, async (req: ExpressRequest<an
 // ==================== Meeting Events ====================
 
 // GET /api/schedule/events - Get user's meeting events
-router.get("/schedule/events", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/schedule/events", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { startTime, endTime, status } = req.query;
@@ -471,9 +471,9 @@ router.get("/schedule/events", isAuthenticated, async (req: ExpressRequest<any, 
 });
 
 // POST /api/schedule/events - Create a new meeting event
-router.post("/schedule/events", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/schedule/events", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const validation = insertMeetingEventsSchema.safeParse({
@@ -511,9 +511,9 @@ router.post("/schedule/events", isAuthenticated, async (req: ExpressRequest<any,
 });
 
 // PUT /api/schedule/events/:id - Update a meeting event
-router.put("/schedule/events/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.put("/schedule/events/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -535,9 +535,9 @@ router.put("/schedule/events/:id", isAuthenticated, async (req: ExpressRequest<a
 });
 
 // DELETE /api/schedule/events/:id - Delete a meeting event
-router.delete("/schedule/events/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.delete("/schedule/events/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;

@@ -1,4 +1,4 @@
-import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import { DuplicateDetectionService } from '../services/duplicate-detection.service';
 import { isAuthenticated } from '../middleware/auth.middleware';
@@ -18,7 +18,7 @@ const checkDuplicateSchema = z.object({
   contentId: z.string().optional(), // For existing content being updated
 });
 
-router.post('/check', isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post('/check', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const validation = checkDuplicateSchema.safeParse(req.body);
     if (!validation.success) {
@@ -26,7 +26,7 @@ router.post('/check', isAuthenticated, async (req: ExpressRequest, res: ExpressR
     }
 
     const { content, contentType, contentId } = validation.data;
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const result = await DuplicateDetectionService.checkForDuplicates(
@@ -52,9 +52,9 @@ router.post('/check', isAuthenticated, async (req: ExpressRequest, res: ExpressR
  * GET /api/duplicates/pending
  * List potential duplicates for review
  */
-router.get('/pending', isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.get('/pending', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const limit = parseInt(req.query.limit as string) || 10;
 
@@ -88,7 +88,7 @@ router.post('/resolve', isAuthenticated, async (req: ExpressRequest, res: Expres
     }
 
     const { duplicatePairId, status, mergeIntoId } = validation.data;
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     // If merging, handle the merge logic
@@ -116,7 +116,7 @@ router.post('/resolve', isAuthenticated, async (req: ExpressRequest, res: Expres
  */
 router.get('/stats', isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const stats = await DuplicateDetectionService.getDuplicateStats(userId);
     res.json(stats);
@@ -143,7 +143,7 @@ router.post('/reindex', isAuthenticated, async (req: ExpressRequest, res: Expres
     }
 
     const { contentType, limit } = validation.data;
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     let reindexed = 0;
@@ -185,7 +185,7 @@ router.post('/reindex', isAuthenticated, async (req: ExpressRequest, res: Expres
 router.get('/check-recipe/:recipeId', isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const { recipeId } = req.params;
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     // Get the recipe

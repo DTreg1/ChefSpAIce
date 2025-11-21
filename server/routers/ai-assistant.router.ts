@@ -5,7 +5,7 @@
  * Provides multi-turn conversations with context awareness.
  */
 
-import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { isAuthenticated } from "../middleware";
 import { chatStorage } from "../storage/index";
 import { z } from "zod";
@@ -18,7 +18,7 @@ const router = Router();
 const openai = getOpenAIClient();
 
 // Check if OpenAI is configured
-function checkOpenAIConfiguration(res: ExpressResponse): boolean {
+function checkOpenAIConfiguration(res: Response): boolean {
   if (!openai) {
     res.status(503).json({ 
       error: "AI service not configured",
@@ -33,9 +33,9 @@ function checkOpenAIConfiguration(res: ExpressResponse): boolean {
  * GET /api/assistant/conversations
  * Get all conversations for the authenticated user
  */
-router.get("/conversations", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/conversations", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const conversations = await chatStorage.getConversations(userId);
@@ -50,9 +50,9 @@ router.get("/conversations", isAuthenticated, async (req: ExpressRequest<any, an
  * POST /api/assistant/conversations
  * Create a new conversation
  */
-router.post("/conversations", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/conversations", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { title } = req.body;
@@ -70,9 +70,9 @@ router.post("/conversations", isAuthenticated, async (req: ExpressRequest<any, a
  * GET /api/assistant/conversations/:id
  * Get a specific conversation with its messages
  */
-router.get("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -100,9 +100,9 @@ router.get("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any
  * PUT /api/assistant/conversations/:id
  * Update conversation (e.g., rename)
  */
-router.put("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.put("/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -120,9 +120,9 @@ router.put("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any
  * DELETE /api/assistant/conversations/:id
  * Delete a conversation and all its messages
  */
-router.delete("/conversations/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.delete("/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -139,9 +139,9 @@ router.delete("/conversations/:id", isAuthenticated, async (req: ExpressRequest<
  * POST /api/assistant/conversations/:id/messages
  * Send a message to the assistant and get a response
  */
-router.post("/conversations/:id/messages", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/conversations/:id/messages", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id: conversationId } = req.params;
@@ -240,9 +240,9 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: ExpressR
  * POST /api/assistant/feedback
  * Rate assistant response
  */
-router.post("/feedback", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/feedback", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { messageId, rating, feedback } = req.body;

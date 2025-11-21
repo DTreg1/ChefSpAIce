@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { isAuthenticated } from "../middleware";
 import { storage, contentStorage } from "../storage/index";
@@ -24,7 +24,7 @@ const embeddingsService = new EmbeddingsService(contentStorage);
 router.get(
   "/content/:id/related",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -83,7 +83,7 @@ router.get(
 router.post(
   "/content/embeddings/refresh",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -142,7 +142,7 @@ router.post(
 router.post(
   "/content/embeddings/generate",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -268,7 +268,7 @@ router.get(
 router.post(
   "/content/search/semantic",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -340,7 +340,7 @@ router.post(
 router.delete(
   "/content/:id/cache",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
