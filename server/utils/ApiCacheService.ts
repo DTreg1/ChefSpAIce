@@ -96,6 +96,30 @@ class ApiCacheServiceClass {
       }
     }, intervalMs);
   }
+
+  /**
+   * Get cache statistics - alias for getStatistics
+   */
+  getStats() {
+    return this.getStatistics();
+  }
+
+  /**
+   * Invalidate cache entries matching a pattern
+   * @param pattern - Pattern to match against cache keys
+   * @returns Number of entries invalidated
+   */
+  invalidate(pattern: string): number {
+    let count = 0;
+    const entries = Array.from(this.cache.entries());
+    for (const [key, _entry] of entries) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+        count++;
+      }
+    }
+    return count;
+  }
 }
 
 // Export singleton instances

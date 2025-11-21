@@ -108,7 +108,7 @@ export async function searchUSDAFoodsCached(
       // Cache individual foods in both ApiCache and database
       const cachePromises = response.foods.map(async (food) => {
         // Foods with foodNutrients have already been validated
-        if (!food.nutrients || food.nutrients.length === 0) {
+        if (!food.foodNutrients || food.foodNutrients.length === 0) {
           return null;
         }
         
@@ -125,7 +125,7 @@ export async function searchUSDAFoodsCached(
           ingredients: food.ingredients,
           servingSize: food.servingSize,
           servingSizeUnit: food.servingSizeUnit,
-          nutrients: food.nutrients as any,
+          nutrients: food.foodNutrients as any,
           fullData: food as any,
         });
       });
