@@ -550,10 +550,11 @@ export class InventoryDomainStorage implements IInventoryStorage {
       const existing = await this.getOnboardingInventoryByName(item.name);
       
       if (existing) {
-        // Update existing item
+        // Update existing item - exclude id and only update specific fields
+        const { id, ...updateData } = item as any;
         const [updated] = await db
           .update(onboardingInventory)
-          .set(item)
+          .set(updateData)
           .where(eq(onboardingInventory.name, item.name))
           .returning();
         return updated;
