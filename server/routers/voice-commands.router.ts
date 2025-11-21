@@ -72,7 +72,7 @@ router.get("/commands", isAuthenticated, async (req: ExpressRequest<any, any, an
  */
 router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const limit = parseInt(req.query.limit as string) || 50;
@@ -90,7 +90,7 @@ router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any
  */
 router.post("/process-text", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { text } = req.body;
@@ -127,7 +127,7 @@ router.post("/process-text", isAuthenticated, async (req: ExpressRequest<any, an
  */
 router.post("/transcribe", isAuthenticated, upload.single("audio"), async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     if (!req.file) {
@@ -188,7 +188,7 @@ router.post("/transcribe", isAuthenticated, upload.single("audio"), async (req: 
  */
 router.post("/interpret", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { transcript } = req.body;
@@ -378,7 +378,7 @@ async function processVoiceCommand(text: string, userId: string): Promise<{
  */
 router.get("/stats", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const commands = await aiMlStorage.getVoiceCommands(userId, 100);

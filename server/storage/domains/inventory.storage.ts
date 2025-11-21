@@ -17,7 +17,6 @@ import {
   users,
   userInventory,
   userStorage,
-  onboardingInventory,
   userShopping,
   userRecipes,
   type UserInventory,
@@ -26,7 +25,6 @@ import {
   type InsertUserStorage,
   type ShoppingItem,
   type InsertShoppingItem,
-  type InsertOnboardingInventory,
 } from "@shared/schema";
 import type { IInventoryStorage } from "../interfaces/IInventoryStorage";
 
@@ -518,7 +516,9 @@ export class InventoryDomainStorage implements IInventoryStorage {
   }
 
   // ============= Onboarding =============
+  // TODO: These methods are temporarily disabled until onboardingInventory table is properly exported from shared/schema
 
+  /* Commented out until onboardingInventory table is available
   async getOnboardingInventory(): Promise<typeof onboardingInventory.$inferSelect[]> {
     try {
       const items = await db.select().from(onboardingInventory);
@@ -571,6 +571,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
       throw new Error("Failed to upsert onboarding inventory item");
     }
   }
+  */
 
   // ============= Shopping List Operations =============
 
