@@ -74,9 +74,11 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
   };
 
   const getLiftIcon = () => {
-    if (!test.insight?.liftPercentage) return null;
+    if (!test.insight?.conversionRate) return null;
     
-    return test.insight.liftPercentage > 0 
+    // Compare conversion rate to baseline (e.g., 0.1 = 10%)
+    const baseline = 0.1;
+    return test.insight.conversionRate > baseline 
       ? <TrendingUp className="h-4 w-4 text-green-500" />
       : <TrendingDown className="h-4 w-4 text-red-500" />;
   };
@@ -86,9 +88,9 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <div>
-            <CardTitle className="text-lg">{test.name}</CardTitle>
+            <CardTitle className="text-lg">{test.testName}</CardTitle>
             <CardDescription>
-              {test.variantA} vs {test.variantB}
+              Control vs {test.configuration?.variants?.[0]?.name || 'Variant B'}
             </CardDescription>
           </div>
           {getRecommendationIcon()}
@@ -101,67 +103,52 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
             <div>
               <p className="text-muted-foreground">Confidence</p>
               <p className="font-medium text-lg">
-                {(test.insight.confidence * 100).toFixed(1)}%
+                {test.insight.confidence ? `${(test.insight.confidence * 100).toFixed(1)}%` : 'N/A'}
               </p>
             </div>
             <div>
-              <p className="text-muted-foreground">Lift</p>
+              <p className="text-muted-foreground">Conversion Rate</p>
               <div className="flex items-center gap-1">
                 {getLiftIcon()}
                 <span className="font-medium text-lg">
-                  {test.insight.liftPercentage?.toFixed(1)}%
+                  {(test.insight.conversionRate * 100).toFixed(1)}%
                 </span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Winner Badge */}
-        {test.insight?.winner && test.insight.winner !== 'inconclusive' && (
+        {/* Result Badge */}
+        {test.insight?.isSignificant && (
           <div className="flex items-center gap-2">
             <Badge variant={getRecommendationColor()}>
-              Variant {test.insight.winner} Wins
+              {test.insight.variant} Shows Significance
             </Badge>
             <Badge variant="outline">
-              {test.insight.recommendation}
+              {test.insight.recommendation || 'Review'}
             </Badge>
           </div>
         )}
 
-        {/* Explanation */}
-        {test.insight?.explanation && (
+        {/* Recommendation */}
+        {test.insight?.recommendation && (
           <Alert className="border-0 bg-muted">
             <AlertDescription className="text-sm">
-              {test.insight.explanation.substring(0, 200)}...
+              {test.insight.recommendation}
             </AlertDescription>
           </Alert>
         )}
-
-        {/* Key Learnings */}
-        {test.insight?.insights?.learnings && test.insight.insights.learnings.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Key Learnings:</p>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              {test.insight.insights.learnings.slice(0, 2).map((learning, index) => (
-                <li key={index} className="flex items-start gap-1">
-                  <span>•</span>
-                  <span>{learning}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </CardContent>
       <CardFooter className="gap-2">
-        {test.insight?.winner && test.insight.winner !== 'inconclusive' && test.insight.recommendation === 'implement' && (
+        {test.insight?.isSignificant && test.insight.recommendation === 'implement' && (
           <Button 
             className="w-full"
-            onClick={() => implementWinner.mutate(test.insight!.winner as 'A' | 'B')}
+            onClick={() => implementWinner.mutate(test.insight!.variant === 'control' ? 'A' : 'B')}
             disabled={implementWinner.isPending}
             data-testid={`button-implement-${test.id}`}
           >
             {implementWinner.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Implement {test.insight.winner === 'A' ? test.variantA : test.variantB}
+            Implement {test.insight.variant}
           </Button>
         )}
         {test.insight?.recommendation === 'continue' && (

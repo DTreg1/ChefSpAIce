@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { type InsertAbTest, type AbTestConfiguration } from "@shared/schema";
+import { type InsertAbTest, type TestConfiguration } from "@shared/schema";
 
 interface CreateTestDialogProps {
   open: boolean;
@@ -21,33 +21,32 @@ interface CreateTestDialogProps {
   onSuccess: () => void;
 }
 
-interface FormData extends InsertAbTest {
-  status?: "active" | "draft" | "completed" | "paused";
-  successMetric?: string;
-  targetAudience?: number;
+interface FormData {
+  testName: string;
+  description?: string;
+  hypothesis?: string;
+  variantAName: string;
+  variantBName: string;
+  startDate: Date;
+  endDate: Date;
+  status: "draft" | "running" | "paused" | "completed" | "cancelled";
+  targetSampleSize?: number;
 }
 
 export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTestDialogProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<FormData>>({
-    name: "",
-    variantA: "",
-    variantB: "",
+    testName: "",
+    variantAName: "",
+    variantBName: "",
     startDate: new Date(),
     endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
     status: "draft",
-    successMetric: "conversion",
-    targetAudience: 0.5,
-    metadata: {
-      hypothesis: "",
-      featureArea: "",
-      minimumSampleSize: 1000,
-      confidenceLevel: 0.95
-    } as AbTestConfiguration
+    targetSampleSize: 1000
   });
 
   const createTest = useMutation({
-    mutationFn: async (data: Partial<FormData>) => {
+    mutationFn: async (data: InsertAbTest) => {
       return apiRequest("/api/ab/create", "POST", data);
     },
     onSuccess: () => {
@@ -69,7 +68,7 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.variantA || !formData.variantB) {
+    if (!formData.testName || !formData.variantAName || !formData.variantBName) {
       toast({
         title: "Validation error",
         description: "Please fill in all required fields",
@@ -78,7 +77,29 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
       return;
     }
 
-    createTest.mutate(formData);
+    // Convert form data to InsertAbTest format
+    const testData: InsertAbTest = {
+      testName: formData.testName,
+      description: formData.description,
+      hypothesis: formData.hypothesis,
+      status: formData.status || "draft",
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      targetSampleSize: formData.targetSampleSize,
+      configuration: {
+        controlGroup: {
+          size: 0.5,
+          features: { name: formData.variantAName }
+        },
+        variants: [{
+          name: formData.variantBName,
+          size: 0.5,
+          features: {}
+        }]
+      }
+    };
+
+    createTest.mutate(testData);
   };
 
   return (
@@ -98,8 +119,8 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
               <Input
                 id="name"
                 placeholder="e.g., Homepage CTA Button Test"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.testName}
+                onChange={(e) => setFormData({ ...formData, testName: e.target.value })}
                 data-testid="input-test-name"
               />
             </div>
@@ -110,8 +131,8 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                 <Input
                   id="variantA"
                   placeholder="e.g., Blue button"
-                  value={formData.variantA}
-                  onChange={(e) => setFormData({ ...formData, variantA: e.target.value })}
+                  value={formData.variantAName}
+                  onChange={(e) => setFormData({ ...formData, variantAName: e.target.value })}
                   data-testid="input-variant-a"
                 />
               </div>
@@ -120,8 +141,8 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                 <Input
                   id="variantB"
                   placeholder="e.g., Green button"
-                  value={formData.variantB}
-                  onChange={(e) => setFormData({ ...formData, variantB: e.target.value })}
+                  value={formData.variantBName}
+                  onChange={(e) => setFormData({ ...formData, variantBName: e.target.value })}
                   data-testid="input-variant-b"
                 />
               </div>

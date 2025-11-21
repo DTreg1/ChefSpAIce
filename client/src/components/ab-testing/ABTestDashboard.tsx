@@ -52,7 +52,7 @@ export default function ABTestDashboard() {
 
   const totalConversions = tests
     ?.flatMap(t => t.results || [])
-    .reduce((acc, r) => acc + r.conversions, 0) || 0;
+    .reduce((acc, r) => acc + (r.converted ? 1 : 0), 0) || 0;
 
   if (isLoading) {
     return (
@@ -129,7 +129,7 @@ export default function ABTestDashboard() {
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-success-rate">
               {tests && tests.length > 0 
-                ? ((tests.filter(t => t.insight?.winner && t.insight.winner !== 'inconclusive').length / tests.length) * 100).toFixed(0)
+                ? ((tests.filter(t => t.insight?.isSignificant).length / tests.length) * 100).toFixed(0)
                 : 0}%
             </div>
             <p className="text-xs text-muted-foreground">
@@ -299,13 +299,13 @@ function TestCard({ test, onSelect, selected }: TestCardProps) {
     >
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-lg">{test.name}</CardTitle>
+          <CardTitle className="text-lg">{test.testName}</CardTitle>
           <Badge variant={getStatusColor(test.status)}>
             {test.status}
           </Badge>
         </div>
         <CardDescription>
-          {test.variantA} vs {test.variantB}
+          Control vs {test.configuration?.variants?.[0]?.name || 'Variant B'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -313,22 +313,21 @@ function TestCard({ test, onSelect, selected }: TestCardProps) {
           <div>
             <p className="text-muted-foreground">Confidence</p>
             <p className="font-medium">
-              {test.insight ? `${(test.insight.confidence * 100).toFixed(1)}%` : 'N/A'}
+              {test.insight?.confidence ? `${(test.insight.confidence * 100).toFixed(1)}%` : 'N/A'}
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">Lift</p>
+            <p className="text-muted-foreground">P-Value</p>
             <div className="flex items-center gap-1">
-              {getLiftIcon(test.insight?.liftPercentage)}
               <span className="font-medium">
-                {test.insight ? `${test.insight.liftPercentage?.toFixed(1)}%` : 'N/A'}
+                {test.insight?.pValue ? test.insight.pValue.toFixed(3) : 'N/A'}
               </span>
             </div>
           </div>
           <div>
-            <p className="text-muted-foreground">Winner</p>
+            <p className="text-muted-foreground">Result</p>
             <p className="font-medium">
-              {test.insight?.winner || 'Inconclusive'}
+              {test.insight?.isSignificant ? 'Significant' : 'Inconclusive'}
             </p>
           </div>
         </div>
