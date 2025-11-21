@@ -24,14 +24,10 @@ export default function CookingTermsAdmin() {
   const [formData, setFormData] = useState<Partial<InsertCookingTerm>>({
     term: "",
     category: "cooking_methods",
-    shortDefinition: "",
-    longDefinition: "",
+    definition: "",
     difficulty: "beginner",
-    timeEstimate: "",
-    tools: [],
     tips: [],
     relatedTerms: [],
-    searchTerms: [],
   });
 
   // Fetch cooking terms
@@ -128,19 +124,15 @@ export default function CookingTermsAdmin() {
     setFormData({
       term: "",
       category: "cooking_methods",
-      shortDefinition: "",
-      longDefinition: "",
+      definition: "",
       difficulty: "beginner",
-      timeEstimate: "",
-      tools: [],
       tips: [],
       relatedTerms: [],
-      searchTerms: [],
     });
   };
 
   const handleSubmit = () => {
-    if (!formData.term || !formData.shortDefinition || !formData.longDefinition || !formData.category) {
+    if (!formData.term || !formData.definition || !formData.category) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -161,14 +153,10 @@ export default function CookingTermsAdmin() {
     setFormData({
       term: term.term,
       category: term.category,
-      shortDefinition: term.shortDefinition,
-      longDefinition: term.longDefinition,
+      definition: term.definition,
       difficulty: term.difficulty || "beginner",
-      timeEstimate: term.timeEstimate || "",
-      tools: term.tools || [],
       tips: term.tips || [],
       relatedTerms: term.relatedTerms || [],
-      searchTerms: term.searchTerms || [],
     });
   };
 
@@ -180,7 +168,7 @@ export default function CookingTermsAdmin() {
   // Filter terms based on search and category
   const filteredTerms = cookingTerms.filter(term => {
     const matchesSearch = term.term.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         term.shortDefinition.toLowerCase().includes(searchQuery.toLowerCase());
+                         term.definition.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || term.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });

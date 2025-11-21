@@ -11,7 +11,7 @@ import { Search, Filter, TrendingUp, TrendingDown, Minus, Download, Calendar } f
 import { type AbTest, type AbTestInsight } from "@shared/schema";
 
 interface TestWithDetails extends AbTest {
-  insight?: AbTestInsight;
+  insights?: AbTestInsight[];
 }
 
 interface TestHistoryProps {
@@ -26,29 +26,47 @@ export default function TestHistory({ tests }: TestHistoryProps) {
 
   // Filter and sort tests
   let filteredTests = tests.filter(test => {
-    if (searchTerm && !test.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !test.testName.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     if (statusFilter !== "all" && test.status !== statusFilter) {
       return false;
     }
-    if (metricFilter !== "all" && test.successMetric !== metricFilter) {
-      return false;
-    }
+    // Skip metric filter as successMetric doesn't exist in the schema
     return true;
   });
+
+  // Helper to get best insight for a test
+  const getBestInsight = (test: TestWithDetails) => {
+    if (!test.insights || test.insights.length === 0) return null;
+    return test.insights.reduce((best, current) => 
+      (current.confidence || 0) > (best.confidence || 0) ? current : best
+    );
+  };
+
+  // Helper to calculate lift percentage
+  const calculateLift = (test: TestWithDetails) => {
+    const insights = test.insights || [];
+    if (insights.length < 2) return 0;
+    const control = insights.find(i => i.variant === 'control');
+    const variant = insights.find(i => i.variant !== 'control');
+    if (!control || !variant || control.conversionRate === 0) return 0;
+    return ((variant.conversionRate - control.conversionRate) / control.conversionRate) * 100;
+  };
 
   // Sort tests
   filteredTests = [...filteredTests].sort((a, b) => {
     switch (sortBy) {
       case "date":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       case "confidence":
-        return (b.insight?.confidence || 0) - (a.insight?.confidence || 0);
+        const aInsight = getBestInsight(a);
+        const bInsight = getBestInsight(b);
+        return (bInsight?.confidence || 0) - (aInsight?.confidence || 0);
       case "lift":
-        return (b.insight?.liftPercentage || 0) - (a.insight?.liftPercentage || 0);
+        return calculateLift(b) - calculateLift(a);
       case "name":
-        return a.name.localeCompare(b.name);
+        return a.testName.localeCompare(b.testName);
       default:
         return 0;
     }
@@ -56,27 +74,42 @@ export default function TestHistory({ tests }: TestHistoryProps) {
 
   // Calculate timeline data for chart
   const timelineData = tests
-    .filter(t => t.status === 'completed')
-    .map(test => ({
-      date: format(new Date(test.endDate), 'MMM dd'),
-      lift: test.insight?.liftPercentage || 0,
-      confidence: (test.insight?.confidence || 0) * 100,
-      name: test.name,
-    }))
+    .filter(t => t.status === 'completed' && t.endDate)
+    .map(test => {
+      const bestInsight = getBestInsight(test);
+      return {
+        date: format(new Date(test.endDate!), 'MMM dd'),
+        lift: calculateLift(test),
+        confidence: (bestInsight?.confidence || 0) * 100,
+        name: test.testName,
+      };
+    })
     .slice(0, 10)
     .reverse();
+
+  // Helper to determine winner
+  const determineWinner = (test: TestWithDetails): string | null => {
+    const insights = test.insights || [];
+    if (insights.length < 2) return null;
+    const significant = insights.filter(i => i.isSignificant);
+    if (significant.length === 0) return 'inconclusive';
+    const best = significant.reduce((best, current) => 
+      (current.conversionRate || 0) > (best.conversionRate || 0) ? current : best
+    );
+    return best.variant;
+  };
 
   // Calculate summary statistics
   const totalCompleted = tests.filter(t => t.status === 'completed').length;
   const averageLift = tests
-    .filter(t => t.status === 'completed' && t.insight?.liftPercentage)
-    .reduce((acc, t) => acc + (t.insight?.liftPercentage || 0), 0) / (totalCompleted || 1);
+    .filter(t => t.status === 'completed')
+    .reduce((acc, t) => acc + calculateLift(t), 0) / (totalCompleted || 1);
   
-  const successfulTests = tests.filter(t => 
-    t.status === 'completed' && 
-    t.insight?.winner && 
-    t.insight.winner !== 'inconclusive'
-  ).length;
+  const successfulTests = tests.filter(t => {
+    if (t.status !== 'completed') return false;
+    const winner = determineWinner(t);
+    return winner && winner !== 'inconclusive';
+  }).length;
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
@@ -94,20 +127,33 @@ export default function TestHistory({ tests }: TestHistoryProps) {
     return <TrendingDown className="h-3 w-3 text-red-500" />;
   };
 
+  // Helper to get variant names from configuration
+  const getVariantNames = (test: TestWithDetails): { variantA: string; variantB: string } => {
+    const config = test.configuration;
+    const variantA = config?.controlGroup?.features?.name || 'Control';
+    const variantB = config?.variants?.[0]?.name || 'Variant B';
+    return { variantA, variantB };
+  };
+
   const exportData = () => {
     const csv = [
       ['Test Name', 'Status', 'Variant A', 'Variant B', 'Winner', 'Confidence', 'Lift %', 'Start Date', 'End Date'],
-      ...filteredTests.map(test => [
-        test.name,
-        test.status,
-        test.variantA,
-        test.variantB,
-        test.insight?.winner || 'N/A',
-        test.insight?.confidence ? (test.insight.confidence * 100).toFixed(2) + '%' : 'N/A',
-        test.insight?.liftPercentage ? test.insight.liftPercentage.toFixed(2) + '%' : 'N/A',
-        format(new Date(test.startDate), 'yyyy-MM-dd'),
-        format(new Date(test.endDate), 'yyyy-MM-dd'),
-      ])
+      ...filteredTests.map(test => {
+        const { variantA, variantB } = getVariantNames(test);
+        const bestInsight = getBestInsight(test);
+        const winner = determineWinner(test);
+        return [
+          test.testName,
+          test.status,
+          variantA,
+          variantB,
+          winner || 'N/A',
+          bestInsight?.confidence ? (bestInsight.confidence * 100).toFixed(2) + '%' : 'N/A',
+          calculateLift(test).toFixed(2) + '%',
+          test.startDate ? format(new Date(test.startDate), 'yyyy-MM-dd') : 'N/A',
+          test.endDate ? format(new Date(test.endDate), 'yyyy-MM-dd') : 'N/A',
+        ];
+      })
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });

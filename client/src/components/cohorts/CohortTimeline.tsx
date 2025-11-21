@@ -23,7 +23,7 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
       // Group metrics by date
       const metricsByDate: Record<string, any> = {};
       (data.metrics as CohortMetric[]).forEach((metric) => {
-        const date = metric.periodDate;
+        const date = metric.metricDate;
         if (!metricsByDate[date]) {
           metricsByDate[date] = { date };
         }

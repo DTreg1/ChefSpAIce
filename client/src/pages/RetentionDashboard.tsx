@@ -66,7 +66,7 @@ export default function RetentionDashboard() {
   };
 
   const totalAtRisk = churnData?.churnRisks?.length || 0;
-  const criticalRisk = churnData?.churnRisks?.filter((r: UserPrediction) => r.probability >= 0.8).length || 0;
+  const criticalRisk = churnData?.churnRisks?.filter((r: UserPrediction) => r.confidence >= 0.8).length || 0;
   const avgAccuracy = accuracyData?.stats?.averageAccuracy || 0;
 
   return (

@@ -138,7 +138,7 @@ export default function CohortAnalysis() {
                   data-testid={`badge-cohort-${cohort.id}`}
                 >
                   <Users className="h-3 w-3 mr-1" />
-                  {cohort.name}
+                  {cohort.cohortName}
                   <span className="ml-2 text-xs opacity-70">
                     ({cohort.userCount || 0} users)
                   </span>
@@ -203,7 +203,7 @@ export default function CohortAnalysis() {
                   <SelectContent>
                     {selectedCohorts.map((cohort) => (
                       <SelectItem key={cohort.id} value={cohort.id}>
-                        {cohort.name}
+                        {cohort.cohortName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -234,7 +234,7 @@ export default function CohortAnalysis() {
                   <SelectContent>
                     {selectedCohorts.map((cohort) => (
                       <SelectItem key={cohort.id} value={cohort.id}>
-                        {cohort.name}
+                        {cohort.cohortName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -259,7 +259,7 @@ export default function CohortAnalysis() {
                 <SelectContent>
                   {selectedCohorts.map((cohort) => (
                     <SelectItem key={cohort.id} value={cohort.id}>
-                      {cohort.name}
+                      {cohort.cohortName}
                     </SelectItem>
                   ))}
                 </SelectContent>

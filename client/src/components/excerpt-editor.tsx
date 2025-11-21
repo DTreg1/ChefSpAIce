@@ -33,18 +33,18 @@ interface ExcerptEditorProps {
 }
 
 export interface ExcerptEditorData {
-  excerptText: string;
-  targetPlatform: string;
-  excerptType: string;
+  excerpt: string;
+  category?: string;
   characterCount: number;
   wordCount: number;
   generationParams?: any;
+  targetPlatform?: string; // For internal use, not saved to DB
 }
 
 export interface ExcerptGenerationOptions {
   content: string;
   targetPlatform: string;
-  excerptType: string;
+  category: string;
   tone: string;
   style: string;
   targetAudience: string;
@@ -72,9 +72,9 @@ export function ExcerptEditor({
   onGenerate,
   isGenerating = false,
 }: ExcerptEditorProps) {
-  const [excerptText, setExcerptText] = useState(initialExcerpt?.excerptText || "");
-  const [targetPlatform, setTargetPlatform] = useState(initialExcerpt?.targetPlatform || "generic");
-  const [excerptType, setExcerptType] = useState(initialExcerpt?.excerptType || "social");
+  const [excerptText, setExcerptText] = useState(initialExcerpt?.excerpt || "");
+  const [targetPlatform, setTargetPlatform] = useState("generic");
+  const [excerptType, setExcerptType] = useState(initialExcerpt?.category || "social");
   
   // Generation options
   const [tone, setTone] = useState("informative");
@@ -96,7 +96,7 @@ export function ExcerptEditor({
       onGenerate({
         content: initialContent,
         targetPlatform,
-        excerptType,
+        category: excerptType,
         tone,
         style,
         targetAudience,
@@ -113,9 +113,9 @@ export function ExcerptEditor({
   const handleSave = () => {
     if (onSave && !isOverLimit) {
       onSave({
-        excerptText,
+        excerpt: excerptText,
+        category: excerptType,
         targetPlatform,
-        excerptType,
         characterCount,
         wordCount,
         generationParams: {

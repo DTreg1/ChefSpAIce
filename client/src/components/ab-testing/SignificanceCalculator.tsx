@@ -44,7 +44,7 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
     },
   });
 
-  const significanceData = analysis?.significance || test.insight?.statisticalAnalysis;
+  const significanceData = analysis?.significance || test.insight;
   const insights = analysis?.insights || test.insight;
 
   const getConfidenceLevel = (confidence: number) => {

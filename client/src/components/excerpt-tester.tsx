@@ -57,7 +57,7 @@ export function ExcerptTester({
       views: 0,
       clicks: 0,
       shares: 0,
-      ctr: excerpt.clickThroughRate || 0,
+      ctr: 0,
     };
     
     return {

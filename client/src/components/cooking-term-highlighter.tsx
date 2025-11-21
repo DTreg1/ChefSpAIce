@@ -38,10 +38,10 @@ export function CookingTermHighlighter({ text, className = "" }: CookingTermHigh
     cookingTerms.forEach(term => {
       // Add the main term
       termMap.set(term.term.toLowerCase(), term);
-      // Also add any search terms/alternative names
-      if (term.searchTerms) {
-        term.searchTerms.forEach(searchTerm => {
-          termMap.set(searchTerm.toLowerCase(), term);
+      // Also add related terms if available
+      if (term.relatedTerms) {
+        term.relatedTerms.forEach((relatedTerm: string) => {
+          termMap.set(relatedTerm.toLowerCase(), term);
         });
       }
     });
@@ -157,7 +157,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             </PopoverTrigger>
           </TooltipTrigger>
           <TooltipContent className="max-w-sm">
-            <p className="text-sm">{data.shortDefinition}</p>
+            <p className="text-sm">{data.definition}</p>
             <p className="text-xs text-muted-foreground mt-1">Click for detailed instructions</p>
           </TooltipContent>
         </Tooltip>
@@ -179,12 +179,6 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
                   <Badge variant="outline" className="text-xs">
                     <ChefHat className="w-3 h-3 mr-1" />
                     {data.difficulty}
-                  </Badge>
-                )}
-                {!!data.timeEstimate && (
-                  <Badge variant="outline" className="text-xs">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {data.timeEstimate}
                   </Badge>
                 )}
               </div>

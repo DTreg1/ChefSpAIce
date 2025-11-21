@@ -137,8 +137,8 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
   }
   
   const insights = insightsQuery.data || [];
-  const activeInsights = insights.filter(i => i.status === "active");
-  const dismissedInsights = insights.filter(i => i.status === "dismissed");
+  const activeInsights = insights.filter(i => i.validUntil && new Date(i.validUntil) > new Date());
+  const dismissedInsights = insights.filter(i => !i.validUntil || new Date(i.validUntil) <= new Date());
   
   return (
     <div className="space-y-4">

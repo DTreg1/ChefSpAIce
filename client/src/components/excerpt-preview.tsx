@@ -58,7 +58,7 @@ export function ExcerptPreview({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(excerpt.excerptText);
+      await navigator.clipboard.writeText(excerpt.excerpt);
       setCopied(true);
       toast({
         title: "Copied!",
@@ -99,7 +99,7 @@ export function ExcerptPreview({
     }
   };
 
-  const ctrPercentage = performance ? performance.ctr * 100 : (excerpt.clickThroughRate || 0) * 100;
+  const ctrPercentage = performance ? performance.ctr * 100 : 0;
   const ctrTarget = 20; // 20% target CTR
 
   if (variant === 'compact') {

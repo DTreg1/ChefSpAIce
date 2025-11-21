@@ -121,8 +121,8 @@ export function AltTextEditor({
           <span>Alt Text Editor</span>
           {quality && (
             <div className="flex items-center gap-2">
-              <Badge variant={getWCAGBadgeVariant(quality.wcagLevel)}>
-                WCAG {quality.wcagLevel || "N/A"}
+              <Badge variant={quality.wcagCompliance ? "default" : "destructive"}>
+                WCAG {quality.wcagCompliance ? "Compliant" : "Non-compliant"}
               </Badge>
               <span className={`text-sm font-medium ${getQualityColor(quality.qualityScore || 0)}`}>
                 Quality: {quality.qualityScore || 0}%

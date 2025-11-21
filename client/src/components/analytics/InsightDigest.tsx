@@ -89,32 +89,32 @@ export function InsightDigest({ insights, date }: InsightDigestProps) {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 space-y-1">
                           <p className="text-sm font-medium">
-                            {insight.metricName.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                            {insight.title.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {insight.insightText}
+                            {insight.description}
                           </p>
                         </div>
-                        {insight.metricData?.percentageChange !== undefined && (
+                        {insight.metrics?.percentageChange !== undefined && (
                           <div className={cn(
                             "flex items-center gap-1 text-sm font-medium",
-                            insight.metricData.percentageChange > 0 ? "text-green-600 dark:text-green-400" : 
-                            insight.metricData.percentageChange < 0 ? "text-red-600 dark:text-red-400" : 
+                            insight.metrics.percentageChange > 0 ? "text-green-600 dark:text-green-400" : 
+                            insight.metrics.percentageChange < 0 ? "text-red-600 dark:text-red-400" : 
                             "text-muted-foreground"
                           )}>
-                            {insight.metricData.percentageChange > 0 ? (
+                            {insight.metrics.percentageChange > 0 ? (
                               <TrendingUp className="w-3 h-3" />
-                            ) : insight.metricData.percentageChange < 0 ? (
+                            ) : insight.metrics.percentageChange < 0 ? (
                               <TrendingDown className="w-3 h-3" />
                             ) : null}
-                            {Math.abs(insight.metricData.percentageChange).toFixed(1)}%
+                            {Math.abs(insight.metrics.percentageChange).toFixed(1)}%
                           </div>
                         )}
                       </div>
-                      {insight.aiContext?.suggestedActions && insight.aiContext.suggestedActions.length > 0 && (
+                      {insight.recommendations && insight.recommendations.length > 0 && (
                         <div className="mt-1">
                           <span className="text-xs text-muted-foreground">
-                            💡 {insight.aiContext.suggestedActions[0]}
+                            💡 {insight.recommendations[0]}
                           </span>
                         </div>
                       )}

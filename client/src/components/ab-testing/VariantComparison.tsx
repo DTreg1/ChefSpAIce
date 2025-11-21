@@ -4,11 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Users, TrendingUp, DollarSign, Clock, Target, Activity } from "lucide-react";
 import { type AbTest, type AbTestResult } from "@shared/schema";
 
+interface AggregatedVariantData {
+  visitors: number;
+  conversions: number;
+  revenue: number;
+}
+
 interface TestWithDetails extends AbTest {
   results?: AbTestResult[];
   aggregated?: {
-    variantA: AbTestResult;
-    variantB: AbTestResult;
+    variantA: AggregatedVariantData;
+    variantB: AggregatedVariantData;
   };
 }
 
@@ -62,7 +68,7 @@ export default function VariantComparison({ test }: VariantComparisonProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline">Variant A</Badge>
-              <span className="text-sm font-medium">{test.variantA}</span>
+              <span className="text-sm font-medium">{test.configuration?.controlGroup?.features?.name || 'Control'}</span>
             </div>
             {!isVariantBWinner && conversionRateA > 0 && (
               <Badge variant="default">Leading</Badge>
@@ -114,7 +120,7 @@ export default function VariantComparison({ test }: VariantComparisonProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline">Variant B</Badge>
-              <span className="text-sm font-medium">{test.variantB}</span>
+              <span className="text-sm font-medium">{test.configuration?.variants?.[0]?.name || 'Variant B'}</span>
             </div>
             {isVariantBWinner && conversionRateB > 0 && (
               <Badge variant="default">Leading</Badge>
