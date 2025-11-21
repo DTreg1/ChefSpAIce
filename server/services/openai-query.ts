@@ -247,21 +247,18 @@ export async function executeValidatedQuery(
 
     // Log the query execution
     if (naturalQuery) {
-      const queryLog: InsertQueryLog = {
+      const tableNames = extractTableNames(sql);
+      const queryLog = {
         userId,
-        naturalQuery,
-        generatedSql: sql,
-        resultCount: rowCount,
-        executionTime,
-        isSuccessful: true,
         queryType: detectQueryType(sql),
-        tablesAccessed: extractTableNames(sql),
-        metadata: {
-          model: MODEL,
-        }
+        tableName: tableNames[0] || 'unknown',
+        executionTime,
+        rowsAffected: rowCount,
+        queryHash: sql.substring(0, 100), // Use first 100 chars as hash
+        endpoint: naturalQuery // Store natural query in endpoint field
       };
       
-      await db.insert(queryLogs).values([queryLog]);
+      await db.insert(queryLogs).values(queryLog);
     }
 
     return {
@@ -274,22 +271,18 @@ export async function executeValidatedQuery(
     
     // Log failed query
     if (naturalQuery) {
-      const queryLog: InsertQueryLog = {
+      const tableNames = extractTableNames(sql);
+      const queryLog = {
         userId,
-        naturalQuery,
-        generatedSql: sql,
-        resultCount: 0,
-        executionTime,
-        isSuccessful: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
         queryType: detectQueryType(sql),
-        tablesAccessed: extractTableNames(sql),
-        metadata: {
-          model: MODEL,
-        }
+        tableName: tableNames[0] || 'unknown',
+        executionTime,
+        rowsAffected: 0,
+        queryHash: sql.substring(0, 100), // Use first 100 chars as hash
+        endpoint: naturalQuery // Store natural query in endpoint field
       };
       
-      await db.insert(queryLogs).values([queryLog]);
+      await db.insert(queryLogs).values(queryLog);
     }
 
     throw error;
@@ -298,13 +291,14 @@ export async function executeValidatedQuery(
 
 /**
  * Get saved queries for a user
+ * Note: Since queryLogs doesn't have an isSaved field, we return all user queries
  */
 export async function getSavedQueries(userId: string) {
   const savedQueries = await db
     .select()
     .from(queryLogs)
-    .where(and(eq(queryLogs.userId, userId), eq(queryLogs.isSaved, true)))
-    .orderBy(desc(queryLogs.createdAt));
+    .where(eq(queryLogs.userId, userId))
+    .orderBy(desc(queryLogs.timestamp));
     
   return savedQueries;
 }
