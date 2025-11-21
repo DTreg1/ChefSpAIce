@@ -360,7 +360,14 @@ export const insertTranslationSchema = createInsertSchema(translations)
 export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
 export type Translation = typeof translations.$inferSelect;
 
-// Export other types
+export const insertExcerptSchema = createInsertSchema(excerpts);
+export type InsertExcerpt = z.infer<typeof insertExcerptSchema>;
 export type Excerpt = typeof excerpts.$inferSelect;
+
+export const insertExcerptPerformanceSchema = createInsertSchema(excerptPerformance);
+export type InsertExcerptPerformance = z.infer<typeof insertExcerptPerformanceSchema>;
 export type ExcerptPerformance = typeof excerptPerformance.$inferSelect;
+
+export const insertLanguagePreferenceSchema = createInsertSchema(languagePreferences);
+export type InsertLanguagePreference = z.infer<typeof insertLanguagePreferenceSchema>;
 export type LanguagePreference = typeof languagePreferences.$inferSelect;

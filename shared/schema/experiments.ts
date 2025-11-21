@@ -243,3 +243,6 @@ export const insertCohortInsightSchema = createInsertSchema(cohortInsights)
 
 export type InsertCohortInsight = z.infer<typeof insertCohortInsightSchema>;
 export type CohortInsight = typeof cohortInsights.$inferSelect;
+
+// Backward compatibility aliases
+export type AbTestConfiguration = TestConfiguration;

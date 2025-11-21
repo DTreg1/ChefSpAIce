@@ -438,3 +438,6 @@ export const insertSentimentTrendsSchema = createInsertSchema(sentimentTrends)
 
 export type InsertSentimentTrends = z.infer<typeof insertSentimentTrendsSchema>;
 export type SentimentTrends = typeof sentimentTrends.$inferSelect;
+
+// Backward compatibility alias
+export const sentimentAnalysis = sentimentResults;

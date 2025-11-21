@@ -243,3 +243,7 @@ export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise)
 
 export type InsertAgentExpertise = z.infer<typeof insertAgentExpertiseSchema>;
 export type AgentExpertise = typeof agentExpertise.$inferSelect;
+
+// Backward compatibility aliases
+export type Feedback = UserFeedback;
+export type InsertFeedback = InsertUserFeedback;

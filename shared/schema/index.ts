@@ -130,3 +130,45 @@ export interface Message {
   similarityHash?: string | null;
   createdAt: Date;
 }
+
+// ==================== Helper/Computed Types (Not DB-Backed) ====================
+// 
+// The following types are NOT backed by database tables.
+// They are helper types for computed/aggregated data used in API responses and UI.
+// DO NOT attempt to use these with direct database operations.
+
+/**
+ * Helper type for API responses - NOT a database table
+ * 
+ * Conversation with metadata type
+ * Used for displaying conversation lists with message counts and last activity
+ * This is computed from chat message data, not a standalone table
+ */
+export interface ConversationWithMetadata {
+  id: string;
+  userId?: string;
+  title?: string | null;
+  lastMessage?: string | null;
+  messageCount: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+/**
+ * Helper type for analytics aggregation - NOT a database table
+ * 
+ * Feedback analytics aggregation type
+ * Used for analyzing user feedback trends
+ * This is computed from userFeedback table data, not a standalone table
+ */
+export interface FeedbackAnalytics {
+  totalFeedback: number;
+  byType: Record<string, number>;
+  byStatus: Record<string, number>;
+  avgSentiment: number;
+  avgRating: number;
+  topIssues: Array<{
+    subject: string;
+    count: number;
+  }>;
+}

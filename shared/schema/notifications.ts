@@ -218,3 +218,10 @@ export const insertNotificationFeedbackSchema = createInsertSchema(notificationF
 
 export type InsertNotificationFeedback = z.infer<typeof insertNotificationFeedbackSchema>;
 export type NotificationFeedback = typeof notificationFeedback.$inferSelect;
+
+// Backward compatibility aliases (handle singular/plural inconsistencies)
+export type NotificationHistory = NotificationHistoryItem;
+export type NotificationScores = NotificationScore;
+export type InsertNotificationScores = InsertNotificationScore;
+export type NotificationPreferences = NotificationPreference;
+export type InsertNotificationPreferences = InsertNotificationPreference;

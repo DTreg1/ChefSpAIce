@@ -365,9 +365,15 @@ export const insertOnboardingInventorySchema = createInsertSchema(onboardingInve
 export type InsertOnboardingInventory = z.infer<typeof insertOnboardingInventorySchema>;
 export type OnboardingInventoryItem = typeof onboardingInventory.$inferSelect;
 
+export const insertCookingTermSchema = createInsertSchema(cookingTerms);
+export type InsertCookingTerm = z.infer<typeof insertCookingTermSchema>;
 export type CookingTerm = typeof cookingTerms.$inferSelect;
+
+export const insertApplianceLibrarySchema = createInsertSchema(applianceLibrary);
+export type InsertApplianceLibraryItem = z.infer<typeof insertApplianceLibrarySchema>;
 export type ApplianceLibraryItem = typeof applianceLibrary.$inferSelect;
 
 // Backward compatibility aliases
 export const insertShoppingListItemSchema = insertShoppingItemSchema;
 export type ShoppingListItem = ShoppingItem;
+export type ApplianceLibrary = ApplianceLibraryItem;
