@@ -10,51 +10,107 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
         // Create sample A/B tests
         const tests: InsertAbTest[] = [
           {
-            name: 'Homepage CTA Button Color Test',
-            variantA: 'Blue button with "Sign Up" text',
-            variantB: 'Green button with "Get Started" text',
+            testName: 'Homepage CTA Button Color Test',
+            description: 'Testing button color and text impact on conversion',
+            hypothesis: 'Changing the button color and text will increase click-through rate by 15%',
             startDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
             endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-            status: 'active',
-            successMetric: 'conversion',
-            targetAudience: 0.5,
-            metadata: {
-              hypothesis: 'Changing the button color and text will increase click-through rate by 15%',
-              featureArea: 'homepage',
-              minimumSampleSize: 1000,
-              confidenceLevel: 0.95
+            status: 'running',
+            targetSampleSize: 5000,
+            currentSampleSize: 4985,
+            configuration: {
+              controlGroup: {
+                size: 0.5,
+                features: {
+                  buttonColor: 'blue',
+                  buttonText: 'Sign Up'
+                }
+              },
+              variants: [
+                {
+                  name: 'variant_b',
+                  size: 0.5,
+                  features: {
+                    buttonColor: 'green',
+                    buttonText: 'Get Started'
+                  }
+                }
+              ],
+              targetingCriteria: {
+                featureArea: 'homepage',
+                minimumSampleSize: 1000,
+                confidenceLevel: 0.95
+              }
             },
           },
           {
-            name: 'Checkout Form Length Optimization',
-            variantA: 'Long form with all fields on one page',
-            variantB: 'Multi-step form with progress indicator',
+            testName: 'Checkout Form Length Optimization',
+            description: 'Testing single-page vs multi-step checkout form',
+            hypothesis: 'Breaking the form into steps will reduce friction and increase completion rate',
             startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
             endDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // ended 5 days ago
             status: 'completed',
-            successMetric: 'conversion',
-            targetAudience: 0.5,
-            metadata: {
-              hypothesis: 'Breaking the form into steps will reduce friction and increase completion rate',
-              featureArea: 'checkout',
-              minimumSampleSize: 2000,
-              confidenceLevel: 0.95
+            targetSampleSize: 10000,
+            currentSampleSize: 9950,
+            configuration: {
+              controlGroup: {
+                size: 0.5,
+                features: {
+                  formType: 'single-page',
+                  allFieldsVisible: true
+                }
+              },
+              variants: [
+                {
+                  name: 'variant_b',
+                  size: 0.5,
+                  features: {
+                    formType: 'multi-step',
+                    progressIndicator: true
+                  }
+                }
+              ],
+              targetingCriteria: {
+                featureArea: 'checkout',
+                minimumSampleSize: 2000,
+                confidenceLevel: 0.95
+              }
             },
           },
           {
-            name: 'Product Card Design Test',
-            variantA: 'Grid layout with small images',
-            variantB: 'List layout with large images and descriptions',
+            testName: 'Product Card Design Test',
+            description: 'Testing grid vs list layout for product cards',
+            hypothesis: 'Larger images and descriptions will increase product engagement',
             startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
             endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
-            status: 'active',
-            successMetric: 'engagement',
-            targetAudience: 0.3,
-            metadata: {
-              hypothesis: 'Larger images and descriptions will increase product engagement',
-              featureArea: 'catalog',
-              minimumSampleSize: 1500,
-              confidenceLevel: 0.95
+            status: 'running',
+            targetSampleSize: 3000,
+            currentSampleSize: 2380,
+            configuration: {
+              controlGroup: {
+                size: 0.5,
+                features: {
+                  layout: 'grid',
+                  imageSize: 'small',
+                  showDescription: false
+                }
+              },
+              variants: [
+                {
+                  name: 'variant_b',
+                  size: 0.5,
+                  features: {
+                    layout: 'list',
+                    imageSize: 'large',
+                    showDescription: true
+                  }
+                }
+              ],
+              targetingCriteria: {
+                featureArea: 'catalog',
+                minimumSampleSize: 1500,
+                confidenceLevel: 0.95
+              }
             },
           }
         ];
@@ -66,102 +122,74 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
           createdTests.push(created);
         }
 
-        // Create sample results for active tests
-        const results: InsertAbTestResult[] = [
-          // Results for test-1 (Homepage CTA)
-          {
+        // Create sample individual user results for tests
+        const results: InsertAbTestResult[] = [];
+        
+        // Generate results for test 1 (Homepage CTA)
+        for (let i = 0; i < 50; i++) {
+          // Control group users
+          results.push({
             testId: createdTests[0].id,
-            variant: 'A',
-            visitors: 2500,
-            conversions: 125,
-            revenue: 12500,
-            periodStart: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-            periodEnd: new Date(),
+            userId: `user_${i * 2}`,
+            variant: 'control',
+            exposedAt: new Date(Date.now() - (14 - i % 14) * 24 * 60 * 60 * 1000),
+            converted: i % 20 === 0, // 5% conversion
+            convertedAt: i % 20 === 0 ? new Date(Date.now() - (13 - i % 14) * 24 * 60 * 60 * 1000) : undefined,
+            conversionValue: i % 20 === 0 ? 100 : undefined,
             metadata: {
-              customMetrics: {
-                avgTimeOnPage: 45,
-                bounceRate: 0.35
-              }
+              source: 'homepage',
+              device: i % 2 === 0 ? 'mobile' : 'desktop'
             }
-          },
-          {
+          });
+          
+          // Variant B users
+          results.push({
             testId: createdTests[0].id,
-            variant: 'B',
-            visitors: 2485,
-            conversions: 186,
-            revenue: 18600,
-            periodStart: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-            periodEnd: new Date(),
+            userId: `user_${i * 2 + 1}`,
+            variant: 'variant_b',
+            exposedAt: new Date(Date.now() - (14 - i % 14) * 24 * 60 * 60 * 1000),
+            converted: i % 13 === 0, // ~7.5% conversion
+            convertedAt: i % 13 === 0 ? new Date(Date.now() - (13 - i % 14) * 24 * 60 * 60 * 1000) : undefined,
+            conversionValue: i % 13 === 0 ? 100 : undefined,
             metadata: {
-              customMetrics: {
-                avgTimeOnPage: 52,
-                bounceRate: 0.28
-              }
+              source: 'homepage',
+              device: i % 2 === 0 ? 'mobile' : 'desktop'
             }
-          },
-          // Results for test-2 (Checkout Form - completed)
-          {
+          });
+        }
+
+        // Generate results for test 2 (Checkout Form - completed)
+        for (let i = 0; i < 100; i++) {
+          // Control group users
+          results.push({
             testId: createdTests[1].id,
-            variant: 'A',
-            visitors: 5000,
-            conversions: 250,
-            revenue: 75000,
-            periodStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-            periodEnd: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+            userId: `user_checkout_${i * 2}`,
+            variant: 'control',
+            exposedAt: new Date(Date.now() - (25 - i % 25) * 24 * 60 * 60 * 1000),
+            converted: i % 20 === 0, // 5% conversion
+            convertedAt: i % 20 === 0 ? new Date(Date.now() - (24 - i % 25) * 24 * 60 * 60 * 1000) : undefined,
+            conversionValue: i % 20 === 0 ? 300 : undefined,
             metadata: {
-              customMetrics: {
-                avgTimeToComplete: 180,
-                dropoffRate: 0.45
-              }
+              source: 'checkout',
+              cartSize: Math.floor(Math.random() * 5) + 1
             }
-          },
-          {
+          });
+          
+          // Variant B users
+          results.push({
             testId: createdTests[1].id,
-            variant: 'B',
-            visitors: 4950,
-            conversions: 396,
-            revenue: 118800,
-            periodStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-            periodEnd: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+            userId: `user_checkout_${i * 2 + 1}`,
+            variant: 'variant_b',
+            exposedAt: new Date(Date.now() - (25 - i % 25) * 24 * 60 * 60 * 1000),
+            converted: i % 12 === 0, // ~8% conversion
+            convertedAt: i % 12 === 0 ? new Date(Date.now() - (24 - i % 25) * 24 * 60 * 60 * 1000) : undefined,
+            conversionValue: i % 12 === 0 ? 300 : undefined,
             metadata: {
-              customMetrics: {
-                avgTimeToComplete: 120,
-                dropoffRate: 0.25
-              }
+              source: 'checkout',
+              cartSize: Math.floor(Math.random() * 5) + 1
             }
-          },
-          // Results for test-3 (Product Cards)
-          {
-            testId: createdTests[2].id,
-            variant: 'A',
-            visitors: 1200,
-            conversions: 84,
-            revenue: 4200,
-            periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-            periodEnd: new Date(),
-            metadata: {
-              customMetrics: {
-                clickThroughRate: 0.07,
-                viewsPerSession: 12
-              }
-            }
-          },
-          {
-            testId: createdTests[2].id,
-            variant: 'B',
-            visitors: 1180,
-            conversions: 94,
-            revenue: 5640,
-            periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-            periodEnd: new Date(),
-            metadata: {
-              customMetrics: {
-                clickThroughRate: 0.08,
-                viewsPerSession: 15
-              }
-            }
-          }
-        ];
+          });
+        }
 
         // Add results
         for (const result of results) {
@@ -169,49 +197,46 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
         }
 
         // Create insights for completed test
-        const insight: InsertAbTestInsight = {
-          testId: createdTests[1].id,
-          pValue: 0.0001,
-          confidence: 0.9999,
-          winner: 'B',
-          liftPercentage: 58.4,
-          recommendation: 'implement',
-          explanation: 'Variant B\'s multi-step form with progress indicator achieved statistical significance with 99.99% confidence. The 58.4% lift in conversion rate represents a substantial improvement. The shorter completion time (2 minutes vs 3 minutes) and lower drop-off rate (25% vs 45%) indicate that breaking the form into steps significantly reduced user friction.',
-          insights: {
-            keyFindings: [
-              'Multi-step forms reduce cognitive load and improve completion rates',
-              'Progress indicators help users understand the scope of the task',
-              'Breaking complex forms into digestible steps increases user confidence',
-              'The 20% reduction in drop-off rate translates to significant revenue gains'
-            ],
-            nextSteps: [
-              'Implement the multi-step form design across all checkout flows',
-              'Test adding a save-progress feature for returning users',
-              'Consider applying this pattern to other long forms in the application',
-              'Monitor long-term impact on customer lifetime value'
-            ],
-            learnings: [
-              'Users prefer clear, structured processes over single-page complexity',
-              'Visual progress indicators are powerful motivators for form completion',
-              'Form design has direct impact on conversion and revenue metrics'
-            ]
+        const controlResults = results.filter(r => r.testId === createdTests[1].id && r.variant === 'control');
+        const variantBResults = results.filter(r => r.testId === createdTests[1].id && r.variant === 'variant_b');
+        
+        const insights: InsertAbTestInsight[] = [
+          {
+            testId: createdTests[1].id,
+            variant: 'control',
+            sampleSize: controlResults.length,
+            conversionRate: controlResults.filter(r => r.converted).length / controlResults.length,
+            averageValue: 300,
+            standardDeviation: 45.5,
+            confidence: 0.95,
+            pValue: 0.0001,
+            isSignificant: false,
+            recommendation: 'Control group baseline performance'
           },
-          statisticalAnalysis: {
-            zScore: 3.98,
-            sampleSizeA: 5000,
-            sampleSizeB: 4950,
-            conversionRateA: 0.05,
-            conversionRateB: 0.08
+          {
+            testId: createdTests[1].id,
+            variant: 'variant_b',
+            sampleSize: variantBResults.length,
+            conversionRate: variantBResults.filter(r => r.converted).length / variantBResults.length,
+            averageValue: 300,
+            standardDeviation: 42.3,
+            confidence: 0.9999,
+            pValue: 0.0001,
+            isSignificant: true,
+            recommendation: 'Implement variant B - Multi-step form shows significant improvement with 60% lift in conversion rate'
           }
-        };
+        ];
 
-        await storage.upsertAbTestInsight(insight);
+        for (const insight of insights) {
+          await storage.upsertAbTestInsight(insight);
+        }
 
         res.json({ 
           success: true, 
           message: 'Sample A/B test data created successfully',
           tests: tests.length,
-          results: results.length 
+          results: results.length,
+          insights: insights.length
         });
       } catch (error) {
         console.error('Error seeding A/B test data:', error);
