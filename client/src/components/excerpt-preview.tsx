@@ -242,38 +242,7 @@ export function ExcerptPreview({
           </>
         )}
 
-        {excerpt.generationParams && (
-          <>
-            <Separator />
-            <div className="flex flex-wrap gap-1">
-              {excerpt.generationParams.tone && (
-                <Badge variant="secondary" className="text-xs">
-                  {excerpt.generationParams.tone}
-                </Badge>
-              )}
-              {excerpt.generationParams.style && (
-                <Badge variant="secondary" className="text-xs">
-                  {excerpt.generationParams.style}
-                </Badge>
-              )}
-              {excerpt.generationParams.callToAction && (
-                <Badge variant="secondary" className="text-xs">
-                  CTA
-                </Badge>
-              )}
-              {excerpt.generationParams.hashtags && (
-                <Badge variant="secondary" className="text-xs">
-                  #tags
-                </Badge>
-              )}
-              {excerpt.generationParams.emojis && (
-                <Badge variant="secondary" className="text-xs">
-                  😊
-                </Badge>
-              )}
-            </div>
-          </>
-        )}
+        {/* Generation params section removed - not available in database schema */}
       </CardContent>
 
       {showControls && (

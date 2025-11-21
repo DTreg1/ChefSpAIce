@@ -192,7 +192,7 @@ export default function CohortAnalysis() {
             {selectedCohorts.length === 1 ? (
               <InsightCards 
                 cohortId={selectedCohorts[0].id} 
-                cohortName={selectedCohorts[0].name}
+                cohortName={selectedCohorts[0].cohortName}
               />
             ) : (
               <div className="space-y-4">
@@ -212,7 +212,7 @@ export default function CohortAnalysis() {
                 {activeCohort && (
                   <InsightCards 
                     cohortId={activeCohort.id} 
-                    cohortName={activeCohort.name}
+                    cohortName={activeCohort.cohortName}
                   />
                 )}
               </div>
@@ -223,7 +223,7 @@ export default function CohortAnalysis() {
             {selectedCohorts.length === 1 ? (
               <CohortTimeline 
                 cohortId={selectedCohorts[0].id} 
-                cohortName={selectedCohorts[0].name}
+                cohortName={selectedCohorts[0].cohortName}
               />
             ) : (
               <div className="space-y-4">
@@ -243,7 +243,7 @@ export default function CohortAnalysis() {
                 {activeCohort && (
                   <CohortTimeline 
                     cohortId={activeCohort.id} 
-                    cohortName={activeCohort.name}
+                    cohortName={activeCohort.cohortName}
                   />
                 )}
               </div>
@@ -268,7 +268,7 @@ export default function CohortAnalysis() {
               {activeCohort && (
                 <CohortMembers 
                   cohortId={activeCohort.id} 
-                  cohortName={activeCohort.name}
+                  cohortName={activeCohort.cohortName}
                 />
               )}
             </div>
