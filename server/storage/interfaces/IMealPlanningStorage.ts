@@ -63,11 +63,4 @@ export interface IMealPlanningStorage {
   deleteShoppingListItem(userId: string, id: string): Promise<void>;
   
   clearCheckedShoppingListItems(userId: string): Promise<void>;
-  
-  // Signature aligned with IInventoryStorage to avoid interface conflict in IStorage
-  addMissingIngredientsToShoppingList(
-    userId: string, 
-    recipeId: string,
-    servings?: number
-  ): Promise<{ added: number; skipped: number }>;
 }

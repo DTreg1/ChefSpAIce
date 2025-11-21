@@ -94,7 +94,6 @@ export interface IInventoryStorage {
   deleteShoppingItem(userId: string, id: string): Promise<void>;
   clearCheckedShoppingItems(userId: string): Promise<number>;
   
-  // TODO: Move to IMealPlanningStorage to avoid interface conflict
   addMissingIngredientsToShoppingList(
     userId: string, 
     recipeId: string,

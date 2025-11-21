@@ -8,8 +8,8 @@ import type {
   UpsertUser,
   AuthProvider,
   InsertAuthProvider,
-  NotificationPreferences,
-  InsertNotificationPreferences,
+  NotificationPreference,
+  InsertNotificationPreference,
 } from "@shared/schema";
 
 export interface IUserStorage {
@@ -47,5 +47,5 @@ export interface IUserStorage {
   getUserPreferences(userId: string): Promise<User | undefined>;
   getNotificationPreferences(
     userId: string,
-  ): Promise<NotificationPreferences | undefined>;
+  ): Promise<NotificationPreference | undefined>;
 }
