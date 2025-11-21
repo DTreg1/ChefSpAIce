@@ -562,7 +562,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
         // Insert new item
         const [newItem] = await db
           .insert(onboardingInventory)
-          .values(item)
+          .values([item])
           .returning();
         return newItem;
       }
