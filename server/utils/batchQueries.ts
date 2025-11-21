@@ -196,7 +196,7 @@ export async function getEstimatedCount(
           WHERE relname = ${tableName}`
     );
     
-    const rows = result.rows[];
+    const rows = result.rows;
     const estimate = rows[0]?.estimate;
     if (estimate && estimate > 10000) {
       return estimate;
