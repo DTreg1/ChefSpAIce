@@ -26,6 +26,7 @@ import {
   type InsertUserStorage,
   type ShoppingItem,
   type InsertShoppingItem,
+  type InsertOnboardingInventory,
 } from "@shared/schema";
 import type { IInventoryStorage } from "../interfaces/IInventoryStorage";
 
