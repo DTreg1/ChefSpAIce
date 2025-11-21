@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
-import type { Message } from '@shared/schema/';
+import type { Message } from '@shared/schema';
 
 interface ChatInterfaceProps {
   conversationId?: string;
