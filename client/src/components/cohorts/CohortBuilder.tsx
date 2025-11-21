@@ -15,7 +15,7 @@ import { format } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { InsertCohort } from "@shared/schema";
+import type { InsertCohort, CohortCriteria } from "@shared/schema";
 
 interface CohortDefinition {
   signupDateRange?: {
@@ -135,12 +135,34 @@ export function CohortBuilder() {
       definition.customFilters = customFilters;
     }
     
+    const criteria: CohortCriteria = {
+      ...(definition.signupDateRange && {
+        dateRange: {
+          start: definition.signupDateRange.start,
+          end: definition.signupDateRange.end,
+        },
+      }),
+      ...(definition.userBehavior && {
+        behaviorPatterns: [{
+          event: definition.userBehavior.event,
+          frequency: definition.userBehavior.minCount || 1,
+          timeframe: `${definition.userBehavior.timeframe || 30} days`,
+        }],
+      }),
+      ...(definition.customFilters && definition.customFilters.length > 0 && {
+        userAttributes: definition.customFilters.reduce((acc: any, filter: any) => {
+          acc[filter.field] = filter.value;
+          return acc;
+        }, {}),
+      }),
+    };
+
     createCohortMutation.mutate({
-      name,
+      cohortName: name,
       description,
-      definition,
+      criteria,
       isActive,
-    } as any);
+    });
   };
   
   return (

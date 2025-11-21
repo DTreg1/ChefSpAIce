@@ -118,19 +118,19 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
   // Prepare data for charts
   const barChartData = selectedMetrics.map(metric => ({
     metric: METRICS.find(m => m.key === metric)?.label || metric,
-    ...cohorts.reduce((acc: any, cohort: any, index: number) => {
+    ...cohorts.reduce((acc: any, cohort, index: number) => {
       const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
       return {
         ...acc,
-        [cohort.name]: cohortData?.metrics[metric] || 0,
+        [cohort.cohortName]: cohortData?.metrics[metric] || 0,
       };
     }, {}),
   }));
   
-  const lineChartData = cohorts.map((cohort: any, index: number) => {
+  const lineChartData = cohorts.map((cohort, index: number) => {
     const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
     return {
-      name: cohort.name,
+      name: cohort.cohortName,
       ...selectedMetrics.reduce((acc, metric) => ({
         ...acc,
         [metric]: cohortData?.metrics[metric] || 0,
@@ -140,11 +140,11 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
   
   const radarChartData = selectedMetrics.map(metric => ({
     metric: METRICS.find(m => m.key === metric)?.label || metric,
-    ...cohorts.reduce((acc: any, cohort: any) => {
+    ...cohorts.reduce((acc: any, cohort) => {
       const cohortData = comparisonData.find((d: any) => d.cohortId === cohort.id);
       return {
         ...acc,
-        [cohort.name]: cohortData?.metrics[metric] || 0,
+        [cohort.cohortName]: cohortData?.metrics[metric] || 0,
       };
     }, {}),
   }));
@@ -209,7 +209,7 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
                 {cohorts.map((cohort, index) => (
                   <Bar
                     key={cohort.id}
-                    dataKey={cohort.name}
+                    dataKey={cohort.cohortName}
                     fill={COLORS[index % COLORS.length]}
                   />
                 ))}
@@ -252,8 +252,8 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
                 {cohorts.map((cohort, index) => (
                   <Radar
                     key={cohort.id}
-                    name={cohort.name}
-                    dataKey={cohort.name}
+                    name={cohort.cohortName}
+                    dataKey={cohort.cohortName}
                     stroke={COLORS[index % COLORS.length]}
                     fill={COLORS[index % COLORS.length]}
                     fillOpacity={0.3}
@@ -286,7 +286,7 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
               <Card key={cohort.id} data-testid={`card-cohort-${cohort.id}`}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium">
-                    {cohort.name}
+                    {cohort.cohortName}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
