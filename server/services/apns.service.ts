@@ -254,11 +254,15 @@ export class ApnsService {
         // Define category based on available actions
         // Categories must be pre-registered in the iOS app
         // Note: category property may not exist in type definition but is supported
-        const anyNotification = notification;
+        // Use type assertion to extend the notification type
+        interface ExtendedNotification extends apn.Notification {
+          category?: string;
+        }
+        const extendedNotification = notification as ExtendedNotification;
         if (payload.actions.some(a => a.action === 'view')) {
-          (anyNotification).category = 'VIEW_ACTION';
+          extendedNotification.category = 'VIEW_ACTION';
         } else if (payload.actions.some(a => a.action === 'dismiss')) {
-          (anyNotification).category = 'DISMISS_ACTION';
+          extendedNotification.category = 'DISMISS_ACTION';
         }
         
         // Pass actions in payload for app to handle
