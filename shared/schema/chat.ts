@@ -44,57 +44,10 @@ export type ConversationWithMetadata = {
   updatedAt?: Date | string;
 };
 
-/**
- * @deprecated - These types reference removed database tables.
- * IChatStorage interface still uses them but needs refactoring.
- * Do not use in new code - migrate to ChatMessage-based system instead.
- */
-export type Conversation = {
-  id: string;
-  userId: string;
-  title?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+// Note: Conversation-related types (Conversation, InsertConversation, ConversationContext) 
+// were removed as those tables don't exist in the database schema.
+// Use ChatMessage and InsertChatMessage for chat functionality.
 
-/**
- * @deprecated - No backing table exists. See Conversation type.
- */
-export type InsertConversation = {
-  userId: string;
-  title?: string | null;
-};
-
-/**
- * @deprecated - Use ChatMessage instead.
- */
-export type Message = ChatMessage;
-
-/**
- * @deprecated - Use InsertChatMessage instead.
- */
-export type InsertMessage = InsertChatMessage;
-
-/**
- * @deprecated - No backing table exists.
- */
-export type ConversationContext = {
-  id: string;
-  conversationId: string;
-  contextType: string;
-  contextData: Record<string, any>;
-  createdAt: Date;
-};
-
-/**
- * @deprecated - No backing table exists. See ConversationContext type.
- */
-export type InsertConversationContext = {
-  conversationId: string;
-  contextType: string;
-  contextData: Record<string, any>;
-};
-
-// Legacy userChats table stub - not actually in database
+// Legacy userChats table stub - referenced by some services but not actually in database
 // This is a compatibility shim to prevent import errors
 export const userChats = {} as any;

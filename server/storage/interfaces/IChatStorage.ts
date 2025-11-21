@@ -1,21 +1,18 @@
 /**
  * Chat Storage Interface
- * Handles chat messages, conversations, and AI assistant interactions
+ * Handles chat messages and AI assistant interactions
+ * 
+ * Note: Conversation-based methods were removed as those tables don't exist in the schema.
+ * For chat history, use ChatMessage-based methods below.
  */
 
 import type {
   ChatMessage,
   InsertChatMessage,
-  Conversation,
-  InsertConversation,
-  Message,
-  InsertMessage,
-  ConversationContext,
-  InsertConversationContext,
 } from "@shared/schema";
 
 export interface IChatStorage {
-  // Legacy Chat Messages
+  // Chat Messages
   getChatMessages(userId: string, limit?: number): Promise<ChatMessage[]>;
   
   getChatMessagesPaginated(
@@ -29,43 +26,5 @@ export interface IChatStorage {
     message: Omit<InsertChatMessage, "id" | "userId">,
   ): Promise<ChatMessage>;
   
-  // Conversations
-  getConversations(userId: string): Promise<Conversation[]>;
-  
-  getConversation(
-    userId: string,
-    conversationId: string,
-  ): Promise<Conversation | undefined>;
-  
-  createConversation(
-    userId: string,
-    conversation: Omit<InsertConversation, "userId">,
-  ): Promise<Conversation>;
-  
-  updateConversation(
-    userId: string,
-    conversationId: string,
-    updates: Partial<Conversation>,
-  ): Promise<void>;
-  
-  deleteConversation(userId: string, conversationId: string): Promise<void>;
-  
-  // Messages
-  getMessages(
-    conversationId: string,
-    limit?: number,
-    offset?: number,
-  ): Promise<Message[]>;
-  
-  createMessage(message: InsertMessage): Promise<Message>;
-  
-  // Conversation Context
-  getConversationContext(
-    conversationId: string,
-  ): Promise<ConversationContext | undefined>;
-  
-  updateConversationContext(
-    conversationId: string,
-    context: Partial<ConversationContext>,
-  ): Promise<void>;
+  deleteChatHistory(userId: string): Promise<void>;
 }
