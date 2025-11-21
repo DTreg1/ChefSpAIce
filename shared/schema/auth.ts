@@ -186,6 +186,13 @@ export const authProviders = pgTable("auth_providers", {
 
 // ==================== Zod Schemas & Type Exports ====================
 
+// Sessions table exports
+export const insertSessionSchema = createInsertSchema(sessions);
+
+export type InsertSession = z.infer<typeof insertSessionSchema>;
+export type Session = typeof sessions.$inferSelect;
+
+// Auth Providers table exports
 export const insertAuthProviderSchema = createInsertSchema(authProviders)
   .extend({
     metadata: z.record(z.any()).optional(),
