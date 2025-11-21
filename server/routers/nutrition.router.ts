@@ -1,4 +1,5 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 import { recipesStorage } from "../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
@@ -16,10 +17,10 @@ const daysQuerySchema = z.object({
 router.get(
   "/nutrition/stats",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = getAuthenticatedUserId(req);
+    if (!userId) return sendError(res, 401, "Unauthorized");
       const { days } = daysQuerySchema.parse(req.query);
       
       // Get food items for the user
@@ -69,10 +70,10 @@ router.get(
 router.get(
   "/nutrition/items",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = getAuthenticatedUserId(req);
+    if (!userId) return sendError(res, 401, "Unauthorized");
       const { category, minCalories, maxCalories, sortBy = "name" } = req.query;
       
       // Get food items with nutrition data
@@ -143,10 +144,10 @@ router.get(
 router.get(
   "/nutrition/daily",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = getAuthenticatedUserId(req);
+    if (!userId) return sendError(res, 401, "Unauthorized");
       const { date = new Date().toISOString().split("T")[0] } = req.query;
       
       // Get meal plans for the date

@@ -12,7 +12,7 @@
  * - Readability scoring
  */
 
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { aiMlStorage } from "../storage/index";
 import { z } from "zod";
@@ -225,9 +225,9 @@ function checkGrammarAndSpelling(text: string): WritingSuggestion[] {
  * POST /api/writing/analyze
  * Comprehensive text analysis with all improvements
  */
-router.post("/analyze", isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/analyze", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const validation = analyzeTextSchema.safeParse(req.body);
@@ -364,7 +364,7 @@ Only return valid JSON array, no other text.`;
  * POST /api/writing/grammar
  * Check grammar and spelling only
  */
-router.post("/grammar", isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/grammar", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { text } = req.body;
     if (!text) {
@@ -389,7 +389,7 @@ router.post("/grammar", isAuthenticated, async (req: ExpressRequest, res: Expres
  * POST /api/writing/tone
  * Adjust tone of text
  */
-router.post("/tone", isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/tone", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const validation = adjustToneSchema.safeParse(req.body);
     if (!validation.success) {
@@ -437,7 +437,7 @@ Return only the rewritten text, no explanations.`;
  * POST /api/writing/expand
  * Expand bullet points or brief text into paragraphs
  */
-router.post("/expand", isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/expand", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const validation = expandTextSchema.safeParse(req.body);
     if (!validation.success) {
@@ -484,7 +484,7 @@ Return only the expanded text.`;
  * POST /api/writing/summarize
  * Create summary of long text
  */
-router.post("/summarize", isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/summarize", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const validation = summarizeTextSchema.safeParse(req.body);
     if (!validation.success) {
@@ -533,9 +533,9 @@ Return only the summary.`;
  * POST /api/writing/session/:sessionId/accept
  * Accept suggestions and update session
  */
-router.post("/session/:sessionId/accept", isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post("/session/:sessionId/accept", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { sessionId } = req.params;
@@ -567,9 +567,9 @@ router.post("/session/:sessionId/accept", isAuthenticated, async (req: ExpressRe
  * GET /api/writing/stats
  * Get user's writing statistics
  */
-router.get("/stats", isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.get("/stats", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const stats = await aiMlStorage.getWritingStats(userId);

@@ -63,7 +63,7 @@ router.post(
 // Get user's appliance categories with counts
 router.get("/appliances/categories", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const categories = await foodStorage.getApplianceCategories(userId);
     res.json(categories);
@@ -75,7 +75,7 @@ router.get("/appliances/categories", isAuthenticated, async (req: Request, res: 
 
 router.get("/appliances/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const applianceId = req.params.id;
     
@@ -121,7 +121,7 @@ router.put(
 
 router.delete("/appliances/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const applianceId = req.params.id;
     
@@ -206,7 +206,7 @@ router.get("/appliance-library/common", async (_req: Request, res: ExpressRespon
 // Get user's appliances from the new system
 router.get("/user-appliances", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const category = req.query.category as string | undefined;
     
@@ -227,7 +227,7 @@ router.get("/user-appliances", isAuthenticated, async (req: Request, res: Respon
 // Get user's appliance categories with counts
 router.get("/user-appliances/categories", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const categories = await foodStorage.getApplianceCategories(userId);
     res.json(categories);
@@ -240,7 +240,7 @@ router.get("/user-appliances/categories", isAuthenticated, async (req: Request, 
 // Add appliance to user's collection
 router.post("/user-appliances", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const bodySchema = z.object({
@@ -251,7 +251,7 @@ router.post("/user-appliances", isAuthenticated, async (req: Request, res: Respo
       warrantyEndDate: z.string().optional(),
     });
     
-    const validation = bodySchema.safeParse(req.body as any);
+    const validation = bodySchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         error: "Validation error",
@@ -280,7 +280,7 @@ router.post("/user-appliances", isAuthenticated, async (req: Request, res: Respo
 // Update user's appliance details
 router.patch("/user-appliances/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { id } = req.params;
     
@@ -292,7 +292,7 @@ router.patch("/user-appliances/:id", isAuthenticated, async (req: Request, res: 
       isActive: z.boolean().optional(),
     });
     
-    const validation = updateSchema.safeParse(req.body as any);
+    const validation = updateSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         error: "Validation error",
@@ -316,7 +316,7 @@ router.patch("/user-appliances/:id", isAuthenticated, async (req: Request, res: 
 // Remove appliance from user's collection
 router.delete("/user-appliances/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { id } = req.params;
     
@@ -331,7 +331,7 @@ router.delete("/user-appliances/:id", isAuthenticated, async (req: Request, res:
 // Batch add/remove appliances (for onboarding or bulk updates)
 router.post("/user-appliances/batch", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const batchSchema = z.object({
@@ -339,7 +339,7 @@ router.post("/user-appliances/batch", isAuthenticated, async (req: Request, res:
       remove: z.array(z.string()).optional(),
     });
     
-    const validation = batchSchema.safeParse(req.body as any);
+    const validation = batchSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
         error: "Validation error",

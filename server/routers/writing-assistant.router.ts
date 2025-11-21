@@ -5,7 +5,7 @@
  * style suggestions, and tone adjustment.
  */
 
-import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { isAuthenticated } from "../middleware";
 import { aiMlStorage } from "../storage/index";
 import { z } from "zod";
@@ -20,9 +20,9 @@ const openai = getOpenAIClient();
  * POST /api/writing/analyze
  * Analyze text for grammar, style, and tone
  */
-router.post("/analyze", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/analyze", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const schema = z.object({
@@ -145,9 +145,9 @@ async function analyzeText(
  * POST /api/writing/improve
  * Apply improvements to text
  */
-router.post("/improve", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/improve", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { sessionId, suggestionIds } = req.body;
@@ -211,7 +211,7 @@ router.post("/improve", isAuthenticated, async (req: ExpressRequest<any, any, an
  * POST /api/writing/adjust-tone
  * Adjust the tone of text
  */
-router.post("/adjust-tone", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/adjust-tone", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { text, currentTone, targetTone } = req.body;
     
@@ -249,7 +249,7 @@ router.post("/adjust-tone", isAuthenticated, async (req: ExpressRequest<any, any
  * POST /api/writing/paraphrase
  * Paraphrase text while maintaining meaning
  */
-router.post("/paraphrase", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/paraphrase", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { text, style } = req.body;
     
@@ -287,9 +287,9 @@ router.post("/paraphrase", isAuthenticated, async (req: ExpressRequest<any, any,
  * GET /api/writing/stats
  * Get user's writing statistics
  */
-router.get("/stats", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/stats", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const stats = await aiMlStorage.getWritingStats(userId);
@@ -304,7 +304,7 @@ router.get("/stats", isAuthenticated, async (req: ExpressRequest<any, any, any, 
  * POST /api/writing/check-plagiarism
  * Check for potential plagiarism (basic implementation)
  */
-router.post("/check-plagiarism", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/check-plagiarism", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { text } = req.body;
     
@@ -347,9 +347,9 @@ router.post("/check-plagiarism", isAuthenticated, async (req: ExpressRequest<any
  * GET /api/writing/sessions/:id
  * Get a specific writing session
  */
-router.get("/sessions/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/sessions/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;

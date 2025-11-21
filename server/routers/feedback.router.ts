@@ -1,4 +1,5 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
+import { getAuthenticatedUserId, validateBody, sendError, sendSuccess } from "../types/request-helpers";
 import { z } from "zod";
 import { feedbackStorage } from "../storage/index";
 import { insertUserFeedbackSchema, type UserFeedback } from "@shared/schema";
@@ -12,11 +13,11 @@ const router = Router();
 router.post(
   "/feedback",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertUserFeedbackSchema.safeParse(req.body as any);
+      const userId = getAuthenticatedUserId(req);
+    if (!userId) return sendError(res, 401, "Unauthorized");
+      const validation = insertUserFeedbackSchema.safeParse(req.body);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -43,10 +44,10 @@ router.get(
     category: z.string().optional(),
     status: z.string().optional(),
   })),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = getAuthenticatedUserId(req);
+    if (!userId) return sendError(res, 401, "Unauthorized");
       const { page = 1, limit = 10, category, status } = req.query;
       
       let feedbacks = await feedbackStorage.getUserFeedback(userId, limit * 10); // Get more for filtering
@@ -85,10 +86,10 @@ router.get(
 router.patch(
   "/feedback/:id/upvote",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const userId = getAuthenticatedUserId(req);
+    if (!userId) return sendError(res, 401, "Unauthorized");
       const feedbackId = req.params.id;
       
       await feedbackStorage.upvoteFeedback(userId, feedbackId);

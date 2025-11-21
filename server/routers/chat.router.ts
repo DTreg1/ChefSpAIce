@@ -5,7 +5,8 @@
  * Provides conversation history, context management, and feedback tracking.
  */
 
-import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from 'express';
+import { Router, Request, Response } from 'express';
+import { getAuthenticatedUserId, sendError, sendSuccess } from '../types/request-helpers';
 import { isAuthenticated } from '../middleware/auth.middleware';
 import { chatService } from '../services/chatService';
 import { z } from 'zod';
@@ -28,9 +29,9 @@ const feedbackSchema = z.object({
  * POST /api/chat/message
  * Send a message to the AI assistant
  */
-router.post('/message', isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post('/message', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -67,9 +68,9 @@ router.post('/message', isAuthenticated, async (req: ExpressRequest<any, any, an
  * GET /api/chat/conversations
  * Get list of user's conversations
  */
-router.get('/conversations', isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get('/conversations', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -88,9 +89,9 @@ router.get('/conversations', isAuthenticated, async (req: ExpressRequest<any, an
  * GET /api/chat/conversation/:id
  * Get conversation history with messages
  */
-router.get('/conversation/:id', isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get('/conversation/:id', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -117,9 +118,9 @@ router.get('/conversation/:id', isAuthenticated, async (req: ExpressRequest<any,
  * DELETE /api/chat/conversation/:id
  * Delete a conversation and all its messages
  */
-router.delete('/conversation/:id', isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.delete('/conversation/:id', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -143,9 +144,9 @@ router.delete('/conversation/:id', isAuthenticated, async (req: ExpressRequest<a
  * POST /api/chat/feedback
  * Rate an assistant response
  */
-router.post('/feedback', isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post('/feedback', isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }

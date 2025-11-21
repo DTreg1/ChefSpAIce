@@ -4,6 +4,7 @@ import { isAuthenticated } from "../middleware";
 import { storage, contentStorage } from "../storage/index";
 import { EmbeddingsService } from "../services/embeddings";
 import { asyncHandler } from "../middleware/error.middleware";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 
 const router = Router();
 const embeddingsService = new EmbeddingsService(contentStorage);
