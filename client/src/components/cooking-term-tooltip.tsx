@@ -185,13 +185,13 @@ export function CookingTermTooltip({
           </div>
         </div>
 
-        {/* Definitions */}
+        {/* Definition */}
         <div className="space-y-2">
           <p className="text-sm leading-relaxed">
-            {termData.shortDefinition}
+            {termData.definition}
           </p>
           
-          {!!termData.longDefinition && (
+          {!!termData.example && (
             <>
               {!showFullDefinition ? (
                 <Button
@@ -201,13 +201,13 @@ export function CookingTermTooltip({
                   className="h-auto p-0 text-xs text-primary hover:bg-transparent"
                 >
                   <ChevronRight className="w-3 h-3 mr-1" />
-                  Show more details
+                  Show example
                 </Button>
               ) : (
                 <div className="space-y-2">
                   <Separator />
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    {termData.longDefinition}
+                    Example: {termData.example}
                   </p>
                 </div>
               )}
@@ -233,22 +233,6 @@ export function CookingTermTooltip({
           </div>
         )}
 
-        {/* Tools section */}
-        {termData.tools && termData.tools.length > 0 && (
-          <div className="space-y-1">
-            <div className="flex items-center gap-1 text-xs font-medium">
-              <Wrench className="w-3 h-3" />
-              Tools needed:
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {termData.tools.map((tool, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
-                  {tool}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Related terms section */}
         {termData.relatedTerms && termData.relatedTerms.length > 0 && (

@@ -112,26 +112,30 @@ export function ExcerptPreview({
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                {excerpt.variant}
-              </Badge>
+              {excerpt.category && (
+                <Badge variant="outline" className="text-xs">
+                  {excerpt.category}
+                </Badge>
+              )}
               {isActive && (
                 <Badge className="bg-green-500 text-white">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Active
                 </Badge>
               )}
-              <Badge variant="outline" className={`${getPlatformColor(excerpt.targetPlatform ?? '')} text-white`}>
-                {excerpt.targetPlatform}
-              </Badge>
+              {excerpt.importance && (
+                <Badge variant="outline" className="text-xs">
+                  Importance: {(excerpt.importance * 100).toFixed(0)}%
+                </Badge>
+              )}
             </div>
             <span className="text-xs text-muted-foreground">
-              {excerpt.characterCount} chars
+              {excerpt.excerpt.length} chars
             </span>
           </div>
           
           <p className="text-sm line-clamp-3 mb-2">
-            {excerpt.excerptText}
+            {excerpt.excerpt}
           </p>
           
           {performance && (
@@ -164,7 +168,7 @@ export function ExcerptPreview({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg">
-              Variant {excerpt.variant}
+              {excerpt.category || 'Excerpt'}
             </CardTitle>
             {isActive && (
               <Badge className="bg-green-500 text-white">
@@ -174,14 +178,16 @@ export function ExcerptPreview({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {getTypeIcon(excerpt.excerptType)}
-            <Badge variant="outline" className={`${getPlatformColor(excerpt.targetPlatform ?? '')} text-white`}>
-              {excerpt.targetPlatform}
-            </Badge>
+            {getTypeIcon(excerpt.category || '')}
+            {excerpt.importance && (
+              <Badge variant="outline" className="text-xs">
+                Importance: {(excerpt.importance * 100).toFixed(0)}%
+              </Badge>
+            )}
           </div>
         </div>
         <CardDescription>
-          {excerpt.characterCount} characters • {excerpt.wordCount} words
+          {excerpt.excerpt.length} characters • {excerpt.excerpt.split(/\s+/).length} words
         </CardDescription>
       </CardHeader>
 
@@ -191,7 +197,7 @@ export function ExcerptPreview({
           onClick={handleCardClick}
         >
           <p className="text-sm whitespace-pre-wrap">
-            {excerpt.excerptText}
+            {excerpt.excerpt}
           </p>
         </div>
 
