@@ -12,7 +12,7 @@ const router = Router();
  */
 router.post("/batch", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
   const { requests  } = req.body || {};
-  const userId = (req.user as any)?.id;
+  const userId = req.user?.id;
   
   if (!userId) {
     return res.status(401).json({ error: "Authentication required" });

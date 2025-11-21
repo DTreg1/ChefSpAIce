@@ -8,18 +8,16 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import {
   userInventory,
   userStorage,
-  fdcCache,
-  onboardingInventory,
   cookingTerms,
   type UserInventory,
   type InsertUserInventory,
   type UserStorage,
   type InsertUserStorage,
-  type FdcCache,
-  type InsertFdcCache,
-  type OnboardingInventoryItem,
   type CookingTerm,
 } from "@shared/schema";
+
+// TODO: Re-enable when these tables are exported from @shared/schema
+// fdcCache, onboardingInventory, FdcCache, InsertFdcCache, OnboardingInventoryItem
 import type { PaginatedResponse } from "../../storage";
 import { PaginationHelper } from "../../utils/pagination";
 

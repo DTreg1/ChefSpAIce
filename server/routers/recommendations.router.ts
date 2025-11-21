@@ -25,7 +25,7 @@ router.get(
   "/content/:id/related",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const { id } = req.params;
@@ -84,7 +84,7 @@ router.post(
   "/content/embeddings/refresh",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const schema = z.object({
@@ -143,7 +143,7 @@ router.post(
   "/content/embeddings/generate",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const schema = z.object({
@@ -269,7 +269,7 @@ router.post(
   "/content/search/semantic",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const schema = z.object({
@@ -341,7 +341,7 @@ router.delete(
   "/content/:id/cache",
   isAuthenticated,
   asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const { id } = req.params;
@@ -353,7 +353,7 @@ router.delete(
     await contentStorage.cacheRelatedContent({
       contentId: id as string,
       contentType: type as 'recipe' | 'article' | 'product' | 'document' | 'media',
-      relatedContent: [] as any,
+      relatedContent: [],
       expiresAt
     });
 

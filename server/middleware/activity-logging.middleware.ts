@@ -253,7 +253,7 @@ export function activityLoggingMiddleware(
         // If no specific mapping, log as generic API call
         if (req.method !== 'GET') {  // Don't log GET requests by default
           activityLogger.logActivity({
-            userId: (req as any).user?.id || null,
+            userId: req.user?.id || null,
             action: ActivityActions.API_CALL,
             entity: 'api',
             entityId: extractEntityId(req.path, req.method),
