@@ -97,7 +97,7 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
           size: 0.5,
           features: {}
         }]
-      } as any
+      }
     };
 
     createTest.mutate(testData);

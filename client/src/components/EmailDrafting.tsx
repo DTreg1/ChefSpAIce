@@ -249,7 +249,7 @@ export function EmailDrafting() {
               {/* Tone */}
               <div className="space-y-2">
                 <Label>Tone</Label>
-                <Select value={tone} onValueChange={setTone as any}>
+                <Select value={tone} onValueChange={setTone}>
                   <SelectTrigger data-testid="select-tone">
                     <SelectValue />
                   </SelectTrigger>

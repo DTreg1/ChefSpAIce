@@ -46,7 +46,7 @@ export function ImageEditor({ file, onFileChange, onSave }: ImageEditorProps) {
     qualityEnhancement: true,
     format: "jpeg",
     compression: 85,
-    filters: [] as any[],
+    filters: [],
     colorAdjustments: {
       brightness: 0,
       contrast: 0,

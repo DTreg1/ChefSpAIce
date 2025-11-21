@@ -25,8 +25,8 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
   let dataType: string | null = null;
   
   // First, check if we have rich USDA data
-  if ((item as any).usdaData) {
-    const usdaData = (item as any).usdaData;
+  if ((item).usdaData) {
+    const usdaData = (item).usdaData;
     
     // Extract additional information from USDA data
     ingredients = usdaData.ingredients || null;
@@ -108,8 +108,8 @@ export function NutritionFactsDialog({ open, onOpenChange, item }: NutritionFact
             {/* Additional Information */}
             <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
               <p>* Percent Daily Values are based on a 2,000 calorie diet.</p>
-              {!!(item as any).usdaData?.fdcId && (
-                <p>USDA FoodData Central ID: {(item as any).usdaData.fdcId}</p>
+              {!!(item).usdaData?.fdcId && (
+                <p>USDA FoodData Central ID: {(item).usdaData.fdcId}</p>
               )}
             </div>
           </div>

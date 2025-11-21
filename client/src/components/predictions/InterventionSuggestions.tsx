@@ -173,7 +173,7 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
               </AlertDescription>
             </Alert>
 
-            <Tabs value={selectedStrategy} onValueChange={(v) => setSelectedStrategy(v as any)}>
+            <Tabs value={selectedStrategy} onValueChange={(v) => setSelectedStrategy(v)}>
               <TabsList className="grid grid-cols-3 w-full">
                 <TabsTrigger value="immediate">
                   <Clock className="h-4 w-4 mr-2" />

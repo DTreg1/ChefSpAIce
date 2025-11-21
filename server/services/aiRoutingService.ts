@@ -328,7 +328,7 @@ export async function findBestAgent(
       let maxSkillScore = 0;
       
       // Check skill matches
-      const agentSkills = agent.skills[];
+      const agentSkills = agent.skills;
       if (agentSkills && agentSkills.length > 0) {
         for (const skill of agentSkills) {
           maxSkillScore += skill.level || 1;

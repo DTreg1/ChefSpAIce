@@ -79,7 +79,7 @@ export function SearchResults({
           searchLogId,
           clickPosition: index + 1, // 1-based position
           timeToClick,
-        } as any,
+        },
         index + 1
       );
     }

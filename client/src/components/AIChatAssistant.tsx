@@ -76,7 +76,7 @@ export function AIChatAssistant() {
     enabled: !!selectedConversation
   });
 
-  const messages = (conversationData as any)?.messages || [];
+  const messages = (conversationData)?.messages || [];
 
   // Create new conversation
   const createConversationMutation = useMutation({

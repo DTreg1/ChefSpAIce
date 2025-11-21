@@ -88,7 +88,7 @@ export function EmotionTags({
                 animate: "visible" as const,
                 exit: "exit" as const,
                 transition: { delay: index * 0.05 },
-              } as any : {})}
+              }: {})}
             >
               <Badge
                 variant="outline"

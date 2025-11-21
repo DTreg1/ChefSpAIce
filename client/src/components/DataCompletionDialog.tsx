@@ -119,8 +119,8 @@ export function DataCompletionDialog({
       // Apply suggestions to form if fields are empty
       if (data.suggestions) {
         Object.entries(data.suggestions).forEach(([key, value]) => {
-          if (!form.getValues(key as any)) {
-            form.setValue(key as any, value as any);
+          if (!form.getValues(key)) {
+            form.setValue(key, value);
           }
         });
       }
@@ -140,7 +140,7 @@ export function DataCompletionDialog({
         // Update form with enriched data
         Object.entries(data.product).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            form.setValue(key as any, value as any);
+            form.setValue(key, value);
           }
         });
         setDataQuality(data.dataQuality);
@@ -221,7 +221,7 @@ export function DataCompletionDialog({
   const handleSelectSearchResult = (product: any) => {
     Object.entries(product).forEach(([key, value]) => {
       if (value !== undefined && value !== null && key !== 'source' && key !== 'dataQuality') {
-        form.setValue(key as any, value as any);
+        form.setValue(key, value);
       }
     });
     setDataQuality(product.dataQuality);
@@ -256,7 +256,7 @@ export function DataCompletionDialog({
           />
         )}
 
-        <Tabs value={selectedSource} onValueChange={(v) => setSelectedSource(v as any)}>
+        <Tabs value={selectedSource} onValueChange={(v) => setSelectedSource(v)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="manual" data-testid="tab-manual-entry">Manual Entry</TabsTrigger>
             <TabsTrigger value="search" data-testid="tab-search-products">Search Products</TabsTrigger>

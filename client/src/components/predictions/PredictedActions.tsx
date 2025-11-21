@@ -125,7 +125,7 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Likely Next Actions</h4>
             {actionPredictions.map((prediction) => {
-              const action = (prediction.factors as any)?.predictedAction || 'unknown';
+              const action = (prediction.factors)?.predictedAction || 'unknown';
               const Icon = ACTION_ICONS[action] || Zap;
               const confidence = Math.round((prediction.probability || 0) * 100);
               

@@ -158,8 +158,8 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
   const nutritionData = useMemo<NutritionInfo | null>(() => {
     try {
       // First check for USDA data
-      if ((item as any).usdaData?.nutrition) {
-        return (item as any).usdaData.nutrition;
+      if ((item).usdaData?.nutrition) {
+        return (item).usdaData.nutrition;
       }
       // Fall back to basic nutrition field
       if (item.nutrition && item.nutrition !== "null") {

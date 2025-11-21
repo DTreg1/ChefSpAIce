@@ -193,7 +193,7 @@ export default function TranscriptionsPage() {
     if (!selectedTranscription) return;
     
     // Find the segment
-    const metadata = selectedTranscription.metadata as any;
+    const metadata = selectedTranscription.metadata;
     const segments = metadata?.transcriptData?.segments || [];
     const segment = segments.find((s: any) => s.id === segmentId);
     
@@ -258,7 +258,7 @@ export default function TranscriptionsPage() {
 
   // Get segments from metadata
   const getSegments = (transcription: Transcription) => {
-    const metadata = transcription.metadata as any;
+    const metadata = transcription.metadata;
     return metadata?.transcriptData?.segments || [];
   };
 
@@ -434,11 +434,11 @@ export default function TranscriptionsPage() {
                       ?.filter((t: Transcription) =>
                         searchQuery
                           ? t.transcript.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (t.metadata as any)?.title?.toLowerCase().includes(searchQuery.toLowerCase())
+                            (t.metadata)?.title?.toLowerCase().includes(searchQuery.toLowerCase())
                           : true
                       )
                       .map((transcription: Transcription) => {
-                        const metadata = transcription.metadata as any;
+                        const metadata = transcription.metadata;
                         return (
                           <div
                             key={transcription.id}
