@@ -203,7 +203,10 @@ router.post("/auth/logout", (req, res) => {
 // Get current user
 router.get("/auth/user", isAuthenticated, async (req, res) => {
   try {
-    const sessionUser = req.user as any;
+    const sessionUser = req.user;
+    if (!sessionUser || !('id' in sessionUser)) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
     const user = await storage.getUser(sessionUser.id);
     res.json(user);
   } catch (error) {
@@ -230,7 +233,9 @@ router.post("/auth/link/:provider", isAuthenticated, (req, res, next) => {
   
   // Store that we're linking, not signing in
   req.session.linkingProvider = provider;
-  req.session.linkingUserId = (req.user as any).id;
+  if (req.user && 'id' in req.user) {
+    req.session.linkingUserId = req.user.id;
+  }
   
   // Redirect to OAuth flow
   res.json({ 

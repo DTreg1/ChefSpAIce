@@ -254,11 +254,11 @@ export class ApnsService {
         // Define category based on available actions
         // Categories must be pre-registered in the iOS app
         // Note: category property may not exist in type definition but is supported
-        const anyNotification = notification as any;
+        const anyNotification = notification;
         if (payload.actions.some(a => a.action === 'view')) {
-          anyNotification.category = 'VIEW_ACTION';
+          (anyNotification as any).category = 'VIEW_ACTION';
         } else if (payload.actions.some(a => a.action === 'dismiss')) {
-          anyNotification.category = 'DISMISS_ACTION';
+          (anyNotification as any).category = 'DISMISS_ACTION';
         }
         
         // Pass actions in payload for app to handle

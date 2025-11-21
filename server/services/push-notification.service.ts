@@ -154,7 +154,7 @@ export class PushNotificationService {
           });
           
           // If the subscription is invalid, deactivate it
-          if (error instanceof Error && (error as any).statusCode === 410) {
+          if (error instanceof Error && 'statusCode' in error && error.statusCode === 410) {
             await db
               .update(pushTokens)
               .set({ 

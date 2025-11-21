@@ -16,17 +16,18 @@ const MODEL = "gpt-5";
 
 // Get database schema information for context
 function getDatabaseSchema(): string {
-  const tableNames = Object.keys(schema).filter(key => 
+  const schemaObj = schema as Record<string, any>;
+  const tableNames = Object.keys(schemaObj).filter(key => 
     !key.includes('insert') && 
     !key.includes('Insert') && 
     !key.includes('Schema') &&
-    typeof (schema as any)[key] === 'object' &&
-    (schema as any)[key]._ &&
-    (schema as any)[key]._.name
+    typeof schemaObj[key] === 'object' &&
+    schemaObj[key]._ &&
+    schemaObj[key]._.name
   );
 
   const schemaInfo = tableNames.map(tableName => {
-    const table = (schema as any)[tableName];
+    const table = schemaObj[tableName];
     const columns = Object.keys(table).filter(key => key !== '_' && typeof table[key] === 'object');
     
     return `Table: ${table._.name}
