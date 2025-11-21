@@ -30,20 +30,6 @@ export const insertChatMessageSchema = z.object({
   similarityHash: z.string().nullable().optional(),
 });
 
-/**
- * Conversation with metadata type
- * Used for displaying conversation lists with message counts and last activity
- */
-export type ConversationWithMetadata = {
-  id: string;
-  userId?: string;
-  title?: string | null;
-  lastMessage?: string | null;
-  messageCount: number;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-};
-
 // Note: Conversation-related types (Conversation, InsertConversation, ConversationContext) 
 // were removed as those tables don't exist in the database schema.
 // Use ChatMessage and InsertChatMessage for chat functionality.
