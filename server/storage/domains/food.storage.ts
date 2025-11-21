@@ -24,7 +24,6 @@ export interface StorageLocationWithCount extends UserStorage {
   itemCount?: number;
 }
 
-
 export class FoodStorage {
   // ==================== Food Inventory Methods ====================
 
