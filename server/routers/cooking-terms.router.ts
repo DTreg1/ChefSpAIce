@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { cookingTerms } from "@shared/schema";
 import CookingTermsService from "../services/cooking-terms.service";

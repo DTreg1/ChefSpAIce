@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { analyticsStorage } from "../storage/index";
 import { analyticsRateLimit } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
@@ -9,7 +9,7 @@ import { retryWithBackoff } from "../utils/retry-handler";
 const router = Router();
 
 // Web Vitals Analytics endpoint
-router.post("/", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/", analyticsRateLimit, asyncHandler(async (req: Request, res) => {
   // Get user ID if authenticated, otherwise null for anonymous tracking
   const userId = getAuthenticatedUserId(req);
 
@@ -67,7 +67,7 @@ router.post("/", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any
 }));
 
 // Analytics Events endpoint - batch processing
-router.post("/events", analyticsRateLimit, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/events", analyticsRateLimit, asyncHandler(async (req: Request, res) => {
   const userId = getAuthenticatedUserId(req);
   const { events  } = req.body || {};
   
@@ -113,7 +113,7 @@ router.post("/events", analyticsRateLimit, asyncHandler(async (req: ExpressReque
 }));
 
 // Session start endpoint
-router.post("/sessions/start", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/sessions/start", asyncHandler(async (req: Request, res) => {
   const userId = getAuthenticatedUserId(req);
   const sessionData = {
     ...req.body,
@@ -130,7 +130,7 @@ router.post("/sessions/start", asyncHandler(async (req: ExpressRequest<any, any,
 }));
 
 // Session end endpoint
-router.post("/sessions/end", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/sessions/end", asyncHandler(async (req: Request, res) => {
   const userId = getAuthenticatedUserId(req);
   const { sessionId, exitPage  } = req.body || {};
   
@@ -169,7 +169,7 @@ router.post("/sessions/end", asyncHandler(async (req: ExpressRequest<any, any, a
 }));
 
 // Get Analytics Dashboard Stats
-router.get("/dashboard", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/dashboard", asyncHandler(async (req: Request, res) => {
   const { startDate, endDate } = req.query;
   
   const start = startDate ? new Date(startDate as string) : undefined;
@@ -187,7 +187,7 @@ router.get("/dashboard", asyncHandler(async (req: ExpressRequest<any, any, any, 
 // Get Web Vitals statistics
 router.get(
   "/stats",
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const { metric, days } = req.query;
     
     // Validate days parameter
@@ -210,7 +210,7 @@ router.get(
 // Get API Health Metrics
 router.get(
   "/api-health",
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     const { days } = req.query;
     

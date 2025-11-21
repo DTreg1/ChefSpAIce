@@ -1,4 +1,5 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 import { recipesStorage } from "../storage/index";
 import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 // Use OAuth authentication middleware
@@ -42,9 +43,9 @@ const recipeCircuitBreaker = getCircuitBreaker('openai-recipe-generation', {
  * 
  * Returns: Array of chat messages (user and assistant) in chronological order
  */
-router.get("/chat/messages", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/chat/messages", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const limit = parseInt(req.query.limit as string) || 50;
 
@@ -61,11 +62,11 @@ router.get("/chat/messages", isAuthenticated, async (req: ExpressRequest<any, an
 router.post(
   "/chat/messages",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
+      const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertChatMessageSchema.safeParse(req.body as any);
+      const validation = insertChatMessageSchema.safeParse(req.body);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -84,9 +85,9 @@ router.post(
   }
 );
 
-router.delete("/chat/messages", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.delete("/chat/messages", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     await recipesStorage.clearChatMessages(userId);
     res.json({ message: "Chat history cleared" });
@@ -122,8 +123,8 @@ router.post(
   "/chat",
   isAuthenticated,
   rateLimiters.openai.middleware(),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+  async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     let assistantMessage = "";
     
@@ -293,8 +294,8 @@ router.post(
   "/recipes/generate",
   isAuthenticated,
   rateLimiters.openai.middleware(),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+  async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     try {
@@ -500,9 +501,9 @@ Return a JSON object with the following structure:
  * 
  * Returns: Created recipe object with ID
  */
-router.post("/recipes", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/recipes", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const recipeData = req.body;
     
@@ -601,9 +602,9 @@ router.post("/recipes", isAuthenticated, async (req: ExpressRequest<any, any, an
  * 
  * Returns: Array of recipe objects matching the filters
  */
-router.get("/recipes", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/recipes", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { 
       saved, 
@@ -650,9 +651,9 @@ router.get("/recipes", isAuthenticated, async (req: ExpressRequest<any, any, any
 router.patch(
   "/recipes/:id",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
+      const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const recipeId = req.params.id;
 
@@ -672,9 +673,9 @@ router.patch(
   }
 );
 
-router.delete("/recipes/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.delete("/recipes/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const recipeId = req.params.id;
 

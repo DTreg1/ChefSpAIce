@@ -1,4 +1,5 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response, NextFunction } from "express";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 import { z } from "zod";
 import { securityStorage } from "../storage/index";
 import { isAuthenticated } from "../middleware/auth.middleware";
@@ -12,12 +13,12 @@ const moderationService = new ModerationService();
 
 // Admin middleware - checks if user has moderation privileges
 const isModerator = async (
-  req: ExpressRequest<any, any, any, any>,
-  res: ExpressResponse,
-  next: (...args: any[]) => any
+  req: Request,
+  res: Response,
+  next: NextFunction
 ) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -56,8 +57,8 @@ router.post(
   "/check",
   isAuthenticated,
   validateBody(moderationCheckSchema),
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { content, contentType, contentId } = req.body;
@@ -146,8 +147,8 @@ router.get(
   isAuthenticated,
   isModerator,
   validateQuery(queueQuerySchema),
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { status, severity, contentType, page, limit } = req.query as any;
@@ -198,8 +199,8 @@ router.post(
   isAuthenticated,
   isModerator,
   validateBody(moderationActionSchema),
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const moderatorId = (req.user as any)?.id;
+  asyncHandler(async (req: Request, res: Response) => {
+    const moderatorId = getAuthenticatedUserId(req);
     if (!moderatorId) return res.status(401).json({ error: "Unauthorized" });
     
     const { logId, action, reason, notes } = req.body;
@@ -260,8 +261,8 @@ router.post(
   "/appeal",
   isAuthenticated,
   validateBody(appealSubmitSchema),
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { blockedContentId, reason, additionalContext } = req.body;
@@ -298,8 +299,8 @@ router.post(
 router.get(
   "/appeal/:id",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const userId = (req.user as any)?.id;
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -339,8 +340,8 @@ router.post(
   isAuthenticated,
   isModerator,
   validateBody(appealReviewSchema),
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
-    const reviewerId = (req.user as any)?.id;
+  asyncHandler(async (req: Request, res: Response) => {
+    const reviewerId = getAuthenticatedUserId(req);
     if (!reviewerId) return res.status(401).json({ error: "Unauthorized" });
     
     const { id } = req.params;
@@ -394,7 +395,7 @@ router.get(
   isAuthenticated,
   isModerator,
   validateQuery(statsQuerySchema),
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { startDate, endDate, period } = req.query as any;
     
     try {

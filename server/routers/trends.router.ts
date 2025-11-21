@@ -5,12 +5,12 @@
  * Uses TensorFlow.js for time series analysis and OpenAI for interpretation.
  */
 
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { analyticsStorage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { Request as ExpressRequest } from "express";
+import { Request } from "express";
 import { trendAnalyzer } from "../services/trend-analyzer.service";
 import { openai } from "../openai";
 
@@ -62,7 +62,7 @@ const trendFiltersSchema = z.object({
 router.get(
   "/current",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const trends = await analyticsStorage.getCurrentTrends();
       
@@ -91,7 +91,7 @@ router.get(
 router.get(
   "/emerging",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const trends = await analyticsStorage.getEmergingTrends();
       
@@ -120,7 +120,7 @@ router.get(
 router.get(
   "/historical",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     const { start, end } = req.query;
     
     if (!start || !end) {
@@ -164,7 +164,7 @@ router.get(
 router.post(
   "/analyze",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -254,7 +254,7 @@ router.post(
 router.post(
   "/subscribe",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -303,7 +303,7 @@ router.post(
 router.get(
   "/alerts",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -338,7 +338,7 @@ router.get(
 router.post(
   "/alerts/acknowledge",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -379,7 +379,7 @@ router.post(
 router.get(
   "/:trendId",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     const { trendId } = req.params;
     
     try {
@@ -421,7 +421,7 @@ router.get(
 router.get(
   "/",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest, res) => {
+  asyncHandler(async (req: Request, res) => {
     // Validate query parameters
     const validation = trendFiltersSchema.safeParse(req.query);
     if (!validation.success) {

@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { validateBody } from "../middleware";
@@ -12,7 +12,7 @@ const router = Router();
 // Unified inventory endpoint with query params for different resources
 // GET /api/inventory?type=items|shopping-list|locations&location=...&status=...
 
-router.get("/inventory", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/inventory", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -123,7 +123,7 @@ const inventoryItemSchema = z.discriminatedUnion("type", [
   })
 ]);
 
-router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -189,7 +189,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
 
 // Batch operations endpoint
 // POST /api/inventory/batch
-router.post("/inventory/batch", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/inventory/batch", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -252,7 +252,7 @@ router.post("/inventory/batch", isAuthenticated, async (req: ExpressRequest<any,
 
 // Update operations
 // PUT /api/inventory/:id
-router.put("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.put("/inventory/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -303,7 +303,7 @@ router.put("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any, an
 
 // Delete operations
 // DELETE /api/inventory/:id
-router.delete("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.delete("/inventory/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -350,7 +350,7 @@ router.delete("/inventory/:id", isAuthenticated, async (req: ExpressRequest<any,
 
 // Special endpoint for adding missing recipe ingredients to shopping list
 // POST /api/inventory/shopping-list/add-missing
-router.post("/inventory/shopping-list/add-missing", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/inventory/shopping-list/add-missing", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });

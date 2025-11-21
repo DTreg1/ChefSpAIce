@@ -5,12 +5,12 @@
  * using OpenAI GPT models with structured output.
  */
 
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { aiMlStorage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { Request as ExpressRequest } from "express";
+import { Request } from "express";
 import OpenAI from "openai";
 import { insertExtractionTemplateSchema, insertExtractedDataSchema } from "@shared/schema";
 import pLimit from "p-limit";
@@ -183,7 +183,7 @@ Return the extracted data as a valid JSON object with confidence scores for each
 router.post(
   "/template",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -225,7 +225,7 @@ router.post(
 router.get(
   "/templates",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const templates = await aiMlStorage.getExtractionTemplates();
       
@@ -250,7 +250,7 @@ router.get(
 router.get(
   "/template/:id",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const templateId = req.params.id;
     
     try {
@@ -281,7 +281,7 @@ router.get(
 router.put(
   "/template/:id",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const templateId = req.params.id;
     
     try {
@@ -308,7 +308,7 @@ router.put(
 router.delete(
   "/template/:id",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const templateId = req.params.id;
     
     try {
@@ -335,7 +335,7 @@ router.delete(
 router.post(
   "/data",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -421,7 +421,7 @@ router.post(
 router.post(
   "/batch",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -514,7 +514,7 @@ router.post(
 router.get(
   "/verify/:id",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const extractionId = req.params.id;
     
     try {
@@ -552,7 +552,7 @@ router.get(
 router.post(
   "/correct",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -598,7 +598,7 @@ router.post(
 router.get(
   "/history",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const { page = 1, limit = 20, templateId, validationStatus } = req.query;
     
     try {
@@ -630,7 +630,7 @@ router.get(
 router.get(
   "/stats",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const stats = await aiMlStorage.getExtractionStats();
       

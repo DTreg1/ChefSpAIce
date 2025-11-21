@@ -1,8 +1,4 @@
-import {
-  Router,
-  Request as ExpressRequest,
-  Response as ExpressResponse,
-} from "express";
+import { Router, Request, Response } from "express";
 import { experimentsStorage } from "../storage/index";
 import { asyncHandler } from "../middleware/error.middleware";
 import { getAuthenticatedUserId } from "../middleware/auth.middleware";
@@ -15,7 +11,7 @@ const router = Router();
 router.post(
   "/create",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       const userId = getAuthenticatedUserId(req);
 
       if (!userId) {
@@ -44,7 +40,7 @@ router.post(
 router.get(
   "/",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       try {
         const filters: any = {};
 
@@ -69,7 +65,7 @@ router.get(
 router.get(
   "/results/:id",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       const { id } = req.params;
 
       try {
@@ -101,7 +97,7 @@ router.get(
 router.post(
   "/results",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       try {
         const validated = insertAbTestResultSchema.parse(req.body);
         const result = await experimentsStorage.upsertAbTestResult(validated);
@@ -120,7 +116,7 @@ router.post(
 router.post(
   "/analyze",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       const { testId } = req.body;
 
       if (!testId) {
@@ -314,7 +310,7 @@ router.post(
 router.get(
   "/recommendations",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       const userId = getAuthenticatedUserId(req);
 
       try {
@@ -335,7 +331,7 @@ router.get(
 router.post(
   "/implement",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       const { testId, variant } = req.body;
       const userId = getAuthenticatedUserId(req);
 
@@ -383,7 +379,7 @@ router.post(
 router.put(
   "/:id",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       const { id } = req.params;
       const userId = getAuthenticatedUserId(req);
 
@@ -419,7 +415,7 @@ router.put(
 router.delete(
   "/:id",
   asyncHandler(
-    async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+    async (req: Request, res: Response) => {
       const { id } = req.params;
       const userId = getAuthenticatedUserId(req);
 

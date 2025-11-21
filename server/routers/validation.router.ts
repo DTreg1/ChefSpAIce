@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { validationService } from "../services/validation.service";
 import { isAuthenticated as requireAuth, adminOnly } from "../middleware/auth.middleware";
@@ -63,7 +63,7 @@ const getSuggestionsSchema = z.object({
 router.post("/field", async (req, res) => {
   try {
     const data = validateFieldSchema.parse(req.body);
-    const userId = (req as any).session?.userId;
+    const userId = req.session?.userId;
     
     const result = await validationService.validateField({
       ...data,
@@ -95,7 +95,7 @@ router.post("/field", async (req, res) => {
 router.post("/form", async (req, res) => {
   try {
     const data = validateFormSchema.parse(req.body);
-    const userId = (req as any).session?.userId;
+    const userId = req.session?.userId;
     
     const result = await validationService.validateForm({
       ...data,
@@ -127,7 +127,7 @@ router.post("/form", async (req, res) => {
 router.get("/suggestions", async (req, res) => {
   try {
     const params = getSuggestionsSchema.parse(req.query);
-    const userId = (req as any).session?.userId;
+    const userId = req.session?.userId;
     
     const suggestions = await validationService.getSuggestions({
       ...params,
@@ -159,7 +159,7 @@ router.get("/suggestions", async (req, res) => {
 router.post("/learn", async (req, res) => {
   try {
     const data = learnFromCorrectionSchema.parse(req.body);
-    const userId = (req as any).session?.userId;
+    const userId = req.session?.userId;
     
     await validationService.learnFromCorrection({
       ...data,
@@ -217,7 +217,7 @@ router.get("/rules/:fieldType", async (req, res) => {
  */
 router.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).session?.userId;
+    const userId = req.session?.userId;
     
     const stats = await validationService.getUserValidationStats(userId);
     

@@ -206,7 +206,7 @@ router.get(
   "/recommendations/user/:userId",
   isAuthenticated,
   asyncHandler(async (req, res) => {
-    const requestingUserId = (req.user as any)?.id;
+    const requestingUserId = getAuthenticatedUserId(req);
     if (!requestingUserId) return res.status(401).json({ error: "Unauthorized" });
 
     const { userId } = req.params;

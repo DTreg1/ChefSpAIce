@@ -5,12 +5,12 @@
  * and rule-based assignment with workload balancing.
  */
 
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { supportStorage } from "../storage/index";
 import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { Request as ExpressRequest } from "express";
+import { Request } from "express";
 import * as aiRoutingService from "../services/aiRoutingService";
 
 const router = Router();
@@ -85,7 +85,7 @@ const escalateTicketSchema = z.object({
 router.post(
   "/tickets",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const validation = createTicketSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
@@ -117,7 +117,7 @@ router.post(
 router.get(
   "/tickets",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const filters = {
         status: req.query.status as string,
@@ -149,7 +149,7 @@ router.get(
 router.get(
   "/tickets/:id",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const ticket = await supportStorage.getTicket(req.params.id);
       
@@ -184,7 +184,7 @@ router.get(
 router.put(
   "/tickets/:id",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const validation = updateTicketSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
@@ -216,7 +216,7 @@ router.put(
 router.post(
   "/assign/:ticketId",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const result = await aiRoutingService.routeTicket(req.params.ticketId);
       
@@ -251,7 +251,7 @@ router.post(
 router.get(
   "/suggest/:ticketId",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const suggestions = await aiRoutingService.suggestRoutings(req.params.ticketId);
       
@@ -276,7 +276,7 @@ router.get(
 router.post(
   "/escalate/:ticketId",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const validation = escalateTicketSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
@@ -319,7 +319,7 @@ router.post(
 router.get(
   "/rules",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const isActive = req.query.active === "true" ? true : 
                        req.query.active === "false" ? false : undefined;
@@ -349,7 +349,7 @@ router.post(
   "/rules",
   isAuthenticated,
   adminOnly,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const validation = createRoutingRuleSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
@@ -382,7 +382,7 @@ router.put(
   "/rules/:id",
   isAuthenticated,
   adminOnly,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const updatedRule = await supportStorage.updateRoutingRule(req.params.id, req.body);
       res.json({
@@ -407,7 +407,7 @@ router.delete(
   "/rules/:id",
   isAuthenticated,
   adminOnly,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       await supportStorage.deleteRoutingRule(req.params.id);
       res.json({
@@ -431,7 +431,7 @@ router.delete(
 router.get(
   "/agents",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const agents = await supportStorage.getAgents();
       
@@ -457,7 +457,7 @@ router.get(
 router.get(
   "/agents/available",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const agents = await supportStorage.getAvailableAgents();
       
@@ -484,7 +484,7 @@ router.post(
   "/agents",
   isAuthenticated,
   adminOnly,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const validation = createAgentSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
@@ -516,7 +516,7 @@ router.post(
 router.get(
   "/performance",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     try {
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
@@ -560,7 +560,7 @@ router.get(
 router.post(
   "/outcome/:ticketId",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const { wasCorrect, actualTeam, notes } = req.body;
     
     try {

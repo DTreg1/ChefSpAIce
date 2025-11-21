@@ -1,5 +1,5 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
-import type { Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 import { z } from "zod";
 import { userAuthStorage, analyticsStorage, systemStorage } from "../storage/index";
 // Use OAuth authentication middleware
@@ -11,9 +11,9 @@ import { getCacheStats, invalidateCache, clearAllCache } from "../utils/usdaCach
 const router = Router();
 
 // Admin middleware - checks if user is admin
-const isAdmin = async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse, next: (...args: any[]) => any) => {
+const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -50,7 +50,7 @@ router.get(
   isAuthenticated,
   isAdmin,
   validateQuery(adminUsersQuerySchema),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = req.query;
       
@@ -82,7 +82,7 @@ router.get(
   "/users/:userId",
   isAuthenticated,
   isAdmin,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const user = await userAuthStorage.getUserById(userId);
@@ -104,7 +104,7 @@ router.patch(
   "/users/:userId",
   isAuthenticated,
   isAdmin,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const updates = req.body;
@@ -130,7 +130,7 @@ router.patch(
   validateBody(z.object({
     isAdmin: z.boolean(),
   })),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const { isAdmin: newAdminStatus  } = req.body || {};
@@ -178,7 +178,7 @@ router.delete(
   "/users/:userId",
   isAuthenticated,
   isAdmin,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const currentUserId = (req.user as any).id;
@@ -225,7 +225,7 @@ router.get(
   "/stats",
   isAuthenticated,
   isAdmin,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const stats = {
         totalUsers: 0,
@@ -255,7 +255,7 @@ router.get(
     startDate: z.string().optional(),
     endDate: z.string().optional(),
   })),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { page = 1, limit = 50 } = req.query;
       
@@ -285,7 +285,7 @@ router.get(
   "/cache/stats",
   isAuthenticated,
   isAdmin,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const stats = getCacheStats();
       const dbStats = await foodStorage.getUSDACacheStats();
@@ -314,7 +314,7 @@ router.post(
   validateBody(z.object({
     pattern: z.string().min(1),
   })),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { pattern  } = req.body || {};
       const invalidatedCount = invalidateCache(pattern);
@@ -346,7 +346,7 @@ router.post(
   "/cache/clear",
   isAuthenticated,
   isAdmin,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const statsBeforeClear = getCacheStats();
       clearAllCache();
@@ -380,7 +380,7 @@ router.post(
   "/cache/warm",
   isAuthenticated,
   isAdmin,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       // Import preloadCommonSearches function
       const { preloadCommonSearches } = await import("../utils/usdaCache");
@@ -416,7 +416,7 @@ router.get(
   "/cache/entry/:key",
   isAuthenticated,
   isAdmin,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { key } = req.params;
       const entry = apiCache.getEntryInfo(key);
@@ -445,7 +445,7 @@ router.get(
     prefix: z.string().optional(),
     limit: z.coerce.number().optional().default(100),
   })),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
       const { prefix, limit = 100 } = req.query;
       let keys = apiCache.getKeys();

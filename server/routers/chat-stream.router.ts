@@ -9,8 +9,7 @@
  * - Retry logic for transient failures
  */
 
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
-import type { Request, Response } from "express";
+import { Router, Request, Response } from "express";
 // Use OAuth authentication middleware
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { openai } from "../openai";
@@ -81,7 +80,7 @@ router.post(
   "/stream",
   isAuthenticated,
   rateLimiters.openai.middleware(),
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     // Set up SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -317,7 +316,7 @@ router.post(
  * Health check endpoint for streaming chat service.
  * Returns circuit breaker status and service health.
  */
-router.get("/health", isAuthenticated, (req: ExpressRequest, res: ExpressResponse) => {
+router.get("/health", isAuthenticated, (req: Request, res: Response) => {
   const stats = chatCircuitBreaker.getStats();
   const isHealthy = stats.state === 'closed';
   
@@ -344,7 +343,7 @@ router.get("/health", isAuthenticated, (req: ExpressRequest, res: ExpressRespons
  * Admin endpoint to reset circuit breaker.
  * Useful for manual intervention when service is recovered.
  */
-router.post("/reset", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/reset", isAuthenticated, async (req: Request, res: Response) => {
   try {
     // Check if user is admin (you may want to implement proper admin check)
     const userId = getAuthenticatedUserId(req);

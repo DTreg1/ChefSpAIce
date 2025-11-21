@@ -5,7 +5,7 @@
  * Works with Web Speech API on frontend, processes with Whisper API.
  */
 
-import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { isAuthenticated } from "../middleware";
 import { aiMlStorage, inventoryStorage } from "../storage/index";
 import OpenAI from "openai";
@@ -56,7 +56,7 @@ const openai = getOpenAIClient();
  * GET /api/voice/commands
  * Get available voice commands
  */
-router.get("/commands", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/commands", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const commands = await aiMlStorage.getAvailableVoiceCommands();
     res.json(commands);
@@ -70,7 +70,7 @@ router.get("/commands", isAuthenticated, async (req: ExpressRequest<any, any, an
  * GET /api/voice/history
  * Get user's voice command history
  */
-router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/history", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -88,7 +88,7 @@ router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any
  * POST /api/voice/process-text
  * Process text-based voice command (when using Web Speech API)
  */
-router.post("/process-text", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/process-text", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -125,7 +125,7 @@ router.post("/process-text", isAuthenticated, async (req: ExpressRequest<any, an
  * POST /api/voice/transcribe
  * Transcribe audio to text using OpenAI Whisper
  */
-router.post("/transcribe", isAuthenticated, upload.single("audio"), async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/transcribe", isAuthenticated, upload.single("audio"), async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -186,7 +186,7 @@ router.post("/transcribe", isAuthenticated, upload.single("audio"), async (req: 
  * POST /api/voice/interpret
  * Interpret and execute a voice command
  */
-router.post("/interpret", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/interpret", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -376,7 +376,7 @@ async function processVoiceCommand(text: string, userId: string): Promise<{
  * GET /api/voice/stats
  * Get voice command usage statistics
  */
-router.get("/stats", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/stats", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });

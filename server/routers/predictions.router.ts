@@ -5,12 +5,12 @@
  * Supports churn prediction, user behavior analysis, and retention interventions.
  */
 
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { analyticsStorage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { Request as ExpressRequest } from "express";
+import { Request } from "express";
 import { predictionService } from "../services/predictionService";
 
 const router = Router();
@@ -52,7 +52,7 @@ const accuracySchema = z.object({
 router.get(
   "/user/:userId",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const requestingUserId = getAuthenticatedUserId(req);
     if (!requestingUserId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -101,7 +101,7 @@ router.get(
 router.post(
   "/churn",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -160,7 +160,7 @@ router.post(
 router.post(
   "/intervention",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const requestingUserId = getAuthenticatedUserId(req);
     if (!requestingUserId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -226,7 +226,7 @@ router.post(
 router.get(
   "/segments",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -267,7 +267,7 @@ router.get(
 router.post(
   "/accuracy",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
@@ -333,7 +333,7 @@ router.post(
 router.get(
   "/accuracy/stats",
   isAuthenticated,
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });

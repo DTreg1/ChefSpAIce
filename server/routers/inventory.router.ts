@@ -160,7 +160,7 @@ router.post(
     try {
       const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertUserInventorySchema.safeParse(req.body as any);
+      const validation = insertUserInventorySchema.safeParse(req.body);
       
       if (!validation.success) {
         return res.status(400).json({ 
@@ -468,7 +468,7 @@ router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middle
 
     res.json(result);
   } catch (error: unknown) {
-    if ((error as any).response?.status === 404) {
+    if (error.response?.status === 404) {
       return res.status(404).json({ error: "Product not found" });
     }
     console.error("Barcode search error:", error instanceof Error ? error.message : String(error));

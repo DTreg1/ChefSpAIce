@@ -4,7 +4,7 @@
  * API endpoints for monitoring AI service metrics and errors
  */
 
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { isAuthenticated, adminOnly } from '../middleware/auth.middleware';
 import { getCircuitBreaker } from '../utils/circuit-breaker';
 import { db } from '../db';
@@ -70,7 +70,7 @@ export function logAIError(
  * Get comprehensive AI service metrics
  * Requires admin authentication
  */
-router.get('/admin/ai-metrics', isAuthenticated, adminOnly, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get('/admin/ai-metrics', isAuthenticated, adminOnly, async (req: Request, res: Response) => {
   try {
     const { timeRange = '1h' } = req.query;
     
@@ -173,7 +173,7 @@ router.get('/admin/ai-metrics', isAuthenticated, adminOnly, async (req: ExpressR
  * Get detailed error logs
  * Requires admin authentication
  */
-router.get('/admin/ai-errors', isAuthenticated, adminOnly, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get('/admin/ai-errors', isAuthenticated, adminOnly, async (req: Request, res: Response) => {
   try {
     const { limit = 100, offset = 0, code, endpoint } = req.query;
     
@@ -213,7 +213,7 @@ router.get('/admin/ai-errors', isAuthenticated, adminOnly, async (req: ExpressRe
  * Reset circuit breaker for a service
  * Requires admin authentication
  */
-router.post('/admin/ai-metrics/reset-circuit-breaker', isAuthenticated, adminOnly, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post('/admin/ai-metrics/reset-circuit-breaker', isAuthenticated, adminOnly, async (req: Request, res: Response) => {
   try {
     const { service  } = req.body || {};
     
@@ -240,7 +240,7 @@ router.post('/admin/ai-metrics/reset-circuit-breaker', isAuthenticated, adminOnl
  * 
  * Health check endpoint for monitoring
  */
-router.get('/admin/ai-metrics/health', async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get('/admin/ai-metrics/health', async (req: Request, res: Response) => {
   try {
     const chatState = chatCircuitBreaker.getState();
     const recipeState = recipeCircuitBreaker.getState();

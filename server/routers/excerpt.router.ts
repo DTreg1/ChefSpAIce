@@ -89,7 +89,7 @@ export function createExcerptRouter(storage: IStorage): Router {
    */
   router.post('/generate', async (req, res) => {
     try {
-      const userId = (req as any).session?.passport?.user?.id;
+      const userId = req.session?.passport?.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
@@ -151,7 +151,7 @@ export function createExcerptRouter(storage: IStorage): Router {
    */
   router.get('/test', async (req, res) => {
     try {
-      const userId = (req as any).session?.passport?.user?.id;
+      const userId = req.session?.passport?.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
@@ -198,7 +198,7 @@ export function createExcerptRouter(storage: IStorage): Router {
    */
   router.get('/performance', async (req, res) => {
     try {
-      const userId = (req as any).session?.passport?.user?.id;
+      const userId = req.session?.passport?.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
@@ -262,7 +262,7 @@ export function createExcerptRouter(storage: IStorage): Router {
    */
   router.put('/optimize', async (req, res) => {
     try {
-      const userId = (req as any).session?.passport?.user?.id;
+      const userId = req.session?.passport?.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
@@ -341,7 +341,7 @@ export function createExcerptRouter(storage: IStorage): Router {
    */
   router.get('/:contentId', async (req, res) => {
     try {
-      const userId = (req as any).session?.passport?.user?.id;
+      const userId = req.session?.passport?.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
@@ -366,7 +366,7 @@ export function createExcerptRouter(storage: IStorage): Router {
    */
   router.put('/:excerptId/activate', async (req, res) => {
     try {
-      const userId = (req as any).session?.passport?.user?.id;
+      const userId = req.session?.passport?.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
@@ -396,7 +396,7 @@ export function createExcerptRouter(storage: IStorage): Router {
    */
   router.delete('/:excerptId', async (req, res) => {
     try {
-      const userId = (req as any).session?.passport?.user?.id;
+      const userId = req.session?.passport?.user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Not authenticated' });
       }

@@ -1,4 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { userAuthStorage } from "../storage/index";
 // Use OAuth authentication middleware
@@ -10,7 +10,7 @@ import type { StorageLocation } from "@shared/schema";
 const router = Router();
 
 // Get authenticated user
-router.get("/user", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/user", isAuthenticated, asyncHandler(async (req: Request, res) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const user = await userAuthStorage.getUser(userId);
@@ -18,7 +18,7 @@ router.get("/user", isAuthenticated, asyncHandler(async (req: ExpressRequest<any
 }));
 
 // Get user preferences  
-router.get("/user/preferences", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/user/preferences", isAuthenticated, asyncHandler(async (req: Request, res) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const preferences = await userAuthStorage.getUserPreferences(userId);
@@ -49,7 +49,7 @@ router.put(
   "/user/preferences",
   isAuthenticated,
   validateBody(userPreferencesUpdateSchema),
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const preferences = await userAuthStorage.updateUserPreferences(userId, req.body);
@@ -58,7 +58,7 @@ router.put(
 );
 
 // Reset user data
-router.post("/user/reset", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/user/reset", isAuthenticated, asyncHandler(async (req: Request, res) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   await userAuthStorage.resetUserData(userId);
@@ -66,7 +66,7 @@ router.post("/user/reset", isAuthenticated, asyncHandler(async (req: ExpressRequ
 }));
 
 // Health check
-router.get("/health", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/health", asyncHandler(async (req: Request, res) => {
   const health: any = {
     status: "healthy",
     timestamp: new Date().toISOString(),
@@ -136,7 +136,7 @@ router.get("/health", asyncHandler(async (req: ExpressRequest<any, any, any, any
 }));
 
 // Session diagnostics
-router.get("/diagnostics", isAuthenticated, asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/diagnostics", isAuthenticated, asyncHandler(async (req: Request, res) => {
   const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const user = req.user as any;
@@ -202,7 +202,7 @@ router.get("/diagnostics", isAuthenticated, asyncHandler(async (req: ExpressRequ
 }));
 
 // Token status
-router.get("/token-status", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/token-status", asyncHandler(async (req: Request, res) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     return res.status(401).json({
       authenticated: false,
@@ -250,7 +250,7 @@ const cleanupStaleManualRefreshes = () => {
 };
 
 // Force token refresh
-router.post("/force-refresh", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.post("/force-refresh", asyncHandler(async (req: Request, res) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     return res.status(401).json({
       error: "Not authenticated",
@@ -376,7 +376,7 @@ router.get("/onboarding/common-items", asyncHandler(async (req, res) => {
 }));
 
 // Get enriched USDA data for onboarding items
-router.get("/onboarding/enriched-item/:itemName", asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+router.get("/onboarding/enriched-item/:itemName", asyncHandler(async (req: Request, res) => {
   const { itemName } = req.params;
   const { getEnrichedOnboardingItem } = await import("../usda");
   const enrichedItem = await getEnrichedOnboardingItem(
@@ -413,7 +413,7 @@ router.post(
   "/onboarding/complete",
   isAuthenticated,
   validateBody(onboardingCompleteSchema),
-  asyncHandler(async (req: ExpressRequest<any, any, any, any>, res) => {
+  asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { preferences, customStorageAreas, selectedCommonItems  } = req.body || {};
