@@ -57,7 +57,8 @@ class ApiCacheServiceClass {
    */
   clear(namespace?: string): void {
     if (namespace) {
-      for (const [key, entry] of this.cache.entries()) {
+      const entries = Array.from(this.cache.entries());
+      for (const [key, entry] of entries) {
         if (entry.namespace === namespace) {
           this.cache.delete(key);
         }
@@ -87,7 +88,8 @@ class ApiCacheServiceClass {
   startPeriodicCleanup(intervalMs: number = 60 * 1000): void {
     setInterval(() => {
       const now = Date.now();
-      for (const [key, entry] of this.cache.entries()) {
+      const entries = Array.from(this.cache.entries());
+      for (const [key, entry] of entries) {
         if (entry.ttl && now - entry.timestamp > entry.ttl) {
           this.cache.delete(key);
         }
