@@ -12,15 +12,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
-
-type ShoppingListItem = {
-  ingredient: string;
-  neededFor: string;
-  servings: number;
-};
+import type { ShoppingItem } from "@shared/schema";
 
 type _ShoppingListResponse = {
-  items: ShoppingListItem[];
+  items: ShoppingItem[];
   totalItems: number;
   plannedMeals: number;
   dateRange: { startDate: string; endDate: string };
