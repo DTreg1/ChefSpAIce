@@ -315,49 +315,53 @@ export default function TestHistory({ tests }: TestHistoryProps) {
                 ) : (
                   filteredTests.map((test) => (
                     <TableRow key={test.id} data-testid={`row-test-${test.id}`}>
-                      <TableCell className="font-medium">{test.name}</TableCell>
+                      <TableCell className="font-medium">{test.testName}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadge(test.status)}>
                           {test.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        A: {test.variantA.substring(0, 20)}...
+                        Control: {test.configuration?.controlGroup?.size || 50}%
                         <br />
-                        B: {test.variantB.substring(0, 20)}...
+                        Variants: {test.configuration?.variants?.length || 1}
                       </TableCell>
                       <TableCell>
-                        {test.insight?.winner && test.insight.winner !== 'inconclusive' ? (
+                        {test.insights && test.insights.length > 0 && test.insights[0].isSignificant ? (
                           <Badge variant="outline">
-                            Variant {test.insight.winner}
+                            {test.insights[0].recommendation || 'Significant'}
                           </Badge>
                         ) : (
                           <span className="text-sm text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        {test.insight?.confidence ? (
+                        {test.insights && test.insights.length > 0 && test.insights[0].confidence ? (
                           <span className="text-sm font-medium">
-                            {(test.insight.confidence * 100).toFixed(1)}%
+                            {(test.insights[0].confidence * 100).toFixed(1)}%
                           </span>
                         ) : (
                           <span className="text-sm text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        {test.insight?.liftPercentage !== undefined && test.insight?.liftPercentage !== null ? (
-                          <div className="flex items-center gap-1">
-                            {getLiftIcon(test.insight.liftPercentage ?? 0)}
-                            <span className="text-sm font-medium">
-                              {(test.insight.liftPercentage ?? 0).toFixed(1)}%
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        )}
+                        {(() => {
+                          const lift = calculateLift(test);
+                          if (lift === 0) {
+                            return <span className="text-sm text-muted-foreground">-</span>;
+                          }
+                          return (
+                            <div className="flex items-center gap-1">
+                              {getLiftIcon(lift)}
+                              <span className="text-sm font-medium">
+                                {lift.toFixed(1)}%
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(test.createdAt), 'MMM dd, yyyy')}
+                        {test.createdAt ? format(new Date(test.createdAt), 'MMM dd, yyyy') : '-'}
                       </TableCell>
                     </TableRow>
                   ))

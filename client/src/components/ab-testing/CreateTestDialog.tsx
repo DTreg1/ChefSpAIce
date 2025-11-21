@@ -86,6 +86,7 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
       startDate: formData.startDate,
       endDate: formData.endDate,
       targetSampleSize: formData.targetSampleSize,
+      currentSampleSize: 0,
       configuration: {
         controlGroup: {
           size: 0.5,
