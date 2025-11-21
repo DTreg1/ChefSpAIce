@@ -86,11 +86,12 @@ export interface FDCFood {
   brandOwner: string;
   gtinUpc: string;
   ingredients: string;
-  foodCategory: string;
+  foodCategory: string | { description: string };
+  brandedFoodCategory?: string;
   servingSize: number;
   servingSizeUnit: string;
   householdServingFullText?: string;
-  labelNutrients: FDCLabelNutrients[];
+  labelNutrients: FDCLabelNutrients;
 }
 
 interface FDCSearchResult {
@@ -347,7 +348,7 @@ function mapFDCFoodToUSDAItem(food: FDCFood): USDAFoodItem {
           nutrientId: 1005,
           nutrientName: "Carbohydrates",
           unitName: "g",
-          value: nutritionInfo.carbs || 0,
+          value: nutritionInfo.carbohydrates || 0,
         },
         {
           nutrientId: 1004,
