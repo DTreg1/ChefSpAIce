@@ -1,6 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db";
-import { validationRules, validationErrors, ValidationRule, ValidationError } from "@shared/schema";
+import { validationRules, validationErrors, ValidationRule, ValidationError } from "@shared/schema/forms";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -430,7 +430,6 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
   }) {
     // Track the validation error and resolution
     await db.insert(validationErrors).values({
-      userId: params.userId,
       fieldName: params.fieldName,
       fieldType: params.fieldType,
       errorType: "format",
@@ -439,7 +438,6 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
       finalValue: params.finalValue,
       userResolution: params.userResolution,
       context: params.context,
-      resolutionTime: params.resolutionTime,
       frequency: 1,
     });
 
@@ -477,7 +475,7 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
       manualCorrections: errors.filter(e => e.userResolution === "manual_correction").length,
       ignoredErrors: errors.filter(e => e.userResolution === "ignored").length,
       abandonedForms: errors.filter(e => e.userResolution === "abandoned").length,
-      averageResolutionTime: errors.reduce((sum, e) => sum + (e.resolutionTime || 0), 0) / errors.length,
+      averageResolutionTime: 0, // Resolution time tracking not implemented yet
       commonErrors: this.groupErrorsByType(errors),
     };
 
@@ -554,7 +552,6 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
             if (!hasExistingPattern) {
               // Create new rule with the learned pattern
               await db.insert(validationRules).values({
-                fieldType: params.fieldType,
                 rules: {
                   patterns: [{ 
                     regex: rulePattern, 
@@ -569,15 +566,13 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
                   formatHints: [`Expected format based on previous corrections`]
                 },
                 aiConfig: {
-                  useAI: true,
-                  model: "gpt-3.5-turbo",
+                  enabled: true,
+                  modelPreference: "gpt-3.5-turbo",
                   temperature: 0.3,
                   maxSuggestions: 3
                 },
                 priority: 5,
                 isActive: true,
-                createdAt: new Date(),
-                updatedAt: new Date(),
               });
             }
           }

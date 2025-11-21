@@ -257,17 +257,22 @@ export const trends = pgTable("trends", {
 export const trendAlerts = pgTable("trend_alerts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   trendId: varchar("trend_id").notNull().references(() => trends.id, { onDelete: "cascade" }),
-  alertType: text("alert_type").notNull(), // 'threshold_exceeded', 'anomaly', 'prediction'
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  alertType: text("alert_type").notNull(), // 'threshold_exceeded', 'anomaly', 'prediction', 'emergence', 'acceleration'
   alertLevel: text("alert_level").notNull(), // 'info', 'warning', 'critical'
   message: text("message").notNull(),
+  threshold: real("threshold"), // Threshold value for triggering alerts
   conditions: jsonb("conditions").$type<Record<string, any>>(), // Alert trigger conditions
+  isActive: boolean("is_active").notNull().default(true),
   isAcknowledged: boolean("is_acknowledged").notNull().default(false),
   acknowledgedBy: varchar("acknowledged_by"),
   acknowledgedAt: timestamp("acknowledged_at"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("trend_alerts_trend_id_idx").on(table.trendId),
+  index("trend_alerts_user_id_idx").on(table.userId),
   index("trend_alerts_alert_level_idx").on(table.alertLevel),
+  index("trend_alerts_is_active_idx").on(table.isActive),
   index("trend_alerts_created_at_idx").on(table.createdAt),
 ]);
 
@@ -390,8 +395,10 @@ export const insertTrendAlertSchema = createInsertSchema(trendAlerts)
 
 
   .extend({
-    alertType: z.enum(['threshold_exceeded', 'anomaly', 'prediction']),
+    alertType: z.enum(['threshold_exceeded', 'anomaly', 'prediction', 'emergence', 'acceleration']),
     alertLevel: alertLevelSchema,
+    threshold: z.number().optional(),
+    isActive: z.boolean().default(true),
   });
 
 export type InsertTrendAlert = z.infer<typeof insertTrendAlertSchema>;

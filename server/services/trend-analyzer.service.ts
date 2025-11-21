@@ -401,8 +401,8 @@ class TrendAnalyzerService {
    */
   private async checkTrendAlerts(trend: any): Promise<void> {
     try {
-      // Get active alert configurations
-      const alerts = await analyticsStorage.getTrendAlerts();
+      // Get active alert configurations - pass null for userId to get all alerts
+      const alerts = await analyticsStorage.getTrendAlerts('', 'active');
       
       for (const alert of alerts) {
         if (!alert.isActive) continue;
@@ -443,11 +443,10 @@ class TrendAnalyzerService {
           // Generate alert message
           const message = `Trend Alert: ${trend.trendName} detected with ${trend.strength.toFixed(2)} strength and ${trend.growthRate.toFixed(1)}% growth rate.`;
           
-          // Notify users
-          const notifiedUsers = alert.userId ? [alert.userId] : [];
-          await analyticsStorage.triggerTrendAlert(alert.id, message, notifiedUsers);
+          // Trigger the alert (just needs the alert ID)
+          await analyticsStorage.triggerTrendAlert(alert.id);
           
-          console.log(`Triggered alert ${alert.id} for trend ${trend.id}`);
+          console.log(`Triggered alert ${alert.id} for trend ${trend.id}: ${message}`);
         }
       }
     } catch (error) {
@@ -797,16 +796,18 @@ class TrendAnalyzerService {
     return 'Long-term';
   }
   
-  private mapTrendType(type: string): string {
-    const typeMap: Record<string, string> = {
-      'growth': 'behavior',
-      'decline': 'behavior',
-      'change_point': 'behavior',
+  private mapTrendType(type: string): "increasing" | "decreasing" | "stable" | "seasonal" | "cyclical" {
+    const typeMap: Record<string, "increasing" | "decreasing" | "stable" | "seasonal" | "cyclical"> = {
+      'growth': 'increasing',
+      'decline': 'decreasing',
+      'change_point': 'stable',
       'seasonal': 'seasonal',
-      'anomaly': 'behavior'
+      'anomaly': 'stable',
+      'topic': 'stable',
+      'behavior': 'stable'
     };
     
-    return typeMap[type] || 'topic';
+    return typeMap[type] || 'stable';
   }
 }
 

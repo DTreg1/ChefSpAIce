@@ -360,6 +360,15 @@ export const validationRules = pgTable("validation_rules", {
   
   exampleValues: text("example_values").array(),
   
+  aiConfig: jsonb("ai_config").$type<{
+    enabled?: boolean;
+    modelPreference?: string;
+    temperature?: number;
+    maxSuggestions?: number;
+    contextWindow?: number;
+    customPrompts?: Record<string, string>;
+  }>(),
+  
   performanceMetrics: jsonb("performance_metrics").$type<{
     avgValidationTime?: number;
     successRate?: number;
