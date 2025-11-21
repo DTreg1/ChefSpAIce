@@ -486,6 +486,7 @@ router.post(
       const validResults = extractionResults.filter(r => r !== null);
 
       // Save extraction results one by one (batch method doesn't exist)
+      // Properly await each save operation
       const savedExtractions = [];
       for (const result of validResults) {
         try {
@@ -493,6 +494,7 @@ router.post(
           savedExtractions.push(saved);
         } catch (error) {
           console.error('Failed to save extraction:', error);
+          // Continue with next item instead of failing entire batch
         }
       }
 
