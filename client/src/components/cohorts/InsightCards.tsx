@@ -178,55 +178,39 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
                       <div className="flex items-start justify-between">
                         <div className="space-y-1 flex-1">
                           <div className="flex items-center gap-2">
-                            <Badge variant={getImportanceColor(insight.importance)}>
-                              {getImportanceIcon(insight.importance)}
-                              <span className="ml-1">{insight.importance}</span>
-                            </Badge>
+                            {insight.impact && (
+                              <Badge variant={getImportanceColor(insight.impact)}>
+                                {getImportanceIcon(insight.impact)}
+                                <span className="ml-1">{insight.impact}</span>
+                              </Badge>
+                            )}
                             <Badge variant="outline">
-                              {getCategoryIcon(insight.category)}
-                              <span className="ml-1">{insight.category}</span>
+                              {getCategoryIcon(insight.insightType)}
+                              <span className="ml-1">{insight.insightType}</span>
                             </Badge>
-                            {insight.confidenceScore && (
+                            {insight.confidence && (
                               <Badge variant="secondary">
-                                {Math.round(insight.confidenceScore * 100)}% confidence
+                                {Math.round(insight.confidence * 100)}% confidence
                               </Badge>
                             )}
                           </div>
                         </div>
-                        {getStatusIcon(insight.status)}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <p className="text-sm">{insight.insight}</p>
                       
-                      {insight.actionRecommended && (
+                      {insight.recommendations && insight.recommendations.length > 0 && (
                         <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-xs font-medium mb-1">Recommended Action:</p>
-                          <p className="text-sm">{insight.actionRecommended}</p>
-                        </div>
-                      )}
-                      
-                      {insight.supportingData?.evidence && insight.supportingData.evidence.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-xs font-medium">Supporting Evidence:</p>
-                          <ul className="text-xs text-muted-foreground space-y-1">
-                            {insight.supportingData.evidence.map((evidence: string, index: number) => (
+                          <p className="text-xs font-medium mb-1">Recommendations:</p>
+                          <ul className="text-sm space-y-1">
+                            {insight.recommendations.map((rec: string, index: number) => (
                               <li key={index} className="flex items-start gap-2">
                                 <span className="text-muted-foreground">•</span>
-                                <span>{evidence}</span>
+                                <span>{rec}</span>
                               </li>
                             ))}
                           </ul>
-                        </div>
-                      )}
-                      
-                      {insight.supportingData?.metrics && (
-                        <div className="flex flex-wrap gap-2">
-                          {Object.entries(insight.supportingData.metrics).map(([key, value]) => (
-                            <Badge key={key} variant="outline" className="text-xs">
-                              {key}: {typeof value === "number" ? value.toFixed(1) : value}
-                            </Badge>
-                          ))}
                         </div>
                       )}
                       
@@ -275,7 +259,7 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">
-                          {insight.category}
+                          {insight.insightType}
                         </Badge>
                         <span className="text-xs text-muted-foreground">Dismissed</span>
                       </div>

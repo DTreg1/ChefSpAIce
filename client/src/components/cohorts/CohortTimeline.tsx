@@ -23,11 +23,13 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
       // Group metrics by date
       const metricsByDate: Record<string, any> = {};
       (data.metrics as CohortMetric[]).forEach((metric) => {
-        const date = metric.metricDate;
-        if (!metricsByDate[date]) {
-          metricsByDate[date] = { date };
+        const dateStr = metric.metricDate instanceof Date 
+          ? metric.metricDate.toISOString() 
+          : String(metric.metricDate);
+        if (!metricsByDate[dateStr]) {
+          metricsByDate[dateStr] = { date: dateStr };
         }
-        metricsByDate[date][metric.metricName] = metric.value;
+        metricsByDate[dateStr][metric.metricName] = metric.value;
       });
       
       // Convert to array and sort by date
