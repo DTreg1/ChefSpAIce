@@ -8,6 +8,7 @@
 
 import { db } from "../../db";
 import { and, eq, desc, sql, gte, lte, between } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import type { IBillingStorage } from "../interfaces/IBillingStorage";
 import {
   donations,
@@ -29,7 +30,7 @@ export class BillingStorage implements IBillingStorage {
   ): Promise<Donation> {
     const [newDonation] = await db
       .insert(donations)
-      .values(donation as any)
+      .values(donation)
       .returning();
     return newDonation;
   }
@@ -331,7 +332,7 @@ export class BillingStorage implements IBillingStorage {
       .set({
         status: "completed",
         completedAt: new Date(),
-        metadata: metadata as any,
+        metadata: metadata,
         updatedAt: new Date(),
       })
       .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
@@ -351,7 +352,7 @@ export class BillingStorage implements IBillingStorage {
       .update(donations)
       .set({
         status: "failed",
-        metadata: errorMessage ? { errorMessage } as any : undefined,
+        metadata: errorMessage ? { errorMessage } : undefined,
         updatedAt: new Date(),
       })
       .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
@@ -381,7 +382,7 @@ export class BillingStorage implements IBillingStorage {
         status: "refunded",
         refundAmount: actualRefundAmount,
         refundedAt: new Date(),
-        metadata: reason ? { ...donation.metadata, refundReason: reason } as any : donation.metadata,
+        metadata: reason ? { ...donation.metadata, refundReason: reason } : donation.metadata,
         updatedAt: new Date(),
       })
       .where(eq(donations.id, donationId))

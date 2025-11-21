@@ -170,7 +170,7 @@ export function configureGoogleStrategy(hostname: string) {
         async (accessToken, refreshToken, profile, done) => {
           try {
             const user = await findOrCreateUser("google", profile as OAuthProfile, accessToken, refreshToken);
-            done(null, user as any);
+            done(null, user);
           } catch (error) {
             done(error as Error);
           }
@@ -248,7 +248,7 @@ export function configureAppleStrategy(hostname: string) {
           key: oauthConfig.apple.privateKey,
           callbackURL: getCallbackURL("apple", hostname),
           scope: ["email", "name"],
-        } as any, // Type assertion to fix mismatch between runtime and type definitions
+        },
         async (accessToken: string, refreshToken: string, idToken: any, profile: any, done: any) => {
           try {
             // Apple provides limited profile info
@@ -368,7 +368,7 @@ export function configureEmailStrategy() {
             providerId: user.id,
           };
           
-          done(null, sessionUser as any);
+          done(null, sessionUser);
         } catch (error) {
           done(error);
         }

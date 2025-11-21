@@ -408,7 +408,7 @@ class TrendAnalyzerService {
         if (!alert.isActive) continue;
         
         let shouldTrigger = false;
-        const conditions = alert.conditions as any;
+        const conditions = alert.conditions;
         
         // Check alert conditions
         if (alert.alertType === 'emergence' && trend.status === 'emerging') {

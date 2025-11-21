@@ -151,7 +151,7 @@ router.get(
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const { status, severity, contentType, page, limit } = req.query as any;
+    const { status, severity, contentType, page, limit } = req.query;
     
     // Get user to check if admin
     const user = await securityStorage.getUser(userId);
@@ -396,7 +396,7 @@ router.get(
   isModerator,
   validateQuery(statsQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { startDate, endDate, period } = req.query as any;
+    const { startDate, endDate, period } = req.query;
     
     try {
       // Calculate time range based on period or custom dates

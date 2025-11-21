@@ -226,7 +226,7 @@ router.post("/extract", upload.single("file"), async (req: any, res: any) => {
 
     if (req.file.mimetype === "application/pdf") {
       // Handle PDF files
-      const pdfParse = (await import("pdf-parse")) as any;
+      const pdfParse = (await import("pdf-parse"));
       const parseFn = pdfParse.default || pdfParse;
       const pdfData = await parseFn(req.file.buffer);
       extractionResult = {
@@ -312,7 +312,7 @@ router.post("/document", upload.single("document"), async (req: any, res: any) =
     }
 
     // Extract text from PDF
-    const pdfParse = (await import("pdf-parse")) as any;
+    const pdfParse = (await import("pdf-parse"));
     const parseFn = pdfParse.default || pdfParse;
     const pdfData = await parseFn(req.file.buffer);
     const processingTime = Date.now() - startTime;

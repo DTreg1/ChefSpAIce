@@ -8,6 +8,7 @@
 
 import { db } from "../../db";
 import { and, eq, desc, asc, sql, gte, lte, ne } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import type { ISupportStorage } from "../interfaces/ISupportStorage";
 import {
   tickets,
@@ -94,7 +95,7 @@ export class SupportStorage implements ISupportStorage {
   async createTicket(ticket: InsertTicket): Promise<Ticket> {
     const [newTicket] = await db
       .insert(tickets)
-      .values(ticket as any)
+      .values(ticket)
       .returning();
     return newTicket;
   }
@@ -267,7 +268,7 @@ export class SupportStorage implements ISupportStorage {
   async createRoutingRule(rule: InsertRoutingRule): Promise<RoutingRule> {
     const [newRule] = await db
       .insert(routingRules)
-      .values(rule as any)
+      .values(rule)
       .returning();
     return newRule;
   }

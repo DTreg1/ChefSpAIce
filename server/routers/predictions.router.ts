@@ -237,7 +237,7 @@ router.get(
     try {
       // Get segments from prediction service
       const segments = await predictionService.getUserSegments({
-        segmentType: segmentType as any,
+        segmentType: segmentType,
         minProbability: minProbability ? parseFloat(minProbability as string) : undefined,
       });
 

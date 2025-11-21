@@ -91,14 +91,14 @@ class PushNotificationService {
 
       // Request notification permission
       const permission = await Notification.requestPermission();
-      this.permissionState = permission as any;
+      this.permissionState = permission;
       
       if (permission !== 'granted') {
         const message = permission === 'denied' 
           ? 'You have denied notification permissions. You can enable them in your browser settings.'
           : 'Notification permission is required to receive updates.';
         // console.log('Notification permission not granted:', permission);
-        this.dispatchPermissionEvent(permission as any, message);
+        this.dispatchPermissionEvent(permission, message);
         return;
       }
 

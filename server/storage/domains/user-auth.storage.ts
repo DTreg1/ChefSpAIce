@@ -338,7 +338,7 @@ export class UserAuthDomainStorage implements IUserAuthStorage {
       if (!user) return undefined;
       
       const providerField = `${provider}Id`;
-      const providerId = (user as any)[providerField];
+      const providerId = (user)[providerField];
       
       return providerId ? {
         id: user.id,

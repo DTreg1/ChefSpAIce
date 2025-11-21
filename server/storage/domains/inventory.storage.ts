@@ -12,6 +12,7 @@
  */
 
 import { and, eq, gte, isNull, lte, or, sql, desc, asc, ilike } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import { db } from "../../db";
 import {
   users,
@@ -551,7 +552,7 @@ export class InventoryDomainStorage implements IInventoryStorage {
       
       if (existing) {
         // Update existing item - exclude id and only update specific fields
-        const { id, ...updateData } = item as any;
+        const { id, ...updateData } = item;
         const [updated] = await db
           .update(onboardingInventory)
           .set(updateData)

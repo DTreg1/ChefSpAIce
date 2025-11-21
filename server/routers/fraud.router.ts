@@ -131,7 +131,7 @@ router.get("/api/fraud/alerts", isAuthenticated, async (req, res) => {
         id: activity.id,
         userId: activity.userId,
         type: activity.activityType,
-        description: (activity.details as any).description || 'Suspicious activity detected',
+        description: (activity.details).description || 'Suspicious activity detected',
         severity: activity.riskLevel,
         timestamp: activity.detectedAt,
         autoBlocked: activity.autoBlocked,
@@ -327,7 +327,7 @@ function extractPatterns(activities: any[]) {
     
     // Extract common factors from details
     if (activity.details) {
-      const data = (activity.details as any).metadata;
+      const data = (activity.details).metadata;
       if (data && data.fraudScore > 0.8) {
         patterns.commonFactors.push({
           type: activity.activityType,
@@ -354,7 +354,7 @@ async function getTopRiskFactors() {
   const factorCounts: { [key: string]: number } = {};
   scores.forEach(s => {
     if (s.factors) {
-      Object.keys(s.factors as any).forEach(factor => {
+      Object.keys(s.factors).forEach(factor => {
         factorCounts[factor] = (factorCounts[factor] || 0) + 1;
       });
     }

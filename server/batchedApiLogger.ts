@@ -315,7 +315,7 @@ class BatchedApiLogger {
       
       results.forEach((result) => {
         if (result.status === 'fulfilled') {
-          const { success, item, retry } = result.value as any;
+          const { success, item, retry } = result.value;
           
           if (!success && retry) {
             // Increment retry count and add back to queue

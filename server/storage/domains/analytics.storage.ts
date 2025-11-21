@@ -5,6 +5,7 @@
 
 import { db } from "../../db";
 import { eq, and, gte, lte, desc, sql, between, asc } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import {
   activityLogs,
   webVitals,
@@ -115,10 +116,10 @@ export class AnalyticsStorage implements IAnalyticsStorage {
       totalRequests: logs.length,
       uniqueEndpoints: new Set(logs.map(l => l.action?.split(' ')[1])).size,
       averageResponseTime: logs.reduce((sum, l) => {
-        const responseTime = (l.details as any)?.responseTime || 0;
+        const responseTime = (l.details)?.responseTime || 0;
         return sum + responseTime;
       }, 0) / logs.length || 0,
-      errorRate: logs.filter(l => (l.details as any)?.statusCode >= 400).length / logs.length || 0,
+      errorRate: logs.filter(l => (l.details)?.statusCode >= 400).length / logs.length || 0,
       requestsByEndpoint: {} as Record<string, number>,
       requestsByHour: {} as Record<string, number>
     };

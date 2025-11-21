@@ -230,7 +230,7 @@ export async function evaluateRoutingRules(
       let matchScore = 0;
       let maxScore = 0;
       
-      const conditions = rule.condition as any;
+      const conditions = rule.condition;
       
       // Check keyword matches
       if (conditions.keywords && conditions.keywords.length > 0) {
@@ -311,7 +311,7 @@ export async function findBestAgent(
     let candidateAgents = agents;
     if (teamId) {
       candidateAgents = agents.filter(agent => {
-        const metadata = agent.metadata as any;
+        const metadata = agent.metadata;
         return agent.agent_id === teamId || 
                metadata?.team === teamId ||
                metadata?.department === teamId;
@@ -328,7 +328,7 @@ export async function findBestAgent(
       let maxSkillScore = 0;
       
       // Check skill matches
-      const agentSkills = agent.skills as any[];
+      const agentSkills = agent.skills[];
       if (agentSkills && agentSkills.length > 0) {
         for (const skill of agentSkills) {
           maxSkillScore += skill.level || 1;
@@ -611,7 +611,7 @@ export async function recordRoutingOutcome(
     }
     
     const latestRouting = routing[0];
-    const metadata = latestRouting.metadata as any || {};
+    const metadata = latestRouting.metadata || {};
     
     // Update routing with outcome
     await supportStorage.updateTicketRouting(latestRouting.id, {
@@ -671,8 +671,8 @@ export async function calculateRoutingAccuracy(
     const byMethod: Record<string, { correct: number; total: number }> = {};
     
     for (const routing of routings) {
-      const metadata = routing.metadata as any;
-      const analysis = routing.ai_analysis as any;
+      const metadata = routing.metadata;
+      const analysis = routing.ai_analysis;
       
       if (metadata?.outcome_recorded) {
         const wasCorrect = metadata.was_correct;
@@ -771,7 +771,7 @@ export async function escalateTicket(
       const currentRule = rules.find(r => r.assigned_to === currentRouting.routed_to);
       
       if (currentRule) {
-        const metadata = currentRule.metadata as any;
+        const metadata = currentRule.metadata;
         if (metadata?.escalation_path && metadata.escalation_path.length > 0) {
           escalationTarget = metadata.escalation_path[0];
         }

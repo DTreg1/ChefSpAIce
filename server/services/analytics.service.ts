@@ -196,8 +196,8 @@ Example for a traffic spike:
           min,
           max,
           trend: analysis.trend
-        } as any,
-        recommendations: response.suggestedActions as any
+        },
+        recommendations: response.suggestedActions
       };
 
       return await analyticsStorage.createAnalyticsInsight(insightData);
@@ -235,7 +235,7 @@ Example for a traffic spike:
           percentageChange: analysis.percentageChange,
           dataPoints: metricData.dataPoints,
           trend: analysis.trend
-        } as any
+        }
       };
 
       return await analyticsStorage.createAnalyticsInsight(fallbackInsight);

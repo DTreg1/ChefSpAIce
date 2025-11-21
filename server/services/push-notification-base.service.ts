@@ -83,7 +83,7 @@ export abstract class BasePushNotificationService {
     try {
       await notificationStorage.upsertPushToken(userId, {
         token,
-        platform: this.serviceName.toLowerCase() as any,
+        platform: this.serviceName.toLowerCase(),
         deviceInfo: metadata,
       });
       
@@ -166,7 +166,7 @@ export abstract class BasePushNotificationService {
             // Update last used timestamp by upserting with new timestamp
             await notificationStorage.upsertPushToken(userId, {
               token,
-              platform: this.serviceName.toLowerCase() as any,
+              platform: this.serviceName.toLowerCase(),
             });
           } else {
             failureCount++;

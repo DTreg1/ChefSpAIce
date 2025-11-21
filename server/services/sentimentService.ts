@@ -582,7 +582,7 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
    */
   private extractKeywords(content: string): string[] {
     try {
-      const extraction = (keywordExtractor as any).extract(content, {
+      const extraction = (keywordExtractor).extract(content, {
         language: 'english',
         remove_digits: true,
         return_changed_case: true,

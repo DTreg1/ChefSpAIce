@@ -103,7 +103,7 @@ router.get("/health", asyncHandler(async (req: Request, res) => {
 
   // Check authenticated user (if any)
   if (req.isAuthenticated && req.isAuthenticated()) {
-    const user = req.user as any;
+    const user = req.user;
     health.currentUser = {
       authenticated: true,
       hasAccessToken: !!user?.access_token,
@@ -139,7 +139,7 @@ router.get("/health", asyncHandler(async (req: Request, res) => {
 router.get("/diagnostics", isAuthenticated, asyncHandler(async (req: Request, res) => {
   const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  const user = req.user as any;
+  const user = req.user;
 
   const diagnostics: any = {
     user: {
@@ -210,7 +210,7 @@ router.get("/token-status", asyncHandler(async (req: Request, res) => {
     });
   }
 
-  const user = req.user as any;
+  const user = req.user;
   const now = Math.floor(Date.now() / 1000);
   const isExpired = user.expires_at ? now > user.expires_at : false;
 
@@ -258,7 +258,7 @@ router.post("/force-refresh", asyncHandler(async (req: Request, res) => {
     });
   }
 
-  const user = req.user as any;
+  const user = req.user;
 
   // Check current token state before refresh
   const preRefreshState = {

@@ -186,7 +186,7 @@ export function validateQuery<T>(schema: z.ZodSchema<T>) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = await schema.parseAsync(req.query);
-      req.query = validated as any; // Type assertion needed for Express query types
+      req.query = validated;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -255,7 +255,7 @@ export function validateParams<T>(schema: z.ZodSchema<T>) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = await schema.parseAsync(req.params);
-      req.params = validated as any; // Type assertion needed for Express params types
+      req.params = validated;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {

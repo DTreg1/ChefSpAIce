@@ -8,6 +8,7 @@
 
 import { db } from "../../db";
 import { and, eq, desc, asc, sql, gte, lte, or, ne, isNull, type SQL } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import type { IContentStorage } from "../interfaces/IContentStorage";
 import {
   categories,
@@ -79,7 +80,7 @@ export class ContentStorage implements IContentStorage {
   async createCategory(category: InsertCategory): Promise<Category> {
     const [result] = await db
       .insert(categories)
-      .values(category as any)
+      .values(category)
       .returning();
     return result;
   }
@@ -91,7 +92,7 @@ export class ContentStorage implements IContentStorage {
     const [result] = await db
       .update(categories)
       .set({
-        ...(updates as any),
+        ...(updates),
         updatedAt: new Date(),
       })
       .where(eq(categories.id, id))
@@ -134,7 +135,7 @@ export class ContentStorage implements IContentStorage {
   ): Promise<ContentCategory> {
     const [result] = await db
       .insert(contentCategories)
-      .values(assignment as any)
+      .values(assignment)
       .onConflictDoUpdate({
         target: [
           contentCategories.contentId,
@@ -235,7 +236,7 @@ export class ContentStorage implements IContentStorage {
         name: normalizedName,
         slug: slug,
         usageCount: 1,
-      } as any)
+      })
       .returning();
 
     return newTag;
@@ -376,7 +377,7 @@ export class ContentStorage implements IContentStorage {
   async assignContentTag(assignment: InsertContentTag): Promise<ContentTag> {
     const [result] = await db
       .insert(contentTags)
-      .values(assignment as any)
+      .values(assignment)
       .onConflictDoUpdate({
         target: [contentTags.contentId, contentTags.tagId],
         set: {
@@ -430,7 +431,7 @@ export class ContentStorage implements IContentStorage {
       const tag = await this.getOrCreateTag(tagName);
       const contentTag = await this.assignContentTag({
         contentId,
-        contentType: contentType as any,
+        contentType: contentType,
         tagId: tag.id,
       });
       results.push(contentTag);
@@ -454,7 +455,7 @@ export class ContentStorage implements IContentStorage {
       .values({
         ...embedding,
         embedding: embeddingArray,
-      } as any)
+      })
       .onConflictDoUpdate({
         target: [
           contentEmbeddings.contentId,
@@ -463,7 +464,7 @@ export class ContentStorage implements IContentStorage {
         set: {
           embedding: embeddingArray,
           embeddingType: embedding.embeddingType,
-          metadata: embedding.metadata as any,
+          metadata: embedding.metadata,
           updatedAt: new Date(),
         },
       })
@@ -573,7 +574,7 @@ export class ContentStorage implements IContentStorage {
   async createDuplicatePair(pair: InsertDuplicatePair): Promise<DuplicatePair> {
     const [result] = await db
       .insert(duplicatePairs)
-      .values(pair as any)
+      .values(pair)
       .returning();
     return result;
   }
@@ -646,7 +647,7 @@ export class ContentStorage implements IContentStorage {
         const pair = await this.createDuplicatePair({
           contentId1: contentId,
           contentId2: item.contentId,
-          contentType: contentType as any,
+          contentType: contentType,
           similarity: item.similarity,
         });
         pairs.push(pair);
@@ -692,7 +693,7 @@ export class ContentStorage implements IContentStorage {
     // Insert new cache entry
     const [result] = await db
       .insert(relatedContentCache)
-      .values(cache as any)
+      .values(cache)
       .returning();
 
     return result;

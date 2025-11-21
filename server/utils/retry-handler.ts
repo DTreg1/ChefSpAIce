@@ -87,7 +87,7 @@ export function calculateRetryDelay(
  */
 export function isRetryableError(error: Error | unknown): boolean {
   // Type guard to safely access error properties
-  const err = error as any;
+  const err = error;
   
   // Check for network errors
   if (err?.code) {

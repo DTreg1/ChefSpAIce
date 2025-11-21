@@ -8,6 +8,7 @@
 
 import { db } from "../../db";
 import { and, eq, desc, asc, sql, gte, lte, type SQL } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import type { IPricingStorage } from "../interfaces/IPricingStorage";
 import {
   pricingRules,
@@ -33,7 +34,7 @@ export class PricingStorage implements IPricingStorage {
   async createPricingRule(rule: InsertPricingRules): Promise<PricingRules> {
     const [result] = await db
       .insert(pricingRules)
-      .values(rule as any)
+      .values(rule)
       .returning();
     return result;
   }
@@ -45,7 +46,7 @@ export class PricingStorage implements IPricingStorage {
     const [result] = await db
       .update(pricingRules)
       .set({
-        ...(rule as any),
+        ...(rule),
         updatedAt: new Date(),
       })
       .where(eq(pricingRules.id, id))
@@ -106,7 +107,7 @@ export class PricingStorage implements IPricingStorage {
   async recordPriceChange(history: InsertPriceHistory): Promise<PriceHistory> {
     const [result] = await db
       .insert(priceHistory)
-      .values(history as any)
+      .values(history)
       .returning();
     return result;
   }
@@ -135,7 +136,7 @@ export class PricingStorage implements IPricingStorage {
       .orderBy(desc(priceHistory.changedAt));
 
     if (params?.limit) {
-      query = query.limit(params.limit) as any;
+      query = query.limit(params.limit);
     }
 
     return await query;
@@ -195,7 +196,7 @@ export class PricingStorage implements IPricingStorage {
   ): Promise<PricingPerformance> {
     const [result] = await db
       .insert(pricingPerformance)
-      .values(performance as any)
+      .values(performance)
       .returning();
     return result;
   }

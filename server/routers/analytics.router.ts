@@ -243,9 +243,9 @@ router.get(
       failedCalls: stats.failedCalls,
       successRate: successRate.toFixed(2),
       // These fields might not exist in basic stats, so we provide defaults
-      apiBreakdown: (stats as any).apiBreakdown || {},
-      errorTypes: (stats as any).errorTypes || {},
-      averageResponseTime: (stats as any).averageResponseTime || null,
+      apiBreakdown: (stats).apiBreakdown || {},
+      errorTypes: (stats).errorTypes || {},
+      averageResponseTime: (stats).averageResponseTime || null,
     });
   })
 );

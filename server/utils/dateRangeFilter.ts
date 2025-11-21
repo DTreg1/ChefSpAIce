@@ -197,7 +197,7 @@ export function getPresetDateRange(preset: 'today' | 'week' | 'month' | 'quarter
 export function dateRangeMiddleware(options: DateRangeOptions = {}) {
   return (req: Request, _res: Response, next: NextFunction) => {
     try {
-      (req as any).dateRange = parseDateRange(req, options);
+      (req).dateRange = parseDateRange(req, options);
       next();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

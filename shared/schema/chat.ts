@@ -36,4 +36,4 @@ export const insertChatMessageSchema = z.object({
 
 // Legacy userChats table stub - referenced by some services but not actually in database
 // This is a compatibility shim to prevent import errors
-export const userChats = {} as any;
+export const userChats = {};

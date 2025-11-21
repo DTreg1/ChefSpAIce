@@ -8,6 +8,7 @@
 
 import { db } from "../../db";
 import { and, eq, desc, sql, gte, lte, type SQL } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import type { IExperimentsStorage } from "../interfaces/IExperimentsStorage";
 import {
   abTests,
@@ -40,7 +41,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
   // ==================== A/B Testing ====================
 
   async createAbTest(test: InsertAbTest): Promise<AbTest> {
-    const [newTest] = await db.insert(abTests).values(test as any).returning();
+    const [newTest] = await db.insert(abTests).values(test).returning();
     return newTest;
   }
 
@@ -122,7 +123,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
       // Update existing
       const [updated] = await db
         .update(abTestResults)
-        .set(result as any)
+        .set(result)
         .where(eq(abTestResults.id, existing[0].id))
         .returning();
       return updated;
@@ -130,7 +131,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
       // Create new
       const [created] = await db
         .insert(abTestResults)
-        .values(result as any)
+        .values(result)
         .returning();
       return created;
     }
@@ -191,7 +192,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
           totalExposures,
           conversionRate: totalExposures > 0 ? totalConversions / totalExposures : 0,
           averageValue: totalConversions > 0 ? totalValue / totalConversions : 0,
-        } as any,
+        },
       };
     };
 
@@ -243,7 +244,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
           converted: true,
           convertedAt: new Date(),
           conversionValue,
-        } as any)
+        })
         .returning();
       return created;
     }
@@ -270,7 +271,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
       // Update existing
       const [updated] = await db
         .update(abTestInsights)
-        .set(insight as any)
+        .set(insight)
         .where(eq(abTestInsights.id, existing[0].id))
         .returning();
       return updated;
@@ -278,7 +279,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
       // Create new
       const [created] = await db
         .insert(abTestInsights)
-        .values(insight as any)
+        .values(insight)
         .returning();
       return created;
     }
@@ -302,8 +303,8 @@ export class ExperimentsStorage implements IExperimentsStorage {
   }> {
     const { variantA, variantB } = await this.getAggregatedAbTestResults(testId);
 
-    const metadataA = variantA.metadata as any || {};
-    const metadataB = variantB.metadata as any || {};
+    const metadataA = variantA.metadata || {};
+    const metadataB = variantB.metadata || {};
 
     // Extract conversion rates from metadata
     const conversionRateA = metadataA.conversionRate || 0;
@@ -447,7 +448,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
   // ==================== Cohort Management ====================
 
   async createCohort(cohort: InsertCohort): Promise<Cohort> {
-    const [newCohort] = await db.insert(cohorts).values(cohort as any).returning();
+    const [newCohort] = await db.insert(cohorts).values(cohort).returning();
 
     // Refresh membership immediately for new cohort
     await this.refreshCohortMembership(newCohort.id);
@@ -491,7 +492,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
     const [updated] = await db
       .update(cohorts)
       .set({
-        ...(updates as any),
+        ...(updates),
         updatedAt: new Date(),
       })
       .where(eq(cohorts.id, cohortId))
@@ -527,7 +528,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
   ): Promise<CohortMetric[]> {
     const recorded = await db
       .insert(cohortMetrics)
-      .values(metrics as any)
+      .values(metrics)
       .returning();
     return recorded;
   }
@@ -640,7 +641,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
   ): Promise<CohortInsight> {
     const [newInsight] = await db
       .insert(cohortInsights)
-      .values(insight as any)
+      .values(insight)
       .returning();
     return newInsight;
   }
@@ -720,7 +721,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
   ): Promise<CohortInsight> {
     const [updated] = await db
       .update(cohortInsights)
-      .set({ impact: status as any })
+      .set({ impact: status })
       .where(eq(cohortInsights.id, insightId))
       .returning();
     return updated;

@@ -8,6 +8,7 @@
 
 import { db } from "../../db";
 import { and, eq, desc, asc, sql, gte, lte, ne, or, type SQL } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import type { ISchedulingStorage } from "../interfaces/ISchedulingStorage";
 import {
   schedulingPreferences,
@@ -54,7 +55,7 @@ export class SchedulingStorage implements ISchedulingStorage {
       const [updated] = await db
         .update(schedulingPreferences)
         .set({
-          ...(preferences as any),
+          ...(preferences),
           updatedAt: new Date(),
         })
         .where(eq(schedulingPreferences.userId, userId))
@@ -64,7 +65,7 @@ export class SchedulingStorage implements ISchedulingStorage {
       const [created] = await db
         .insert(schedulingPreferences)
         .values({
-          ...(preferences as any),
+          ...(preferences),
           userId,
         })
         .returning();
@@ -122,7 +123,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   ): Promise<MeetingSuggestions> {
     const [created] = await db
       .insert(meetingSuggestions)
-      .values(suggestions as any)
+      .values(suggestions)
       .returning();
     return created;
   }
@@ -201,7 +202,7 @@ export class SchedulingStorage implements ISchedulingStorage {
       const [updated] = await db
         .update(schedulingPatterns)
         .set({
-          ...(pattern as any),
+          ...(pattern),
           updatedAt: new Date(),
         })
         .where(eq(schedulingPatterns.id, existing[0].id))
@@ -211,7 +212,7 @@ export class SchedulingStorage implements ISchedulingStorage {
       const [created] = await db
         .insert(schedulingPatterns)
         .values({
-          ...(pattern as any),
+          ...(pattern),
           userId,
         })
         .returning();
@@ -343,7 +344,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   async createMeetingEvent(event: InsertMeetingEvents): Promise<MeetingEvents> {
     const [created] = await db
       .insert(meetingEvents)
-      .values(event as any)
+      .values(event)
       .returning();
     return created;
   }
@@ -355,7 +356,7 @@ export class SchedulingStorage implements ISchedulingStorage {
     const [updated] = await db
       .update(meetingEvents)
       .set({
-        ...(updates as any),
+        ...(updates),
         updatedAt: new Date(),
       })
       .where(eq(meetingEvents.id, eventId))

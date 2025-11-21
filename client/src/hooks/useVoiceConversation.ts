@@ -183,8 +183,8 @@ export function useVoiceConversation(options: VoiceConversationOptions = {}) {
 
   // Initialize speech recognition
   const initializeRecognition = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || 
-                              (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window).SpeechRecognition || 
+                              (window).webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       toast({

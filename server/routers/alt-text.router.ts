@@ -116,7 +116,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
           data.context
         );
         
-        await aiMlStorage.upsertAltTextQuality(imageMetadata.id, quality as any);
+        await aiMlStorage.upsertAltTextQuality(imageMetadata.id, quality);
       }
 
       res.json({
@@ -203,7 +203,7 @@ export function createAltTextRouter(storage: DatabaseStorage): Router {
               imageData.context
             );
             
-            await aiMlStorage.upsertAltTextQuality(imageMetadata.id, quality as any);
+            await aiMlStorage.upsertAltTextQuality(imageMetadata.id, quality);
 
             return {
               id: imageMetadata.id,

@@ -156,7 +156,7 @@ router.post("/audio", requireAuth, upload.single("audio"), async (req: any, res:
             originalFileName: req.file.originalname,
             fileSize: req.file.size,
           },
-        } as any,
+        },
       });
 
       res.json({
@@ -201,7 +201,7 @@ router.post("/stream", requireAuth, async (req: any, res: any) => {
         title: title || `Live Transcription from ${new Date().toLocaleDateString()}`,
         processingTime: 0,
         audioFormat: "streaming",
-      } as any,
+      },
     });
 
     // Set up SSE headers
@@ -314,13 +314,13 @@ router.put("/:id/edit", requireAuth, async (req: any, res: any) => {
           ...transcription.metadata,
           // Store edit history in a compatible format
           editHistory: [
-            ...((transcription.metadata as any)?.editHistory || []),
+            ...((transcription.metadata)?.editHistory || []),
             {
               editedAt: new Date().toISOString(),
               editId: edit.id,
             }
           ],
-        } as any,
+        },
       }
     );
 
@@ -367,7 +367,7 @@ router.get("/:id/export", requireAuth, async (req: any, res: any) => {
       return res.status(404).json({ error: "Transcription not found" });
     }
 
-    const metadata = transcription.metadata as any;
+    const metadata = transcription.metadata;
     const segments = metadata?.segments || [];
     const title = metadata?.title || "Transcription";
 

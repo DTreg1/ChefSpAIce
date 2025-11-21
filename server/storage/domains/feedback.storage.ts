@@ -5,6 +5,7 @@
 
 import { db } from "../../db";
 import { eq, and, desc, sql, gte, lte, or } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import {
   userFeedback,
   donations,
@@ -223,7 +224,7 @@ export class FeedbackStorage implements IFeedbackStorage {
       
       await db.update(userFeedback)
         .set({ 
-          upvotes: newUpvotes as any,
+          upvotes: newUpvotes,
           updatedAt: new Date()
         })
         .where(eq(userFeedback.id, feedbackId));
@@ -244,7 +245,7 @@ export class FeedbackStorage implements IFeedbackStorage {
     if (newUpvotes.length !== currentUpvotes.length) {
       await db.update(userFeedback)
         .set({ 
-          upvotes: newUpvotes as any,
+          upvotes: newUpvotes,
           updatedAt: new Date()
         })
         .where(eq(userFeedback.id, feedbackId));

@@ -256,9 +256,9 @@ export class ApnsService {
         // Note: category property may not exist in type definition but is supported
         const anyNotification = notification;
         if (payload.actions.some(a => a.action === 'view')) {
-          (anyNotification as any).category = 'VIEW_ACTION';
+          (anyNotification).category = 'VIEW_ACTION';
         } else if (payload.actions.some(a => a.action === 'dismiss')) {
-          (anyNotification as any).category = 'DISMISS_ACTION';
+          (anyNotification).category = 'DISMISS_ACTION';
         }
         
         // Pass actions in payload for app to handle

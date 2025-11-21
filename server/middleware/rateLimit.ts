@@ -29,7 +29,7 @@ class RateLimiter {
       return this.options.keyGenerator(req);
     }
     // Default: rate limit per user
-    return (req as any).user?.claims?.sub || req.ip || 'anonymous';
+    return req.user?.claims?.sub || req.ip || 'anonymous';
   }
   
   middleware() {

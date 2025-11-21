@@ -106,7 +106,7 @@ async function seedSentimentData() {
     ];
 
     console.log("Inserting sentiment metrics...");
-    await db.insert(sentimentMetrics).values(metricsData as any);
+    await db.insert(sentimentMetrics).values(metricsData);
 
     // Create alerts for the sentiment drop
     const alertsData = [
@@ -228,7 +228,7 @@ async function seedSentimentData() {
     ];
 
     console.log("Inserting sentiment segments...");
-    await db.insert(sentimentSegments).values(segmentsData as any);
+    await db.insert(sentimentSegments).values(segmentsData);
 
     // Create sample sentiment analysis entries
     const analysisData = [
@@ -333,7 +333,7 @@ async function seedSentimentData() {
     }
 
     console.log("Inserting sentiment trends...");
-    await db.insert(sentimentTrends).values(trendsData as any);
+    await db.insert(sentimentTrends).values(trendsData);
 
     console.log("✅ Sentiment demo data seeded successfully!");
     console.log("📊 Created:");

@@ -168,7 +168,7 @@ router.post(
 
             if (!streamingEnabled) {
               // Non-streaming response
-              const completion = stream as any;
+              const completion = stream;
               const content = completion.choices[0].message?.content || "";
               
               writeSSE(res, 'message', content);
@@ -177,7 +177,7 @@ router.post(
               
             } else {
               // Streaming response
-              for await (const chunk of stream as any) {
+              for await (const chunk of stream) {
                 try {
                   const content = chunk.choices[0]?.delta?.content || "";
                   if (content) {

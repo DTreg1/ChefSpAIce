@@ -276,7 +276,7 @@ Return only the category name and confidence score (0-1) in JSON format:
         return_changed_case: true,
         remove_duplicates: true
       }) :
-      (keywordExtractor as any).extract(text, {
+      (keywordExtractor).extract(text, {
         language: "english",
         remove_digits: true,
         return_changed_case: true,

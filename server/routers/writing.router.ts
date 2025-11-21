@@ -206,7 +206,7 @@ function checkGrammarAndSpelling(text: string): WritingSuggestion[] {
       suggestions.push({
         id: '',
         sessionId: '',
-        suggestionType: type as any,
+        suggestionType: type,
         originalSnippet,
         suggestedSnippet,
         reason,
@@ -261,7 +261,7 @@ router.post("/analyze", isAuthenticated, async (req: Request, res: Response) => 
     // Grammar and spelling checking
     if (checkGrammar || checkSpelling) {
       const basicSuggestions = checkGrammarAndSpelling(text);
-      suggestions.push(...basicSuggestions as any);
+      suggestions.push(...basicSuggestions);
     }
     
     // AI-powered style and tone suggestions
@@ -322,7 +322,7 @@ Only return valid JSON array, no other text.`;
                   length: suggestion.original.length,
                   confidence: 0.8,
                   accepted: false,
-                } as any);
+                });
               }
             });
           } catch (parseError) {
@@ -336,7 +336,7 @@ Only return valid JSON array, no other text.`;
     
     // Save suggestions to database
     if (suggestions.length > 0) {
-      await aiMlStorage.addWritingSuggestions(session.id, suggestions as any);
+      await aiMlStorage.addWritingSuggestions(session.id, suggestions);
     }
     
     res.json({

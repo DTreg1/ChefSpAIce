@@ -64,7 +64,7 @@ export async function searchUSDAFoodsCached(
         if (cachedFood) return cachedFood;
         
         // Fall back to database cache
-        const dbFood = await (storage as any).getCachedFood(fdcId);
+        const dbFood = await (storage).getCachedFood(fdcId);
         if (dbFood && dbFood.fullData) {
           const foodData = dbFood.fullData as USDAFoodItem;
           // Cache in memory for faster access
@@ -116,17 +116,17 @@ export async function searchUSDAFoodsCached(
         apiCache.set(`usda.food:${food.fdcId}`, food, undefined, food.brandOwner ? 'usda.branded' : 'usda.food');
         
         // Cache in database for persistence
-        return (storage as any).cacheFood({
+        return (storage).cacheFood({
           fdcId: String(food.fdcId),
           description: food.description,
           dataType: food.dataType,
           brandOwner: food.brandOwner,
-          brandName: (food as any).brandName,
+          brandName: (food).brandName,
           ingredients: food.ingredients,
           servingSize: food.servingSize,
           servingSizeUnit: food.servingSizeUnit,
-          nutrients: food.foodNutrients as any,
-          fullData: food as any,
+          nutrients: food.foodNutrients,
+          fullData: food,
         });
       });
       
@@ -169,7 +169,7 @@ export async function getCachedFoodById(fdcId: number): Promise<any | null> {
     }
     
     // Fall back to database cache
-    const dbCached = await (storage as any).getCachedFood(String(fdcId));
+    const dbCached = await (storage).getCachedFood(String(fdcId));
     if (dbCached && dbCached.fullData) {
       // console.log(`[USDA Cache] Database hit for FDC ID: ${fdcId}`);
       const foodData = dbCached.fullData;
@@ -223,7 +223,7 @@ export async function cleanupCache(): Promise<void> {
   try {
     // The ApiCacheService handles its own cleanup automatically
     // Just clear old database cache entries
-    await (storage as any).clearOldCache(30); // Clear database cache older than 30 days
+    await (storage).clearOldCache(30); // Clear database cache older than 30 days
     // console.log('[USDA Cache] Database cleanup completed');
   } catch (error) {
     console.error('[USDA Cache] Cleanup failed:', error);

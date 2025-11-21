@@ -94,7 +94,7 @@ export class EmbeddingsService {
     
     if (cached && new Date(cached.expiresAt) > new Date()) {
       console.log(`Using cached related content for ${contentId}`);
-      return cached.relatedContent as any;
+      return cached.relatedContent;
     }
 
     // Get the embedding for the source content
@@ -128,7 +128,7 @@ export class EmbeddingsService {
     await this.storage.cacheRelatedContent({
       contentId,
       contentType: contentType as 'recipe' | 'article' | 'product' | 'document' | 'media',
-      relatedContent: relatedItems as any,
+      relatedContent: relatedItems,
       expiresAt,
     });
 
@@ -215,7 +215,7 @@ export class EmbeddingsService {
 
 // Export standalone functions for backward compatibility
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const service = new EmbeddingsService(null as any);
+  const service = new EmbeddingsService(null);
   return service.generateEmbedding(text);
 }
 

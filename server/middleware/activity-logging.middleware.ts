@@ -275,7 +275,7 @@ export function activityLoggingMiddleware(
                       null;
       
       activityLogger.logActivity({
-        userId: (req as any).user?.id || null,
+        userId: req.user?.id || null,
         action: routeConfig.action,
         entity: routeConfig.entity,
         entityId,
@@ -290,7 +290,7 @@ export function activityLoggingMiddleware(
       // Log AI response for chat messages
       if (req.path === '/api/chat' && req.method === 'POST' && responseBody?.response) {
         activityLogger.logActivity({
-          userId: (req as any).user?.id || null,
+          userId: req.user?.id || null,
           action: ActivityActions.AI_RESPONSE_RECEIVED,
           entity: 'chat',
           metadata: {
@@ -331,7 +331,7 @@ export function logRouteActivity(
   };
   
   activityLogger.logActivity({
-    userId: (req as any).user?.id || null,
+    userId: req.user?.id || null,
     action,
     entity,
     entityId,

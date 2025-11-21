@@ -81,7 +81,7 @@ export async function batchUpdate<T extends { id: string | number }>(
   const updateGroups = new Map<string, T[]>();
   
   updates.forEach((item) => {
-    const key = updateFields.map(field => (item as any)[field]).join('|');
+    const key = updateFields.map(field => (item)[field]).join('|');
     if (!updateGroups.has(key)) {
       updateGroups.set(key, []);
     }
@@ -95,7 +95,7 @@ export async function batchUpdate<T extends { id: string | number }>(
       const ids = items.map(item => item.id);
       const updateData: any = {};
       updateFields.forEach(field => {
-        updateData[field] = (items[0] as any)[field];
+        updateData[field] = (items[0])[field];
       });
       
       await tx.update(table)
@@ -139,7 +139,7 @@ export async function parallelQueries<T extends readonly any[]>(
 ): Promise<{ [K in keyof T]: Awaited<T[K]> }> {
   // Queries are already executing at this point due to Drizzle's eager execution
   // Promise.all just waits for them to complete and aggregates results
-  return await Promise.all(queries) as any;
+  return await Promise.all(queries);
 }
 
 /**
@@ -196,7 +196,7 @@ export async function getEstimatedCount(
           WHERE relname = ${tableName}`
     );
     
-    const rows = result.rows as any[];
+    const rows = result.rows[];
     const estimate = rows[0]?.estimate;
     if (estimate && estimate > 10000) {
       return estimate;

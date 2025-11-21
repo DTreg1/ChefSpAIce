@@ -39,7 +39,7 @@ export async function fetchOnboardingItemUsdaData(
     }
 
     // Try FDC ID if available (cast to any to access fdcId)
-    const mappingWithFdc = mapping as any;
+    const mappingWithFdc = mapping;
     if (mappingWithFdc.fdcId) {
       // console.log(`Searching for ${itemName} by FDC ID: ${mappingWithFdc.fdcId}`);
       const fdcData = await getFoodByFdcId(parseInt(mappingWithFdc.fdcId));

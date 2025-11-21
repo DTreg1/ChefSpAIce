@@ -47,7 +47,7 @@ export function handleOpenAIError(error: Error | unknown): AIError {
   // console.log('[AI Error Handler] Raw error:', error);
 
   // Cast error to any to safely access properties
-  const err = error as any;
+  const err = error;
 
   // First check for axios-style error responses
   const status = err?.response?.status || err?.status;
@@ -255,7 +255,7 @@ export function formatErrorForLogging(error: Error | unknown): object {
   }
 
   // Cast error to any to safely access properties
-  const err = error as any;
+  const err = error;
   
   return {
     type: err?.constructor?.name || 'Unknown',

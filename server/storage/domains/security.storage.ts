@@ -8,6 +8,7 @@
 
 import { db } from "../../db";
 import { and, eq, desc, sql, gte, lte, or, type SQL } from "drizzle-orm";
+import { createInsertData, createUpdateData, buildMetadata } from "../../types/storage-helpers";
 import type { ISecurityStorage } from "../interfaces/ISecurityStorage";
 import {
   moderationLogs,
@@ -68,7 +69,7 @@ export class SecurityStorage implements ISecurityStorage {
   async createModerationLog(log: InsertModerationLog): Promise<ModerationLog> {
     const [result] = await db
       .insert(moderationLogs)
-      .values(log as any)
+      .values(log)
       .returning();
     return result;
   }
@@ -80,7 +81,7 @@ export class SecurityStorage implements ISecurityStorage {
     await db
       .update(moderationLogs)
       .set({
-        ...(updates as any),
+        ...(updates),
         updatedAt: new Date(),
       })
       .where(eq(moderationLogs.id, id));
@@ -222,7 +223,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<BlockedContent> {
     const [result] = await db
       .insert(blockedContent)
-      .values(content as any)
+      .values(content)
       .returning();
     return result;
   }
@@ -267,7 +268,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<ModerationAppeal> {
     const [result] = await db
       .insert(moderationAppeals)
-      .values(appeal as any)
+      .values(appeal)
       .returning();
     return result;
   }
@@ -288,7 +289,7 @@ export class SecurityStorage implements ISecurityStorage {
     await db
       .update(moderationAppeals)
       .set({
-        ...(updates as any),
+        ...(updates),
         updatedAt: new Date(),
       })
       .where(eq(moderationAppeals.id, id));
@@ -335,7 +336,7 @@ export class SecurityStorage implements ISecurityStorage {
   async createFraudScore(score: InsertFraudScore): Promise<FraudScore> {
     const [result] = await db
       .insert(fraudScores)
-      .values(score as any)
+      .values(score)
       .returning();
     return result;
   }
@@ -368,7 +369,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<FraudDetectionResult> {
     const [created] = await db
       .insert(fraudDetectionResults)
-      .values(result as any)
+      .values(result)
       .returning();
     return created;
   }
@@ -387,13 +388,13 @@ export class SecurityStorage implements ISecurityStorage {
 
     if (filters?.analysisType) {
       conditions.push(
-        eq(fraudDetectionResults.analysisType, filters.analysisType as any)
+        eq(fraudDetectionResults.analysisType, filters.analysisType)
       );
     }
 
     if (filters?.riskLevel) {
       conditions.push(
-        eq(fraudDetectionResults.riskLevel, filters.riskLevel as any)
+        eq(fraudDetectionResults.riskLevel, filters.riskLevel)
       );
     }
 
@@ -438,7 +439,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<SuspiciousActivity> {
     const [result] = await db
       .insert(suspiciousActivities)
-      .values(activity as any)
+      .values(activity)
       .returning();
     return result;
   }
@@ -497,7 +498,7 @@ export class SecurityStorage implements ISecurityStorage {
   async createFraudReview(review: InsertFraudReview): Promise<FraudReview> {
     const [result] = await db
       .insert(fraudReviews)
-      .values(review as any)
+      .values(review)
       .returning();
     return result;
   }
@@ -551,7 +552,7 @@ export class SecurityStorage implements ISecurityStorage {
         decision: "banned",
         notes: reason,
         restrictions,
-      } as any)
+      })
       .returning();
     return review;
   }
@@ -681,11 +682,11 @@ export class SecurityStorage implements ISecurityStorage {
       .values({
         ...settings,
         userId,
-      } as any)
+      })
       .onConflictDoUpdate({
         target: privacySettings.userId,
         set: {
-          ...(settings as any),
+          ...(settings),
           updatedAt: new Date(),
         },
       })
