@@ -148,11 +148,11 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   // Shopping list endpoints
   if (endpoint === '/api/shopping-list' && method === 'GET') {
-    return inventoryStorage.getShoppingListItems(userId!);
+    return inventoryStorage.getShoppingItems(userId!);
   }
   
   if (endpoint === '/api/shopping-list/grouped' && method === 'GET') {
-    return storage.getGroupedShoppingListItems(userId!);
+    return inventoryStorage.getGroupedShoppingItems(userId!);
   }
   
   // User preferences

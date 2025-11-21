@@ -7,7 +7,7 @@
 
 import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import { isAuthenticated } from "../middleware";
-import { aiMlStorage } from "../storage/index";
+import { aiMlStorage, inventoryStorage } from "../storage/index";
 import OpenAI from "openai";
 import { z } from "zod";
 import multer from "multer";
@@ -322,10 +322,11 @@ async function processVoiceCommand(text: string, userId: string): Promise<{
       case "add":
         actionTaken = `Add ${result.parameters.quantity || 1} ${result.parameters.item} to ${result.parameters.list}`;
         if (result.parameters.list === "shopping" || result.parameters.list === "shopping list") {
-          await aiMlStorage.createShoppingListItem(userId, {
-            ingredient: result.parameters.item,
+          await inventoryStorage.createShoppingItem({
+            userId,
+            name: result.parameters.item,
             quantity: (result.parameters.quantity || 1).toString(),
-            isChecked: false
+            isPurchased: false
           });
         } else if (result.parameters.list === "inventory") {
           await aiMlStorage.createFoodItem(userId, {

@@ -1,5 +1,5 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
-import { recipesStorage } from "../storage/index";
+import { recipesStorage, inventoryStorage } from "../storage/index";
 import { 
   insertMealPlanSchema, 
   insertShoppingItemSchema,
@@ -117,7 +117,7 @@ router.get("/shopping-list", isAuthenticated, async (req: ExpressRequest<any, an
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     // Use the consolidated method that groups data at storage layer
-    const shoppingData = await recipesStorage.getGroupedShoppingListItems(userId);
+    const shoppingData = await inventoryStorage.getGroupedShoppingItems(userId);
     res.json(shoppingData);
   } catch (error) {
     console.error("Error fetching shopping list:", error);
@@ -141,10 +141,10 @@ router.post(
         });
       }
 
-      const item = await recipesStorage.createShoppingListItem(
-        userId,
-        validation.data
-      );
+      const item = await inventoryStorage.createShoppingItem({
+        ...validation.data,
+        userId
+      });
       
       res.json(item);
     } catch (error) {
@@ -170,7 +170,8 @@ router.post(
       
       const items = await Promise.all(
         ingredients.map((ingredient: string) =>
-          recipesStorage.createShoppingListItem(userId, {
+          inventoryStorage.createShoppingItem({
+            userId,
             ingredient: ingredient,
             recipeId,
             isChecked: false,
@@ -197,14 +198,14 @@ router.patch(
       const itemId = req.params.id;
       
       // Get current item
-      const items = await recipesStorage.getShoppingListItems(userId);
+      const items = await inventoryStorage.getShoppingItems(userId);
       const item = items.find((i: ShoppingItem) => i.id === itemId);
       
       if (!item) {
         return res.status(404).json({ error: "Shopping list item not found" });
       }
       
-      const updated = await recipesStorage.updateShoppingListItem(itemId, userId, {
+      const updated = await inventoryStorage.updateShoppingItem(userId, itemId, {
         isChecked: !item.isChecked,
       });
       
@@ -230,7 +231,7 @@ router.delete("/shopping-list/:id", isAuthenticated, async (req: ExpressRequest<
       return res.status(404).json({ error: "Shopping list item not found" });
     }
     
-    await recipesStorage.deleteShoppingListItem(itemId, userId);
+    await inventoryStorage.deleteShoppingItem(userId, itemId);
     res.json({ message: "Item removed from shopping list" });
   } catch (error) {
     console.error("Error deleting shopping list item:", error);
@@ -249,7 +250,7 @@ router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: Expre
     
     await Promise.all(
       checkedItems.map((item: ShoppingItem) =>
-        recipesStorage.deleteShoppingListItem(item.id, userId)
+        inventoryStorage.deleteShoppingItem(userId, item.id)
       )
     );
     
@@ -424,7 +425,8 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
       const batch = missingItems.slice(i, i + batchSize);
       const batchResults = await Promise.all(
         batch.map(item =>
-          recipesStorage.createShoppingListItem(userId, {
+          inventoryStorage.createShoppingItem({
+            userId,
             ingredient: item.ingredient,
             recipeId: item.recipeId,
             isChecked: false  // Start unchecked for user to mark as purchased
