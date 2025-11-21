@@ -5,7 +5,7 @@
  * Uses GPT-3.5-turbo for efficient draft generation.
  */
 
-import { Router, type Request as ExpressRequest, type Response as ExpressResponse } from "express";
+import { Router, Request, Response } from "express";
 import { isAuthenticated } from "../middleware";
 import { aiMlStorage } from "../storage/index";
 import { z } from "zod";
@@ -20,7 +20,7 @@ const openai = getOpenAIClient();
  * GET /api/drafts/templates
  * Get available draft templates
  */
-router.get("/templates", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/templates", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const contextType = req.query.contextType as string | undefined;
     const templates = await aiMlStorage.getDraftTemplates(contextType);
@@ -35,9 +35,9 @@ router.get("/templates", isAuthenticated, async (req: ExpressRequest<any, any, a
  * POST /api/drafts/templates
  * Create a new draft template
  */
-router.post("/templates", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/templates", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const schema = z.object({
@@ -61,9 +61,9 @@ router.post("/templates", isAuthenticated, async (req: ExpressRequest<any, any, 
  * POST /api/drafts/generate
  * Generate draft variations based on context
  */
-router.post("/generate", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/generate", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const schema = z.object({
@@ -179,9 +179,9 @@ Each draft should be complete and ready to send.`;
  * POST /api/drafts/feedback
  * Track if draft was used/edited
  */
-router.post("/feedback", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/feedback", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const schema = z.object({
@@ -221,9 +221,9 @@ router.post("/feedback", isAuthenticated, async (req: ExpressRequest<any, any, a
  * GET /api/drafts/history
  * Get user's draft history
  */
-router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/history", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const originalMessageId = req.query.messageId as string | undefined;
@@ -239,9 +239,9 @@ router.get("/history", isAuthenticated, async (req: ExpressRequest<any, any, any
  * POST /api/drafts/quick-reply
  * Generate quick contextual replies
  */
-router.post("/quick-reply", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/quick-reply", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const { message, sentiment } = req.body;
@@ -282,7 +282,7 @@ router.post("/quick-reply", isAuthenticated, async (req: ExpressRequest<any, any
  * POST /api/drafts/improve
  * Improve/polish an existing draft
  */
-router.post("/improve", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/improve", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { draft, improvements } = req.body;
     

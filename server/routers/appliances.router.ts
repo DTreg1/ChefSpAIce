@@ -1,5 +1,4 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
-import type { Request, Response } from "express";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { foodStorage } from "../storage/index";
 import { 
@@ -14,9 +13,9 @@ import { isAuthenticated } from "../middleware/auth.middleware";
 const router = Router();
 
 // Appliances CRUD
-router.get("/appliances", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/appliances", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const category = req.query.category as string | undefined;
     
@@ -38,11 +37,11 @@ router.get("/appliances", isAuthenticated, async (req: ExpressRequest<any, any, 
 router.post(
   "/appliances",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
+      const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const validation = insertApplianceSchema.safeParse(req.body as any);
+      const validation = insertApplianceSchema.safeParse(req.body);
       
       if (!validation.success) {
         return res.status(400).json({
@@ -62,7 +61,7 @@ router.post(
 );
 
 // Get user's appliance categories with counts
-router.get("/appliances/categories", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/appliances/categories", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -74,7 +73,7 @@ router.get("/appliances/categories", isAuthenticated, async (req: ExpressRequest
   }
 });
 
-router.get("/appliances/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/appliances/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -97,9 +96,9 @@ router.get("/appliances/:id", isAuthenticated, async (req: ExpressRequest<any, a
 router.put(
   "/appliances/:id",
   isAuthenticated,
-  async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = (req.user as any)?.id;
+      const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const applianceId = req.params.id;
       
@@ -120,7 +119,7 @@ router.put(
   }
 );
 
-router.delete("/appliances/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.delete("/appliances/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -172,7 +171,7 @@ router.get("/appliance-categories", async (_req: Request, res: ExpressResponse) 
 // ===== NEW APPLIANCE LIBRARY ENDPOINTS =====
 
 // Get all items from appliance library
-router.get("/appliance-library", async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/appliance-library", async (req: Request, res: Response) => {
   try {
     const category = req.query.category as string | undefined;
     const search = req.query.search as string | undefined;
@@ -205,7 +204,7 @@ router.get("/appliance-library/common", async (_req: Request, res: ExpressRespon
 });
 
 // Get user's appliances from the new system
-router.get("/user-appliances", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/user-appliances", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -226,7 +225,7 @@ router.get("/user-appliances", isAuthenticated, async (req: ExpressRequest<any, 
 });
 
 // Get user's appliance categories with counts
-router.get("/user-appliances/categories", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.get("/user-appliances/categories", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -239,7 +238,7 @@ router.get("/user-appliances/categories", isAuthenticated, async (req: ExpressRe
 });
 
 // Add appliance to user's collection
-router.post("/user-appliances", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/user-appliances", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -279,7 +278,7 @@ router.post("/user-appliances", isAuthenticated, async (req: ExpressRequest<any,
 });
 
 // Update user's appliance details
-router.patch("/user-appliances/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.patch("/user-appliances/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -315,7 +314,7 @@ router.patch("/user-appliances/:id", isAuthenticated, async (req: ExpressRequest
 });
 
 // Remove appliance from user's collection
-router.delete("/user-appliances/:id", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.delete("/user-appliances/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -330,7 +329,7 @@ router.delete("/user-appliances/:id", isAuthenticated, async (req: ExpressReques
 });
 
 // Batch add/remove appliances (for onboarding or bulk updates)
-router.post("/user-appliances/batch", isAuthenticated, async (req: ExpressRequest<any, any, any, any>, res: ExpressResponse) => {
+router.post("/user-appliances/batch", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });

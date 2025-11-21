@@ -80,7 +80,7 @@ const resolveDuplicateSchema = z.object({
   mergeIntoId: z.string().optional(), // If merging, which content to keep
 });
 
-router.post('/resolve', isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post('/resolve', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const validation = resolveDuplicateSchema.safeParse(req.body);
     if (!validation.success) {
@@ -114,7 +114,7 @@ router.post('/resolve', isAuthenticated, async (req: ExpressRequest, res: Expres
  * GET /api/duplicates/stats
  * Get duplicate detection statistics
  */
-router.get('/stats', isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.get('/stats', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -135,7 +135,7 @@ const reindexSchema = z.object({
   limit: z.number().min(1).max(100).default(10),
 });
 
-router.post('/reindex', isAuthenticated, async (req: ExpressRequest, res: ExpressResponse) => {
+router.post('/reindex', isAuthenticated, async (req: Request, res: Response) => {
   try {
     const validation = reindexSchema.safeParse(req.body);
     if (!validation.success) {
