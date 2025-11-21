@@ -134,7 +134,7 @@ router.patch(
     try {
       const { userId } = req.params;
       const { isAdmin: newAdminStatus  } = req.body || {};
-      const currentUserId = (req.user as any).id;
+      const currentUserId = getAuthenticatedUserId(req);
 
       // Prevent users from promoting themselves
       if (userId === currentUserId && newAdminStatus === true) {
@@ -181,7 +181,7 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
-      const currentUserId = (req.user as any).id;
+      const currentUserId = getAuthenticatedUserId(req);
 
       // Prevent admins from deleting themselves
       if (userId === currentUserId) {
@@ -320,7 +320,7 @@ router.post(
       const invalidatedCount = invalidateCache(pattern);
       
       // Log admin action
-      await systemStorage.logApiUsage((req.user as any).id, {
+      await systemStorage.logApiUsage(getAuthenticatedUserId(req) || '', {
         apiName: "admin-cache-invalidate",
         endpoint: "/api/admin/cache/invalidate",
         statusCode: 200,
@@ -355,7 +355,7 @@ router.post(
       await foodStorage.clearOldCache(0); // Clear all database cache
       
       // Log admin action
-      await systemStorage.logApiUsage((req.user as any).id, {
+      await systemStorage.logApiUsage(getAuthenticatedUserId(req) || '', {
         apiName: "admin-cache-clear",
         endpoint: "/api/admin/cache/clear",
         statusCode: 200,
@@ -391,7 +391,7 @@ router.post(
       });
       
       // Log admin action
-      await systemStorage.logApiUsage((req.user as any).id, {
+      await systemStorage.logApiUsage(getAuthenticatedUserId(req) || '', {
         apiName: "admin-cache-warm",
         endpoint: "/api/admin/cache/warm",
         statusCode: 202,
