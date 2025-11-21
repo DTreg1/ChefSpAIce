@@ -26,6 +26,3 @@
 
 // Re-export everything from the schema index which aggregates all domains
 export * from './schema/index';
-
-// For backward compatibility, also export common JSON schemas
-export * from './json-schemas';

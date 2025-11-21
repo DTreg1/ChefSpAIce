@@ -6,7 +6,9 @@ import type { USDAFoodItem } from "@shared/schema";
 const usdaDataCache = new Map<string, USDAFoodItem>();
 
 // Fetch USDA data for a single onboarding item
-export async function fetchOnboardingItemUsdaData(itemName: string): Promise<USDAFoodItem | null> {
+export async function fetchOnboardingItemUsdaData(
+  itemName: string,
+): Promise<USDAFoodItem | null> {
   const mapping = getOnboardingItemByName(itemName);
   if (!mapping) {
     console.error(`No mapping found for item: ${itemName}`);
@@ -14,24 +16,28 @@ export async function fetchOnboardingItemUsdaData(itemName: string): Promise<USD
   }
 
   // Check cache first (use UPC as key if available, otherwise use displayName)
-  const cacheKey = mapping.upc || mapping.displayName;
+  const cacheKey = mapping.gtinUpc || mapping.displayName;
   if (usdaDataCache.has(cacheKey)) {
     return usdaDataCache.get(cacheKey) || null;
   }
 
   try {
     // Try UPC search if available
-    if (mapping.upc) {
+    if (mapping.gtinUpc) {
       // console.log(`Searching for ${itemName} by UPC: ${mapping.upc}`);
-      const searchResults = await searchUSDAFoods(mapping.upc);
-      if (searchResults && searchResults.foods && searchResults.foods.length > 0) {
+      const searchResults = await searchUSDAFoods(mapping.gtinUpc);
+      if (
+        searchResults &&
+        searchResults.foods &&
+        searchResults.foods.length > 0
+      ) {
         const firstResult = searchResults.foods[0];
         usdaDataCache.set(cacheKey, firstResult);
         return firstResult;
       }
       // console.log(`UPC search failed for ${itemName}`);
     }
-    
+
     // Try FDC ID if available (cast to any to access fdcId)
     const mappingWithFdc = mapping as any;
     if (mappingWithFdc.fdcId) {
@@ -46,8 +52,14 @@ export async function fetchOnboardingItemUsdaData(itemName: string): Promise<USD
 
     // Final fallback: search by name
     // console.log(`Searching for ${itemName} by name...`);
-    const nameSearchResults = await searchUSDAFoods(mapping.description || itemName);
-    if (nameSearchResults && nameSearchResults.foods && nameSearchResults.foods.length > 0) {
+    const nameSearchResults = await searchUSDAFoods(
+      mapping.description || itemName,
+    );
+    if (
+      nameSearchResults &&
+      nameSearchResults.foods &&
+      nameSearchResults.foods.length > 0
+    ) {
       const firstResult = nameSearchResults.foods[0];
       usdaDataCache.set(cacheKey, firstResult);
       return firstResult;
@@ -61,9 +73,11 @@ export async function fetchOnboardingItemUsdaData(itemName: string): Promise<USD
 }
 
 // Batch fetch USDA data for multiple onboarding items
-export async function fetchOnboardingItemsUsdaData(itemNames: string[]): Promise<Map<string, USDAFoodItem>> {
+export async function fetchOnboardingItemsUsdaData(
+  itemNames: string[],
+): Promise<Map<string, USDAFoodItem>> {
   const results = new Map<string, USDAFoodItem>();
-  
+
   // Process items in parallel for efficiency
   const promises = itemNames.map(async (itemName) => {
     const usdaData = await fetchOnboardingItemUsdaData(itemName);
@@ -93,7 +107,7 @@ export async function getEnrichedOnboardingItem(itemName: string): Promise<{
   }
 
   const usdaData = await fetchOnboardingItemUsdaData(itemName);
-  
+
   return {
     name: usdaData?.description || mapping.displayName,
     quantity: mapping.quantity,
@@ -101,18 +115,22 @@ export async function getEnrichedOnboardingItem(itemName: string): Promise<{
     storage: mapping.storage,
     expirationDays: mapping.expirationDays,
     fdcId: usdaData?.fdcId ? String(usdaData.fdcId) : undefined,
-    nutrition: usdaData?.nutrition ? JSON.stringify(usdaData.nutrition) : undefined,
-    usdaData: usdaData ? {
-      fdcId: usdaData.fdcId,
-      description: usdaData.description,
-      dataType: usdaData.dataType,
-      brandOwner: usdaData.brandOwner,
-      gtinUpc: usdaData.gtinUpc,
-      ingredients: usdaData.ingredients,
-      foodCategory: usdaData.foodCategory,
-      servingSize: usdaData.servingSize,
-      servingSizeUnit: usdaData.servingSizeUnit,
-      nutrition: usdaData.nutrition,
-    } : undefined,
+    nutrition: usdaData?.nutrition
+      ? JSON.stringify(usdaData.nutrition)
+      : undefined,
+    usdaData: usdaData
+      ? {
+          fdcId: usdaData.fdcId,
+          description: usdaData.description,
+          dataType: usdaData.dataType,
+          brandOwner: usdaData.brandOwner,
+          gtinUpc: usdaData.gtinUpc,
+          ingredients: usdaData.ingredients,
+          foodCategory: usdaData.foodCategory,
+          servingSize: usdaData.servingSize,
+          servingSizeUnit: usdaData.servingSizeUnit,
+          nutrition: usdaData.nutrition,
+        }
+      : undefined,
   };
 }

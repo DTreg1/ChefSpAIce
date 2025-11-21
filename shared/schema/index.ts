@@ -70,13 +70,6 @@ import { userPredictions } from './analytics';
 // Re-export for backward compatibility
 export { users, userRecipes, pushTokens, analyticsInsights, trends, userPredictions };
 
-// ==================== Type Re-exports from json-schemas ====================
-// Re-export types from json-schemas that are used by client code
-export type { 
-  USDAFoodItem, 
-  USDASearchResponse, 
-  NutritionInfo 
-} from '../json-schemas';
 
 // ==================== Compatibility Aliases ====================
 // These provide backward compatibility for incorrect type names that were used
