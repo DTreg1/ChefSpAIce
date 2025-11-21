@@ -200,7 +200,7 @@ export async function preloadCommonSearches(): Promise<void> {
       const cacheKey = generateCacheKey(query);
       
       // Check if already cached
-      if (!apiCache.has(cacheKey)) {
+      if (!apiCache.get(cacheKey)) {
         // Preload with small page size
         await searchUSDAFoodsCached({ query, pageSize: 10, pageNumber: 1 });
         // Add delay to avoid rate limiting
@@ -208,6 +208,7 @@ export async function preloadCommonSearches(): Promise<void> {
       }
     } catch (error) {
       failedSearches++;
+      console.error(`[USDA Cache] Failed to preload search for "${query}":`, error instanceof Error ? error.message : error);
     }
   }
   

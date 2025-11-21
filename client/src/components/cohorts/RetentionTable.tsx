@@ -169,10 +169,10 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
                   <tr key={cohort.id} className="border-b" data-testid={`row-cohort-${cohort.id}`}>
                     <td className="py-3 px-4">
                       <div className="space-y-1">
-                        <div className="font-medium">{cohort.name}</div>
+                        <div className="font-medium">{cohort.cohortName}</div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(cohort.createdAt), "MMM d, yyyy")}
+                          {cohort.createdAt && format(new Date(cohort.createdAt), "MMM d, yyyy")}
                         </div>
                       </div>
                     </td>
@@ -210,7 +210,7 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
                               </TooltipTrigger>
                               <TooltipContent>
                                 <div className="space-y-1">
-                                  <p className="font-medium">{cohort.name}</p>
+                                  <p className="font-medium">{cohort.cohortName}</p>
                                   <p>{formatPeriodLabel(period)}</p>
                                   <p className="text-sm">
                                     {count} of {baseCount} users
