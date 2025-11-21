@@ -40,14 +40,30 @@ export enum AIErrorCode {
 }
 
 /**
+ * Type definition for axios-style errors and other error types
+ */
+interface ExtendedError {
+  response?: {
+    status?: number;
+    data?: any;
+    headers?: Record<string, any>;
+  };
+  status?: number;
+  data?: any;
+  headers?: Record<string, any>;
+  message?: string;
+  code?: string;
+}
+
+/**
  * Handle OpenAI specific errors and convert to AIError
  */
 export function handleOpenAIError(error: Error | unknown): AIError {
   // Log the full error for debugging
   // console.log('[AI Error Handler] Raw error:', error);
 
-  // Cast error to any to safely access properties
-  const err = error;
+  // Cast error to ExtendedError to safely access properties
+  const err = error as ExtendedError;
 
   // First check for axios-style error responses
   const status = err?.response?.status || err?.status;
@@ -254,8 +270,8 @@ export function formatErrorForLogging(error: Error | unknown): object {
     };
   }
 
-  // Cast error to any to safely access properties
-  const err = error;
+  // Cast error to ExtendedError to safely access properties
+  const err = error as ExtendedError & { constructor?: { name?: string }, stack?: string };
   
   return {
     type: err?.constructor?.name || 'Unknown',

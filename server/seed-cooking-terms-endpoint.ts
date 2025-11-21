@@ -3,7 +3,7 @@
 
 import { Router, Request, Response } from "express";
 import { initialCookingTerms } from "./seed-cooking-terms";
-import type { IStorage } from "./storage";
+import type { IStorage } from "../server/storage/interfaces/IFoodStorage";
 
 export async function seedCookingTerms(storage: IStorage) {
   try {

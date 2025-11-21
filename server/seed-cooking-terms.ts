@@ -1,5 +1,5 @@
 // Seed data for cooking terms knowledge bank
-import { InsertCookingTerm } from "@shared/schema";
+import { InsertCookingTerm } from "@shared/schema/food";
 
 export const initialCookingTerms: InsertCookingTerm[] = [
   // Knife Skills
