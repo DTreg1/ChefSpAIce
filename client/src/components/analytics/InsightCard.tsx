@@ -48,28 +48,28 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
     }
   });
 
-  // Get icon based on category
+  // Get icon based on insight type
   const getIcon = () => {
-    switch (insight.category) {
+    switch (insight.insightType) {
       case "anomaly":
         return <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
       case "trend":
-        return insight.metricData?.trend === "up" 
+        return insight.metrics?.trend === "up" 
           ? <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
-          : insight.metricData?.trend === "down"
+          : insight.metrics?.trend === "down"
           ? <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
           : <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
-      case "prediction":
+      case "recommendation":
         return <Lightbulb className="w-5 h-5 text-purple-600 dark:text-purple-400" />;
       default:
         return <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
     }
   };
 
-  // Get importance badge color
-  const getImportanceColor = () => {
-    if (insight.importance >= 4) return "destructive";
-    if (insight.importance >= 3) return "default";
+  // Get severity badge color
+  const getSeverityColor = () => {
+    if (insight.severity === "critical") return "destructive";
+    if (insight.severity === "warning") return "default";
     return "secondary";
   };
 
@@ -101,19 +101,17 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
             {getIcon()}
             <div className="flex-1 space-y-1">
               <CardTitle className="text-base leading-tight">
-                {insight.metricName.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                {insight.title}
               </CardTitle>
               <CardDescription className="text-sm mt-2">
-                {insight.insightText}
+                {insight.description}
               </CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={getImportanceColor()} className="text-xs">
-              {insight.importance === 5 ? "Critical" :
-               insight.importance === 4 ? "Important" :
-               insight.importance === 3 ? "Notable" :
-               insight.importance === 2 ? "Minor" : "Info"}
+            <Badge variant={getSeverityColor()} className="text-xs">
+              {insight.severity === "critical" ? "Critical" :
+               insight.severity === "warning" ? "Warning" : "Info"}
             </Badge>
             {!insight.isRead && (
               <Badge variant="outline" className="text-xs">New</Badge>
@@ -124,41 +122,41 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
 
       <CardContent>
         {/* Key metrics display */}
-        {insight.metricData && (
+        {insight.metrics && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            {insight.metricData.currentValue !== undefined && (
+            {insight.metrics.currentValue !== undefined && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Current</p>
                 <p className="text-sm font-semibold" data-testid={`text-current-${insight.id}`}>
-                  {insight.metricData.currentValue.toLocaleString()}
+                  {insight.metrics.currentValue.toLocaleString()}
                 </p>
               </div>
             )}
-            {insight.metricData.percentageChange !== undefined && (
+            {insight.metrics.percentageChange !== undefined && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Change</p>
                 <p className={cn(
                   "text-sm font-semibold",
-                  insight.metricData.percentageChange > 0 ? "text-green-600 dark:text-green-400" : 
-                  insight.metricData.percentageChange < 0 ? "text-red-600 dark:text-red-400" : ""
+                  insight.metrics.percentageChange > 0 ? "text-green-600 dark:text-green-400" : 
+                  insight.metrics.percentageChange < 0 ? "text-red-600 dark:text-red-400" : ""
                 )} data-testid={`text-change-${insight.id}`}>
-                  {formatPercentage(insight.metricData.percentageChange)}
+                  {formatPercentage(insight.metrics.percentageChange)}
                 </p>
               </div>
             )}
-            {insight.metricData.average !== undefined && (
+            {insight.metrics.average !== undefined && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Average</p>
                 <p className="text-sm font-semibold" data-testid={`text-average-${insight.id}`}>
-                  {insight.metricData.average.toLocaleString()}
+                  {insight.metrics.average.toLocaleString()}
                 </p>
               </div>
             )}
-            {insight.period && (
+            {insight.metrics.period && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Period</p>
                 <p className="text-sm font-semibold" data-testid={`text-period-${insight.id}`}>
-                  {insight.period}
+                  {insight.metrics.period}
                 </p>
               </div>
             )}
@@ -166,7 +164,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
         )}
 
         {/* Expandable details */}
-        {(insight.aiContext?.suggestedActions || insight.aiContext?.reasoning) && (
+        {insight.recommendations && insight.recommendations.length > 0 && (
           <>
             <Button
               variant="ghost"
@@ -175,47 +173,23 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
               className="w-full justify-between"
               data-testid={`button-expand-${insight.id}`}
             >
-              <span className="text-xs">View Details</span>
+              <span className="text-xs">View Recommendations</span>
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
             
             {isExpanded && (
               <div className="mt-4 space-y-4 pt-4 border-t">
-                {insight.aiContext?.suggestedActions && insight.aiContext.suggestedActions.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Suggested Actions</h4>
-                    <ul className="space-y-1">
-                      {insight.aiContext.suggestedActions.map((action: string, idx: number) => (
-                        <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <span className="text-primary mt-0.5">•</span>
-                          <span data-testid={`text-action-${insight.id}-${idx}`}>{action}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {insight.aiContext?.reasoning && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Technical Details</h4>
-                    <p className="text-sm text-muted-foreground" data-testid={`text-reasoning-${insight.id}`}>
-                      {insight.aiContext.reasoning}
-                    </p>
-                  </div>
-                )}
-
-                {insight.aiContext?.relatedMetrics && insight.aiContext.relatedMetrics.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Related Metrics</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {insight.aiContext.relatedMetrics.map((metric: string, idx: number) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {metric.replace(/_/g, " ")}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Recommendations</h4>
+                  <ul className="space-y-1">
+                    {insight.recommendations.map((recommendation: string, idx: number) => (
+                      <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span data-testid={`text-recommendation-${insight.id}-${idx}`}>{recommendation}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 {/* Feedback buttons */}
                 {!feedbackGiven && (

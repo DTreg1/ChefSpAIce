@@ -153,10 +153,10 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
               <Textarea
                 id="hypothesis"
                 placeholder="e.g., Changing the button color to green will increase click-through rate by 10%"
-                value={formData.metadata?.hypothesis}
+                value={formData.hypothesis}
                 onChange={(e) => setFormData({ 
                   ...formData, 
-                  metadata: { ...formData.metadata, hypothesis: e.target.value } 
+                  hypothesis: e.target.value 
                 })}
                 data-testid="textarea-hypothesis"
               />
@@ -223,65 +223,30 @@ export default function CreateTestDialog({ open, onClose, onSuccess }: CreateTes
                 <Label htmlFor="status">Status</Label>
                 <Select 
                   value={formData.status} 
-                  onValueChange={(value) => setFormData({ ...formData, status: value as "active" | "draft" | "completed" | "paused" })}
+                  onValueChange={(value) => setFormData({ ...formData, status: value as "draft" | "running" | "paused" | "completed" | "cancelled" })}
                 >
                   <SelectTrigger id="status" data-testid="select-status">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="running">Running</SelectItem>
+                    <SelectItem value="paused">Paused</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="metric">Success Metric</Label>
-                <Select 
-                  value={formData.successMetric} 
-                  onValueChange={(value) => setFormData({ ...formData, successMetric: value })}
-                >
-                  <SelectTrigger id="metric" data-testid="select-metric">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="conversion">Conversion Rate</SelectItem>
-                    <SelectItem value="revenue">Revenue</SelectItem>
-                    <SelectItem value="engagement">Engagement</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="audience">Target Audience %</Label>
-                <Input
-                  id="audience"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="5"
-                  value={(formData.targetAudience || 0.5) * 100}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    targetAudience: parseFloat(e.target.value) / 100 
-                  })}
-                  data-testid="input-audience"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="sampleSize">Min Sample Size</Label>
+                <Label htmlFor="sampleSize">Target Sample Size</Label>
                 <Input
                   id="sampleSize"
                   type="number"
                   min="100"
                   step="100"
-                  value={formData.metadata?.minimumSampleSize}
+                  value={formData.targetSampleSize}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    metadata: { ...formData.metadata, minimumSampleSize: parseInt(e.target.value) } 
+                    targetSampleSize: parseInt(e.target.value) 
                   })}
                   data-testid="input-sample-size"
                 />

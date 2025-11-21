@@ -8,9 +8,9 @@ interface AnomalyAlertProps {
 }
 
 export function AnomalyAlert({ insights }: AnomalyAlertProps) {
-  // Filter for anomalies with high importance
+  // Filter for anomalies with high severity
   const anomalies = insights.filter(
-    i => i.category === "anomaly" && i.importance >= 4
+    i => i.insightType === "anomaly" && i.severity === "critical"
   );
 
   if (anomalies.length === 0) {
@@ -28,16 +28,16 @@ export function AnomalyAlert({ insights }: AnomalyAlertProps) {
       </AlertTitle>
       <AlertDescription className="mt-2 text-yellow-800 dark:text-yellow-200">
         <div className="space-y-2">
-          <p data-testid="text-anomaly-description">{latestAnomaly.insightText}</p>
-          {latestAnomaly.metricData?.percentageChange !== undefined && (
+          <p data-testid="text-anomaly-description">{latestAnomaly.description}</p>
+          {latestAnomaly.metrics?.percentageChange !== undefined && (
             <div className="flex items-center gap-2 mt-2">
-              {latestAnomaly.metricData.percentageChange > 0 ? (
+              {latestAnomaly.metrics.percentageChange > 0 ? (
                 <TrendingUp className="w-4 h-4" />
               ) : (
                 <TrendingDown className="w-4 h-4" />
               )}
               <span className="font-semibold" data-testid="text-anomaly-change">
-                {Math.abs(latestAnomaly.metricData.percentageChange).toFixed(1)}% change detected
+                {Math.abs(latestAnomaly.metrics.percentageChange).toFixed(1)}% change detected
               </span>
             </div>
           )}
