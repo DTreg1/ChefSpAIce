@@ -189,6 +189,7 @@ export const insertAbTestSchema = createInsertSchema(abTests)
     status: testStatusSchema.default('draft'),
     targetSampleSize: z.number().positive().optional(),
     currentSampleSize: z.number().nonnegative().default(0),
+    configuration: z.custom<TestConfiguration>(),
   });
 
 export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
@@ -198,6 +199,7 @@ export const insertAbTestResultSchema = createInsertSchema(abTestResults)
   .extend({
     converted: z.boolean().default(false),
     conversionValue: z.number().optional(),
+    metadata: z.record(z.any()).optional(),
   });
 
 export type InsertAbTestResult = z.infer<typeof insertAbTestResultSchema>;

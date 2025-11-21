@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { storage as defaultStorage } from './storage';
-import { type InsertAbTest, type InsertAbTestResult, type InsertAbTestInsight } from '@shared/schema';
+import { type InsertAbTest, type InsertAbTestResult, type InsertAbTestInsight, type AbTest } from '@shared/schema';
 
 export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
   const router = Router();
@@ -116,7 +116,7 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
         ];
 
         // Create tests and capture IDs
-        const createdTests = [];
+        const createdTests: AbTest[] = [];
         for (const test of tests) {
           const created = await storage.createAbTest(test);
           createdTests.push(created);

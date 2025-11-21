@@ -14,7 +14,7 @@ import {
   type UserStorage,
   type InsertUserStorage,
   type CookingTerm,
-  type InsertCookingTerm,
+  type InsertCookingTerm
 } from "@shared/schema";
 
 import { PaginationHelper, PaginatedResponse } from "../../utils/pagination";
