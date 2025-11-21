@@ -377,3 +377,4 @@ export type ApplianceLibraryItem = typeof applianceLibrary.$inferSelect;
 export const insertShoppingListItemSchema = insertShoppingItemSchema;
 export type ShoppingListItem = ShoppingItem;
 export type ApplianceLibrary = ApplianceLibraryItem;
+export type OnboardingInventory = OnboardingInventoryItem;
