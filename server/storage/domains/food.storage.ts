@@ -16,10 +16,8 @@ import {
   type CookingTerm,
 } from "@shared/schema";
 
-// TODO: Re-enable when these tables are exported from @shared/schema
-// fdcCache, onboardingInventory, FdcCache, InsertFdcCache, OnboardingInventoryItem
-import type { PaginatedResponse } from "../../storage";
-import { PaginationHelper } from "../../utils/pagination";
+
+import { PaginationHelper, PaginatedResponse } from "../../utils/pagination";
 
 // Type for storage location with item count
 export interface StorageLocationWithCount extends UserStorage {
@@ -320,111 +318,6 @@ export class FoodStorage {
       .where(and(eq(userStorage.userId, userId), eq(userStorage.id, id)));
   }
 
-  // ==================== FDC Cache Methods ====================
-
-  async getCachedFood(fdcId: string | number): Promise<FdcCache | null> {
-    const fdcIdStr = String(fdcId);
-    const [cached] = await db
-      .select()
-      .from(fdcCache)
-      .where(eq(fdcCache.fdcId, fdcIdStr));
-    return cached || null;
-  }
-
-  async cacheFood(food: InsertFdcCache): Promise<FdcCache> {
-    const now = new Date();
-    const foodToInsert = {
-      id: `fdc_${food.fdcId}`,
-      fdcId: food.fdcId,
-      description: food.description,
-      dataType: food.dataType,
-      brandOwner: food.brandOwner,
-      brandName: food.brandName,
-      ingredients: food.ingredients,
-      servingSize: food.servingSize,
-      servingSizeUnit: food.servingSizeUnit,
-      nutrients: food.nutrients,
-      fullData: food.fullData,
-      cachedAt: now,
-      lastAccessed: now,
-    };
-
-    const [cachedFood] = await db
-      .insert(fdcCache)
-      .values(foodToInsert)
-      .onConflictDoUpdate({
-        target: fdcCache.id,
-        set: {
-          ...foodToInsert,
-          lastAccessed: new Date(),
-        },
-      })
-      .returning();
-    return cachedFood;
-  }
-
-  async updateFoodLastAccessed(fdcId: string): Promise<void> {
-    await db
-      .update(fdcCache)
-      .set({ lastAccessed: new Date() })
-      .where(eq(fdcCache.fdcId, fdcId));
-  }
-
-  async clearOldCache(daysOld: number = 30): Promise<void> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-
-    // Clear old food cache that hasn't been accessed recently
-    await db
-      .delete(fdcCache)
-      .where(sql`${fdcCache.lastAccessed} < ${cutoffDate.toISOString()}`);
-  }
-
-  async getUSDACacheStats(): Promise<{
-    totalEntries: number;
-    oldestEntry: Date | null;
-  }> {
-    const [countResult] = await db
-      .select({ count: sql<number>`COUNT(*)::int` })
-      .from(fdcCache);
-
-    const [oldestResult] = await db
-      .select({ oldest: sql<Date>`MIN(${fdcCache.cachedAt})` })
-      .from(fdcCache);
-
-    return {
-      totalEntries: countResult?.count || 0,
-      oldestEntry: oldestResult?.oldest || null,
-    };
-  }
-
-  // ==================== Onboarding Inventory Methods ====================
-
-  async getOnboardingInventory(): Promise<OnboardingInventoryItem[]> {
-    return await db.select().from(onboardingInventory);
-  }
-
-  async getOnboardingInventoryByName(name: string): Promise<OnboardingInventoryItem | null> {
-    const [item] = await db
-      .select()
-      .from(onboardingInventory)
-      .where(eq(onboardingInventory.name, name));
-    return item || null;
-  }
-
-  async getOnboardingInventoryByNames(names: string[]): Promise<OnboardingInventoryItem[]> {
-    if (names.length === 0) return [];
-    
-    return await db
-      .select()
-      .from(onboardingInventory)
-      .where(
-        sql`${onboardingInventory.name} = ANY(ARRAY[${sql.join(
-          names.map((name) => sql`${name}`),
-          sql`, `
-        )}])`
-      );
-  }
 
   // ==================== Cooking Terms Methods ====================
 
@@ -456,7 +349,13 @@ export class FoodStorage {
   }
 
   async createCookingTerm(term: InsertCookingTerm): Promise<CookingTerm> {
-    const [result] = await db.insert(cookingTerms).values(term).returning();
+    // Ensure required fields are provided
+    const termWithDefaults = {
+      ...term,
+      shortDefinition: term.shortDefinition || '',
+      longDefinition: term.longDefinition || ''
+    };
+    const [result] = await db.insert(cookingTerms).values(termWithDefaults).returning();
     return result;
   }
 
@@ -483,13 +382,14 @@ export class FoodStorage {
   async searchCookingTerms(searchText: string): Promise<CookingTerm[]> {
     const lowerSearch = searchText.toLowerCase();
 
-    // Search in term, definition, and related terms array
+    // Search in term, short/long definitions, and related terms array
     return await db
       .select()
       .from(cookingTerms)
       .where(
         sql`LOWER(${cookingTerms.term}) LIKE ${`%${lowerSearch}%`} 
-             OR LOWER(${cookingTerms.definition}) LIKE ${`%${lowerSearch}%`}
+             OR LOWER(${cookingTerms.shortDefinition}) LIKE ${`%${lowerSearch}%`}
+             OR LOWER(${cookingTerms.longDefinition}) LIKE ${`%${lowerSearch}%`}
              OR EXISTS (
                SELECT 1 FROM unnest(${cookingTerms.relatedTerms}) AS related_term
                WHERE LOWER(related_term) LIKE ${`%${lowerSearch}%`}
