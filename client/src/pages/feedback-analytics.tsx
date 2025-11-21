@@ -96,24 +96,24 @@ export default function FeedbackAnalyticsPage() {
   }
 
   const sentimentData = [
-    { name: "Positive", value: analytics.sentimentDistribution.positive, color: COLORS.positive },
-    { name: "Neutral", value: analytics.sentimentDistribution.neutral, color: COLORS.neutral },
-    { name: "Negative", value: analytics.sentimentDistribution.negative, color: COLORS.negative }
+    { name: "Positive", value: analytics.avgSentiment > 0.6 ? Math.round(analytics.avgSentiment * 100) : 0, color: COLORS.positive },
+    { name: "Neutral", value: analytics.avgSentiment >= 0.4 && analytics.avgSentiment <= 0.6 ? Math.round(analytics.avgSentiment * 100) : 0, color: COLORS.neutral },
+    { name: "Negative", value: analytics.avgSentiment < 0.4 ? Math.round((1 - analytics.avgSentiment) * 100) : 0, color: COLORS.negative }
   ];
 
-  const typeData = Object.entries(analytics.typeDistribution).map(([type, count]) => ({
+  const typeData = Object.entries(analytics.byType).map(([type, count]) => ({
     name: type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     count
   }));
 
-  const priorityData = Object.entries(analytics.priorityDistribution).map(([priority, count]) => ({
-    name: priority.charAt(0).toUpperCase() + priority.slice(1),
+  const statusData = Object.entries(analytics.byStatus).map(([status, count]) => ({
+    name: status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' '),
     count,
-    color: priority === 'critical' ? '#ef4444' : priority === 'high' ? '#f59e0b' : priority === 'medium' ? '#3b82f6' : '#10b981'
+    color: status === 'resolved' ? '#10b981' : status === 'in_review' ? '#f59e0b' : '#3b82f6'
   }));
 
   const sentimentPercentage = analytics.totalFeedback > 0
-    ? Math.round((analytics.sentimentDistribution.positive / analytics.totalFeedback) * 100)
+    ? Math.round(analytics.avgSentiment * 100)
     : 0;
 
   return (
@@ -162,7 +162,7 @@ export default function FeedbackAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {analytics.averageRating ? analytics.averageRating.toFixed(1) : "N/A"}
+                  {analytics.avgRating ? analytics.avgRating.toFixed(1) : "N/A"}
                 </div>
                 <div className="flex gap-0.5 mt-1">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -170,7 +170,7 @@ export default function FeedbackAnalyticsPage() {
                       key={star}
                       className={cn(
                         "w-4 h-4",
-                        analytics.averageRating && star <= analytics.averageRating
+                        analytics.avgRating && star <= analytics.avgRating
                           ? "fill-amber-500 text-amber-500"
                           : "text-muted-foreground"
                       )}
@@ -258,52 +258,21 @@ export default function FeedbackAnalyticsPage() {
               </CardContent>
             </Card>
 
-            {/* Trends Over Time */}
+            {/* Status Distribution */}
             <Card className="glass-morph">
               <CardHeader>
-                <CardTitle>Feedback Trends</CardTitle>
-                <CardDescription>Daily feedback volume and sentiment</CardDescription>
+                <CardTitle>Feedback by Status</CardTitle>
+                <CardDescription>Current status of feedback items</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={analytics.recentTrends}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="count" 
-                      stroke="#3b82f6" 
-                      name="Feedback Count"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="averageSentiment" 
-                      stroke="#10b981" 
-                      name="Avg Sentiment"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Priority Distribution */}
-            <Card className="glass-morph">
-              <CardHeader>
-                <CardTitle>Issue Priority</CardTitle>
-                <CardDescription>Breakdown by priority level</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={priorityData}>
+                  <BarChart data={statusData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
                     <Bar dataKey="count">
-                      {priorityData.map((entry, index) => (
+                      {statusData.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Bar>
@@ -325,18 +294,9 @@ export default function FeedbackAnalyticsPage() {
                   <div key={idx} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium">{idx + 1}.</span>
-                      <span className="text-sm">{issue.category}</span>
+                      <span className="text-sm">{issue.subject}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge 
-                        variant={
-                          issue.priority === 'critical' ? 'destructive' :
-                          issue.priority === 'high' ? 'secondary' :
-                          'outline'
-                        }
-                      >
-                        {issue.priority}
-                      </Badge>
                       <span className="text-sm text-muted-foreground">{issue.count} reports</span>
                     </div>
                   </div>
@@ -358,8 +318,8 @@ export default function FeedbackAnalyticsPage() {
                     <div key={item.id} className="flex items-start gap-3 pb-3 border-b">
                       <div className={cn(
                         "w-2 h-2 rounded-full mt-2",
-                        item.sentiment === 'positive' ? "bg-green-500" :
-                        item.sentiment === 'negative' ? "bg-red-500" :
+                        item.sentiment && item.sentiment > 0.6 ? "bg-green-500" :
+                        item.sentiment && item.sentiment < 0.4 ? "bg-red-500" :
                         "bg-yellow-500"
                       )} />
                       <div className="flex-1 space-y-1">
@@ -381,12 +341,12 @@ export default function FeedbackAnalyticsPage() {
                             </div>
                           )}
                           <span className="text-xs text-muted-foreground">
-                            {new Date(item.createdAt).toLocaleDateString()}
+                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Unknown date"}
                           </span>
                         </div>
-                        {(item.content || item.description) && (
+                        {item.message && (
                           <p className="text-sm text-muted-foreground line-clamp-2">
-                            {item.content || item.description}
+                            {item.message}
                           </p>
                         )}
                       </div>
