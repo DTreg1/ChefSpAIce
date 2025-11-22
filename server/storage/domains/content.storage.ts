@@ -431,7 +431,7 @@ export class ContentStorage implements IContentStorage {
       const tag = await this.getOrCreateTag(tagName);
       const contentTag = await this.assignContentTag({
         contentId,
-        contentType: contentType,
+        contentType: contentType as any,
         tagId: tag.id,
       });
       results.push(contentTag);
@@ -455,7 +455,7 @@ export class ContentStorage implements IContentStorage {
       .values({
         ...embedding,
         embedding: embeddingArray,
-      })
+      } as any)
       .onConflictDoUpdate({
         target: [
           contentEmbeddings.contentId,
@@ -464,7 +464,7 @@ export class ContentStorage implements IContentStorage {
         set: {
           embedding: embeddingArray,
           embeddingType: embedding.embeddingType,
-          metadata: embedding.metadata,
+          metadata: embedding.metadata as any,
           updatedAt: new Date(),
         },
       })
@@ -647,7 +647,7 @@ export class ContentStorage implements IContentStorage {
         const pair = await this.createDuplicatePair({
           contentId1: contentId,
           contentId2: item.contentId,
-          contentType: contentType,
+          contentType: contentType as any,
           similarity: item.similarity,
         });
         pairs.push(pair);
@@ -693,7 +693,7 @@ export class ContentStorage implements IContentStorage {
     // Insert new cache entry
     const [result] = await db
       .insert(relatedContentCache)
-      .values(cache)
+      .values(cache as any)
       .returning();
 
     return result;

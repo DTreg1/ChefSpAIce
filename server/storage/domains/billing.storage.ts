@@ -30,7 +30,7 @@ export class BillingStorage implements IBillingStorage {
   ): Promise<Donation> {
     const [newDonation] = await db
       .insert(donations)
-      .values(donation)
+      .values(donation as any)
       .returning();
     return newDonation;
   }

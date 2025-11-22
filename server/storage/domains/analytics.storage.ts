@@ -69,7 +69,6 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     startDate?: Date,
     endDate?: Date
   ): Promise<ActivityLog[]> {
-    let query = db.select().from(activityLogs);
     const conditions = [];
     
     if (userId) {
@@ -85,10 +84,13 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     }
     
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      return await db.select().from(activityLogs)
+        .where(and(...conditions))
+        .orderBy(desc(activityLogs.timestamp));
     }
     
-    return await query.orderBy(desc(activityLogs.timestamp));
+    return await db.select().from(activityLogs)
+      .orderBy(desc(activityLogs.timestamp));
   }
 
   async getApiUsageStats(
@@ -143,26 +145,31 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   }
 
   async getWebVitals(userId?: string, limit = 100): Promise<WebVital[]> {
-    let query = db.select().from(webVitals);
-    
     if (userId) {
-      query = query.where(eq(webVitals.userId, userId));
+      return await db.select().from(webVitals)
+        .where(eq(webVitals.userId, userId))
+        .orderBy(desc(webVitals.timestamp))
+        .limit(limit);
     }
     
-    return await query.orderBy(desc(webVitals.timestamp)).limit(limit);
+    return await db.select().from(webVitals)
+      .orderBy(desc(webVitals.timestamp))
+      .limit(limit);
   }
 
   async getWebVitalsByMetric(metric: string, userId?: string): Promise<WebVital[]> {
-    let query = db.select().from(webVitals).where(eq(webVitals.metric, metric));
-    
     if (userId) {
-      query = query.where(and(
-        eq(webVitals.metric, metric),
-        eq(webVitals.userId, userId)
-      ));
+      return await db.select().from(webVitals)
+        .where(and(
+          eq(webVitals.metric, metric),
+          eq(webVitals.userId, userId)
+        ))
+        .orderBy(desc(webVitals.timestamp));
     }
     
-    return await query.orderBy(desc(webVitals.timestamp));
+    return await db.select().from(webVitals)
+      .where(eq(webVitals.metric, metric))
+      .orderBy(desc(webVitals.timestamp));
   }
 
   async getWebVitalsStats(
@@ -183,18 +190,14 @@ export class AnalyticsStorage implements IAnalyticsStorage {
         startDate.setDate(now.getDate() - 1);
     }
     
-    let query = db.select().from(webVitals).where(
-      gte(webVitals.timestamp, startDate)
-    );
-    
-    if (userId) {
-      query = query.where(and(
-        gte(webVitals.timestamp, startDate),
-        eq(webVitals.userId, userId)
-      ));
-    }
-    
-    const vitals = await query;
+    const vitals = userId
+      ? await db.select().from(webVitals).where(and(
+          gte(webVitals.timestamp, startDate),
+          eq(webVitals.userId, userId)
+        ))
+      : await db.select().from(webVitals).where(
+          gte(webVitals.timestamp, startDate)
+        );
     
     // Calculate percentiles for each metric
     const metricGroups = vitals.reduce((acc: Record<string, number[]>, vital) => {
@@ -225,13 +228,13 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   
   // Analytics Events
   async recordAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
-    const [result] = await db.insert(analyticsEvents).values(event).returning();
+    const [result] = await db.insert(analyticsEvents).values(event as any).returning();
     return result;
   }
 
   async recordAnalyticsEventsBatch(events: InsertAnalyticsEvent[]): Promise<AnalyticsEvent[]> {
     if (events.length === 0) return [];
-    return await db.insert(analyticsEvents).values(events).returning();
+    return await db.insert(analyticsEvents).values(events as any).returning();
   }
 
   async getAnalyticsEvents(
@@ -240,7 +243,6 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     startDate?: Date,
     endDate?: Date
   ): Promise<AnalyticsEvent[]> {
-    let query = db.select().from(analyticsEvents);
     const conditions = [];
     
     if (userId) {
@@ -260,10 +262,13 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     }
     
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      return await db.select().from(analyticsEvents)
+        .where(and(...conditions))
+        .orderBy(desc(analyticsEvents.createdAt));
     }
     
-    return await query.orderBy(desc(analyticsEvents.createdAt));
+    return await db.select().from(analyticsEvents)
+      .orderBy(desc(analyticsEvents.createdAt));
   }
   
   // User Sessions
@@ -355,18 +360,14 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   }
 
   async getAnalyticsInsights(userId: string, type?: string): Promise<AnalyticsInsight[]> {
-    let query = db.select().from(analyticsInsights);
-    const conditions = [];
-    
     if (type) {
-      conditions.push(eq(analyticsInsights.insightType, type));
+      return await db.select().from(analyticsInsights)
+        .where(eq(analyticsInsights.insightType, type))
+        .orderBy(desc(analyticsInsights.createdAt));
     }
     
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    return await query.orderBy(desc(analyticsInsights.createdAt));
+    return await db.select().from(analyticsInsights)
+      .orderBy(desc(analyticsInsights.createdAt));
   }
 
   async getDailyInsightSummary(userId: string): Promise<AnalyticsInsight[]> {
@@ -392,16 +393,18 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   }
 
   async getUserPredictions(userId: string, type?: string): Promise<UserPrediction[]> {
-    let query = db.select().from(userPredictions).where(eq(userPredictions.userId, userId));
-    
     if (type) {
-      query = query.where(and(
-        eq(userPredictions.userId, userId),
-        eq(userPredictions.predictionType, type)
-      ));
+      return await db.select().from(userPredictions)
+        .where(and(
+          eq(userPredictions.userId, userId),
+          eq(userPredictions.predictionType, type)
+        ))
+        .orderBy(desc(userPredictions.createdAt));
     }
     
-    return await query.orderBy(desc(userPredictions.createdAt));
+    return await db.select().from(userPredictions)
+      .where(eq(userPredictions.userId, userId))
+      .orderBy(desc(userPredictions.createdAt));
   }
 
   async getPredictionById(predictionId: string): Promise<UserPrediction | null> {
@@ -475,18 +478,14 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   }
 
   async getTrends(type?: string, status?: 'active' | 'inactive'): Promise<Trend[]> {
-    let query = db.select().from(trends);
-    const conditions = [];
-    
     if (type) {
-      conditions.push(eq(trends.trendType, type));
+      return await db.select().from(trends)
+        .where(eq(trends.trendType, type))
+        .orderBy(desc(trends.detectedAt));
     }
     
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    return await query.orderBy(desc(trends.detectedAt));
+    return await db.select().from(trends)
+      .orderBy(desc(trends.detectedAt));
   }
 
   async getTrendById(trendId: string): Promise<Trend | null> {
@@ -535,20 +534,18 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   }
 
   async getTrendAlerts(userId: string, status?: string): Promise<TrendAlert[]> {
-    let query = db.select().from(trendAlerts);
-    const conditions = [];
-    
     if (status === 'acknowledged') {
-      conditions.push(eq(trendAlerts.isAcknowledged, true));
+      return await db.select().from(trendAlerts)
+        .where(eq(trendAlerts.isAcknowledged, true))
+        .orderBy(desc(trendAlerts.createdAt));
     } else if (status === 'pending') {
-      conditions.push(eq(trendAlerts.isAcknowledged, false));
+      return await db.select().from(trendAlerts)
+        .where(eq(trendAlerts.isAcknowledged, false))
+        .orderBy(desc(trendAlerts.createdAt));
     }
     
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    return await query.orderBy(desc(trendAlerts.createdAt));
+    return await db.select().from(trendAlerts)
+      .orderBy(desc(trendAlerts.createdAt));
   }
 
   async getTrendAlertsByTrendId(trendId: string): Promise<TrendAlert[]> {
