@@ -87,10 +87,12 @@ export const oauthConfig = {
   },
 };
 
+import type { OAuthProvider } from "./oauth";
+
 /**
  * Check if OAuth is properly configured
  */
-export function isOAuthConfigured(provider: string): boolean {
+export function isOAuthConfigured(provider: OAuthProvider | string): boolean {
   switch (provider) {
     case "google":
       return !!oauthConfig.google.clientID && !!oauthConfig.google.clientSecret;
@@ -113,7 +115,7 @@ export function isOAuthConfigured(provider: string): boolean {
 /**
  * Get callback URL for a provider
  */
-export function getCallbackURL(provider: string, hostname: string): string {
+export function getCallbackURL(provider: OAuthProvider | string, hostname: string): string {
   const protocol = hostname === "localhost" ? "http" : "https";
   const port = hostname === "localhost" ? ":5000" : "";
   return `${protocol}://${hostname}${port}/api/auth/${provider}/callback`;

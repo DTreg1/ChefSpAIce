@@ -16,10 +16,12 @@ import bcrypt from "bcryptjs";
 import { oauthConfig, isOAuthConfigured, getCallbackURL } from "./oauth-config";
 import { storage } from "../storage";
 import { UpsertUser, InsertAuthProvider } from "../../shared/schema";
-import { Request, Response, NextFunction } from "express";
+
+// Valid OAuth provider types
+export type OAuthProvider = 'google' | 'github' | 'twitter' | 'apple' | 'email' | 'replit';
 
 // Track which strategies are actually registered successfully
-export const registeredStrategies = new Set<string>();
+export const registeredStrategies = new Set<OAuthProvider>();
 
 /**
  * User type for Passport session
@@ -30,7 +32,7 @@ interface SessionUser {
   firstName?: string;
   lastName?: string;
   profileImageUrl?: string;
-  provider: string;
+  provider: OAuthProvider;
   providerId: string;
 }
 
@@ -54,7 +56,7 @@ interface OAuthProfile {
  * Find or create user from OAuth profile
  */
 async function findOrCreateUser(
-  provider: string,
+  provider: OAuthProvider,
   profile: OAuthProfile,
   accessToken?: string,
   refreshToken?: string
@@ -69,7 +71,7 @@ async function findOrCreateUser(
   
   if (existingAuth) {
     // User exists, update their information
-    const user = await storage.getUser(existingAuth.userId);
+    const user = await storage.getUserById(existingAuth.userId);
     if (!user) {
       throw new Error("User not found for existing auth provider");
     }
@@ -112,7 +114,7 @@ async function findOrCreateUser(
   // Create auth provider entry
   const authProvider: InsertAuthProvider = {
     userId: user.id,
-    provider,
+    provider: provider,
     providerId: profile.id,
     providerEmail: email,
     accessToken,
@@ -248,7 +250,7 @@ export function configureAppleStrategy(hostname: string) {
           key: oauthConfig.apple.privateKey,
           callbackURL: getCallbackURL("apple", hostname),
           scope: ["email", "name"],
-        },
+        } as any,
         async (accessToken: string, refreshToken: string, idToken: any, profile: any, done: any) => {
           try {
             // Apple provides limited profile info
@@ -444,21 +446,3 @@ export async function initializeOAuthStrategies(hostname: string) {
   configureEmailStrategy();
 }
 
-/**
- * Admin-only middleware
- * @deprecated Use adminOnly from middleware/auth.middleware.ts instead
- */
-export const adminOnly = async (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  
-  const user = req.user as SessionUser;
-  const dbUser = await storage.getUser(user.id);
-  
-  if (!dbUser?.isAdmin) {
-    return res.status(403).json({ error: "Forbidden: Admin access required" });
-  }
-  
-  next();
-};
