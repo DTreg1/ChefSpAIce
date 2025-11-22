@@ -315,10 +315,8 @@ export function createDataCompletionRoutes(storage: typeof storageInstance) {
         expirationDate: completedItem.expirationDate,
         foodCategory: completedItem.foodCategory,
         barcode: completedItem.barcode,
-        usdaData: completedItem.fdcId ? { 
-          fdcId: completedItem.fdcId,
-          description: completedItem.name || "Unknown"
-        } : undefined,
+        // Only include usdaData if we have complete USDA data with all required fields
+        // Otherwise, just store the fdcId separately for future reference
         nutrition: completedItem.nutrition ? JSON.stringify(completedItem.nutrition) : undefined,
         servingSize: completedItem.servingSize,
         servingSizeUnit: completedItem.servingUnit,

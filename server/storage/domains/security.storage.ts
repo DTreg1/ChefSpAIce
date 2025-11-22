@@ -69,7 +69,7 @@ export class SecurityStorage implements ISecurityStorage {
   async createModerationLog(log: InsertModerationLog): Promise<ModerationLog> {
     const [result] = await db
       .insert(moderationLogs)
-      .values(log)
+      .values([log])
       .returning();
     return result;
   }
@@ -223,7 +223,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<BlockedContent> {
     const [result] = await db
       .insert(blockedContent)
-      .values(content)
+      .values([content])
       .returning();
     return result;
   }
@@ -268,7 +268,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<ModerationAppeal> {
     const [result] = await db
       .insert(moderationAppeals)
-      .values(appeal)
+      .values([appeal])
       .returning();
     return result;
   }
@@ -336,7 +336,7 @@ export class SecurityStorage implements ISecurityStorage {
   async createFraudScore(score: InsertFraudScore): Promise<FraudScore> {
     const [result] = await db
       .insert(fraudScores)
-      .values(score)
+      .values([score])
       .returning();
     return result;
   }
@@ -369,7 +369,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<FraudDetectionResult> {
     const [created] = await db
       .insert(fraudDetectionResults)
-      .values(result)
+      .values([result])
       .returning();
     return created;
   }
@@ -439,7 +439,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<SuspiciousActivity> {
     const [result] = await db
       .insert(suspiciousActivities)
-      .values(activity)
+      .values([activity])
       .returning();
     return result;
   }
@@ -498,7 +498,7 @@ export class SecurityStorage implements ISecurityStorage {
   async createFraudReview(review: InsertFraudReview): Promise<FraudReview> {
     const [result] = await db
       .insert(fraudReviews)
-      .values(review)
+      .values([review])
       .returning();
     return result;
   }
@@ -546,13 +546,13 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<FraudReview> {
     const [review] = await db
       .insert(fraudReviews)
-      .values({
+      .values([{
         userId,
         reviewerId,
         decision: "banned",
         notes: reason,
         restrictions,
-      })
+      }])
       .returning();
     return review;
   }
@@ -679,10 +679,10 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<PrivacySettings> {
     const [upserted] = await db
       .insert(privacySettings)
-      .values({
+      .values([{
         ...settings,
         userId,
-      })
+      }])
       .onConflictDoUpdate({
         target: privacySettings.userId,
         set: {
