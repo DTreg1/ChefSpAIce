@@ -175,7 +175,7 @@ export async function adminOnly(req: Request, res: Response, next: NextFunction)
     
     try {
       // Check if user is admin in database
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
       if (user && user.isAdmin) {
         return next();
       }
