@@ -502,6 +502,11 @@ export async function searchUSDAFoods(
     url.searchParams.append("query", query);
     url.searchParams.append("pageSize", (pageSize || 20).toString());
     url.searchParams.append("pageNumber", (pageNumber || 1).toString());
+    
+    // Debug logging
+    console.log("USDA API Request URL:", url.toString());
+    console.log("API Key exists:", !!API_KEY);
+    console.log("API Key length:", API_KEY ? API_KEY.length : 0);
 
     // Add each dataType as a separate parameter for FDC API array handling
     if (dataType && dataType.length > 0) {

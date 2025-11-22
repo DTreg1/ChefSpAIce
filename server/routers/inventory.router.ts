@@ -9,6 +9,9 @@ import { validateBody } from "../middleware";
 import axios from "axios";
 import { openai } from "../integrations/openai";
 import rateLimiters from "../middleware/rateLimit";
+// USDA FoodData Central integration
+import { searchUSDAFoods, getFoodByFdcId } from "../integrations/usda";
+import { searchUSDAFoodsCached } from "../utils/usdaCache";
 
 const router = Router();
 
@@ -321,9 +324,6 @@ router.get("/food-categories", isAuthenticated, async (_req: any, res: Response)
 });
 
 // USDA FoodData Central endpoints
-const fdcCache = new Map<string, { data: any; timestamp: number }>();
-const FDC_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
 router.get("/fdc/search", async (req: Request, res: Response) => {
   try {
     const query = req.query.query as string;
@@ -331,46 +331,26 @@ router.get("/fdc/search", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Query parameter is required" });
     }
 
-    const cacheKey = `search:${query}`;
-    const cached = fdcCache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < FDC_CACHE_TTL) {
-      // Set cache headers for cached response
-      res.set({
-        'Cache-Control': 'public, max-age=86400', // 24 hours
-        'X-Cache': 'HIT',
-        'ETag': `W/"${Buffer.from(JSON.stringify(cached.data)).toString('base64').slice(0, 27)}"`,
-      });
-      return res.json(cached.data);
-    }
-
-    const apiKey = process.env.VITE_USDA_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "USDA API key not configured" });
-    }
-
-    const response = await axios.get(`https://api.nal.usda.gov/fdc/v1/foods/search`, {
-      params: {
-        query,
-        api_key: apiKey,
-        limit: 25,
-        dataType: "Branded,Survey (FNDDS)",
-      },
+    // Use the cached USDA search function that properly handles the API
+    const result = await searchUSDAFoodsCached({
+      query,
+      pageSize: 25,
+      pageNumber: 1,
+      dataType: ["Branded", "Survey (FNDDS)"],
     });
 
-    const result = response.data;
-    fdcCache.set(cacheKey, { data: result, timestamp: Date.now() });
-
-    // Set cache headers for fresh response
+    // Set cache headers for response
     res.set({
       'Cache-Control': 'public, max-age=86400', // 24 hours
-      'X-Cache': 'MISS',
       'ETag': `W/"${Buffer.from(JSON.stringify(result)).toString('base64').slice(0, 27)}"`,
     });
 
     res.json(result);
   } catch (error) {
     console.error("FDC search error:", error);
+    if (error instanceof Error && error.message.includes("not configured")) {
+      return res.status(500).json({ error: "USDA API key not configured" });
+    }
     res.status(500).json({ error: "Failed to search FDC" });
   }
 });
@@ -379,49 +359,32 @@ router.get("/fdc/food/:fdcId", async (req: Request, res: Response) => {
   try {
     const fdcId = req.params.fdcId;
     
-    const cacheKey = `food:${fdcId}`;
-    const cached = fdcCache.get(cacheKey);
+    // Use the proper USDA integration function
+    const result = await getFoodByFdcId(fdcId);
     
-    if (cached && Date.now() - cached.timestamp < FDC_CACHE_TTL) {
-      // Set cache headers for cached response
-      res.set({
-        'Cache-Control': 'public, max-age=2592000', // 30 days for specific food items
-        'X-Cache': 'HIT',
-        'ETag': `W/"${fdcId}-${cached.timestamp}"`,
-      });
-      return res.json(cached.data);
+    if (!result) {
+      return res.status(404).json({ error: "Food item not found" });
     }
 
-    const apiKey = process.env.VITE_USDA_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "USDA API key not configured" });
-    }
-
-    const response = await axios.get(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}`, {
-      params: { api_key: apiKey },
-    });
-
-    const result = response.data;
-    const timestamp = Date.now();
-    fdcCache.set(cacheKey, { data: result, timestamp });
-
-    // Set cache headers for fresh response
+    // Set cache headers for response
     res.set({
       'Cache-Control': 'public, max-age=2592000', // 30 days for specific food items
-      'X-Cache': 'MISS',
-      'ETag': `W/"${fdcId}-${timestamp}"`,
+      'ETag': `W/"${fdcId}-${Date.now()}"`,
     });
 
     res.json(result);
   } catch (error) {
     console.error("FDC food error:", error);
+    if (error instanceof Error && error.message.includes("not configured")) {
+      return res.status(500).json({ error: "USDA API key not configured" });
+    }
     res.status(500).json({ error: "Failed to fetch food data" });
   }
 });
 
 router.post("/fdc/cache/clear", async (_req: Request, res: Response) => {
-  fdcCache.clear();
-  res.json({ message: "FDC cache cleared successfully" });
+  // The usdaCache module handles its own caching
+  res.json({ message: "FDC cache is managed by the USDA integration module" });
 });
 
 // Barcode lookup endpoints
