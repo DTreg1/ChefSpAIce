@@ -95,7 +95,7 @@ export class SupportStorage implements ISupportStorage {
   async createTicket(ticket: InsertTicket): Promise<Ticket> {
     const [newTicket] = await db
       .insert(tickets)
-      .values(ticket)
+      .values([ticket])
       .returning();
     return newTicket;
   }
