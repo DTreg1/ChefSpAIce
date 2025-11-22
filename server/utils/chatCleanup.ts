@@ -1,5 +1,5 @@
-import { storage } from "./storage";
-import { log } from "./vite";
+import { storage } from "../storage";
+import { log } from "../vite";
 
 // Cleanup tracker to avoid running cleanup too frequently for the same user
 const userCleanupTimestamps = new Map<string, number>();
