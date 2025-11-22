@@ -55,7 +55,6 @@ import ocrRouter from "./ocr.router";
 import transcriptionsRouter from "./transcriptions.router";
 
 // Import special endpoints
-import { createSeedEndpoint } from "../seeds/seed-cooking-terms-endpoint";
 import { createABTestSeedEndpoint } from "../seeds/seed-ab-tests";
 import { createCohortSeedEndpoint } from "../seeds/seed-cohorts";
 import { createDataCompletionRoutes } from "../utils/dataCompletionEndpoints";
@@ -126,8 +125,6 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/transcriptions", transcriptionsRouter); // Speech-to-text transcription endpoints
   
   // Register special endpoints
-  const seedEndpoint = createSeedEndpoint(storage);
-  app.use("/api", seedEndpoint);
   const abTestSeedEndpoint = createABTestSeedEndpoint(storage);
   app.use("/api", abTestSeedEndpoint);
   const cohortSeedEndpoint = createCohortSeedEndpoint(storage);
