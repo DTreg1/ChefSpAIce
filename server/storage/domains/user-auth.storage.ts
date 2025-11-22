@@ -1,6 +1,6 @@
 /**
  * User/Auth Domain Storage
- * Implements IUserAuthStorage interface for user and authentication operations
+ * Implements IUserStorage interface for user and authentication operations
  */
 
 import { db } from "../../db";
@@ -9,6 +9,7 @@ import {
   sessions,
   userStorage,
   User,
+  Session,
 } from "@shared/schema";
 import {
   eq,
@@ -19,9 +20,9 @@ import {
   gte,
   lt,
 } from "drizzle-orm";
-import type { IUserAuthStorage, InsertUser, Session } from "../interfaces/IUserAuthStorage";
+import type { IUserStorage } from "../interfaces/IUserStorage";
 
-export class UserAuthDomainStorage implements IUserAuthStorage {
+export class UserAuthDomainStorage implements IUserStorage {
   // ============= User Management =============
   
   async getUserById(id: string): Promise<User | undefined> {
@@ -70,7 +71,7 @@ export class UserAuthDomainStorage implements IUserAuthStorage {
     }
   }
   
-  async createUser(userData: Partial<InsertUser>): Promise<User> {
+  async createUser(userData: Partial<User>): Promise<User> {
     try {
       const [newUser] = await db
         .insert(users)

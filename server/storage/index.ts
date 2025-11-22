@@ -160,7 +160,7 @@ export {
 
 // Export interface types
 export type { IInventoryStorage } from "./interfaces/IInventoryStorage";
-export type { IUserAuthStorage } from "./interfaces/IUserAuthStorage";
+export type { IUserStorage } from "./interfaces/IUserStorage";
 export type { IRecipesStorage } from "./interfaces/IRecipesStorage";
 export type { IChatStorage } from "./interfaces/IChatStorage";
 export type { IAnalyticsStorage } from "./interfaces/IAnalyticsStorage";
