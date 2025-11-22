@@ -6,7 +6,6 @@ import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 import { isAuthenticated } from "../middleware/auth.middleware";
 import { openai } from "../integrations/openai";
 import { batchedApiLogger } from "../utils/batchedApiLogger";
-import { cleanupOldMessagesForUser } from "../utils/chatCleanup";
 import rateLimiters from "../middleware/rateLimit";
 import {
   AIError,
@@ -158,9 +157,6 @@ router.post(
         role: "user",
         content: message,
       });
-
-      // Periodic cleanup to prevent unbounded growth of chat history
-      await cleanupOldMessagesForUser(userId);
 
       // Build inventory context when requested
       let inventoryContext = "";

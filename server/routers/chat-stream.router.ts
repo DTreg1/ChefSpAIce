@@ -15,7 +15,6 @@ import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.midd
 import { openai } from "../integrations/openai";
 import { storage } from "../storage/index";
 import { batchedApiLogger } from "../utils/batchedApiLogger";
-import { cleanupOldMessagesForUser } from "../utils/chatCleanup";
 import rateLimiters from "../middleware/rateLimit";
 import {
   AIError,
@@ -126,9 +125,6 @@ router.post(
         role: "user",
         content: message,
       });
-
-      // Cleanup old messages
-      await cleanupOldMessagesForUser(userId);
 
       // Build context
       let inventoryContext = "";
