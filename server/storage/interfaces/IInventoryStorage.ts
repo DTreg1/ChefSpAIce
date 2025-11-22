@@ -10,8 +10,6 @@ import type {
   InsertUserStorage,
   ShoppingItem,
   InsertShoppingItem,
-  onboardingInventory,
-  InsertOnboardingInventory,
 } from "@shared/schema";
 
 export interface IInventoryStorage {
@@ -77,10 +75,12 @@ export interface IInventoryStorage {
   
   deleteStorageLocation(userId: string, id: string): Promise<void>;
   
-  // Onboarding
-  getOnboardingInventory(): Promise<typeof onboardingInventory.$inferSelect[]>;
-  getOnboardingInventoryByName(name: string): Promise<typeof onboardingInventory.$inferSelect | undefined>;
-  upsertOnboardingInventoryItem(item: InsertOnboardingInventory): Promise<typeof onboardingInventory.$inferSelect>;
+  // Common Items (previously onboardingInventory)
+  // These methods are temporarily removed as the onboardingInventory table doesn't exist
+  // TODO: Implement common items functionality using userInventory table
+  // getCommonItems(): Promise<UserInventory[]>;
+  // getCommonItemByName(name: string): Promise<UserInventory | undefined>;
+  // upsertCommonItem(item: InsertUserInventory): Promise<UserInventory>;
   
   // Shopping List Operations
   getShoppingItems(userId: string): Promise<ShoppingItem[]>;

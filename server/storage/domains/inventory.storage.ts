@@ -145,12 +145,12 @@ export class InventoryDomainStorage implements IInventoryStorage {
           eq(userInventory.userId, userId),
           gte(userInventory.expirationDate, todayStr),
           lte(userInventory.expirationDate, sevenDaysStr),
-        );
+        ) as typeof whereClause;
       } else if (filter === "expired") {
         whereClause = and(
           eq(userInventory.userId, userId),
           lte(userInventory.expirationDate, todayStr),
-        );
+        ) as typeof whereClause;
       }
 
       // Get total count
