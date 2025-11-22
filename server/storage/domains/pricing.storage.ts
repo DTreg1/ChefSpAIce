@@ -34,7 +34,7 @@ export class PricingStorage implements IPricingStorage {
   async createPricingRule(rule: InsertPricingRules): Promise<PricingRules> {
     const [result] = await db
       .insert(pricingRules)
-      .values(rule)
+      .values([rule])
       .returning();
     return result;
   }
@@ -107,7 +107,7 @@ export class PricingStorage implements IPricingStorage {
   async recordPriceChange(history: InsertPriceHistory): Promise<PriceHistory> {
     const [result] = await db
       .insert(priceHistory)
-      .values(history)
+      .values([history])
       .returning();
     return result;
   }
