@@ -322,7 +322,7 @@ export class UserAuthDomainStorage implements IUserAuthStorage {
         provider,
         providerId,
         userId: user.id,
-        displayName: user.name,
+        displayName: user.firstName || user.email || '',
         email: user.email
       } : undefined;
     } catch (error) {
@@ -338,14 +338,14 @@ export class UserAuthDomainStorage implements IUserAuthStorage {
       if (!user) return undefined;
       
       const providerField = `${provider}Id`;
-      const providerId = (user)[providerField];
+      const providerId = (user as any)[providerField];
       
       return providerId ? {
         id: user.id,
         provider,
         providerId,
         userId: user.id,
-        displayName: user.name,
+        displayName: user.firstName || user.email || '',
         email: user.email
       } : undefined;
     } catch (error) {
@@ -372,7 +372,7 @@ export class UserAuthDomainStorage implements IUserAuthStorage {
         const providerField = `${provider.provider}Id`;
         const userToCreate: any = {
           email: provider.email,
-          name: provider.displayName || provider.email,
+          firstName: provider.displayName || provider.email,
           primaryProvider: provider.provider,
         };
         userToCreate[providerField] = provider.providerId;

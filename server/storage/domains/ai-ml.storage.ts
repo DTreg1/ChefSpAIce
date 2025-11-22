@@ -82,7 +82,7 @@ export class AiMlStorage {
   async createVoiceCommand(command: InsertVoiceCommand): Promise<VoiceCommand> {
     const [result] = await db
       .insert(voiceCommands)
-      .values(command)
+      .values(command as any)
       .returning();
     return result;
   }
@@ -337,7 +337,7 @@ export class AiMlStorage {
   ): Promise<WritingSession> {
     const [result] = await db
       .insert(writingSessions)
-      .values({ ...session, userId })
+      .values({ ...session, userId } as any)
       .returning();
     return result;
   }
@@ -378,7 +378,7 @@ export class AiMlStorage {
   ): Promise<WritingSession> {
     const [result] = await db
       .update(writingSessions)
-      .set(updates)
+      .set(updates as any)
       .where(
         and(
           eq(writingSessions.userId, userId),
@@ -851,7 +851,7 @@ export class AiMlStorage {
   ): Promise<ExtractedData> {
     const [result] = await db
       .insert(extractedData)
-      .values(data)
+      .values(data as any)
       .returning();
     return result;
   }
@@ -897,7 +897,7 @@ export class AiMlStorage {
   ): Promise<ExtractedData> {
     const [result] = await db
       .update(extractedData)
-      .set(updates)
+      .set(updates as any)
       .where(eq(extractedData.id, id))
       .returning();
 
@@ -941,7 +941,7 @@ export class AiMlStorage {
   ): Promise<Transcription> {
     const [result] = await db
       .insert(transcriptions)
-      .values({ ...transcription, userId })
+      .values({ ...transcription, userId } as any)
       .returning();
     return result;
   }
@@ -988,7 +988,7 @@ export class AiMlStorage {
   ): Promise<Transcription> {
     const [result] = await db
       .update(transcriptions)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date() } as any)
       .where(
         and(
           eq(transcriptions.userId, userId),
@@ -1171,7 +1171,7 @@ export class AiMlStorage {
         metadata: draft.metadata,
         isAutoSave: draft.isAutoSave ?? true,
         conflictResolved: draft.conflictResolved ?? false,
-      })
+      } as any)
       .returning();
 
     // Clean up old versions (keep only last 10)
@@ -1288,6 +1288,7 @@ export class AiMlStorage {
       const [newPattern] = await db
         .insert(savePatterns)
         .values({
+          userId,
           avgPauseDuration: 2000,
           typingSpeed: 40,
           saveFrequency: 0.5,
@@ -1295,7 +1296,7 @@ export class AiMlStorage {
           paragraphPauseDuration: 4000,
           preferredSaveInterval: 3000,
           totalSessions: 0,
-        })
+        } as any)
         .returning();
       return newPattern;
     }
