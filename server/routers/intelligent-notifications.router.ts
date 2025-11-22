@@ -8,7 +8,7 @@
 import { Router, type Request, type Response } from 'express';
 import { notificationStorage } from '../storage/index';
 import { intelligentNotificationService } from '../notifications/intelligent-service';
-import { isAuthenticated, adminOnly } from '../middleware/auth.middleware';
+import { isAuthenticated, adminOnly } from '../middleware/oauth.middleware';
 import { z } from 'zod';
 import { insertNotificationPreferenceSchema } from '@shared/schema';
 

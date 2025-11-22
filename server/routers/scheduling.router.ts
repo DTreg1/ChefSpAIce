@@ -10,7 +10,7 @@ import {
   type SchedulingPatterns,
   type MeetingEvents
 } from "@shared/schema";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { openai } from "../integrations/openai";
 
 const router = Router();

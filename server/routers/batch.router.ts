@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/error.middleware";
 import { inventoryStorage, recipesStorage, userAuthStorage, chatStorage, analyticsStorage, foodStorage } from "../storage/index";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 
 const router = Router();
 

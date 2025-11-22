@@ -8,7 +8,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { analyticsStorage } from "../storage/index";
-import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request } from "express";
 import { trendAnalyzer } from "../services/trend-analyzer.service";

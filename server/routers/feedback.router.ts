@@ -4,7 +4,7 @@ import { z } from "zod";
 import { feedbackStorage } from "../storage/index";
 import { insertUserFeedbackSchema, type UserFeedback } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { validateQuery, paginationQuerySchema } from "../middleware";
 
 const router = Router();

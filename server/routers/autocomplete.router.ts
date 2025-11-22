@@ -15,8 +15,7 @@
 
 import express, { Router } from "express";
 import { aiMlStorage } from "../storage/index";
-import { isAuthenticated } from "../auth/unified-auth";
-import { getAuthenticatedUserId } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { insertCompletionFeedbackSchema } from "@shared/schema";
 import z from "zod";
 import OpenAI from "openai";

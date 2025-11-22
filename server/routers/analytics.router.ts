@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { analyticsStorage } from "../storage/index";
 import { analyticsRateLimit } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { getAuthenticatedUserId } from "../middleware/auth.middleware";
+import { getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { insertWebVitalSchema, insertAnalyticsEventSchema } from "@shared/schema";
 import { retryWithBackoff } from "../utils/retry-handler";
 

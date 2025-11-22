@@ -8,7 +8,7 @@ import {
   type ApplianceLibrary
 } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 
 const router = Router();
 

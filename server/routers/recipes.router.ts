@@ -3,7 +3,7 @@ import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request
 import { recipesStorage, chatStorage, inventoryStorage, storage } from "../storage/index";
 import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { openai } from "../integrations/openai";
 import { batchedApiLogger } from "../utils/batchedApiLogger";
 import rateLimiters from "../middleware/rateLimit";

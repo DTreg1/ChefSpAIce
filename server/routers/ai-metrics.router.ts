@@ -5,7 +5,7 @@
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated, adminOnly } from '../middleware/auth.middleware';
+import { isAuthenticated, adminOnly } from '../middleware/oauth.middleware';
 import { getCircuitBreaker } from '../utils/circuit-breaker';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';

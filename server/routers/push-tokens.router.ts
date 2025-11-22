@@ -3,7 +3,7 @@ import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request
 import { eq, and } from "drizzle-orm";
 import { db } from "../db";
 import { pushTokens } from "@shared/schema";
-import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly } from "../middleware/oauth.middleware";
 import crypto from "crypto";
 import PushStatusService from "../services/push-status.service";
 

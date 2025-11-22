@@ -8,7 +8,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { aiMlStorage } from "../storage/index";
-import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request } from "express";
 import { sentimentService } from "../services/sentimentService";

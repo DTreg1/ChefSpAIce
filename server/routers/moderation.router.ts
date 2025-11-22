@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 import { z } from "zod";
 import { securityStorage } from "../storage/index";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { validateBody, validateQuery } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { ModerationService } from "../services/moderation.service";

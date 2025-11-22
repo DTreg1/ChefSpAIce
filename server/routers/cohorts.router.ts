@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { experimentsStorage } from "../storage/index";
 import { asyncHandler } from "../middleware/error.middleware";
-import { getAuthenticatedUserId, isAuthenticated } from "../middleware/auth.middleware";
+import { getAuthenticatedUserId, isAuthenticated } from "../middleware/oauth.middleware";
 import { insertCohortSchema, insertCohortInsightSchema } from "@shared/schema";
 import OpenAI from "openai";
 

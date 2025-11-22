@@ -8,7 +8,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { supportStorage } from "../storage/index";
-import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request } from "express";
 import * as aiRoutingService from "../services/aiRoutingService";

@@ -6,7 +6,7 @@
 
 import { Router } from "express";
 import { z } from "zod";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import multer from "multer";
 import type { DatabaseStorage } from "../storage/index";
 import {

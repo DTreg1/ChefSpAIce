@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { analyticsStorage } from "../storage/index";
-import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { insertAnalyticsInsightSchema, insertInsightFeedbackSchema } from "@shared/schema";
 import { AnalyticsService } from "../services/analytics.service";

@@ -3,7 +3,7 @@ import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request
 import { z } from "zod";
 import { userAuthStorage, analyticsStorage, systemStorage } from "../storage/index";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { validateBody, validateQuery, paginationQuerySchema } from "../middleware";
 import { apiCache } from "../utils/ApiCacheService";
 import { getCacheStats, invalidateCache, clearAllCache } from "../utils/usdaCache";

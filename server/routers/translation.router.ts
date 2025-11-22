@@ -7,7 +7,7 @@
 
 import { Router } from "express";
 import { aiMlStorage } from "../storage/index";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { z } from "zod";
 import OpenAI from "openai";
 import { db } from "../db";

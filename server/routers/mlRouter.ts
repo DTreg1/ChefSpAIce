@@ -14,7 +14,7 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { mlService } from "../services/mlService";
 import { aiMlStorage } from "../storage/index";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 
 const router = Router();
 

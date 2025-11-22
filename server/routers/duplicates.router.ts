@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import { DuplicateDetectionService } from '../services/duplicate-detection.service';
-import { isAuthenticated } from '../middleware/auth.middleware';
+import { isAuthenticated } from '../middleware/oauth.middleware';
 import { db } from '../db';
 import { userRecipes } from '../../shared/schema';
 import { eq } from 'drizzle-orm';

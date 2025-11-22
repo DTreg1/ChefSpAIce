@@ -11,7 +11,7 @@ import {
   insertFraudReviewSchema
 } from "@shared/schema";
 import { FraudDetectionService } from "../services/fraud.service";
-import { isAuthenticated, adminOnly } from "../middleware/auth.middleware";
+import { isAuthenticated, adminOnly } from "../middleware/oauth.middleware";
 import { and, eq, gte, desc, sql } from "drizzle-orm";
 
 const router = Router();

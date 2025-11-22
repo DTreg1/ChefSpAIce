@@ -3,7 +3,7 @@ import { z } from "zod";
 import { inventoryStorage } from "../storage/index";
 import { insertUserInventorySchema, type UserInventory as FoodItem } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { batchedApiLogger } from "../utils/batchedApiLogger";
 import { validateBody } from "../middleware";
 import axios from "axios";

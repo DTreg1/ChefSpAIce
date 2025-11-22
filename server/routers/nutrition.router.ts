@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 import { recipesStorage } from "../storage/index";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { extractNutrition } from "../utils/nutritionCalculator";
 import { z } from "zod";
 

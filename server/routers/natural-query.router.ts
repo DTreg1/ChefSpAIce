@@ -18,7 +18,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { aiMlStorage } from "../storage/index";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { convertNaturalLanguageToSQL, executeValidatedQuery } from "../services/openai-query";
 
 const router = Router();

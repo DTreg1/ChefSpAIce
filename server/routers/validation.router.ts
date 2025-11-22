@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { validationService } from "../services/validation.service";
-import { isAuthenticated as requireAuth, adminOnly } from "../middleware/auth.middleware";
+import { isAuthenticated as requireAuth, adminOnly } from "../middleware/oauth.middleware";
 
 const router = Router();
 

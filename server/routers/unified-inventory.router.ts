@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { validateBody } from "../middleware";
 import { inventoryStorage } from "../storage/domains/inventory.storage";
 import { storage } from "../storage/index"; // Keep for shopping list operations temporarily

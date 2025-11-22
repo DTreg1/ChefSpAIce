@@ -3,7 +3,7 @@ import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request
 import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../db";
 import { notificationHistory } from "@shared/schema";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { notificationStorage } from "../storage/index";
 
 const router = Router();

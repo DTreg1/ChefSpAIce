@@ -8,7 +8,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { aiMlStorage } from "../storage/index";
-import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import OpenAI from "openai";
 import { insertExtractionTemplateSchema, insertExtractedDataSchema } from "@shared/schema";
