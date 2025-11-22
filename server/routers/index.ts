@@ -1,14 +1,12 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { createServer, type Server } from "http";
-// Unified authentication - supports both Replit Auth and OAuth
-import { setupUnifiedAuth } from "../auth/unified-auth";
 
 // Import all routers
-import authRouter from "./auth.router";
+import authRouter from "./oauth.router";
 import inventoryRouter from "./inventory.router";
 import recipesRouter from "./recipes.router";
 import chatRouter from "./chat.router";
-import chatStreamRouter from "./chat-stream.router";
+import chatStreamRouter from "./chat.router";
 import mealPlanningRouter from "./meal-planning.router";
 import appliancesRouter from "./appliances.router";
 import adminRouter from "./admin.router";

@@ -87,7 +87,7 @@ export const oauthConfig = {
   },
 };
 
-import type { OAuthProvider } from "./oauth";
+import type { OAuthProvider } from "../auth/oauth";
 
 /**
  * Check if OAuth is properly configured

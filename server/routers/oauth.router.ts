@@ -6,9 +6,9 @@
 
 import { Router, Request, Response, NextFunction } from "express";
 import passport from "passport";
-import { isOAuthConfigured } from "./oauth-config";
-import { registerEmailUser, registeredStrategies } from "./oauth";
-import { isAuthenticated } from "../middleware/auth.middleware";
+import { isOAuthConfigured } from "../config/oauth-config";
+import { registerEmailUser, registeredStrategies } from "../auth/oauth";
+import { isAuthenticated } from "../middleware/oauth.middleware";
 import { storage } from "../storage";
 
 const router = Router();
@@ -32,7 +32,7 @@ router.get("/auth/google/login", checkOAuthConfig("google"), (req, res, next) =>
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
-  
+
   passport.authenticate("google", {
     scope: ["profile", "email"],
   })(req, res, next);
@@ -52,7 +52,7 @@ router.get("/auth/github/login", checkOAuthConfig("github"), (req, res, next) =>
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
-  
+
   passport.authenticate("github", {
     scope: ["user:email"],
   })(req, res, next);
@@ -72,7 +72,7 @@ router.get("/auth/twitter/login", checkOAuthConfig("twitter"), (req, res, next) 
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
-  
+
   passport.authenticate("twitter")(req, res, next);
 });
 
@@ -91,7 +91,7 @@ router.get("/auth/apple/login", checkOAuthConfig("apple"), (req, res, next) => {
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
-  
+
   passport.authenticate("apple")(req, res, next);
 });
 
@@ -109,7 +109,7 @@ router.get("/auth/replit/login", checkOAuthConfig("replit"), (req, res, next) =>
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
-  
+
   passport.authenticate("replit")(req, res, next);
 });
 
@@ -126,21 +126,21 @@ router.get("/auth/replit/callback", checkOAuthConfig("replit"),
 router.post("/auth/email/register", async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
-    
+
     if (!email || !password) {
       return res.status(400).json({ 
         error: "Email and password are required" 
       });
     }
-    
+
     if (password.length < 8) {
       return res.status(400).json({ 
         error: "Password must be at least 8 characters" 
       });
     }
-    
+
     const user = await registerEmailUser(email, password, firstName, lastName);
-    
+
     // Log the user in after registration
     req.login(user, (err) => {
       if (err) {
@@ -165,13 +165,13 @@ router.post("/auth/email/login", (req, res, next) => {
       console.error("Authentication error:", err);
       return res.status(500).json({ error: "Authentication failed" });
     }
-    
+
     if (!user) {
       return res.status(401).json({ 
         error: info?.message || "Invalid email or password" 
       });
     }
-    
+
     req.login(user, (loginErr) => {
       if (loginErr) {
         console.error("Login error:", loginErr);
@@ -189,7 +189,7 @@ router.post("/auth/logout", (req, res) => {
       console.error("Logout error:", err);
       return res.status(500).json({ error: "Logout failed" });
     }
-    
+
     // Destroy the session
     req.session.destroy((destroyErr) => {
       if (destroyErr) {
@@ -218,11 +218,11 @@ router.get("/auth/user", isAuthenticated, async (req, res) => {
 // Link additional OAuth provider
 router.post("/auth/link/:provider", isAuthenticated, (req, res, next) => {
   const { provider } = req.params;
-  
+
   if (!["google", "github", "twitter", "apple", "replit"].includes(provider)) {
     return res.status(400).json({ error: "Invalid provider" });
   }
-  
+
   if (!isOAuthConfigured(provider)) {
     return res.status(503).json({
       error: "Service Unavailable",
@@ -230,13 +230,13 @@ router.post("/auth/link/:provider", isAuthenticated, (req, res, next) => {
       requiresConfiguration: true
     });
   }
-  
+
   // Store that we're linking, not signing in
   req.session.linkingProvider = provider;
   if (req.user && 'id' in req.user) {
     req.session.linkingUserId = req.user.id;
   }
-  
+
   // Redirect to OAuth flow
   res.json({ 
     redirectUrl: `/api/auth/${provider}/login` 
@@ -254,7 +254,7 @@ router.get("/auth/config-status", (req, res) => {
     replit: isOAuthConfigured("replit") && registeredStrategies.has("replit"),
     email: registeredStrategies.has("email"), // Email is registered if strategy was set up
   };
-  
+
   res.json({
     providers,
     configured: Object.values(providers).some(v => v),

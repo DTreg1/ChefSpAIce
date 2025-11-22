@@ -13,7 +13,7 @@ import AppleStrategy from "@nicokaiser/passport-apple";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as OAuth2Strategy } from "passport-oauth2";
 import bcrypt from "bcryptjs";
-import { oauthConfig, isOAuthConfigured, getCallbackURL } from "./oauth-config";
+import { oauthConfig, isOAuthConfigured, getCallbackURL } from "../config/oauth-config";
 import { storage } from "../storage";
 import { UpsertUser, InsertAuthProvider } from "../../shared/schema";
 
