@@ -119,7 +119,7 @@ export const storage = mergeStorageModules(
 // Legacy method mappings for backward compatibility
 // These ensure old method names still work with new implementations
 Object.assign(storage, {
-  // Map old getUserById to new getUser pattern
+  // Map legacy getUser to standard getUserById pattern
   getUser: userAuthStorage.getUserById.bind(userAuthStorage),
   
   // Shopping list methods are now in inventory domain
