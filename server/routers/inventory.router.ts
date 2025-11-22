@@ -360,6 +360,7 @@ router.get("/fdc/food/:fdcId", async (req: Request, res: Response) => {
     const fdcId = req.params.fdcId;
     
     // Use the proper USDA integration function
+    // getFoodByFdcId now accepts both string and number, and uses fallback when needed
     const result = await getFoodByFdcId(fdcId);
     
     if (!result) {
