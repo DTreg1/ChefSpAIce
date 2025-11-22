@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { userAuthStorage } from "../storage/index";
+import { userAuthStorage, inventoryStorage } from "../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { validateBody } from "../middleware";
@@ -363,15 +363,25 @@ router.post("/force-refresh", asyncHandler(async (req: Request, res) => {
 
 // Get common items for onboarding
 router.get("/onboarding/common-items", asyncHandler(async (req, res) => {
-  const { getItemsByCategory } = await import("../onboarding-items-expanded");
-  const itemsByCategory = getItemsByCategory();
+  const { onboardingUsdaMapping } = await import("../onboarding-usda-mapping");
+  
+  // Group items by category for organized display
+  const itemsByCategory: Record<string, any[]> = {};
+  
+  Object.entries(onboardingUsdaMapping).forEach(([key, item]) => {
+    const category = item.foodCategory || "Other";
+    if (!itemsByCategory[category]) {
+      itemsByCategory[category] = [];
+    }
+    itemsByCategory[category].push({
+      ...item,
+      name: key, // Original key as fallback
+    });
+  });
 
   res.json({
     categories: itemsByCategory,
-    totalItems: Object.values(itemsByCategory).reduce(
-      (sum, items) => sum + items.length,
-      0,
-    ),
+    totalItems: Object.keys(onboardingUsdaMapping).length,
   });
 }));
 
@@ -431,7 +441,7 @@ router.post(
     // Step 2: Create custom storage locations
     for (const customArea of customStorageAreas || []) {
       try {
-        const location = await userAuthStorage.createStorageLocation(userId, {
+        const location = await inventoryStorage.createStorageLocation(userId, {
           name: customArea,
           icon: "package",
         });
@@ -445,102 +455,52 @@ router.post(
     }
 
     // Step 3: Get all storage locations to map names to IDs
-    const allLocations = await userAuthStorage.getStorageLocations(userId);
+    const allLocations = await inventoryStorage.getStorageLocations(userId);
     const locationMap = new Map(
       allLocations.map((loc: any) => [loc.name, loc.id]),
     );
 
-    // Step 4: Import common items and get enriched data
-    const { getItemsByCategory } = await import("../onboarding-items-expanded");
-    const { normalizeCategory } = await import("../category-mapping");
-    const itemsByCategory = getItemsByCategory();
+    // Step 4: Import common items from hardcoded list
+    const { onboardingUsdaMapping } = await import("../onboarding-usda-mapping");
 
-    // Flatten all items to create a lookup map
-    const allItemsMap = new Map<string, any>();
-    Object.values(itemsByCategory).forEach((items) => {
-      items.forEach((item) => {
-        allItemsMap.set(item.displayName, item);
-      });
-    });
-
-    // Step 5: Create selected common food items from pre-populated database
-    const commonItems = await userAuthStorage.getOnboardingInventoryByNames(
-      selectedCommonItems || [],
-    );
-    const commonItemsMap = new Map(
-      commonItems.map((item: any) => [item.displayName, item]),
-    );
-
+    // Step 5: Create selected common food items directly from hardcoded list
     for (const itemName of selectedCommonItems || []) {
       try {
-        // Get pre-populated data from database (instant lookup, no API calls!)
-        const commonItem = commonItemsMap.get(itemName);
-
-        if (commonItem) {
-          const storageLocationId = locationMap.get(commonItem.storage);
-          if (!storageLocationId) {
-            console.error(
-              `No storage location found for ${commonItem.storage}`,
-            );
-            failedItems.push(itemName);
-            continue;
-          }
-
-          const expirationDate = new Date();
-          expirationDate.setDate(
-            expirationDate.getDate() + commonItem.expirationDays,
-          );
-
-          // Create the food item with pre-populated USDA data
-          await userAuthStorage.createFoodItem(userId, {
-            name: commonItem.displayName,
-            quantity: commonItem.quantity,
-            unit: commonItem.unit,
-            storageLocationId,
-            expirationDate: expirationDate.toISOString(),
-            nutrition: commonItem.nutrition || null,
-            usdaData: commonItem.usdaData || null,
-            foodCategory: commonItem.foodCategory,
-          });
-          successCount++;
-        } else {
-          // Fall back to basic data from the items map (shouldn't happen if DB is seeded)
-          const itemData = allItemsMap.get(itemName);
-          if (!itemData) {
-            console.error(
-              `No data found for ${itemName} in commonFoodItems or local map`,
-            );
-            failedItems.push(itemName);
-            continue;
-          }
-
-          const storageLocationId = locationMap.get(itemData.storage);
-          if (!storageLocationId) {
-            console.error(
-              `No storage location found for ${itemData.storage}`,
-            );
-            failedItems.push(itemName);
-            continue;
-          }
-
-          const expirationDate = new Date();
-          expirationDate.setDate(
-            expirationDate.getDate() + itemData.expirationDays,
-          );
-
-          // Normalize the category from our predefined list
-          const foodCategory = normalizeCategory(itemData.category);
-
-          await userAuthStorage.createFoodItem(userId, {
-            name: itemData.displayName,
-            quantity: itemData.quantity,
-            unit: itemData.unit,
-            storageLocationId,
-            expirationDate: expirationDate.toISOString(),
-            foodCategory,
-          });
-          successCount++;
+        // Get item data from hardcoded mapping
+        const itemData = onboardingUsdaMapping[itemName];
+        
+        if (!itemData) {
+          console.error(`No data found for ${itemName} in onboarding mapping`);
+          failedItems.push(itemName);
+          continue;
         }
+
+        const storageLocationId = locationMap.get(itemData.storage);
+        if (!storageLocationId) {
+          console.error(
+            `No storage location found for ${itemData.storage}`,
+          );
+          failedItems.push(itemName);
+          continue;
+        }
+
+        const expirationDate = new Date();
+        expirationDate.setDate(
+          expirationDate.getDate() + itemData.expirationDays,
+        );
+
+        // Create the food item with data from hardcoded mapping
+        await inventoryStorage.createFoodItem(userId, {
+          name: itemData.displayName,
+          quantity: itemData.quantity,
+          unit: itemData.unit,
+          storageLocationId,
+          expirationDate: expirationDate.toISOString(),
+          nutrition: itemData.nutrition || null,
+          fdcId: itemData.fdcId || null,
+          foodCategory: itemData.foodCategory || null,
+        });
+        successCount++;
       } catch (error) {
         console.error(`Failed to create food item ${itemName}:`, error);
         failedItems.push(itemName);
