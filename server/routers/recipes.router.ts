@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
-import { recipesStorage } from "../storage/index";
+import { recipesStorage, chatStorage, inventoryStorage, storage } from "../storage/index";
 import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
@@ -48,7 +48,7 @@ router.get("/chat/messages", isAuthenticated, async (req: Request, res: Response
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const messages = await recipesStorage.getChatMessages(userId, limit);
+    const messages = await chatStorage.getChatMessages(userId, limit);
 
     // Return in chronological order for display
     res.json(messages.reverse());
@@ -74,7 +74,7 @@ router.post(
         });
       }
 
-      const message = await recipesStorage.createChatMessage(userId, validation.data);
+      const message = await chatStorage.createChatMessage(userId, validation.data);
       
       res.json(message);
     } catch (error) {
@@ -88,7 +88,7 @@ router.delete("/chat/messages", isAuthenticated, async (req: Request, res: Respo
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    await recipesStorage.clearChatMessages(userId);
+    await chatStorage.deleteChatHistory(userId);
     res.json({ message: "Chat history cleared" });
   } catch (error) {
     console.error("Error clearing chat messages:", error);
@@ -153,7 +153,7 @@ router.post(
       }
 
       // Persist user message to database for conversation history
-      await recipesStorage.createChatMessage(userId, {
+      await chatStorage.createChatMessage(userId, {
         role: "user",
         content: message,
       });
@@ -161,7 +161,7 @@ router.post(
       // Build inventory context when requested
       let inventoryContext = "";
       if (includeInventory) {
-        const items = await recipesStorage.getFoodItems(userId);
+        const items = await inventoryStorage.getFoodItems(userId);
         
         if (items.length > 0) {
           inventoryContext = `\n\nUser's current food inventory:\n${items
@@ -171,7 +171,7 @@ router.post(
       }
 
       // Fetch recent conversation history to maintain context
-      const history = await recipesStorage.getChatMessages(userId, 10);
+      const history = await chatStorage.getChatMessages(userId, 10);
 
       const messages: any[] = [
         {
@@ -213,7 +213,7 @@ router.post(
       }
 
       // Save assistant message
-      const saved = await recipesStorage.createChatMessage(userId, {
+      const saved = await chatStorage.createChatMessage(userId, {
         role: "assistant",
         content: assistantMessage,
       });
@@ -222,7 +222,6 @@ router.post(
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "chat",
-        queryParams: `model=gpt-4-turbo`,
         statusCode: 200,
         success: true,
       });
@@ -240,7 +239,6 @@ router.post(
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "chat",
-        queryParams: `model=gpt-4-turbo,error=${aiError.code}`,
         statusCode: aiError.statusCode,
         success: false,
       }).catch(logError => {
@@ -324,7 +322,7 @@ router.post(
 
       // Include user's available ingredients for personalized recipes
       if (useInventory) {
-        const items = await recipesStorage.getFoodItems(userId);
+        const items = await inventoryStorage.getFoodItems(userId);
         
         if (items.length > 0) {
           context += `\nAvailable ingredients:\n${items
@@ -335,15 +333,19 @@ router.post(
 
       // Ensure recipe matches user's available kitchen equipment
       // Prevents suggesting recipes requiring tools the user doesn't own
-      const userAppliances = await recipesStorage.getUserAppliances(userId);
-      if (userAppliances && userAppliances.length > 0) {
-        // Map user's appliance IDs to actual equipment names
-        const applianceLibrary = await recipesStorage.getApplianceLibrary();
-        const userEquipmentDetails = userAppliances.map(ua => {
-          const libItem = applianceLibrary.find((al: any) => al.id === ua.applianceLibraryId);
-          return libItem ? libItem.name : null;
-        }).filter(Boolean);
-        
+      // TODO: Implement getUserAppliances and getApplianceLibrary methods
+      // const userAppliances = await storage.getUserAppliances(userId);
+      // if (userAppliances && userAppliances.length > 0) {
+      //   // Map user's appliance IDs to actual equipment names
+      //   const applianceLibrary = await storage.getApplianceLibrary();
+      //   const userEquipmentDetails = userAppliances.map(ua => {
+      //     const libItem = applianceLibrary.find((al: any) => al.id === ua.applianceLibraryId);
+      //     return libItem ? libItem.name : null;
+      //   }).filter(Boolean);
+      const userEquipmentDetails: string[] = [];
+      // }
+      
+      if (userEquipmentDetails.length > 0) {
         context += `\nAvailable kitchen equipment:\n${userEquipmentDetails
           .join(", ")}\n`;
         context += `\nPlease only suggest recipes that can be made with this equipment. If special equipment is needed, make sure it's from the available list.\n`;
@@ -449,7 +451,6 @@ Return a JSON object with the following structure:
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "recipes/generate",
-        queryParams: `model=gpt-4-turbo`,
         statusCode: 200,
         success: true,
       });
@@ -464,7 +465,6 @@ Return a JSON object with the following structure:
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "recipes/generate",
-        queryParams: `model=gpt-4-turbo,error=${aiError.code}`,
         statusCode: aiError.statusCode,
         success: false,
       }).catch(logError => {
