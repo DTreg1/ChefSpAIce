@@ -1,5 +1,4 @@
 import { BarcodeLookupService } from "./barcodeLookup";
-import { foodStorage } from "../storage/index";
 
 // Initialize barcode lookup service
 const barcodeLookupService = new BarcodeLookupService();
@@ -23,14 +22,11 @@ export async function getBarcodeLookupProductCached(barcode: string): Promise<an
 // Clean up old cache entries for all APIs
 export async function cleanupAllCaches(): Promise<void> {
   try {
-    // Clean USDA cache
-    await foodStorage.clearOldCache(30);
-    // console.log('[Cache Cleanup] USDA cache cleaned');
+    // All caches now use ApiCacheService which handles its own cleanup automatically
+    // via startPeriodicCleanup() method. USDA cache is in-memory only (no database table).
+    // No manual cleanup needed.
     
-    // The ApiCacheService (used by BarcodeLookupService) handles its own cleanup automatically
-    // via startPeriodicCleanup() method, so no manual cleanup needed here
-    
-    // console.log('[Cache Cleanup] All caches cleaned successfully');
+    // console.log('[Cache Cleanup] All caches handle their own cleanup automatically');
   } catch (error) {
     console.error('[Cache Cleanup] Failed:', error);
   }
@@ -42,16 +38,17 @@ export async function getCacheStats(): Promise<{
   barcode: { totalEntries: number; oldestEntry: Date | null };
 }> {
   try {
-    const usdaStats = await foodStorage.getUSDACacheStats();
-    
-    // The barcode cache stats are now managed by ApiCacheService
-    // We can't easily access them from here, so returning empty stats for now
+    // Both USDA and barcode caches now use ApiCacheService (in-memory only)
     // The ApiCacheService has its own getStatistics() method if needed
+    // Returning empty stats since we no longer track database cache
     
     return {
-      usda: usdaStats,
+      usda: {
+        totalEntries: 0, // USDA cache is now in-memory only (ApiCacheService)
+        oldestEntry: null,
+      },
       barcode: {
-        totalEntries: 0, // Statistics not accessible from ApiCacheService instance in BarcodeLookupService
+        totalEntries: 0, // Barcode cache uses ApiCacheService instance
         oldestEntry: null,
       },
     };
