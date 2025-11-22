@@ -355,7 +355,7 @@ export class SupportStorage implements ISupportStorage {
   ): Promise<TicketRouting> {
     const [newRouting] = await db
       .insert(ticketRouting)
-      .values(routing)
+      .values([routing])
       .returning();
     return newRouting;
   }
