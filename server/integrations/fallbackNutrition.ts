@@ -15,36 +15,36 @@ import type { USDAFoodItem, USDASearchResponse, NutritionInfo } from "@shared/sc
 // Basic nutrition data for common food categories
 const NUTRITION_PROFILES: Record<string, Partial<NutritionInfo>> = {
   // Fruits
-  apple: { calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2.4, sugar: 10.4, sodium: 1 },
-  banana: { calories: 89, protein: 1.1, carbs: 23, fat: 0.3, fiber: 2.6, sugar: 12.2, sodium: 1 },
-  orange: { calories: 47, protein: 0.9, carbs: 12, fat: 0.1, fiber: 2.4, sugar: 9.4, sodium: 0 },
+  apple: { calories: 52, protein: 0.3, carbohydrates: 14, fat: 0.2, fiber: 2.4, sugar: 10.4, sodium: 1 },
+  banana: { calories: 89, protein: 1.1, carbohydrates: 23, fat: 0.3, fiber: 2.6, sugar: 12.2, sodium: 1 },
+  orange: { calories: 47, protein: 0.9, carbohydrates: 12, fat: 0.1, fiber: 2.4, sugar: 9.4, sodium: 0 },
   
   // Vegetables
-  tomato: { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, fiber: 1.2, sugar: 2.6, sodium: 5 },
-  potato: { calories: 77, protein: 2, carbs: 17, fat: 0.1, fiber: 2.2, sugar: 0.8, sodium: 6 },
-  carrot: { calories: 41, protein: 0.9, carbs: 10, fat: 0.2, fiber: 2.8, sugar: 4.7, sodium: 69 },
-  broccoli: { calories: 34, protein: 2.8, carbs: 7, fat: 0.4, fiber: 2.6, sugar: 1.7, sodium: 33 },
+  tomato: { calories: 18, protein: 0.9, carbohydrates: 3.9, fat: 0.2, fiber: 1.2, sugar: 2.6, sodium: 5 },
+  potato: { calories: 77, protein: 2, carbohydrates: 17, fat: 0.1, fiber: 2.2, sugar: 0.8, sodium: 6 },
+  carrot: { calories: 41, protein: 0.9, carbohydrates: 10, fat: 0.2, fiber: 2.8, sugar: 4.7, sodium: 69 },
+  broccoli: { calories: 34, protein: 2.8, carbohydrates: 7, fat: 0.4, fiber: 2.6, sugar: 1.7, sodium: 33 },
   
   // Proteins
-  chicken: { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sugar: 0, sodium: 74 },
-  beef: { calories: 250, protein: 26, carbs: 0, fat: 15, fiber: 0, sugar: 0, sodium: 72 },
-  fish: { calories: 206, protein: 22, carbs: 0, fat: 12, fiber: 0, sugar: 0, sodium: 61 },
-  eggs: { calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, sugar: 1.1, sodium: 124 },
+  chicken: { calories: 165, protein: 31, carbohydrates: 0, fat: 3.6, fiber: 0, sugar: 0, sodium: 74 },
+  beef: { calories: 250, protein: 26, carbohydrates: 0, fat: 15, fiber: 0, sugar: 0, sodium: 72 },
+  fish: { calories: 206, protein: 22, carbohydrates: 0, fat: 12, fiber: 0, sugar: 0, sodium: 61 },
+  eggs: { calories: 155, protein: 13, carbohydrates: 1.1, fat: 11, fiber: 0, sugar: 1.1, sodium: 124 },
   
   // Grains
-  bread: { calories: 265, protein: 9, carbs: 49, fat: 3.2, fiber: 2.7, sugar: 5.4, sodium: 491 },
-  rice: { calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4, sugar: 0.1, sodium: 1 },
-  pasta: { calories: 158, protein: 5.8, carbs: 31, fat: 0.9, fiber: 1.8, sugar: 0.6, sodium: 1 },
-  oatmeal: { calories: 68, protein: 2.4, carbs: 12, fat: 1.4, fiber: 1.7, sugar: 0.5, sodium: 49 },
+  bread: { calories: 265, protein: 9, carbohydrates: 49, fat: 3.2, fiber: 2.7, sugar: 5.4, sodium: 491 },
+  rice: { calories: 130, protein: 2.7, carbohydrates: 28, fat: 0.3, fiber: 0.4, sugar: 0.1, sodium: 1 },
+  pasta: { calories: 158, protein: 5.8, carbohydrates: 31, fat: 0.9, fiber: 1.8, sugar: 0.6, sodium: 1 },
+  oatmeal: { calories: 68, protein: 2.4, carbohydrates: 12, fat: 1.4, fiber: 1.7, sugar: 0.5, sodium: 49 },
   
   // Dairy
-  milk: { calories: 42, protein: 3.4, carbs: 5, fat: 1, fiber: 0, sugar: 5, sodium: 44 },
-  cheese: { calories: 402, protein: 25, carbs: 1.3, fat: 33, fiber: 0, sugar: 0.5, sodium: 621 },
-  yogurt: { calories: 59, protein: 10, carbs: 3.6, fat: 0.4, fiber: 0, sugar: 3.2, sodium: 36 },
-  butter: { calories: 717, protein: 0.9, carbs: 0.1, fat: 81, fiber: 0, sugar: 0.1, sodium: 11 },
+  milk: { calories: 42, protein: 3.4, carbohydrates: 5, fat: 1, fiber: 0, sugar: 5, sodium: 44 },
+  cheese: { calories: 402, protein: 25, carbohydrates: 1.3, fat: 33, fiber: 0, sugar: 0.5, sodium: 621 },
+  yogurt: { calories: 59, protein: 10, carbohydrates: 3.6, fat: 0.4, fiber: 0, sugar: 3.2, sodium: 36 },
+  butter: { calories: 717, protein: 0.9, carbohydrates: 0.1, fat: 81, fiber: 0, sugar: 0.1, sodium: 11 },
   
   // Default for unknown foods
-  default: { calories: 100, protein: 3, carbs: 15, fat: 3, fiber: 2, sugar: 5, sodium: 100 }
+  default: { calories: 100, protein: 3, carbohydrates: 15, fat: 3, fiber: 2, sugar: 5, sodium: 100 }
 };
 
 /**
@@ -128,7 +128,7 @@ function createFallbackFoodItem(
     nutrition: {
       calories: nutrition.calories || 0,
       protein: nutrition.protein || 0,
-      carbs: nutrition.carbs || 0,
+      carbohydrates: nutrition.carbohydrates || 0,
       fat: nutrition.fat || 0,
       fiber: nutrition.fiber || 0,
       sugar: nutrition.sugar || 0,
