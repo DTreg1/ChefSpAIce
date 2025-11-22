@@ -7,14 +7,14 @@
  */
 
 import { Router } from "express";
-import { IStorage } from "../storage";
+import { storage as storageInstance } from "../storage/index";
 import { searchUSDAFoods, getFoodByFdcId } from "../integrations/usda";
 import { searchOFFByBarcode, searchOFFByName, getCombinedNutrition, enrichWithOFF } from "../integrations/openFoodFacts";
 import { assessDataQuality, ensureRequiredFields, getFoodDefaults, calculateExpirationDate } from "../data/foodCategoryDefaults";
 import { resolveStorageLocationId } from "./storageLocationResolver";
 import type { NutritionInfo } from "@shared/schema";
 
-export function createDataCompletionRoutes(storage: IStorage) {
+export function createDataCompletionRoutes(storage: typeof storageInstance) {
   const router = Router();
 
   /**

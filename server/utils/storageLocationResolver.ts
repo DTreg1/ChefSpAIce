@@ -5,9 +5,8 @@
  * userStorage IDs in the database. Creates default locations if they don't exist.
  */
 
-import { storage } from "./storage";
+import { storage } from "../storage/index";
 import type { UserStorage } from "@shared/schema";
-import type { IStorage } from "./storage/interfaces/IStorage";
 
 /**
  * Standard storage location name mappings
@@ -65,7 +64,7 @@ export function clearStorageLocationCache(userId?: string) {
  * @returns Map of location names to storage IDs
  */
 export async function ensureDefaultStorageLocations(
-  storage: IStorage,
+  storage: typeof import("../storage/index").storage,
   userId: string
 ): Promise<Map<string, string>> {
   // Check cache first
@@ -118,7 +117,7 @@ export async function ensureDefaultStorageLocations(
  * @returns Storage location ID or null if not found/created
  */
 export async function resolveStorageLocationId(
-  storage: IStorage,
+  storage: typeof import("../storage/index").storage,
   userId: string,
   locationName: string
 ): Promise<string | null> {
@@ -172,7 +171,7 @@ export async function resolveStorageLocationId(
  * @returns Map of location names to IDs
  */
 export async function batchResolveStorageLocationIds(
-  storage: IStorage,
+  storage: typeof import("../storage/index").storage,
   userId: string,
   locationNames: string[]
 ): Promise<Map<string, string | null>> {
@@ -199,7 +198,7 @@ export async function batchResolveStorageLocationIds(
  * @returns Default storage location ID or null
  */
 export async function getDefaultStorageLocationId(
-  storage: IStorage,
+  storage: typeof import("../storage/index").storage,
   userId: string
 ): Promise<string | null> {
   const locationMap = await ensureDefaultStorageLocations(storage, userId);
