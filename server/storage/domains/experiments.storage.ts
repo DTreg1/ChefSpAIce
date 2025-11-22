@@ -448,7 +448,7 @@ export class ExperimentsStorage implements IExperimentsStorage {
   // ==================== Cohort Management ====================
 
   async createCohort(cohort: InsertCohort): Promise<Cohort> {
-    const [newCohort] = await db.insert(cohorts).values(cohort).returning();
+    const [newCohort] = await db.insert(cohorts).values([cohort]).returning();
 
     // Refresh membership immediately for new cohort
     await this.refreshCohortMembership(newCohort.id);

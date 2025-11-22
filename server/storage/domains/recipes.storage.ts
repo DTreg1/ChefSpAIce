@@ -525,7 +525,9 @@ export class RecipesDomainStorage implements IRecipesStorage {
         .orderBy(desc(sql`COUNT(*)`))
         .limit(limit);
       
-      const recipeIds = mealPlanCounts.map((mp) => mp.recipeId);
+      const recipeIds = mealPlanCounts
+        .map((mp) => mp.recipeId)
+        .filter((id): id is string => id !== null);
       
       if (recipeIds.length === 0) return [];
       

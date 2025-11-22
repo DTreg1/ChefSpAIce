@@ -162,7 +162,7 @@ function extractOFFNutrition(product: OFFProduct): NutritionInfo | undefined {
   return {
     calories,
     protein,
-    carbs,
+    carbohydrates: carbs,
     fat,
     fiber,
     sugar,
@@ -325,7 +325,7 @@ export async function getCombinedNutrition(
   if (usdaNutrition && 
       usdaNutrition.calories !== undefined && usdaNutrition.calories > 0 && 
       ((usdaNutrition.protein !== undefined && usdaNutrition.protein > 0) || 
-       (usdaNutrition.carbs !== undefined && usdaNutrition.carbs > 0) || 
+       (usdaNutrition.carbohydrates !== undefined && usdaNutrition.carbohydrates > 0) || 
        (usdaNutrition.fat !== undefined && usdaNutrition.fat > 0))) {
     return usdaNutrition;
   }
