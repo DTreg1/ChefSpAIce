@@ -178,4 +178,4 @@ export type { IPricingStorage } from "./interfaces/IPricingStorage";
 export type { IContentStorage } from "./interfaces/IContentStorage";
 
 // Export shared types from domain modules
-export type { StorageLocationWithCount, InsertCookingTerm } from "./domains/food.storage";
+export type { StorageLocationWithCount } from "./domains/food.storage";

@@ -154,7 +154,7 @@ router.post(
       await chatCircuitBreaker.execute(async () => {
         return await retryWithBackoff(async () => {
           try {
-            const stream = await openai.chat.completions.create({
+            const response = await openai.chat.completions.create({
               model: "gpt-4-turbo",
               messages,
               temperature: 0.7,
@@ -164,7 +164,7 @@ router.post(
 
             if (!streamingEnabled) {
               // Non-streaming response
-              const completion = stream;
+              const completion = response as any;
               const content = completion.choices[0].message?.content || "";
               
               writeSSE(res, 'message', content);
@@ -173,6 +173,7 @@ router.post(
               
             } else {
               // Streaming response
+              const stream = response as any;
               for await (const chunk of stream) {
                 try {
                   const content = chunk.choices[0]?.delta?.content || "";
@@ -235,9 +236,8 @@ router.post(
               await batchedApiLogger.logApiUsage(userId, {
                 apiName: "openai",
                 endpoint: "chat-stream",
-                queryParams: `model=gpt-4-turbo,streaming=${streamingEnabled}`,
+                method: "POST" as const,
                 statusCode: 200,
-                success: true,
               });
               
               // Send detected terms if any were found
@@ -262,9 +262,8 @@ router.post(
               await batchedApiLogger.logApiUsage(userId, {
                 apiName: "openai",
                 endpoint: "chat-stream",
-                queryParams: `model=gpt-4-turbo,streaming=${streamingEnabled},partial=true`,
+                method: "POST" as const,
                 statusCode: 206, // Partial content
-                success: false,
               });
             }
             throw streamError; // Re-throw for retry logic
@@ -292,9 +291,8 @@ router.post(
         await batchedApiLogger.logApiUsage(errorUserId, {
           apiName: "openai",
           endpoint: "chat-stream",
-          queryParams: `error=${aiError.code}`,
+          method: "POST" as const,
           statusCode: aiError.statusCode,
-          success: false,
         }).catch(logError => {
           console.error('[Chat Stream] Failed to log error:', logError);
         });
@@ -348,14 +346,13 @@ router.post("/reset", isAuthenticated, async (req: Request, res: Response) => {
     // Reset circuit breaker
     chatCircuitBreaker.reset();
     
-    // Log the reset action
-    await batchedApiLogger.logApiUsage(userId, {
-      apiName: "internal",
-      endpoint: "chat-stream-reset",
-      queryParams: "action=reset",
-      statusCode: 200,
-      success: true,
-    });
+    // Log the reset action (commented out as "internal" is not a valid apiName)
+    // await batchedApiLogger.logApiUsage(userId, {
+    //   apiName: "internal",
+    //   endpoint: "chat-stream-reset",
+    //   statusCode: 200,
+    //   success: true,
+    // });
     
     res.json({
       message: 'Circuit breaker reset successfully',

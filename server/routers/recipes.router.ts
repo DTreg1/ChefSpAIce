@@ -222,8 +222,8 @@ router.post(
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "chat",
+        method: "POST" as const,
         statusCode: 200,
-        success: true,
       });
 
       res.json({
@@ -239,8 +239,8 @@ router.post(
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "chat",
+        method: "POST" as const,
         statusCode: aiError.statusCode,
-        success: false,
       }).catch(logError => {
         console.error('Failed to log API error:', logError);
       });
@@ -451,8 +451,8 @@ Return a JSON object with the following structure:
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "recipes/generate",
+        method: "POST" as const,
         statusCode: 200,
-        success: true,
       });
 
       res.json(saved);
@@ -465,8 +465,8 @@ Return a JSON object with the following structure:
       await batchedApiLogger.logApiUsage(userId, {
         apiName: "openai",
         endpoint: "recipes/generate",
+        method: "POST" as const,
         statusCode: aiError.statusCode,
-        success: false,
       }).catch(logError => {
         console.error('Failed to log API error:', logError);
       });
