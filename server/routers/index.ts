@@ -62,10 +62,6 @@ import { storage } from "../storage/index";
 import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";
 
 export async function registerModularRoutes(app: any): Promise<Server> {
-  // Setup authentication middleware first
-  // Using unified auth that supports both Replit Auth and OAuth
-  await setupUnifiedAuth(app);
-  
   // Setup activity logging middleware after authentication
   // This ensures we have user context when logging activities
   app.use(activityLoggingMiddleware);
