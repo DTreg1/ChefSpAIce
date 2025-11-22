@@ -64,10 +64,10 @@ export class SchedulingStorage implements ISchedulingStorage {
     } else {
       const [created] = await db
         .insert(schedulingPreferences)
-        .values({
+        .values([{
           ...(preferences),
           userId,
-        })
+        }])
         .returning();
       return created;
     }
@@ -123,7 +123,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   ): Promise<MeetingSuggestions> {
     const [created] = await db
       .insert(meetingSuggestions)
-      .values(suggestions)
+      .values([suggestions])
       .returning();
     return created;
   }
@@ -211,10 +211,10 @@ export class SchedulingStorage implements ISchedulingStorage {
     } else {
       const [created] = await db
         .insert(schedulingPatterns)
-        .values({
+        .values([{
           ...(pattern),
           userId,
-        })
+        }])
         .returning();
       return created;
     }
@@ -344,7 +344,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   async createMeetingEvent(event: InsertMeetingEvents): Promise<MeetingEvents> {
     const [created] = await db
       .insert(meetingEvents)
-      .values(event)
+      .values([event])
       .returning();
     return created;
   }
