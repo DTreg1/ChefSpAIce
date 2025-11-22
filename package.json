@@ -8,6 +8,8 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
+    "check:client": "tsc --project tsconfig.client.json",
+    "check:server": "tsc --project tsconfig.server.json",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "lint": "npx eslint client server shared --ext .ts,.tsx",
