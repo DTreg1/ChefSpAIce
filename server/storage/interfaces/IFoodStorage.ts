@@ -7,13 +7,11 @@ import type {
   UserInventory,
   InsertUserInventory,
   UserStorage,
-  FdcCache,
-  InsertFdcCache,
-  OnboardingInventoryItem,
   CookingTerm,
+  InsertCookingTerm,
 } from "@shared/schema";
-import type { PaginatedResponse } from "../../storage";
-import type { StorageLocationWithCount, InsertCookingTerm } from "../domains/food.storage";
+import type { PaginatedResponse } from "../../utils/pagination";
+import type { StorageLocationWithCount } from "../domains/food.storage";
 
 export interface IFoodStorage {
   // ==================== Food Inventory Methods ====================
@@ -67,27 +65,6 @@ export interface IFoodStorage {
   ): Promise<UserStorage>;
 
   deleteStorageLocation(userId: string, id: string): Promise<void>;
-
-  // ==================== FDC Cache Methods ====================
-  getCachedFood(fdcId: string | number): Promise<FdcCache | null>;
-
-  cacheFood(food: InsertFdcCache): Promise<FdcCache>;
-
-  updateFoodLastAccessed(fdcId: string): Promise<void>;
-
-  clearOldCache(daysOld?: number): Promise<void>;
-
-  getUSDACacheStats(): Promise<{
-    totalEntries: number;
-    oldestEntry: Date | null;
-  }>;
-
-  // ==================== Onboarding Inventory Methods ====================
-  getOnboardingInventory(): Promise<OnboardingInventoryItem[]>;
-
-  getOnboardingInventoryByName(name: string): Promise<OnboardingInventoryItem | null>;
-
-  getOnboardingInventoryByNames(names: string[]): Promise<OnboardingInventoryItem[]>;
 
   // ==================== Cooking Terms Methods ====================
   getCookingTerms(): Promise<CookingTerm[]>;

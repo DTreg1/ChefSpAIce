@@ -70,7 +70,7 @@ export async function batchInsert<T>(
 /**
  * Batch update with optimized IN clause
  */
-export async function batchUpdate<T extends { id: string | number }>(
+export async function batchUpdate<T extends { id: string | number; [key: string]: any }>(
   table: any,
   updates: T[],
   updateFields: string[]
@@ -81,7 +81,7 @@ export async function batchUpdate<T extends { id: string | number }>(
   const updateGroups = new Map<string, T[]>();
   
   updates.forEach((item) => {
-    const key = updateFields.map(field => (item)[field]).join('|');
+    const key = updateFields.map(field => (item as any)[field]).join('|');
     if (!updateGroups.has(key)) {
       updateGroups.set(key, []);
     }
@@ -95,7 +95,7 @@ export async function batchUpdate<T extends { id: string | number }>(
       const ids = items.map(item => item.id);
       const updateData: any = {};
       updateFields.forEach(field => {
-        updateData[field] = (items[0])[field];
+        updateData[field] = (items[0] as any)[field];
       });
       
       await tx.update(table)
@@ -196,9 +196,9 @@ export async function getEstimatedCount(
           WHERE relname = ${tableName}`
     );
     
-    const rows = result.rows;
+    const rows = result.rows as Array<{ estimate?: number }>;
     const estimate = rows[0]?.estimate;
-    if (estimate && estimate > 10000) {
+    if (estimate && typeof estimate === 'number' && estimate > 10000) {
       return estimate;
     }
   }

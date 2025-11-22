@@ -47,13 +47,13 @@ export function extractNutrition(usdaData: any): NutritionInfo | null {
 
   const nutrients: Partial<NutritionInfo> = {};
   const nutrientMap: Record<number, keyof NutritionInfo> = {
-    1008: 'calories',    // Energy (kcal)
-    1003: 'protein',     // Protein (g)
-    1005: 'carbs',       // Carbohydrate (g)
-    1004: 'fat',         // Total lipid (g)
-    1079: 'fiber',       // Fiber, total dietary (g)
-    2000: 'sugar',       // Sugars, total (g)
-    1093: 'sodium',      // Sodium (mg)
+    1008: 'calories',        // Energy (kcal)
+    1003: 'protein',         // Protein (g)
+    1005: 'carbohydrates',   // Carbohydrate (g)
+    1004: 'fat',             // Total lipid (g)
+    1079: 'fiber',           // Fiber, total dietary (g)
+    2000: 'sugar',           // Sugars, total (g)
+    1093: 'sodium',          // Sodium (mg)
   };
 
   for (const nutrient of usdaData.foodNutrients) {
@@ -83,8 +83,8 @@ export function extractNutrition(usdaData: any): NutritionInfo | null {
     fiber: nutrients.fiber,
     sugar: nutrients.sugar,
     sodium: nutrients.sodium,
-    servingSize: nutrients.servingSize,
-    servingUnit: nutrients.servingUnit,
+    servingSize: nutrients.servingSize || "100",
+    servingUnit: nutrients.servingUnit || "g",
   };
 }
 

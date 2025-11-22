@@ -18,6 +18,13 @@ export interface DateRangeFilter {
   endDate?: Date;
 }
 
+// Extend Express Request to include dateRange
+declare module 'express-serve-static-core' {
+  interface Request {
+    dateRange?: DateRangeFilter;
+  }
+}
+
 export interface DateRangeOptions {
   defaultDays?: number; // Default number of days to look back if no startDate provided
   maxDays?: number; // Maximum allowed date range
@@ -197,7 +204,7 @@ export function getPresetDateRange(preset: 'today' | 'week' | 'month' | 'quarter
 export function dateRangeMiddleware(options: DateRangeOptions = {}) {
   return (req: Request, _res: Response, next: NextFunction) => {
     try {
-      (req).dateRange = parseDateRange(req, options);
+      req.dateRange = parseDateRange(req, options);
       next();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
