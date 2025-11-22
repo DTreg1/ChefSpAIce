@@ -12,7 +12,7 @@
  * - Documentation: https://world.openfoodfacts.org/data
  */
 
-import { ApiError } from "./apiError";
+import { ApiError } from "../utils/apiError";
 import type { NutritionInfo } from "@shared/schema";
 
 /** OpenFoodFacts API base URL */

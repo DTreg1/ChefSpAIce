@@ -1,4 +1,4 @@
-import { searchUSDAFoods, getFoodByFdcId } from "./usda";
+import { searchUSDAFoods, getFoodByFdcId } from "../integrations/usda";
 import { getOnboardingItemByName } from "./onboarding-usda-mapping";
 import type { USDAFoodItem } from "@shared/schema";
 

@@ -52,11 +52,11 @@ import type {
   USDASearchResponse,
   NutritionInfo,
 } from "@shared/schema";
-import { ApiError } from "./apiError";
+import { ApiError } from "../utils/apiError";
 import {
   ensureRequiredFields,
   assessDataQuality,
-} from "./foodCategoryDefaults";
+} from "../data/foodCategoryDefaults";
 
 /** USDA FoodData Central API base URL */
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";

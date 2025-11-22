@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { searchUSDAFoods as originalSearchUSDAFoods, USDASearchOptions, isNutritionDataValid, extractNutritionInfo, type FDCFood } from "../usda";
+import { searchUSDAFoods as originalSearchUSDAFoods, USDASearchOptions, isNutritionDataValid, extractNutritionInfo, type FDCFood } from "../integrations/usda";
 import type { USDASearchResponse, USDAFoodItem } from "@shared/schema";
 import { ApiCacheService, apiCache } from "./ApiCacheService";
 

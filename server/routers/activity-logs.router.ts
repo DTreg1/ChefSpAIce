@@ -9,7 +9,7 @@ import { Router, Request, Response } from "express";
 import { analyticsStorage } from "../storage/index";
 import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { ApiError } from "../apiError";
+import { ApiError } from "../utils/apiError";
 
 const router = Router();
 

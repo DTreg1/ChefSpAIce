@@ -12,10 +12,10 @@
 import { Router, Request, Response } from "express";
 // Use OAuth authentication middleware
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.middleware";
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 import { storage } from "../storage/index";
-import { batchedApiLogger } from "../batchedApiLogger";
-import { cleanupOldMessagesForUser } from "../chatCleanup";
+import { batchedApiLogger } from "../utils/batchedApiLogger";
+import { cleanupOldMessagesForUser } from "../utils/chatCleanup";
 import rateLimiters from "../middleware/rateLimit";
 import {
   AIError,

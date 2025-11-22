@@ -1,4 +1,4 @@
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 import type { ContentEmbedding, InsertContentEmbedding, RelatedContentCache, InsertRelatedContentCache } from "@shared/schema";
 import type { IContentStorage } from '../storage/interfaces/IContentStorage';
 

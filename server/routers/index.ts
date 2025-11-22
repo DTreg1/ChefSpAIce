@@ -55,10 +55,10 @@ import ocrRouter from "./ocr.router";
 import transcriptionsRouter from "./transcriptions.router";
 
 // Import special endpoints
-import { createSeedEndpoint } from "../seed-cooking-terms-endpoint";
-import { createABTestSeedEndpoint } from "../seed-ab-tests";
-import { createCohortSeedEndpoint } from "../seed-cohorts";
-import { createDataCompletionRoutes } from "../dataCompletionEndpoints";
+import { createSeedEndpoint } from "../seeds/seed-cooking-terms-endpoint";
+import { createABTestSeedEndpoint } from "../seeds/seed-ab-tests";
+import { createCohortSeedEndpoint } from "../seeds/seed-cohorts";
+import { createDataCompletionRoutes } from "../utils/dataCompletionEndpoints";
 import { storage } from "../storage/index";
 
 // Import activity logging middleware

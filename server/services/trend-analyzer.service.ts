@@ -7,7 +7,7 @@
 
 import { analyticsStorage } from '../storage/index';
 import { InsertTrend } from '@shared/schema';
-import { openai } from '../openai';
+import { openai } from '../integrations/openai';
 import { detectSimpleTrend, detectAnomalies, detectSeasonality } from './lightweightPrediction';
 
 interface TrendAnalysisConfig {

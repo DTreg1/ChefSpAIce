@@ -12,7 +12,7 @@ import { isAuthenticated, getAuthenticatedUserId } from "../middleware/auth.midd
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request } from "express";
 import { trendAnalyzer } from "../services/trend-analyzer.service";
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 
 const router = Router();
 

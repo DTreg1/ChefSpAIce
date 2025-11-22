@@ -11,7 +11,7 @@ import {
   type MeetingEvents
 } from "@shared/schema";
 import { isAuthenticated } from "../middleware/auth.middleware";
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 // Script to update categories in onboarding items to use 5 major food groups
-import { normalizeCategory } from './category-mapping';
+import { normalizeCategory } from '../data/category-mapping';
 
 // Map of old categories to new 5 major food groups
 const categoryMap: Record<string, string> = {

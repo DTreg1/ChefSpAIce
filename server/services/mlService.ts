@@ -13,7 +13,7 @@
  * - Natural language to SQL query
  */
 
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 import { aiMlStorage } from "../storage/index";
 import type { 
   Recipe, 

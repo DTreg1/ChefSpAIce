@@ -1,4 +1,4 @@
-import { openai } from "./openai";
+import { openai } from "../integrations/openai";
 import type { Feedback } from "@shared/schema";
 
 export interface ModerationResult {

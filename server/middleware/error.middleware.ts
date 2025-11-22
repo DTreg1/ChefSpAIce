@@ -32,7 +32,7 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { ApiError } from "../apiError";
+import { ApiError } from "../utils/apiError";
 import { z } from "zod";
 
 /**

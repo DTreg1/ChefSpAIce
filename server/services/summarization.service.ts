@@ -5,7 +5,7 @@
  * Supports multiple summary formats: TL;DR, bullet points, and paragraph.
  */
 
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export interface SummarizationOptions {

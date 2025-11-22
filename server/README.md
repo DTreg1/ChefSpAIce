@@ -12,16 +12,61 @@ The server follows a modular architecture with clear separation of concerns:
 server/
 ├── auth/               # Authentication & OAuth configuration
 ├── config/             # Configuration files
+├── data/               # Static data & configuration files
+├── integrations/       # External service integrations (APIs)
 ├── middleware/         # Express middleware
-├── migrations/         # Database migrations
+├── migrations/         # Database migrations & schema updates
 ├── notifications/      # Push notification system
 ├── routers/            # API route handlers
+├── seeds/              # Database seed scripts
 ├── services/           # Business logic services
 ├── storage/            # Database storage layer
 ├── types/              # TypeScript type definitions
-├── utils/              # Utility functions
-└── index.ts            # Main server entry point
+├── utils/              # Utility functions & helpers
+├── db.ts               # Database connection
+├── index.ts            # Main server entry point
+├── suppress-logs.ts    # TensorFlow log suppression
+└── vite.ts             # Vite server configuration
 ```
+
+## Directory Structure Details
+
+### Core Files (Server Root)
+- `index.ts` - Application entry point, middleware setup, route registration
+- `db.ts` - Database connection using Neon's serverless PostgreSQL
+- `vite.ts` - Vite server configuration for frontend asset serving
+- `suppress-logs.ts` - TensorFlow log suppression (must load first)
+
+### Data Directory (`data/`)
+Static configuration and mapping data:
+- `appliance-library-data.ts` - Comprehensive appliance data
+- `category-mapping.ts` - Food category normalization mappings
+- `foodCategoryDefaults.ts` - Default values for food categories
+- `onboarding-items.ts` - Initial onboarding food items
+- `onboarding-usda-mapping.ts` - USDA database mappings
+
+### Integrations Directory (`integrations/`)
+External API integrations:
+- `openai.ts` - OpenAI API client configuration
+- `usda.ts` - USDA FoodData Central API integration
+- `openFoodFacts.ts` - OpenFoodFacts API fallback
+- `objectStorage.ts` - Google Cloud Storage integration
+
+### Seeds Directory (`seeds/`)
+Database seeding scripts:
+- `seed-db.ts` - Main database seeding script
+- `seed-common-food-items.ts` - Common food items seeder
+- `seed-ab-tests.ts` - A/B testing configuration
+- `seed-cohorts.ts` - User cohort definitions
+- `seed-templates.ts` - Template data seeding
+- `seed-validation-rules.ts` - Validation rule definitions
+
+### Migrations Directory (`migrations/`)
+Database schema migrations and updates:
+- `add-performance-indexes.ts` - Performance optimization indexes
+- `migrate-categories.ts` - Category migration scripts
+- `update-categories.ts` - Category update utilities
+- `init-appliance-library.ts` - Appliance library initialization
 
 ## Key Technologies
 

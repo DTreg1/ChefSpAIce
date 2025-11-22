@@ -3,9 +3,9 @@
  * Run with: npm run migrate:categories
  */
 
-import { db } from './db';
+import { db } from '../db';
 import { userInventory } from '@shared/schema';
-import { normalizeCategory } from './category-mapping';
+import { normalizeCategory } from '../data/category-mapping';
 import { eq, sql } from 'drizzle-orm';
 
 async function migrateCategories() {

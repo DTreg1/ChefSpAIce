@@ -4,9 +4,9 @@ import { recipesStorage } from "../storage/index";
 import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
-import { openai } from "../openai";
-import { batchedApiLogger } from "../batchedApiLogger";
-import { cleanupOldMessagesForUser } from "../chatCleanup";
+import { openai } from "../integrations/openai";
+import { batchedApiLogger } from "../utils/batchedApiLogger";
+import { cleanupOldMessagesForUser } from "../utils/chatCleanup";
 import rateLimiters from "../middleware/rateLimit";
 import {
   AIError,

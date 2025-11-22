@@ -7,10 +7,10 @@
  */
 
 import { Router } from "express";
-import { IStorage } from "./storage";
-import { searchUSDAFoods, getFoodByFdcId } from "./usda";
-import { searchOFFByBarcode, searchOFFByName, getCombinedNutrition, enrichWithOFF } from "./openFoodFacts";
-import { assessDataQuality, ensureRequiredFields, getFoodDefaults, calculateExpirationDate } from "./foodCategoryDefaults";
+import { IStorage } from "../storage";
+import { searchUSDAFoods, getFoodByFdcId } from "../integrations/usda";
+import { searchOFFByBarcode, searchOFFByName, getCombinedNutrition, enrichWithOFF } from "../integrations/openFoodFacts";
+import { assessDataQuality, ensureRequiredFields, getFoodDefaults, calculateExpirationDate } from "../data/foodCategoryDefaults";
 import { resolveStorageLocationId } from "./storageLocationResolver";
 import type { NutritionInfo } from "@shared/schema";
 

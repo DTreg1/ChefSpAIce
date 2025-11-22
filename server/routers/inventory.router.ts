@@ -4,10 +4,10 @@ import { inventoryStorage } from "../storage/index";
 import { insertUserInventorySchema, type UserInventory as FoodItem } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/auth.middleware";
-import { batchedApiLogger } from "../batchedApiLogger";
+import { batchedApiLogger } from "../utils/batchedApiLogger";
 import { validateBody } from "../middleware";
 import axios from "axios";
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 import rateLimiters from "../middleware/rateLimit";
 
 const router = Router();

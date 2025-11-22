@@ -1,7 +1,7 @@
 // Script to initialize the appliance library with comprehensive data
-import { db } from "./db";
+import { db } from "../db";
 import { applianceLibrary } from "@shared/schema";
-import { applianceLibraryData } from "./appliance-library-data";
+import { applianceLibraryData } from "../data/appliance-library-data";
 
 export async function initializeApplianceLibrary() {
   try {

@@ -14,7 +14,7 @@
  * @module server/services/moderation.service
  */
 
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 import { securityStorage } from "../storage/index";
 import type {
   ModerationLog,

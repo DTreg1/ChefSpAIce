@@ -15,7 +15,7 @@
  * @module server/services/fraud.service
  */
 
-import { openai } from "../openai";
+import { openai } from "../integrations/openai";
 import { securityStorage } from "../storage/index";
 import type {
   FraudScore,

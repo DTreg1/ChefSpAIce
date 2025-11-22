@@ -1,7 +1,7 @@
-import { storage } from "./storage";
-import { onboardingUsdaMapping } from "./onboarding-usda-mapping";
-import { fetchOnboardingItemsUsdaData } from "./onboarding-items";
-import { normalizeCategory } from "./category-mapping";
+import { storage } from "../storage";
+import { onboardingUsdaMapping } from "../data/onboarding-usda-mapping";
+import { fetchOnboardingItemsUsdaData } from "../data/onboarding-items";
+import { normalizeCategory } from "../data/category-mapping";
 import type { InsertOnboardingInventory } from "@shared/schema";
 
 /**
