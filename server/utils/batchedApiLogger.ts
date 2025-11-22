@@ -75,9 +75,9 @@
  * @module server/batchedApiLogger
  */
 
-import { storage } from './storage';
+import { storage } from '../storage';
 import type { InsertApiUsageLog } from '@shared/schema';
-import { calculateRetryDelay, isRetryableError } from './utils/retry-handler';
+import { calculateRetryDelay, isRetryableError } from './retry-handler';
 
 /**
  * Queued log entry with metadata
