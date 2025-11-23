@@ -48,38 +48,43 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
   
   // Handle special cases for paths with parameters that don't have exact legacy mappings
   if (!isLegacyPath) {
-    // Inventory-related parameterized routes
-    if (originalPath.match(/^\/api\/inventories\/[\w-]+$/)) {
+    // Inventory-related parameterized routes (legacy uses singular "inventory")
+    if (originalPath.match(/^\/api\/inventory\/.+$/)) {
       isLegacyPath = true;
-      newPath = originalPath.replace('/api/inventories', '/api/v1/inventories');
+      newPath = originalPath.replace('/api/inventory', '/api/v1/inventories');
     }
-    // Food items with IDs
-    else if (originalPath.match(/^\/api\/food-items\/[\w-]+$/)) {
+    // Food items with IDs and nested paths
+    else if (originalPath.match(/^\/api\/food-items\/.+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/food-items', '/api/v1/food-items');
     }
-    // FDC food with IDs
-    else if (originalPath.match(/^\/api\/fdc\/food\/[\w-]+$/)) {
+    // FDC food with nested paths
+    else if (originalPath.match(/^\/api\/fdc\/food\/.+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/fdc/food', '/api/v1/fdc/food');
     }
-    // Recipes with IDs
-    else if (originalPath.match(/^\/api\/recipes\/[\w-]+$/)) {
+    // Storage locations with IDs and nested paths
+    else if (originalPath.match(/^\/api\/storage-locations\/.+$/)) {
+      isLegacyPath = true;
+      newPath = originalPath.replace('/api/storage-locations', '/api/v1/storage-locations');
+    }
+    // Recipes with IDs and nested paths
+    else if (originalPath.match(/^\/api\/recipes\/.+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/recipes', '/api/v1/recipes');
     }
-    // Meal plans with IDs
-    else if (originalPath.match(/^\/api\/meal-plans\/[\w-]+$/)) {
+    // Meal plans with IDs and nested paths
+    else if (originalPath.match(/^\/api\/meal-plans\/.+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/meal-plans', '/api/v1/meal-plans');
     }
-    // Shopping list items with IDs
-    else if (originalPath.match(/^\/api\/shopping-list\/items\/[\w-]+$/)) {
+    // Shopping list with nested paths (must check items path first)
+    else if (originalPath.match(/^\/api\/shopping-list\/items\/.+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/shopping-list/items', '/api/v1/shopping-list/items');
     }
-    // Shopping list with IDs
-    else if (originalPath.match(/^\/api\/shopping-list\/[\w-]+$/)) {
+    // Shopping list with other nested paths
+    else if (originalPath.match(/^\/api\/shopping-list\/.+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/shopping-list', '/api/v1/shopping-list');
     }
