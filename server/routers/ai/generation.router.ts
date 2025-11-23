@@ -732,6 +732,107 @@ router.post("/conversations/:id/messages", isAuthenticated, rateLimiters.openai.
 });
 
 /**
+ * GET /api/ai/generation/conversations/:id
+ * Get a specific conversation
+ */
+router.get("/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const conversation = await storage.user.chat.getConversation(userId, req.params.id);
+    
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    
+    res.json(conversation);
+  } catch (error) {
+    console.error("Error fetching conversation:", error);
+    res.status(500).json({ error: "Failed to fetch conversation" });
+  }
+});
+
+/**
+ * PATCH /api/ai/generation/conversations/:id
+ * Update a conversation
+ */
+router.patch("/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const { title, context, metadata } = req.body;
+    const updated = await storage.user.chat.updateConversation(
+      userId,
+      req.params.id,
+      { title, context, metadata }
+    );
+    
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating conversation:", error);
+    res.status(500).json({ error: "Failed to update conversation" });
+  }
+});
+
+/**
+ * DELETE /api/ai/generation/conversations/:id
+ * Delete a conversation
+ */
+router.delete("/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    await storage.user.chat.deleteConversation(userId, req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting conversation:", error);
+    res.status(500).json({ error: "Failed to delete conversation" });
+  }
+});
+
+/**
+ * GET /api/ai/generation/conversations/:id/messages
+ * Get all messages in a conversation
+ */
+router.get("/conversations/:id/messages", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const messages = await storage.user.chat.getMessages(userId, req.params.id);
+    res.json(messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+/**
+ * DELETE /api/ai/generation/conversations/:conversationId/messages/:messageId
+ * Delete a message from a conversation
+ */
+router.delete("/conversations/:conversationId/messages/:messageId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    await storage.user.chat.deleteMessage(
+      userId,
+      req.params.conversationId,
+      req.params.messageId
+    );
+    
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting message:", error);
+    res.status(500).json({ error: "Failed to delete message" });
+  }
+});
+
+/**
  * GET /api/ai/generation/stats
  * Get AI generation usage statistics
  */
