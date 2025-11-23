@@ -372,13 +372,15 @@ router.post("/correct", async (req: Request, res: Response) => {
     const correctionData = insertOcrCorrectionSchema.omit({ userId: true }).parse(req.body);
 
     // Verify the OCR result belongs to the user
-    const ocrResult = // await aiMlStorage.getOcrResultById(userId, correctionData.resultId);
+    // TODO: Implement getOcrResultById in storage layer
+    const ocrResult = null; // await aiMlStorage.getOcrResultById(userId, correctionData.ocrResultId);
     if (!ocrResult) {
-      return res.status(404).json({ error: "OCR result not found" });
+      return res.status(404).json({ error: "OCR storage not yet implemented" });
     }
 
     // Create correction record
-    const correction = // await aiMlStorage.createOcrCorrection(userId, correctionData);
+    // TODO: Implement createOcrCorrection in storage layer
+    const correction = { id: "stub_correction_" + Date.now() }; // await aiMlStorage.createOcrCorrection(userId, correctionData);
 
     res.json({
       success: true,
@@ -422,7 +424,8 @@ router.get("/results", async (req: Request, res: Response) => {
     }
 
     const limit = parseInt(req.query.limit as string) || 20;
-    const results = // await aiMlStorage.getOcrResults(userId, limit);
+    // TODO: Implement getOcrResults in storage layer
+    const results: any[] = []; // await aiMlStorage.getOcrResults(userId, limit);
 
     res.json({
       success: true,
@@ -446,13 +449,15 @@ router.get("/result/:id", async (req: Request, res: Response) => {
     }
 
     const resultId = req.params.id;
-    const result = // await aiMlStorage.getOcrResultById(userId, resultId);
+    // TODO: Implement getOcrResultById in storage layer
+    const result = null; // await aiMlStorage.getOcrResultById(userId, resultId);
     
     if (!result) {
-      return res.status(404).json({ error: "OCR result not found" });
+      return res.status(404).json({ error: "OCR storage not yet implemented" });
     }
 
-    const corrections = // await aiMlStorage.getOcrCorrections(userId, resultId);
+    // TODO: Implement getOcrCorrections in storage layer
+    const corrections: any[] = []; // await aiMlStorage.getOcrCorrections(userId, resultId);
 
     res.json({
       success: true,
@@ -501,7 +506,8 @@ router.get("/corrections", async (req: Request, res: Response) => {
     }
 
     const limit = parseInt(req.query.limit as string) || 50;
-    const corrections = // await aiMlStorage.getUserCorrections(userId, limit);
+    // TODO: Implement getUserCorrections in storage layer
+    const corrections: any[] = []; // await aiMlStorage.getUserCorrections(userId, limit);
 
     res.json({
       success: true,
