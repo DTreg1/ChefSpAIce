@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,10 +82,10 @@ export default function MealPlanner() {
   const { data: mealPlans = [], isLoading: mealPlansLoading } = useQuery<
     MealPlan[]
   >({
-    queryKey: ["/api/meal-plans", { startDate, endDate }],
+    queryKey: [API_ENDPOINTS.mealPlans.list, { startDate, endDate }],
     queryFn: async () => {
       const response = await fetch(
-        `/api/meal-plans?startDate=${startDate}&endDate=${endDate}`,
+        `${API_ENDPOINTS.mealPlans.list}?startDate=${startDate}&endDate=${endDate}`,
       );
       if (!response.ok) throw new Error("Failed to fetch meal plans");
       return response.json();
@@ -93,16 +94,16 @@ export default function MealPlanner() {
 
   // Fetch all recipes
   const { data: recipes = [] } = useQuery<Recipe[]>({
-    queryKey: ["/api/recipes"],
+    queryKey: [API_ENDPOINTS.recipes.list],
   });
 
   // Delete meal plan mutation
   const deleteMealPlanMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/meal-plans/${id}`, "DELETE");
+      return await apiRequest(API_ENDPOINTS.mealPlans.delete(id), "DELETE");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/meal-plans"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.mealPlans.list] });
       toast({
         title: "Meal removed",
         description: "Meal plan removed from calendar",
@@ -128,7 +129,7 @@ export default function MealPlanner() {
     });
     
     try {
-      const response = await fetch("/api/shopping-list/generate-from-meal-plans", {
+      const response = await fetch(API_ENDPOINTS.shoppingList.generateFromMealPlans, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

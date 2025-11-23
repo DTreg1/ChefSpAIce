@@ -125,8 +125,8 @@ export function getCacheConfigForQuery(queryKey: unknown[]): Partial<typeof cach
   const key = queryKey[0];
   
   if (typeof key === 'string') {
-    // Match query keys to cache configs
-    if (key.includes('/food-items') || key.includes('/inventory')) {
+    // Match query keys to cache configs - support both legacy and v1 paths
+    if (key.includes('/food-items') || key.includes('/inventories') || key.includes('/inventory')) {
       return cacheConfig.inventory;
     }
     if (key.includes('/shopping-list')) {
@@ -138,14 +138,20 @@ export function getCacheConfigForQuery(queryKey: unknown[]): Partial<typeof cach
     if (key.includes('/recipes')) {
       return cacheConfig.recipes;
     }
+    if (key.includes('/meal-plans')) {
+      return cacheConfig.recipes;
+    }
     if (key.includes('/auth/user') || key.includes('/preferences')) {
       return cacheConfig.user;
     }
     if (key.includes('/usda') || key.includes('/fdc') || key.includes('/nutrition')) {
       return cacheConfig.usda;
     }
-    if (key.includes('/analytics') || key.includes('/feedback')) {
+    if (key.includes('/analytics') || key.includes('/feedback') || key.includes('/activity-logs')) {
       return cacheConfig.analytics;
+    }
+    if (key.includes('/api/v1/ai/')) {
+      return cacheConfig.chat; // AI endpoints use similar caching to chat
     }
   }
   
