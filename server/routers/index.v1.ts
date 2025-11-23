@@ -12,6 +12,7 @@ import { backwardCompatibilityMiddleware, requestTransformMiddleware, getDepreca
 // User routers
 import authRouter from "./user/oauth.router";
 import inventoryRouter from "./user/inventory.router";
+import inventoryRouterV1 from "./user/inventory.router.v1";
 import recipesRouter from "./user/recipes.router";
 import chatRouter from "./user/chat.router";
 import chatStreamRouter from "./user/chat.router";
@@ -100,22 +101,8 @@ export async function registerModularRoutesV1(app: any): Promise<Server> {
   // INVENTORY & FOOD MANAGEMENT
   // ============================================
   
-  // Create sub-router for inventory resources
-  const inventoryV1Router = Router();
-  
-  // Map old inventory endpoints to RESTful patterns
-  inventoryV1Router.get("/inventories", inventoryRouter); // GET /api/v1/inventories
-  inventoryV1Router.post("/inventories", inventoryRouter); // POST /api/v1/inventories
-  inventoryV1Router.put("/inventories/:id", inventoryRouter); // PUT /api/v1/inventories/:id
-  inventoryV1Router.delete("/inventories/:id", inventoryRouter); // DELETE /api/v1/inventories/:id
-  inventoryV1Router.post("/inventories/batch", inventoryRouter); // POST /api/v1/inventories/batch
-  
-  inventoryV1Router.use("/food-items", inventoryRouter);
-  inventoryV1Router.use("/storage-locations", inventoryRouter);
-  inventoryV1Router.use("/barcodes", inventoryRouter);
-  inventoryV1Router.use("/food-data", inventoryRouter);
-  
-  v1Router.use(inventoryV1Router);
+  // Use the new RESTful inventory router
+  v1Router.use(inventoryRouterV1);
   
   // ============================================
   // RECIPES & CHAT
