@@ -134,10 +134,86 @@ The existing system uses 17 separate domain modules composed together:
 - **Type Safety**: Full TypeScript support maintained
 - **Backward Compatibility**: Legacy imports continue to work
 
-#### Known Issues
-- Some LSP errors in tier classes due to domain module instantiation
-- Need to verify all methods are properly bound in tier classes
-- Routers need gradual migration to new import structure
+#### Critical Issues Identified (Architect Review)
+
+**1. Export Compatibility Problem**
+- The new `index-refactored.ts` isn't being used by any routers
+- Replacing `index.ts` would break dozens of imports expecting named exports
+- Solution needed: Gradual migration strategy or better compatibility layer
+
+**2. Instance vs Class Confusion**  
+- Domain modules export **singleton instances**, not classes to instantiate
+- Current tier classes incorrectly create new instances, causing:
+  - Duplicate in-memory state
+  - Lost shared caches
+  - Broken singleton patterns
+- Affected modules: inventoryStorage, recipesStorage, chatStorage, userStorage
+
+**3. Incomplete Method Forwarding**
+- Not all interface methods are properly bound
+- Missing methods include:
+  - inventoryStorage.getInventorySummary
+  - analyticsStorage.streamEvents
+  - userStorage.generateApiToken
+  - supportStorage.bulkAssignTickets
+- TypeScript passes only because of `any` type signatures
+
+**4. Prototype Method Loss**
+- Spreading tier instances into plain objects drops prototype methods
+- Many domains define methods on prototypes, not as field arrows
+- Legacy compatibility is broken for these methods
+
+#### Revised Implementation Strategy
+
+**Option 1: Namespace-Based Tiers (Recommended)**
+```typescript
+// Keep existing mergeStorageModules but add tier namespaces
+export const storage = {
+  // Direct access (legacy compatibility)
+  ...mergedStorage,
+  
+  // Tier namespaces (new organized API)
+  user: {
+    inventory: inventoryStorage,
+    food: foodStorage,
+    recipes: recipesStorage,
+    auth: userStorage,
+    chat: chatStorage,
+    feedback: feedbackStorage,
+    notifications: notificationStorage,
+  },
+  admin: {
+    billing: billingStorage,
+    support: supportStorage,
+    security: securityStorage,
+    pricing: pricingStorage,
+    scheduling: schedulingStorage,
+  },
+  platform: {
+    aiMl: aiMlStorage,
+    analytics: analyticsStorage,
+    system: systemStorage,
+    content: contentStorage,
+    experiments: experimentsStorage,
+  },
+};
+```
+
+**Option 2: Proxy-Based Forwarding**
+- Use ES6 Proxies to forward method calls to singleton instances
+- Maintains single source of truth
+- Preserves all methods including prototype-based ones
+
+**Option 3: Facade Pattern with Delegation**
+- Create lightweight facade classes that delegate to singletons
+- Don't instantiate new domain classes
+- Use existing singleton instances directly
+
+#### Next Steps
+1. Choose implementation strategy based on minimal disruption
+2. Create automated tests to verify all methods remain accessible
+3. Implement gradual migration path for routers
+4. Add TypeScript structural typing to ensure interface compliance
 
 ### Storage Naming Simplified (November 23, 2025)
 
