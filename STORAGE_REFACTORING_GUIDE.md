@@ -255,7 +255,7 @@ export const contentStorage = storage.platform.content;
 export const feedbackStorage = storage.platform.feedback;
 ```
 ```
-
+```
 ---
 
 ### Prompt 5: Update Router Imports (Phase 1 - Backward Compatible)
@@ -282,7 +282,7 @@ storage.platform.analytics.trackEvent()
 
 Test that both import styles work correctly before proceeding to phase 2.
 ```
-
+```
 ---
 
 ### Prompt 6: Update Router Imports (Phase 2 - Migration)
@@ -300,6 +300,8 @@ inventoryStorage.getFoodItems()
 userStorage.getUserById()
 recipesStorage.createRecipe()
 ```
+```
+```
 
 Change TO:
 ```typescript
@@ -308,6 +310,8 @@ import { storage } from "../storage/index";
 storage.user.inventory.getFoodItems()
 storage.user.user.getUserById()
 storage.user.recipes.createRecipe()
+```
+```
 ```
 
 Examples for each tier:
@@ -320,7 +324,7 @@ Update all routers including:
 - All service files that import storage
 - Any other files that reference storage modules
 ```
-
+```
 ---
 
 ### Prompt 7: Remove Legacy Code and Clean Up
