@@ -70,9 +70,8 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
     res.setHeader('X-Deprecation-Date', API_CONFIG.DEPRECATION_DATE);
     res.setHeader('X-New-Endpoint', `${method} ${newPath}`);
     
-    // Rewrite the request path
+    // Rewrite the request URL (path is derived from url automatically)
     req.url = newPath;
-    req.path = newPath.split('?')[0];
   }
   
   next();

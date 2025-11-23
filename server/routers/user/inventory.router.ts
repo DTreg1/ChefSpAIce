@@ -32,7 +32,7 @@ const router = Router();
  * - pagination: { page, limit, total, totalPages }
  * - type: "items"
  */
-router.get("/inventory", isAuthenticated, async (req: Request, res: Response) => {
+router.get("/inventories", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -123,7 +123,7 @@ router.post(
 );
 
 // Food items CRUD
-router.get("/food-items", isAuthenticated, async (req: Request, res: Response) => {
+router.get("/inventories/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });

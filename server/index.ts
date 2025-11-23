@@ -5,7 +5,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import compression from "compression";
 // Use modular routes instead of monolithic routes.ts
 import { registerModularRoutes } from "./routers";
-import { registerModularRoutesV1 } from "./routers/index.v1";
 import { setupVite, serveStatic, log } from "./vite";
 import { logRetentionService } from "./services/log-retention.service";
 import PushStatusService from "./services/push-status.service";
@@ -131,10 +130,8 @@ app.use((req, res, next) => {
   // Initialize and validate environment variables
   initializeEnvironment();
   
-  // Use the new versioned router configuration
-  const server = await registerModularRoutesV1(app);
-  // Keep legacy routes for backward compatibility (will be handled by middleware)
-  // await registerModularRoutes(app);
+  // Register all routes with API versioning
+  const server = await registerModularRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

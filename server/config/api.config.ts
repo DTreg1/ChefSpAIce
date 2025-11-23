@@ -10,28 +10,29 @@ export const API_CONFIG = {
   VERSIONED_BASE: '/api/v1',
   
   // Legacy paths for backward compatibility
+  // Maps old paths to actual new v1 paths (not ideal RESTful, but what exists)
   LEGACY_PATHS: {
-    // User & Inventory
-    '/inventory': '/api/v1/inventories',
-    '/storage-locations': '/api/v1/storage-locations',
-    '/food-items': '/api/v1/food-items',
-    '/food/enrich': '/api/v1/food-items/enrichment',
-    '/barcodelookup/search': '/api/v1/barcodes/search',
-    '/fdc/search': '/api/v1/food-data/search',
-    '/fdc/food': '/api/v1/food-data',
+    // User & Inventory (actual paths after mounting at /api/v1)
+    '/api/inventory': '/api/v1/inventory',
+    '/api/storage-locations': '/api/v1/storage-locations',
+    '/api/food-items': '/api/v1/food-items',
+    '/api/food/enrich': '/api/v1/food/enrich',
+    '/api/barcodelookup/search': '/api/v1/barcodelookup/search',
+    '/api/fdc/search': '/api/v1/fdc/search',
+    '/api/fdc/food': '/api/v1/fdc/food',
     
-    // Recipes & Chat
-    '/chat/messages': '/api/v1/chats/messages',
-    '/chat': '/api/v1/chats/messages',
-    '/recipes': '/api/v1/recipes',
-    '/recipe/generate': '/api/v1/ai/recipes/generate',
+    // Recipes & Chat (actual paths after mounting at /api/v1)
+    '/api/chat/messages': '/api/v1/chats/messages',
+    '/api/chat': '/api/v1/chats',
+    '/api/recipes': '/api/v1/recipes',
+    '/api/recipe/generate': '/api/v1/recipes/generate',
     
-    // Meal Planning
-    '/meal-plans': '/api/v1/meal-plans',
-    '/shopping-list/items': '/api/v1/shopping-lists/items',
-    '/shopping-list/add-missing': '/api/v1/shopping-lists/items/bulk',
-    '/shopping-list/clear-checked': '/api/v1/shopping-lists/items',
-    '/shopping-list/generate-from-meal-plans': '/api/v1/shopping-lists/generate',
+    // Meal Planning (actual paths after mounting at /api/v1)
+    '/api/meal-plans': '/api/v1/meal-plans',
+    '/api/shopping-list/items': '/api/v1/shopping-list/items',
+    '/api/shopping-list/add-missing': '/api/v1/shopping-list/add-missing',
+    '/api/shopping-list/clear-checked': '/api/v1/shopping-list/clear-checked',
+    '/api/shopping-list/generate-from-meal-plans': '/api/v1/shopping-list/generate-from-meal-plans',
     
     // AI Services
     '/api/ai/generation': '/api/v1/ai/text',
