@@ -55,6 +55,90 @@ PostgreSQL, accessed via Drizzle ORM, serves as the primary data store. The sche
 
 ## Recent Updates
 
+### Storage Architecture Refactoring - Three-Tier Design (November 23, 2025)
+
+**Status:** In Progress 🔄  
+**Purpose:** Consolidate 17 separate domain storage modules into a three-tier architecture for better organization and maintainability.
+
+#### Current Architecture (17 Domain Modules)
+The existing system uses 17 separate domain modules composed together:
+1. **inventoryStorage** - Food items, expiration tracking, shopping lists
+2. **userStorage** - User management, OAuth, sessions, preferences  
+3. **recipesStorage** - Recipe CRUD, meal planning, suggestions
+4. **chatStorage** - AI conversation history, messages
+5. **analyticsStorage** - Activity logging, API usage, predictions, trends
+6. **feedbackStorage** - User feedback, donations, community features
+7. **notificationStorage** - Push tokens, notification preferences
+8. **foodStorage** - Food data, storage locations, cooking terms
+9. **aiMlStorage** - Voice commands, writing assistance, translations (1,322 lines)
+10. **systemStorage** - API logging, system metrics, maintenance (982 lines)
+11. **supportStorage** - Ticket management, routing rules (578 lines)
+12. **billingStorage** - Donations, Stripe payments (486 lines)
+13. **experimentsStorage** - A/B testing, cohort analysis (728 lines)
+14. **securityStorage** - Content moderation, fraud detection (704 lines)
+15. **schedulingStorage** - Meeting preferences, AI suggestions (550 lines)
+16. **pricingStorage** - Dynamic pricing, market intelligence (689 lines)
+17. **contentStorage** - Categories, tags, embeddings (839 lines)
+
+#### New Three-Tier Architecture
+
+**UserStorage Tier** (User-specific data - 7 domains):
+- inventoryStorage → Food inventory management
+- foodStorage → Cooking terms and storage locations
+- recipesStorage → Recipe and meal planning
+- userStorage → User accounts and authentication
+- chatStorage → AI conversations
+- feedbackStorage → User feedback and community
+- notificationStorage → Push notifications
+
+**AdminStorage Tier** (Administrative operations - 5 domains):
+- billingStorage → Payment processing
+- supportStorage → Customer support tickets
+- securityStorage → Security and moderation
+- pricingStorage → Dynamic pricing
+- schedulingStorage → Meeting scheduling
+
+**PlatformStorage Tier** (Cross-cutting concerns - 5 domains):
+- aiMlStorage → AI/ML operations
+- analyticsStorage → Analytics and metrics
+- systemStorage → System monitoring
+- contentStorage → Content organization
+- experimentsStorage → A/B testing
+
+#### Implementation Details
+- Created three new tier classes in `server/storage/tiers/`
+- Each tier implements all interfaces from its constituent domains
+- Maintains backward compatibility through legacy exports
+- New refactored index at `server/storage/index-refactored.ts`
+- Fixed TypeScript type safety issue in `compose-storage.ts`
+
+#### Migration Path
+1. **Option 1 - Gradual Migration (Recommended):**
+   - Start importing from `index-refactored.ts`
+   - Update imports module by module
+   - Legacy exports ensure existing code continues working
+
+2. **Option 2 - Direct Three-Tier Usage:**
+   ```typescript
+   import { storage } from "../storage/index-refactored";
+   storage.user.getFoodItems(userId);
+   storage.admin.createTicket(ticket);
+   storage.platform.recordAnalyticsEvent(event);
+   ```
+
+#### Benefits
+- **Better Organization**: Clear separation between user, admin, and platform concerns
+- **Reduced Complexity**: 3 tiers instead of 17 separate modules
+- **Easier Access Control**: Can implement role-based access at tier level
+- **Improved Maintainability**: Related functionality grouped together
+- **Type Safety**: Full TypeScript support maintained
+- **Backward Compatibility**: Legacy imports continue to work
+
+#### Known Issues
+- Some LSP errors in tier classes due to domain module instantiation
+- Need to verify all methods are properly bound in tier classes
+- Routers need gradual migration to new import structure
+
 ### Storage Naming Simplified (November 23, 2025)
 
 **Status:** Completed ✅  
