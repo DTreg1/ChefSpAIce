@@ -15,7 +15,7 @@
  */
 
 import { openai } from "../integrations/openai";
-import { securityStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import type {
   ModerationLog,
   BlockedContent,
@@ -508,7 +508,7 @@ export class ModerationService {
    */
   private async logModeration(data: InsertModerationLog): Promise<void> {
     try {
-      await securityStorage.createModerationLog(data);
+      await storage.admin.security.createModerationLog(data);
     } catch (error) {
       console.error('Error logging moderation:', error);
     }
@@ -519,7 +519,7 @@ export class ModerationService {
    */
   private async saveBlockedContent(data: InsertBlockedContent): Promise<void> {
     try {
-      await securityStorage.createBlockedContent(data);
+      await storage.admin.security.createBlockedContent(data);
     } catch (error) {
       console.error('Error saving blocked content:', error);
     }
@@ -537,7 +537,7 @@ export class ModerationService {
       contentType?: string;
     }
   ): Promise<ModerationLog[]> {
-    return await securityStorage.getModerationQueue(userId, isAdmin, filters);
+    return await storage.admin.security.getModerationQueue(userId, isAdmin, filters);
   }
   
   /**
@@ -549,7 +549,7 @@ export class ModerationService {
     reviewedBy: string,
     notes?: string
   ): Promise<void> {
-    await securityStorage.updateModerationLog(moderationLogId, {
+    await storage.admin.security.updateModerationLog(moderationLogId, {
       actionTaken: action,
       reviewedBy,
       reviewNotes: notes,
@@ -562,7 +562,7 @@ export class ModerationService {
    * Submit appeal
    */
   async submitAppeal(appeal: InsertModerationAppeal): Promise<ModerationAppeal> {
-    return await securityStorage.createModerationAppeal(appeal);
+    return await storage.admin.security.createModerationAppeal(appeal);
   }
   
   /**
@@ -574,11 +574,11 @@ export class ModerationService {
     decidedBy: string,
     reason: string
   ): Promise<void> {
-    const appeal = await securityStorage.getModerationAppeal(appealId);
+    const appeal = await storage.admin.security.getModerationAppeal(appealId);
     if (!appeal) throw new Error('Appeal not found');
     
     // Update appeal
-    await securityStorage.updateModerationAppeal(appealId, {
+    await storage.admin.security.updateModerationAppeal(appealId, {
       status: decision === 'approved' ? 'approved' : 'rejected',
       decision,
       decidedBy,
@@ -588,7 +588,7 @@ export class ModerationService {
     
     // If approved, restore content
     if (decision === 'approved' && appeal.blockedContentId) {
-      await securityStorage.restoreBlockedContent(appeal.blockedContentId, decidedBy);
+      await storage.admin.security.restoreBlockedContent(appeal.blockedContentId, decidedBy);
     }
   }
   
@@ -607,7 +607,7 @@ export class ModerationService {
     severityBreakdown: { [key: string]: number };
     averageConfidence: number;
   }> {
-    return await securityStorage.getModerationStats(timeRange);
+    return await storage.admin.security.getModerationStats(timeRange);
   }
 }
 

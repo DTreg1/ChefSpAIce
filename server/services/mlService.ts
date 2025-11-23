@@ -14,7 +14,7 @@
  */
 
 import { openai } from "../integrations/openai";
-import { aiMlStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import type { 
   Recipe, 
   UserInventory, 
@@ -123,7 +123,7 @@ export class MLService {
     const text = prepareTextForEmbedding(content, contentType);
     const embedding = await this.generateEmbedding(text);
     
-    return await aiMlStorage.upsertContentEmbedding({
+    return await storage.platform.ai.upsertContentEmbedding({
       contentId,
       contentType,
       embedding,
@@ -156,7 +156,7 @@ export class MLService {
     const queryEmbedding = await this.generateEmbedding(query);
     
     // Search for similar content
-    const results = await aiMlStorage.searchByEmbedding(
+    const results = await storage.platform.ai.searchByEmbedding(
       queryEmbedding,
       contentType,
       userId,
@@ -164,7 +164,7 @@ export class MLService {
     );
     
     // Log the search
-    await aiMlStorage.createSearchLog({
+    await storage.platform.ai.createSearchLog({
       query,
       searchType: 'semantic',
       userId,
@@ -179,10 +179,10 @@ export class MLService {
         
         switch (contentType) {
           case 'recipe':
-            content = await aiMlStorage.getRecipe(result.contentId, userId);
+            content = await storage.platform.ai.getRecipe(result.contentId, userId);
             break;
           case 'inventory':
-            const items = await aiMlStorage.getFoodItems(userId);
+            const items = await storage.platform.ai.getFoodItems(userId);
             content = items.find((i: any) => i.id === result.contentId);
             break;
           default:
@@ -452,7 +452,7 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
     const embedding = await this.generateEmbedding(text);
     
     // Search for similar content
-    const results = await aiMlStorage.searchByEmbedding(
+    const results = await storage.platform.ai.searchByEmbedding(
       embedding,
       contentType,
       userId,
@@ -488,19 +488,19 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
     score: number;
   }>> {
     // Check cache first
-    const cached = await aiMlStorage.getRelatedContent(contentId, contentType, userId);
+    const cached = await storage.platform.ai.getRelatedContent(contentId, contentType, userId);
     if (cached) {
       return cached.relatedItems.slice(0, limit);
     }
     
     // Get content embedding
-    const embedding = await aiMlStorage.getContentEmbedding(contentId, contentType, userId);
+    const embedding = await storage.platform.ai.getContentEmbedding(contentId, contentType, userId);
     if (!embedding) {
       return [];
     }
     
     // Search for similar content
-    const results = await aiMlStorage.searchByEmbedding(
+    const results = await storage.platform.ai.searchByEmbedding(
       embedding.embedding,
       contentType,
       userId,
@@ -522,7 +522,7 @@ Return ${Math.max(5, maxTags - results.length)} relevant tags as a JSON array of
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // Cache for 24 hours
     
-    await aiMlStorage.cacheRelatedContent({
+    await storage.platform.ai.cacheRelatedContent({
       contentId,
       contentType,
       relatedItems,
@@ -603,7 +603,7 @@ Return a safe SELECT query and a brief explanation in JSON format:
       }
       
       // Log the query
-      await aiMlStorage.createQueryLog(userId, {
+      await storage.platform.ai.createQueryLog(userId, {
         naturalQuery: query,
         generatedSql: sql,
       });
@@ -624,13 +624,13 @@ Return a safe SELECT query and a brief explanation in JSON format:
   async updateUserEmbeddings(userId: string): Promise<void> {
     try {
       // Update recipe embeddings
-      const recipes = await aiMlStorage.getRecipes(userId);
+      const recipes = await storage.platform.ai.getRecipes(userId);
       for (const recipe of recipes) {
         await this.createContentEmbedding(recipe, 'recipe', recipe.id, userId);
       }
       
       // Update inventory embeddings
-      const inventory = await aiMlStorage.getFoodItems(userId);
+      const inventory = await storage.platform.ai.getFoodItems(userId);
       for (const item of inventory) {
         await this.createContentEmbedding(item, 'inventory', item.id, userId);
       }

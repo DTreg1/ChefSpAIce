@@ -12,7 +12,7 @@ import OpenAI from "openai";
 import Sentiment from 'sentiment';
 import * as natural from 'natural';
 import * as keywordExtractor from 'keyword-extractor';
-import { analyticsStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import type { InsertSentimentResults, SentimentResults, InsertSentimentTrends } from "@shared/schema";
 
 // Initialize OpenAI client using Replit AI Integrations
@@ -785,7 +785,7 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
     periodType: 'hour' | 'day' | 'week' | 'month',
     analysis: any
   ): Promise<void> {
-    // TODO: getSentimentTrends and createSentimentTrend methods not yet implemented in analyticsStorage
+    // TODO: getSentimentTrends and createSentimentTrend methods not yet implemented in storage.platform.analytics
     // Placeholder for future sentiment trend tracking functionality
     console.log(`Sentiment trend tracking not yet implemented for ${periodType} ${timePeriod}`);
   }

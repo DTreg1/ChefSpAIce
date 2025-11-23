@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/error.middleware";
-import { inventoryStorage, recipesStorage, userStorage, chatStorage, analyticsStorage, foodStorage } from "../storage/index";
+import { storage } from "../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/oauth.middleware";
 
@@ -53,7 +53,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   // Food items endpoints
   if (endpoint === '/api/food-items' && method === 'GET') {
-    return inventoryStorage.getFoodItemsPaginated(
+    return storage.user.inventory.getFoodItemsPaginated(
       userId!,
       params?.page || 1,
       params?.limit || 20,
@@ -63,12 +63,12 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   }
   
   if (endpoint === '/api/food-items/expiring' && method === 'GET') {
-    return inventoryStorage.getExpiringItems(userId!, params?.days || 7);
+    return storage.user.inventory.getExpiringItems(userId!, params?.days || 7);
   }
   
   // Recipes endpoints
   if (endpoint === '/api/recipes' && method === 'GET') {
-    return recipesStorage.getRecipesPaginated(
+    return storage.user.recipes.getRecipesPaginated(
       userId!,
       params?.page || 1,
       params?.limit || 20
@@ -81,7 +81,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
     const limit = params?.limit || 10;
     
     // Get user's available ingredients with categories
-    const foodItems = await inventoryStorage.getFoodItemsPaginated(
+    const foodItems = await storage.user.inventory.getFoodItemsPaginated(
       userId!,
       1,
       100, // Get up to 100 items for matching
@@ -95,7 +95,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
     
     // Get recipes and check which can be made with available ingredients
     // Only fetch a reasonable number of recipes to check
-    const recipesData = await recipesStorage.getRecipesPaginated(
+    const recipesData = await storage.user.recipes.getRecipesPaginated(
       userId!,
       1,
       50 // Check up to 50 recipes
@@ -138,7 +138,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   // Meal planning endpoints
   if (endpoint === '/api/meal-plans' && method === 'GET') {
-    return recipesStorage.getMealPlans(
+    return storage.user.recipes.getMealPlans(
       userId!,
       params?.startDate,
       params?.endDate,
@@ -148,16 +148,16 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   // Shopping list endpoints
   if (endpoint === '/api/shopping-list' && method === 'GET') {
-    return inventoryStorage.getShoppingItems(userId!);
+    return storage.user.inventory.getShoppingItems(userId!);
   }
   
   if (endpoint === '/api/shopping-list/grouped' && method === 'GET') {
-    return inventoryStorage.getGroupedShoppingItems(userId!);
+    return storage.user.inventory.getGroupedShoppingItems(userId!);
   }
   
   // User preferences
   if (endpoint === '/api/user/preferences' && method === 'GET') {
-    return userStorage.getUserPreferences(userId!);
+    return storage.user.user.getUserPreferences(userId!);
   }
   
   // Analytics endpoints
@@ -177,7 +177,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   // Storage locations endpoint  
   if (endpoint === '/api/storage-locations' && method === 'GET') {
-    return foodStorage.getStorageLocations(userId!);
+    return storage.user.food.getStorageLocations(userId!);
   }
   
   // Common food items endpoint

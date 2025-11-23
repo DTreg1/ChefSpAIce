@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/oauth.middleware";
 import { validateBody } from "../middleware";
-import { inventoryStorage } from "../storage/domains/inventory.storage";
+import { storage.user.inventory } from "../storage/index";
 import { storage } from "../storage/index"; // Keep for shopping list operations temporarily
 import { insertUserInventorySchema, insertShoppingListItemSchema } from "@shared/schema";
 import { z } from "zod";
@@ -21,9 +21,9 @@ router.get("/inventory", isAuthenticated, async (req: Request, res: Response) =>
     switch (type) {
       case "items": {
         // Get food items with optional filtering
-        // Note: The new inventoryStorage doesn't support location/category filtering yet
+        // Note: The new storage.user.inventory doesn't support location/category filtering yet
         // This will be implemented next
-        const items = await inventoryStorage.getFoodItems(userId);
+        const items = await storage.user.inventory.getFoodItems(userId);
         
         // Apply client-side filtering temporarily until domain storage supports it
         let filteredItems = items;
@@ -54,7 +54,7 @@ router.get("/inventory", isAuthenticated, async (req: Request, res: Response) =>
       
       case "shopping-list": {
         // Get shopping list items with optional status filter
-        const shoppingData = await inventoryStorage.getGroupedShoppingItems(userId);
+        const shoppingData = await storage.user.inventory.getGroupedShoppingItems(userId);
         let items = shoppingData.items || [];
         
         if (status === "checked") {
@@ -75,7 +75,7 @@ router.get("/inventory", isAuthenticated, async (req: Request, res: Response) =>
       
       case "locations": {
         // Get storage locations
-        const locations = await inventoryStorage.getStorageLocations(userId);
+        const locations = await storage.user.inventory.getStorageLocations(userId);
         res.json({
           data: locations,
           type: "locations"
@@ -132,7 +132,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
     switch (type) {
       case "item": {
         // Verify storage location
-        const locations = await inventoryStorage.getStorageLocations(userId);
+        const locations = await storage.user.inventory.getStorageLocations(userId);
         const locationExists = locations.some((loc: any) => loc.id === data.storageLocationId);
         
         if (!locationExists) {
@@ -154,7 +154,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
           expirationDate = expDate.toISOString().split("T")[0];
         }
         
-        const item = await inventoryStorage.createFoodItem(userId, {
+        const item = await storage.user.inventory.createFoodItem(userId, {
           ...data,
           expirationDate: expirationDate || new Date().toISOString().split("T")[0],
         });
@@ -164,7 +164,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
       }
       
       case "shopping-list": {
-        const item = await inventoryStorage.createShoppingItem({
+        const item = await storage.user.inventory.createShoppingItem({
           ...data,
           userId
         });
@@ -173,7 +173,7 @@ router.post("/inventory", isAuthenticated, validateBody(inventoryItemSchema), as
       }
       
       case "location": {
-        const newLocation = await inventoryStorage.createStorageLocation(userId, data);
+        const newLocation = await storage.user.inventory.createStorageLocation(userId, data);
         res.json({ data: newLocation, type: "location" });
         break;
       }
@@ -206,7 +206,7 @@ router.post("/inventory/batch", isAuthenticated, async (req: Request, res: Respo
           const { recipeId, ingredients  } = req.body || {};
           const createdItems = await Promise.all(
             ingredients.map((ingredient: string) =>
-              inventoryStorage.createShoppingItem({
+              storage.user.inventory.createShoppingItem({
                 userId,
                 ingredient: ingredient,
                 recipeId,
@@ -224,11 +224,11 @@ router.post("/inventory/batch", isAuthenticated, async (req: Request, res: Respo
       case "delete": {
         if (type === "shopping-list" && req.body.filter === "checked") {
           // Clear checked items
-          const items = await inventoryStorage.getShoppingItems(userId);
+          const items = await storage.user.inventory.getShoppingItems(userId);
           const checkedItems = items.filter((item: any) => item.isChecked);
           
           for (const item of checkedItems) {
-            await inventoryStorage.deleteShoppingItem(userId, item.id);
+            await storage.user.inventory.deleteShoppingItem(userId, item.id);
           }
           
           res.json({ 
@@ -262,28 +262,28 @@ router.put("/inventory/:id", isAuthenticated, async (req: Request, res: Response
     switch (type) {
       case "item": {
         // Verify item ownership
-        const items = await inventoryStorage.getFoodItems(userId);
+        const items = await storage.user.inventory.getFoodItems(userId);
         const existing = items.find((item: any) => item.id === itemId);
         
         if (!existing) {
           return res.status(404).json({ error: "Item not found" });
         }
         
-        const updated = await inventoryStorage.updateFoodItem(userId, itemId, req.body);
+        const updated = await storage.user.inventory.updateFoodItem(userId, itemId, req.body);
         res.json({ data: updated, type: "item" });
         break;
       }
       
       case "shopping-list": {
         // Toggle checked status
-        const items = await inventoryStorage.getShoppingListItems(userId);
+        const items = await storage.user.inventory.getShoppingListItems(userId);
         const item = items.find((i: any) => i.id === itemId);
         
         if (!item) {
           return res.status(404).json({ error: "Shopping list item not found" });
         }
         
-        const updated = await inventoryStorage.updateShoppingItem(
+        const updated = await storage.user.inventory.updateShoppingItem(
           userId,
           itemId,
           { isChecked: !item.isChecked }
@@ -313,28 +313,28 @@ router.delete("/inventory/:id", isAuthenticated, async (req: Request, res: Respo
     switch (type) {
       case "item": {
         // Verify ownership
-        const items = await inventoryStorage.getFoodItems(userId);
+        const items = await storage.user.inventory.getFoodItems(userId);
         const existing = items.find((item: any) => item.id === itemId);
         
         if (!existing) {
           return res.status(404).json({ error: "Item not found" });
         }
         
-        await inventoryStorage.deleteFoodItem(userId, itemId);
+        await storage.user.inventory.deleteFoodItem(userId, itemId);
         res.json({ message: "Item deleted successfully", type: "item" });
         break;
       }
       
       case "shopping-list": {
         // Verify ownership
-        const items = await inventoryStorage.getShoppingListItems(userId);
+        const items = await storage.user.inventory.getShoppingListItems(userId);
         const existing = items.find((item: any) => item.id === itemId);
         
         if (!existing) {
           return res.status(404).json({ error: "Shopping list item not found" });
         }
         
-        await inventoryStorage.deleteShoppingItem(userId, itemId);
+        await storage.user.inventory.deleteShoppingItem(userId, itemId);
         res.json({ message: "Shopping list item deleted", type: "shopping-list" });
         break;
       }
@@ -362,7 +362,7 @@ router.post("/inventory/shopping-list/add-missing", isAuthenticated, async (req:
     
     const items = await Promise.all(
       ingredients.map((ingredient: string) =>
-        inventoryStorage.createShoppingItem({
+        storage.user.inventory.createShoppingItem({
           userId,
           ingredient: ingredient,
           recipeId,

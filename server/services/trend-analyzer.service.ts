@@ -5,7 +5,7 @@
  * patterns, and anomalies in various data sources.
  */
 
-import { analyticsStorage } from '../storage/index';
+import { storage } from "../storage/index";
 import { InsertTrend } from '@shared/schema';
 import { openai } from '../integrations/openai';
 import { detectSimpleTrend, detectAnomalies, detectSeasonality } from './lightweightPrediction';
@@ -92,7 +92,7 @@ class TrendAnalyzerService {
       const storedTrends = [];
       for (const trend of trends) {
         try {
-          const stored = await analyticsStorage.createTrend(trend);
+          const stored = await storage.platform.analytics.createTrend(trend);
           storedTrends.push(stored);
           
           // Check if we should trigger alerts
@@ -120,7 +120,7 @@ class TrendAnalyzerService {
     try {
       if (config.dataSource === 'analytics' || config.dataSource === 'all') {
         // Fetch analytics events
-        const events = await analyticsStorage.getAnalyticsEvents(undefined, {
+        const events = await storage.platform.analytics.getAnalyticsEvents(undefined, {
           startDate, endDate
         });
         
@@ -138,7 +138,7 @@ class TrendAnalyzerService {
       
       if (config.dataSource === 'feedback' || config.dataSource === 'all') {
         // Fetch user feedback - use getAllFeedback for trend analysis
-        const feedbackPage = await analyticsStorage.getAllFeedback(1, 1000);
+        const feedbackPage = await storage.platform.analytics.getAllFeedback(1, 1000);
         
         // Analyze feedback sentiment and topics
         const feedbackSeries = this.processFeedbackData(feedbackPage.data);
@@ -147,7 +147,7 @@ class TrendAnalyzerService {
       
       if (config.dataSource === 'inventory' || config.dataSource === 'all') {
         // Fetch inventory changes
-        const activityLogs = await analyticsStorage.getActivityLogs(null, {
+        const activityLogs = await storage.platform.analytics.getActivityLogs(null, {
           action: ['item_added', 'item_removed', 'item_updated']
         });
         
@@ -158,7 +158,7 @@ class TrendAnalyzerService {
       
       if (config.dataSource === 'recipes' || config.dataSource === 'all') {
         // Fetch recipe interactions
-        const recipeLogs = await analyticsStorage.getActivityLogs(null, {
+        const recipeLogs = await storage.platform.analytics.getActivityLogs(null, {
           action: ['recipe_viewed', 'recipe_created', 'recipe_favorited']
         });
         
@@ -402,7 +402,7 @@ class TrendAnalyzerService {
   private async checkTrendAlerts(trend: any): Promise<void> {
     try {
       // Get active alert configurations - pass null for userId to get all alerts
-      const alerts = await analyticsStorage.getTrendAlerts('', 'active');
+      const alerts = await storage.platform.analytics.getTrendAlerts('', 'active');
       
       for (const alert of alerts) {
         if (!alert.isActive) continue;
@@ -444,7 +444,7 @@ class TrendAnalyzerService {
           const message = `Trend Alert: ${trend.trendName} detected with ${trend.strength.toFixed(2)} strength and ${trend.growthRate.toFixed(1)}% growth rate.`;
           
           // Trigger the alert (just needs the alert ID)
-          await analyticsStorage.triggerTrendAlert(alert.id);
+          await storage.platform.analytics.triggerTrendAlert(alert.id);
           
           console.log(`Triggered alert ${alert.id} for trend ${trend.id}: ${message}`);
         }

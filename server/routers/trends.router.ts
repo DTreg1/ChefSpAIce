@@ -7,7 +7,7 @@
 
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { analyticsStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request } from "express";
@@ -64,7 +64,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     try {
-      const trends = await analyticsStorage.getCurrentTrends();
+      const trends = await storage.platform.analytics.getCurrentTrends();
       
       res.json({
         success: true,
@@ -93,7 +93,7 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     try {
-      const trends = await analyticsStorage.getEmergingTrends();
+      const trends = await storage.platform.analytics.getEmergingTrends();
       
       res.json({
         success: true,
@@ -136,7 +136,7 @@ router.get(
         end: new Date(end as string)
       };
       
-      const trends = await analyticsStorage.getHistoricalTrends(dateRange);
+      const trends = await storage.platform.analytics.getHistoricalTrends(dateRange);
       
       res.json({
         success: true,
@@ -222,7 +222,7 @@ router.post(
           }
           
           // Update trend in storage
-          await analyticsStorage.updateTrend(trend.id, trend);
+          await storage.platform.analytics.updateTrend(trend.id, trend);
         }
       }
       
@@ -272,11 +272,11 @@ router.post(
     const { alertType, conditions, notificationChannels } = validation.data;
     
     try {
-      const alert = await analyticsStorage.subscribeTrendAlerts(userId, conditions, alertType);
+      const alert = await storage.platform.analytics.subscribeTrendAlerts(userId, conditions, alertType);
       
       // Update notification channels if provided
       if (notificationChannels) {
-        await analyticsStorage.updateTrendAlert(alert.id, {
+        await storage.platform.analytics.updateTrendAlert(alert.id, {
           notificationChannels
         });
       }
@@ -310,7 +310,7 @@ router.get(
     }
     
     try {
-      const alerts = await analyticsStorage.getTrendAlerts(userId);
+      const alerts = await storage.platform.analytics.getTrendAlerts(userId);
       
       res.json({
         success: true,
@@ -356,7 +356,7 @@ router.post(
     const { alertId, actionTaken } = validation.data;
     
     try {
-      await analyticsStorage.acknowledgeTrendAlert(alertId, actionTaken);
+      await storage.platform.analytics.acknowledgeTrendAlert(alertId, actionTaken);
       
       res.json({
         success: true,
@@ -383,7 +383,7 @@ router.get(
     const { trendId } = req.params;
     
     try {
-      const trend = await analyticsStorage.getTrendById(trendId);
+      const trend = await storage.platform.analytics.getTrendById(trendId);
       
       if (!trend) {
         return res.status(404).json({
@@ -392,7 +392,7 @@ router.get(
       }
       
       // Get related alerts
-      const alerts = await analyticsStorage.getTrendAlertsByTrendId(trendId);
+      const alerts = await storage.platform.analytics.getTrendAlertsByTrendId(trendId);
       
       res.json({
         success: true,
@@ -434,7 +434,7 @@ router.get(
     const filters = validation.data;
     
     try {
-      const trends = await analyticsStorage.getTrends(filters);
+      const trends = await storage.platform.analytics.getTrends(filters);
       
       res.json({
         success: true,

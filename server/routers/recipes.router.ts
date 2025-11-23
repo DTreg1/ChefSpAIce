@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
-import { recipesStorage, chatStorage, inventoryStorage, storage } from "../storage/index";
+import { storage } from "../storage/index";
 import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/oauth.middleware";
@@ -48,7 +48,7 @@ router.get("/chat/messages", isAuthenticated, async (req: Request, res: Response
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const messages = await chatStorage.getChatMessages(userId, limit);
+    const messages = await storage.user.chat.getChatMessages(userId, limit);
 
     // Return in chronological order for display
     res.json(messages.reverse());
@@ -74,7 +74,7 @@ router.post(
         });
       }
 
-      const message = await chatStorage.createChatMessage(userId, validation.data);
+      const message = await storage.user.chat.createChatMessage(userId, validation.data);
       
       res.json(message);
     } catch (error) {
@@ -88,7 +88,7 @@ router.delete("/chat/messages", isAuthenticated, async (req: Request, res: Respo
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    await chatStorage.deleteChatHistory(userId);
+    await storage.user.chat.deleteChatHistory(userId);
     res.json({ message: "Chat history cleared" });
   } catch (error) {
     console.error("Error clearing chat messages:", error);
@@ -153,7 +153,7 @@ router.post(
       }
 
       // Persist user message to database for conversation history
-      await chatStorage.createChatMessage(userId, {
+      await storage.user.chat.createChatMessage(userId, {
         role: "user",
         content: message,
       });
@@ -161,7 +161,7 @@ router.post(
       // Build inventory context when requested
       let inventoryContext = "";
       if (includeInventory) {
-        const items = await inventoryStorage.getFoodItems(userId);
+        const items = await storage.user.inventory.getFoodItems(userId);
         
         if (items.length > 0) {
           inventoryContext = `\n\nUser's current food inventory:\n${items
@@ -171,7 +171,7 @@ router.post(
       }
 
       // Fetch recent conversation history to maintain context
-      const history = await chatStorage.getChatMessages(userId, 10);
+      const history = await storage.user.chat.getChatMessages(userId, 10);
 
       const messages: any[] = [
         {
@@ -213,7 +213,7 @@ router.post(
       }
 
       // Save assistant message
-      const saved = await chatStorage.createChatMessage(userId, {
+      const saved = await storage.user.chat.createChatMessage(userId, {
         role: "assistant",
         content: assistantMessage,
       });
@@ -322,7 +322,7 @@ router.post(
 
       // Include user's available ingredients for personalized recipes
       if (useInventory) {
-        const items = await inventoryStorage.getFoodItems(userId);
+        const items = await storage.user.inventory.getFoodItems(userId);
         
         if (items.length > 0) {
           context += `\nAvailable ingredients:\n${items
@@ -445,7 +445,7 @@ Return a JSON object with the following structure:
       };
 
       // Persist generated recipe to user's cookbook
-      const saved = await recipesStorage.createRecipe(userId, enrichedRecipeData);
+      const saved = await storage.user.recipes.createRecipe(userId, enrichedRecipeData);
 
       // Log API usage
       await batchedApiLogger.logApiUsage(userId, {
@@ -553,7 +553,7 @@ router.post("/recipes", isAuthenticated, async (req: Request, res: Response) => 
     }
     
     // Create the recipe
-    const saved = await recipesStorage.createRecipe(userId, recipeData);
+    const saved = await storage.user.recipes.createRecipe(userId, recipeData);
     
     // Store embedding for future duplicate detection (async, don't wait)
     if (saved.id) {
@@ -635,7 +635,7 @@ router.get("/recipes", isAuthenticated, async (req: Request, res: Response) => {
     }
     
     // Delegate to storage layer for optimized database query
-    const userRecipes = await recipesStorage.getRecipes(userId, filters);
+    const userRecipes = await storage.user.recipes.getRecipes(userId, filters);
 
     res.json(userRecipes);
   } catch (error) {
@@ -654,13 +654,13 @@ router.patch(
       const recipeId = req.params.id;
 
       // Verify recipe belongs to user - optimized to fetch only the specific recipe
-      const existing = await recipesStorage.getRecipe(userId, recipeId);
+      const existing = await storage.user.recipes.getRecipe(userId, recipeId);
 
       if (!existing) {
         return res.status(404).json({ error: "Recipe not found" });
       }
 
-      const updated = await recipesStorage.updateRecipe(recipeId, userId, req.body);
+      const updated = await storage.user.recipes.updateRecipe(recipeId, userId, req.body);
       res.json(updated);
     } catch (error) {
       console.error("Error updating recipe:", error);
@@ -676,14 +676,14 @@ router.delete("/recipes/:id", isAuthenticated, async (req: Request, res: Respons
     const recipeId = req.params.id;
 
     // Verify recipe belongs to user - optimized to fetch only the specific recipe
-    const existing = await recipesStorage.getRecipe(userId, recipeId);
+    const existing = await storage.user.recipes.getRecipe(userId, recipeId);
 
     if (!existing) {
       return res.status(404).json({ error: "Recipe not found" });
     }
 
     // Delete the recipe (cascading deletes will handle related meal plans)
-    await recipesStorage.deleteRecipe(userId, recipeId);
+    await storage.user.recipes.deleteRecipe(userId, recipeId);
     
     res.status(204).send();
   } catch (error) {

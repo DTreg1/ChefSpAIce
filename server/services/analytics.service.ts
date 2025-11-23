@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { analyticsStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { AnalyticsInsight, InsertAnalyticsInsight } from "@shared/schema";
 import pRetry from "p-retry";
 
@@ -200,7 +200,7 @@ Example for a traffic spike:
         recommendations: response.suggestedActions
       };
 
-      return await analyticsStorage.createAnalyticsInsight(insightData);
+      return await storage.platform.analytics.createAnalyticsInsight(insightData);
     } catch (error) {
       console.error("Failed to generate insight:", error);
       
@@ -238,7 +238,7 @@ Example for a traffic spike:
         }
       };
 
-      return await analyticsStorage.createAnalyticsInsight(fallbackInsight);
+      return await storage.platform.analytics.createAnalyticsInsight(fallbackInsight);
     }
   }
 

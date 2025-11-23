@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { aiMlStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { insertAutoSaveDraftSchema } from "@shared/schema";
 import { z } from "zod";
@@ -43,14 +43,14 @@ router.post("/draft", isAuthenticated, async (req: any, res) => {
     const validatedData = draftSchema.parse(req.body);
     
     // Save the draft
-    const savedDraft = await aiMlStorage.saveDraft({
+    const savedDraft = await storage.platform.ai.saveDraft({
       ...validatedData,
       userId,
     });
 
     // Record typing event if provided
     if (req.body.typingEvent) {
-      await aiMlStorage.recordTypingEvent(userId, req.body.typingEvent);
+      await storage.platform.ai.recordTypingEvent(userId, req.body.typingEvent);
     }
 
     res.json({
@@ -86,7 +86,7 @@ router.get("/restore", isAuthenticated, async (req: any, res) => {
       });
     }
 
-    const draft = await aiMlStorage.getLatestDraft(userId, documentId);
+    const draft = await storage.platform.ai.getLatestDraft(userId, documentId);
     
     if (!draft) {
       return res.status(404).json({
@@ -122,7 +122,7 @@ router.get("/versions", isAuthenticated, async (req: any, res) => {
     }
 
     const limitNum = limit ? parseInt(limit as string, 10) : 10;
-    const versions = await aiMlStorage.getDraftVersions(userId, documentId, limitNum);
+    const versions = await storage.platform.ai.getDraftVersions(userId, documentId, limitNum);
 
     res.json({
       success: true,
@@ -152,7 +152,7 @@ router.delete("/draft/:id", isAuthenticated, async (req: any, res) => {
       });
     }
 
-    await aiMlStorage.deleteDraft(userId, id);
+    await storage.platform.ai.deleteDraft(userId, id);
 
     res.json({
       success: true,
@@ -181,7 +181,7 @@ router.delete("/document/:documentId", isAuthenticated, async (req: any, res) =>
       });
     }
 
-    await aiMlStorage.deleteDocumentDrafts(userId, documentId);
+    await storage.platform.ai.deleteDocumentDrafts(userId, documentId);
 
     res.json({
       success: true,
@@ -203,7 +203,7 @@ router.post("/cleanup", isAuthenticated, async (req: any, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const deletedCount = await aiMlStorage.cleanupOldDrafts(userId);
+    const deletedCount = await storage.platform.ai.cleanupOldDrafts(userId);
 
     res.json({
       success: true,
@@ -226,7 +226,7 @@ router.get("/patterns", isAuthenticated, async (req: any, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const patterns = await aiMlStorage.getUserSavePatterns(userId);
+    const patterns = await storage.platform.ai.getUserSavePatterns(userId);
 
     res.json({
       success: true,
@@ -248,7 +248,7 @@ router.put("/patterns", isAuthenticated, async (req: any, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const updatedPatterns = await aiMlStorage.updateUserSavePatterns(userId, req.body);
+    const updatedPatterns = await storage.platform.ai.updateUserSavePatterns(userId, req.body);
 
     res.json({
       success: true,
@@ -280,7 +280,7 @@ router.post("/typing-event", isAuthenticated, async (req: any, res) => {
     });
 
     const validatedEvent = eventSchema.parse(req.body);
-    await aiMlStorage.recordTypingEvent(userId, validatedEvent);
+    await storage.platform.ai.recordTypingEvent(userId, validatedEvent);
 
     res.json({
       success: true,
@@ -315,7 +315,7 @@ router.post("/check-conflicts", isAuthenticated, async (req: any, res) => {
       });
     }
 
-    const conflictCheck = await aiMlStorage.checkForConflicts(userId, documentId, contentHash);
+    const conflictCheck = await storage.platform.ai.checkForConflicts(userId, documentId, contentHash);
 
     res.json({
       success: true,

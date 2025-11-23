@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { pricingStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { insertPricingRulesSchema, insertPriceHistorySchema, insertPricingPerformanceSchema } from "@shared/schema";
 import OpenAI from "openai";
 import * as tf from "@tensorflow/tfjs-node";
@@ -126,15 +126,15 @@ router.get("/optimize/:productId", asyncHandler(async (req: any, res: any) => {
   
   try {
     // Get current pricing rule
-    const rule = await pricingStorage.getPricingRuleByProduct(productId);
+    const rule = await storage.admin.pricing.getPricingRuleByProduct(productId);
     
     if (!rule) {
       return res.status(404).json({ error: "No pricing rule found for product" });
     }
     
     // Get current market conditions
-    const demand = await pricingStorage.getCurrentDemand(productId);
-    const inventory = await pricingStorage.getCurrentInventory(productId);
+    const demand = await storage.admin.pricing.getCurrentDemand(productId);
+    const inventory = await storage.admin.pricing.getCurrentInventory(productId);
     
     // Use TensorFlow.js to predict future demand
     const now = new Date();
@@ -188,7 +188,7 @@ router.get("/optimize/:productId", asyncHandler(async (req: any, res: any) => {
     }
     
     // Calculate optimal price using storage method
-    const optimization = await pricingStorage.calculateOptimalPrice(productId, {
+    const optimization = await storage.admin.pricing.calculateOptimalPrice(productId, {
       includeCompetition,
       targetRevenue: req.query.targetRevenue ? parseFloat(req.query.targetRevenue) : undefined,
       targetConversion: req.query.targetConversion ? parseFloat(req.query.targetConversion) : undefined
@@ -254,7 +254,7 @@ router.post("/simulate", asyncHandler(async (req: any, res: any) => {
     const { productId, scenarios } = simulationSchema.parse(req.body);
     
     // Get pricing rule
-    const rule = await pricingStorage.getPricingRuleByProduct(productId);
+    const rule = await storage.admin.pricing.getPricingRuleByProduct(productId);
     if (!rule) {
       return res.status(404).json({ error: "No pricing rule found for product" });
     }
@@ -314,8 +314,8 @@ router.get("/competition/:productId", asyncHandler(async (req: any, res: any) =>
   const useAI = req.query.useAI !== 'false';
   
   try {
-    const competitors = await pricingStorage.getCompetitorPricing(productId);
-    const rule = await pricingStorage.getPricingRuleByProduct(productId);
+    const competitors = await storage.admin.pricing.getCompetitorPricing(productId);
+    const rule = await storage.admin.pricing.getPricingRuleByProduct(productId);
     
     if (!rule) {
       return res.status(404).json({ error: "No pricing rule found for product" });
@@ -395,19 +395,19 @@ router.put("/rules", asyncHandler(async (req: any, res: any) => {
     const ruleData = insertPricingRulesSchema.parse(req.body);
     
     // Check if rule exists for this product
-    const existingRule = await pricingStorage.getPricingRuleByProduct(ruleData.productId);
+    const existingRule = await storage.admin.pricing.getPricingRuleByProduct(ruleData.productId);
     
     let result;
     if (existingRule) {
       // Update existing rule
-      result = await pricingStorage.updatePricingRule(existingRule.id, ruleData);
+      result = await storage.admin.pricing.updatePricingRule(existingRule.id, ruleData);
     } else {
       // Create new rule
-      result = await pricingStorage.createPricingRule(ruleData);
+      result = await storage.admin.pricing.createPricingRule(ruleData);
     }
     
     // Record initial price in history
-    await pricingStorage.recordPriceChange({
+    await storage.admin.pricing.recordPriceChange({
       productId: ruleData.productId,
       price: ruleData.basePrice,
       previousPrice: existingRule?.basePrice,
@@ -445,18 +445,18 @@ router.get("/report", asyncHandler(async (req: any, res: any) => {
   
   try {
     // Get overall metrics
-    const metrics = await pricingStorage.getPricingMetrics({ startDate, endDate });
+    const metrics = await storage.admin.pricing.getPricingMetrics({ startDate, endDate });
     
     // Get all active pricing rules
-    const activeRules = await pricingStorage.getActivePricingRules();
+    const activeRules = await storage.admin.pricing.getActivePricingRules();
     
     // Get detailed performance for each product
     const productReports = await Promise.all(
       activeRules.map(async (rule) => {
-        const performance = await pricingStorage.getPricingPerformance(rule.productId, { startDate, endDate });
-        const history = await pricingStorage.getPriceHistory(rule.productId, { startDate, endDate, limit: 10 });
-        const demand = await pricingStorage.getCurrentDemand(rule.productId);
-        const inventory = await pricingStorage.getCurrentInventory(rule.productId);
+        const performance = await storage.admin.pricing.getPricingPerformance(rule.productId, { startDate, endDate });
+        const history = await storage.admin.pricing.getPriceHistory(rule.productId, { startDate, endDate, limit: 10 });
+        const demand = await storage.admin.pricing.getCurrentDemand(rule.productId);
+        const inventory = await storage.admin.pricing.getCurrentInventory(rule.productId);
         
         // Calculate key metrics
         const avgPrice = history.length > 0 
@@ -572,7 +572,7 @@ router.post("/apply/:productId", asyncHandler(async (req: any, res: any) => {
   
   try {
     // Get current rule
-    const rule = await pricingStorage.getPricingRuleByProduct(productId);
+    const rule = await storage.admin.pricing.getPricingRuleByProduct(productId);
     if (!rule) {
       return res.status(404).json({ error: "No pricing rule found for product" });
     }
@@ -585,11 +585,11 @@ router.post("/apply/:productId", asyncHandler(async (req: any, res: any) => {
     }
     
     // Get current conditions
-    const demand = await pricingStorage.getCurrentDemand(productId);
-    const inventory = await pricingStorage.getCurrentInventory(productId);
+    const demand = await storage.admin.pricing.getCurrentDemand(productId);
+    const inventory = await storage.admin.pricing.getCurrentInventory(productId);
     
     // Record price change
-    await pricingStorage.recordPriceChange({
+    await storage.admin.pricing.recordPriceChange({
       productId,
       price,
       previousPrice: rule.basePrice,
@@ -602,7 +602,7 @@ router.post("/apply/:productId", asyncHandler(async (req: any, res: any) => {
     });
     
     // Update base price in rule
-    await pricingStorage.updatePricingRule(rule.id, { basePrice: price });
+    await storage.admin.pricing.updatePricingRule(rule.id, { basePrice: price });
     
     res.json({
       success: true,
@@ -630,7 +630,7 @@ router.get("/history/:productId", asyncHandler(async (req: any, res: any) => {
   const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
   
   try {
-    const history = await pricingStorage.getPriceHistory(productId, { startDate, endDate, limit });
+    const history = await storage.admin.pricing.getPriceHistory(productId, { startDate, endDate, limit });
     
     res.json({
       productId,

@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { cookingTerms, type CookingTerm } from "@shared/schema";
 import { like, or } from "drizzle-orm";
-import { foodStorage } from "../storage/index";
+import { storage } from "../storage/index";
 
 export interface DetectedTerm {
   term: string;
@@ -60,7 +60,7 @@ export class CookingTermsService {
     }
 
     try {
-      const terms = await foodStorage.getCookingTerms();
+      const terms = await storage.user.food.getCookingTerms();
       this.termsCache = terms;
       this.cacheExpiry = now + this.CACHE_DURATION;
       return terms;
@@ -199,7 +199,7 @@ export class CookingTermsService {
    */
   static async getTermsByCategory(category: string): Promise<CookingTerm[]> {
     try {
-      const terms = await foodStorage.getCookingTermsByCategory(category);
+      const terms = await storage.user.food.getCookingTermsByCategory(category);
       return terms;
     } catch (error) {
       console.error("Error fetching terms by category:", error);
@@ -212,7 +212,7 @@ export class CookingTermsService {
    */
   static async getTerm(term: string): Promise<CookingTerm | null> {
     try {
-      const result = await foodStorage.getCookingTerm(term.toLowerCase());
+      const result = await storage.user.food.getCookingTerm(term.toLowerCase());
       return result || null;
     } catch (error) {
       console.error("Error fetching cooking term:", error);

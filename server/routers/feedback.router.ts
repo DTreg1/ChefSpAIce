@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { getAuthenticatedUserId, validateBody, sendError, sendSuccess } from "../types/request-helpers";
 import { z } from "zod";
-import { feedbackStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { insertUserFeedbackSchema, type UserFeedback } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/oauth.middleware";
@@ -26,7 +26,7 @@ router.post(
         });
       }
 
-      const feedback = await feedbackStorage.createFeedback({
+      const feedback = await storage.platform.feedback.createFeedback({
         ...validation.data,
         userId
       });
@@ -55,7 +55,7 @@ router.get(
       const limit = parseInt(req.query.limit as string) || 10;
       const { category, status } = req.query;
       
-      let feedbacks = await feedbackStorage.getUserFeedback(userId) || [];
+      let feedbacks = await storage.platform.feedback.getUserFeedback(userId) || [];
       // Note: Currently fetching all feedback items then filtering/paginating client-side
       
       // Apply filters
@@ -98,7 +98,7 @@ router.patch(
     if (!userId) return sendError(res, 401, "Unauthorized");
       const feedbackId = req.params.id;
       
-      await feedbackStorage.upvoteFeedback(userId, feedbackId);
+      await storage.platform.feedback.upvoteFeedback(userId, feedbackId);
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating feedback:", error);

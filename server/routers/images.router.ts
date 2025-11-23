@@ -14,7 +14,7 @@ import multer from "multer";
 import sharp from "sharp";
 import axios from "axios";
 import FormData from "form-data";
-import { aiMlStorage, systemStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import path from "path";
 import fs from "fs/promises";
 

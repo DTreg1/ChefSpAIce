@@ -1,13 +1,13 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { isAuthenticated } from "../middleware";
-import { storage, contentStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { EmbeddingsService } from "../services/embeddings";
 import { asyncHandler } from "../middleware/error.middleware";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 
 const router = Router();
-const embeddingsService = new EmbeddingsService(contentStorage);
+const embeddingsService = new EmbeddingsService(storage.platform.content);
 
 /**
  * GET /api/content/:id/related
@@ -287,7 +287,7 @@ router.post(
       const queryEmbedding = await embeddingsService.generateEmbedding(validated.query);
 
       // Search for similar content
-      const results = await contentStorage.searchByEmbedding(
+      const results = await storage.platform.content.searchByEmbedding(
         queryEmbedding,
         validated.contentType,
         validated.limit
@@ -351,7 +351,7 @@ router.delete(
     // For now, we'll set an expired cache entry to effectively clear it
     const expiresAt = new Date(0); // Expired date
 
-    await contentStorage.cacheRelatedContent({
+    await storage.platform.content.cacheRelatedContent({
       contentId: id as string,
       contentType: type as 'recipe' | 'article' | 'product' | 'document' | 'media',
       relatedContent: [],

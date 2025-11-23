@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
-import { recipesStorage } from "../storage/index";
+import { storage } from "../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/oauth.middleware";
 import { extractNutrition } from "../utils/nutritionCalculator";
@@ -24,7 +24,7 @@ router.get(
       const { days } = daysQuerySchema.parse(req.query);
       
       // Get food items for the user
-      const items = await recipesStorage.getFoodItems(userId);
+      const items = await storage.user.recipes.getFoodItems(userId);
       
       // Calculate nutrition stats based on items
       const stats = {
@@ -77,7 +77,7 @@ router.get(
       const { category, minCalories, maxCalories, sortBy = "name" } = req.query;
       
       // Get food items with nutrition data
-      let items = await recipesStorage.getFoodItems(userId);
+      let items = await storage.user.recipes.getFoodItems(userId);
       items = items.filter((item) => item.usdaData);
       
       // Apply filters
@@ -151,11 +151,11 @@ router.get(
       const { date = new Date().toISOString().split("T")[0] } = req.query;
       
       // Get meal plans for the date
-      const mealPlans = await recipesStorage.getMealPlans(userId);
+      const mealPlans = await storage.user.recipes.getMealPlans(userId);
       const todaysMeals = mealPlans.filter((plan) => plan.date === date);
       
       // Get recipes for those meal plans
-      const recipes = await recipesStorage.getRecipes(userId);
+      const recipes = await storage.user.recipes.getRecipes(userId);
       const todaysRecipes = recipes.filter((recipe) =>
         todaysMeals.some((plan) => plan.recipeId === recipe.id)
       );

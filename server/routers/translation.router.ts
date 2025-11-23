@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { aiMlStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated } from "../middleware/oauth.middleware";
 import { z } from "zod";
 import OpenAI from "openai";
@@ -138,7 +138,7 @@ async function detectLanguageAI(text: string): Promise<string> {
   } catch (error) {
     console.error("Language detection error:", error);
     // Fallback to simple detection
-    return await aiMlStorage.detectLanguage(text);
+    return await storage.platform.ai.detectLanguage(text);
   }
 }
 
@@ -164,7 +164,7 @@ router.post("/translate", isAuthenticated, async (req, res) => {
     let languagesToTranslate = targetLanguages;
     if (!languagesToTranslate || languagesToTranslate.length === 0) {
       // Get user's preferred languages
-      const prefs = await aiMlStorage.getLanguagePreferences(userId);
+      const prefs = await storage.platform.ai.getLanguagePreferences(userId);
       languagesToTranslate = prefs?.preferredLanguages || ['es', 'fr', 'de'];
     }
 
@@ -177,7 +177,7 @@ router.post("/translate", isAuthenticated, async (req, res) => {
       .map(async (targetLang): Promise<any> => {
         try {
           // Check if translation already exists
-          const existing = await aiMlStorage.getTranslation(actualContentId, targetLang);
+          const existing = await storage.platform.ai.getTranslation(actualContentId, targetLang);
           if (existing && !existing.isVerified) {
             return existing;
           }
@@ -258,7 +258,7 @@ router.get("/translate/detect", isAuthenticated, async (req, res) => {
     const { text } = detectLanguageSchema.parse(req.query);
     
     const detectedLanguage = await detectLanguageAI(text);
-    const languages = await aiMlStorage.getSupportedLanguages();
+    const languages = await storage.platform.ai.getSupportedLanguages();
     const languageInfo = languages.find(l => l.code === detectedLanguage);
 
     res.json({
@@ -284,7 +284,7 @@ router.get("/content/:id/translations", isAuthenticated, async (req, res) => {
     const { id } = req.params;
     const { language } = req.query;
 
-    const translations = await aiMlStorage.getTranslations(id, language as string | undefined);
+    const translations = await storage.platform.ai.getTranslations(id, language as string | undefined);
 
     res.json({
       contentId: id,
@@ -310,7 +310,7 @@ router.post("/translate/verify", isAuthenticated, async (req, res) => {
 
     const { translationId } = verifyTranslationSchema.parse(req.body);
     
-    const translation = await aiMlStorage.verifyTranslation(translationId, userId);
+    const translation = await storage.platform.ai.verifyTranslation(translationId, userId);
     
     res.json({
       success: true,
@@ -331,7 +331,7 @@ router.post("/translate/verify", isAuthenticated, async (req, res) => {
  */
 router.get("/languages/supported", async (req, res) => {
   try {
-    const languages = await aiMlStorage.getSupportedLanguages();
+    const languages = await storage.platform.ai.getSupportedLanguages();
     res.json(languages);
   } catch (error) {
     console.error("Error fetching languages:", error);
@@ -350,7 +350,7 @@ router.get("/languages/preferences", isAuthenticated, async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const preferences = await aiMlStorage.getLanguagePreferences(userId);
+    const preferences = await storage.platform.ai.getLanguagePreferences(userId);
     
     if (!preferences) {
       // Return default preferences if none exist
@@ -384,7 +384,7 @@ router.post("/languages/preferences", isAuthenticated, async (req, res) => {
 
     const validatedData = languagePreferencesSchema.parse(req.body);
     
-    const preferences = await aiMlStorage.upsertLanguagePreferences(userId, validatedData);
+    const preferences = await storage.platform.ai.upsertLanguagePreferences(userId, validatedData);
     
     res.json({
       success: true,
@@ -407,7 +407,7 @@ router.delete("/translate/:id", isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     
-    await aiMlStorage.deleteTranslation(id);
+    await storage.platform.ai.deleteTranslation(id);
     
     res.json({ success: true });
   } catch (error) {

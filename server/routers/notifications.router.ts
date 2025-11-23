@@ -4,7 +4,7 @@ import { eq, desc, and, isNull } from "drizzle-orm";
 import { db } from "../db";
 import { notificationHistory } from "@shared/schema";
 import { isAuthenticated } from "../middleware/oauth.middleware";
-import { notificationStorage } from "../storage/index";
+import { storage } from "../storage/index";
 
 const router = Router();
 
@@ -154,7 +154,7 @@ router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req, res) 
     const { id } = req.params;
     const { dismissedBy  } = req.body || {};
 
-    await notificationStorage.dismissNotification(userId, id, dismissedBy);
+    await storage.user.notifications.dismissNotification(userId, id, dismissedBy);
 
     res.json({ message: "Notification dismissed successfully" });
   } catch (error: unknown) {

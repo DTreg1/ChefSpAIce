@@ -11,7 +11,7 @@
 
 import express from "express";
 import multer from "multer";
-import { aiMlStorage, systemStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { FaceDetectionService } from "../services/faceDetection.service";
 
 const router = express.Router();
@@ -53,7 +53,7 @@ router.post("/detect", upload.single("image"), async (req: any, res: any) => {
     const detectionResult = await faceDetectionService.detectFaces(req.file.buffer);
 
     // Save detection results to database
-    const detectionRecord = await aiMlStorage.createFaceDetection(userId, {
+    const detectionRecord = await storage.platform.ai.createFaceDetection(userId, {
       imageId: `upload_${Date.now()}`,
       imageUrl: req.body.imageUrl || "",
       facesDetected: detectionResult.faces.length,
@@ -129,7 +129,7 @@ router.post("/blur", upload.single("image"), async (req: any, res: any) => {
     const dataUrl = `data:image/png;base64,${base64Image}`;
 
     // Save blur operation to database
-    const detectionRecord = await aiMlStorage.createFaceDetection(userId, {
+    const detectionRecord = await storage.platform.ai.createFaceDetection(userId, {
       imageId: `blur_${Date.now()}`,
       imageUrl: req.body.originalImageUrl || "",
       facesDetected: facesToBlur.length,
@@ -198,7 +198,7 @@ router.post("/crop", upload.single("image"), async (req: any, res: any) => {
 
     // Save crop operation to database
     for (let i = 0; i < croppedFaceUrls.length; i++) {
-      await aiMlStorage.createFaceDetection(userId, {
+      await storage.platform.ai.createFaceDetection(userId, {
         imageId: `crop_${Date.now()}_${i}`,
         imageUrl: req.body.originalImageUrl || "",
         facesDetected: 1,
@@ -247,7 +247,7 @@ router.post("/count", upload.single("image"), async (req: any, res: any) => {
     const count = await faceDetectionService.countFaces(req.file.buffer);
 
     // Save count operation to database
-    const detectionRecord = await aiMlStorage.createFaceDetection(userId, {
+    const detectionRecord = await storage.platform.ai.createFaceDetection(userId, {
       imageId: `count_${Date.now()}`,
       imageUrl: req.body.imageUrl || "",
       facesDetected: count,
@@ -283,7 +283,7 @@ router.get("/privacy-settings", async (req: any, res: any) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const settings = await aiMlStorage.getPrivacySettings(userId);
+    const settings = await storage.platform.ai.getPrivacySettings(userId);
 
     if (!settings) {
       // Return default settings if none exist
@@ -316,7 +316,7 @@ router.post("/privacy-settings", async (req: any, res: any) => {
 
     const { autoBlurFaces, blurIntensity, consentToProcessing, privacyMode, dataRetentionDays } = req.body;
 
-    const settings = await aiMlStorage.upsertPrivacySettings(userId, {
+    const settings = await storage.platform.ai.upsertPrivacySettings(userId, {
       autoBlurFaces: autoBlurFaces ?? false,
       blurIntensity: blurIntensity ?? 10,
       consentToProcessing: consentToProcessing ?? false,
@@ -349,7 +349,7 @@ router.get("/history", async (req: any, res: any) => {
     }
 
     const limit = parseInt(req.query.limit as string) || 50;
-    const detections = await aiMlStorage.getFaceDetections(userId, limit);
+    const detections = await storage.platform.ai.getFaceDetections(userId, limit);
 
     res.json({
       success: true,
@@ -381,7 +381,7 @@ router.delete("/history/:id", async (req: any, res: any) => {
     }
 
     const detectionId = req.params.id;
-    await aiMlStorage.deleteFaceDetection(userId, detectionId);
+    await storage.platform.ai.deleteFaceDetection(userId, detectionId);
 
     res.json({
       success: true,
@@ -405,11 +405,11 @@ router.post("/cleanup", async (req: any, res: any) => {
     }
 
     // Get user's privacy settings
-    const settings = await aiMlStorage.getPrivacySettings(userId);
+    const settings = await storage.platform.ai.getPrivacySettings(userId);
     const retentionDays = settings?.dataRetentionDays || 30;
 
     // Clean up old records
-    const deletedCount = await aiMlStorage.cleanupOldFaceDetections(userId, retentionDays);
+    const deletedCount = await storage.platform.ai.cleanupOldFaceDetections(userId, retentionDays);
 
     res.json({
       success: true,

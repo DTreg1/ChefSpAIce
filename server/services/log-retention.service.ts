@@ -6,7 +6,7 @@
  */
 
 import * as cron from "node-cron";
-import { systemStorage } from "../storage/index";
+import { storage } from "../storage/index";
 
 interface RetentionPolicy {
   name: string;
@@ -105,7 +105,7 @@ class LogRetentionService {
   private async getLastCleanupTime(): Promise<Date | null> {
     try {
       // Get the most recent system cleanup log
-      const logs = await systemStorage.getSystemActivityLogs({
+      const logs = await storage.platform.system.getSystemActivityLogs({
         action: "log_cleanup_completed",
         limit: 1,
       });
@@ -173,7 +173,7 @@ class LogRetentionService {
         endTime: endTime.toISOString(),
       };
       
-      await systemStorage.createActivityLog({
+      await storage.platform.system.createActivityLog({
         userId: null, // System action
         activityType: "system",
         resourceType: "log_retention",
@@ -194,7 +194,7 @@ class LogRetentionService {
         startTime: startTime.toISOString(),
       };
       
-      await systemStorage.createActivityLog({
+      await storage.platform.system.createActivityLog({
         userId: null,
         activityType: "system",
         resourceType: "log_retention",
@@ -217,7 +217,7 @@ class LogRetentionService {
     try {
       // Delete old logs based on the policy
       // cleanupOldActivityLogs expects retentionDays (how many days to keep)
-      const deletedCount = await systemStorage.cleanupOldActivityLogs(
+      const deletedCount = await storage.platform.system.cleanupOldActivityLogs(
         policy.retentionDays,
         actionFilter.excludeActions
       );

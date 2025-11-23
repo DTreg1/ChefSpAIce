@@ -12,7 +12,7 @@
 import express, { Request, Response } from "express";
 import multer from "multer";
 import Tesseract from "tesseract.js";
-import { aiMlStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import type { InsertOcrResult, InsertOcrCorrection } from "@shared/schema";
 import { insertOcrResultSchema, insertOcrCorrectionSchema } from "@shared/schema";
 import { z } from "zod";
@@ -253,7 +253,7 @@ router.post("/extract", upload.single("file"), async (req: Request, res: Respons
     // TODO: Implement OCR storage methods in IAiMlStorage interface
     // Methods needed: createOcrResult, getOcrResultById, deleteOcrResult, etc.
     // if (userId) {
-    //   ocrResult = // await aiMlStorage.createOcrResult(userId, {
+    //   ocrResult = // await storage.platform.ai.createOcrResult(userId, {
     //     imageId,
     //     fileName: req.file.originalname,
     //     fileType: req.file.mimetype,
@@ -339,7 +339,7 @@ router.post("/document", upload.single("document"), async (req: Request, res: Re
         imageHeight: pdfData.info?.ModDate ? 0 : undefined,
       },
     };
-    // const ocrResult = await aiMlStorage.createOcrResult(userId, {...});
+    // const ocrResult = await storage.platform.ai.createOcrResult(userId, {...});
 
     res.json({
       success: true,
@@ -373,14 +373,14 @@ router.post("/correct", async (req: Request, res: Response) => {
 
     // Verify the OCR result belongs to the user
     // TODO: Implement getOcrResultById in storage layer
-    const ocrResult = null; // await aiMlStorage.getOcrResultById(userId, correctionData.ocrResultId);
+    const ocrResult = null; // await storage.platform.ai.getOcrResultById(userId, correctionData.ocrResultId);
     if (!ocrResult) {
       return res.status(404).json({ error: "OCR storage not yet implemented" });
     }
 
     // Create correction record
     // TODO: Implement createOcrCorrection in storage layer
-    const correction = { id: "stub_correction_" + Date.now() }; // await aiMlStorage.createOcrCorrection(userId, correctionData);
+    const correction = { id: "stub_correction_" + Date.now() }; // await storage.platform.ai.createOcrCorrection(userId, correctionData);
 
     res.json({
       success: true,
@@ -425,7 +425,7 @@ router.get("/results", async (req: Request, res: Response) => {
 
     const limit = parseInt(req.query.limit as string) || 20;
     // TODO: Implement getOcrResults in storage layer
-    const results: any[] = []; // await aiMlStorage.getOcrResults(userId, limit);
+    const results: any[] = []; // await storage.platform.ai.getOcrResults(userId, limit);
 
     res.json({
       success: true,
@@ -450,14 +450,14 @@ router.get("/result/:id", async (req: Request, res: Response) => {
 
     const resultId = req.params.id;
     // TODO: Implement getOcrResultById in storage layer
-    const result = null; // await aiMlStorage.getOcrResultById(userId, resultId);
+    const result = null; // await storage.platform.ai.getOcrResultById(userId, resultId);
     
     if (!result) {
       return res.status(404).json({ error: "OCR storage not yet implemented" });
     }
 
     // TODO: Implement getOcrCorrections in storage layer
-    const corrections: any[] = []; // await aiMlStorage.getOcrCorrections(userId, resultId);
+    const corrections: any[] = []; // await storage.platform.ai.getOcrCorrections(userId, resultId);
 
     res.json({
       success: true,
@@ -482,7 +482,7 @@ router.delete("/result/:id", async (req: Request, res: Response) => {
     }
 
     const resultId = req.params.id;
-    // await aiMlStorage.deleteOcrResult(userId, resultId);
+    // await storage.platform.ai.deleteOcrResult(userId, resultId);
 
     res.json({
       success: true,
@@ -507,7 +507,7 @@ router.get("/corrections", async (req: Request, res: Response) => {
 
     const limit = parseInt(req.query.limit as string) || 50;
     // TODO: Implement getUserCorrections in storage layer
-    const corrections: any[] = []; // await aiMlStorage.getUserCorrections(userId, limit);
+    const corrections: any[] = []; // await storage.platform.ai.getUserCorrections(userId, limit);
 
     res.json({
       success: true,

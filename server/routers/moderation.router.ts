@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 import { z } from "zod";
-import { securityStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated } from "../middleware/oauth.middleware";
 import { validateBody, validateQuery } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
@@ -24,7 +24,7 @@ const isModerator = async (
     }
     
     // Check if user exists and has admin/moderator privileges
-    const user = await securityStorage.getUser(userId);
+    const user = await storage.admin.security.getUser(userId);
     if (!user) {
       return res.status(403).json({ error: "Access denied - User not found" });
     }
@@ -91,7 +91,7 @@ router.post(
         manualReview: result.requiresManualReview || false,
       };
       
-      const log = await securityStorage.createModerationLog(logEntry);
+      const log = await storage.admin.security.createModerationLog(logEntry);
       
       // If content is blocked, create blocked content entry
       if (isBlocked) {
@@ -107,7 +107,7 @@ router.post(
           autoBlocked: true,
         };
         
-        await securityStorage.createBlockedContent(blockedEntry);
+        await storage.admin.security.createBlockedContent(blockedEntry);
       }
       
       res.json({
@@ -154,11 +154,11 @@ router.get(
     const { status, severity, contentType, page, limit } = req.query;
     
     // Get user to check if admin
-    const user = await securityStorage.getUser(userId);
+    const user = await storage.admin.security.getUser(userId);
     const isAdmin = user?.isAdmin || false;
     
     // Get moderation queue
-    const logs = await securityStorage.getModerationQueue(userId, isAdmin, {
+    const logs = await storage.admin.security.getModerationQueue(userId, isAdmin, {
       status,
       severity,
       contentType,
@@ -230,7 +230,7 @@ router.post(
           break;
       }
       
-      await securityStorage.updateModerationLog(logId, updates);
+      await storage.admin.security.updateModerationLog(logId, updates);
       
       res.json({
         success: true,
@@ -278,7 +278,7 @@ router.post(
         appealType: "false_positive", // Default type
       };
       
-      const createdAppeal = await securityStorage.createModerationAppeal(appeal);
+      const createdAppeal = await storage.admin.security.createModerationAppeal(appeal);
       
       res.json({
         success: true,
@@ -306,14 +306,14 @@ router.get(
     const { id } = req.params;
     
     try {
-      const appeal = await securityStorage.getModerationAppeal(id);
+      const appeal = await storage.admin.security.getModerationAppeal(id);
       
       if (!appeal) {
         return res.status(404).json({ error: "Appeal not found" });
       }
       
       // Check if user owns the appeal or is admin
-      const user = await securityStorage.getUser(userId);
+      const user = await storage.admin.security.getUser(userId);
       if (appeal.userId !== userId && !user?.isAdmin) {
         return res.status(403).json({ error: "Access denied" });
       }
@@ -356,13 +356,13 @@ router.post(
         decision,
       };
       
-      await securityStorage.updateModerationAppeal(id, updates);
+      await storage.admin.security.updateModerationAppeal(id, updates);
       
       // If appeal is approved, restore the blocked content
       if (decision === "approved") {
-        const appeal = await securityStorage.getModerationAppeal(id);
+        const appeal = await storage.admin.security.getModerationAppeal(id);
         if (appeal && appeal.blockedContentId) {
-          await securityStorage.restoreBlockedContent(appeal.blockedContentId, reviewerId);
+          await storage.admin.security.restoreBlockedContent(appeal.blockedContentId, reviewerId);
         }
       }
       
@@ -428,7 +428,7 @@ router.get(
         timeRange = { start, end: now };
       }
       
-      const stats = await securityStorage.getModerationStats(timeRange);
+      const stats = await storage.admin.security.getModerationStats(timeRange);
       
       res.json({
         ...stats,

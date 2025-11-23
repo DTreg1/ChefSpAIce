@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { analyticsStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { analyticsRateLimit } from "../middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { getAuthenticatedUserId } from "../middleware/oauth.middleware";
@@ -42,7 +42,7 @@ router.post("/", analyticsRateLimit, asyncHandler(async (req: Request, res) => {
     try {
       await retryWithBackoff(
         async () => {
-          await analyticsStorage.recordWebVital(validated);
+          await storage.platform.analytics.recordWebVital(validated);
         },
         {
           maxRetries: 3,
@@ -99,7 +99,7 @@ router.post("/events", analyticsRateLimit, asyncHandler(async (req: Request, res
     }
     
     // Batch insert validated events
-    await analyticsStorage.recordAnalyticsEventsBatch(validatedEvents);
+    await storage.platform.analytics.recordAnalyticsEventsBatch(validatedEvents);
     
     res.status(200).json({ 
       success: true, 
@@ -121,7 +121,7 @@ router.post("/sessions/start", asyncHandler(async (req: Request, res) => {
   };
   
   try {
-    const session = await analyticsStorage.createUserSession(sessionData);
+    const session = await storage.platform.analytics.createUserSession(sessionData);
     res.json({ success: true, sessionId: session.sessionId });
   } catch (error) {
     console.error("Failed to create session:", error);
@@ -142,7 +142,7 @@ router.post("/sessions/end", asyncHandler(async (req: Request, res) => {
     const endTime = new Date();
     
     // Get session to calculate duration - scoped to current user for security
-    const sessions = await analyticsStorage.getUserSessions(userId ?? undefined, { limit: 100 });
+    const sessions = await storage.platform.analytics.getUserSessions(userId ?? undefined, { limit: 100 });
     const session = sessions.find(s => s.sessionId === sessionId);
     
     if (!session) {
@@ -154,7 +154,7 @@ router.post("/sessions/end", asyncHandler(async (req: Request, res) => {
       const duration = Math.floor((endTime.getTime() - new Date(session.startTime).getTime()) / 1000);
       
       // Only update sessions that belong to the current user
-      await analyticsStorage.updateUserSession(sessionId, {
+      await storage.platform.analytics.updateUserSession(sessionId, {
         endTime,
         exitPage,
         duration,
@@ -176,7 +176,7 @@ router.get("/dashboard", asyncHandler(async (req: Request, res) => {
   const end = endDate ? new Date(endDate as string) : undefined;
   
   try {
-    const stats = await analyticsStorage.getAnalyticsStats(start, end);
+    const stats = await storage.platform.analytics.getAnalyticsStats(start, end);
     res.json(stats);
   } catch (error) {
     console.error("Failed to get analytics stats:", error);
@@ -202,7 +202,7 @@ router.get(
       daysNum = parsed;
     }
     
-    const stats = await analyticsStorage.getWebVitalsStats(metric as string | undefined, daysNum);
+    const stats = await storage.platform.analytics.getWebVitalsStats(metric as string | undefined, daysNum);
     res.json(stats);
   })
 );
@@ -228,7 +228,7 @@ router.get(
     
     // Get stats for all APIs if no userId, or user-specific stats
     const stats = userId 
-      ? await analyticsStorage.getApiUsageStats(userId, '', daysNum)  // Empty string for all APIs
+      ? await storage.platform.analytics.getApiUsageStats(userId, '', daysNum)  // Empty string for all APIs
       : { totalCalls: 0, successfulCalls: 0, failedCalls: 0 };
     
     // Calculate success rate

@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { aiMlStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated } from "../middleware/oauth.middleware";
 import { z } from "zod";
 import {
@@ -75,7 +75,7 @@ router.post("/summarize", isAuthenticated, async (req, res) => {
 
     // Check cache if not forcing regeneration
     if (!forceRegenerate) {
-      const cached = await aiMlStorage.getSummary(userId, contentId);
+      const cached = await storage.platform.ai.getSummary(userId, contentId);
       if (cached && cached.summaryType === type && cached.summaryLength === length) {
         return res.json({
           summary: cached.isEdited ? cached.editedText : cached.summaryText,
@@ -101,7 +101,7 @@ router.post("/summarize", isAuthenticated, async (req, res) => {
     });
 
     // Save to database
-    const saved = await aiMlStorage.createSummary(userId, {
+    const saved = await storage.platform.ai.createSummary(userId, {
       contentId,
       originalContent: content,
       summaryText: result.summary,
@@ -155,7 +155,7 @@ router.get("/content/:contentId/summary", isAuthenticated, async (req, res) => {
     }
 
     const { contentId } = req.params;
-    const summary = await aiMlStorage.getSummary(userId, contentId);
+    const summary = await storage.platform.ai.getSummary(userId, contentId);
 
     if (!summary) {
       return res.status(404).json({ error: "Summary not found" });
@@ -208,7 +208,7 @@ router.post("/summarize/batch", isAuthenticated, async (req, res) => {
           .update(item.content)
           .digest('hex');
         
-        const cached = await aiMlStorage.getSummary(userId, contentId);
+        const cached = await storage.platform.ai.getSummary(userId, contentId);
         return { item, contentId, cached };
       })
     );
@@ -238,7 +238,7 @@ router.post("/summarize/batch", isAuthenticated, async (req, res) => {
           .filter(s => s.result)
           .map(async (s, index) => {
             const { contentId, item } = uncached[index];
-            return aiMlStorage.createSummary(userId, {
+            return storage.platform.ai.createSummary(userId, {
               contentId,
               originalContent: item.content,
               summaryText: s.result!.summary,
@@ -307,7 +307,7 @@ router.put("/summarize/:id", isAuthenticated, async (req, res) => {
     const validatedData = updateSummaryRequestSchema.parse(req.body);
 
     // Update the summary
-    const updated = await aiMlStorage.updateSummary(userId, id, {
+    const updated = await storage.platform.ai.updateSummary(userId, id, {
       ...validatedData,
       isEdited: !!validatedData.editedText
     });
@@ -353,8 +353,8 @@ router.get("/summaries", isAuthenticated, async (req, res) => {
     const type = req.query.type as 'tldr' | 'bullet' | 'paragraph' | undefined;
 
     const summaries = type
-      ? await aiMlStorage.getSummariesByType(userId, type)
-      : await aiMlStorage.getSummaries(userId, limit);
+      ? await storage.platform.ai.getSummariesByType(userId, type)
+      : await storage.platform.ai.getSummaries(userId, limit);
 
     const formattedSummaries = summaries.map(s => ({
       id: s.id,
@@ -395,7 +395,7 @@ router.delete("/summarize/:id", isAuthenticated, async (req, res) => {
     }
 
     const { id } = req.params;
-    await aiMlStorage.deleteSummary(userId, id);
+    await storage.platform.ai.deleteSummary(userId, id);
 
     res.json({ success: true });
   } catch (error) {

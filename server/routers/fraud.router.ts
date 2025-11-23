@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db";
-import { securityStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import {
   fraudScores,
   suspiciousActivities,
@@ -56,7 +56,7 @@ router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
     );
 
     // Store fraud score
-    await securityStorage.createFraudScore({
+    await storage.admin.security.createFraudScore({
       userId,
       score: analysisResult.fraudScore,
       factors: analysisResult.factors
@@ -64,7 +64,7 @@ router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
 
     // If high risk, create suspicious activity
     if (analysisResult.fraudScore > 0.75 || analysisResult.shouldBlock) {
-      await securityStorage.createSuspiciousActivity({
+      await storage.admin.security.createSuspiciousActivity({
         userId,
         activityType: 'transaction',
         details: {
@@ -103,11 +103,11 @@ router.get("/api/fraud/alerts", isAuthenticated, async (req, res) => {
     }
     
     // Get user to check admin status
-    const user = await securityStorage.getUser(userId);
+    const user = await storage.admin.security.getUser(userId);
     const isAdmin = user?.isAdmin || false;
 
     // Get suspicious activities
-    const activities = await securityStorage.getSuspiciousActivities(
+    const activities = await storage.admin.security.getSuspiciousActivities(
       isAdmin ? undefined : userId,
       isAdmin
     );
@@ -121,7 +121,7 @@ router.get("/api/fraud/alerts", isAuthenticated, async (req, res) => {
         .orderBy(desc(fraudScores.timestamp))
         .limit(100);
     } else {
-      scores = await securityStorage.getFraudScores(userId, 20);
+      scores = await storage.admin.security.getFraudScores(userId, 20);
     }
 
     // Calculate alert severity
@@ -171,15 +171,15 @@ router.get("/api/fraud/report/:period", isAuthenticated, async (req, res) => {
     }
     
     // Get user to check admin status
-    const user = await securityStorage.getUser(userId);
+    const user = await storage.admin.security.getUser(userId);
     const isAdmin = user?.isAdmin || false;
 
     // Admin gets full system stats, users get their own
     if (!isAdmin) {
       // Get user-specific stats
-      const userScores = await securityStorage.getFraudScores(userId, 100);
-      const userActivities = await securityStorage.getSuspiciousActivities(userId, false);
-      const userReviews = await securityStorage.getFraudReviews(userId);
+      const userScores = await storage.admin.security.getFraudScores(userId, 100);
+      const userActivities = await storage.admin.security.getSuspiciousActivities(userId, false);
+      const userReviews = await storage.admin.security.getFraudReviews(userId);
 
       res.json({
         userStats: {
@@ -196,7 +196,7 @@ router.get("/api/fraud/report/:period", isAuthenticated, async (req, res) => {
       });
     } else {
       // Get system-wide stats for admins
-      const stats = await securityStorage.getFraudStats(period);
+      const stats = await storage.admin.security.getFraudStats(period);
       res.json(stats);
     }
   } catch (error) {
@@ -230,14 +230,14 @@ router.post("/api/fraud/review", isAuthenticated, adminOnly, async (req, res) =>
         break;
     }
 
-    await securityStorage.updateSuspiciousActivity(
+    await storage.admin.security.updateSuspiciousActivity(
       validatedData.activityId,
       newStatus,
       new Date()
     );
 
     // Create fraud review record
-    await securityStorage.createFraudReview({
+    await storage.admin.security.createFraudReview({
       userId: userId, // The user being reviewed (from activity)
       reviewerId: userId, // The admin doing the review
       decision: validatedData.decision === 'confirm' ? 'banned' : 

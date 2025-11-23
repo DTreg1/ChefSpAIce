@@ -7,7 +7,7 @@
 
 import { Router, Request, Response } from "express";
 import { isAuthenticated } from "../middleware";
-import { chatStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { z } from "zod";
 import { getOpenAIClient } from "../config/openai-config";
 
@@ -38,7 +38,7 @@ router.get("/conversations", isAuthenticated, async (req: Request, res: Response
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const conversations = await chatStorage.getConversations(userId);
+    const conversations = await storage.user.chat.getConversations(userId);
     res.json(conversations);
   } catch (error) {
     console.error("Error fetching conversations:", error);
@@ -58,7 +58,7 @@ router.post("/conversations", isAuthenticated, async (req: Request, res: Respons
     const { title } = req.body;
     const conversationTitle = title || "New Conversation";
     
-    const conversation = await chatStorage.createConversation(userId, conversationTitle);
+    const conversation = await storage.user.chat.createConversation(userId, conversationTitle);
     res.json(conversation);
   } catch (error) {
     console.error("Error creating conversation:", error);
@@ -77,13 +77,13 @@ router.get("/conversations/:id", isAuthenticated, async (req: Request, res: Resp
     
     const { id } = req.params;
     
-    const conversation = await chatStorage.getConversation(userId, id);
+    const conversation = await storage.user.chat.getConversation(userId, id);
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
     }
     
-    const messages = await chatStorage.getMessages(id);
-    const context = await chatStorage.getConversationContext(id);
+    const messages = await storage.user.chat.getMessages(id);
+    const context = await storage.user.chat.getConversationContext(id);
     
     res.json({
       conversation,
@@ -108,7 +108,7 @@ router.put("/conversations/:id", isAuthenticated, async (req: Request, res: Resp
     const { id } = req.params;
     const { title } = req.body;
     
-    const conversation = await chatStorage.updateConversation(userId, id, { title });
+    const conversation = await storage.user.chat.updateConversation(userId, id, { title });
     res.json(conversation);
   } catch (error) {
     console.error("Error updating conversation:", error);
@@ -127,7 +127,7 @@ router.delete("/conversations/:id", isAuthenticated, async (req: Request, res: R
     
     const { id } = req.params;
     
-    await chatStorage.deleteConversation(userId, id);
+    await storage.user.chat.deleteConversation(userId, id);
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting conversation:", error);
@@ -152,21 +152,21 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: Request,
     }
     
     // Verify conversation belongs to user
-    const conversation = await chatStorage.getConversation(userId, conversationId);
+    const conversation = await storage.user.chat.getConversation(userId, conversationId);
     if (!conversation) {
       return res.status(404).json({ error: "Conversation not found" });
     }
     
     // Save user message
-    const userMessage = await chatStorage.createMessage({
+    const userMessage = await storage.user.chat.createMessage({
       conversationId,
       role: "user",
       content,
     });
     
     // Get conversation history
-    const messages = await chatStorage.getMessages(conversationId, 20);
-    const context = await chatStorage.getConversationContext(conversationId);
+    const messages = await storage.user.chat.getMessages(conversationId, 20);
+    const context = await storage.user.chat.getConversationContext(conversationId);
     
     // Build messages for OpenAI
     const openaiMessages: any[] = [
@@ -197,7 +197,7 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: Request,
     const tokensUsed = completion.usage?.total_tokens || 0;
     
     // Save AI response
-    const assistantMessage = await chatStorage.createMessage({
+    const assistantMessage = await storage.user.chat.createMessage({
       conversationId,
       role: "assistant",
       content: aiResponse,
@@ -220,7 +220,7 @@ router.post("/conversations/:id/messages", isAuthenticated, async (req: Request,
       
       const summary = summaryCompletion.choices[0]?.message?.content || "";
       
-      await chatStorage.updateConversationContext(conversationId, {
+      await storage.user.chat.updateConversationContext(conversationId, {
         contextSummary: summary,
         keyFacts: [] // Could extract key facts here
       });
@@ -248,7 +248,7 @@ router.post("/feedback", isAuthenticated, async (req: Request, res: Response) =>
     const { messageId, rating, feedback } = req.body;
     
     // Log feedback for analytics
-    await chatStorage.createActivityLog({
+    await storage.user.chat.createActivityLog({
       userId,
       action: "assistant_feedback",
       entity: "message",

@@ -7,7 +7,7 @@
 
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { analyticsStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request } from "express";
@@ -63,7 +63,7 @@ router.get(
 
     try {
       // Get user predictions from storage
-      const predictions = await analyticsStorage.getUserPredictions(userId, {
+      const predictions = await storage.platform.analytics.getUserPredictions(userId, {
         predictionType: predictionTypes ? predictionTypes[0] : undefined,
         status: 'pending',
       });
@@ -120,7 +120,7 @@ router.post(
 
     try {
       // Get high-risk churn users
-      const churnRisks = await analyticsStorage.getChurnRiskUsers(threshold);
+      const churnRisks = await storage.platform.analytics.getChurnRiskUsers(threshold);
       const limitedRisks = churnRisks.slice(0, limit);
 
       // Generate interventions if requested
@@ -179,7 +179,7 @@ router.post(
 
     try {
       // Get the prediction
-      const prediction = await analyticsStorage.getPredictionById(predictionId);
+      const prediction = await storage.platform.analytics.getPredictionById(predictionId);
       if (!prediction) {
         return res.status(404).json({ error: "Prediction not found" });
       }
@@ -192,7 +192,7 @@ router.post(
 
       // Update prediction with intervention
       if (intervention.recommendedAction) {
-        await analyticsStorage.updatePredictionStatus(
+        await storage.platform.analytics.updatePredictionStatus(
           predictionId,
           'intervention_suggested',
           intervention.recommendedAction
@@ -286,7 +286,7 @@ router.post(
 
     try {
       // Record accuracy
-      const accuracy = await analyticsStorage.createPredictionAccuracy({
+      const accuracy = await storage.platform.analytics.createPredictionAccuracy({
         predictionId,
         actualOutcome,
         accuracyScore,
@@ -294,13 +294,13 @@ router.post(
       });
 
       // Update prediction status
-      await analyticsStorage.updatePredictionStatus(
+      await storage.platform.analytics.updatePredictionStatus(
         predictionId,
         'resolved'
       );
 
       // Get accuracy statistics
-      const stats = await analyticsStorage.getPredictionAccuracy({
+      const stats = await storage.platform.analytics.getPredictionAccuracy({
         dateRange: {
           start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
           end: new Date(),
@@ -360,7 +360,7 @@ router.get(
         };
       }
 
-      const stats = await analyticsStorage.getPredictionAccuracy({
+      const stats = await storage.platform.analytics.getPredictionAccuracy({
         dateRange: dateFilter,
         predictionType: predictionType as string,
       });

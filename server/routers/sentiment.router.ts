@@ -7,7 +7,7 @@
 
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { aiMlStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { Request } from "express";
@@ -60,7 +60,7 @@ router.post(
     try {
       // Check if content was already analyzed
       if (contentId) {
-        const existing = await aiMlStorage.getSentimentAnalysis(contentId);
+        const existing = await storage.platform.ai.getSentimentAnalysis(contentId);
         if (existing) {
           return res.json({
             success: true,
@@ -80,7 +80,7 @@ router.post(
       });
 
       // Store the analysis
-      const savedAnalysis = await aiMlStorage.createSentimentAnalysis({
+      const savedAnalysis = await storage.platform.ai.createSentimentAnalysis({
         ...analysis,
         userId,
         contentId: contentId || analysis.contentId,
@@ -125,7 +125,7 @@ router.get(
     
     // Users can only access their own sentiment history unless admin
     if (currentUserId !== requestedUserId) {
-      const user = await aiMlStorage.getUser(currentUserId);
+      const user = await storage.platform.ai.getUser(currentUserId);
       if (!user?.isAdmin) {
         return res.status(403).json({ error: "Access denied" });
       }
@@ -134,7 +134,7 @@ router.get(
     const limit = parseInt(req.query.limit as string) || 50;
 
     try {
-      const analyses = await aiMlStorage.getUserSentimentAnalyses(requestedUserId, limit);
+      const analyses = await storage.platform.ai.getUserSentimentAnalyses(requestedUserId, limit);
       
       res.json({
         success: true,
@@ -176,7 +176,7 @@ router.get(
     const isGlobal = req.query.global === 'true';
 
     try {
-      const trends = await aiMlStorage.getSentimentTrends(
+      const trends = await storage.platform.ai.getSentimentTrends(
         isGlobal ? null : userId,
         periodType,
         limit || 30
@@ -220,11 +220,11 @@ router.get(
     }
 
     const { startDate, endDate } = validation.data;
-    const user = await aiMlStorage.getUser(userId);
+    const user = await storage.platform.ai.getUser(userId);
     const isGlobal = req.query.global === 'true' && user?.isAdmin;
 
     try {
-      const insights = await aiMlStorage.getSentimentInsights(
+      const insights = await storage.platform.ai.getSentimentInsights(
         isGlobal ? undefined : userId,
         startDate ? new Date(startDate) : undefined,
         endDate ? new Date(endDate) : undefined
@@ -259,7 +259,7 @@ router.get(
     const { contentId } = req.params;
 
     try {
-      const analysis = await aiMlStorage.getSentimentAnalysis(contentId);
+      const analysis = await storage.platform.ai.getSentimentAnalysis(contentId);
       
       if (!analysis) {
         return res.status(404).json({
@@ -273,7 +273,7 @@ router.get(
         if (!userId) {
           return res.status(401).json({ error: "Authentication required" });
         }
-        const user = await aiMlStorage.getUser(userId);
+        const user = await storage.platform.ai.getUser(userId);
         if (!user?.isAdmin) {
           return res.status(403).json({ error: "Access denied" });
         }
@@ -311,13 +311,13 @@ router.get(
       // Get latest metrics or for specific period
       let metrics;
       if (period && periodType) {
-        const [result] = await aiMlStorage.getSentimentMetrics(
+        const [result] = await storage.platform.ai.getSentimentMetrics(
           period as string,
           periodType as "day" | "week" | "month"
         );
         metrics = result;
       } else {
-        metrics = await aiMlStorage.getLatestSentimentMetrics();
+        metrics = await storage.platform.ai.getLatestSentimentMetrics();
       }
 
       if (!metrics) {
@@ -327,11 +327,11 @@ router.get(
       }
 
       // Get active alerts
-      const alerts = await aiMlStorage.getSentimentAlerts("active", 5);
+      const alerts = await storage.platform.ai.getSentimentAlerts("active", 5);
 
       // Get segment breakdown if available
       const segments = period
-        ? await aiMlStorage.getSentimentSegments(period as string)
+        ? await storage.platform.ai.getSentimentSegments(period as string)
         : [];
 
       res.json({
@@ -366,7 +366,7 @@ router.get(
     const limit = parseInt(req.query.limit as string) || 20;
 
     try {
-      const alerts = await aiMlStorage.getSentimentAlerts("active", limit);
+      const alerts = await storage.platform.ai.getSentimentAlerts("active", limit);
 
       res.json({
         success: true,
@@ -401,7 +401,7 @@ router.post(
 
     try {
       // Create new alert configuration
-      const alert = await aiMlStorage.createSentimentAlert({
+      const alert = await storage.platform.ai.createSentimentAlert({
         alertType,
         threshold,
         currentValue: threshold, // Will be updated when triggered
@@ -458,7 +458,7 @@ router.patch(
         update.resolvedAt = new Date();
       }
 
-      const updatedAlert = await aiMlStorage.updateSentimentAlert(alertId, update);
+      const updatedAlert = await storage.platform.ai.updateSentimentAlert(alertId, update);
 
       res.json({
         success: true,
@@ -496,7 +496,7 @@ router.get(
     }
 
     try {
-      const breakdown = await aiMlStorage.getSentimentBreakdown(
+      const breakdown = await storage.platform.ai.getSentimentBreakdown(
         period as string,
         periodType as "day" | "week" | "month"
       );
@@ -538,7 +538,7 @@ router.get(
     }
 
     try {
-      const report = await aiMlStorage.generateSentimentReport(
+      const report = await storage.platform.ai.generateSentimentReport(
         period as string,
         periodType as "day" | "week" | "month"
       );
@@ -598,7 +598,7 @@ router.post(
             });
 
             // Store the analysis
-            const savedAnalysis = await aiMlStorage.createSentimentAnalysis({
+            const savedAnalysis = await storage.platform.ai.createSentimentAnalysis({
               ...analysis,
               userId,
               contentId: item.contentId || analysis.contentId,

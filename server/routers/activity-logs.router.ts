@@ -6,7 +6,7 @@
  */
 
 import { Router, Request, Response } from "express";
-import { analyticsStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
 import { ApiError } from "../utils/apiError";
@@ -54,7 +54,7 @@ router.get(
       filters.endDate = new Date(req.query.endDate as string);
     }
 
-    const result = await analyticsStorage.getActivityLogsPaginated(
+    const result = await storage.platform.analytics.getActivityLogsPaginated(
       userId,
       page,
       limit,
@@ -84,7 +84,7 @@ router.get(
 
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     
-    const timeline = await analyticsStorage.getUserActivityTimeline(userId, limit);
+    const timeline = await storage.platform.analytics.getUserActivityTimeline(userId, limit);
     
     res.json({
       data: timeline,
@@ -118,7 +118,7 @@ router.get(
       ? new Date(req.query.endDate as string) 
       : undefined;
     
-    const stats = await analyticsStorage.getActivityStats(userId, startDate, endDate);
+    const stats = await storage.platform.analytics.getActivityStats(userId, startDate, endDate);
     
     res.json(stats);
   })
@@ -139,7 +139,7 @@ router.get(
       throw new ApiError("User not authenticated", 401);
     }
 
-    const logs = await analyticsStorage.exportUserActivityLogs(userId);
+    const logs = await storage.platform.analytics.exportUserActivityLogs(userId);
     
     // Set headers for file download
     res.setHeader('Content-Type', 'application/json');
@@ -198,7 +198,7 @@ router.get(
       filters.endDate = new Date(req.query.endDate as string);
     }
 
-    const result = await analyticsStorage.getActivityLogsPaginated(
+    const result = await storage.platform.analytics.getActivityLogsPaginated(
       userId || undefined,
       page,
       limit,
@@ -240,7 +240,7 @@ router.get(
     }
     filters.limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
 
-    const events = await analyticsStorage.getSystemActivityLogs(filters);
+    const events = await storage.platform.analytics.getSystemActivityLogs(filters);
     
     res.json({
       data: events,
@@ -272,7 +272,7 @@ router.get(
       ? new Date(req.query.endDate as string) 
       : undefined;
     
-    const stats = await analyticsStorage.getActivityStats(
+    const stats = await storage.platform.analytics.getActivityStats(
       userId || undefined,
       startDate,
       endDate
@@ -306,7 +306,7 @@ router.post(
       throw new ApiError("Retention period cannot exceed 365 days", 400);
     }
     
-    const deletedCount = await analyticsStorage.cleanupOldActivityLogs(
+    const deletedCount = await storage.platform.analytics.cleanupOldActivityLogs(
       retentionDays,
       excludeActions
     );
@@ -342,7 +342,7 @@ router.get(
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     
-    const result = await analyticsStorage.getActivityLogsPaginated(
+    const result = await storage.platform.analytics.getActivityLogsPaginated(
       userId,
       page,
       limit
@@ -372,7 +372,7 @@ router.delete(
       throw new ApiError("Please confirm deletion by setting confirm: true", 400);
     }
     
-    const deletedCount = await analyticsStorage.deleteUserActivityLogs(userId);
+    const deletedCount = await storage.platform.analytics.deleteUserActivityLogs(userId);
     
     res.json({
       success: true,

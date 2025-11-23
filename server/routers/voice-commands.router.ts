@@ -7,7 +7,7 @@
 
 import { Router, Request, Response } from "express";
 import { isAuthenticated } from "../middleware";
-import { aiMlStorage, inventoryStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import OpenAI from "openai";
 import { z } from "zod";
 import multer from "multer";
@@ -58,7 +58,7 @@ const openai = getOpenAIClient();
  */
 router.get("/commands", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const commands = await aiMlStorage.getAvailableVoiceCommands();
+    const commands = await storage.platform.ai.getAvailableVoiceCommands();
     res.json(commands);
   } catch (error) {
     console.error("Error fetching voice commands:", error);
@@ -76,7 +76,7 @@ router.get("/history", isAuthenticated, async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     const limit = parseInt(req.query.limit as string) || 50;
-    const history = await aiMlStorage.getVoiceCommands(userId, limit);
+    const history = await storage.platform.ai.getVoiceCommands(userId, limit);
     res.json(history);
   } catch (error) {
     console.error("Error fetching voice history:", error);
@@ -103,7 +103,7 @@ router.post("/process-text", isAuthenticated, async (req: Request, res: Response
     const processedCommand = await processVoiceCommand(text, userId);
     
     // Save to history
-    const command = await aiMlStorage.createVoiceCommand({
+    const command = await storage.platform.ai.createVoiceCommand({
       userId,
       transcript: text,
       commandType: processedCommand.command,
@@ -201,7 +201,7 @@ router.post("/interpret", isAuthenticated, async (req: Request, res: Response) =
     const processedCommand = await processVoiceCommand(transcript, userId);
     
     // Save to history
-    const command = await aiMlStorage.createVoiceCommand({
+    const command = await storage.platform.ai.createVoiceCommand({
       userId,
       transcript: transcript,
       commandType: processedCommand.command,
@@ -322,14 +322,14 @@ async function processVoiceCommand(text: string, userId: string): Promise<{
       case "add":
         actionTaken = `Add ${result.parameters.quantity || 1} ${result.parameters.item} to ${result.parameters.list}`;
         if (result.parameters.list === "shopping" || result.parameters.list === "shopping list") {
-          await inventoryStorage.createShoppingItem({
+          await storage.user.inventory.createShoppingItem({
             userId,
             name: result.parameters.item,
             quantity: (result.parameters.quantity || 1).toString(),
             isPurchased: false
           });
         } else if (result.parameters.list === "inventory") {
-          await aiMlStorage.createFoodItem(userId, {
+          await storage.platform.ai.createFoodItem(userId, {
             name: result.parameters.item,
             quantity: (result.parameters.quantity || 1).toString(),
             unit: "units",
@@ -381,7 +381,7 @@ router.get("/stats", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const commands = await aiMlStorage.getVoiceCommands(userId, 100);
+    const commands = await storage.platform.ai.getVoiceCommands(userId, 100);
     
     // Calculate stats
     const stats = {

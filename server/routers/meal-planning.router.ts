@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { recipesStorage, inventoryStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { 
   insertMealPlanSchema, 
   insertShoppingItemSchema,
@@ -19,7 +19,7 @@ router.get("/meal-plans", isAuthenticated, async (req: Request, res: Response) =
     const { date, startDate, endDate, mealType } = req.query;
 
     // Get meal plans from storage with filters applied at database level
-    const plans = await recipesStorage.getMealPlans(
+    const plans = await storage.user.recipes.getMealPlans(
       userId, 
       startDate as string | undefined,
       endDate as string | undefined,
@@ -50,7 +50,7 @@ router.post(
         });
       }
 
-      const mealPlan = await recipesStorage.createMealPlan(
+      const mealPlan = await storage.user.recipes.createMealPlan(
         userId,
         validation.data
       );
@@ -73,14 +73,14 @@ router.put(
       const mealPlanId = req.params.id;
       
       // Verify meal plan belongs to user
-      const plans = await recipesStorage.getMealPlans(userId);
+      const plans = await storage.user.recipes.getMealPlans(userId);
       const existing = plans.find((p: MealPlan) => p.id === mealPlanId);
       
       if (!existing) {
         return res.status(404).json({ error: "Meal plan not found" });
       }
       
-      const updated = await recipesStorage.updateMealPlan(mealPlanId, userId, req.body);
+      const updated = await storage.user.recipes.updateMealPlan(mealPlanId, userId, req.body);
       res.json(updated);
     } catch (error) {
       console.error("Error updating meal plan:", error);
@@ -96,14 +96,14 @@ router.delete("/meal-plans/:id", isAuthenticated, async (req: Request, res: Resp
     const mealPlanId = req.params.id;
     
     // Verify meal plan belongs to user
-    const plans = await recipesStorage.getMealPlans(userId);
+    const plans = await storage.user.recipes.getMealPlans(userId);
     const existing = plans.find((p: MealPlan) => p.id === mealPlanId);
     
     if (!existing) {
       return res.status(404).json({ error: "Meal plan not found" });
     }
     
-    await recipesStorage.deleteMealPlan(mealPlanId, userId);
+    await storage.user.recipes.deleteMealPlan(mealPlanId, userId);
     res.json({ message: "Meal plan deleted successfully" });
   } catch (error) {
     console.error("Error deleting meal plan:", error);
@@ -117,7 +117,7 @@ router.get("/shopping-list", isAuthenticated, async (req: Request, res: Response
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     // Use the consolidated method that groups data at storage layer
-    const shoppingData = await inventoryStorage.getGroupedShoppingItems(userId);
+    const shoppingData = await storage.user.inventory.getGroupedShoppingItems(userId);
     res.json(shoppingData);
   } catch (error) {
     console.error("Error fetching shopping list:", error);
@@ -141,7 +141,7 @@ router.post(
         });
       }
 
-      const item = await inventoryStorage.createShoppingItem({
+      const item = await storage.user.inventory.createShoppingItem({
         ...validation.data,
         userId
       });
@@ -170,7 +170,7 @@ router.post(
       
       const items = await Promise.all(
         ingredients.map((ingredient: string) =>
-          inventoryStorage.createShoppingItem({
+          storage.user.inventory.createShoppingItem({
             userId,
             ingredient: ingredient,
             recipeId,
@@ -198,14 +198,14 @@ router.patch(
       const itemId = req.params.id;
       
       // Get current item
-      const items = await inventoryStorage.getShoppingItems(userId);
+      const items = await storage.user.inventory.getShoppingItems(userId);
       const item = items.find((i: ShoppingItem) => i.id === itemId);
       
       if (!item) {
         return res.status(404).json({ error: "Shopping list item not found" });
       }
       
-      const updated = await inventoryStorage.updateShoppingItem(userId, itemId, {
+      const updated = await storage.user.inventory.updateShoppingItem(userId, itemId, {
         isChecked: !item.isChecked,
       });
       
@@ -224,14 +224,14 @@ router.delete("/shopping-list/:id", isAuthenticated, async (req: Request, res: R
     const itemId = req.params.id;
     
     // Verify item belongs to user
-    const items = await recipesStorage.getShoppingListItems(userId);
+    const items = await storage.user.recipes.getShoppingListItems(userId);
     const existing = items.find((i: ShoppingItem) => i.id === itemId);
     
     if (!existing) {
       return res.status(404).json({ error: "Shopping list item not found" });
     }
     
-    await inventoryStorage.deleteShoppingItem(userId, itemId);
+    await storage.user.inventory.deleteShoppingItem(userId, itemId);
     res.json({ message: "Item removed from shopping list" });
   } catch (error) {
     console.error("Error deleting shopping list item:", error);
@@ -244,13 +244,13 @@ router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: Reque
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const items = await recipesStorage.getShoppingListItems(userId);
+    const items = await storage.user.recipes.getShoppingListItems(userId);
     
     const checkedItems = items.filter((i: ShoppingItem) => i.isChecked);
     
     await Promise.all(
       checkedItems.map((item: ShoppingItem) =>
-        inventoryStorage.deleteShoppingItem(userId, item.id)
+        storage.user.inventory.deleteShoppingItem(userId, item.id)
       )
     );
     
@@ -322,7 +322,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     
     // Step 1: Fetch meal plans for the specified date range
     sendProgress(10, "Fetching meal plans...");
-    const mealPlans = await recipesStorage.getMealPlans(userId, startDate, endDate);
+    const mealPlans = await storage.user.recipes.getMealPlans(userId, startDate, endDate);
     
     if (mealPlans.length === 0) {
       sendProgress(100, "No meal plans found for the selected date range", { itemsAdded: 0 });
@@ -347,7 +347,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     
     // Step 3: Get recipe details and ingredients
     const recipes = await Promise.all(
-      recipeIds.map(id => recipesStorage.getRecipe(userId, id))
+      recipeIds.map(id => storage.user.recipes.getRecipe(userId, id))
     );
     
     // Extract all ingredients from recipes
@@ -362,7 +362,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     
     // Step 4: Compare against current inventory
     // Items already in user's pantry don't need to be purchased
-    const inventory = await recipesStorage.getFoodItems(userId);
+    const inventory = await storage.user.recipes.getFoodItems(userId);
     const inventoryNames = new Set(
       inventory.map(item => item.name.toLowerCase())
     );
@@ -371,7 +371,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
     
     // Step 5: Check existing shopping list to prevent duplicates
     // Don't add items user already plans to buy
-    const existingShoppingItems = await recipesStorage.getShoppingListItems(userId);
+    const existingShoppingItems = await storage.user.recipes.getShoppingListItems(userId);
     const existingItemNames = new Set(
       existingShoppingItems.map(item => item.ingredient.toLowerCase())
     );
@@ -425,7 +425,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
       const batch = missingItems.slice(i, i + batchSize);
       const batchResults = await Promise.all(
         batch.map(item =>
-          inventoryStorage.createShoppingItem({
+          storage.user.inventory.createShoppingItem({
             userId,
             ingredient: item.ingredient,
             recipeId: item.recipeId,

@@ -9,7 +9,7 @@
 
 import * as cron from 'node-cron';
 import { intelligentNotificationService } from '../notifications/intelligent-service';
-import { notificationStorage } from '../storage/index';
+import { storage } from "../storage/index";
 import { db } from '../db';
 import { notificationFeedback, notificationScores } from '@shared/schema';
 import { gte, lte, and, isNotNull, desc } from 'drizzle-orm';
@@ -52,7 +52,7 @@ export class NotificationSchedulerService {
           .limit(100);
         
         for (const { userId } of recentFeedback) {
-          const feedback = await notificationStorage.getNotificationFeedback(userId);
+          const feedback = await storage.user.notifications.getNotificationFeedback(userId);
           if (feedback.length >= 20) {
             await intelligentNotificationService.updateModelWithFeedback(feedback);
             console.log(`Updated model for user ${userId} with ${feedback.length} feedback items`);

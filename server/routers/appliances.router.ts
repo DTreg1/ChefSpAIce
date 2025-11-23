@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { foodStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { 
   type UserAppliance,
   type UserAppliance as Appliance,
@@ -22,9 +22,9 @@ router.get("/appliances", isAuthenticated, async (req: Request, res: Response) =
     let userAppliances;
     if (category) {
       // Filter by category if provided
-      userAppliances = await foodStorage.getUserAppliancesByCategory(userId, category);
+      userAppliances = await storage.user.food.getUserAppliancesByCategory(userId, category);
     } else {
-      userAppliances = await foodStorage.getAppliances(userId);
+      userAppliances = await storage.user.food.getAppliances(userId);
     }
     
     res.json(userAppliances);
@@ -50,7 +50,7 @@ router.post(
         });
       }
 
-      const appliance = await foodStorage.createAppliance(userId, validation.data);
+      const appliance = await storage.user.food.createAppliance(userId, validation.data);
       
       res.json(appliance);
     } catch (error) {
@@ -65,7 +65,7 @@ router.get("/appliances/categories", isAuthenticated, async (req: Request, res: 
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const categories = await foodStorage.getApplianceCategories(userId);
+    const categories = await storage.user.food.getApplianceCategories(userId);
     res.json(categories);
   } catch (error) {
     console.error("Error fetching appliance categories:", error);
@@ -79,7 +79,7 @@ router.get("/appliances/:id", isAuthenticated, async (req: Request, res: Respons
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const applianceId = req.params.id;
     
-    const userAppliances = await foodStorage.getAppliances(userId);
+    const userAppliances = await storage.user.food.getAppliances(userId);
     const appliance = userAppliances.find((a: Appliance) => a.id === applianceId);
     
     if (!appliance) {
@@ -103,14 +103,14 @@ router.put(
       const applianceId = req.params.id;
       
       // Verify appliance belongs to user
-      const userAppliances = await foodStorage.getAppliances(userId);
+      const userAppliances = await storage.user.food.getAppliances(userId);
       const existing = userAppliances.find((a: Appliance) => a.id === applianceId);
       
       if (!existing) {
         return res.status(404).json({ error: "Appliance not found" });
       }
       
-      const updated = await foodStorage.updateAppliance(applianceId, userId, req.body);
+      const updated = await storage.user.food.updateAppliance(applianceId, userId, req.body);
       res.json(updated);
     } catch (error) {
       console.error("Error updating appliance:", error);
@@ -126,14 +126,14 @@ router.delete("/appliances/:id", isAuthenticated, async (req: Request, res: Resp
     const applianceId = req.params.id;
     
     // Verify appliance belongs to user
-    const userAppliances = await foodStorage.getAppliances(userId);
+    const userAppliances = await storage.user.food.getAppliances(userId);
     const existing = userAppliances.find((a: Appliance) => a.id === applianceId);
     
     if (!existing) {
       return res.status(404).json({ error: "Appliance not found" });
     }
     
-    await foodStorage.deleteAppliance(applianceId, userId);
+    await storage.user.food.deleteAppliance(applianceId, userId);
     res.json({ message: "Appliance deleted successfully" });
   } catch (error) {
     console.error("Error deleting appliance:", error);
@@ -144,7 +144,7 @@ router.delete("/appliances/:id", isAuthenticated, async (req: Request, res: Resp
 // Appliance categories - get unique categories from appliance library
 router.get("/appliance-categories", async (_req: Request, res: ExpressResponse) => {
   try {
-    const library = await foodStorage.getApplianceLibrary();
+    const library = await storage.user.food.getApplianceLibrary();
     // Extract unique categories from the appliance library
     const categoriesMap = new Map<string, { name: string, count: number }>();
     
@@ -178,11 +178,11 @@ router.get("/appliance-library", async (req: Request, res: Response) => {
     
     let appliances: ApplianceLibrary[];
     if (search) {
-      appliances = await foodStorage.searchApplianceLibrary(search);
+      appliances = await storage.user.food.searchApplianceLibrary(search);
     } else if (category) {
-      appliances = await foodStorage.getApplianceLibraryByCategory(category);
+      appliances = await storage.user.food.getApplianceLibraryByCategory(category);
     } else {
-      appliances = await foodStorage.getApplianceLibrary();
+      appliances = await storage.user.food.getApplianceLibrary();
     }
     
     res.json(appliances);
@@ -195,7 +195,7 @@ router.get("/appliance-library", async (req: Request, res: Response) => {
 // Get common appliances (for onboarding)
 router.get("/appliance-library/common", async (_req: Request, res: ExpressResponse) => {
   try {
-    const commonAppliances = await foodStorage.getCommonAppliances();
+    const commonAppliances = await storage.user.food.getCommonAppliances();
     res.json(commonAppliances);
   } catch (error) {
     console.error("Error fetching common appliances:", error);
@@ -212,9 +212,9 @@ router.get("/user-appliances", isAuthenticated, async (req: Request, res: Respon
     
     let userAppliances;
     if (category) {
-      userAppliances = await foodStorage.getUserAppliancesByCategory(userId, category);
+      userAppliances = await storage.user.food.getUserAppliancesByCategory(userId, category);
     } else {
-      userAppliances = await foodStorage.getUserAppliances(userId);
+      userAppliances = await storage.user.food.getUserAppliances(userId);
     }
     
     res.json(userAppliances);
@@ -229,7 +229,7 @@ router.get("/user-appliances/categories", isAuthenticated, async (req: Request, 
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const categories = await foodStorage.getApplianceCategories(userId);
+    const categories = await storage.user.food.getApplianceCategories(userId);
     res.json(categories);
   } catch (error) {
     console.error("Error fetching user appliance categories:", error);
@@ -259,7 +259,7 @@ router.post("/user-appliances", isAuthenticated, async (req: Request, res: Respo
       });
     }
     
-    const newUserAppliance = await foodStorage.addUserAppliance(
+    const newUserAppliance = await storage.user.food.addUserAppliance(
       userId,
       validation.data.applianceLibraryId,
       {
@@ -300,7 +300,7 @@ router.patch("/user-appliances/:id", isAuthenticated, async (req: Request, res: 
       });
     }
     
-    const updatedAppliance = await foodStorage.updateUserAppliance(
+    const updatedAppliance = await storage.user.food.updateUserAppliance(
       userId,
       id,
       validation.data
@@ -320,7 +320,7 @@ router.delete("/user-appliances/:id", isAuthenticated, async (req: Request, res:
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const { id } = req.params;
     
-    await foodStorage.deleteUserAppliance(userId, id);
+    await storage.user.food.deleteUserAppliance(userId, id);
     res.status(204).send();
   } catch (error) {
     console.error("Error deleting user appliance:", error);
@@ -356,7 +356,7 @@ router.post("/user-appliances/batch", isAuthenticated, async (req: Request, res:
     if (validation.data.add && validation.data.add.length > 0) {
       for (const applianceLibraryId of validation.data.add) {
         try {
-          const added = await foodStorage.addUserAppliance(userId, applianceLibraryId);
+          const added = await storage.user.food.addUserAppliance(userId, applianceLibraryId);
           results.added.push(added);
         } catch (error) {
           console.error(`Failed to add appliance ${applianceLibraryId}:`, error);
@@ -368,7 +368,7 @@ router.post("/user-appliances/batch", isAuthenticated, async (req: Request, res:
     if (validation.data.remove && validation.data.remove.length > 0) {
       for (const id of validation.data.remove) {
         try {
-          await foodStorage.deleteUserAppliance(userId, id);
+          await storage.user.food.deleteUserAppliance(userId, id);
           results.removed.push(id);
         } catch (error) {
           console.error(`Failed to remove appliance ${id}:`, error);

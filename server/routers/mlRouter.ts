@@ -13,7 +13,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { mlService } from "../services/mlService";
-import { aiMlStorage } from "../storage/index";
+import { storage } from "../storage/index";
 import { isAuthenticated } from "../middleware/oauth.middleware";
 
 const router = Router();
@@ -104,7 +104,7 @@ router.post("/search/feedback", async (req: Request, res: Response) => {
     const { searchLogId, clickedResultId, clickedResultType, clickPosition, timeToClick } = schema.parse(req.body);
     
     // Update search log with clicked result
-    const updatedLog = await aiMlStorage.updateSearchLogFeedback(searchLogId, {
+    const updatedLog = await storage.platform.ai.updateSearchLogFeedback(searchLogId, {
       clickedResultId,
       clickedResultType,
       clickPosition,
@@ -128,7 +128,7 @@ router.post("/search/feedback", async (req: Request, res: Response) => {
 router.get("/categories", async (req: Request, res: Response) => {
   try {
     const parentId = req.query.parentId as string | undefined;
-    const categories = await aiMlStorage.getCategories(parentId);
+    const categories = await storage.platform.ai.getCategories(parentId);
     
     res.json({ success: true, categories });
   } catch (error) {
@@ -156,7 +156,7 @@ router.post("/categories", async (req: Request, res: Response) => {
     });
 
     const categoryData = schema.parse(req.body);
-    const category = await aiMlStorage.createCategory(categoryData);
+    const category = await storage.platform.ai.createCategory(categoryData);
     
     res.json({ success: true, category });
   } catch (error) {
@@ -187,9 +187,9 @@ router.post("/categorize", async (req: Request, res: Response) => {
     // If content not provided, fetch it
     if (!content) {
       if (contentType === 'recipe') {
-        content = await aiMlStorage.getRecipe(contentId, userId);
+        content = await storage.platform.ai.getRecipe(contentId, userId);
       } else if (contentType === 'inventory') {
-        content = await aiMlStorage.getFoodItem(userId, contentId);
+        content = await storage.platform.ai.getFoodItem(userId, contentId);
       }
       
       if (!content) {
@@ -201,7 +201,7 @@ router.post("/categorize", async (req: Request, res: Response) => {
     }
 
     // Get available categories
-    const categories = await aiMlStorage.getCategories();
+    const categories = await storage.platform.ai.getCategories();
     
     if (categories.length === 0) {
       return res.status(400).json({ 
@@ -218,7 +218,7 @@ router.post("/categorize", async (req: Request, res: Response) => {
     );
 
     // Assign category to content
-    const assignment = await aiMlStorage.assignContentCategory({
+    const assignment = await storage.platform.ai.assignContentCategory({
       contentId,
       contentType,
       categoryId,
@@ -252,7 +252,7 @@ router.put("/categorize/:contentId", async (req: Request, res: Response) => {
     const { contentId } = req.params;
     const userId = req.user!.id;
 
-    const assignment = await aiMlStorage.assignContentCategory({
+    const assignment = await storage.platform.ai.assignContentCategory({
       contentId,
       contentType,
       categoryId,
@@ -291,9 +291,9 @@ router.post("/tags/generate", async (req: Request, res: Response) => {
     // If content not provided, fetch it
     if (!content) {
       if (contentType === 'recipe') {
-        content = await aiMlStorage.getRecipe(contentId, userId);
+        content = await storage.platform.ai.getRecipe(contentId, userId);
       } else if (contentType === 'inventory') {
-        content = await aiMlStorage.getFoodItem(userId, contentId);
+        content = await storage.platform.ai.getFoodItem(userId, contentId);
       }
       
       if (!content) {
@@ -310,14 +310,14 @@ router.post("/tags/generate", async (req: Request, res: Response) => {
     // Create or get tags and assign to content
     const tags = [];
     for (const tagInfo of generatedTags) {
-      const tag = await aiMlStorage.getOrCreateTag(tagInfo.name);
+      const tag = await storage.platform.ai.getOrCreateTag(tagInfo.name);
       tags.push({
         ...tag,
         relevanceScore: tagInfo.relevanceScore,
         source: tagInfo.source
       });
       
-      await aiMlStorage.assignContentTag({
+      await storage.platform.ai.assignContentTag({
         contentId,
         contentType,
         tagId: tag.id,
@@ -344,7 +344,7 @@ router.post("/tags/generate", async (req: Request, res: Response) => {
 router.get("/tags/trending", async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
-    const tags = await aiMlStorage.getTrendingTags(limit);
+    const tags = await storage.platform.ai.getTrendingTags(limit);
     
     res.json({ success: true, tags });
   } catch (error) {
@@ -374,12 +374,12 @@ router.post("/tags/approve", async (req: Request, res: Response) => {
 
     // Process approved tags
     for (const tagId of approvedTags) {
-      await aiMlStorage.updateTagRelevanceScore(contentId, tagId, userId, 1.0);
+      await storage.platform.ai.updateTagRelevanceScore(contentId, tagId, userId, 1.0);
     }
     
     // Remove rejected tags
     for (const tagId of rejectedTags) {
-      await aiMlStorage.removeContentTag(contentId, tagId, userId);
+      await storage.platform.ai.removeContentTag(contentId, tagId, userId);
     }
     
     res.json({ success: true });
@@ -401,7 +401,7 @@ router.get("/tags/related/:tagId", async (req: Request, res: Response) => {
     const { tagId } = req.params;
     const limit = parseInt(req.query.limit as string) || 5;
     
-    const relatedTags = await aiMlStorage.getRelatedTags(tagId, limit);
+    const relatedTags = await storage.platform.ai.getRelatedTags(tagId, limit);
     
     res.json({ success: true, tags: relatedTags });
   } catch (error) {
@@ -429,7 +429,7 @@ router.get("/tags/search", async (req: Request, res: Response) => {
       });
     }
     
-    const tags = await aiMlStorage.searchTags(query, limit);
+    const tags = await storage.platform.ai.searchTags(query, limit);
     
     res.json({ success: true, tags });
   } catch (error) {
@@ -448,7 +448,7 @@ router.get("/tags/search", async (req: Request, res: Response) => {
 router.get("/tags/all", async (req: Request, res: Response) => {
   try {
     const userId = req.query.userOnly === 'true' ? req.user!.id : undefined;
-    const tags = await aiMlStorage.getAllTags(userId);
+    const tags = await storage.platform.ai.getAllTags(userId);
     
     res.json({ success: true, tags });
   } catch (error) {
@@ -477,7 +477,7 @@ router.get("/content/:contentId/tags", async (req: Request, res: Response) => {
       });
     }
     
-    const tags = await aiMlStorage.getContentTags(contentId, contentType, userId);
+    const tags = await storage.platform.ai.getContentTags(contentId, contentType, userId);
     
     res.json({ success: true, tags });
   } catch (error) {
@@ -498,7 +498,7 @@ router.delete("/content/:contentId/tags/:tagId", async (req: Request, res: Respo
     const { contentId, tagId } = req.params;
     const userId = req.user!.id;
     
-    await aiMlStorage.removeContentTag(contentId, tagId, userId);
+    await storage.platform.ai.removeContentTag(contentId, tagId, userId);
     
     res.json({ success: true });
   } catch (error) {
@@ -577,7 +577,7 @@ router.post("/duplicates/resolve", async (req: Request, res: Response) => {
     const { pairId, status } = schema.parse(req.body);
     const userId = req.user!.id;
 
-    await aiMlStorage.updateDuplicateStatus(pairId, status, userId);
+    await storage.platform.ai.updateDuplicateStatus(pairId, status, userId);
 
     res.json({ success: true });
   } catch (error) {
@@ -680,7 +680,7 @@ router.get("/query/history", async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const limit = parseInt(req.query.limit as string) || 20;
 
-    const history = await aiMlStorage.getQueryHistory(userId, limit);
+    const history = await storage.platform.ai.getQueryHistory(userId, limit);
 
     res.json({ success: true, history });
   } catch (error) {
@@ -707,7 +707,7 @@ router.post("/query/save", async (req: Request, res: Response) => {
     const { naturalQuery, generatedSql, resultCount } = schema.parse(req.body);
     const userId = req.user!.id;
 
-    const log = await aiMlStorage.createQueryLog(userId, {
+    const log = await storage.platform.ai.createQueryLog(userId, {
       naturalQuery,
       generatedSql,
       resultCount,
