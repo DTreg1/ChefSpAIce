@@ -9,10 +9,10 @@
  * - Export structured data from receipts, forms, etc.
  */
 
-import express from "express";
+import express, { Request, Response } from "express";
 import multer from "multer";
 import Tesseract from "tesseract.js";
-import { aiMlStorage, systemStorage } from "../storage/index";
+import { aiMlStorage } from "../storage/index";
 import type { InsertOcrResult, InsertOcrCorrection } from "@shared/schema";
 import { insertOcrResultSchema, insertOcrCorrectionSchema } from "@shared/schema";
 import { z } from "zod";
@@ -203,7 +203,7 @@ function parseReceiptData(text: string): any {
  * POST /api/ocr/extract
  * Extract text from uploaded image
  */
-router.post("/extract", upload.single("file"), async (req: any, res: any) => {
+router.post("/extract", upload.single("file"), async (req: Request, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     // Skip auth for public testing (temporary)
@@ -251,7 +251,7 @@ router.post("/extract", upload.single("file"), async (req: any, res: any) => {
     // Save OCR result to database (only if user is authenticated)
     let ocrResult = null;
     if (userId) {
-      ocrResult = await storage.createOcrResult(userId, {
+      ocrResult = await aiMlStorage.createOcrResult(userId, {
         imageId,
         fileName: req.file.originalname,
         fileType: req.file.mimetype,
@@ -291,7 +291,7 @@ router.post("/extract", upload.single("file"), async (req: any, res: any) => {
  * POST /api/ocr/document
  * Process entire document (multi-page PDF support)
  */
-router.post("/document", upload.single("document"), async (req: any, res: any) => {
+router.post("/document", upload.single("document"), async (req: Request, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -318,7 +318,7 @@ router.post("/document", upload.single("document"), async (req: any, res: any) =
     const processingTime = Date.now() - startTime;
 
     // Save OCR result to database
-    const ocrResult = await storage.createOcrResult(userId, {
+    const ocrResult = await aiMlStorage.createOcrResult(userId, {
       imageId,
       fileName: req.file.originalname,
       fileType: req.file.mimetype,
@@ -357,7 +357,7 @@ router.post("/document", upload.single("document"), async (req: any, res: any) =
  * POST /api/ocr/correct
  * Submit corrections for extracted text
  */
-router.post("/correct", async (req: any, res: any) => {
+router.post("/correct", async (req: Request, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -367,13 +367,13 @@ router.post("/correct", async (req: any, res: any) => {
     const correctionData = insertOcrCorrectionSchema.omit({ userId: true }).parse(req.body);
 
     // Verify the OCR result belongs to the user
-    const ocrResult = await storage.getOcrResultById(userId, correctionData.resultId);
+    const ocrResult = await aiMlStorage.getOcrResultById(userId, correctionData.resultId);
     if (!ocrResult) {
       return res.status(404).json({ error: "OCR result not found" });
     }
 
     // Create correction record
-    const correction = await storage.createOcrCorrection(userId, correctionData);
+    const correction = await aiMlStorage.createOcrCorrection(userId, correctionData);
 
     res.json({
       success: true,
@@ -393,7 +393,7 @@ router.post("/correct", async (req: any, res: any) => {
  * GET /api/ocr/languages
  * Get supported OCR languages
  */
-router.get("/languages", async (req: any, res: any) => {
+router.get("/languages", async (req: Request, res: Response) => {
   try {
     res.json({
       success: true,
@@ -409,7 +409,7 @@ router.get("/languages", async (req: any, res: any) => {
  * GET /api/ocr/results
  * Get user's OCR results history
  */
-router.get("/results", async (req: any, res: any) => {
+router.get("/results", async (req: Request, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -417,7 +417,7 @@ router.get("/results", async (req: any, res: any) => {
     }
 
     const limit = parseInt(req.query.limit as string) || 20;
-    const results = await storage.getOcrResults(userId, limit);
+    const results = await aiMlStorage.getOcrResults(userId, limit);
 
     res.json({
       success: true,
@@ -433,7 +433,7 @@ router.get("/results", async (req: any, res: any) => {
  * GET /api/ocr/result/:id
  * Get specific OCR result with corrections
  */
-router.get("/result/:id", async (req: any, res: any) => {
+router.get("/result/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -441,13 +441,13 @@ router.get("/result/:id", async (req: any, res: any) => {
     }
 
     const resultId = req.params.id;
-    const result = await storage.getOcrResultById(userId, resultId);
+    const result = await aiMlStorage.getOcrResultById(userId, resultId);
     
     if (!result) {
       return res.status(404).json({ error: "OCR result not found" });
     }
 
-    const corrections = await storage.getOcrCorrections(userId, resultId);
+    const corrections = await aiMlStorage.getOcrCorrections(userId, resultId);
 
     res.json({
       success: true,
@@ -464,7 +464,7 @@ router.get("/result/:id", async (req: any, res: any) => {
  * DELETE /api/ocr/result/:id
  * Delete an OCR result
  */
-router.delete("/result/:id", async (req: any, res: any) => {
+router.delete("/result/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -472,7 +472,7 @@ router.delete("/result/:id", async (req: any, res: any) => {
     }
 
     const resultId = req.params.id;
-    await storage.deleteOcrResult(userId, resultId);
+    await aiMlStorage.deleteOcrResult(userId, resultId);
 
     res.json({
       success: true,
@@ -488,7 +488,7 @@ router.delete("/result/:id", async (req: any, res: any) => {
  * GET /api/ocr/corrections
  * Get user's correction history
  */
-router.get("/corrections", async (req: any, res: any) => {
+router.get("/corrections", async (req: Request, res: Response) => {
   try {
     const userId = req.session?.user?.id;
     if (!userId) {
@@ -496,7 +496,7 @@ router.get("/corrections", async (req: any, res: any) => {
     }
 
     const limit = parseInt(req.query.limit as string) || 50;
-    const corrections = await storage.getUserCorrections(userId, limit);
+    const corrections = await aiMlStorage.getUserCorrections(userId, limit);
 
     res.json({
       success: true,
