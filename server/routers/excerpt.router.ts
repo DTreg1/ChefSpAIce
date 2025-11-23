@@ -18,7 +18,8 @@
  */
 
 import { Router } from 'express';
-import type { IStorage } from '../storage/index';
+import type { IStorage } from '../storage/interfaces/IStorage';
+import { aiMlStorage } from '../storage';
 import { excerptService } from '../services/excerpt.service';
 import { insertExcerptSchema } from '@shared/schema';
 import { z } from 'zod';
