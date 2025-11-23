@@ -1,6 +1,6 @@
 import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
 import { createServer, type Server } from "http";
-import { API_CONFIG, createApiResponse } from "../config/api.config";
+import { API_CONFIG } from "../config/api.config";
 import { backwardCompatibilityMiddleware, requestTransformMiddleware } from "../middleware/backward-compatibility.middleware";
 
 // Import all routers
@@ -162,20 +162,20 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   
   // API Health & Info endpoints
   app.get(`${v1Base}/health`, (_req: any, res: any) => {
-    res.json(createApiResponse.success({
+    res.json({
       status: "healthy",
       version: API_CONFIG.VERSION,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-    }));
+    });
   });
   
   app.get(`${v1Base}/info`, (_req: any, res: any) => {
-    res.json(createApiResponse.success({
+    res.json({
       version: API_CONFIG.VERSION,
       deprecationDate: API_CONFIG.DEPRECATION_DATE,
       documentation: `${v1Base}/docs`,
-    }));
+    });
   });
   
   // Legacy health check (for monitoring tools)
