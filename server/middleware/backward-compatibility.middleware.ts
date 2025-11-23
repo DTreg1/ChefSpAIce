@@ -23,11 +23,21 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
   // Check if this is a legacy path
   let isLegacyPath = false;
   let newPath = originalPath;
+  let additionalQueryParams = '';
   
-  // Check exact matches first
+  // Check exact matches first (including query parameter transformations)
   if (API_CONFIG.LEGACY_PATHS[originalPath]) {
     isLegacyPath = true;
-    newPath = API_CONFIG.LEGACY_PATHS[originalPath];
+    const mappedValue = API_CONFIG.LEGACY_PATHS[originalPath];
+    
+    // Handle mappings that include query parameters
+    if (mappedValue.includes('?')) {
+      const [path, params] = mappedValue.split('?');
+      newPath = path;
+      additionalQueryParams = params;
+    } else {
+      newPath = mappedValue;
+    }
   } else {
     // Check for parameterized route matches
     // Find the longest matching legacy path prefix
@@ -42,14 +52,76 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
       isLegacyPath = true;
       const mappedPath = API_CONFIG.LEGACY_PATHS[matchingLegacyPath as keyof typeof API_CONFIG.LEGACY_PATHS];
       const pathSuffix = originalPath.slice(matchingLegacyPath.length);
-      newPath = mappedPath + pathSuffix;
+      
+      // Handle mappings that include query parameters
+      if (mappedPath.includes('?')) {
+        const [path, params] = mappedPath.split('?');
+        newPath = path + pathSuffix;
+        additionalQueryParams = params;
+      } else {
+        newPath = mappedPath + pathSuffix;
+      }
     }
   }
   
   // Handle special cases for paths with parameters that don't have exact legacy mappings
   if (!isLegacyPath) {
+    // === New RESTful Transformations ===
+    
+    // Shopping list standardization (v1 paths)
+    if (originalPath.match(/^\/api\/v1\/shopping-list\/items\/.+$/)) {
+      isLegacyPath = true;
+      const itemId = originalPath.split('/').pop();
+      if (originalPath.includes('/toggle')) {
+        newPath = `/api/v1/shopping-lists/default/items/${itemId?.replace('/toggle', '')}`;
+      } else {
+        newPath = `/api/v1/shopping-lists/default/items/${itemId}`;
+      }
+    }
+    else if (originalPath.match(/^\/api\/v1\/shopping-list\/.+$/)) {
+      isLegacyPath = true;
+      const suffix = originalPath.replace('/api/v1/shopping-list', '');
+      if (suffix === '/clear-checked') {
+        newPath = '/api/v1/shopping-lists/default/items';
+        additionalQueryParams = 'status=checked';
+      } else if (suffix === '/generate-from-meal-plans') {
+        newPath = '/api/v1/shopping-lists/default/items/import';
+        additionalQueryParams = 'source=meal-plans';
+      } else if (suffix === '/add-missing') {
+        newPath = '/api/v1/shopping-lists/default/items/bulk';
+      } else if (suffix === '/batch') {
+        newPath = '/api/v1/shopping-lists/default/items/batch';
+      } else {
+        const listId = suffix.substring(1); // Remove leading /
+        newPath = `/api/v1/shopping-lists/${listId}`;
+      }
+    }
+    
+    // AI text prefix removal for conversations
+    else if (originalPath.match(/^\/api\/v1\/ai\/text\/conversations\/.+$/)) {
+      isLegacyPath = true;
+      newPath = originalPath.replace('/api/v1/ai/text/conversations', '/api/v1/ai/conversations');
+      // Handle streaming endpoint
+      if (newPath.includes('/messages/stream')) {
+        newPath = newPath.replace('/messages/stream', '/messages');
+        additionalQueryParams = 'stream=true';
+      }
+    }
+    else if (originalPath === '/api/v1/ai/text/conversations') {
+      isLegacyPath = true;
+      newPath = '/api/v1/ai/conversations';
+    }
+    
+    // Admin user management special endpoints
+    else if (originalPath.match(/^\/api\/v1\/admin\/users\/[\w-]+\/admin$/)) {
+      isLegacyPath = true;
+      newPath = originalPath.replace('/admin', ''); // Remove trailing /admin
+    }
+    
+    // === Legacy Path Transformations (non-v1) ===
+    
     // Inventory-related parameterized routes (legacy uses singular "inventory")
-    if (originalPath.match(/^\/api\/inventory\/.+$/)) {
+    else if (originalPath.match(/^\/api\/inventory\/.+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/inventory', '/api/v1/inventories');
     }
@@ -81,12 +153,25 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
     // Shopping list with nested paths (must check items path first)
     else if (originalPath.match(/^\/api\/shopping-list\/items\/.+$/)) {
       isLegacyPath = true;
-      newPath = originalPath.replace('/api/shopping-list/items', '/api/v1/shopping-list/items');
+      const itemId = originalPath.split('/').pop();
+      newPath = `/api/v1/shopping-lists/default/items/${itemId}`;
     }
     // Shopping list with other nested paths
     else if (originalPath.match(/^\/api\/shopping-list\/.+$/)) {
       isLegacyPath = true;
-      newPath = originalPath.replace('/api/shopping-list', '/api/v1/shopping-list');
+      const suffix = originalPath.replace('/api/shopping-list', '');
+      if (suffix === '/clear-checked') {
+        newPath = '/api/v1/shopping-lists/default/items';
+        additionalQueryParams = 'status=checked';
+      } else if (suffix === '/generate-from-meal-plans') {
+        newPath = '/api/v1/shopping-lists/default/items/import';
+        additionalQueryParams = 'source=meal-plans';
+      } else if (suffix === '/add-missing') {
+        newPath = '/api/v1/shopping-lists/default/items/bulk';
+      } else {
+        const listId = suffix.substring(1); // Remove leading /
+        newPath = `/api/v1/shopping-lists/${listId}`;
+      }
     }
     // Admin routes with IDs
     else if (originalPath.match(/^\/api\/admin\/[\w-\/]+$/)) {
@@ -115,8 +200,18 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
     res.setHeader('X-Deprecation-Date', API_CONFIG.DEPRECATION_DATE);
     res.setHeader('X-New-Endpoint', `${method} ${newPath}`);
     
-    // Rewrite the request URL with query string preserved
-    req.url = newPath + queryString;
+    // Combine existing query string with additional parameters
+    let finalQueryString = queryString;
+    if (additionalQueryParams) {
+      if (queryString) {
+        finalQueryString = queryString + '&' + additionalQueryParams;
+      } else {
+        finalQueryString = '?' + additionalQueryParams;
+      }
+    }
+    
+    // Rewrite the request URL with combined query string
+    req.url = newPath + finalQueryString;
   }
   
   next();
@@ -146,26 +241,115 @@ export function clearDeprecationStats(): void {
 export function requestTransformMiddleware(req: Request, res: Response, next: NextFunction) {
   // Transform query parameters for backward compatibility
   
+  // === Query Parameter Standardization ===
+  
   // Transform 'type' to resource-specific parameters
   if (req.query.type === 'items' && req.path.includes('/inventories')) {
     delete req.query.type; // Remove redundant type parameter
   }
   
-  // Transform barcode parameter
-  if (req.query.barcode && req.path.includes('/barcodes')) {
-    req.query.code = req.query.barcode;
-    delete req.query.barcode;
+  // Transform barcode parameter for barcode lookups
+  if (req.query.barcode) {
+    if (req.path.includes('/barcodes') || req.path.includes('/barcodelookup')) {
+      req.query.code = req.query.barcode;
+      delete req.query.barcode;
+    }
   }
   
   // Transform USDA query parameter
-  if (req.query.query && req.path.includes('/food-data')) {
+  if (req.query.query && (req.path.includes('/food-data') || req.path.includes('/fdc'))) {
     req.query.q = req.query.query;
     delete req.query.query;
   }
   
   // Transform shopping list status for deletion
-  if (req.method === 'DELETE' && req.path.includes('/shopping-lists') && req.path.includes('/clear-checked')) {
-    req.query.status = 'checked';
+  if (req.method === 'DELETE' && req.path.includes('/shopping-lists')) {
+    if (req.path.includes('/clear-checked') || req.query.clearChecked === 'true') {
+      req.query.status = 'checked';
+      delete req.query.clearChecked;
+    }
+  }
+  
+  // === Method Transformations ===
+  
+  // Transform non-RESTful action endpoints to proper HTTP methods
+  if (req.path.includes('/toggle') && req.method === 'PATCH') {
+    // Transform toggle to standard PATCH with body
+    if (!req.body) req.body = {};
+    req.body.checked = req.body.checked !== undefined ? req.body.checked : true;
+  }
+  
+  // Transform POST to DELETE for clear/reset operations
+  if (req.method === 'POST') {
+    if (req.path.includes('/clear-checked') || req.path.includes('/reset')) {
+      // These should be DELETE operations in RESTful API
+      // The backward compatibility middleware will handle the path transformation
+    }
+  }
+  
+  // === Body Parameter Transformations ===
+  
+  // Transform AI request bodies for standardized endpoints
+  if (req.path.includes('/ai/') && req.body) {
+    // Add type field for consolidated AI endpoints
+    if (req.path.includes('/writing/analyze')) {
+      req.body.type = 'writing';
+    } else if (req.path.includes('/writing/tone')) {
+      req.body.type = 'tone';
+    } else if (req.path.includes('/writing/expand')) {
+      req.body.type = 'expand';
+    } else if (req.path.includes('/sentiment')) {
+      req.body.type = 'sentiment';
+    } else if (req.path.includes('/trends')) {
+      req.body.type = 'trends';
+    } else if (req.path.includes('/predictions')) {
+      req.body.type = 'predictions';
+    }
+  }
+  
+  // Transform admin user updates
+  if (req.path.match(/\/admin\/users\/[\w-]+\/admin$/) && req.method === 'PATCH') {
+    // Transform admin status update to standard user update
+    if (!req.body) req.body = {};
+    req.body.isAdmin = req.body.admin !== undefined ? req.body.admin : req.body.isAdmin;
+    delete req.body.admin;
+  }
+  
+  // === Pagination Parameter Standardization ===
+  
+  // Standardize pagination parameters
+  if (req.query.offset !== undefined && req.query.limit !== undefined) {
+    // Convert offset/limit to page/limit
+    const offset = parseInt(req.query.offset as string);
+    const limit = parseInt(req.query.limit as string);
+    req.query.page = Math.floor(offset / limit) + 1;
+    delete req.query.offset;
+  }
+  
+  // Standardize sort parameters
+  if (req.query.sortBy) {
+    req.query.sort = req.query.sortBy;
+    delete req.query.sortBy;
+  }
+  if (req.query.sortOrder) {
+    req.query.order = req.query.sortOrder;
+    delete req.query.sortOrder;
+  }
+  
+  // Standardize search parameter
+  if (req.query.search && !req.query.q) {
+    req.query.q = req.query.search;
+    delete req.query.search;
+  }
+  
+  // Standardize date range parameters
+  if (req.query.startDate && !req.query.start_date) {
+    req.query.start_date = req.query.startDate;
+    delete req.query.startDate;
+  }
+  if (req.query.endDate && !req.query.end_date) {
+    req.query.end_date = req.query.endDate;
+    delete req.query.endDate;
   }
   
   next();

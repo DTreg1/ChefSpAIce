@@ -12,56 +12,21 @@ export const API_CONFIG = {
   // Legacy paths for backward compatibility
   // These map old API paths to new v1 paths based on actual router definitions
   LEGACY_PATHS: {
+    // === EXISTING LEGACY PATHS ===
     // Inventory routes (from inventory.router.ts)
     '/api/inventory': '/api/v1/inventories',
     '/api/storage-locations': '/api/v1/storage-locations',
     '/api/food-items': '/api/v1/food-items',
-    '/api/food/enrich': '/api/v1/food/enrich',
-    '/api/barcodelookup/search': '/api/v1/barcodelookup/search',
+    '/api/food-categories': '/api/v1/food-categories',
     '/api/fdc/search': '/api/v1/fdc/search',
     '/api/fdc/food': '/api/v1/fdc/food',
-    '/api/food-categories': '/api/v1/food-categories',
-    '/api/shopping-list/items': '/api/v1/shopping-list/items',
-    '/api/shopping-list/add-missing': '/api/v1/shopping-list/add-missing',
     
     // Recipe & Chat routes (from recipes.router.ts)
-    '/api/chat/messages': '/api/v1/chat/messages',
     '/api/chat': '/api/v1/chat',
     '/api/recipes': '/api/v1/recipes',
-    '/api/recipe/generate': '/api/v1/recipes/generate',
     
     // Meal Planning routes (from meal-planning.router.ts)
     '/api/meal-plans': '/api/v1/meal-plans',
-    '/api/shopping-list': '/api/v1/shopping-list',
-    '/api/shopping-list/clear-checked': '/api/v1/shopping-list/clear-checked',
-    '/api/shopping-list/generate-from-meal-plans': '/api/v1/shopping-list/generate-from-meal-plans',
-    
-    // AI Generation routes (from generation.router.ts mounted at /api/v1/ai)
-    '/api/ai/writing/analyze': '/api/v1/ai/writing/analyze',
-    '/api/ai/writing/tone': '/api/v1/ai/writing/tone',
-    '/api/ai/writing/expand': '/api/v1/ai/writing/expand',
-    '/api/ai/summarize': '/api/v1/ai/summarize',
-    '/api/ai/translate': '/api/v1/ai/translate',
-    '/api/ai/translate/detect': '/api/v1/ai/translate/detect',
-    '/api/ai/recipe': '/api/v1/ai/recipe',
-    '/api/ai/conversations': '/api/v1/ai/conversations',
-    
-    // AI Analysis routes (from analysis.router.ts mounted at /api/v1/ai)
-    '/api/ai/sentiment': '/api/v1/ai/sentiment',
-    '/api/ai/trends': '/api/v1/ai/trends',
-    '/api/ai/predictions': '/api/v1/ai/predictions',
-    '/api/ai/extraction': '/api/v1/ai/extraction',
-    '/api/ai/insights': '/api/v1/ai/insights',
-    
-    // AI Vision routes (from vision.router.ts mounted at /api/v1/ai)
-    '/api/ai/vision/ocr': '/api/v1/ai/ocr',
-    '/api/ai/vision/faces': '/api/v1/ai/faces',
-    '/api/ai/vision/alt-text': '/api/v1/ai/alt-text',
-    '/api/ai/vision/analyze': '/api/v1/ai/images/analyze',
-    
-    // AI Voice routes (from voice.router.ts mounted at /api/v1/ai)
-    '/api/ai/voice/transcribe': '/api/v1/ai/transcribe',
-    '/api/ai/voice/command': '/api/v1/ai/voice/commands',
     
     // Analytics & Platform routes
     '/api/analytics': '/api/v1/analytics',
@@ -87,6 +52,101 @@ export const API_CONFIG = {
     '/api/autosave': '/api/v1/autosave',
     '/api/scheduling': '/api/v1/scheduling',
     '/api/batch': '/api/v1/batch',
+    
+    // === NEW STANDARDIZED MAPPINGS ===
+    // Non-RESTful to RESTful transformations
+    
+    // Shopping List Standardization (singular to plural)
+    '/api/v1/shopping-list': '/api/v1/shopping-lists',
+    '/api/shopping-list': '/api/v1/shopping-lists',
+    '/api/v1/shopping-list/items': '/api/v1/shopping-lists/default/items',
+    '/api/shopping-list/items': '/api/v1/shopping-lists/default/items',
+    '/api/v1/shopping-list/add-missing': '/api/v1/shopping-lists/default/items/bulk',
+    '/api/shopping-list/add-missing': '/api/v1/shopping-lists/default/items/bulk',
+    '/api/v1/shopping-list/clear-checked': '/api/v1/shopping-lists/default/items?status=checked',
+    '/api/shopping-list/clear-checked': '/api/v1/shopping-lists/default/items?status=checked',
+    '/api/v1/shopping-list/generate-from-meal-plans': '/api/v1/shopping-lists/default/items/import?source=meal-plans',
+    '/api/shopping-list/generate-from-meal-plans': '/api/v1/shopping-lists/default/items/import?source=meal-plans',
+    
+    // Food & Inventory Action Endpoints
+    '/api/v1/food/enrich': '/api/v1/food-items/enrichment',
+    '/api/food/enrich': '/api/v1/food-items/enrichment',
+    '/api/v1/fdc/cache/clear': '/api/v1/system/caches/fdc',
+    '/api/fdc/cache/clear': '/api/v1/system/caches/fdc',
+    '/api/v1/barcodelookup/search': '/api/v1/barcodes',
+    '/api/barcodelookup/search': '/api/v1/barcodes',
+    '/api/v1/onboarding/common-items': '/api/v1/food-items/common',
+    '/api/onboarding/common-items': '/api/v1/food-items/common',
+    '/api/v1/food-images': '/api/v1/food-items/images',
+    '/api/food-images': '/api/v1/food-items/images',
+    
+    // Chat Standardization (nested messages)
+    '/api/v1/chat/messages': '/api/v1/chats/default/messages',
+    '/api/chat/messages': '/api/v1/chats/default/messages',
+    '/api/v1/chats/stream': '/api/v1/chats/default/messages?stream=true',
+    '/api/chats/stream': '/api/v1/chats/default/messages?stream=true',
+    '/api/v1/chats/health': '/api/v1/system/health/chats',
+    '/api/chats/health': '/api/v1/system/health/chats',
+    '/api/v1/chats/reset': '/api/v1/chats/default/messages',
+    '/api/chats/reset': '/api/v1/chats/default/messages',
+    
+    // Recipe Generation
+    '/api/v1/recipe/generate': '/api/v1/recipes/generate',
+    '/api/recipe/generate': '/api/v1/recipes/generate',
+    
+    // AI Services Standardization
+    '/api/v1/ai/text/writing/analyze': '/api/v1/ai/analyses',
+    '/api/ai/writing/analyze': '/api/v1/ai/analyses',
+    '/api/v1/ai/text/writing/tone': '/api/v1/ai/transformations',
+    '/api/ai/writing/tone': '/api/v1/ai/transformations',
+    '/api/v1/ai/text/writing/expand': '/api/v1/ai/transformations',
+    '/api/ai/writing/expand': '/api/v1/ai/transformations',
+    '/api/v1/ai/text/summarize': '/api/v1/ai/summaries',
+    '/api/ai/summarize': '/api/v1/ai/summaries',
+    '/api/v1/ai/text/translate': '/api/v1/ai/translations',
+    '/api/ai/translate': '/api/v1/ai/translations',
+    '/api/v1/ai/text/translate/detect': '/api/v1/ai/language-detections',
+    '/api/ai/translate/detect': '/api/v1/ai/language-detections',
+    '/api/v1/ai/text/recipe': '/api/v1/ai/recipes/generate',
+    '/api/ai/recipe': '/api/v1/ai/recipes/generate',
+    '/api/v1/ai/text/stats': '/api/v1/ai/statistics',
+    '/api/ai/stats': '/api/v1/ai/statistics',
+    
+    // AI Conversations (remove /text prefix)
+    '/api/v1/ai/text/conversations': '/api/v1/ai/conversations',
+    '/api/ai/conversations': '/api/v1/ai/conversations',
+    
+    // AI Analysis routes
+    '/api/v1/ai/sentiment': '/api/v1/ai/analyses',
+    '/api/ai/sentiment': '/api/v1/ai/analyses',
+    '/api/v1/ai/trends': '/api/v1/ai/analyses',
+    '/api/ai/trends': '/api/v1/ai/analyses',
+    '/api/v1/ai/predictions': '/api/v1/ai/analyses',
+    '/api/ai/predictions': '/api/v1/ai/analyses',
+    '/api/v1/ai/extraction': '/api/v1/ai/extractions',
+    '/api/ai/extraction': '/api/v1/ai/extractions',
+    '/api/v1/ai/insights': '/api/v1/ai/insights',
+    '/api/ai/insights': '/api/v1/ai/insights',
+    
+    // AI Vision routes standardization
+    '/api/v1/ai/vision/ocr': '/api/v1/ai/ocr',
+    '/api/ai/vision/ocr': '/api/v1/ai/ocr',
+    '/api/v1/ai/vision/faces': '/api/v1/ai/face-detections',
+    '/api/ai/vision/faces': '/api/v1/ai/face-detections',
+    '/api/v1/ai/vision/alt-text': '/api/v1/ai/alt-texts',
+    '/api/ai/vision/alt-text': '/api/v1/ai/alt-texts',
+    '/api/v1/ai/vision/analyze': '/api/v1/ai/image-analyses',
+    '/api/ai/vision/analyze': '/api/v1/ai/image-analyses',
+    
+    // AI Voice routes standardization
+    '/api/v1/ai/voice/transcribe': '/api/v1/ai/transcriptions',
+    '/api/ai/voice/transcribe': '/api/v1/ai/transcriptions',
+    '/api/v1/ai/voice/command': '/api/v1/ai/voice-commands',
+    '/api/ai/voice/command': '/api/v1/ai/voice-commands',
+    
+    // Admin User Management
+    '/api/v1/admin/users/:userId/admin': '/api/v1/admin/users/:userId',
+    '/api/admin/users/:userId/admin': '/api/v1/admin/users/:userId',
   },
   
   // Resource naming conventions
