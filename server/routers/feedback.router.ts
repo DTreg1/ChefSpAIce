@@ -26,7 +26,10 @@ router.post(
         });
       }
 
-      const feedback = await feedbackStorage.createFeedback(userId, validation.data);
+      const feedback = await feedbackStorage.createFeedback({
+        ...validation.data,
+        userId
+      });
       
       res.json(feedback);
     } catch (error) {
@@ -48,9 +51,12 @@ router.get(
     try {
       const userId = getAuthenticatedUserId(req);
     if (!userId) return sendError(res, 401, "Unauthorized");
-      const { page = 1, limit = 10, category, status } = req.query;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const { category, status } = req.query;
       
-      let feedbacks = await feedbackStorage.getUserFeedback(userId, limit * 10); // Get more for filtering
+      let feedbacks = await feedbackStorage.getUserFeedback(userId) || [];
+      // Note: Currently fetching all feedback items then filtering/paginating client-side
       
       // Apply filters
       if (category) {
