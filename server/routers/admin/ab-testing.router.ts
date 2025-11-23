@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
-import { storage } from "../storage/index";
-import { asyncHandler } from "../middleware/error.middleware";
-import { getAuthenticatedUserId } from "../middleware/oauth.middleware";
+import { storage } from "../../storage/index";
+import { asyncHandler } from "../../middleware/error.middleware";
+import { getAuthenticatedUserId } from "../../middleware/oauth.middleware";
 import { insertAbTestSchema, insertAbTestResultSchema } from "@shared/schema";
 import OpenAI from "openai";
 

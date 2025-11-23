@@ -2,22 +2,41 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { createServer, type Server } from "http";
 
 // Import all routers
-import authRouter from "./oauth.router";
-import inventoryRouter from "./inventory.router";
-import recipesRouter from "./recipes.router";
-import chatRouter from "./chat.router";
-import chatStreamRouter from "./chat.router";
-import mealPlanningRouter from "./meal-planning.router";
-import appliancesRouter from "./appliances.router";
-import adminRouter from "./admin.router";
-import analyticsRouter from "./analytics.router";
-import nutritionRouter from "./nutrition.router";
-import feedbackRouter from "./feedback.router";
-import batchRouter from "./batch.router";
-import pushTokensRouter from "./push-tokens.router";
-import notificationsRouter from "./notifications.router";
-import cookingTermsRouter from "./cooking-terms.router";
-import activityLogsRouter from "./activity-logs.router";
+// User routers
+import authRouter from "./user/oauth.router";
+import inventoryRouter from "./user/inventory.router";
+import unifiedInventoryRouter from "./user/unified-inventory.router";
+import recipesRouter from "./user/recipes.router";
+import chatRouter from "./user/chat.router";
+import chatStreamRouter from "./user/chat.router";
+import mealPlanningRouter from "./user/meal-planning.router";
+import appliancesRouter from "./user/appliances.router";
+import nutritionRouter from "./user/nutrition.router";
+import cookingTermsRouter from "./user/cooking-terms.router";
+import autosaveRouter from "./user/autosave.router";
+import autocompleteRouter from "./user/autocomplete.router";
+import validationRouter from "./user/validation.router";
+
+// Admin routers
+import adminRouter from "./admin/admin.router";
+import abTestingRouter from "./admin/ab-testing.router";
+import cohortsRouter from "./admin/cohorts.router";
+import { maintenanceRouter } from "./admin/maintenance.router";
+import ticketRoutingRouter from "./admin/ticket-routing.router";
+import pricingRouter from "./admin/pricing.router";
+import moderationRouter from "./admin/moderation.router";
+import aiMetricsRouter from "./admin/ai-metrics.router";
+
+// Platform routers
+import analyticsRouter from "./platform/analytics.router";
+import feedbackRouter from "./platform/feedback.router";
+import batchRouter from "./platform/batch.router";
+import pushTokensRouter from "./platform/push-tokens.router";
+import notificationsRouter from "./platform/notifications.router";
+import activityLogsRouter from "./platform/activity-logs.router";
+import intelligentNotificationsRouter from "./platform/intelligent-notifications.router";
+
+// AI/ML routers (remaining in main directory for now)
 import mlRouter from "./mlRouter";
 import aiAssistantRouter from "./ai-assistant.router";
 import voiceCommandsRouter from "./voice-commands.router";
@@ -25,28 +44,17 @@ import emailDraftingRouter from "./email-drafting.router";
 import writingAssistantRouter from "./writing.router";
 import summarizationRouter from "./summarization.router";
 import { createExcerptRouter } from "./excerpt.router";
-// import duplicatesRouter from "./duplicates.router"; // File doesn't exist
 import recommendationsRouter from "./recommendations.router";
 import naturalQueryRouter from "./natural-query.router";
 import { translationRouter } from "./translation.router";
 import { createAltTextRouter } from "./alt-text.router";
-import moderationRouter from "./moderation.router";
 import fraudRouter from "./fraud.router";
 import sentimentRouter from "./sentiment.router";
-import intelligentNotificationsRouter from "./intelligent-notifications.router";
-import autosaveRouter from "./autosave.router";
-import autocompleteRouter from "./autocomplete.router";
-import validationRouter from "./validation.router";
 import insightsRouter from "./insights.router";
 import predictionsRouter from "./predictions.router";
 import trendsRouter from "./trends.router";
-import abTestingRouter from "./ab-testing.router";
-import cohortsRouter from "./cohorts.router";
-import { maintenanceRouter } from "./maintenance.router";
 import schedulingRouter from "./scheduling.router";
-import ticketRoutingRouter from "./ticket-routing.router";
 import extractionRouter from "./extraction.router";
-import pricingRouter from "./pricing.router";
 import imagesRouter from "./images.router";
 import faceDetectionRouter from "./face-detection.router";
 import ocrRouter from "./ocr.router";

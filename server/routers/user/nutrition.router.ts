@@ -1,9 +1,9 @@
 import { Router, Request, Response } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
-import { storage } from "../storage/index";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
+import { storage } from "../../storage/index";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { extractNutrition } from "../utils/nutritionCalculator";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { extractNutrition } from "../../utils/nutritionCalculator";
 import { z } from "zod";
 
 const router = Router();

@@ -6,10 +6,10 @@
 
 import { Router, Request, Response, NextFunction } from "express";
 import passport from "passport";
-import { isOAuthConfigured } from "../config/oauth-config";
-import { registerEmailUser, registeredStrategies } from "../auth/oauth";
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { storage } from "../storage";
+import { isOAuthConfigured } from "../../config/oauth-config";
+import { registerEmailUser, registeredStrategies } from "../../auth/oauth";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { storage } from "../../storage";
 
 const router = Router();
 

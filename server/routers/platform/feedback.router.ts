@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
-import { getAuthenticatedUserId, validateBody, sendError, sendSuccess } from "../types/request-helpers";
+import { getAuthenticatedUserId, validateBody, sendError, sendSuccess } from "../../types/request-helpers";
 import { z } from "zod";
-import { storage } from "../storage/index";
+import { storage } from "../../storage/index";
 import { insertUserFeedbackSchema, type UserFeedback } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { validateQuery, paginationQuerySchema } from "../middleware";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { validateQuery, paginationQuerySchema } from "../../middleware";
 
 const router = Router();
 

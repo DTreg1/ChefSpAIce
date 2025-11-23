@@ -14,8 +14,8 @@
  */
 
 import express, { Router } from "express";
-import { storage } from "../storage/index";
-import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
+import { storage } from "../../storage/index";
+import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
 import { insertCompletionFeedbackSchema } from "@shared/schema";
 import z from "zod";
 import OpenAI from "openai";

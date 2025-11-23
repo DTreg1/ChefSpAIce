@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { validateBody } from "../middleware";
-import { storage } from "../storage/index";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { validateBody } from "../../middleware";
+import { storage } from "../../storage/index";
 import { insertUserInventorySchema, insertShoppingListItemSchema } from "@shared/schema";
 import { z } from "zod";
 

@@ -1,9 +1,9 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db";
+import { db } from "../../db";
 import { cookingTerms } from "@shared/schema";
-import CookingTermsService from "../services/cooking-terms.service";
-import { asyncHandler } from "../middleware/error.middleware";
-import { termDetector } from "../services/term-detector.service";
+import CookingTermsService from "../../services/cooking-terms.service";
+import { asyncHandler } from "../../middleware/error.middleware";
+import { termDetector } from "../../services/term-detector.service";
 
 const router = Router();
 

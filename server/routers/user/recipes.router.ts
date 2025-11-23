@@ -1,20 +1,20 @@
 import { Router, Request, Response } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
-import { storage } from "../storage/index";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
+import { storage } from "../../storage/index";
 import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { openai } from "../integrations/openai";
-import { batchedApiLogger } from "../utils/batchedApiLogger";
-import rateLimiters from "../middleware/rateLimit";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { openai } from "../../integrations/openai";
+import { batchedApiLogger } from "../../utils/batchedApiLogger";
+import rateLimiters from "../../middleware/rateLimit";
 import {
   AIError,
   handleOpenAIError,
   retryWithBackoff,
   createErrorResponse,
   formatErrorForLogging
-} from "../utils/ai-error-handler";
-import { getCircuitBreaker } from "../utils/circuit-breaker";
+} from "../../utils/ai-error-handler";
+import { getCircuitBreaker } from "../../utils/circuit-breaker";
 
 const router = Router();
 

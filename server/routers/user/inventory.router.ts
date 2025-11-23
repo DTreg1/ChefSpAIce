@@ -1,17 +1,17 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { storage } from "../storage/index";
+import { storage } from "../../storage/index";
 import { insertUserInventorySchema, type UserInventory as FoodItem } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { batchedApiLogger } from "../utils/batchedApiLogger";
-import { validateBody } from "../middleware";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { batchedApiLogger } from "../../utils/batchedApiLogger";
+import { validateBody } from "../../middleware";
 import axios from "axios";
-import { openai } from "../integrations/openai";
-import rateLimiters from "../middleware/rateLimit";
+import { openai } from "../../integrations/openai";
+import rateLimiters from "../../middleware/rateLimit";
 // USDA FoodData Central integration
-import { searchUSDAFoods, getFoodByFdcId } from "../integrations/usda";
-import { searchUSDAFoodsCached } from "../utils/usdaCache";
+import { searchUSDAFoods, getFoodByFdcId } from "../../integrations/usda";
+import { searchUSDAFoodsCached } from "../../utils/usdaCache";
 
 const router = Router();
 

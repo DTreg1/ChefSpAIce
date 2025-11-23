@@ -6,10 +6,10 @@
  */
 
 import { Router, Request, Response } from "express";
-import { storage } from "../storage/index";
-import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../middleware/oauth.middleware";
-import { asyncHandler } from "../middleware/error.middleware";
-import { ApiError } from "../utils/apiError";
+import { storage } from "../../storage/index";
+import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import { asyncHandler } from "../../middleware/error.middleware";
+import { ApiError } from "../../utils/apiError";
 
 const router = Router();
 

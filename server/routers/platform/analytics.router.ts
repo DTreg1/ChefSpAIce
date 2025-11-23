@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
-import { storage } from "../storage/index";
-import { analyticsRateLimit } from "../middleware";
-import { asyncHandler } from "../middleware/error.middleware";
-import { getAuthenticatedUserId } from "../middleware/oauth.middleware";
+import { storage } from "../../storage/index";
+import { analyticsRateLimit } from "../../middleware";
+import { asyncHandler } from "../../middleware/error.middleware";
+import { getAuthenticatedUserId } from "../../middleware/oauth.middleware";
 import { insertWebVitalSchema, insertAnalyticsEventSchema } from "@shared/schema";
-import { retryWithBackoff } from "../utils/retry-handler";
+import { retryWithBackoff } from "../../utils/retry-handler";
 
 const router = Router();
 

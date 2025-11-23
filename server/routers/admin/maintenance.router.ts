@@ -6,13 +6,13 @@
  */
 
 import { Router } from "express";
-import { isAuthenticated, adminOnly } from "../middleware/oauth.middleware";
-import { storage } from "../storage/index";
+import { isAuthenticated, adminOnly } from "../../middleware/oauth.middleware";
+import { storage } from "../../storage/index";
 import { 
   predictiveMaintenanceService,
   MONITORED_COMPONENTS,
   METRIC_TYPES
-} from "../services/predictive-maintenance.service";
+} from "../../services/predictive-maintenance.service";
 import { z } from "zod";
 import { 
   insertSystemMetricSchema,

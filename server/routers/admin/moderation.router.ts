@@ -1,11 +1,11 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
 import { z } from "zod";
-import { storage } from "../storage/index";
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { validateBody, validateQuery } from "../middleware";
-import { asyncHandler } from "../middleware/error.middleware";
-import { ModerationService } from "../services/moderation.service";
+import { storage } from "../../storage/index";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { validateBody, validateQuery } from "../../middleware";
+import { asyncHandler } from "../../middleware/error.middleware";
+import { ModerationService } from "../../services/moderation.service";
 import type { InsertModerationLog, InsertBlockedContent, InsertModerationAppeal } from "@shared/schema";
 
 const router = Router();

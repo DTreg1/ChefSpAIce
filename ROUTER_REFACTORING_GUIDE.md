@@ -13,30 +13,43 @@ ChefSpAIce currently has **49 router files** in a flat directory structure with 
 
 ```
 server/routers/
-├── user/                 # User-facing features
-│   ├── inventory.router.ts
-│   ├── recipes.router.ts  
+├── user/
+│   ├── auth.router.ts (from oauth.router.ts)
+│   ├── inventory.router.ts (consolidated from both inventory files)
+│   ├── recipes.router.ts
 │   ├── meal-planning.router.ts
-│   ├── chat.router.ts
-│   ├── profile.router.ts
-│   └── shopping.router.ts
-├── admin/                # Administrative endpoints
-│   ├── dashboard.router.ts
-│   ├── users.router.ts
-│   ├── moderation.router.ts
-│   ├── experiments.router.ts
-│   └── billing.router.ts
-├── ai/                   # Consolidated AI/ML services
-│   ├── generation.router.ts
-│   ├── analysis.router.ts
-│   ├── vision.router.ts
-│   └── voice.router.ts
-├── platform/             # System-wide features
+│   ├── nutrition.router.ts
+│   ├── appliances.router.ts
+│   ├── cooking-terms.router.ts
+│   ├── profile.router.ts (new - consolidate user-related endpoints)
+│   ├── notifications.router.ts (merge notifications + push-tokens)
+│   └── feedback.router.ts
+├── admin/
+│   ├── dashboard.router.ts (from admin.router.ts)
 │   ├── analytics.router.ts
-│   ├── notifications.router.ts
-│   ├── health.router.ts
-│   └── batch.router.ts
-└── index.ts             # Main router composition
+│   ├── activity-logs.router.ts
+│   ├── metrics.router.ts (from ai-metrics.router.ts)
+│   ├── experiments.router.ts (merge ab-testing + cohorts)
+│   ├── maintenance.router.ts
+│   └── pricing.router.ts
+├── ai/
+│   ├── chat.router.ts (merge chat + ai-assistant)
+│   ├── writing.router.ts (consolidate both writing routers)
+│   ├── content.router.ts (merge email-drafting + summarization + excerpt)
+│   ├── vision.router.ts (merge face-detection + ocr + alt-text + images)
+│   ├── audio.router.ts (merge voice-commands + transcriptions)
+│   ├── translation.router.ts
+│   ├── analysis.router.ts (merge sentiment + insights + predictions + trends)
+│   ├── moderation.router.ts (merge moderation + fraud)
+│   ├── search.router.ts (merge mlRouter + natural-query + extraction)
+│   └── recommendations.router.ts
+├── platform/
+│   ├── forms.router.ts (merge autocomplete + validation + autosave)
+│   ├── notifications.router.ts (intelligent-notifications)
+│   ├── batch.router.ts
+│   ├── scheduling.router.ts
+│   └── routing.router.ts (from ticket-routing)
+└── index.ts (updated registration)
 ```
 
 ## Refactoring Tasks

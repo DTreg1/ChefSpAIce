@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
 import { eq, and } from "drizzle-orm";
-import { db } from "../db";
+import { db } from "../../db";
 import { pushTokens } from "@shared/schema";
-import { isAuthenticated, adminOnly } from "../middleware/oauth.middleware";
+import { isAuthenticated, adminOnly } from "../../middleware/oauth.middleware";
 import crypto from "crypto";
-import PushStatusService from "../services/push-status.service";
+import PushStatusService from "../../services/push-status.service";
 
 const router = Router();
 

@@ -1,10 +1,10 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
 import { eq, desc, and, isNull } from "drizzle-orm";
-import { db } from "../db";
+import { db } from "../../db";
 import { notificationHistory } from "@shared/schema";
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { storage } from "../storage/index";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { storage } from "../../storage/index";
 
 const router = Router();
 

@@ -11,11 +11,11 @@
 
 import { Router, Request, Response } from "express";
 // Use OAuth authentication middleware
-import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
-import { openai } from "../integrations/openai";
-import { storage } from "../storage/index";
-import { batchedApiLogger } from "../utils/batchedApiLogger";
-import rateLimiters from "../middleware/rateLimit";
+import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import { openai } from "../../integrations/openai";
+import { storage } from "../../storage/index";
+import { batchedApiLogger } from "../../utils/batchedApiLogger";
+import rateLimiters from "../../middleware/rateLimit";
 import {
   AIError,
   AIErrorCode,
@@ -23,9 +23,9 @@ import {
   retryWithBackoff,
   createErrorResponse,
   formatErrorForLogging
-} from "../utils/ai-error-handler";
-import { getCircuitBreaker } from "../utils/circuit-breaker";
-import { termDetector } from "../services/term-detector.service";
+} from "../../utils/ai-error-handler";
+import { getCircuitBreaker } from "../../utils/circuit-breaker";
+import { termDetector } from "../../services/term-detector.service";
 import type { Message } from "@shared/schema";
 
 const router = Router();

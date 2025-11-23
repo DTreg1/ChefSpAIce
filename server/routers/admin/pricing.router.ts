@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { storage } from "../storage/index";
+import { storage } from "../../storage/index";
 import { insertPricingRulesSchema, insertPriceHistorySchema, insertPricingPerformanceSchema } from "@shared/schema";
 import OpenAI from "openai";
 import * as tf from "@tensorflow/tfjs-node";

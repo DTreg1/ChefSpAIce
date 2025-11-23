@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { storage } from "../storage/index";
+import { storage } from "../../storage/index";
 import { 
   type UserAppliance,
   type UserAppliance as Appliance,
@@ -8,7 +8,7 @@ import {
   type ApplianceLibrary
 } from "@shared/schema";
 // Use OAuth authentication middleware
-import { isAuthenticated } from "../middleware/oauth.middleware";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
 
 const router = Router();
 
