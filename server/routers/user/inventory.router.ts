@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../../storage/index";
-import { insertUserInventorySchema, type UserInventory as FoodItem } from "@shared/schema";
+import { insertUserInventorySchema, insertShoppingListItemSchema, type UserInventory as FoodItem } from "@shared/schema";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../../middleware/oauth.middleware";
 import { batchedApiLogger } from "../../utils/batchedApiLogger";
@@ -418,7 +418,7 @@ router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middle
     await batchedApiLogger.logApiUsage(userId, {
       apiName: "barcode",
       endpoint: "search",
-      queryParams: `barcode=${barcode}`,
+      method: "GET",
       statusCode: 200,
       success: true,
     });
@@ -431,8 +431,8 @@ router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middle
     barcodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
 
     res.json(result);
-  } catch (error: unknown) {
-    if (error.response?.status === 404) {
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
       return res.status(404).json({ error: "Product not found" });
     }
     console.error("Barcode search error:", error instanceof Error ? error.message : String(error));
@@ -570,6 +570,355 @@ router.put("/food-images", isAuthenticated, async (req: Request, res: Response) 
   } catch (error) {
     console.error("Error updating food image:", error);
     res.status(500).json({ error: "Failed to update image" });
+  }
+});
+
+// ==================== SHOPPING LIST ENDPOINTS ====================
+// These endpoints handle shopping list management, including grouped items
+
+/**
+ * GET /shopping-list/items
+ * 
+ * Retrieves all shopping list items for the user.
+ * 
+ * Returns: Shopping list items grouped by category
+ */
+router.get("/shopping-list/items", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const shoppingData = await storage.user.inventory.getGroupedShoppingItems(userId);
+    
+    // Compute additional metrics that frontend expects
+    const totalItems = shoppingData.items?.length || 0;
+    const checkedItems = (shoppingData.items?.filter((i: any) => i.isPurchased) ?? []).length;
+    
+    res.json({
+      ...shoppingData,
+      totalItems,
+      checkedItems,
+    });
+  } catch (error) {
+    console.error("Error fetching shopping list:", error);
+    res.status(500).json({ error: "Failed to fetch shopping list" });
+  }
+});
+
+/**
+ * POST /shopping-list/items
+ * 
+ * Adds an item to the shopping list.
+ * 
+ * Request Body:
+ * - name: String (required) - Item name
+ * - quantity: String (required) - Item quantity
+ * - unit: String (optional) - Unit of measurement
+ * - category: String (optional) - Item category
+ * - recipeId: String (optional) - Associated recipe ID
+ * - recipeTitle: String (optional) - Associated recipe title
+ * - notes: String (optional) - Item notes
+ * - addedFrom: String (optional) - Source ('manual', 'recipe', 'inventory')
+ */
+router.post("/shopping-list/items", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    // Support both 'ingredient' and 'name' fields for backward compatibility
+    const itemData = {
+      ...req.body,
+      name: req.body.name || req.body.ingredient,
+      quantity: req.body.quantity || "1",
+      isPurchased: false,
+    };
+    
+    // Remove 'ingredient' field if it exists
+    delete itemData.ingredient;
+    delete itemData.isChecked; // Use isPurchased instead
+    
+    // Basic validation - require name and quantity
+    if (!itemData.name) {
+      return res.status(400).json({ error: "Item name is required" });
+    }
+    
+    // Create a minimal valid item for storage
+    const shoppingItem = {
+      userId,
+      name: itemData.name,
+      quantity: String(itemData.quantity || "1"), // Ensure quantity is a string
+      unit: itemData.unit || undefined,
+      category: itemData.category || undefined,
+      isPurchased: false,
+      recipeId: itemData.recipeId || undefined,
+      recipeTitle: itemData.recipeTitle || undefined,
+      notes: itemData.notes || undefined,
+      addedFrom: itemData.addedFrom || undefined,
+      price: itemData.price ? Number(itemData.price) : undefined,
+    };
+    
+    const item = await storage.user.inventory.createShoppingItem(shoppingItem);
+    
+    res.json(item);
+  } catch (error) {
+    console.error("Error adding shopping list item:", error);
+    res.status(500).json({ error: "Failed to add shopping list item" });
+  }
+});
+
+/**
+ * PUT /shopping-list/items/:id
+ * 
+ * Updates a shopping list item (typically to toggle checked status).
+ * 
+ * Path Parameters:
+ * - id: String - Shopping list item ID
+ */
+router.put("/shopping-list/items/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const itemId = req.params.id;
+    
+    // Verify item ownership
+    const items = await storage.user.inventory.getShoppingItems(userId);
+    const item = items.find((i: any) => i.id === itemId);
+    
+    if (!item) {
+      return res.status(404).json({ error: "Shopping list item not found" });
+    }
+    
+    // Toggle checked status by default, or accept specific updates
+    const updates = Object.keys(req.body).length > 0 
+      ? req.body 
+      : { isChecked: !item.isChecked };
+    
+    const updated = await storage.user.inventory.updateShoppingItem(userId, itemId, updates);
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating shopping list item:", error);
+    res.status(500).json({ error: "Failed to update shopping list item" });
+  }
+});
+
+/**
+ * DELETE /shopping-list/items/:id
+ * 
+ * Removes an item from the shopping list.
+ */
+router.delete("/shopping-list/items/:id", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const itemId = req.params.id;
+    
+    // Verify ownership
+    const items = await storage.user.inventory.getShoppingItems(userId);
+    const existing = items.find((item: any) => item.id === itemId);
+    
+    if (!existing) {
+      return res.status(404).json({ error: "Shopping list item not found" });
+    }
+    
+    await storage.user.inventory.deleteShoppingItem(userId, itemId);
+    res.json({ message: "Shopping list item deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting shopping list item:", error);
+    res.status(500).json({ error: "Failed to delete shopping list item" });
+  }
+});
+
+/**
+ * POST /shopping-list/add-missing
+ * 
+ * Adds missing recipe ingredients to the shopping list.
+ * 
+ * Request Body:
+ * - recipeId: String (optional) - Recipe ID
+ * - ingredients: Array<String> (required) - List of ingredients to add
+ */
+router.post("/shopping-list/add-missing", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const { recipeId, ingredients } = req.body;
+    
+    if (!ingredients || !Array.isArray(ingredients)) {
+      return res.status(400).json({ error: "Ingredients array is required" });
+    }
+    
+    const items = await Promise.all(
+      ingredients.map((ingredient: string) =>
+        storage.user.inventory.createShoppingItem({
+          userId,
+          name: ingredient,
+          quantity: "1",
+          recipeId,
+          isChecked: false,
+        })
+      )
+    );
+    
+    res.json(items);
+  } catch (error) {
+    console.error("Error adding missing ingredients:", error);
+    res.status(500).json({ error: "Failed to add missing ingredients" });
+  }
+});
+
+/**
+ * DELETE /shopping-list/clear-checked
+ * 
+ * Removes all checked items from the shopping list.
+ */
+router.delete("/shopping-list/clear-checked", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const items = await storage.user.inventory.getShoppingItems(userId);
+    const checkedItems = items.filter((item: any) => item.isChecked);
+    
+    for (const item of checkedItems) {
+      await storage.user.inventory.deleteShoppingItem(userId, item.id);
+    }
+    
+    res.json({ 
+      message: `Cleared ${checkedItems.length} checked items`,
+      count: checkedItems.length 
+    });
+  } catch (error) {
+    console.error("Error clearing checked items:", error);
+    res.status(500).json({ error: "Failed to clear checked items" });
+  }
+});
+
+/**
+ * POST /shopping-list/generate-from-meal-plans
+ * 
+ * Generates a shopping list from meal plans within a date range.
+ * 
+ * Request Body:
+ * - startDate: String - ISO date string
+ * - endDate: String - ISO date string
+ */
+router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const { startDate, endDate } = req.body;
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Start and end dates are required" });
+    }
+    
+    // Get meal plans in range
+    const mealPlans = await storage.user.recipes.getMealPlans(userId, startDate, endDate);
+    
+    // Extract unique ingredients from all recipes
+    const ingredientsSet = new Set<string>();
+    for (const plan of mealPlans) {
+      if (plan.recipe?.ingredients) {
+        plan.recipe.ingredients.forEach((ing: string) => ingredientsSet.add(ing));
+      }
+    }
+    
+    // Add ingredients to shopping list
+    const items = await Promise.all(
+      Array.from(ingredientsSet).map((ingredient) =>
+        storage.user.inventory.createShoppingItem({
+          userId,
+          name: ingredient,
+          quantity: "1",
+          isChecked: false,
+        })
+      )
+    );
+    
+    res.json({
+      message: `Added ${items.length} items to shopping list`,
+      items,
+    });
+  } catch (error) {
+    console.error("Error generating shopping list from meal plans:", error);
+    res.status(500).json({ error: "Failed to generate shopping list" });
+  }
+});
+
+// ==================== BATCH OPERATIONS ====================
+/**
+ * POST /inventory/batch
+ * 
+ * Performs batch operations on inventory items.
+ * 
+ * Request Body:
+ * - operation: String - "create" or "delete"
+ * - type: String - Type of items to operate on
+ * - items: Array - Items to process
+ */
+router.post("/inventory/batch", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const { operation, type, items, filter } = req.body || {};
+    
+    switch (operation) {
+      case "create": {
+        if (type === "shopping-list") {
+          // Batch add to shopping list
+          const { recipeId, ingredients } = req.body || {};
+          if (!ingredients || !Array.isArray(ingredients)) {
+            return res.status(400).json({ error: "Ingredients array is required" });
+          }
+          
+          const createdItems = await Promise.all(
+            ingredients.map((ingredient: string) =>
+              storage.user.inventory.createShoppingItem({
+                userId,
+                name: ingredient,
+                quantity: "1",
+                recipeId,
+                isPurchased: false,
+              })
+            )
+          );
+          res.json({ data: createdItems, type: "shopping-list" });
+        } else {
+          res.status(400).json({ error: "Batch create only supported for shopping-list" });
+        }
+        break;
+      }
+      
+      case "delete": {
+        if (type === "shopping-list" && filter === "checked") {
+          // Clear checked items
+          const items = await storage.user.inventory.getShoppingItems(userId);
+          const checkedItems = items.filter((item: any) => item.isPurchased);
+          
+          for (const item of checkedItems) {
+            await storage.user.inventory.deleteShoppingItem(userId, item.id);
+          }
+          
+          res.json({ 
+            message: `Cleared ${checkedItems.length} checked items`,
+            count: checkedItems.length 
+          });
+        } else {
+          res.status(400).json({ error: "Batch delete only supported for checked shopping-list items" });
+        }
+        break;
+      }
+      
+      default:
+        res.status(400).json({ error: "Invalid batch operation" });
+    }
+  } catch (error) {
+    console.error("Error in batch operation:", error);
+    res.status(500).json({ error: "Failed to perform batch operation" });
   }
 });
 

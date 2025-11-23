@@ -5,7 +5,6 @@ import { createServer, type Server } from "http";
 // User routers
 import authRouter from "./user/oauth.router";
 import inventoryRouter from "./user/inventory.router";
-import unifiedInventoryRouter from "./user/unified-inventory.router";
 import recipesRouter from "./user/recipes.router";
 import chatRouter from "./user/chat.router";
 import chatStreamRouter from "./user/chat.router";

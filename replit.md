@@ -14,6 +14,19 @@ The frontend is built with React 18, TypeScript, Vite, and TailwindCSS with shad
 ### Backend Architecture
 The backend is an Express.js RESTful API, organized into domain-specific routers with middleware for authentication, rate limiting, and error handling. Server-Sent Events (SSE) are used for streaming AI responses. Authentication supports Replit Auth (development), OAuth (Google, GitHub, Twitter/X, Apple), and email/password, with session-based management and user-scoped data isolation.
 
+#### Router Organization (November 2024)
+The router architecture has been refactored into a hierarchical structure:
+- **user/** - User-facing features (inventory, recipes, meal planning, shopping lists)
+- **admin/** - Administrative functions
+- **platform/** - Platform-wide services
+- **ai/** - AI/ML endpoints consolidated into 4 specialized routers:
+  - generation.router.ts - Recipe and content generation
+  - analysis.router.ts - Nutrition and image analysis
+  - vision.router.ts - OCR and receipt processing
+  - voice.router.ts - Voice commands and TTS
+
+Inventory management has been consolidated into a single inventory.router.ts combining all food item, storage location, shopping list, USDA lookup, barcode scanning, and AI enrichment functionality.
+
 ### Data Storage Architecture
 PostgreSQL, accessed via Drizzle ORM, is the primary data store. The schema is type-safe, defined in `shared/schema/*.ts` files, using Zod for runtime validation, foreign key relationships, and JSONB columns. Core tables include `users`, `food_items`, `recipes`, `meal_plans`, `shopping_list_items`, `chat_messages`, `push_tokens`, `appliance_library`, `user_appliances`, `cooking_terms`, and `activity_logs`. Data is isolated by `user_id`.
 
