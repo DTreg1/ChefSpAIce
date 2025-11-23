@@ -15,7 +15,16 @@ The frontend is built with React 18, TypeScript, Vite, and TailwindCSS with shad
 The backend is an Express.js RESTful API, organized into domain-specific routers with middleware for authentication, rate limiting, and error handling. Server-Sent Events (SSE) are used for streaming AI responses. Authentication supports Replit Auth (development), OAuth (Google, GitHub, Twitter/X, Apple), and email/password, with session-based management and user-scoped data isolation.
 
 ### Data Storage Architecture
-PostgreSQL, accessed via Drizzle ORM, is the primary data store. The schema is type-safe, defined in `shared/schema/*.ts` files, using Zod for runtime validation, foreign key relationships, and JSONB columns. Core tables include `users`, `food_items`, `recipes`, `meal_plans`, `shopping_list_items`, `chat_messages`, `push_tokens`, `appliance_library`, `user_appliances`, `cooking_terms`, and `activity_logs`. Data is isolated by `user_id`. The storage architecture is being refactored into a three-tier system: UserStorage, AdminStorage, and PlatformStorage, to improve organization and maintainability.
+PostgreSQL, accessed via Drizzle ORM, is the primary data store. The schema is type-safe, defined in `shared/schema/*.ts` files, using Zod for runtime validation, foreign key relationships, and JSONB columns. Core tables include `users`, `food_items`, `recipes`, `meal_plans`, `shopping_list_items`, `chat_messages`, `push_tokens`, `appliance_library`, `user_appliances`, `cooking_terms`, and `activity_logs`. Data is isolated by `user_id`.
+
+#### Three-Tier Storage Architecture (Completed November 2024)
+The storage architecture has been successfully refactored into a three-tier facade system:
+
+1. **UserStorage**: Handles user-specific data (food items, recipes, inventory, meal plans, chat, subscriptions)
+2. **AdminStorage**: Manages administrative functions (billing, notifications, security, experiments, support)
+3. **PlatformStorage**: Controls platform-wide operations (analytics, AI/ML, system, integrations, content)
+
+All tiers are composed through a central StorageRoot class accessible via `storage.user.*`, `storage.admin.*`, and `storage.platform.*`. Backward compatibility is maintained through root-level method proxies for seamless migration.
 
 ### System Design Choices
 - **UI/UX**: Component-based architecture with TailwindCSS and shadcn/ui for consistency and accessibility.
