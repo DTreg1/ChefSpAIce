@@ -137,7 +137,7 @@ export function mergeStorageModules<
   const modules = [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17]
     .filter(Boolean) as Record<string, any>[];
   
-  return composeStorageModules(base, ...modules);
+  return composeStorageModules(base, ...modules) as T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11 & T12 & T13 & T14 & T15 & T16 & T17 & T18;
 }
 
 /**
