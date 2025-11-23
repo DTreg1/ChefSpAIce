@@ -25,7 +25,7 @@ import emailDraftingRouter from "./email-drafting.router";
 import writingAssistantRouter from "./writing.router";
 import summarizationRouter from "./summarization.router";
 import { createExcerptRouter } from "./excerpt.router";
-import duplicatesRouter from "./duplicates.router";
+// import duplicatesRouter from "./duplicates.router"; // File doesn't exist
 import recommendationsRouter from "./recommendations.router";
 import naturalQueryRouter from "./natural-query.router";
 import { translationRouter } from "./translation.router";
@@ -91,7 +91,7 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   app.use("/api/writing", writingAssistantRouter); // Writing Assistant endpoints
   app.use("/api", summarizationRouter);         // Summarization endpoints
   app.use("/api/excerpts", createExcerptRouter(storage)); // Excerpt generation endpoints
-  app.use("/api/duplicates", duplicatesRouter);  // Duplicate detection endpoints
+  // app.use("/api/duplicates", duplicatesRouter);  // Duplicate detection endpoints - Router file doesn't exist
   app.use("/api", recommendationsRouter);       // Content recommendations endpoints
   app.use("/api/query", naturalQueryRouter);    // Natural language query endpoints
   app.use("/api", translationRouter);           // Translation endpoints
