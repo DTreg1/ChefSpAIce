@@ -650,7 +650,21 @@ router.post("/conversations", isAuthenticated, async (req: Request, res: Respons
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const { title } = req.body;
+    // Validate input
+    const createSchema = z.object({
+      title: z.string().min(1).max(200).optional(),
+      type: z.enum(["assistant", "recipe", "meal_planning"]).optional(),
+    });
+    
+    const validationResult = createSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid input",
+        details: validationResult.error.errors 
+      });
+    }
+    
+    const { title, type = "assistant" } = validationResult.data;
     const conversationTitle = title || "New Conversation";
     
     const conversation = await storage.user.chat.createConversation(userId, conversationTitle);
@@ -762,7 +776,22 @@ router.patch("/conversations/:id", isAuthenticated, async (req: Request, res: Re
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const { title, context, metadata } = req.body;
+    // Validate input with proper sanitization
+    const updateSchema = z.object({
+      title: z.string().min(1).max(200).trim().optional(),
+      context: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+      metadata: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+    });
+    
+    const validationResult = updateSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: "Invalid input",
+        details: validationResult.error.errors 
+      });
+    }
+    
+    const { title, context, metadata } = validationResult.data;
     const updated = await storage.user.chat.updateConversation(
       userId,
       req.params.id,
@@ -829,6 +858,145 @@ router.delete("/conversations/:conversationId/messages/:messageId", isAuthentica
   } catch (error) {
     console.error("Error deleting message:", error);
     res.status(500).json({ error: "Failed to delete message" });
+  }
+});
+
+/**
+ * GET /api/ai/generation/conversations/:id/messages/stream
+ * Stream a conversation response using Server-Sent Events
+ */
+router.get("/conversations/:id/messages/stream", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
+  let streamStarted = false;
+  let openaiStream: any = null;
+  
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      if (!streamStarted) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      return;
+    }
+    
+    if (!openai) {
+      if (!streamStarted) {
+        return res.status(503).json({ error: "AI service not configured" });
+      }
+      return;
+    }
+    
+    const { id } = req.params;
+    const { message } = req.query;
+    
+    // Validate message input
+    const messageSchema = z.string().min(1).max(2000);
+    const validationResult = messageSchema.safeParse(message);
+    
+    if (!validationResult.success) {
+      if (!streamStarted) {
+        return res.status(400).json({ 
+          error: "Invalid message", 
+          details: validationResult.error.errors 
+        });
+      }
+      return;
+    }
+    
+    const validatedMessage = validationResult.data;
+    
+    // Set up SSE headers before any async operations
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+    });
+    streamStarted = true;
+    
+    try {
+      // Save user message
+      await storage.user.chat.addMessage(userId, id, {
+        conversationId: id,
+        role: "user",
+        content: validatedMessage,
+      });
+      
+      // Get conversation history for context
+      const conversation = await storage.user.chat.getConversation(userId, id);
+      if (!conversation) {
+        res.write(`data: ${JSON.stringify({ error: "Conversation not found" })}\n\n`);
+        res.end();
+        return;
+      }
+      
+      // Prepare messages for OpenAI
+      const messages = [
+        {
+          role: "system" as const,
+          content: "You are a helpful AI assistant for a kitchen management app. Help users with recipes, meal planning, and cooking advice.",
+        },
+        ...conversation.messages.slice(-10).map(msg => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        })),
+        { role: "user" as const, content: validatedMessage },
+      ];
+      
+      // Stream AI response
+      openaiStream = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages,
+        max_tokens: 1000,
+        temperature: 0.7,
+        stream: true,
+      });
+      
+      let fullResponse = "";
+      let eventId = 0;
+      
+      for await (const chunk of openaiStream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          fullResponse += content;
+          res.write(`id: ${++eventId}\n`);
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+      
+      // Save AI response
+      await storage.user.chat.addMessage(userId, id, {
+        conversationId: id,
+        role: "assistant",
+        content: fullResponse,
+      });
+      
+      // Send completion event
+      res.write(`id: ${++eventId}\n`);
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      
+    } catch (streamError) {
+      console.error("Error during streaming:", streamError);
+      // Only write error if stream is still open
+      if (streamStarted && !res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`);
+      }
+    }
+    
+    // Always end the response
+    if (!res.writableEnded) {
+      res.end();
+    }
+  } catch (error) {
+    console.error("Error setting up stream:", error);
+    // Only send JSON response if headers haven't been sent
+    if (!streamStarted) {
+      return res.status(500).json({ error: "Failed to initialize stream" });
+    }
+    // If stream started, end it gracefully
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ error: "Stream setup failed" })}\n\n`);
+      res.end();
+    }
   }
 });
 
