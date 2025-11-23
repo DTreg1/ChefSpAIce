@@ -14,6 +14,7 @@ import authRouter from "./user/oauth.router";
 import inventoryRouter from "./user/inventory.router";
 import inventoryRouterV1 from "./user/inventory.router.v1";
 import recipesRouter from "./user/recipes.router";
+import recipesRouterV1 from "./user/recipes.router.v1";
 import chatRouter from "./user/chat.router";
 import chatStreamRouter from "./user/chat.router";
 import mealPlanningRouter from "./user/meal-planning.router";
@@ -108,9 +109,8 @@ export async function registerModularRoutesV1(app: any): Promise<Server> {
   // RECIPES & CHAT
   // ============================================
   
-  v1Router.use("/recipes", recipesRouter);
-  v1Router.use("/chats", chatRouter);
-  v1Router.use("/chats", chatStreamRouter); // SSE streaming
+  // Use the new RESTful recipes and chat router
+  v1Router.use(recipesRouterV1);
   
   // ============================================
   // MEAL PLANNING & SHOPPING
