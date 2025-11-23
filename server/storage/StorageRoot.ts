@@ -16,7 +16,9 @@ export class StorageRoot {
   public readonly admin: AdminStorage;
   public readonly platform: PlatformStorage;
 
-  constructor() {
+  constructor(db?: any) {
+    // db parameter is optional for compatibility but not used
+    // since facades import db directly
     this.user = new UserStorage();
     this.admin = new AdminStorage();
     this.platform = new PlatformStorage();
