@@ -71,29 +71,33 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
     // Shopping list standardization (v1 paths)
     if (originalPath.match(/^\/api\/v1\/shopping-list\/items\/.+$/)) {
       isLegacyPath = true;
-      const itemId = originalPath.split('/').pop();
+      const pathParts = originalPath.split('/');
       if (originalPath.includes('/toggle')) {
-        newPath = `/api/v1/shopping-lists/default/items/${itemId?.replace('/toggle', '')}`;
+        // Extract item ID (comes before /toggle)
+        const itemId = pathParts[pathParts.length - 2]; // Get the ID before 'toggle'
+        newPath = `/api/v1/shopping-list/items/${itemId}`;
+        // The PATCH method with toggle will be handled by requestTransformMiddleware
       } else {
-        newPath = `/api/v1/shopping-lists/default/items/${itemId}`;
+        const itemId = pathParts[pathParts.length - 1];
+        newPath = `/api/v1/shopping-list/items/${itemId}`;
       }
     }
     else if (originalPath.match(/^\/api\/v1\/shopping-list\/.+$/)) {
       isLegacyPath = true;
       const suffix = originalPath.replace('/api/v1/shopping-list', '');
+      // Keep existing single-list semantics - don't transform to nested resources yet
+      // The routers will need to be updated to support the new nested structure
       if (suffix === '/clear-checked') {
-        newPath = '/api/v1/shopping-lists/default/items';
-        additionalQueryParams = 'status=checked';
+        newPath = '/api/v1/shopping-list/clear-checked';
       } else if (suffix === '/generate-from-meal-plans') {
-        newPath = '/api/v1/shopping-lists/default/items/import';
-        additionalQueryParams = 'source=meal-plans';
+        newPath = '/api/v1/shopping-list/generate-from-meal-plans';
       } else if (suffix === '/add-missing') {
-        newPath = '/api/v1/shopping-lists/default/items/bulk';
+        newPath = '/api/v1/shopping-list/add-missing';
       } else if (suffix === '/batch') {
-        newPath = '/api/v1/shopping-lists/default/items/batch';
+        newPath = '/api/v1/shopping-list/batch';
       } else {
         const listId = suffix.substring(1); // Remove leading /
-        newPath = `/api/v1/shopping-lists/${listId}`;
+        newPath = `/api/v1/shopping-list/${listId}`;
       }
     }
     
@@ -153,24 +157,24 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
     // Shopping list with nested paths (must check items path first)
     else if (originalPath.match(/^\/api\/shopping-list\/items\/.+$/)) {
       isLegacyPath = true;
-      const itemId = originalPath.split('/').pop();
-      newPath = `/api/v1/shopping-lists/default/items/${itemId}`;
+      const pathParts = originalPath.split('/');
+      const itemId = pathParts[pathParts.length - 1];
+      newPath = `/api/v1/shopping-list/items/${itemId}`;
     }
     // Shopping list with other nested paths
     else if (originalPath.match(/^\/api\/shopping-list\/.+$/)) {
       isLegacyPath = true;
       const suffix = originalPath.replace('/api/shopping-list', '');
+      // Keep existing single-list semantics
       if (suffix === '/clear-checked') {
-        newPath = '/api/v1/shopping-lists/default/items';
-        additionalQueryParams = 'status=checked';
+        newPath = '/api/v1/shopping-list/clear-checked';
       } else if (suffix === '/generate-from-meal-plans') {
-        newPath = '/api/v1/shopping-lists/default/items/import';
-        additionalQueryParams = 'source=meal-plans';
+        newPath = '/api/v1/shopping-list/generate-from-meal-plans';
       } else if (suffix === '/add-missing') {
-        newPath = '/api/v1/shopping-lists/default/items/bulk';
+        newPath = '/api/v1/shopping-list/add-missing';
       } else {
         const listId = suffix.substring(1); // Remove leading /
-        newPath = `/api/v1/shopping-lists/${listId}`;
+        newPath = `/api/v1/shopping-list/${listId}`;
       }
     }
     // Admin routes with IDs

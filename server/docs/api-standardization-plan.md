@@ -368,13 +368,16 @@ GET /api/v1/ai/conversations/:id/messages?stream=true
 
 ## 6. Implementation Plan
 
-### Phase 1: Update Backward Compatibility Middleware (Week 1)
+### Phase 1: Update Backward Compatibility Middleware (Week 1) ✅ COMPLETED
 - Add new legacy path mappings
 - Implement request transformation for new patterns
 - Add deprecation warnings for old endpoints
+- **Note**: Currently maintaining existing single-resource semantics (e.g., single shopping list, single chat) to ensure backward compatibility without breaking changes
 
-### Phase 2: Update Router Implementations (Week 2-3)
-- Refactor routers to support new RESTful patterns
+### Phase 2: Update Router Implementations (Week 2-3) 🚧 PENDING
+- Refactor routers to support new RESTful patterns with proper resource nesting
+- Add support for multiple shopping lists, chats, etc.
+- Implement proper resource ID handling
 - Maintain backward compatibility through middleware
 - Update validation schemas
 
@@ -393,29 +396,56 @@ GET /api/v1/ai/conversations/:id/messages?stream=true
 - Clean up backward compatibility middleware
 - Archive old documentation
 
-## 7. Breaking Changes Summary
+## 7. Current Backward Compatibility Approach
 
-### Minimal Breaking Changes:
-Most changes will be handled through backward compatibility middleware, but these require client updates:
+### Phase 1 Implementation (Current)
+To ensure zero breaking changes, the current implementation:
 
-1. **Shopping List Item Operations**:
-   - Now require `listId` in path
-   - Items are nested under specific lists
+1. **Maintains Single-Resource Semantics**:
+   - Shopping list endpoints continue to work with implicit single list
+   - Chat endpoints continue to work with implicit single chat
+   - No requirement for list/chat IDs in legacy endpoints
 
-2. **Chat Messages**:
-   - Now require `chatId` in path
-   - Messages are nested under specific chats
+2. **Progressive Enhancement**:
+   - Legacy endpoints redirect to existing v1 endpoints
+   - Request transformations handle parameter normalization
+   - Query parameter standardization for consistency
 
-3. **AI Streaming**:
-   - Stream flag moved to query parameter
-   - Consistent SSE implementation
+3. **Conservative Path Mappings**:
+   - `/api/shopping-list/*` → `/api/v1/shopping-list/*` (not `/shopping-lists/:id/*`)
+   - `/api/chat/*` → `/api/v1/chat/*` (not `/chats/:id/*`)
+   - Preserves exact functionality of existing API
 
-### Non-Breaking Changes:
-- Resource naming (handled by middleware)
-- Verb removal from URLs (redirected)
-- Query parameter standardization (both formats accepted)
+### Phase 2 (Future Router Updates)
+Once routers are updated to support multiple resources:
 
-## 8. Benefits of Standardization
+1. **Shopping List Operations**:
+   - Will support multiple lists with explicit IDs
+   - Default list concept for backward compatibility
+   - Nested resource patterns: `/shopping-lists/:listId/items`
+
+2. **Chat Operations**:
+   - Will support multiple chat sessions
+   - Default chat for backward compatibility
+   - Nested messages: `/chats/:chatId/messages`
+
+3. **Migration Path**:
+   - Middleware will map legacy single-resource to default resources
+   - New clients can use full RESTful patterns
+   - Old clients continue working unchanged
+
+## 8. Breaking Changes Summary
+
+### Current Implementation (Phase 1): NO Breaking Changes
+All legacy endpoints are fully supported through backward compatibility middleware with no functional changes required from clients.
+
+### Future Implementation (Phase 2): Minimal Breaking Changes
+When routers are updated to support full RESTful patterns:
+- New endpoints will be available for multi-resource support
+- Legacy endpoints will map to default resources
+- Gradual migration path for clients
+
+## 9. Benefits of Standardization
 
 1. **Consistency**: Predictable API patterns across all resources
 2. **Scalability**: Easier to add new resources following same patterns

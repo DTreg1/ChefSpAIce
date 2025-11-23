@@ -56,17 +56,12 @@ export const API_CONFIG = {
     // === NEW STANDARDIZED MAPPINGS ===
     // Non-RESTful to RESTful transformations
     
-    // Shopping List Standardization (singular to plural)
-    '/api/v1/shopping-list': '/api/v1/shopping-lists',
-    '/api/shopping-list': '/api/v1/shopping-lists',
-    '/api/v1/shopping-list/items': '/api/v1/shopping-lists/default/items',
-    '/api/shopping-list/items': '/api/v1/shopping-lists/default/items',
-    '/api/v1/shopping-list/add-missing': '/api/v1/shopping-lists/default/items/bulk',
-    '/api/shopping-list/add-missing': '/api/v1/shopping-lists/default/items/bulk',
-    '/api/v1/shopping-list/clear-checked': '/api/v1/shopping-lists/default/items?status=checked',
-    '/api/shopping-list/clear-checked': '/api/v1/shopping-lists/default/items?status=checked',
-    '/api/v1/shopping-list/generate-from-meal-plans': '/api/v1/shopping-lists/default/items/import?source=meal-plans',
-    '/api/shopping-list/generate-from-meal-plans': '/api/v1/shopping-lists/default/items/import?source=meal-plans',
+    // Shopping List Legacy Mappings (maintain single-list semantics)
+    '/api/shopping-list': '/api/v1/shopping-list',
+    '/api/shopping-list/items': '/api/v1/shopping-list/items',
+    '/api/shopping-list/add-missing': '/api/v1/shopping-list/add-missing',
+    '/api/shopping-list/clear-checked': '/api/v1/shopping-list/clear-checked',
+    '/api/shopping-list/generate-from-meal-plans': '/api/v1/shopping-list/generate-from-meal-plans',
     
     // Food & Inventory Action Endpoints
     '/api/v1/food/enrich': '/api/v1/food-items/enrichment',
@@ -80,15 +75,11 @@ export const API_CONFIG = {
     '/api/v1/food-images': '/api/v1/food-items/images',
     '/api/food-images': '/api/v1/food-items/images',
     
-    // Chat Standardization (nested messages)
-    '/api/v1/chat/messages': '/api/v1/chats/default/messages',
-    '/api/chat/messages': '/api/v1/chats/default/messages',
-    '/api/v1/chats/stream': '/api/v1/chats/default/messages?stream=true',
-    '/api/chats/stream': '/api/v1/chats/default/messages?stream=true',
-    '/api/v1/chats/health': '/api/v1/system/health/chats',
-    '/api/chats/health': '/api/v1/system/health/chats',
-    '/api/v1/chats/reset': '/api/v1/chats/default/messages',
-    '/api/chats/reset': '/api/v1/chats/default/messages',
+    // Chat Legacy Mappings (maintain existing structure)
+    '/api/chat/messages': '/api/v1/chat/messages',
+    '/api/chats/stream': '/api/v1/chats/stream',
+    '/api/chats/health': '/api/v1/chats/health',
+    '/api/chats/reset': '/api/v1/chats/reset',
     
     // Recipe Generation
     '/api/v1/recipe/generate': '/api/v1/recipes/generate',
