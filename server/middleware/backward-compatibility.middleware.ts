@@ -15,43 +15,83 @@ const deprecationUsage = new Map<string, number>();
  * Redirects old paths to new RESTful endpoints and logs deprecation warnings
  */
 export function backwardCompatibilityMiddleware(req: Request, res: Response, next: NextFunction) {
+  const originalUrl = req.url;
   const originalPath = req.path;
   const method = req.method;
+  const queryString = originalUrl.includes('?') ? originalUrl.substring(originalUrl.indexOf('?')) : '';
   
   // Check if this is a legacy path
   let isLegacyPath = false;
   let newPath = originalPath;
   
   // Check exact matches first
-  for (const [legacy, modern] of Object.entries(API_CONFIG.LEGACY_PATHS)) {
-    if (originalPath === legacy || originalPath.startsWith(legacy + '/') || originalPath.startsWith(legacy + '?')) {
+  if (API_CONFIG.LEGACY_PATHS[originalPath]) {
+    isLegacyPath = true;
+    newPath = API_CONFIG.LEGACY_PATHS[originalPath];
+  } else {
+    // Check for parameterized route matches
+    // Find the longest matching legacy path prefix
+    const matchingLegacyPath = Object.keys(API_CONFIG.LEGACY_PATHS)
+      .filter(oldPath => {
+        // Check if the current path starts with this legacy path followed by a slash
+        return originalPath.startsWith(oldPath + '/');
+      })
+      .sort((a, b) => b.length - a.length)[0]; // Get longest match
+    
+    if (matchingLegacyPath) {
       isLegacyPath = true;
-      newPath = originalPath.replace(legacy, modern);
-      break;
+      const mappedPath = API_CONFIG.LEGACY_PATHS[matchingLegacyPath as keyof typeof API_CONFIG.LEGACY_PATHS];
+      const pathSuffix = originalPath.slice(matchingLegacyPath.length);
+      newPath = mappedPath + pathSuffix;
     }
   }
   
-  // Handle special cases for paths with parameters
+  // Handle special cases for paths with parameters that don't have exact legacy mappings
   if (!isLegacyPath) {
-    // Check patterns for inventory
-    if (originalPath.match(/^\/api\/food-items\/\d+$/)) {
+    // Inventory-related parameterized routes
+    if (originalPath.match(/^\/api\/inventories\/[\w-]+$/)) {
+      isLegacyPath = true;
+      newPath = originalPath.replace('/api/inventories', '/api/v1/inventories');
+    }
+    // Food items with IDs
+    else if (originalPath.match(/^\/api\/food-items\/[\w-]+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/food-items', '/api/v1/food-items');
     }
-    // Check patterns for FDC
+    // FDC food with IDs
     else if (originalPath.match(/^\/api\/fdc\/food\/[\w-]+$/)) {
       isLegacyPath = true;
-      newPath = originalPath.replace('/api/fdc/food', '/api/v1/food-data');
+      newPath = originalPath.replace('/api/fdc/food', '/api/v1/fdc/food');
     }
-    // Check patterns for recipes
+    // Recipes with IDs
     else if (originalPath.match(/^\/api\/recipes\/[\w-]+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/recipes', '/api/v1/recipes');
     }
-    // Check patterns for meal plans
+    // Meal plans with IDs
     else if (originalPath.match(/^\/api\/meal-plans\/[\w-]+$/)) {
       isLegacyPath = true;
       newPath = originalPath.replace('/api/meal-plans', '/api/v1/meal-plans');
+    }
+    // Shopping list items with IDs
+    else if (originalPath.match(/^\/api\/shopping-list\/items\/[\w-]+$/)) {
+      isLegacyPath = true;
+      newPath = originalPath.replace('/api/shopping-list/items', '/api/v1/shopping-list/items');
+    }
+    // Shopping list with IDs
+    else if (originalPath.match(/^\/api\/shopping-list\/[\w-]+$/)) {
+      isLegacyPath = true;
+      newPath = originalPath.replace('/api/shopping-list', '/api/v1/shopping-list');
+    }
+    // Admin routes with IDs
+    else if (originalPath.match(/^\/api\/admin\/[\w-\/]+$/)) {
+      isLegacyPath = true;
+      newPath = originalPath.replace('/api/admin', '/api/v1/admin');
+    }
+    // AI conversation messages
+    else if (originalPath.match(/^\/api\/ai\/conversations\/[\w-]+\/messages$/)) {
+      isLegacyPath = true;
+      newPath = originalPath.replace('/api/ai/conversations', '/api/v1/ai/conversations');
     }
   }
   
@@ -70,8 +110,8 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
     res.setHeader('X-Deprecation-Date', API_CONFIG.DEPRECATION_DATE);
     res.setHeader('X-New-Endpoint', `${method} ${newPath}`);
     
-    // Rewrite the request URL (path is derived from url automatically)
-    req.url = newPath;
+    // Rewrite the request URL with query string preserved
+    req.url = newPath + queryString;
   }
   
   next();
