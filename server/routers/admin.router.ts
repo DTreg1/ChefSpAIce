@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
 import { z } from "zod";
-import { userAuthStorage, analyticsStorage, systemStorage } from "../storage/index";
+import { userStorage, analyticsStorage, systemStorage } from "../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/oauth.middleware";
 import { validateBody, validateQuery, paginationQuerySchema } from "../middleware";
@@ -19,7 +19,7 @@ const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
     }
     
     // Check if user exists and has admin privileges
-    const user = await userAuthStorage.getUserById(userId);
+    const user = await userStorage.getUserById(userId);
     if (!user) {
       return res.status(403).json({ error: "Access denied - User not found" });
     }
@@ -54,7 +54,7 @@ router.get(
     try {
       const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = req.query;
       
-      const result = await userAuthStorage.getAllUsers(
+      const result = await userStorage.getAllUsers(
         Number(page),
         Number(limit),
         sortBy as string,
@@ -85,7 +85,7 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
-      const user = await userAuthStorage.getUserById(userId);
+      const user = await userStorage.getUserById(userId);
       
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -113,7 +113,7 @@ router.patch(
       delete updates.id;
       delete updates.createdAt;
       
-      const updatedUser = await userAuthStorage.updateUserPreferences(userId, updates);
+      const updatedUser = await userStorage.updateUserPreferences(userId, updates);
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -145,8 +145,8 @@ router.patch(
 
       // If demoting, check if this is the last admin
       if (newAdminStatus === false) {
-        const adminCount = await userAuthStorage.getAdminCount();
-        const targetUser = await userAuthStorage.getUserById(userId);
+        const adminCount = await userStorage.getAdminCount();
+        const targetUser = await userStorage.getUserById(userId);
         
         // If target user is currently an admin and we're demoting them
         if (targetUser?.isAdmin && adminCount <= 1) {
@@ -157,7 +157,7 @@ router.patch(
       }
 
       // Update admin status
-      const updatedUser = await userAuthStorage.updateUserAdminStatus(userId, newAdminStatus);
+      const updatedUser = await userStorage.updateUserAdminStatus(userId, newAdminStatus);
       
       res.json({
         success: true,
@@ -191,14 +191,14 @@ router.delete(
       }
 
       // Check if user exists
-      const userToDelete = await userAuthStorage.getUserById(userId);
+      const userToDelete = await userStorage.getUserById(userId);
       if (!userToDelete) {
         return res.status(404).json({ error: "User not found" });
       }
 
       // If deleting an admin, ensure it's not the last admin
       if (userToDelete.isAdmin) {
-        const adminCount = await userAuthStorage.getAdminCount();
+        const adminCount = await userStorage.getAdminCount();
         if (adminCount <= 1) {
           return res.status(403).json({ 
             error: "Cannot delete the last admin. Please promote another user first." 
@@ -207,7 +207,7 @@ router.delete(
       }
 
       // Delete the user and all their data
-      await userAuthStorage.deleteUser(userId);
+      await userStorage.deleteUser(userId);
       
       res.json({ 
         success: true,

@@ -91,7 +91,7 @@ export function composeStorageModules<T extends Record<string, any>>(
  * const storage = mergeStorageModules(
  *   legacyStorage,
  *   inventoryStorage,
- *   userAuthStorage,
+ *   userStorage,
  *   recipesStorage
  * );
  */

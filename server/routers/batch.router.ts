@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/error.middleware";
-import { inventoryStorage, recipesStorage, userAuthStorage, chatStorage, analyticsStorage, foodStorage } from "../storage/index";
+import { inventoryStorage, recipesStorage, userStorage, chatStorage, analyticsStorage, foodStorage } from "../storage/index";
 // Use OAuth authentication middleware
 import { isAuthenticated } from "../middleware/oauth.middleware";
 
@@ -157,7 +157,7 @@ async function processRequest(request: any, userId?: string): Promise<any> {
   
   // User preferences
   if (endpoint === '/api/user/preferences' && method === 'GET') {
-    return userAuthStorage.getUserPreferences(userId!);
+    return userStorage.getUserPreferences(userId!);
   }
   
   // Analytics endpoints

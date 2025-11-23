@@ -33,7 +33,7 @@
 
 // Import domain storage modules
 import { inventoryStorage } from "./domains/inventory.storage";
-import { userAuthStorage } from "./domains/user-auth.storage";
+import { userStorage } from "./domains/user.storage";
 import { recipesStorage } from "./domains/recipes.storage";
 import { chatStorage } from "./domains/chat.storage";
 import { AnalyticsStorage } from "./domains/analytics.storage";
@@ -98,7 +98,7 @@ const contentStorage = new ContentStorage();
  */
 export const storage = mergeStorageModules(
   inventoryStorage,        // Domain 1: Inventory management
-  userAuthStorage,         // Domain 2: User authentication & management  
+  userStorage,         // Domain 2: User authentication & management  
   recipesStorage,          // Domain 3: Recipes & meal planning
   chatStorage,             // Domain 4: Chat & conversations
   analyticsStorage,        // Domain 5: Analytics & metrics
@@ -120,7 +120,7 @@ export const storage = mergeStorageModules(
 // These ensure old method names still work with new implementations
 Object.assign(storage, {
   // Map legacy getUser to standard getUserById pattern
-  getUser: userAuthStorage.getUserById.bind(userAuthStorage),
+  getUser: userStorage.getUserById.bind(userStorage),
   
   // Shopping list methods are now in inventory domain
   getShoppingListItems: inventoryStorage.getShoppingItems.bind(inventoryStorage),
@@ -132,14 +132,14 @@ Object.assign(storage, {
   addMissingIngredientsToShoppingList: inventoryStorage.addMissingIngredientsToShoppingList.bind(inventoryStorage),
   
   // Notification preferences
-  upsertNotificationPreferences: userAuthStorage.updateUserNotificationPreferences.bind(userAuthStorage)
+  upsertNotificationPreferences: userStorage.updateUserNotificationPreferences.bind(userStorage)
 });
 
 // Export domain storage modules for direct import
 export { 
   // Core domains
   inventoryStorage,
-  userAuthStorage,
+  userStorage,
   recipesStorage,
   chatStorage,
   analyticsStorage,

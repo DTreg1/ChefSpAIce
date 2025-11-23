@@ -559,4 +559,4 @@ export class UserAuthDomainStorage implements IUserStorage {
 }
 
 // Export singleton instance
-export const userAuthStorage = new UserAuthDomainStorage();
+export const userStorage = new UserAuthDomainStorage();

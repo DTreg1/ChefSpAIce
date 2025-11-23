@@ -55,6 +55,21 @@ PostgreSQL, accessed via Drizzle ORM, serves as the primary data store. The sche
 
 ## Recent Updates
 
+### Storage Naming Simplified (November 23, 2025)
+
+**Status:** Completed ✅  
+**Changes Made:** Renamed UserAuthStorage to UserStorage for simplicity
+
+Successfully renamed storage components:
+- **File Renamed**: `user-auth.storage.ts` → `user.storage.ts`
+- **Class Renamed**: `UserAuthStorage` → `UserStorage`  
+- **Variable Renamed**: `userAuthStorage` → `userStorage`
+- **Interface Renamed**: `IUserAuthStorage` → `IUserStorage`
+
+**Result:** Application continues to run successfully with simplified naming convention.
+
+---
+
 ### Application Startup Fixed (November 23, 2025)
 
 **Status:** Completed ✅  
