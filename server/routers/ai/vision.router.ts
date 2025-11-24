@@ -11,7 +11,7 @@
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/auth.middleware";
 import { storage } from "../../storage/index";
 import { z } from "zod";
 import multer from "multer";
@@ -19,21 +19,21 @@ import Tesseract from "tesseract.js";
 import { getOpenAIClient } from "../../config/openai-config";
 import { faceDetectionService } from "../../services/faceDetection.service";
 import { generateAltText, analyzeAltTextQuality, generateAltTextSuggestions } from "../../services/alt-text-generator";
-import { rateLimiters } from "../../middleware/rateLimit";
+import { rateLimiters } from "../../middleware/rate-limit.middleware";
+import { circuitBreakers, executeWithBreaker } from "../../middleware/circuit-breaker.middleware";
 import {
   AIError,
   handleOpenAIError,
   createErrorResponse,
 } from "../../utils/ai-error-handler";
-import { getCircuitBreaker } from "../../utils/circuit-breaker";
 
 const router = Router();
 
 // Initialize OpenAI client
 const openai = getOpenAIClient();
 
-// Circuit breaker for OpenAI calls
-const openaiBreaker = getCircuitBreaker("openai-vision");
+// Use centralized circuit breaker
+const openaiBreaker = circuitBreakers.openaiVision;
 
 // Configure multer for file uploads
 const upload = multer({

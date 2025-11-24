@@ -1,40 +1,15 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
 import { z } from "zod";
 import { storage } from "../../storage/index";
-// Use OAuth authentication middleware
-import { isAuthenticated } from "../../middleware/oauth.middleware";
+// Import authentication and authorization middleware
+import { isAuthenticated } from "../../middleware/auth.middleware";
+import { isAdmin } from "../../middleware/rbac.middleware";
 import { validateBody, validateQuery, paginationQuerySchema } from "../../middleware";
 import { apiCache } from "../../utils/ApiCacheService";
 import { getCacheStats, invalidateCache, clearAllCache } from "../../utils/usdaCache";
 
 const router = Router();
-
-// Admin middleware - checks if user is admin
-const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    // Check if user exists and has admin privileges
-    const user = await storage.user.user.getUserById(userId);
-    if (!user) {
-      return res.status(403).json({ error: "Access denied - User not found" });
-    }
-    
-    // Check admin flag
-    if (!user.isAdmin) {
-      return res.status(403).json({ error: "Access denied - Admin privileges required" });
-    }
-    
-    next();
-  } catch (error) {
-    console.error("Admin authorization check failed:", error);
-    res.status(500).json({ error: "Authorization check failed" });
-  }
-};
 
 // Schema for admin users query with whitelisted sort columns
 const adminUsersQuerySchema = z.object({

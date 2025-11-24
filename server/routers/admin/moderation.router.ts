@@ -1,8 +1,10 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
 import { z } from "zod";
 import { storage } from "../../storage/index";
-import { isAuthenticated } from "../../middleware/oauth.middleware";
+// Import authentication and authorization middleware
+import { isAuthenticated } from "../../middleware/auth.middleware";
+import { isModerator } from "../../middleware/rbac.middleware";
 import { validateBody, validateQuery } from "../../middleware";
 import { asyncHandler } from "../../middleware/error.middleware";
 import { ModerationService } from "../../services/moderation.service";
@@ -10,36 +12,6 @@ import type { InsertModerationLog, InsertBlockedContent, InsertModerationAppeal 
 
 const router = Router();
 const moderationService = new ModerationService();
-
-// Admin middleware - checks if user has moderation privileges
-const isModerator = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    
-    // Check if user exists and has admin/moderator privileges
-    const user = await storage.admin.security.getUser(userId);
-    if (!user) {
-      return res.status(403).json({ error: "Access denied - User not found" });
-    }
-    
-    // For now, only admins can moderate
-    if (!user.isAdmin) {
-      return res.status(403).json({ error: "Access denied - Moderator privileges required" });
-    }
-    
-    next();
-  } catch (error) {
-    console.error("Moderator authorization check failed:", error);
-    res.status(500).json({ error: "Authorization check failed" });
-  }
-};
 
 // ==================== Moderation Check ====================
 

@@ -5,8 +5,9 @@
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated, adminOnly } from '../../middleware/oauth.middleware';
-import { getCircuitBreaker } from '../../utils/circuit-breaker';
+import { isAuthenticated } from '../../middleware/auth.middleware';
+import { adminOnly } from '../../middleware/rbac.middleware';
+import { circuitBreakers } from '../../middleware/circuit-breaker.middleware';
 import { db } from '../../db';
 import { sql } from 'drizzle-orm';
 import { subHours } from 'date-fns';
@@ -14,9 +15,9 @@ import { apiUsageLogs } from '@shared/schema';
 
 const router = Router();
 
-// Get circuit breaker instances (shared with other routers)
-const chatCircuitBreaker = getCircuitBreaker('openai-chat-standard');
-const recipeCircuitBreaker = getCircuitBreaker('openai-recipe-generation');
+// Get circuit breaker instances from centralized middleware
+const chatCircuitBreaker = circuitBreakers.openaiChat;
+const recipeCircuitBreaker = circuitBreakers.openaiRecipe;
 
 // In-memory error log for real-time monitoring
 interface ErrorLogEntry {

@@ -11,20 +11,19 @@
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/auth.middleware";
 import { storage } from "../../storage/index";
 import { z } from "zod";
 import OpenAI from "openai";
 import { getOpenAIClient } from "../../config/openai-config";
-import { getAuthenticatedUserId } from "../../middleware/oauth.middleware";
-import { rateLimiters } from "../../middleware/rateLimit";
+import { rateLimiters } from "../../middleware/rate-limit.middleware";
+import { circuitBreakers, executeWithBreaker } from "../../middleware/circuit-breaker.middleware";
 import {
   AIError,
   handleOpenAIError,
   retryWithBackoff,
   createErrorResponse,
 } from "../../utils/ai-error-handler";
-import { getCircuitBreaker } from "../../utils/circuit-breaker";
 import { syllable } from "syllable";
 import Sentiment from "sentiment";
 import rs from "text-readability";
@@ -37,8 +36,8 @@ const openai = getOpenAIClient();
 // Initialize NLP tools
 const sentiment = new Sentiment();
 
-// Circuit breaker for OpenAI calls
-const openaiBreaker = getCircuitBreaker("openai-generation");
+// Use centralized circuit breaker
+const openaiBreaker = circuitBreakers.openaiGeneration;
 
 // ==================== VALIDATION SCHEMAS ====================
 

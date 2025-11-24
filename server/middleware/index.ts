@@ -1,12 +1,24 @@
+// Authentication and OAuth
 export * from "./oauth.middleware";
+export * from "./auth.middleware";
+
+// Role-Based Access Control
+export * from "./rbac.middleware";
+
+// Error handling
 export * from "./error.middleware";
+
+// Validation
 export * from "./validation.middleware";
 
-// Import and re-export from the newer rate limit implementation
-export { default as rateLimiters, createRateLimiter } from "./rateLimit";
+// Rate limiting
+export * from "./rate-limit.middleware";
 
-// Export specific rate limiters as middleware for backwards compatibility
-// Import default rateLimiters directly for the middleware exports
+// Circuit breakers
+export * from "./circuit-breaker.middleware";
+
+// Legacy exports for backwards compatibility
+export { default as rateLimiters, createRateLimiter } from "./rateLimit";
 import rateLimitersInternal from "./rateLimit";
 export const apiRateLimit = rateLimitersInternal.general.middleware();
 export const analyticsRateLimit = rateLimitersInternal.general.middleware(); 
