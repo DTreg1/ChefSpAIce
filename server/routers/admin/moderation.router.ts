@@ -126,7 +126,7 @@ router.get(
     const { status, severity, contentType, page, limit } = req.query;
     
     // Get user to check if admin
-    const user = await storage.admin.security.getUser(userId);
+    const user = await storage.user.user.getUserById(userId);
     const isAdmin = user?.isAdmin || false;
     
     // Get moderation queue
@@ -285,7 +285,7 @@ router.get(
       }
       
       // Check if user owns the appeal or is admin
-      const user = await storage.admin.security.getUser(userId);
+      const user = await storage.user.user.getUserById(userId);
       if (appeal.userId !== userId && !user?.isAdmin) {
         return res.status(403).json({ error: "Access denied" });
       }

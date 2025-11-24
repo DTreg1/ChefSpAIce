@@ -29,20 +29,25 @@ router.get(
     try {
       const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = req.query;
       
-      const result = await storage.user.user.getAllUsers(
-        Number(page),
-        Number(limit),
-        sortBy as string,
-        sortOrder as string
-      );
+      // Get all users (method doesn't support pagination parameters)
+      const allUsers = await storage.user.user.getAllUsers();
+      
+      // Manual pagination
+      const pageNum = Number(page);
+      const limitNum = Number(limit);
+      const startIndex = (pageNum - 1) * limitNum;
+      const endIndex = startIndex + limitNum;
+      
+      const paginatedUsers = allUsers.slice(startIndex, endIndex);
+      const totalPages = Math.ceil(allUsers.length / limitNum);
       
       res.json({
-        users: result.data,
+        users: paginatedUsers,
         pagination: {
-          page: result.page,
-          limit: result.limit,
-          total: result.total,
-          totalPages: result.totalPages,
+          page: pageNum,
+          limit: limitNum,
+          total: allUsers.length,
+          totalPages: totalPages,
         },
       });
     } catch (error) {
