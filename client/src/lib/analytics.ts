@@ -67,10 +67,10 @@ const flushEvents = async () => {
     // Use sendBeacon for reliability
     if (navigator.sendBeacon) {
       const blob = new Blob([JSON.stringify({ events: eventsToSend })], { type: 'application/json' });
-      navigator.sendBeacon('/api/analytics/events', blob);
+      navigator.sendBeacon('/api/v1/analytics/events', blob);
     } else {
       // Fallback to fetch
-      await fetch('/api/analytics/events', {
+      await fetch('/api/v1/analytics/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ events: eventsToSend }),
@@ -183,7 +183,7 @@ export const startSession = () => {
     const deviceInfo = getDeviceInfo();
     
     // Send session start event
-    fetch('/api/analytics/sessions/start', {
+    fetch('/api/v1/analytics/sessions/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

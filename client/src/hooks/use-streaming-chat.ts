@@ -29,7 +29,7 @@ export interface StreamingChatState {
  */
 export function useStreamingChat(options: StreamingChatOptions = {}) {
   const {
-    endpoint = '/api/chat/stream',
+    endpoint = '/api/v1/chat/stream',
     includeInventory = false,
     onMessageComplete,
     onError

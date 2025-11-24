@@ -37,15 +37,15 @@ export function StarRating({
 
   const submitRatingMutation = useMutation({
     mutationFn: async (data: Partial<InsertFeedback>) => {
-      const res = await apiRequest('POST', '/api/feedback', data);
+      const res = await apiRequest('POST', '/api/v1/feedback', data);
       return res.json();
     },
     onSuccess: () => {
       setHasSubmitted(true);
       setIsOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/v1/feedback'] });
       if (contextType === 'recipe') {
-        queryClient.invalidateQueries({ queryKey: ['/api/recipes'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/v1/recipes'] });
       }
       if (onRatingSubmit) {
         onRatingSubmit(rating, comment);
