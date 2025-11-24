@@ -88,77 +88,103 @@ export async function registerModularRoutes(app: any): Promise<Server> {
   // API v1 Base Path
   const v1Base = API_CONFIG.VERSIONED_BASE; // "/api/v1"
   
-  // Register all route modules with RESTful v1 paths
+  // ====================================================================
+  // USER DOMAIN - Resources accessible by regular users
+  // ====================================================================
+  
   // Authentication & User Management
   app.use(`${v1Base}/auth`, authRouter);
   
-  // Inventory & Food Management
-  app.use(`${v1Base}`, inventoryRouter);  // Maps to /api/v1/inventories, /api/v1/food-items, etc.
+  // Core Resources - Inventory & Food Management
+  app.use(`${v1Base}/inventory`, inventoryRouter);       // Food items, storage, USDA lookup
+  app.use(`${v1Base}/food-items`, inventoryRouter);       // Alternative path for food items
   
-  // Recipes & Chat
-  app.use(`${v1Base}`, recipesRouter);    // Maps to /api/v1/recipes
-  app.use(`${v1Base}/chats`, chatRouter); // Maps to /api/v1/chats
-  app.use(`${v1Base}/chats`, chatStreamRouter); // SSE streaming for chats
+  // Recipe Management
+  app.use(`${v1Base}/recipes`, recipesRouter);            // Recipe CRUD and generation
   
-  // Meal Planning & Shopping
-  app.use(`${v1Base}`, mealPlanningRouter); // Maps to /api/v1/meal-plans, /api/v1/shopping-lists
+  // Meal Planning
+  app.use(`${v1Base}/meal-plans`, mealPlanningRouter);    // Meal planning operations
+  
+  // Shopping Management  
+  app.use(`${v1Base}/shopping-list`, mealPlanningRouter); // Single shopping list (backward compat)
+  
+  // Chat & Conversations
+  app.use(`${v1Base}/chat`, chatRouter);                  // Chat operations
+  app.use(`${v1Base}/chats`, chatStreamRouter);           // SSE streaming for chats
   
   // Utility Resources
-  app.use(`${v1Base}`, appliancesRouter);  // Maps to /api/v1/appliances
-  app.use(`${v1Base}`, nutritionRouter);   // Maps to /api/v1/nutrition
-  app.use(`${v1Base}/feedback`, feedbackRouter); // Maps to /api/v1/feedback
-  app.use(`${v1Base}/cooking-terms`, cookingTermsRouter); // Maps to /api/v1/cooking-terms
+  app.use(`${v1Base}/appliances`, appliancesRouter);      // Kitchen appliances
+  app.use(`${v1Base}/nutrition`, nutritionRouter);        // Nutrition data
+  app.use(`${v1Base}/cooking-terms`, cookingTermsRouter); // Cooking terminology
   
-  // Admin Resources
-  app.use(`${v1Base}/admin`, adminRouter);
+  // User Features
+  app.use(`${v1Base}/autosave`, autosaveRouter);          // Auto-save functionality
+  app.use(`${v1Base}/autocomplete`, autocompleteRouter);  // Autocomplete suggestions
+  app.use(`${v1Base}/validation`, validationRouter);      // Data validation
   
-  // Analytics & Monitoring
-  app.use(`${v1Base}/analytics`, analyticsRouter);
-  app.use(`${v1Base}/activities`, activityLogsRouter);
+  // ====================================================================
+  // ADMIN DOMAIN - Administrative and management functions
+  // ====================================================================
   
-  // Batch Operations
-  app.use(`${v1Base}`, batchRouter);
+  // Core Admin
+  app.use(`${v1Base}/admin`, adminRouter);                // Base admin operations
+  app.use(`${v1Base}/admin/users`, adminRouter);          // User management
+  app.use(`${v1Base}/admin/experiments`, abTestingRouter); // A/B testing & experiments
+  app.use(`${v1Base}/admin/cohorts`, cohortsRouter);      // User cohorts
+  app.use(`${v1Base}/admin/maintenance`, maintenanceRouter); // System maintenance
+  app.use(`${v1Base}/admin/tickets`, ticketRoutingRouter); // Support tickets
+  app.use(`${v1Base}/admin/pricing`, pricingRouter);      // Pricing management
+  app.use(`${v1Base}/admin/moderation`, moderationRouter); // Content moderation
+  app.use(`${v1Base}/admin/ai-metrics`, aiMetricsRouter); // AI usage metrics
   
-  // Notifications
-  app.use(`${v1Base}/notifications`, pushTokensRouter);
-  app.use(`${v1Base}/notifications`, notificationsRouter);
-  
-  // Data Quality
-  app.use(`${v1Base}/data-completion`, createDataCompletionRoutes(storage));
-  
-  // AI Services
-  app.use(`${v1Base}/ai/text`, generationRouter);     // Text processing (formerly generation)
-  app.use(`${v1Base}/ai/analysis`, analysisRouter);   // AI Analysis
-  app.use(`${v1Base}/ai/vision`, visionRouter);       // AI Vision
-  app.use(`${v1Base}/ai/voice`, voiceRouter);         // AI Voice
-  app.use(`${v1Base}/ai/drafts`, emailDraftingRouter); // Email/Message Drafting
-  app.use(`${v1Base}/ai/excerpts`, createExcerptRouter(storage)); // Excerpt generation
-  
-  // Additional Services
-  app.use(`${v1Base}/recommendations`, recommendationsRouter);
-  app.use(`${v1Base}/natural-query`, naturalQueryRouter);
-  app.use(`${v1Base}/fraud-detection`, fraudRouter);
-  app.use(`${v1Base}/scheduling`, schedulingRouter);
-  app.use(`${v1Base}/image-processing`, imagesRouter);
-  
-  // Advanced Features
-  app.use(`${v1Base}/notifications/intelligent`, intelligentNotificationsRouter);
-  app.use(`${v1Base}/autosave`, autosaveRouter);
-  app.use(`${v1Base}/autocomplete`, autocompleteRouter);
-  app.use(`${v1Base}/validation`, validationRouter);
-  app.use(`${v1Base}/insights`, insightsRouter);
-  
-  // Admin - Advanced Features
-  app.use(`${v1Base}/admin/ab-tests`, abTestingRouter);
-  app.use(`${v1Base}/admin/cohorts`, cohortsRouter);
-  app.use(`${v1Base}/admin/maintenance`, maintenanceRouter);
-  app.use(`${v1Base}/admin/tickets`, ticketRoutingRouter);
-  app.use(`${v1Base}/admin/pricing`, pricingRouter);
-  app.use(`${v1Base}/admin/moderation`, moderationRouter);
-  
-  // Special endpoints
+  // Admin Seed Data
   app.use(`${v1Base}/admin/seed`, createABTestSeedEndpoint(storage));
   app.use(`${v1Base}/admin/seed`, createCohortSeedEndpoint(storage));
+  
+  // ====================================================================
+  // AI DOMAIN - Artificial Intelligence services
+  // ====================================================================
+  
+  // Core AI Services
+  app.use(`${v1Base}/ai/generation`, generationRouter);   // Content generation
+  app.use(`${v1Base}/ai/analysis`, analysisRouter);       // Content analysis
+  app.use(`${v1Base}/ai/vision`, visionRouter);           // Computer vision
+  app.use(`${v1Base}/ai/voice`, voiceRouter);             // Voice processing
+  
+  // Specialized AI Services
+  app.use(`${v1Base}/ai/drafts`, emailDraftingRouter);    // Email/message drafting
+  app.use(`${v1Base}/ai/excerpts`, createExcerptRouter(storage as any)); // Excerpt generation
+  app.use(`${v1Base}/ai/recommendations`, recommendationsRouter); // AI recommendations
+  app.use(`${v1Base}/ai/insights`, insightsRouter);      // AI-powered insights
+  
+  // ====================================================================
+  // PLATFORM DOMAIN - Platform-wide services and infrastructure
+  // ====================================================================
+  
+  // Analytics & Monitoring
+  app.use(`${v1Base}/analytics`, analyticsRouter);        // Analytics data
+  app.use(`${v1Base}/activities`, activityLogsRouter);    // Activity logs
+  
+  // Notifications
+  app.use(`${v1Base}/notifications`, notificationsRouter); // Notification management
+  app.use(`${v1Base}/notifications/tokens`, pushTokensRouter); // Push tokens
+  app.use(`${v1Base}/notifications/intelligent`, intelligentNotificationsRouter); // Smart notifications
+  
+  // Data Operations
+  app.use(`${v1Base}/batch`, batchRouter);                // Batch operations
+  app.use(`${v1Base}/data-completion`, createDataCompletionRoutes(storage)); // Data quality
+  
+  // User Feedback
+  app.use(`${v1Base}/feedback`, feedbackRouter);          // User feedback
+  
+  // ====================================================================
+  // SPECIALIZED SERVICES - Domain-specific functionality
+  // ====================================================================
+  
+  app.use(`${v1Base}/natural-query`, naturalQueryRouter); // Natural language queries
+  app.use(`${v1Base}/fraud-detection`, fraudRouter);      // Fraud detection
+  app.use(`${v1Base}/scheduling`, schedulingRouter);      // Scheduling services
+  app.use(`${v1Base}/images`, imagesRouter);             // Image processing
   
   // API Health & Info endpoints
   app.get(`${v1Base}/health`, (_req: any, res: any) => {

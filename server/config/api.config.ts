@@ -14,7 +14,7 @@ export const API_CONFIG = {
   LEGACY_PATHS: {
     // === EXISTING LEGACY PATHS ===
     // Inventory routes (from inventory.router.ts)
-    '/api/inventory': '/api/v1/inventories',
+    '/api/inventory': '/api/v1/inventory',
     '/api/storage-locations': '/api/v1/storage-locations',
     '/api/food-items': '/api/v1/food-items',
     '/api/food-categories': '/api/v1/food-categories',
@@ -30,17 +30,17 @@ export const API_CONFIG = {
     
     // Analytics & Platform routes
     '/api/analytics': '/api/v1/analytics',
-    '/api/push-tokens': '/api/v1/push-tokens',
+    '/api/push-tokens': '/api/v1/notifications/tokens',
     '/api/notifications': '/api/v1/notifications',
-    '/api/activity-logs': '/api/v1/activity-logs',
+    '/api/activity-logs': '/api/v1/activities',
     
     // Admin routes
     '/api/admin': '/api/v1/admin',
-    '/api/ab': '/api/v1/ab',
-    '/api/cohorts': '/api/v1/cohorts',
-    '/api/pricing': '/api/v1/pricing',
-    '/api/routing': '/api/v1/routing',
-    '/api/moderate': '/api/v1/moderate',
+    '/api/ab': '/api/v1/admin/experiments',
+    '/api/cohorts': '/api/v1/admin/cohorts',
+    '/api/pricing': '/api/v1/admin/pricing',
+    '/api/routing': '/api/v1/admin/tickets',
+    '/api/moderate': '/api/v1/admin/moderation',
     
     // User routes
     '/api/users/profile': '/api/v1/users/profile',
