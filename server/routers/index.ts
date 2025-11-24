@@ -2,6 +2,7 @@ import { Router, Request as ExpressRequest, Response as ExpressResponse } from "
 import { createServer, type Server } from "http";
 import { API_CONFIG } from "../config/api.config";
 import { backwardCompatibilityMiddleware, requestTransformMiddleware } from "../middleware/backward-compatibility.middleware";
+import { setupApiVersionRedirects, addDeprecationHeaders, handleRedirectErrors } from "../middleware/api-version-handler";
 
 // Import all routers
 // User routers
@@ -77,9 +78,17 @@ import { storage } from "../storage/index";
 import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";
 
 export async function registerModularRoutes(app: any): Promise<Server> {
-  // Apply backward compatibility middleware first
-  app.use(backwardCompatibilityMiddleware);
-  app.use(requestTransformMiddleware);
+  // Setup API version redirects for clean backward compatibility
+  // This uses HTTP 301 redirects instead of URL rewriting
+  setupApiVersionRedirects(app);
+  
+  // Apply backward compatibility middleware as fallback for complex transformations
+  // Comment out if you want to use only redirect-based approach
+  // app.use(backwardCompatibilityMiddleware);
+  // app.use(requestTransformMiddleware);
+  
+  // Add deprecation headers for future v2 migration
+  app.use(addDeprecationHeaders);
   
   // Setup activity logging middleware after authentication
   // This ensures we have user context when logging activities
@@ -214,6 +223,9 @@ export async function registerModularRoutes(app: any): Promise<Server> {
     });
   });
 
+  // Add redirect error handler
+  app.use(handleRedirectErrors);
+  
   // Create HTTP server
   return createServer(app);
 }
