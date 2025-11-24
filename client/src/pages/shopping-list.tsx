@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { ShoppingItem } from "@shared/schema";
 
 type _ShoppingListResponse = {
@@ -46,7 +47,7 @@ export default function ShoppingList() {
   }, [endDate]);
 
   const { data: shoppingListItems, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/v1/shopping-list/items"],
+    queryKey: [API_ENDPOINTS.shoppingList.items],
   });
 
   // Reset checked items when date range changes

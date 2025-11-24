@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useBarcodeScanner } from "@/hooks/useBarcodescanner";
@@ -302,11 +303,11 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   // Add food mutation
   const addFoodMutation = useMutation({
     mutationFn: async (data: unknown) => {
-      const response = await apiRequest("POST", "/api/food-items", data);
+      const response = await apiRequest(API_ENDPOINTS.inventory.foodItems, "POST", data);
       return response.json();
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
       setShowSuccess(true);
       
       setTimeout(() => {

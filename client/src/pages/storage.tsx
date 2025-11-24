@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Plus, X, Trash2, Package, Calendar, CheckSquare, Square, Check } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { format, addDays } from "date-fns";
 import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";
 
@@ -172,9 +173,9 @@ export default function Storage() {
     pagination: { page: number; limit: number; total: number; totalPages: number };
     type: string;
   }>({
-    queryKey: ["/api/v1/inventories", location, selectedCategory, currentLocation?.id],
+    queryKey: [API_ENDPOINTS.inventory.list, location, selectedCategory, currentLocation?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/inventories?${queryParams.toString()}`);
+      const response = await fetch(`${API_ENDPOINTS.inventory.list}?${queryParams.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch items");
       return response.json();
     },
@@ -184,7 +185,7 @@ export default function Storage() {
   const items = inventoryResponse?.data;
 
   const { data: categories } = useQuery<string[]>({
-    queryKey: ["/api/food-categories"],
+    queryKey: [API_ENDPOINTS.inventory.foodCategories],
   });
 
   // Display error notifications
@@ -243,14 +244,14 @@ export default function Storage() {
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       const promises = ids.map(id => 
-        apiRequest(`/api/v1/food-items/${id}`, "DELETE")
+        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "DELETE")
       );
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/inventories"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/storage-locations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.list] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.data] });
       toast({
         title: "Items deleted",
         description: `Successfully deleted ${selectedItems.size} items`,
@@ -270,13 +271,13 @@ export default function Storage() {
   const bulkMoveMutation = useMutation({
     mutationFn: async ({ ids, locationId }: { ids: string[], locationId: string }) => {
       const promises = ids.map(id => 
-        apiRequest(`/api/v1/food-items/${id}`, "PATCH", { storageLocationId: locationId })
+        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "PATCH", { storageLocationId: locationId })
       );
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/inventories"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/storage-locations"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.list] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
       toast({
         title: "Items moved",
         description: `Successfully moved ${selectedItems.size} items`,

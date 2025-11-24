@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 import type { StorageLocation, UserInventory as FoodItem } from "@shared/schema";
 
@@ -48,13 +49,13 @@ export function EditFoodDialog({ open, onOpenChange, item }: EditFoodDialogProps
 
   const updateItemMutation = useMutation({
     mutationFn: async (data: unknown) => {
-      return await apiRequest(`/api/food-items/${item?.id}`, "PUT", data);
+      return await apiRequest(API_ENDPOINTS.inventory.foodItem(item?.id || ''), "PUT", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.data] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.tracking] });
       toast({
         title: "Success",
         description: "Food item updated",

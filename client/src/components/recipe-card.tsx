@@ -6,6 +6,7 @@ import { Clock, Users, ChefHat, CheckCircle2, XCircle, Star, AlertCircle, Shoppi
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState, useCallback, useMemo } from "react";
 import { MealPlanningDialog } from "@/components/meal-planning-dialog";
@@ -72,10 +73,10 @@ export const RecipeCard = React.memo(function RecipeCard({
   const updateMutation = useMutation({
     mutationFn: async (updates: { isFavorite?: boolean; rating?: number }) => {
       if (!id) throw new Error("Recipe ID required");
-      return await apiRequest(`/api/v1/recipes/${id}`, "PATCH", updates);
+      return await apiRequest(API_ENDPOINTS.recipes.item(id), "PATCH", updates);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/recipes"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list] });
     },
     onError: () => {
       toast({
@@ -103,11 +104,11 @@ export const RecipeCard = React.memo(function RecipeCard({
     setIsRefreshing(true);
     try {
       // Invalidate and refetch both food items and recipes
-      await queryClient.invalidateQueries({ queryKey: ["/api/v1/food-items"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/v1/recipes"] });
+      await queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
+      await queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list] });
       
       const updatedRecipes = await queryClient.fetchQuery({
-        queryKey: ["/api/v1/recipes"],
+        queryKey: [API_ENDPOINTS.recipes.list],
         staleTime: 0,
       });
       
@@ -154,7 +155,7 @@ export const RecipeCard = React.memo(function RecipeCard({
 
     setIsAddingToShoppingList(true);
     try {
-      const response = await apiRequest("/api/v1/shopping-list/add-missing", "POST", {
+      const response = await apiRequest(API_ENDPOINTS.shoppingList.addMissing, "POST", {
         recipeId: id,
         ingredients: missingItems,
       });
@@ -166,7 +167,7 @@ export const RecipeCard = React.memo(function RecipeCard({
         description: `Added ${items.length} item${items.length === 1 ? '' : 's'} to your shopping list`,
       });
       
-      queryClient.invalidateQueries({ queryKey: ["/api/v1/shopping-list/items"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.shoppingList.items] });
     } catch (error) {
       toast({
         title: "Error",

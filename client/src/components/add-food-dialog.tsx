@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedFoodSearch } from "@/components/unified-food-search";
@@ -359,14 +360,14 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
 
   const addItemMutation = useMutation({
     mutationFn: async (data: Omit<InsertFoodItem, 'userId'>) => {
-      const response = await apiRequest("POST", "/api/food-items", data);
+      const response = await apiRequest(API_ENDPOINTS.inventory.foodItems, "POST", data);
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.data] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.tracking] });
       toast({
         title: "Success",
         description: "Food item added to inventory",
@@ -385,7 +386,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   // Mutation for analyzing food image
   const analyzeImageMutation = useMutation({
     mutationFn: async (imageBase64: string) => {
-      const response = await apiRequest("POST", "/api/food/analyze-image", {
+      const response = await apiRequest(API_ENDPOINTS.ai.analyzeImage, "POST", {
         image: imageBase64,
       });
       return await response.json();

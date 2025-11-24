@@ -32,6 +32,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { CacheStorage } from "@/lib/cacheStorage";
 import { queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import {
   Sidebar,
   SidebarContent,
@@ -115,13 +116,13 @@ export function AppSidebar() {
     // Clear localStorage cache
     CacheStorage.remove("cache:storage:locations");
     // Force React Query to refetch fresh data from the API
-    queryClient.invalidateQueries({ queryKey: ['/api/storage-locations'] });
+    queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
   }, []);
 
   const { data: storageLocations, refetch: _refetchStorageLocations } = useStorageLocations();
 
   const { data: foodItems } = useQuery<FoodItem[]>({
-    queryKey: ["/api/food-items"],
+    queryKey: [API_ENDPOINTS.inventory.foodItems],
   });
 
   const totalItems = foodItems?.length || 0;
@@ -716,7 +717,7 @@ export function AppSidebar() {
               variant="outline"
               onClick={() => {
                 CacheStorage.clear();
-                window.location.href = "/api/logout";
+                window.location.href = API_ENDPOINTS.auth.logout;
               }}
               data-testid="button-logout"
             >
