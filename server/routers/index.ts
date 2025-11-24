@@ -1,16 +1,92 @@
-import { Router, Request as ExpressRequest, Response as ExpressResponse } from "express";
+/**
+ * Centralized Router Configuration
+ * 
+ * This file consolidates all API route definitions and provides a single
+ * entry point for route registration. Routes are organized by domain:
+ * 
+ * ROUTE STRUCTURE:
+ * ================
+ * 
+ * /api/v1                                  - API Version 1 Base
+ * 
+ * USER DOMAIN (/api/v1/...)
+ * --------------------------
+ * /auth                                    - Authentication & user management
+ * /inventory, /food-items                  - Food items, storage, USDA lookup
+ * /recipes                                 - Recipe CRUD and generation
+ * /meal-plans                              - Meal planning operations
+ * /shopping-list                           - Shopping list management
+ * /chat, /chats                            - Chat operations (SSE for /chats)
+ * /appliances                              - Kitchen appliances management
+ * /nutrition                               - Nutrition data and analysis
+ * /cooking-terms                           - Cooking terminology reference
+ * /autosave                                - Auto-save functionality
+ * /autocomplete                            - Autocomplete suggestions
+ * /validation                              - Data validation
+ * 
+ * ADMIN DOMAIN (/api/v1/admin/...)
+ * ---------------------------------
+ * /admin                                   - Base admin operations
+ * /admin/users                             - User management
+ * /admin/experiments                       - A/B testing & experiments
+ * /admin/cohorts                           - User cohort management
+ * /admin/maintenance                       - System maintenance operations
+ * /admin/tickets                           - Support ticket routing
+ * /admin/pricing                           - Pricing tier management
+ * /admin/moderation                        - Content moderation
+ * /admin/ai-metrics                        - AI usage metrics & monitoring
+ * /admin/seed                              - Seed data endpoints
+ * 
+ * AI DOMAIN (/api/v1/ai/...)
+ * ---------------------------
+ * /ai/generation                           - Content generation services
+ * /ai/analysis                             - Content analysis services
+ * /ai/vision                               - Computer vision processing
+ * /ai/voice                                - Voice processing & transcription
+ * /ai/drafts                               - Email/message drafting
+ * /ai/excerpts                             - Excerpt generation
+ * /ai/recommendations                      - AI-powered recommendations
+ * /ai/insights                             - AI-powered insights & analytics
+ * /ai/writing                              - Writing assistance & grammar
+ * 
+ * PLATFORM DOMAIN (/api/v1/...)
+ * ------------------------------
+ * /analytics                               - Analytics data & reporting
+ * /activities                              - Activity logs & audit trail
+ * /notifications                           - Notification management
+ * /notifications/tokens                    - Push notification tokens
+ * /notifications/intelligent               - Smart notification system
+ * /batch                                   - Batch operations
+ * /data-completion                         - Data quality & completion
+ * /feedback                                - User feedback collection
+ * 
+ * SPECIALIZED SERVICES (/api/v1/...)
+ * -----------------------------------
+ * /natural-query                           - Natural language query processing
+ * /fraud-detection                         - Fraud detection services
+ * /scheduling                              - Scheduling & calendar services
+ * /images                                  - Image processing & manipulation
+ * 
+ * HEALTH & STATUS
+ * ---------------
+ * /health                                  - Health check (no auth required)
+ * /api/v1/health                          - Versioned health check
+ * /api/v1/info                            - API version & deprecation info
+ */
+
+import { Application } from "express";
 import { createServer, type Server } from "http";
 import { API_CONFIG } from "../config/api.config";
-import { backwardCompatibilityMiddleware, requestTransformMiddleware } from "../middleware/backward-compatibility.middleware";
 import { setupApiVersionRedirects, addDeprecationHeaders, handleRedirectErrors } from "../middleware/api-version-handler";
+import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";
 
-// Import all routers
-// User routers
+// ====================================================================
+// USER DOMAIN ROUTERS
+// ====================================================================
 import authRouter from "./user/oauth.router";
 import inventoryRouter from "./user/inventory.router";
 import recipesRouter from "./user/recipes.router";
 import chatRouter from "./user/chat.router";
-import chatStreamRouter from "./user/chat.router";
 import mealPlanningRouter from "./user/meal-planning.router";
 import appliancesRouter from "./user/appliances.router";
 import nutritionRouter from "./user/nutrition.router";
@@ -19,7 +95,9 @@ import autosaveRouter from "./user/autosave.router";
 import autocompleteRouter from "./user/autocomplete.router";
 import validationRouter from "./user/validation.router";
 
-// Admin routers
+// ====================================================================
+// ADMIN DOMAIN ROUTERS
+// ====================================================================
 import adminRouter from "./admin/admin.router";
 import abTestingRouter from "./admin/ab-testing.router";
 import cohortsRouter from "./admin/cohorts.router";
@@ -29,7 +107,22 @@ import pricingRouter from "./admin/pricing.router";
 import moderationRouter from "./admin/moderation.router";
 import aiMetricsRouter from "./admin/ai-metrics.router";
 
-// Platform routers
+// ====================================================================
+// AI DOMAIN ROUTERS
+// ====================================================================
+import generationRouter from "./ai/generation.router";
+import analysisRouter from "./ai/analysis.router";
+import visionRouter from "./ai/vision.router";
+import voiceRouter from "./ai/voice.router";
+import emailDraftingRouter from "./email-drafting.router";
+import writingAssistantRouter from "./writing-assistant.router";
+import { createExcerptRouter } from "./excerpt.router";
+import recommendationsRouter from "./recommendations.router";
+import insightsRouter from "./insights.router";
+
+// ====================================================================
+// PLATFORM DOMAIN ROUTERS
+// ====================================================================
 import analyticsRouter from "./platform/analytics.router";
 import feedbackRouter from "./platform/feedback.router";
 import batchRouter from "./platform/batch.router";
@@ -38,194 +131,171 @@ import notificationsRouter from "./platform/notifications.router";
 import activityLogsRouter from "./platform/activity-logs.router";
 import intelligentNotificationsRouter from "./platform/intelligent-notifications.router";
 
-// Consolidated AI routers
-import generationRouter from "./ai/generation.router";
-import analysisRouter from "./ai/analysis.router";
-import visionRouter from "./ai/vision.router";
-import voiceRouter from "./ai/voice.router";
-
-// Legacy AI/ML routers (to be removed after migration verification)
-// import mlRouter from "./mlRouter";
-// import aiAssistantRouter from "./ai-assistant.router";
-// import voiceCommandsRouter from "./voice-commands.router";
-import emailDraftingRouter from "./email-drafting.router";
-// import writingAssistantRouter from "./writing.router";
-// import summarizationRouter from "./summarization.router";
-import { createExcerptRouter } from "./excerpt.router";
-import recommendationsRouter from "./recommendations.router";
+// ====================================================================
+// SPECIALIZED SERVICE ROUTERS
+// ====================================================================
 import naturalQueryRouter from "./natural-query.router";
-// import { translationRouter } from "./translation.router";
-// import { createAltTextRouter } from "./alt-text.router";
 import fraudRouter from "./fraud.router";
-// import sentimentRouter from "./sentiment.router";
-import insightsRouter from "./insights.router";
-// import predictionsRouter from "./predictions.router";
-// import trendsRouter from "./trends.router";
 import schedulingRouter from "./scheduling.router";
-// import extractionRouter from "./extraction.router";
 import imagesRouter from "./images.router";
-// import faceDetectionRouter from "./face-detection.router";
-// import ocrRouter from "./ocr.router";
-// import transcriptionsRouter from "./transcriptions.router";
 
-// Import special endpoints
+// ====================================================================
+// UTILITIES & SEED DATA
+// ====================================================================
 import { createABTestSeedEndpoint } from "../seeds/seed-ab-tests";
 import { createCohortSeedEndpoint } from "../seeds/seed-cohorts";
 import { createDataCompletionRoutes } from "../utils/dataCompletionEndpoints";
 import { storage } from "../storage/index";
 
-// Import activity logging middleware
-import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";
-
-export async function registerModularRoutes(app: any): Promise<Server> {
-  // Setup API version redirects for clean backward compatibility
-  // This uses HTTP 301 redirects instead of URL rewriting
+/**
+ * Setup all API routes with proper versioning and organization
+ * @param app Express application instance
+ */
+export function setupRouters(app: Application): void {
+  // API versioning configuration
+  const API_PREFIX = '/api/v1';
+  
+  // Setup middleware
   setupApiVersionRedirects(app);
-  
-  // Apply backward compatibility middleware as fallback for complex transformations
-  // Comment out if you want to use only redirect-based approach
-  // app.use(backwardCompatibilityMiddleware);
-  // app.use(requestTransformMiddleware);
-  
-  // Add deprecation headers for future v2 migration
   app.use(addDeprecationHeaders);
-  
-  // Setup activity logging middleware after authentication
-  // This ensures we have user context when logging activities
   app.use(activityLoggingMiddleware);
   
-  // API v1 Base Path
-  const v1Base = API_CONFIG.VERSIONED_BASE; // "/api/v1"
-  
   // ====================================================================
-  // USER DOMAIN - Resources accessible by regular users
+  // USER ENDPOINTS
   // ====================================================================
   
   // Authentication & User Management
-  app.use(`${v1Base}/auth`, authRouter);
+  app.use(`${API_PREFIX}/auth`, authRouter);
   
-  // Core Resources - Inventory & Food Management
-  app.use(`${v1Base}/inventory`, inventoryRouter);       // Food items, storage, USDA lookup
-  app.use(`${v1Base}/food-items`, inventoryRouter);       // Alternative path for food items
+  // Core Food & Recipe Management
+  app.use(`${API_PREFIX}/inventory`, inventoryRouter);
+  app.use(`${API_PREFIX}/food-items`, inventoryRouter); // Alias for backward compatibility
+  app.use(`${API_PREFIX}/recipes`, recipesRouter);
+  app.use(`${API_PREFIX}/meal-plans`, mealPlanningRouter);
+  app.use(`${API_PREFIX}/shopping-list`, mealPlanningRouter); // Backward compatibility
   
-  // Recipe Management
-  app.use(`${v1Base}/recipes`, recipesRouter);            // Recipe CRUD and generation
+  // Chat & Communication
+  app.use(`${API_PREFIX}/chat`, chatRouter);
+  app.use(`${API_PREFIX}/chats`, chatRouter); // SSE streaming endpoint
   
-  // Meal Planning
-  app.use(`${v1Base}/meal-plans`, mealPlanningRouter);    // Meal planning operations
-  
-  // Shopping Management  
-  app.use(`${v1Base}/shopping-list`, mealPlanningRouter); // Single shopping list (backward compat)
-  
-  // Chat & Conversations
-  app.use(`${v1Base}/chat`, chatRouter);                  // Chat operations
-  app.use(`${v1Base}/chats`, chatStreamRouter);           // SSE streaming for chats
-  
-  // Utility Resources
-  app.use(`${v1Base}/appliances`, appliancesRouter);      // Kitchen appliances
-  app.use(`${v1Base}/nutrition`, nutritionRouter);        // Nutrition data
-  app.use(`${v1Base}/cooking-terms`, cookingTermsRouter); // Cooking terminology
-  
-  // User Features
-  app.use(`${v1Base}/autosave`, autosaveRouter);          // Auto-save functionality
-  app.use(`${v1Base}/autocomplete`, autocompleteRouter);  // Autocomplete suggestions
-  app.use(`${v1Base}/validation`, validationRouter);      // Data validation
+  // Utility Features
+  app.use(`${API_PREFIX}/appliances`, appliancesRouter);
+  app.use(`${API_PREFIX}/nutrition`, nutritionRouter);
+  app.use(`${API_PREFIX}/cooking-terms`, cookingTermsRouter);
+  app.use(`${API_PREFIX}/autosave`, autosaveRouter);
+  app.use(`${API_PREFIX}/autocomplete`, autocompleteRouter);
+  app.use(`${API_PREFIX}/validation`, validationRouter);
   
   // ====================================================================
-  // ADMIN DOMAIN - Administrative and management functions
+  // ADMIN ENDPOINTS
   // ====================================================================
   
-  // Core Admin
-  app.use(`${v1Base}/admin`, adminRouter);                // Base admin operations
-  app.use(`${v1Base}/admin/users`, adminRouter);          // User management
-  app.use(`${v1Base}/admin/experiments`, abTestingRouter); // A/B testing & experiments
-  app.use(`${v1Base}/admin/cohorts`, cohortsRouter);      // User cohorts
-  app.use(`${v1Base}/admin/maintenance`, maintenanceRouter); // System maintenance
-  app.use(`${v1Base}/admin/tickets`, ticketRoutingRouter); // Support tickets
-  app.use(`${v1Base}/admin/pricing`, pricingRouter);      // Pricing management
-  app.use(`${v1Base}/admin/moderation`, moderationRouter); // Content moderation
-  app.use(`${v1Base}/admin/ai-metrics`, aiMetricsRouter); // AI usage metrics
+  app.use(`${API_PREFIX}/admin`, adminRouter);
+  app.use(`${API_PREFIX}/admin/users`, adminRouter);
+  app.use(`${API_PREFIX}/admin/experiments`, abTestingRouter);
+  app.use(`${API_PREFIX}/admin/cohorts`, cohortsRouter);
+  app.use(`${API_PREFIX}/admin/maintenance`, maintenanceRouter);
+  app.use(`${API_PREFIX}/admin/tickets`, ticketRoutingRouter);
+  app.use(`${API_PREFIX}/admin/pricing`, pricingRouter);
+  app.use(`${API_PREFIX}/admin/moderation`, moderationRouter);
+  app.use(`${API_PREFIX}/admin/ai-metrics`, aiMetricsRouter);
   
-  // Admin Seed Data
-  app.use(`${v1Base}/admin/seed`, createABTestSeedEndpoint(storage));
-  app.use(`${v1Base}/admin/seed`, createCohortSeedEndpoint(storage));
+  // Admin seed data endpoints
+  app.use(`${API_PREFIX}/admin/seed`, createABTestSeedEndpoint(storage));
+  app.use(`${API_PREFIX}/admin/seed`, createCohortSeedEndpoint(storage));
   
   // ====================================================================
-  // AI DOMAIN - Artificial Intelligence services
+  // AI ENDPOINTS
   // ====================================================================
   
   // Core AI Services
-  app.use(`${v1Base}/ai/generation`, generationRouter);   // Content generation
-  app.use(`${v1Base}/ai/analysis`, analysisRouter);       // Content analysis
-  app.use(`${v1Base}/ai/vision`, visionRouter);           // Computer vision
-  app.use(`${v1Base}/ai/voice`, voiceRouter);             // Voice processing
+  app.use(`${API_PREFIX}/ai/generation`, generationRouter);
+  app.use(`${API_PREFIX}/ai/analysis`, analysisRouter);
+  app.use(`${API_PREFIX}/ai/vision`, visionRouter);
+  app.use(`${API_PREFIX}/ai/voice`, voiceRouter);
   
-  // Specialized AI Services
-  app.use(`${v1Base}/ai/drafts`, emailDraftingRouter);    // Email/message drafting
-  app.use(`${v1Base}/ai/excerpts`, createExcerptRouter(storage as any)); // Excerpt generation
-  app.use(`${v1Base}/ai/recommendations`, recommendationsRouter); // AI recommendations
-  app.use(`${v1Base}/ai/insights`, insightsRouter);      // AI-powered insights
+  // Specialized AI Features
+  app.use(`${API_PREFIX}/ai/drafts`, emailDraftingRouter);
+  app.use(`${API_PREFIX}/ai/writing`, writingAssistantRouter);
+  app.use(`${API_PREFIX}/ai/excerpts`, createExcerptRouter(storage as any));
+  app.use(`${API_PREFIX}/ai/recommendations`, recommendationsRouter);
+  app.use(`${API_PREFIX}/ai/insights`, insightsRouter);
   
   // ====================================================================
-  // PLATFORM DOMAIN - Platform-wide services and infrastructure
+  // PLATFORM ENDPOINTS
   // ====================================================================
   
   // Analytics & Monitoring
-  app.use(`${v1Base}/analytics`, analyticsRouter);        // Analytics data
-  app.use(`${v1Base}/activities`, activityLogsRouter);    // Activity logs
+  app.use(`${API_PREFIX}/analytics`, analyticsRouter);
+  app.use(`${API_PREFIX}/activities`, activityLogsRouter);
   
   // Notifications
-  app.use(`${v1Base}/notifications`, notificationsRouter); // Notification management
-  app.use(`${v1Base}/notifications/tokens`, pushTokensRouter); // Push tokens
-  app.use(`${v1Base}/notifications/intelligent`, intelligentNotificationsRouter); // Smart notifications
+  app.use(`${API_PREFIX}/notifications`, notificationsRouter);
+  app.use(`${API_PREFIX}/notifications/tokens`, pushTokensRouter);
+  app.use(`${API_PREFIX}/notifications/intelligent`, intelligentNotificationsRouter);
   
-  // Data Operations
-  app.use(`${v1Base}/batch`, batchRouter);                // Batch operations
-  app.use(`${v1Base}/data-completion`, createDataCompletionRoutes(storage)); // Data quality
-  
-  // User Feedback
-  app.use(`${v1Base}/feedback`, feedbackRouter);          // User feedback
+  // Data Management
+  app.use(`${API_PREFIX}/batch`, batchRouter);
+  app.use(`${API_PREFIX}/data-completion`, createDataCompletionRoutes(storage));
+  app.use(`${API_PREFIX}/feedback`, feedbackRouter);
   
   // ====================================================================
-  // SPECIALIZED SERVICES - Domain-specific functionality
+  // SPECIALIZED SERVICES
   // ====================================================================
   
-  app.use(`${v1Base}/natural-query`, naturalQueryRouter); // Natural language queries
-  app.use(`${v1Base}/fraud-detection`, fraudRouter);      // Fraud detection
-  app.use(`${v1Base}/scheduling`, schedulingRouter);      // Scheduling services
-  app.use(`${v1Base}/images`, imagesRouter);             // Image processing
+  app.use(`${API_PREFIX}/natural-query`, naturalQueryRouter);
+  app.use(`${API_PREFIX}/fraud-detection`, fraudRouter);
+  app.use(`${API_PREFIX}/scheduling`, schedulingRouter);
+  app.use(`${API_PREFIX}/images`, imagesRouter);
   
-  // API Health & Info endpoints
-  app.get(`${v1Base}/health`, (_req: any, res: any) => {
+  // ====================================================================
+  // HEALTH & STATUS ENDPOINTS (No authentication required)
+  // ====================================================================
+  
+  // Health check endpoint - Available at both root and versioned paths
+  const healthResponse = (_req: any, res: any) => {
     res.json({
       status: "healthy",
       version: API_CONFIG.VERSION,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
     });
-  });
+  };
   
-  app.get(`${v1Base}/info`, (_req: any, res: any) => {
+  app.get('/health', healthResponse);
+  app.get(`${API_PREFIX}/health`, healthResponse);
+  
+  // API information endpoint
+  app.get(`${API_PREFIX}/info`, (_req: any, res: any) => {
     res.json({
       version: API_CONFIG.VERSION,
       deprecationDate: API_CONFIG.DEPRECATION_DATE,
-      documentation: `${v1Base}/docs`,
+      documentation: `${API_PREFIX}/docs`,
+      supportedVersions: ['v1'],
+      currentVersion: 'v1'
     });
   });
   
-  // Legacy health check (for monitoring tools)
-  app.get("/api/health", (_req: any, res: any) => {
-    res.setHeader('X-Deprecation-Warning', `Use ${v1Base}/health instead`);
+  // Legacy health endpoint for backward compatibility
+  app.get('/api/health', (_req: any, res: any) => {
+    res.setHeader('X-Deprecation-Warning', `This endpoint is deprecated. Use /health or ${API_PREFIX}/health instead`);
     res.json({ 
       status: "healthy",
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
+      uptime: process.uptime()
     });
   });
-
-  // Add redirect error handler
-  app.use(handleRedirectErrors);
   
-  // Create HTTP server
+  // Error handling for API versioning
+  app.use(handleRedirectErrors);
+}
+
+/**
+ * Create HTTP server with registered routes (legacy support)
+ * @deprecated Use setupRouters directly instead
+ */
+export async function registerModularRoutes(app: Application): Promise<Server> {
+  setupRouters(app);
   return createServer(app);
 }
