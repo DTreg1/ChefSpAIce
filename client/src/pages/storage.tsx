@@ -172,9 +172,9 @@ export default function Storage() {
     pagination: { page: number; limit: number; total: number; totalPages: number };
     type: string;
   }>({
-    queryKey: ["/api/inventory", location, selectedCategory, currentLocation?.id],
+    queryKey: ["/api/v1/inventories", location, selectedCategory, currentLocation?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/inventory?${queryParams.toString()}`);
+      const response = await fetch(`/api/v1/inventories?${queryParams.toString()}`);
       if (!response.ok) throw new Error("Failed to fetch items");
       return response.json();
     },
@@ -243,13 +243,13 @@ export default function Storage() {
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
       const promises = ids.map(id => 
-        apiRequest(`/api/food-items/${id}`, "DELETE")
+        apiRequest(`/api/v1/food-items/${id}`, "DELETE")
       );
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/inventories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/storage-locations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
       toast({
         title: "Items deleted",
@@ -270,13 +270,13 @@ export default function Storage() {
   const bulkMoveMutation = useMutation({
     mutationFn: async ({ ids, locationId }: { ids: string[], locationId: string }) => {
       const promises = ids.map(id => 
-        apiRequest(`/api/food-items/${id}`, "PATCH", { storageLocationId: locationId })
+        apiRequest(`/api/v1/food-items/${id}`, "PATCH", { storageLocationId: locationId })
       );
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/inventories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/storage-locations"] });
       toast({
         title: "Items moved",
         description: `Successfully moved ${selectedItems.size} items`,
@@ -297,7 +297,7 @@ export default function Storage() {
   const bulkUpdateExpirationMutation = useMutation({
     mutationFn: async ({ ids, date }: { ids: string[], date: string }) => {
       const promises = ids.map(id => 
-        apiRequest(`/api/food-items/${id}`, "PATCH", { expirationDate: date })
+        apiRequest(`/api/v1/food-items/${id}`, "PATCH", { expirationDate: date })
       );
       return await Promise.all(promises);
     },

@@ -201,7 +201,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
   // Mutation for quick quantity update
   const updateQuantityMutation = useMutation({
     mutationFn: async (newQuantity: number) => {
-      return await apiRequest(`/api/food-items/${item.id}`, "PUT", {
+      return await apiRequest(`/api/v1/food-items/${item.id}`, "PUT", {
         quantity: newQuantity.toString(),
         unit: item.unit,
         storageLocationId: item.storageLocationId,
@@ -210,10 +210,10 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
     },
     onMutate: async (newQuantity: number) => {
       // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ["/api/food-items"] });
-      const previousItems = queryClient.getQueryData(["/api/food-items"]);
+      await queryClient.cancelQueries({ queryKey: ["/api/v1/food-items"] });
+      const previousItems = queryClient.getQueryData(["/api/v1/food-items"]);
       
-      queryClient.setQueryData(["/api/food-items"], (old: any) => {
+      queryClient.setQueryData(["/api/v1/food-items"], (old: any) => {
         if (!old) return old;
         return old.map((i: FoodItem) => 
           i.id === item.id ? { ...i, quantity: newQuantity.toString() } : i
@@ -225,7 +225,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
     onError: (err, newQuantity, context) => {
       // Rollback on error
       if (context?.previousItems) {
-        queryClient.setQueryData(["/api/food-items"], context.previousItems);
+        queryClient.setQueryData(["/api/v1/food-items"], context.previousItems);
       }
       setLocalQuantity(parseFloat(item.quantity));
       toast({
@@ -239,7 +239,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
       setLocalQuantity(newQuantity);
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/v1/food-items"] });
       void queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
       void queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
     },
@@ -248,7 +248,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
   // Mutation for quick expiry update
   const updateExpiryMutation = useMutation({
     mutationFn: async (newExpiry: string) => {
-      return await apiRequest(`/api/food-items/${item.id}`, "PUT", {
+      return await apiRequest(`/api/v1/food-items/${item.id}`, "PUT", {
         quantity: item.quantity,
         unit: item.unit,
         storageLocationId: item.storageLocationId,
@@ -257,7 +257,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
     },
     onSuccess: () => {
       setIsEditingExpiry(false);
-      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/v1/food-items"] });
       toast({
         title: "Expiration date updated",
         description: "The expiration date has been successfully updated",
@@ -276,7 +276,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
   // Mutation for quick storage location update
   const updateStorageMutation = useMutation({
     mutationFn: async (newStorageId: string) => {
-      return await apiRequest(`/api/food-items/${item.id}`, "PUT", {
+      return await apiRequest(`/api/v1/food-items/${item.id}`, "PUT", {
         quantity: item.quantity,
         unit: item.unit,
         storageLocationId: newStorageId,
@@ -285,8 +285,8 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
     },
     onSuccess: (data, newStorageId) => {
       const newLocation = storageLocations?.find(loc => loc.id === newStorageId);
-      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      void queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/v1/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/v1/storage-locations"] });
       toast({
         title: "Location updated",
         description: `Moved to ${newLocation?.name || 'new location'}`,
@@ -303,11 +303,11 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/food-items/${item.id}`, "DELETE");
+      return await apiRequest(`/api/v1/food-items/${item.id}`, "DELETE");
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      void queryClient.invalidateQueries({ queryKey: ["/api/storage-locations"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/v1/food-items"] });
+      void queryClient.invalidateQueries({ queryKey: ["/api/v1/storage-locations"] });
       void queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });
       void queryClient.invalidateQueries({ queryKey: ["/api/nutrition/items"] });
       toast({

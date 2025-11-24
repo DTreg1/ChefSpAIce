@@ -46,7 +46,7 @@ export default function ShoppingList() {
   }, [endDate]);
 
   const { data: shoppingListItems, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/shopping-list/items"],
+    queryKey: ["/api/v1/shopping-list/items"],
   });
 
   // Reset checked items when date range changes

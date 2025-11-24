@@ -72,10 +72,10 @@ export const RecipeCard = React.memo(function RecipeCard({
   const updateMutation = useMutation({
     mutationFn: async (updates: { isFavorite?: boolean; rating?: number }) => {
       if (!id) throw new Error("Recipe ID required");
-      return await apiRequest(`/api/recipes/${id}`, "PATCH", updates);
+      return await apiRequest(`/api/v1/recipes/${id}`, "PATCH", updates);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/recipes"] });
     },
     onError: () => {
       toast({
@@ -103,11 +103,11 @@ export const RecipeCard = React.memo(function RecipeCard({
     setIsRefreshing(true);
     try {
       // Invalidate and refetch both food items and recipes
-      await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/v1/food-items"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/v1/recipes"] });
       
       const updatedRecipes = await queryClient.fetchQuery({
-        queryKey: ["/api/recipes"],
+        queryKey: ["/api/v1/recipes"],
         staleTime: 0,
       });
       
@@ -154,7 +154,7 @@ export const RecipeCard = React.memo(function RecipeCard({
 
     setIsAddingToShoppingList(true);
     try {
-      const response = await apiRequest("/api/shopping-list/add-missing", "POST", {
+      const response = await apiRequest("/api/v1/shopping-list/add-missing", "POST", {
         recipeId: id,
         ingredients: missingItems,
       });
@@ -166,7 +166,7 @@ export const RecipeCard = React.memo(function RecipeCard({
         description: `Added ${items.length} item${items.length === 1 ? '' : 's'} to your shopping list`,
       });
       
-      queryClient.invalidateQueries({ queryKey: ["/api/shopping-list/items"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/v1/shopping-list/items"] });
     } catch (error) {
       toast({
         title: "Error",
