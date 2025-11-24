@@ -9,7 +9,7 @@ import { storage } from "../../storage/index";
 const router = Router();
 
 // Track notification delivery/status
-router.post("/api/notifications/track", isAuthenticated, async (req, res) => {
+router.post("/track", isAuthenticated, async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -35,7 +35,7 @@ router.post("/api/notifications/track", isAuthenticated, async (req, res) => {
 });
 
 // Get notification history for the current user
-router.get("/api/notifications/history", isAuthenticated, async (req, res) => {
+router.get("/history", isAuthenticated, async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -81,7 +81,7 @@ router.get("/api/notifications/history", isAuthenticated, async (req, res) => {
 });
 
 // Get unread notification count
-router.get("/api/notifications/unread-count", isAuthenticated, async (req, res) => {
+router.get("/unread-count", isAuthenticated, async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -107,7 +107,7 @@ router.get("/api/notifications/unread-count", isAuthenticated, async (req, res) 
 });
 
 // Mark notification as read
-router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req, res) => {
+router.post("/:id/mark-read", isAuthenticated, async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -143,7 +143,7 @@ router.post("/api/notifications/:id/mark-read", isAuthenticated, async (req, res
 });
 
 // Dismiss a notification
-router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req, res) => {
+router.post("/:id/dismiss", isAuthenticated, async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -167,7 +167,7 @@ router.post("/api/notifications/:id/dismiss", isAuthenticated, async (req, res) 
 });
 
 // Clear all notifications
-router.delete("/api/notifications/clear", isAuthenticated, async (req, res) => {
+router.delete("/clear", isAuthenticated, async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });

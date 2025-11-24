@@ -142,7 +142,7 @@ function checkOpenAIConfiguration(res: Response): boolean {
  * POST /api/ai/generation/writing/analyze
  * Analyze text for grammar, style, and tone improvements
  */
-router.post("/writing/analyze", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
+router.post("/analyze", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -251,7 +251,7 @@ Format as JSON array. Only return valid JSON, no other text.`;
  * POST /api/ai/generation/writing/tone
  * Adjust the tone of text
  */
-router.post("/writing/tone", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
+router.post("/tone", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -307,7 +307,7 @@ Return only the rewritten text, no explanations.`;
  * POST /api/ai/generation/writing/expand
  * Expand text to be more detailed
  */
-router.post("/writing/expand", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
+router.post("/expand", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });

@@ -32,7 +32,7 @@ const router = Router();
  * - pagination: { page, limit, total, totalPages }
  * - type: "items"
  */
-router.get("/inventories", isAuthenticated, async (req: Request, res: Response) => {
+router.get("/", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -123,7 +123,7 @@ router.post(
 );
 
 // Food items CRUD
-router.get("/inventories/:id", isAuthenticated, async (req: Request, res: Response) => {
+router.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -157,7 +157,7 @@ router.get("/inventories/:id", isAuthenticated, async (req: Request, res: Respon
  * Returns: Created food item with generated ID and all provided fields
  */
 router.post(
-  "/food-items",
+  "/",
   isAuthenticated,
   async (req: Request, res: Response) => {
     try {
@@ -248,7 +248,7 @@ router.post(
  * Returns: Updated food item
  */
 router.put(
-  "/food-items/:id",
+  "/:id",
   isAuthenticated,
   async (req: Request, res: Response) => {
     try {
@@ -284,7 +284,7 @@ router.put(
   }
 );
 
-router.delete("/food-items/:id", isAuthenticated, async (req: Request, res: Response) => {
+router.delete("/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -307,7 +307,7 @@ router.delete("/food-items/:id", isAuthenticated, async (req: Request, res: Resp
 });
 
 // Food categories
-router.get("/food-categories", isAuthenticated, async (_req: any, res: Response) => {
+router.get("/categories", isAuthenticated, async (_req: any, res: Response) => {
   const categories = [
     "Dairy",
     "Meat",
@@ -383,7 +383,7 @@ router.get("/fdc/food/:fdcId", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/fdc/cache/clear", async (_req: Request, res: Response) => {
+router.post("/cache/fdc/clear", async (_req: Request, res: Response) => {
   // The usdaCache module handles its own caching
   res.json({ message: "FDC cache is managed by the USDA integration module" });
 });
@@ -392,7 +392,7 @@ router.post("/fdc/cache/clear", async (_req: Request, res: Response) => {
 const barcodeCache = new Map<string, { data: any; timestamp: number }>();
 const BARCODE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middleware(), async (req: Request, res: Response) => {
+router.get("/barcodes", isAuthenticated, rateLimiters.barcode.middleware(), async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -463,7 +463,7 @@ router.get("/barcodelookup/search", isAuthenticated, rateLimiters.barcode.middle
  * 
  * Returns: Enriched food data with AI-generated insights
  */
-router.post("/food/enrich", isAuthenticated, async (req: Request, res: Response) => {
+router.post("/enrichment", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const { name, barcode, fdcData  } = req.body || {};
     
@@ -528,7 +528,7 @@ Response must be valid JSON only, no additional text.`;
 });
 
 // Onboarding common items
-router.get("/onboarding/common-items", async (_req: Request, res: Response) => {
+router.get("/common-items", async (_req: Request, res: Response) => {
   const commonItems = [
     { name: "Milk", foodCategory: "dairy", icon: "🥛" },
     { name: "Eggs", foodCategory: "dairy", icon: "🥚" },
@@ -547,7 +547,7 @@ router.get("/onboarding/common-items", async (_req: Request, res: Response) => {
 });
 
 // Image upload endpoint
-router.put("/food-images", isAuthenticated, async (req: Request, res: Response) => {
+router.put("/images", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -860,7 +860,7 @@ router.post("/shopping-list/generate-from-meal-plans", isAuthenticated, async (r
  * - type: String - Type of items to operate on
  * - items: Array - Items to process
  */
-router.post("/inventory/batch", isAuthenticated, async (req: Request, res: Response) => {
+router.post("/batch", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
