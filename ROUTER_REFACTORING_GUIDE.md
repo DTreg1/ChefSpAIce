@@ -289,7 +289,6 @@ Implement the API standardization plan:
    // Platform routers
    app.use('/api/v1/analytics', analyticsRouter);
    app.use('/api/v1/notifications', notificationsRouter);
-   ```
 
 2. **Update individual route paths** within each router to remove redundant prefixes
 
@@ -299,12 +298,10 @@ Implement the API standardization plan:
    app.use('/inventory', (req, res) => {
      res.redirect(301, `/api/v1/inventory${req.url}`);
    });
-   ```
 
 4. **Update all frontend API calls** to use new endpoints
 ```
 
----
 
 ### Prompt 7: Create Centralized Router Index
 
@@ -340,7 +337,6 @@ Create a centralized router index file for better organization:
      // Health check (no auth required)
      app.use('/health', healthRouter);
    }
-   ```
 
 2. **Update server/index.ts** to use the centralized setup:
    ```typescript
@@ -348,7 +344,7 @@ Create a centralized router index file for better organization:
    
    // Replace individual router imports with:
    setupRouters(app);
-   ```
+
 
 3. **Add route documentation** at the top of index.ts listing all available endpoints
 ```
@@ -379,13 +375,11 @@ Extract custom middleware from router files and centralize them:
    export const isAdmin = async (req, res, next) => { ... };
    export const isModerator = async (req, res, next) => { ... };
    export const hasRole = (role: string) => async (req, res, next) => { ... };
-   ```
 
 4. **Update router imports**:
    ```typescript
    import { isAdmin, isModerator } from '../middleware/rbac.middleware';
    import { aiRateLimiter } from '../middleware/rate-limit.middleware';
-   ```
 
 5. **Standardize error responses** across all middleware
 ```
@@ -419,7 +413,6 @@ Update the frontend to use the new standardized API endpoints:
      },
      // ... etc
    };
-   ```
 
 3. **Update all API calls** to use the constants:
    ```typescript
@@ -428,7 +421,7 @@ Update the frontend to use the new standardized API endpoints:
    
    // After:
    queryKey: [API_ENDPOINTS.inventory.list]
-   ```
+
 
 4. **Test all frontend features** to ensure they still work with new endpoints
 ```
