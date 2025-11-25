@@ -931,11 +931,9 @@ router.post(
     const { metricName, dataPoints, period } = req.body;
 
     if (!metricName || !dataPoints || !period) {
-      return res
-        .status(400)
-        .json({
-          error: "Missing required fields: metricName, dataPoints, period",
-        });
+      return res.status(400).json({
+        error: "Missing required fields: metricName, dataPoints, period",
+      });
     }
 
     try {
