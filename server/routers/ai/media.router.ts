@@ -1774,7 +1774,7 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
       confidence: interpretation.confidence,
       action: interpretation.action,
       result: interpretation.parameters,
-      metadata: { originalCommand: command } as Record<string, [any, ...any[]]>,
+      metadata: { originalCommand: command },
     });
     
     let executionResult = null;
