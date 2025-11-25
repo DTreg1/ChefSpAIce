@@ -1,17 +1,21 @@
 /**
  * AI Analysis Router
- * 
+ *
  * Consolidated router for all AI analysis services including:
  * - Sentiment analysis
  * - Trend detection and monitoring
  * - Predictive analytics
  * - Data extraction and insights
- * 
+ *
  * Base path: /api/ai/analysis
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated, adminOnly, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import {
+  isAuthenticated,
+  adminOnly,
+  getAuthenticatedUserId,
+} from "../../middleware/oauth.middleware";
 import { storage } from "../../storage/index";
 import { z } from "zod";
 import { getOpenAIClient } from "../../config/openai-config";
@@ -47,23 +51,38 @@ const analyzeRequestSchema = z.object({
 });
 
 const sentimentTrendsSchema = z.object({
-  periodType: z.enum(['hour', 'day', 'week', 'month', 'quarter', 'year']).optional(),
+  periodType: z
+    .enum(["hour", "day", "week", "month", "quarter", "year"])
+    .optional(),
   limit: z.number().int().min(1).max(100).optional(),
 });
 
 // Trend Analysis
 const analyzeTrendsSchema = z.object({
-  dataSource: z.enum(['analytics', 'feedback', 'inventory', 'recipes', 'all']).optional().default('all'),
-  timeWindow: z.object({
-    value: z.number().min(1).max(365),
-    unit: z.enum(['hours', 'days', 'weeks', 'months'])
-  }).optional().default({ value: 7, unit: 'days' }),
+  dataSource: z
+    .enum(["analytics", "feedback", "inventory", "recipes", "all"])
+    .optional()
+    .default("all"),
+  timeWindow: z
+    .object({
+      value: z.number().min(1).max(365),
+      unit: z.enum(["hours", "days", "weeks", "months"]),
+    })
+    .optional()
+    .default({ value: 7, unit: "days" }),
   minSampleSize: z.number().min(10).optional().default(50),
   includeInterpretation: z.boolean().optional().default(true),
 });
 
 const subscribeTrendsSchema = z.object({
-  alertType: z.enum(['threshold', 'emergence', 'acceleration', 'peak', 'decline', 'anomaly']),
+  alertType: z.enum([
+    "threshold",
+    "emergence",
+    "acceleration",
+    "peak",
+    "decline",
+    "anomaly",
+  ]),
   conditions: z.object({
     minGrowthRate: z.number().min(0).optional(),
     minConfidence: z.number().min(0).max(1).optional(),
@@ -71,13 +90,24 @@ const subscribeTrendsSchema = z.object({
     categories: z.array(z.string()).optional(),
     trendTypes: z.array(z.string()).optional(),
   }),
-  notificationChannels: z.array(z.enum(['email', 'push', 'in-app', 'webhook'])).optional(),
+  notificationChannels: z
+    .array(z.enum(["email", "push", "in-app", "webhook"]))
+    .optional(),
 });
 
 // Predictions
 const predictUserSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  predictionTypes: z.array(z.enum(['churn_risk', 'next_action', 'engagement_drop', 'feature_adoption'])).optional(),
+  predictionTypes: z
+    .array(
+      z.enum([
+        "churn_risk",
+        "next_action",
+        "engagement_drop",
+        "feature_adoption",
+      ]),
+    )
+    .optional(),
   includeFactors: z.boolean().optional(),
 });
 
@@ -90,15 +120,21 @@ const churnPredictionSchema = z.object({
 // Data Extraction
 const extractionSchema = z.object({
   text: z.string().min(1).max(50000),
-  extractionType: z.enum(['entities', 'keywords', 'structured', 'summary']).default('entities'),
-  template: z.object({
-    fields: z.array(z.object({
-      name: z.string(),
-      type: z.enum(['text', 'number', 'date', 'boolean', 'array']),
-      description: z.string().optional(),
-      required: z.boolean().optional(),
-    })),
-  }).optional(),
+  extractionType: z
+    .enum(["entities", "keywords", "structured", "summary"])
+    .default("entities"),
+  template: z
+    .object({
+      fields: z.array(
+        z.object({
+          name: z.string(),
+          type: z.enum(["text", "number", "date", "boolean", "array"]),
+          description: z.string().optional(),
+          required: z.boolean().optional(),
+        }),
+      ),
+    })
+    .optional(),
 });
 
 // ==================== SENTIMENT ANALYSIS ENDPOINTS ====================
@@ -147,7 +183,7 @@ router.post(
       const aiError = handleOpenAIError(error as Error);
       res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
-  })
+  }),
 );
 
 /**
@@ -171,12 +207,15 @@ router.get(
       });
     }
 
-    const { periodType = 'day', limit = 30 } = validation.data;
+    const { periodType = "day", limit = 30 } = validation.data;
 
     try {
       // Get trends from analytics storage
-      const trends = await storage.platform.analytics.getTrends(undefined, 'active');
-      
+      const trends = await storage.platform.analytics.getTrends(
+        undefined,
+        "active",
+      );
+
       res.json({
         success: true,
         trends: trends.slice(0, limit),
@@ -192,7 +231,7 @@ router.get(
         error: "Failed to get sentiment trends",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -210,7 +249,8 @@ router.get(
 
     try {
       // Get insights from analytics storage
-      const insights = await storage.platform.analytics.getAnalyticsInsights(userId);
+      const insights =
+        await storage.platform.analytics.getAnalyticsInsights(userId);
 
       res.json({
         success: true,
@@ -223,7 +263,7 @@ router.get(
         error: "Failed to generate insights",
       });
     }
-  })
+  }),
 );
 
 // ==================== TREND ANALYSIS ENDPOINTS ====================
@@ -238,14 +278,14 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const trends = await storage.platform.analytics.getCurrentTrends();
-      
+
       res.json({
         success: true,
         trends,
         metadata: {
           count: trends.length,
           timestamp: new Date().toISOString(),
-        }
+        },
       });
     } catch (error) {
       console.error("Error getting current trends:", error);
@@ -254,7 +294,7 @@ router.get(
         details: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -266,15 +306,16 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: Request, res: Response) => {
     try {
-      const emergingTrends = await storage.platform.analytics.getEmergingTrends();
-      
+      const emergingTrends =
+        await storage.platform.analytics.getEmergingTrends();
+
       res.json({
         success: true,
         trends: emergingTrends,
         metadata: {
           count: emergingTrends.length,
           timestamp: new Date().toISOString(),
-        }
+        },
       });
     } catch (error) {
       console.error("Error getting emerging trends:", error);
@@ -283,7 +324,7 @@ router.get(
         details: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -308,7 +349,8 @@ router.post(
       });
     }
 
-    const { dataSource, timeWindow, minSampleSize, includeInterpretation } = validation.data;
+    const { dataSource, timeWindow, minSampleSize, includeInterpretation } =
+      validation.data;
 
     try {
       // Trigger trend analysis
@@ -319,8 +361,10 @@ router.post(
       });
 
       // Get trends array from results
-      const trendsArray = Array.isArray(results) ? results : (results as any).trends || [];
-      
+      const trendsArray = Array.isArray(results)
+        ? results
+        : (results as any).trends || [];
+
       // Get AI interpretation if requested
       let interpretation = null;
       if (includeInterpretation && trendsArray.length > 0 && openai) {
@@ -346,7 +390,9 @@ Format as JSON with fields: insights, recommendations, opportunities, risks.`;
             });
           });
 
-          interpretation = JSON.parse(completion.choices[0]?.message?.content || "{}");
+          interpretation = JSON.parse(
+            completion.choices[0]?.message?.content || "{}",
+          );
         } catch (aiError) {
           console.error("Error getting AI interpretation:", aiError);
         }
@@ -356,12 +402,12 @@ Format as JSON with fields: insights, recommendations, opportunities, risks.`;
       for (const trend of trendsArray) {
         await storage.platform.analytics.createTrend({
           trendName: trend.name || `Trend ${Date.now()}`,
-          trendType: trend.type || 'increasing',
-          metric: trend.metric || 'unknown',
+          trendType: trend.type || "increasing",
+          metric: trend.metric || "unknown",
           currentValue: trend.currentValue || 0,
           previousValue: trend.previousValue || 0,
           changePercent: trend.changePercent || 0,
-          timePeriod: trend.period || 'day',
+          timePeriod: trend.period || "day",
           significance: trend.significance || 0.5,
           detectedAt: new Date(),
         });
@@ -382,7 +428,7 @@ Format as JSON with fields: insights, recommendations, opportunities, risks.`;
       const aiError = handleOpenAIError(error as Error);
       res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
-  })
+  }),
 );
 
 /**
@@ -406,20 +452,33 @@ router.post(
       });
     }
 
-    const { alertType, conditions, notificationChannels = ['in-app'] } = validation.data;
+    const {
+      alertType,
+      conditions,
+      notificationChannels = ["in-app"],
+    } = validation.data;
 
     try {
       // Map alertType to match schema requirements
-      const mappedAlertType = alertType === 'threshold' ? 'threshold_exceeded' : 
-                              alertType === 'peak' ? 'emergence' :
-                              alertType === 'decline' ? 'emergence' :
-                              alertType as 'emergence' | 'acceleration' | 'anomaly' | 'prediction' | 'threshold_exceeded';
-      
+      const mappedAlertType =
+        alertType === "threshold"
+          ? "threshold_exceeded"
+          : alertType === "peak"
+            ? "emergence"
+            : alertType === "decline"
+              ? "emergence"
+              : (alertType as
+                  | "emergence"
+                  | "acceleration"
+                  | "anomaly"
+                  | "prediction"
+                  | "threshold_exceeded");
+
       const alert = await storage.platform.analytics.createTrendAlert({
         userId,
         alertType: mappedAlertType,
         trendId: `trend_${Date.now()}`,
-        alertLevel: 'info',
+        alertLevel: "info",
         message: `Alert for ${alertType}`,
         conditions: conditions as Record<string, [any, ...any[]]>,
         isActive: true,
@@ -436,7 +495,7 @@ router.post(
         details: error instanceof Error ? error.message : "Unknown error",
       });
     }
-  })
+  }),
 );
 
 // ==================== PREDICTIVE ANALYTICS ENDPOINTS ====================
@@ -459,13 +518,24 @@ router.get(
 
     try {
       // Get user predictions from storage
-      const predictionType = predictionTypes ? (predictionTypes as string[])[0] : undefined;
-      const predictions = await storage.platform.analytics.getUserPredictions(userId, predictionType);
+      const predictionType = predictionTypes
+        ? (predictionTypes as string[])[0]
+        : undefined;
+      const predictions = await storage.platform.analytics.getUserPredictions(
+        userId,
+        predictionType,
+      );
 
       // If no recent predictions, generate new ones
-      if (predictions.length === 0 || 
-          predictions.every((p: any) => new Date(p.createdAt).getTime() < Date.now() - 24 * 60 * 60 * 1000)) {
-        const newPredictions = await predictionService.generateUserPredictions(userId);
+      if (
+        predictions.length === 0 ||
+        predictions.every(
+          (p: any) =>
+            new Date(p.createdAt).getTime() < Date.now() - 24 * 60 * 60 * 1000,
+        )
+      ) {
+        const newPredictions =
+          await predictionService.generateUserPredictions(userId);
         predictions.push(...newPredictions);
       }
 
@@ -483,7 +553,7 @@ router.get(
         error: "Failed to get user predictions",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -512,7 +582,8 @@ router.post(
 
     try {
       // Get high churn risk users from storage
-      const predictions = await storage.platform.analytics.getChurnRiskUsers(threshold);
+      const predictions =
+        await storage.platform.analytics.getChurnRiskUsers(threshold);
 
       // Generate interventions if requested
       let interventions: Record<string, any> = {};
@@ -538,7 +609,7 @@ router.post(
       const aiError = handleOpenAIError(error as Error);
       res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
-  })
+  }),
 );
 
 /**
@@ -571,7 +642,7 @@ router.get(
         error: "Failed to get user segments",
       });
     }
-  })
+  }),
 );
 
 // ==================== DATA EXTRACTION ENDPOINTS ====================
@@ -591,9 +662,9 @@ router.post(
     }
 
     if (!openai) {
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: "AI service not configured",
-        message: "OpenAI API key is required for this feature."
+        message: "OpenAI API key is required for this feature.",
       });
     }
 
@@ -612,7 +683,7 @@ router.post(
       let responseFormat: any = undefined;
 
       switch (extractionType) {
-        case 'entities':
+        case "entities":
           prompt = `Extract all named entities from this text:
 "${text}"
 
@@ -628,7 +699,7 @@ Format as JSON with fields: people, organizations, locations, dates, products, q
           responseFormat = { type: "json_object" };
           break;
 
-        case 'keywords':
+        case "keywords":
           prompt = `Extract the key topics and keywords from this text:
 "${text}"
 
@@ -642,9 +713,11 @@ Format as JSON with fields: topics, keywords, concepts, categories.`;
           responseFormat = { type: "json_object" };
           break;
 
-        case 'structured':
+        case "structured":
           if (!template) {
-            return res.status(400).json({ error: "Template required for structured extraction" });
+            return res
+              .status(400)
+              .json({ error: "Template required for structured extraction" });
           }
           prompt = `Extract structured data from this text according to the template:
 "${text}"
@@ -656,7 +729,7 @@ Extract the values for each field and format as JSON.`;
           responseFormat = { type: "json_object" };
           break;
 
-        case 'summary':
+        case "summary":
           prompt = `Extract and summarize the key information from this text:
 "${text}"
 
@@ -681,17 +754,19 @@ Format as JSON with fields: mainPoints, facts, conclusions, actionItems.`;
         });
       });
 
-      const extractedData = JSON.parse(completion.choices[0]?.message?.content || "{}");
+      const extractedData = JSON.parse(
+        completion.choices[0]?.message?.content || "{}",
+      );
 
       // Save extraction to storage using createExtractedData
       const extraction = await storage.platform.ai.createExtractedData({
         sourceId: `text_${Date.now()}`,
-        sourceType: 'document',
+        sourceType: "document",
         templateId: null,
         inputText: text,
         extractedFields: extractedData,
         confidence: 0.95,
-        validationStatus: 'pending',
+        validationStatus: "pending",
       });
 
       res.json({
@@ -709,7 +784,7 @@ Format as JSON with fields: mainPoints, facts, conclusions, actionItems.`;
       const aiError = handleOpenAIError(error as Error);
       res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
-  })
+  }),
 );
 
 /**
@@ -729,8 +804,12 @@ router.get(
       // Get recent analytics events
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const recentData = await storage.platform.analytics.getAnalyticsEvents(userId, undefined, thirtyDaysAgo);
-      
+      const recentData = await storage.platform.analytics.getAnalyticsEvents(
+        userId,
+        undefined,
+        thirtyDaysAgo,
+      );
+
       if (!openai) {
         // Return basic insights without AI
         return res.json({
@@ -764,7 +843,9 @@ Format as JSON with fields: summary, trends (array), recommendations (array), co
         });
       });
 
-      const insights = JSON.parse(completion.choices[0]?.message?.content || "{}");
+      const insights = JSON.parse(
+        completion.choices[0]?.message?.content || "{}",
+      );
 
       res.json({
         success: true,
@@ -779,7 +860,7 @@ Format as JSON with fields: summary, trends (array), recommendations (array), co
       const aiError = handleOpenAIError(error as Error);
       res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
-  })
+  }),
 );
 
 /**
@@ -798,8 +879,10 @@ router.get(
     try {
       // Get usage stats from various services
       const trends = await storage.platform.analytics.getTrends();
-      const predictions = await storage.platform.analytics.getUserPredictions(userId);
-      const insights = await storage.platform.analytics.getAnalyticsInsights(userId);
+      const predictions =
+        await storage.platform.analytics.getUserPredictions(userId);
+      const insights =
+        await storage.platform.analytics.getAnalyticsInsights(userId);
 
       res.json({
         success: true,
@@ -826,7 +909,7 @@ router.get(
         error: "Failed to get analysis statistics",
       });
     }
-  })
+  }),
 );
 
 // ==================== INSIGHTS ENDPOINTS ====================
@@ -848,7 +931,11 @@ router.post(
     const { metricName, dataPoints, period } = req.body;
 
     if (!metricName || !dataPoints || !period) {
-      return res.status(400).json({ error: "Missing required fields: metricName, dataPoints, period" });
+      return res
+        .status(400)
+        .json({
+          error: "Missing required fields: metricName, dataPoints, period",
+        });
     }
 
     try {
@@ -879,20 +966,24 @@ Format as JSON with fields: trend, observations, recommendations, anomalies.`;
         });
       });
 
-      const insight = JSON.parse(completion.choices[0]?.message?.content || "{}");
+      const insight = JSON.parse(
+        completion.choices[0]?.message?.content || "{}",
+      );
 
       // Store the insight using createAnalyticsInsight
-      const savedInsight = await storage.platform.analytics.createAnalyticsInsight({
-        insightType: 'trend',
-        title: `Analysis of ${metricName}`,
-        description: insight.observations?.[0] || "No significant observations",
-        category: 'analytics',
-        severity: insight.anomalies?.length > 0 ? 'warning' : 'info',
-        metrics: insight,
-        recommendations: insight.recommendations || [],
-        isRead: false,
-        isActionable: true,
-      });
+      const savedInsight =
+        await storage.platform.analytics.createAnalyticsInsight({
+          insightType: "trend",
+          title: `Analysis of ${metricName}`,
+          description:
+            insight.observations?.[0] || "No significant observations",
+          category: "analytics",
+          severity: insight.anomalies?.length > 0 ? "warning" : "info",
+          metrics: insight,
+          recommendations: insight.recommendations || [],
+          isRead: false,
+          isActionable: true,
+        });
 
       res.json({
         id: savedInsight.id,
@@ -904,7 +995,7 @@ Format as JSON with fields: trend, observations, recommendations, anomalies.`;
       const aiError = handleOpenAIError(error as Error);
       res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
-  })
+  }),
 );
 
 /**
@@ -921,13 +1012,14 @@ router.get(
     }
 
     try {
-      const insights = await storage.platform.analytics.getDailyInsightSummary(userId);
+      const insights =
+        await storage.platform.analytics.getDailyInsightSummary(userId);
       res.json(insights);
     } catch (error) {
       console.error("Failed to get daily insights:", error);
       res.status(500).json({ error: "Failed to get daily insights" });
     }
-  })
+  }),
 );
 
 /**
@@ -947,7 +1039,9 @@ router.post(
     const { metricName, context } = req.body;
 
     if (!metricName) {
-      return res.status(400).json({ error: "Missing required field: metricName" });
+      return res
+        .status(400)
+        .json({ error: "Missing required field: metricName" });
     }
 
     try {
@@ -977,14 +1071,16 @@ Format as JSON with fields: definition, importance, interpretation, actions.`;
         });
       });
 
-      const explanation = JSON.parse(completion.choices[0]?.message?.content || "{}");
+      const explanation = JSON.parse(
+        completion.choices[0]?.message?.content || "{}",
+      );
       res.json({ explanation });
     } catch (error) {
       console.error("Failed to explain metric:", error);
       const aiError = handleOpenAIError(error as Error);
       res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
-  })
+  }),
 );
 
 /**
@@ -1004,8 +1100,8 @@ router.get(
 
     try {
       const insights = await storage.platform.analytics.getAnalyticsInsights(
-        userId, 
-        type as string | undefined
+        userId,
+        type as string | undefined,
       );
 
       res.json(insights);
@@ -1013,7 +1109,7 @@ router.get(
       console.error("Failed to get insights:", error);
       res.status(500).json({ error: "Failed to get insights" });
     }
-  })
+  }),
 );
 
 /**
@@ -1038,7 +1134,7 @@ router.patch(
       console.error("Failed to mark insight as read:", error);
       res.status(500).json({ error: "Failed to mark insight as read" });
     }
-  })
+  }),
 );
 
 /**
@@ -1059,14 +1155,14 @@ router.get(
     try {
       const predictions = await storage.platform.analytics.getUserPredictions(
         userId,
-        type as string | undefined
+        type as string | undefined,
       );
       res.json(predictions);
     } catch (error) {
       console.error("Failed to get predictions:", error);
       res.status(500).json({ error: "Failed to get predictions" });
     }
-  })
+  }),
 );
 
 // ==================== RECOMMENDATIONS/EMBEDDINGS ENDPOINTS ====================
@@ -1085,17 +1181,19 @@ router.get(
     }
 
     const { userId } = req.params;
-    const { type = 'article', limit = 10 } = req.query;
+    const { type = "article", limit = 10 } = req.query;
 
     // Ensure users can only get their own recommendations
     if (requestingUserId !== userId) {
-      return res.status(403).json({ error: "Forbidden: Can only access your own recommendations" });
+      return res
+        .status(403)
+        .json({ error: "Forbidden: Can only access your own recommendations" });
     }
 
     const schema = z.object({
       userId: z.string().min(1),
       type: z.string().min(1),
-      limit: z.coerce.number().min(1).max(50).default(10)
+      limit: z.coerce.number().min(1).max(50).default(10),
     });
 
     try {
@@ -1105,32 +1203,36 @@ router.get(
       const { EmbeddingsService } = await import("../../services/embeddings");
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
-      const recommendations = await embeddingsService.getPersonalizedRecommendations(
-        validated.userId,
-        validated.type,
-        validated.limit
-      );
+      const recommendations =
+        await embeddingsService.getPersonalizedRecommendations(
+          validated.userId,
+          validated.type,
+          validated.limit,
+        );
 
       res.json({
         success: true,
         userId: validated.userId,
         recommendations,
-        count: recommendations.length
+        count: recommendations.length,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Invalid parameters", 
-          details: error.errors 
+        return res.status(400).json({
+          error: "Invalid parameters",
+          details: error.errors,
         });
       }
 
       console.error("Error fetching recommendations:", error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to fetch recommendations" 
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch recommendations",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -1142,15 +1244,16 @@ router.get(
   isAuthenticated,
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    if (!userId)
+      return res.status(401).json({ error: "Authentication required" });
 
     const { id } = req.params;
-    const { type = 'article', limit = 10 } = req.query;
+    const { type = "article", limit = 10 } = req.query;
 
     const schema = z.object({
       id: z.string().min(1),
       type: z.string().min(1),
-      limit: z.coerce.number().min(1).max(50).default(10)
+      limit: z.coerce.number().min(1).max(50).default(10),
     });
 
     try {
@@ -1163,7 +1266,7 @@ router.get(
         validated.id,
         validated.type,
         userId,
-        validated.limit
+        validated.limit,
       );
 
       res.json({
@@ -1171,22 +1274,25 @@ router.get(
         contentId: validated.id,
         contentType: validated.type,
         related: relatedContent,
-        count: relatedContent.length
+        count: relatedContent.length,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Invalid parameters", 
-          details: error.errors 
+        return res.status(400).json({
+          error: "Invalid parameters",
+          details: error.errors,
         });
       }
 
       console.error("Error fetching related content:", error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to fetch related content" 
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch related content",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -1199,13 +1305,14 @@ router.post(
   rateLimiters.openai.middleware(),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    if (!userId)
+      return res.status(401).json({ error: "Authentication required" });
 
     const schema = z.object({
       contentId: z.string().min(1),
       contentType: z.string().min(1),
       text: z.string().min(1),
-      metadata: z.any().optional()
+      metadata: z.any().optional(),
     });
 
     try {
@@ -1219,7 +1326,7 @@ router.post(
         validated.contentType,
         validated.text,
         validated.metadata,
-        userId
+        userId,
       );
 
       res.json({
@@ -1230,23 +1337,26 @@ router.post(
           contentType: embedding.contentType,
           embeddingType: embedding.embeddingType,
           createdAt: embedding.createdAt,
-          updatedAt: embedding.updatedAt
-        }
+          updatedAt: embedding.updatedAt,
+        },
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Invalid request body", 
-          details: error.errors 
+        return res.status(400).json({
+          error: "Invalid request body",
+          details: error.errors,
         });
       }
 
       console.error("Error generating embedding:", error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to generate embedding" 
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate embedding",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -1259,15 +1369,21 @@ router.post(
   rateLimiters.openai.middleware(),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    if (!userId)
+      return res.status(401).json({ error: "Authentication required" });
 
     const schema = z.object({
       contentType: z.string().min(1),
-      contents: z.array(z.object({
-        id: z.string().min(1),
-        text: z.string().min(1),
-        metadata: z.any().optional()
-      })).min(1).max(100)
+      contents: z
+        .array(
+          z.object({
+            id: z.string().min(1),
+            text: z.string().min(1),
+            metadata: z.any().optional(),
+          }),
+        )
+        .min(1)
+        .max(100),
     });
 
     try {
@@ -1279,29 +1395,32 @@ router.post(
       const result = await embeddingsService.refreshEmbeddings(
         validated.contentType,
         userId,
-        validated.contents
+        validated.contents,
       );
 
       res.json({
         success: true,
         processed: result.processed,
         failed: result.failed,
-        message: `Successfully processed ${result.processed} items, ${result.failed} failed`
+        message: `Successfully processed ${result.processed} items, ${result.failed} failed`,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Invalid request body", 
-          details: error.errors 
+        return res.status(400).json({
+          error: "Invalid request body",
+          details: error.errors,
         });
       }
 
       console.error("Error refreshing embeddings:", error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to refresh embeddings" 
+      res.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to refresh embeddings",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -1314,13 +1433,14 @@ router.post(
   rateLimiters.openai.middleware(),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    if (!userId)
+      return res.status(401).json({ error: "Authentication required" });
 
     const schema = z.object({
       query: z.string().min(1),
       contentType: z.string().min(1),
       limit: z.number().min(1).max(50).default(10),
-      threshold: z.number().min(0).max(1).default(0.7)
+      threshold: z.number().min(0).max(1).default(0.7),
     });
 
     try {
@@ -1330,13 +1450,15 @@ router.post(
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       // Generate embedding for the query
-      const queryEmbedding = await embeddingsService.generateEmbedding(validated.query);
+      const queryEmbedding = await embeddingsService.generateEmbedding(
+        validated.query,
+      );
 
       // Search for similar content
       const results = await storage.platform.content.searchByEmbedding(
         queryEmbedding,
         validated.contentType,
-        validated.limit
+        validated.limit,
       );
 
       // Filter by threshold and format results
@@ -1345,31 +1467,32 @@ router.post(
         .map((r: any) => ({
           id: r.contentId,
           type: r.contentType,
-          title: r.metadata?.title || 'Untitled',
+          title: r.metadata?.title || "Untitled",
           score: r.similarity,
-          metadata: r.metadata
+          metadata: r.metadata,
         }));
 
       res.json({
         success: true,
         query: validated.query,
         results: filteredResults,
-        count: filteredResults.length
+        count: filteredResults.length,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          error: "Invalid request body", 
-          details: error.errors 
+        return res.status(400).json({
+          error: "Invalid request body",
+          details: error.errors,
         });
       }
 
       console.error("Error in semantic search:", error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Semantic search failed" 
+      res.status(500).json({
+        error:
+          error instanceof Error ? error.message : "Semantic search failed",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -1381,36 +1504,45 @@ router.delete(
   isAuthenticated,
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Authentication required" });
+    if (!userId)
+      return res.status(401).json({ error: "Authentication required" });
 
     const { id } = req.params;
-    const { type = 'article' } = req.query;
+    const { type = "article" } = req.query;
 
     // Set an expired cache entry to effectively clear it
     const expiresAt = new Date(0);
 
     await storage.platform.content.cacheRelatedContent({
       contentId: id as string,
-      contentType: type as 'recipe' | 'article' | 'product' | 'document' | 'media',
+      contentType: type as
+        | "recipe"
+        | "article"
+        | "product"
+        | "document"
+        | "media",
       relatedContent: {
         contentIds: [],
         scores: [],
-        algorithm: 'cache_clear',
+        algorithm: "cache_clear",
       },
-      expiresAt
+      expiresAt,
     });
 
     res.json({
       success: true,
-      message: `Cache cleared for content ${id}`
+      message: `Cache cleared for content ${id}`,
     });
-  })
+  }),
 );
 
 // ==================== NATURAL LANGUAGE QUERY ENDPOINTS ====================
 
 const naturalQuerySchema = z.object({
-  naturalQuery: z.string().min(1, "Query is required").max(500, "Query too long"),
+  naturalQuery: z
+    .string()
+    .min(1, "Query is required")
+    .max(500, "Query too long"),
 });
 
 const executeQuerySchema = z.object({
@@ -1434,16 +1566,18 @@ router.post(
 
     try {
       const { naturalQuery } = naturalQuerySchema.parse(req.body);
-      
-      const { convertNaturalLanguageToSQL } = await import("../../services/openai-query");
+
+      const { convertNaturalLanguageToSQL } = await import(
+        "../../services/openai-query"
+      );
       const result = await convertNaturalLanguageToSQL(naturalQuery, userId);
-      
+
       const queryLog = await storage.platform.ai.createQueryLog(userId, {
-        tableName: result.tablesAccessed?.[0] || 'unknown',
+        tableName: result.tablesAccessed?.[0] || "unknown",
         queryType: result.queryType,
-        executionTime: 0
+        executionTime: 0,
       });
-      
+
       res.json({
         queryId: queryLog.id,
         sql: result.sql,
@@ -1455,13 +1589,16 @@ router.post(
     } catch (error) {
       console.error("Error converting natural language to SQL:", error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Validation failed", details: error.errors });
+        return res
+          .status(400)
+          .json({ error: "Validation failed", details: error.errors });
       }
       res.status(500).json({
-        error: error instanceof Error ? error.message : "Failed to convert query"
+        error:
+          error instanceof Error ? error.message : "Failed to convert query",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -1479,29 +1616,31 @@ router.post(
 
     try {
       const { queryId, sql } = executeQuerySchema.parse(req.body);
-      
+
       const logs = await storage.platform.ai.getQueryLogs(userId, 100);
       const queryLog = logs.find((log: any) => log.id === queryId);
-      
+
       if (!queryLog) {
         return res.status(404).json({ error: "Query not found" });
       }
-      
+
       const startTime = Date.now();
       try {
-        const { executeValidatedQuery } = await import("../../services/openai-query");
+        const { executeValidatedQuery } = await import(
+          "../../services/openai-query"
+        );
         const { results, rowCount } = await executeValidatedQuery(
           sql,
           userId,
-          queryLog.queryHash || ''
+          queryLog.queryHash || "",
         );
         const executionTime = Date.now() - startTime;
-        
+
         await storage.platform.ai.updateQueryLog(queryId, {
           rowsAffected: rowCount,
-          executionTime
+          executionTime,
         });
-        
+
         res.json({
           results,
           rowCount,
@@ -1509,23 +1648,26 @@ router.post(
         });
       } catch (execError) {
         const executionTime = Date.now() - startTime;
-        
+
         await storage.platform.ai.updateQueryLog(queryId, {
-          executionTime
+          executionTime,
         });
-        
+
         throw execError;
       }
     } catch (error) {
       console.error("Error executing query:", error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Validation failed", details: error.errors });
+        return res
+          .status(400)
+          .json({ error: "Validation failed", details: error.errors });
       }
       res.status(500).json({
-        error: error instanceof Error ? error.message : "Failed to execute query"
+        error:
+          error instanceof Error ? error.message : "Failed to execute query",
       });
     }
-  })
+  }),
 );
 
 /**
@@ -1549,7 +1691,7 @@ router.get(
       console.error("Error getting query history:", error);
       res.status(500).json({ error: "Failed to get query history" });
     }
-  })
+  }),
 );
 
 /**
@@ -1568,17 +1710,17 @@ router.get(
     try {
       const logs = await storage.platform.ai.getQueryLogs(userId, 100);
       const query = logs.find((log: any) => log.id === req.params.id);
-      
+
       if (!query) {
         return res.status(404).json({ error: "Query not found" });
       }
-      
+
       res.json(query);
     } catch (error) {
       console.error("Error getting query:", error);
       res.status(500).json({ error: "Failed to get query" });
     }
-  })
+  }),
 );
 
 export default router;
