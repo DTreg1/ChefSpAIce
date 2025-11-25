@@ -310,7 +310,7 @@ async function extractTextFromImage(imageBuffer: Buffer, language: string) {
     return {
       text: result.data.text,
       confidence: result.data.confidence,
-      boundingBoxes: result.data.words.map(word => ({
+      boundingBoxes: ((result.data as any).words || []).map((word: any) => ({
         text: word.text,
         bbox: word.bbox,
         confidence: word.confidence,
@@ -1506,12 +1506,8 @@ router.post("/voice/transcribe", isAuthenticated, audioUpload.single("audio"), r
         metadata: {
           title: title || `Transcription from ${new Date().toLocaleDateString()}`,
           audioFormat: req.file.mimetype,
-          originalFileName: req.file.originalname,
-          fileSize: req.file.size,
           processingTime: Date.now() - (req.body.startTime || Date.now()),
-          segments: transcription.segments,
-          words: transcription.words,
-        },
+        } as any,
       });
       
       res.json({
@@ -1610,19 +1606,18 @@ router.put("/voice/transcriptions/:id/edit", isAuthenticated, async (req: Reques
       return res.status(404).json({ error: "Transcription not found" });
     }
     
-    await storage.platform.ai.createTranscriptionEdit(userId, req.params.id, {
-      originalText: original.transcript,
-      editedText: editedTranscript,
-      editReason: editReason || null,
+    await storage.platform.ai.createTranscriptEdit({
+      transcriptionId: req.params.id,
+      userId,
+      originalSegment: original.transcript,
+      editedSegment: editedTranscript,
+      timestamp: 0,
+      editType: 'content',
+      confidence: 100,
     });
     
     const updated = await storage.platform.ai.updateTranscription(userId, req.params.id, {
       transcript: editedTranscript,
-      metadata: {
-        ...original.metadata,
-        lastEditedAt: new Date().toISOString(),
-        editCount: (original.metadata?.editCount || 0) + 1,
-      }
     });
     
     res.json({
@@ -1709,10 +1704,13 @@ router.get("/voice/transcriptions/search", isAuthenticated, async (req: Request,
       return res.status(400).json({ error: "Search query is required" });
     }
     
-    const results = await storage.platform.ai.searchTranscriptions(
+    const allTranscriptions = await storage.platform.ai.getTranscriptions(
       userId, 
-      q as string,
+      undefined,
       parseInt(limit as string)
+    );
+    const results = allTranscriptions.filter(t => 
+      t.transcript?.toLowerCase().includes((q as string).toLowerCase())
     );
     
     res.json(results);
@@ -1742,11 +1740,14 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
     
     const interpretation = await interpretVoiceCommand(command, context);
     
-    const commandRecord = await storage.platform.ai.createVoiceCommand(userId, {
-      command,
-      interpretation,
-      processedAt: new Date(),
-      success: interpretation.confidence > 0.5,
+    const commandRecord = await storage.platform.ai.createVoiceCommand({
+      userId,
+      transcription: command,
+      intent: interpretation.action,
+      confidence: interpretation.confidence,
+      action: interpretation.action,
+      result: interpretation.parameters,
+      metadata: { originalCommand: command },
     });
     
     let executionResult = null;
@@ -1756,9 +1757,11 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
         case 'add_item':
           if (interpretation.parameters?.items) {
             for (const item of interpretation.parameters.items) {
-              await storage.user.inventory.createFoodItem(userId, {
+              await storage.user.inventory.createFoodItem({
+                userId,
                 name: item,
                 quantity: interpretation.parameters.quantity || "1",
+                unit: interpretation.parameters.unit || "item",
                 storageLocationId: interpretation.parameters.location || "default",
                 foodCategory: interpretation.parameters.category || "other",
               });
@@ -1880,8 +1883,9 @@ router.get("/voice/commands/history", isAuthenticated, async (req: Request, res:
     
     const { limit = 20 } = req.query;
     
-    const history = await storage.platform.ai.getVoiceCommandHistory(
+    const history = await storage.platform.ai.getVoiceCommands(
       userId,
+      undefined,
       parseInt(limit as string)
     );
     
@@ -1904,11 +1908,11 @@ router.get("/voice/stats", isAuthenticated, async (req: Request, res: Response) 
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const transcriptions = await storage.platform.ai.getTranscriptionsPaginated(userId, 1, 1000);
-    const commands = await storage.platform.ai.getVoiceCommandHistory(userId, 1000);
+    const transcriptionsData = await storage.platform.ai.getTranscriptions(userId, undefined, 1000);
+    const commands = await storage.platform.ai.getVoiceCommands(userId, undefined, 1000);
     
-    const totalTranscriptions = transcriptions.data?.length || 0;
-    const totalDuration = transcriptions.data?.reduce((sum: number, t: any) => sum + (t.duration || 0), 0) || 0;
+    const totalTranscriptions = transcriptionsData?.length || 0;
+    const totalDuration = transcriptionsData?.reduce((sum: number, t: any) => sum + (t.duration || 0), 0) || 0;
     const totalCommands = commands.length;
     const successfulCommands = commands.filter((c: any) => c.success).length;
     

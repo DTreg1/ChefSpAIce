@@ -1320,4 +1320,73 @@ export class AiMlStorage {
 
     return result;
   }
+
+  // ==================== Stub Methods (TODO: Implement) ====================
+  // These methods are stubs to allow compilation. They should be implemented
+  // when the corresponding features are built out.
+
+  async createOcrResult(_userId: string, _data: any): Promise<any> {
+    console.warn("createOcrResult: stub method called");
+    return { id: `ocr_${Date.now()}`, ...(_data || {}) };
+  }
+
+  async getUserOcrResults(_userId: string, _limit?: number, _offset?: number): Promise<any[]> {
+    console.warn("getUserOcrResults: stub method called");
+    return [];
+  }
+
+  async createFaceDetection(_userId: string, _data: any): Promise<any> {
+    console.warn("createFaceDetection: stub method called");
+    return { id: `face_${Date.now()}`, ...(_data || {}) };
+  }
+
+  async getPrivacySettings(_userId: string): Promise<any> {
+    console.warn("getPrivacySettings: stub method called");
+    return { blurFaces: false, detectMinors: false };
+  }
+
+  async upsertPrivacySettings(_userId: string, _settings: any): Promise<any> {
+    console.warn("upsertPrivacySettings: stub method called");
+    return { id: `privacy_${Date.now()}`, ...(_settings || {}) };
+  }
+
+  async getImageMetadataByUrl(_userId: string, _url: string): Promise<any | null> {
+    console.warn("getImageMetadataByUrl: stub method called");
+    return null;
+  }
+
+  async createImageMetadata(_userId: string, _data: any): Promise<any> {
+    console.warn("createImageMetadata: stub method called");
+    return { id: `img_${Date.now()}`, ...(_data || {}) };
+  }
+
+  async updateImageMetadata(_userId: string, _imageId: string, _data: any): Promise<any> {
+    console.warn("updateImageMetadata: stub method called");
+    return { id: _imageId, ...(_data || {}) };
+  }
+
+  async getImageMetadata(_userId: string, _imageId: string): Promise<any | null> {
+    console.warn("getImageMetadata: stub method called");
+    return null;
+  }
+
+  async upsertAltTextQuality(_imageId: string, _quality: any): Promise<any> {
+    console.warn("upsertAltTextQuality: stub method called");
+    return { imageId: _imageId, ...(_quality || {}) };
+  }
+
+  async getTranscriptionsPaginated(
+    userId: string,
+    page: number,
+    limit: number,
+    status?: "processing" | "completed" | "failed"
+  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+    const transcriptionsList = await this.getTranscriptions(userId, status, limit);
+    return {
+      data: transcriptionsList,
+      total: transcriptionsList.length,
+      page,
+      limit,
+    };
+  }
 }

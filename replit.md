@@ -90,3 +90,27 @@ All tiers are composed through a central StorageRoot class accessible via `stora
 
 ### Infrastructure
 - **PostgreSQL Database**: Primary data store.
+
+## Technical Notes
+
+### AI Router Storage Stubs (November 2024)
+The following storage methods are stub implementations that return placeholder data. They allow the application to compile but should be fully implemented when the corresponding features are built out:
+
+**In StorageRoot.ts:**
+- `createImageProcessingJob` - Image processing job tracking
+- `updateImageProcessingJob` - Update job status/results
+- `getImageProcessingJob` - Retrieve single job
+- `getImageProcessingJobs` - List jobs by user/status
+- `getImagePresets` - Enhancement preset retrieval
+- `createImagePreset` - Custom preset creation
+
+**In ai-ml.storage.ts:**
+- `createOcrResult` - OCR result persistence
+- `getUserOcrResults` - OCR history retrieval
+- `createFaceDetection` - Face detection result storage
+- `getPrivacySettings` / `upsertPrivacySettings` - Privacy preference management
+- `createImageMetadata` / `updateImageMetadata` - Image metadata tracking
+- `upsertAltTextQuality` - Alt text quality metrics
+- `getImageMetadataByUrl` - Image lookup by URL
+
+All stub methods log warnings when called to help identify when they need implementation.

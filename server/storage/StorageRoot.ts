@@ -972,6 +972,40 @@ export class StorageRoot {
   async searchCookingTerms(query: string) {
     return this.user.food.searchCookingTerms(query);
   }
+
+  // ==================== Image Processing Stubs (TODO: Implement) ====================
+  // These methods are stubs to allow compilation. They should be implemented
+  // when the corresponding features are built out.
+
+  async createImageProcessingJob(_data: any): Promise<any> {
+    console.warn("createImageProcessingJob: stub method called");
+    return { id: `job_${Date.now()}`, status: 'pending', ...(_data || {}) };
+  }
+
+  async updateImageProcessingJob(_jobId: string, _data: any): Promise<any> {
+    console.warn("updateImageProcessingJob: stub method called");
+    return { id: _jobId, ...(_data || {}) };
+  }
+
+  async getImageProcessingJob(_jobId: string): Promise<any | null> {
+    console.warn("getImageProcessingJob: stub method called");
+    return null;
+  }
+
+  async getImageProcessingJobs(_userId: string, _status?: string): Promise<any[]> {
+    console.warn("getImageProcessingJobs: stub method called");
+    return [];
+  }
+
+  async getImagePresets(_userId?: string, _category?: string): Promise<any[]> {
+    console.warn("getImagePresets: stub method called");
+    return [];
+  }
+
+  async createImagePreset(_data: any): Promise<any> {
+    console.warn("createImagePreset: stub method called");
+    return { id: `preset_${Date.now()}`, ...(_data || {}) };
+  }
 }
 
 // Export a singleton instance for convenience
