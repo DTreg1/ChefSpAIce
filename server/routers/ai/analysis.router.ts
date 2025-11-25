@@ -851,4 +851,750 @@ router.get(
   })
 );
 
+// ==================== INSIGHTS ENDPOINTS ====================
+
+/**
+ * POST /api/ai/analysis/insights/generate
+ * Generate insights from data
+ */
+router.post(
+  "/insights/generate",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { metricName, dataPoints, period } = req.body;
+
+    if (!metricName || !dataPoints || !period) {
+      return res.status(400).json({ error: "Missing required fields: metricName, dataPoints, period" });
+    }
+
+    try {
+      if (!openai) {
+        return res.status(503).json({ error: "AI service not configured" });
+      }
+
+      const prompt = `Analyze the following data and generate insights:
+Metric: ${metricName}
+Period: ${period}
+Data points: ${JSON.stringify(dataPoints)}
+
+Provide:
+1. Trend analysis
+2. Key observations
+3. Recommendations
+4. Anomalies or concerns
+
+Format as JSON with fields: trend, observations, recommendations, anomalies.`;
+
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 1000,
+          temperature: 0.5,
+          response_format: { type: "json_object" },
+        });
+      });
+
+      const insight = JSON.parse(completion.choices[0]?.message?.content || "{}");
+
+      // Store the insight
+      const savedInsight = await storage.platform.analytics.createInsight({
+        userId,
+        metricName,
+        insightType: insight.trend?.direction || "neutral",
+        title: `Analysis of ${metricName}`,
+        description: insight.observations?.[0] || "No significant observations",
+        data: insight,
+        priority: insight.anomalies?.length > 0 ? "high" : "normal",
+      });
+
+      res.json({
+        id: savedInsight.id,
+        ...insight,
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Failed to generate insight:", error);
+      const errorResponse = handleOpenAIError(error as Error);
+      res.status(errorResponse.status).json(errorResponse.body);
+    }
+  })
+);
+
+/**
+ * GET /api/ai/analysis/insights/daily
+ * Get daily insight summary
+ */
+router.get(
+  "/insights/daily",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    try {
+      const insights = await storage.platform.analytics.getDailyInsightSummary(userId);
+      res.json(insights);
+    } catch (error) {
+      console.error("Failed to get daily insights:", error);
+      res.status(500).json({ error: "Failed to get daily insights" });
+    }
+  })
+);
+
+/**
+ * POST /api/ai/analysis/insights/explain
+ * Explain specific metric
+ */
+router.post(
+  "/insights/explain",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { metricName, context } = req.body;
+
+    if (!metricName) {
+      return res.status(400).json({ error: "Missing required field: metricName" });
+    }
+
+    try {
+      if (!openai) {
+        return res.status(503).json({ error: "AI service not configured" });
+      }
+
+      const prompt = `Explain the following metric in simple terms:
+Metric: ${metricName}
+${context ? `Context: ${JSON.stringify(context)}` : ""}
+
+Provide a clear, concise explanation that:
+1. Explains what this metric measures
+2. Why it matters
+3. How to interpret the values
+4. Actions to improve it
+
+Format as JSON with fields: definition, importance, interpretation, actions.`;
+
+      const completion = await openaiBreaker.execute(async () => {
+        return await openai!.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 500,
+          temperature: 0.3,
+          response_format: { type: "json_object" },
+        });
+      });
+
+      const explanation = JSON.parse(completion.choices[0]?.message?.content || "{}");
+      res.json({ explanation });
+    } catch (error) {
+      console.error("Failed to explain metric:", error);
+      const errorResponse = handleOpenAIError(error as Error);
+      res.status(errorResponse.status).json(errorResponse.body);
+    }
+  })
+);
+
+/**
+ * GET /api/ai/analysis/insights/all
+ * Get all insights
+ */
+router.get(
+  "/insights/all",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { type } = req.query;
+
+    try {
+      const insights = await storage.platform.analytics.getAnalyticsInsights(
+        userId, 
+        type as string | undefined
+      );
+
+      res.json(insights);
+    } catch (error) {
+      console.error("Failed to get insights:", error);
+      res.status(500).json({ error: "Failed to get insights" });
+    }
+  })
+);
+
+/**
+ * PATCH /api/ai/analysis/insights/:insightId/read
+ * Mark insight as read
+ */
+router.patch(
+  "/insights/:insightId/read",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { insightId } = req.params;
+
+    try {
+      await storage.platform.analytics.markInsightAsRead(insightId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to mark insight as read:", error);
+      res.status(500).json({ error: "Failed to mark insight as read" });
+    }
+  })
+);
+
+/**
+ * GET /api/ai/analysis/insights/predictions
+ * Get user predictions
+ */
+router.get(
+  "/insights/predictions",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { type } = req.query;
+
+    try {
+      const predictions = await storage.platform.analytics.getUserPredictions(
+        userId,
+        type as string | undefined
+      );
+      res.json(predictions);
+    } catch (error) {
+      console.error("Failed to get predictions:", error);
+      res.status(500).json({ error: "Failed to get predictions" });
+    }
+  })
+);
+
+// ==================== RECOMMENDATIONS/EMBEDDINGS ENDPOINTS ====================
+
+/**
+ * GET /api/ai/analysis/recommendations/user/:userId
+ * Get personalized content recommendations for a user
+ */
+router.get(
+  "/recommendations/user/:userId",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const requestingUserId = getAuthenticatedUserId(req);
+    if (!requestingUserId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const { userId } = req.params;
+    const { type = 'article', limit = 10 } = req.query;
+
+    // Ensure users can only get their own recommendations
+    if (requestingUserId !== userId) {
+      return res.status(403).json({ error: "Forbidden: Can only access your own recommendations" });
+    }
+
+    const schema = z.object({
+      userId: z.string().min(1),
+      type: z.string().min(1),
+      limit: z.coerce.number().min(1).max(50).default(10)
+    });
+
+    try {
+      const validated = schema.parse({ userId, type, limit });
+
+      // Import and use embeddings service
+      const { EmbeddingsService } = await import("../../services/embeddings");
+      const embeddingsService = new EmbeddingsService(storage.platform.content);
+
+      const recommendations = await embeddingsService.getPersonalizedRecommendations(
+        validated.userId,
+        validated.type,
+        validated.limit
+      );
+
+      res.json({
+        success: true,
+        userId: validated.userId,
+        recommendations,
+        count: recommendations.length
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid parameters", 
+          details: error.errors 
+        });
+      }
+
+      console.error("Error fetching recommendations:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to fetch recommendations" 
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/ai/analysis/content/:id/related
+ * Get semantically similar content based on embeddings
+ */
+router.get(
+  "/content/:id/related",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const { id } = req.params;
+    const { type = 'article', limit = 10 } = req.query;
+
+    const schema = z.object({
+      id: z.string().min(1),
+      type: z.string().min(1),
+      limit: z.coerce.number().min(1).max(50).default(10)
+    });
+
+    try {
+      const validated = schema.parse({ id, type, limit });
+
+      const { EmbeddingsService } = await import("../../services/embeddings");
+      const embeddingsService = new EmbeddingsService(storage.platform.content);
+
+      const relatedContent = await embeddingsService.findRelatedContent(
+        validated.id,
+        validated.type,
+        userId,
+        validated.limit
+      );
+
+      res.json({
+        success: true,
+        contentId: validated.id,
+        contentType: validated.type,
+        related: relatedContent,
+        count: relatedContent.length
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid parameters", 
+          details: error.errors 
+        });
+      }
+
+      console.error("Error fetching related content:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to fetch related content" 
+      });
+    }
+  })
+);
+
+/**
+ * POST /api/ai/analysis/content/embeddings/generate
+ * Generate embedding for a single piece of content
+ */
+router.post(
+  "/content/embeddings/generate",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const schema = z.object({
+      contentId: z.string().min(1),
+      contentType: z.string().min(1),
+      text: z.string().min(1),
+      metadata: z.any().optional()
+    });
+
+    try {
+      const validated = schema.parse(req.body);
+
+      const { EmbeddingsService } = await import("../../services/embeddings");
+      const embeddingsService = new EmbeddingsService(storage.platform.content);
+
+      const embedding = await embeddingsService.createContentEmbedding(
+        validated.contentId,
+        validated.contentType,
+        validated.text,
+        validated.metadata,
+        userId
+      );
+
+      res.json({
+        success: true,
+        embedding: {
+          id: embedding.id,
+          contentId: embedding.contentId,
+          contentType: embedding.contentType,
+          embeddingType: embedding.embeddingType,
+          createdAt: embedding.createdAt,
+          updatedAt: embedding.updatedAt
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid request body", 
+          details: error.errors 
+        });
+      }
+
+      console.error("Error generating embedding:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to generate embedding" 
+      });
+    }
+  })
+);
+
+/**
+ * POST /api/ai/analysis/content/embeddings/refresh
+ * Refresh embeddings for multiple content items
+ */
+router.post(
+  "/content/embeddings/refresh",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const schema = z.object({
+      contentType: z.string().min(1),
+      contents: z.array(z.object({
+        id: z.string().min(1),
+        text: z.string().min(1),
+        metadata: z.any().optional()
+      })).min(1).max(100)
+    });
+
+    try {
+      const validated = schema.parse(req.body);
+
+      const { EmbeddingsService } = await import("../../services/embeddings");
+      const embeddingsService = new EmbeddingsService(storage.platform.content);
+
+      const result = await embeddingsService.refreshEmbeddings(
+        validated.contentType,
+        userId,
+        validated.contents
+      );
+
+      res.json({
+        success: true,
+        processed: result.processed,
+        failed: result.failed,
+        message: `Successfully processed ${result.processed} items, ${result.failed} failed`
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid request body", 
+          details: error.errors 
+        });
+      }
+
+      console.error("Error refreshing embeddings:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to refresh embeddings" 
+      });
+    }
+  })
+);
+
+/**
+ * POST /api/ai/analysis/content/search/semantic
+ * Search for content using semantic similarity
+ */
+router.post(
+  "/content/search/semantic",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const schema = z.object({
+      query: z.string().min(1),
+      contentType: z.string().min(1),
+      limit: z.number().min(1).max(50).default(10),
+      threshold: z.number().min(0).max(1).default(0.7)
+    });
+
+    try {
+      const validated = schema.parse(req.body);
+
+      const { EmbeddingsService } = await import("../../services/embeddings");
+      const embeddingsService = new EmbeddingsService(storage.platform.content);
+
+      // Generate embedding for the query
+      const queryEmbedding = await embeddingsService.generateEmbedding(validated.query);
+
+      // Search for similar content
+      const results = await storage.platform.content.searchByEmbedding(
+        queryEmbedding,
+        validated.contentType,
+        validated.limit
+      );
+
+      // Filter by threshold and format results
+      const filteredResults = results
+        .filter((r: any) => r.similarity >= validated.threshold)
+        .map((r: any) => ({
+          id: r.contentId,
+          type: r.contentType,
+          title: r.metadata?.title || 'Untitled',
+          score: r.similarity,
+          metadata: r.metadata
+        }));
+
+      res.json({
+        success: true,
+        query: validated.query,
+        results: filteredResults,
+        count: filteredResults.length
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Invalid request body", 
+          details: error.errors 
+        });
+      }
+
+      console.error("Error in semantic search:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Semantic search failed" 
+      });
+    }
+  })
+);
+
+/**
+ * DELETE /api/ai/analysis/content/:id/cache
+ * Clear cached related content for a specific item
+ */
+router.delete(
+  "/content/:id/cache",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+    const { id } = req.params;
+    const { type = 'article' } = req.query;
+
+    // Set an expired cache entry to effectively clear it
+    const expiresAt = new Date(0);
+
+    await storage.platform.content.cacheRelatedContent({
+      contentId: id as string,
+      contentType: type as 'recipe' | 'article' | 'product' | 'document' | 'media',
+      relatedContent: [],
+      expiresAt
+    });
+
+    res.json({
+      success: true,
+      message: `Cache cleared for content ${id}`
+    });
+  })
+);
+
+// ==================== NATURAL LANGUAGE QUERY ENDPOINTS ====================
+
+const naturalQuerySchema = z.object({
+  naturalQuery: z.string().min(1, "Query is required").max(500, "Query too long"),
+});
+
+const executeQuerySchema = z.object({
+  queryId: z.string().uuid("Invalid query ID"),
+  sql: z.string().min(1, "SQL query is required"),
+});
+
+/**
+ * POST /api/ai/analysis/query/natural
+ * Convert natural language to SQL query
+ */
+router.post(
+  "/query/natural",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    try {
+      const { naturalQuery } = naturalQuerySchema.parse(req.body);
+      
+      const { convertNaturalLanguageToSQL } = await import("../../services/openai-query");
+      const result = await convertNaturalLanguageToSQL(naturalQuery, userId);
+      
+      const queryLog = await storage.platform.ai.createQueryLog(userId, {
+        tableName: result.tablesAccessed?.[0] || 'unknown',
+        queryType: result.queryType,
+        executionTime: 0
+      });
+      
+      res.json({
+        queryId: queryLog.id,
+        sql: result.sql,
+        explanation: result.explanation,
+        confidence: result.confidence,
+        queryType: result.queryType,
+        tablesAccessed: result.tablesAccessed,
+      });
+    } catch (error) {
+      console.error("Error converting natural language to SQL:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation failed", details: error.errors });
+      }
+      res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to convert query"
+      });
+    }
+  })
+);
+
+/**
+ * POST /api/ai/analysis/query/execute
+ * Execute a validated SQL query
+ */
+router.post(
+  "/query/execute",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    try {
+      const { queryId, sql } = executeQuerySchema.parse(req.body);
+      
+      const logs = await storage.platform.ai.getQueryLogs(userId, 100);
+      const queryLog = logs.find((log: any) => log.id === queryId);
+      
+      if (!queryLog) {
+        return res.status(404).json({ error: "Query not found" });
+      }
+      
+      const startTime = Date.now();
+      try {
+        const { executeValidatedQuery } = await import("../../services/openai-query");
+        const { results, rowCount } = await executeValidatedQuery(
+          sql,
+          userId,
+          queryLog.queryHash || ''
+        );
+        const executionTime = Date.now() - startTime;
+        
+        await storage.platform.ai.updateQueryLog(queryId, {
+          rowsAffected: rowCount,
+          executionTime
+        });
+        
+        res.json({
+          results,
+          rowCount,
+          executionTime,
+        });
+      } catch (execError) {
+        const executionTime = Date.now() - startTime;
+        
+        await storage.platform.ai.updateQueryLog(queryId, {
+          executionTime
+        });
+        
+        throw execError;
+      }
+    } catch (error) {
+      console.error("Error executing query:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation failed", details: error.errors });
+      }
+      res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to execute query"
+      });
+    }
+  })
+);
+
+/**
+ * GET /api/ai/analysis/query/history
+ * Get user's query history
+ */
+router.get(
+  "/query/history",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const history = await storage.platform.ai.getQueryLogs(userId, limit);
+      res.json(history);
+    } catch (error) {
+      console.error("Error getting query history:", error);
+      res.status(500).json({ error: "Failed to get query history" });
+    }
+  })
+);
+
+/**
+ * GET /api/ai/analysis/query/:id
+ * Get a specific query by ID
+ */
+router.get(
+  "/query/:id",
+  isAuthenticated,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    try {
+      const logs = await storage.platform.ai.getQueryLogs(userId, 100);
+      const query = logs.find((log: any) => log.id === req.params.id);
+      
+      if (!query) {
+        return res.status(404).json({ error: "Query not found" });
+      }
+      
+      res.json(query);
+    } catch (error) {
+      console.error("Error getting query:", error);
+      res.status(500).json({ error: "Failed to get query" });
+    }
+  })
+);
+
 export default router;

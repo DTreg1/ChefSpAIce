@@ -108,19 +108,12 @@ import moderationRouter from "./admin/moderation.router";
 import aiMetricsRouter from "./admin/ai-metrics.router";
 
 // ====================================================================
-// AI DOMAIN ROUTERS
+// AI DOMAIN ROUTERS (Consolidated)
 // ====================================================================
-import generationRouter from "./ai/generation.router";
-import analysisRouter from "./ai/analysis.router";
-import visionRouter from "./ai/vision.router";
-import voiceRouter from "./ai/voice.router";
-import emailDraftingRouter from "./ai/drafting.router";
-import writingAssistantRouter from "./ai/writing.router";
-import { createExcerptRouter } from "./ai/excerpt.router";
-import recommendationsRouter from "./ai/recommendations.router";
-import insightsRouter from "./ai/insights.router";
-import naturalQueryRouter from "./ai/natural-query.router";
-import imagesRouter from "./ai/images.router";
+// Consolidated routers for better organization and reduced redundancy
+import contentRouter from "./ai/content.router";       // Merges: generation, drafting, excerpt, writing
+import analysisRouter from "./ai/analysis.router";     // Includes: insights, recommendations, natural-query
+import mediaRouter from "./ai/media.router";           // Merges: images, vision, voice
 
 // ====================================================================
 // PLATFORM DOMAIN ROUTERS
@@ -201,21 +194,31 @@ export function setupRouters(app: Application): void {
   app.use(`${API_PREFIX}/admin/seed`, createCohortSeedEndpoint(storage));
   
   // ====================================================================
-  // AI ENDPOINTS
+  // AI ENDPOINTS (Consolidated Router Structure)
   // ====================================================================
   
-  // Core AI Services
-  app.use(`${API_PREFIX}/ai/generation`, generationRouter);
-  app.use(`${API_PREFIX}/ai/analysis`, analysisRouter);
-  app.use(`${API_PREFIX}/ai/vision`, visionRouter);
-  app.use(`${API_PREFIX}/ai/voice`, voiceRouter);
+  // Consolidated AI Content Router
+  // Handles: generation, drafting, excerpts, writing assistance
+  app.use(`${API_PREFIX}/ai/content`, contentRouter);
   
-  // Specialized AI Features
-  app.use(`${API_PREFIX}/ai/drafts`, emailDraftingRouter);
-  app.use(`${API_PREFIX}/ai/writing`, writingAssistantRouter);
-  app.use(`${API_PREFIX}/ai/excerpts`, createExcerptRouter(storage as any));
-  app.use(`${API_PREFIX}/ai/recommendations`, recommendationsRouter);
-  app.use(`${API_PREFIX}/ai/insights`, insightsRouter);
+  // Consolidated AI Analysis Router
+  // Handles: sentiment, trends, predictions, insights, recommendations, natural-query
+  app.use(`${API_PREFIX}/ai/analysis`, analysisRouter);
+  
+  // Consolidated AI Media Router
+  // Handles: images, vision (OCR, face detection, alt-text), voice (transcription, commands)
+  app.use(`${API_PREFIX}/ai/media`, mediaRouter);
+  
+  // Backward compatibility routes for old API paths
+  // These redirect to the new consolidated endpoints
+  app.use(`${API_PREFIX}/ai/generation`, contentRouter);   // Legacy: now /ai/content
+  app.use(`${API_PREFIX}/ai/drafts`, contentRouter);       // Legacy: now /ai/content/drafts/*
+  app.use(`${API_PREFIX}/ai/writing`, contentRouter);      // Legacy: now /ai/content/writing/*
+  app.use(`${API_PREFIX}/ai/vision`, mediaRouter);         // Legacy: now /ai/media/vision/*
+  app.use(`${API_PREFIX}/ai/voice`, mediaRouter);          // Legacy: now /ai/media/voice/*
+  app.use(`${API_PREFIX}/ai/images`, mediaRouter);         // Legacy: now /ai/media/images/*
+  app.use(`${API_PREFIX}/ai/insights`, analysisRouter);    // Legacy: now /ai/analysis/insights/*
+  app.use(`${API_PREFIX}/ai/recommendations`, analysisRouter); // Legacy: now /ai/analysis/recommendations/*
   
   // ====================================================================
   // PLATFORM ENDPOINTS
@@ -239,10 +242,12 @@ export function setupRouters(app: Application): void {
   // SPECIALIZED SERVICES
   // ====================================================================
   
-  app.use(`${API_PREFIX}/natural-query`, naturalQueryRouter);
+  // Natural language query is now part of analysis router at /ai/analysis/query/*
+  app.use(`${API_PREFIX}/natural-query`, analysisRouter);  // Legacy: now /ai/analysis/query/*
   app.use(`${API_PREFIX}/fraud-detection`, fraudRouter);
   app.use(`${API_PREFIX}/scheduling`, schedulingRouter);
-  app.use(`${API_PREFIX}/images`, imagesRouter);
+  // Images are now part of media router at /ai/media/images/*
+  app.use(`${API_PREFIX}/images`, mediaRouter);  // Legacy: now /ai/media/images/*
   
   // ====================================================================
   // HEALTH & STATUS ENDPOINTS (No authentication required)

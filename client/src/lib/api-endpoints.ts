@@ -66,9 +66,119 @@ export const API_ENDPOINTS = {
     delete: (id: string) => `${API_BASE}/meal-plans/${id}`,
   },
   
-  // AI Generation endpoints
+  // AI Endpoints (Consolidated Router Structure)
+  // New paths: /ai/content, /ai/analysis, /ai/media
   ai: {
-    // Text generation
+    // Content Router - Text generation, writing, drafting, excerpts
+    content: {
+      generate: `${API_BASE}/ai/content/generate`,
+      summarize: `${API_BASE}/ai/content/summarize`,
+      translate: `${API_BASE}/ai/content/translate`,
+      detectLanguage: `${API_BASE}/ai/content/translate/detect`,
+      recipe: `${API_BASE}/ai/content/recipe`,
+      // Writing assistance
+      writing: {
+        analyze: `${API_BASE}/ai/content/writing/analyze`,
+        tone: `${API_BASE}/ai/content/writing/tone`,
+        expand: `${API_BASE}/ai/content/writing/expand`,
+        grammar: `${API_BASE}/ai/content/writing/grammar`,
+      },
+      // Drafts
+      drafts: {
+        email: `${API_BASE}/ai/content/drafts/email`,
+        message: `${API_BASE}/ai/content/drafts/message`,
+      },
+      // Excerpts
+      excerpts: {
+        generate: `${API_BASE}/ai/content/excerpts/generate`,
+      },
+      // Conversations
+      conversations: {
+        list: `${API_BASE}/ai/content/conversations`,
+        create: `${API_BASE}/ai/content/conversations`,
+        messages: (id: string) => `${API_BASE}/ai/content/conversations/${id}/messages`,
+      },
+    },
+    
+    // Analysis Router - Sentiment, trends, predictions, insights, recommendations
+    analysis: {
+      sentiment: `${API_BASE}/ai/analysis/sentiment`,
+      trends: {
+        current: `${API_BASE}/ai/analysis/trends/current`,
+        emerging: `${API_BASE}/ai/analysis/trends/emerging`,
+        analyze: `${API_BASE}/ai/analysis/trends/analyze`,
+      },
+      predictions: {
+        user: (userId: string) => `${API_BASE}/ai/analysis/predict/user/${userId}`,
+        churn: `${API_BASE}/ai/analysis/predict/churn`,
+        segments: `${API_BASE}/ai/analysis/predict/segments`,
+      },
+      extract: `${API_BASE}/ai/analysis/extract`,
+      insights: {
+        generate: `${API_BASE}/ai/analysis/insights/generate`,
+        daily: `${API_BASE}/ai/analysis/insights/daily`,
+        all: `${API_BASE}/ai/analysis/insights/all`,
+        explain: `${API_BASE}/ai/analysis/insights/explain`,
+      },
+      recommendations: {
+        user: (userId: string) => `${API_BASE}/ai/analysis/recommendations/user/${userId}`,
+      },
+      query: {
+        natural: `${API_BASE}/ai/analysis/query/natural`,
+        execute: `${API_BASE}/ai/analysis/query/execute`,
+        history: `${API_BASE}/ai/analysis/query/history`,
+      },
+    },
+    
+    // Media Router - Images, vision (OCR, faces, alt-text), voice
+    media: {
+      images: {
+        enhance: `${API_BASE}/ai/media/images/enhance`,
+        background: `${API_BASE}/ai/media/images/background`,
+        crop: `${API_BASE}/ai/media/images/crop`,
+        batch: `${API_BASE}/ai/media/images/batch`,
+        presets: `${API_BASE}/ai/media/images/presets`,
+        jobs: `${API_BASE}/ai/media/images/jobs`,
+      },
+      vision: {
+        ocr: {
+          extract: `${API_BASE}/ai/media/vision/ocr/extract`,
+          results: `${API_BASE}/ai/media/vision/ocr/results`,
+          languages: `${API_BASE}/ai/media/vision/ocr/languages`,
+        },
+        faces: {
+          detect: `${API_BASE}/ai/media/vision/faces/detect`,
+          blur: `${API_BASE}/ai/media/vision/faces/blur`,
+          privacySettings: `${API_BASE}/ai/media/vision/faces/privacy-settings`,
+        },
+        altText: {
+          generate: `${API_BASE}/ai/media/vision/alt-text`,
+          bulk: `${API_BASE}/ai/media/vision/alt-text/bulk`,
+          update: (id: string) => `${API_BASE}/ai/media/vision/alt-text/${id}`,
+          suggestions: (id: string) => `${API_BASE}/ai/media/vision/alt-text/${id}/suggestions`,
+        },
+      },
+      voice: {
+        transcribe: `${API_BASE}/ai/media/voice/transcribe`,
+        transcriptions: {
+          list: `${API_BASE}/ai/media/voice/transcriptions`,
+          get: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}`,
+          edit: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}/edit`,
+          export: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}/export`,
+          delete: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}`,
+          search: `${API_BASE}/ai/media/voice/transcriptions/search`,
+        },
+        commands: {
+          process: `${API_BASE}/ai/media/voice/commands/process`,
+          list: `${API_BASE}/ai/media/voice/commands`,
+          history: `${API_BASE}/ai/media/voice/commands/history`,
+        },
+        stats: `${API_BASE}/ai/media/voice/stats`,
+      },
+    },
+    
+    // Legacy aliases for backward compatibility
+    // These paths still work but prefer the new structured paths above
     writing: {
       analyze: `${API_BASE}/ai/writing/analyze`,
       tone: `${API_BASE}/ai/writing/tone`,
@@ -78,28 +188,20 @@ export const API_ENDPOINTS = {
     translate: `${API_BASE}/ai/translate`,
     detectLanguage: `${API_BASE}/ai/translate/detect`,
     recipe: `${API_BASE}/ai/recipe`,
-    
-    // Conversations
     conversations: {
       list: `${API_BASE}/ai/conversations`,
       create: `${API_BASE}/ai/conversations`,
       messages: (id: string) => `${API_BASE}/ai/conversations/${id}/messages`,
     },
-    
-    // Analysis
     sentiment: `${API_BASE}/ai/sentiment`,
     trends: `${API_BASE}/ai/trends`,
     predictions: `${API_BASE}/ai/predictions`,
     extraction: `${API_BASE}/ai/extraction`,
     insights: `${API_BASE}/ai/insights`,
-    
-    // Vision
     ocr: `${API_BASE}/ai/ocr`,
     faces: `${API_BASE}/ai/faces`,
     altText: `${API_BASE}/ai/alt-text`,
     analyzeImage: `${API_BASE}/ai/images/analyze`,
-    
-    // Voice
     transcribe: `${API_BASE}/ai/transcribe`,
     voiceCommands: `${API_BASE}/ai/voice/commands`,
   },
