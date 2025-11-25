@@ -282,6 +282,8 @@ router.post("/analyze", isAuthenticated, rateLimiters.openai.middleware(), async
       sessionType: 'review',
       startContent: text,
       documentId: null,
+      suggestionsAccepted: 0,
+      suggestionsRejected: 0,
     });
     
     const suggestions: any[] = [];
@@ -763,86 +765,29 @@ Format as JSON with these fields: name, prepTime, cookTime, totalTime, difficult
 });
 
 // ==================== AI CONVERSATION ENDPOINTS ====================
+// Note: Conversation-based chat endpoints are temporarily disabled.
+// The current chat storage interface supports simple message history only.
+// Use /api/ai/content/chat for simple AI chat interactions.
 
 /**
- * GET /api/ai/content/conversations
- * Get all conversations for the authenticated user
+ * POST /api/ai/content/chat
+ * Simple AI chat - send a message and get a response
  */
-router.get("/conversations", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const conversations = await storage.user.chat.getConversations(userId);
-    res.json(conversations);
-  } catch (error) {
-    console.error("Error fetching conversations:", error);
-    res.status(500).json({ error: "Failed to fetch conversations" });
-  }
-});
-
-/**
- * POST /api/ai/content/conversations
- * Create a new conversation
- */
-router.post("/conversations", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    
-    const createSchema = z.object({
-      title: z.string().min(1).max(200).optional(),
-      type: z.enum(["assistant", "recipe", "meal_planning"]).optional(),
-    });
-    
-    const validationResult = createSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: "Invalid input",
-        details: validationResult.error.errors 
-      });
-    }
-    
-    const { title, type = "assistant" } = validationResult.data;
-    const conversationTitle = title || "New Conversation";
-    
-    const conversation = await storage.user.chat.createConversation(userId, conversationTitle);
-    res.json(conversation);
-  } catch (error) {
-    console.error("Error creating conversation:", error);
-    res.status(500).json({ error: "Failed to create conversation" });
-  }
-});
-
-/**
- * POST /api/ai/content/conversations/:id/messages
- * Send a message in a conversation
- */
-router.post("/conversations/:id/messages", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
+router.post("/chat", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
     if (!checkOpenAIConfiguration(res)) return;
     
-    const { id } = req.params;
     const { message } = req.body;
     
     if (!message) {
       return res.status(400).json({ error: "Message is required" });
     }
     
-    const conversation = await storage.user.chat.getConversation(userId, id);
-    if (!conversation) {
-      return res.status(404).json({ error: "Conversation not found" });
-    }
-    
-    await storage.user.chat.addMessage(userId, id, {
-      role: "user",
-      content: message,
-    });
-    
-    const messages = await storage.user.chat.getMessages(userId, id);
+    // Get recent chat history
+    const recentMessages = await storage.user.chat.getChatMessages(userId, 10);
     
     const completion = await openaiBreaker.execute(async () => {
       return await openai!.chat.completions.create({
@@ -852,10 +797,11 @@ router.post("/conversations/:id/messages", isAuthenticated, rateLimiters.openai.
             role: "system",
             content: "You are a helpful kitchen and cooking assistant. Help users with recipes, meal planning, ingredient substitutions, cooking techniques, and food-related questions. Be friendly, informative, and provide practical advice.",
           },
-          ...messages.map(m => ({
+          ...recentMessages.map((m: any) => ({
             role: m.role as "user" | "assistant",
             content: m.content,
           })),
+          { role: "user", content: message },
         ],
         max_tokens: 1000,
         temperature: 0.7,
@@ -864,14 +810,21 @@ router.post("/conversations/:id/messages", isAuthenticated, rateLimiters.openai.
     
     const assistantMessage = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
     
-    const savedMessage = await storage.user.chat.addMessage(userId, id, {
+    // Save user message
+    await storage.user.chat.createChatMessage(userId, {
+      role: "user",
+      content: message,
+    });
+    
+    // Save assistant response
+    const savedMessage = await storage.user.chat.createChatMessage(userId, {
       role: "assistant",
       content: assistantMessage,
     });
     
     res.json({
       message: savedMessage,
-      conversationId: id,
+      response: assistantMessage,
     });
   } catch (error) {
     const aiError = handleOpenAIError(error as Error);
@@ -880,45 +833,37 @@ router.post("/conversations/:id/messages", isAuthenticated, rateLimiters.openai.
 });
 
 /**
- * GET /api/ai/content/conversations/:id/messages
- * Get messages for a conversation
+ * GET /api/ai/content/chat/history
+ * Get chat history for the authenticated user
  */
-router.get("/conversations/:id/messages", isAuthenticated, async (req: Request, res: Response) => {
+router.get("/chat/history", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const { id } = req.params;
-    
-    const conversation = await storage.user.chat.getConversation(userId, id);
-    if (!conversation) {
-      return res.status(404).json({ error: "Conversation not found" });
-    }
-    
-    const messages = await storage.user.chat.getMessages(userId, id);
+    const limit = parseInt(req.query.limit as string) || 50;
+    const messages = await storage.user.chat.getChatMessages(userId, limit);
     res.json(messages);
   } catch (error) {
-    console.error("Error fetching messages:", error);
-    res.status(500).json({ error: "Failed to fetch messages" });
+    console.error("Error fetching chat history:", error);
+    res.status(500).json({ error: "Failed to fetch chat history" });
   }
 });
 
 /**
- * DELETE /api/ai/content/conversations/:id
- * Delete a conversation
+ * DELETE /api/ai/content/chat/history
+ * Delete chat history for the authenticated user
  */
-router.delete("/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
+router.delete("/chat/history", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     
-    const { id } = req.params;
-    
-    await storage.user.chat.deleteConversation(userId, id);
+    await storage.user.chat.deleteChatHistory(userId);
     res.json({ success: true });
   } catch (error) {
-    console.error("Error deleting conversation:", error);
-    res.status(500).json({ error: "Failed to delete conversation" });
+    console.error("Error deleting chat history:", error);
+    res.status(500).json({ error: "Failed to delete chat history" });
   }
 });
 
