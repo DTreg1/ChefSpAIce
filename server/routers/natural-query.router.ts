@@ -4,11 +4,12 @@
  * Provides API endpoints for converting natural language questions to SQL queries
  * and executing them safely against the database with proper validation.
  * 
+ * Base path: /api/v1/natural-query
+ * 
  * Features:
  * - Natural language to SQL conversion using OpenAI GPT-4
  * - Safe query execution with validation
  * - Query history tracking
- * - Saved queries management
  * 
  * All endpoints require authentication.
  * 
@@ -23,35 +24,29 @@ import { convertNaturalLanguageToSQL, executeValidatedQuery } from "../services/
 
 const router = Router();
 
-// ==================== Natural Language Query Routes ====================
-
-/**
- * POST /api/query/natural
- * Convert natural language to SQL query
- */
 const naturalQuerySchema = z.object({
   naturalQuery: z.string().min(1, "Query is required").max(500, "Query too long"),
 });
 
+/**
+ * POST /natural
+ * Convert natural language to SQL query
+ */
 router.post("/natural", isAuthenticated, async (req, res) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const { naturalQuery } = naturalQuerySchema.parse(req.body);
     
-    // Convert natural language to SQL using OpenAI
-    const result = await convertNaturalLanguageToSQL(naturalQuery, req.user!.id);
+    const result = await convertNaturalLanguageToSQL(naturalQuery, userId);
     
-    // Log the query (without executing it yet)
-    const queryLog = await storage.platform.ai.createQueryLog(req.user!.id, {
-      naturalQuery,
-      generatedSql: result.sql,
+    const queryLog = await storage.platform.ai.createQueryLog(userId, {
+      tableName: result.tablesAccessed?.[0] || 'unknown',
       queryType: result.queryType,
-      tablesAccessed: result.tablesAccessed,
-      isSuccessful: true,
-      metadata: {
-        model: "gpt-5",
-        confidence: result.confidence,
-        explanations: result.explanation,
-      },
+      executionTime: 0
     });
     
     res.json({
@@ -64,46 +59,52 @@ router.post("/natural", isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error("Error converting natural language to SQL:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
     res.status(500).json({
       error: error instanceof Error ? error.message : "Failed to convert query"
     });
   }
 });
 
-/**
- * POST /api/query/execute
- * Execute a validated SQL query
- */
 const executeQuerySchema = z.object({
   queryId: z.string().uuid("Invalid query ID"),
   sql: z.string().min(1, "SQL query is required"),
 });
 
+/**
+ * POST /execute
+ * Execute a validated SQL query
+ */
 router.post("/execute", isAuthenticated, async (req, res) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const { queryId, sql } = executeQuerySchema.parse(req.body);
     
-    // Get the original query log
-    const queryLog = await storage.platform.ai.getQueryLog(req.user!.id, queryId);
+    const logs = await storage.platform.ai.getQueryLogs(userId, 100);
+    const queryLog = logs.find(log => log.id === queryId);
+    
     if (!queryLog) {
       return res.status(404).json({ error: "Query not found" });
     }
     
-    // Execute the SQL query
     const startTime = Date.now();
     try {
       const { results, rowCount } = await executeValidatedQuery(
         sql,
-        req.user!.id,
-        queryLog.naturalQuery
+        userId,
+        queryLog.queryHash || ''
       );
       const executionTime = Date.now() - startTime;
       
-      // Update the query log with execution results
       await storage.platform.ai.updateQueryLog(queryId, {
-        resultCount: rowCount,
-        executionTime,
-        isSuccessful: true,
+        rowsAffected: rowCount,
+        executionTime
       });
       
       res.json({
@@ -114,17 +115,17 @@ router.post("/execute", isAuthenticated, async (req, res) => {
     } catch (execError) {
       const executionTime = Date.now() - startTime;
       
-      // Update the query log with error
       await storage.platform.ai.updateQueryLog(queryId, {
-        executionTime,
-        isSuccessful: false,
-        error: execError instanceof Error ? execError.message : "Unknown error",
+        executionTime
       });
       
       throw execError;
     }
   } catch (error) {
     console.error("Error executing query:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
     res.status(500).json({
       error: error instanceof Error ? error.message : "Failed to execute query"
     });
@@ -132,13 +133,18 @@ router.post("/execute", isAuthenticated, async (req, res) => {
 });
 
 /**
- * GET /api/query/history
+ * GET /history
  * Get user's query history
  */
 router.get("/history", isAuthenticated, async (req, res) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-    const history = await storage.platform.ai.getQueryLogs(req.user!.id, limit);
+    const history = await storage.platform.ai.getQueryLogs(userId, limit);
     res.json(history);
   } catch (error) {
     console.error("Error getting query history:", error);
@@ -147,85 +153,27 @@ router.get("/history", isAuthenticated, async (req, res) => {
 });
 
 /**
- * GET /api/query/saved
- * Get user's saved queries
- */
-router.get("/saved", isAuthenticated, async (req, res) => {
-  try {
-    const savedQueries = await storage.platform.ai.getSavedQueries(req.user!.id);
-    res.json(savedQueries);
-  } catch (error) {
-    console.error("Error getting saved queries:", error);
-    res.status(500).json({ error: "Failed to get saved queries" });
-  }
-});
-
-/**
- * POST /api/query/save
- * Save a query for future use
- */
-const saveQuerySchema = z.object({
-  queryId: z.string().uuid("Invalid query ID"),
-  savedName: z.string().min(1, "Name is required").max(255, "Name too long"),
-});
-
-router.post("/save", isAuthenticated, async (req, res) => {
-  try {
-    const { queryId, savedName } = saveQuerySchema.parse(req.body);
-    
-    const savedQuery = await storage.platform.ai.saveQuery(req.user!.id, queryId, savedName);
-    res.json(savedQuery);
-  } catch (error) {
-    console.error("Error saving query:", error);
-    res.status(500).json({
-      error: error instanceof Error ? error.message : "Failed to save query"
-    });
-  }
-});
-
-/**
- * GET /api/query/:id
+ * GET /:id
  * Get a specific query by ID
  */
 router.get("/:id", isAuthenticated, async (req, res) => {
   try {
-    const query = await storage.platform.ai.getQueryLog(req.user!.id, req.params.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const logs = await storage.platform.ai.getQueryLogs(userId, 100);
+    const query = logs.find(log => log.id === req.params.id);
+    
     if (!query) {
       return res.status(404).json({ error: "Query not found" });
     }
+    
     res.json(query);
   } catch (error) {
     console.error("Error getting query:", error);
     res.status(500).json({ error: "Failed to get query" });
-  }
-});
-
-/**
- * DELETE /api/query/:id
- * Delete a saved query
- */
-router.delete("/:id", isAuthenticated, async (req, res) => {
-  try {
-    const query = await storage.platform.ai.getQueryLog(req.user!.id, req.params.id);
-    if (!query) {
-      return res.status(404).json({ error: "Query not found" });
-    }
-    
-    // Only allow deleting saved queries
-    if (!query.isSaved) {
-      return res.status(403).json({ error: "Cannot delete unsaved queries" });
-    }
-    
-    // Update to mark as unsaved rather than actually deleting
-    await storage.platform.ai.updateQueryLog(req.params.id, {
-      isSaved: false,
-      savedName: null,
-    });
-    
-    res.json({ message: "Query removed from saved list" });
-  } catch (error) {
-    console.error("Error deleting query:", error);
-    res.status(500).json({ error: "Failed to delete query" });
   }
 });
 

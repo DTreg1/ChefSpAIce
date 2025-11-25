@@ -1,23 +1,29 @@
+/**
+ * Fraud Detection Router
+ * 
+ * Provides endpoints for fraud detection, monitoring, and review.
+ * Includes transaction analysis, suspicious activity tracking, and reporting.
+ * 
+ * Base path: /api/v1/fraud-detection
+ * 
+ * @module server/routers/fraud.router
+ */
+
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db";
 import { storage } from "../storage/index";
 import {
   fraudScores,
-  suspiciousActivities,
-  fraudReviews,
-  insertFraudScoreSchema,
-  insertSuspiciousActivitySchema,
-  insertFraudReviewSchema
+  suspiciousActivities
 } from "@shared/schema";
 import { FraudDetectionService } from "../services/fraud.service";
 import { isAuthenticated, adminOnly } from "../middleware/oauth.middleware";
-import { and, eq, gte, desc, sql } from "drizzle-orm";
+import { eq, gte, desc, sql } from "drizzle-orm";
 
 const router = Router();
 const fraudService = new FraudDetectionService();
 
-// Schema validations
 const analyzeTransactionSchema = z.object({
   amount: z.number().positive(),
   paymentMethod: z.string(),
@@ -32,8 +38,11 @@ const reviewActivitySchema = z.object({
   notes: z.string().optional()
 });
 
-// Analyze transaction or user action for fraud
-router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
+/**
+ * POST /analyze
+ * Analyze transaction or user action for fraud
+ */
+router.post("/analyze", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -42,7 +51,6 @@ router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
 
     const validatedData = analyzeTransactionSchema.parse(req.body);
     
-    // Run fraud analysis
     const analysisResult = await fraudService.analyzeTransaction(
       userId,
       'transaction',
@@ -55,14 +63,13 @@ router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
       }
     );
 
-    // Store fraud score
     await storage.admin.security.createFraudScore({
       userId,
       score: analysisResult.fraudScore,
-      factors: analysisResult.factors
+      factors: analysisResult.factors,
+      modelVersion: "v1.0"
     });
 
-    // If high risk, create suspicious activity
     if (analysisResult.fraudScore > 0.75 || analysisResult.shouldBlock) {
       await storage.admin.security.createSuspiciousActivity({
         userId,
@@ -73,13 +80,7 @@ router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
             `Fraud score: ${analysisResult.fraudScore}`,
             `Amount: $${validatedData.amount}`,
             `Payment method: ${validatedData.paymentMethod}`
-          ],
-          metadata: {
-            amount: validatedData.amount,
-            paymentMethod: validatedData.paymentMethod,
-            recipientId: validatedData.recipientId,
-            fraudScore: analysisResult.fraudScore
-          }
+          ]
         },
         riskLevel: analysisResult.fraudScore > 0.9 ? 'critical' : 
                    analysisResult.fraudScore > 0.75 ? 'high' : 'medium'
@@ -89,12 +90,18 @@ router.post("/api/fraud/analyze", isAuthenticated, async (req, res) => {
     res.json(analysisResult);
   } catch (error) {
     console.error("Error analyzing transaction:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
     res.status(500).json({ error: "Failed to analyze transaction" });
   }
 });
 
-// Get fraud alerts and suspicious activities
-router.get("/api/fraud/alerts", isAuthenticated, async (req, res) => {
+/**
+ * GET /alerts
+ * Get fraud alerts and suspicious activities
+ */
+router.get("/alerts", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.id;
     
@@ -102,17 +109,13 @@ router.get("/api/fraud/alerts", isAuthenticated, async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     
-    // Get user to check admin status
-    const user = await storage.admin.security.getUser(userId);
-    const isAdmin = user?.isAdmin || false;
+    const isAdmin = req.user?.role === 'admin';
 
-    // Get suspicious activities
     const activities = await storage.admin.security.getSuspiciousActivities(
       isAdmin ? undefined : userId,
       isAdmin
     );
 
-    // Get recent fraud scores for the user or all users (admin)
     let scores;
     if (isAdmin) {
       scores = await db
@@ -124,14 +127,13 @@ router.get("/api/fraud/alerts", isAuthenticated, async (req, res) => {
       scores = await storage.admin.security.getFraudScores(userId, 20);
     }
 
-    // Calculate alert severity
     const alerts = activities
       .filter(activity => activity.status === 'pending' || activity.status === 'reviewing')
       .map(activity => ({
         id: activity.id,
         userId: activity.userId,
         type: activity.activityType,
-        description: (activity.details).description || 'Suspicious activity detected',
+        description: (activity.details as any)?.description || 'Suspicious activity detected',
         severity: activity.riskLevel,
         timestamp: activity.detectedAt,
         autoBlocked: activity.autoBlocked,
@@ -156,8 +158,11 @@ router.get("/api/fraud/alerts", isAuthenticated, async (req, res) => {
   }
 });
 
-// Get fraud statistics and reports
-router.get("/api/fraud/report/:period", isAuthenticated, async (req, res) => {
+/**
+ * GET /report/:period
+ * Get fraud statistics and reports
+ */
+router.get("/report/:period", isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.id;
     const period = req.params.period as 'day' | 'week' | 'month';
@@ -170,13 +175,9 @@ router.get("/api/fraud/report/:period", isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: "Invalid period. Use 'day', 'week', or 'month'" });
     }
     
-    // Get user to check admin status
-    const user = await storage.admin.security.getUser(userId);
-    const isAdmin = user?.isAdmin || false;
+    const isAdmin = req.user?.role === 'admin';
 
-    // Admin gets full system stats, users get their own
     if (!isAdmin) {
-      // Get user-specific stats
       const userScores = await storage.admin.security.getFraudScores(userId, 100);
       const userActivities = await storage.admin.security.getSuspiciousActivities(userId, false);
       const userReviews = await storage.admin.security.getFraudReviews(userId);
@@ -195,7 +196,6 @@ router.get("/api/fraud/report/:period", isAuthenticated, async (req, res) => {
         }
       });
     } else {
-      // Get system-wide stats for admins
       const stats = await storage.admin.security.getFraudStats(period);
       res.json(stats);
     }
@@ -205,8 +205,11 @@ router.get("/api/fraud/report/:period", isAuthenticated, async (req, res) => {
   }
 });
 
-// Review and update suspicious activity (admin only)
-router.post("/api/fraud/review", isAuthenticated, adminOnly, async (req, res) => {
+/**
+ * POST /review
+ * Review and update suspicious activity (admin only)
+ */
+router.post("/review", isAuthenticated, adminOnly, async (req, res) => {
   try {
     const userId = req.user?.id;
     
@@ -216,7 +219,6 @@ router.post("/api/fraud/review", isAuthenticated, adminOnly, async (req, res) =>
 
     const validatedData = reviewActivitySchema.parse(req.body);
     
-    // Update suspicious activity status
     let newStatus: 'confirmed' | 'dismissed' | 'escalated';
     switch (validatedData.decision) {
       case 'confirm':
@@ -236,10 +238,9 @@ router.post("/api/fraud/review", isAuthenticated, adminOnly, async (req, res) =>
       new Date()
     );
 
-    // Create fraud review record
     await storage.admin.security.createFraudReview({
-      userId: userId, // The user being reviewed (from activity)
-      reviewerId: userId, // The admin doing the review
+      userId: userId,
+      reviewerId: userId,
       decision: validatedData.decision === 'confirm' ? 'banned' : 
                 validatedData.decision === 'escalate' ? 'monitor' : 'cleared',
       notes: validatedData.notes || null,
@@ -252,20 +253,19 @@ router.post("/api/fraud/review", isAuthenticated, adminOnly, async (req, res) =>
     });
   } catch (error) {
     console.error("Error reviewing activity:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
     res.status(500).json({ error: "Failed to review activity" });
   }
 });
 
-// Get fraud patterns for ML training (admin only)
-router.get("/api/fraud/patterns", isAuthenticated, adminOnly, async (req, res) => {
+/**
+ * GET /patterns
+ * Get fraud patterns for ML training (admin only)
+ */
+router.get("/patterns", isAuthenticated, adminOnly, async (req, res) => {
   try {
-    const userId = req.user?.id;
-    
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    // Get confirmed fraud cases for pattern analysis
     const confirmedFraud = await db
       .select({
         userId: suspiciousActivities.userId,
@@ -279,7 +279,6 @@ router.get("/api/fraud/patterns", isAuthenticated, adminOnly, async (req, res) =
       .orderBy(desc(suspiciousActivities.detectedAt))
       .limit(500);
 
-    // Get dismissed cases for comparison
     const dismissedCases = await db
       .select({
         userId: suspiciousActivities.userId,
@@ -293,7 +292,6 @@ router.get("/api/fraud/patterns", isAuthenticated, adminOnly, async (req, res) =
       .orderBy(desc(suspiciousActivities.detectedAt))
       .limit(500);
 
-    // Extract patterns
     const patterns = {
       confirmedPatterns: extractPatterns(confirmedFraud),
       dismissedPatterns: extractPatterns(dismissedCases),
@@ -308,7 +306,23 @@ router.get("/api/fraud/patterns", isAuthenticated, adminOnly, async (req, res) =
   }
 });
 
-// Helper functions
+/**
+ * GET /high-risk
+ * Get high-risk users
+ */
+router.get("/high-risk", isAuthenticated, adminOnly, async (req, res) => {
+  try {
+    const threshold = parseFloat(req.query.threshold as string) || 0.75;
+    const limit = parseInt(req.query.limit as string) || 50;
+    
+    const highRiskUsers = await storage.admin.security.getHighRiskUsers(threshold, limit);
+    res.json(highRiskUsers);
+  } catch (error) {
+    console.error("Error fetching high-risk users:", error);
+    res.status(500).json({ error: "Failed to fetch high-risk users" });
+  }
+});
+
 function extractPatterns(activities: any[]) {
   const patterns: any = {
     activityTypes: {},
@@ -317,18 +331,15 @@ function extractPatterns(activities: any[]) {
   };
 
   activities.forEach(activity => {
-    // Count activity types
     patterns.activityTypes[activity.activityType] = 
       (patterns.activityTypes[activity.activityType] || 0) + 1;
     
-    // Count risk levels
     patterns.riskLevels[activity.riskLevel] = 
       (patterns.riskLevels[activity.riskLevel] || 0) + 1;
     
-    // Extract common factors from details
     if (activity.details) {
-      const data = (activity.details).metadata;
-      if (data && data.fraudScore > 0.8) {
+      const data = (activity.details as any);
+      if (data.fraudScore && data.fraudScore > 0.8) {
         patterns.commonFactors.push({
           type: activity.activityType,
           score: data.fraudScore,

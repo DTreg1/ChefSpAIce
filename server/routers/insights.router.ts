@@ -1,14 +1,27 @@
+/**
+ * AI Insights Router
+ * 
+ * Provides endpoints for generating and managing AI-powered insights
+ * from analytics data.
+ * 
+ * Base path: /api/v1/ai/insights
+ * 
+ * @module server/routers/insights.router
+ */
+
 import { Router, Request, Response } from "express";
 import { storage } from "../storage/index";
 import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
 import { asyncHandler } from "../middleware/error.middleware";
-import { insertAnalyticsInsightSchema, insertInsightFeedbackSchema } from "@shared/schema";
 import { AnalyticsService } from "../services/analytics.service";
 
 const router = Router();
 const analyticsService = new AnalyticsService();
 
-// Generate insights from data
+/**
+ * POST /generate
+ * Generate insights from data
+ */
 router.post("/generate", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) {
@@ -35,17 +48,18 @@ router.post("/generate", isAuthenticated, asyncHandler(async (req: Request, res:
   }
 }));
 
-// Get daily insight summary
+/**
+ * GET /daily
+ * Get daily insight summary
+ */
 router.get("/daily", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { date } = req.query;
-
   try {
-    const insights = await storage.platform.analytics.getDailyInsightSummary(userId, date as string);
+    const insights = await storage.platform.analytics.getDailyInsightSummary(userId);
     res.json(insights);
   } catch (error) {
     console.error("Failed to get daily insights:", error);
@@ -53,7 +67,10 @@ router.get("/daily", isAuthenticated, asyncHandler(async (req: Request, res: Res
   }
 }));
 
-// Explain specific metric
+/**
+ * POST /explain
+ * Explain specific metric
+ */
 router.post("/explain", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) {
@@ -75,24 +92,23 @@ router.post("/explain", isAuthenticated, asyncHandler(async (req: Request, res: 
   }
 }));
 
-// Get all insights
+/**
+ * GET /
+ * Get all insights
+ */
 router.get("/", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { metricName, period, category, importance, isRead, limit } = req.query;
+  const { type } = req.query;
 
   try {
-    const insights = await storage.platform.analytics.getAnalyticsInsights(userId, {
-      metricName: metricName as string,
-      period: period as string,
-      category: category as string,
-      importance: importance ? parseInt(importance as string) : undefined,
-      isRead: isRead === 'true' ? true : isRead === 'false' ? false : undefined,
-      limit: limit ? parseInt(limit as string) : 50
-    });
+    const insights = await storage.platform.analytics.getAnalyticsInsights(
+      userId, 
+      type as string | undefined
+    );
 
     res.json(insights);
   } catch (error) {
@@ -101,7 +117,10 @@ router.get("/", isAuthenticated, asyncHandler(async (req: Request, res: Response
   }
 }));
 
-// Mark insight as read
+/**
+ * PATCH /:insightId/read
+ * Mark insight as read
+ */
 router.patch("/:insightId/read", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) {
@@ -111,7 +130,7 @@ router.patch("/:insightId/read", isAuthenticated, asyncHandler(async (req: Reque
   const { insightId } = req.params;
 
   try {
-    await storage.platform.analytics.markInsightAsRead(userId, insightId);
+    await storage.platform.analytics.markInsightAsRead(insightId);
     res.json({ success: true });
   } catch (error) {
     console.error("Failed to mark insight as read:", error);
@@ -119,85 +138,74 @@ router.patch("/:insightId/read", isAuthenticated, asyncHandler(async (req: Reque
   }
 }));
 
-// Submit feedback for an insight
-router.post("/:insightId/feedback", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
-  const userId = getAuthenticatedUserId(req);
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const { insightId } = req.params;
-  const { helpfulScore, comments, wasActionable, resultOutcome } = req.body;
-
-  if (!helpfulScore || helpfulScore < 1 || helpfulScore > 5) {
-    return res.status(400).json({ error: "helpfulScore must be between 1 and 5" });
-  }
-
-  try {
-    const feedback = await storage.platform.analytics.createInsightFeedback({
-      insightId,
-      userId,
-      helpfulScore,
-      comments,
-      wasActionable,
-      resultOutcome
-    });
-
-    res.json(feedback);
-  } catch (error) {
-    console.error("Failed to submit feedback:", error);
-    res.status(500).json({ error: "Failed to submit feedback" });
-  }
-}));
-
-// Get feedback for an insight
-router.get("/:insightId/feedback", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
-  const { insightId } = req.params;
-
-  try {
-    const feedback = await storage.platform.analytics.getInsightFeedback(insightId);
-    res.json(feedback);
-  } catch (error) {
-    console.error("Failed to get feedback:", error);
-    res.status(500).json({ error: "Failed to get feedback" });
-  }
-}));
-
-// Subscribe to insights
-router.post("/subscribe", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
-  const userId = getAuthenticatedUserId(req);
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const { subscriptionType } = req.body;
-
-  if (!subscriptionType || !['all', 'important', 'none'].includes(subscriptionType)) {
-    return res.status(400).json({ error: "Invalid subscription type. Must be 'all', 'important', or 'none'" });
-  }
-
-  try {
-    await storage.platform.analytics.subscribeToInsights(userId, subscriptionType);
-    res.json({ success: true, subscriptionType });
-  } catch (error) {
-    console.error("Failed to update subscription:", error);
-    res.status(500).json({ error: "Failed to update subscription" });
-  }
-}));
-
-// Get analytics statistics
+/**
+ * GET /stats
+ * Get analytics statistics
+ */
 router.get("/stats", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
   const userId = getAuthenticatedUserId(req);
   if (!userId) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
+  const { type, period } = req.query;
+
   try {
-    const stats = await storage.platform.analytics.getAnalyticsStats(userId);
+    const validType = type as 'sessions' | 'events' | 'usage';
+    const validPeriod = (period as 'day' | 'week' | 'month') || 'day';
+    
+    const stats = await storage.platform.analytics.getAnalyticsStats(
+      validType || 'usage',
+      userId,
+      validPeriod
+    );
     res.json(stats);
   } catch (error) {
     console.error("Failed to get analytics stats:", error);
     res.status(500).json({ error: "Failed to get analytics stats" });
+  }
+}));
+
+/**
+ * GET /trends
+ * Get trend analysis
+ */
+router.get("/trends", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const trends = await storage.platform.analytics.getCurrentTrends();
+    res.json(trends);
+  } catch (error) {
+    console.error("Failed to get trends:", error);
+    res.status(500).json({ error: "Failed to get trends" });
+  }
+}));
+
+/**
+ * GET /predictions
+ * Get user predictions
+ */
+router.get("/predictions", isAuthenticated, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthenticatedUserId(req);
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const { type } = req.query;
+
+  try {
+    const predictions = await storage.platform.analytics.getUserPredictions(
+      userId,
+      type as string | undefined
+    );
+    res.json(predictions);
+  } catch (error) {
+    console.error("Failed to get predictions:", error);
+    res.status(500).json({ error: "Failed to get predictions" });
   }
 }));
 

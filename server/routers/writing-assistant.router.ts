@@ -1,8 +1,12 @@
 /**
- * Writing Assistant Router (Task 10)
+ * Writing Assistant Router
  * 
  * Comprehensive writing assistance with grammar checking,
  * style suggestions, and tone adjustment.
+ * 
+ * Base path: /api/v1/ai/writing
+ * 
+ * @module server/routers/writing-assistant.router
  */
 
 import { Router, Request, Response } from "express";
@@ -13,11 +17,10 @@ import { getOpenAIClient } from "../config/openai-config";
 
 const router = Router();
 
-// Initialize OpenAI client
 const openai = getOpenAIClient();
 
 /**
- * POST /api/writing/analyze
+ * POST /analyze
  * Analyze text for grammar, style, and tone
  */
 router.post("/analyze", isAuthenticated, async (req: Request, res: Response) => {
@@ -34,18 +37,23 @@ router.post("/analyze", isAuthenticated, async (req: Request, res: Response) => 
     
     const { text, type, targetTone, checkFor } = schema.parse(req.body);
     
-    // Create writing session
-    const session = await storage.platform.ai.createWritingSession({
-      userId,
-      originalText: text
+    const session = await storage.platform.ai.createWritingSession(userId, {
+      sessionType: 'review',
+      startContent: text
     });
     
-    // Analyze text
     const analysis = await analyzeText(text, type, targetTone, checkFor);
     
-    // Save suggestions
     if (analysis.suggestions.length > 0) {
-      await storage.platform.ai.addWritingSuggestions(session.id, analysis.suggestions);
+      await storage.platform.ai.addWritingSuggestions(
+        session.id, 
+        analysis.suggestions.map(s => ({
+          suggestionType: s.suggestionType as 'grammar' | 'style' | 'clarity' | 'tone' | 'vocabulary',
+          originalText: s.originalSnippet,
+          suggestedText: s.suggestedSnippet,
+          reason: s.reason
+        }))
+      );
     }
     
     res.json({
@@ -54,6 +62,9 @@ router.post("/analyze", isAuthenticated, async (req: Request, res: Response) => 
     });
   } catch (error) {
     console.error("Error analyzing text:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Validation failed", details: error.errors });
+    }
     res.status(500).json({ error: "Failed to analyze text" });
   }
 });
@@ -82,6 +93,10 @@ async function analyzeText(
     sentenceCount: number;
   };
 }> {
+  if (!openai) {
+    throw new Error("OpenAI client not configured");
+  }
+
   const checksToPerform = checkFor || ['grammar', 'style', 'tone', 'clarity'];
   
   const systemPrompt = `You are an expert writing assistant. Analyze the following text for:
@@ -95,7 +110,7 @@ async function analyzeText(
       "overallScore": 0-100,
       "suggestions": [
         {
-          "suggestionType": "grammar|style|tone|clarity|conciseness",
+          "suggestionType": "grammar|style|tone|clarity|vocabulary",
           "originalSnippet": "exact text with issue",
           "suggestedSnippet": "corrected text",
           "reason": "why this change improves the text"
@@ -111,19 +126,13 @@ async function analyzeText(
     }`;
   
   const completion = await openai.chat.completions.create({
-    model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025
+    model: "gpt-4o-mini",
     messages: [
-      {
-        role: "system",
-        content: systemPrompt
-      },
-      {
-        role: "user",
-        content: text
-      }
+      { role: "system", content: systemPrompt },
+      { role: "user", content: text }
     ],
     response_format: { type: "json_object" },
-    max_completion_tokens: 2000
+    max_tokens: 2000
   });
   
   const result = JSON.parse(completion.choices[0]?.message?.content || "{}");
@@ -136,13 +145,13 @@ async function analyzeText(
       clarity: 0,
       tone: "neutral",
       wordCount: text.split(/\s+/).length,
-      sentenceCount: text.split(/[.!?]+/).filter(s => s.trim()).length
+      sentenceCount: text.split(/[.!?]+/).filter((s: string) => s.trim()).length
     }
   };
 }
 
 /**
- * POST /api/writing/improve
+ * POST /improve
  * Apply improvements to text
  */
 router.post("/improve", isAuthenticated, async (req: Request, res: Response) => {
@@ -156,26 +165,23 @@ router.post("/improve", isAuthenticated, async (req: Request, res: Response) => 
       return res.status(400).json({ error: "Session ID is required" });
     }
     
-    // Get session
     const session = await storage.platform.ai.getWritingSession(userId, sessionId);
     if (!session) {
       return res.status(404).json({ error: "Session not found" });
     }
     
-    // Apply selected suggestions
-    let improvedText = session.improvedText || session.originalText;
-    const improvements: string[] = [];
+    let improvedText = session.endContent || session.startContent || '';
     
-    if (suggestionIds && suggestionIds.length > 0) {
-      // Mark suggestions as accepted
-      for (const suggestionId of suggestionIds) {
-        await storage.platform.ai.updateSuggestionStatus(suggestionId, true);
-        improvements.push(suggestionId);
+    if (suggestionIds && suggestionIds.length > 0 && openai) {
+      const suggestions = await storage.platform.ai.getWritingSuggestions(sessionId);
+      const acceptedSuggestions = suggestions.filter(s => suggestionIds.includes(s.id));
+      
+      for (const suggestion of acceptedSuggestions) {
+        await storage.platform.ai.updateWritingSuggestion(suggestion.id, { isAccepted: true });
       }
       
-      // Generate improved text with AI
       const completion = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -183,21 +189,22 @@ router.post("/improve", isAuthenticated, async (req: Request, res: Response) => 
           },
           {
             role: "user",
-            content: `Original: ${session.originalText}\n\nApply improvements based on accepted suggestions.`
+            content: `Original: ${session.startContent}\n\nApply improvements based on accepted suggestions:\n${acceptedSuggestions.map(s => `- Change "${s.originalText}" to "${s.suggestedText}"`).join('\n')}`
           }
         ],
-        max_completion_tokens: 2000
+        max_tokens: 2000
       });
       
-      improvedText = completion.choices[0]?.message?.content || session.originalText;
+      improvedText = completion.choices[0]?.message?.content || session.startContent || '';
     }
     
-    // Update session
     const updatedSession = await storage.platform.ai.updateWritingSession(
       userId, 
       sessionId,
-      improvedText,
-      improvements
+      {
+        endContent: improvedText,
+        suggestionsAccepted: (session.suggestionsAccepted || 0) + (suggestionIds?.length || 0)
+      }
     );
     
     res.json(updatedSession);
@@ -208,11 +215,15 @@ router.post("/improve", isAuthenticated, async (req: Request, res: Response) => 
 });
 
 /**
- * POST /api/writing/adjust-tone
+ * POST /adjust-tone
  * Adjust the tone of text
  */
 router.post("/adjust-tone", isAuthenticated, async (req: Request, res: Response) => {
   try {
+    if (!openai) {
+      return res.status(503).json({ error: "AI service not available" });
+    }
+    
     const { text, currentTone, targetTone } = req.body;
     
     if (!text || !targetTone) {
@@ -220,7 +231,7 @@ router.post("/adjust-tone", isAuthenticated, async (req: Request, res: Response)
     }
     
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Using efficient model for tone adjustment
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -234,7 +245,7 @@ router.post("/adjust-tone", isAuthenticated, async (req: Request, res: Response)
         }
       ],
       response_format: { type: "json_object" },
-      max_completion_tokens: 1500
+      max_tokens: 1500
     });
     
     const result = JSON.parse(completion.choices[0]?.message?.content || "{}");
@@ -246,11 +257,15 @@ router.post("/adjust-tone", isAuthenticated, async (req: Request, res: Response)
 });
 
 /**
- * POST /api/writing/paraphrase
+ * POST /paraphrase
  * Paraphrase text while maintaining meaning
  */
 router.post("/paraphrase", isAuthenticated, async (req: Request, res: Response) => {
   try {
+    if (!openai) {
+      return res.status(503).json({ error: "AI service not available" });
+    }
+    
     const { text, style } = req.body;
     
     if (!text) {
@@ -272,7 +287,7 @@ router.post("/paraphrase", isAuthenticated, async (req: Request, res: Response) 
         }
       ],
       response_format: { type: "json_object" },
-      max_completion_tokens: 1500
+      max_tokens: 1500
     });
     
     const result = JSON.parse(completion.choices[0]?.message?.content || '{"variations":[]}');
@@ -284,7 +299,7 @@ router.post("/paraphrase", isAuthenticated, async (req: Request, res: Response) 
 });
 
 /**
- * GET /api/writing/stats
+ * GET /stats
  * Get user's writing statistics
  */
 router.get("/stats", isAuthenticated, async (req: Request, res: Response) => {
@@ -301,19 +316,21 @@ router.get("/stats", isAuthenticated, async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/writing/check-plagiarism
+ * POST /check-plagiarism
  * Check for potential plagiarism (basic implementation)
  */
 router.post("/check-plagiarism", isAuthenticated, async (req: Request, res: Response) => {
   try {
+    if (!openai) {
+      return res.status(503).json({ error: "AI service not available" });
+    }
+    
     const { text } = req.body;
     
     if (!text) {
       return res.status(400).json({ error: "Text is required" });
     }
     
-    // Note: Real plagiarism checking would require external service
-    // This is a simplified implementation that checks for common phrases
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -332,7 +349,7 @@ router.post("/check-plagiarism", isAuthenticated, async (req: Request, res: Resp
         }
       ],
       response_format: { type: "json_object" },
-      max_completion_tokens: 500
+      max_tokens: 500
     });
     
     const result = JSON.parse(completion.choices[0]?.message?.content || "{}");
@@ -344,7 +361,7 @@ router.post("/check-plagiarism", isAuthenticated, async (req: Request, res: Resp
 });
 
 /**
- * GET /api/writing/sessions/:id
+ * GET /sessions/:id
  * Get a specific writing session
  */
 router.get("/sessions/:id", isAuthenticated, async (req: Request, res: Response) => {
@@ -359,10 +376,31 @@ router.get("/sessions/:id", isAuthenticated, async (req: Request, res: Response)
       return res.status(404).json({ error: "Session not found" });
     }
     
-    res.json(session);
+    const suggestions = await storage.platform.ai.getWritingSuggestions(id);
+    
+    res.json({ ...session, suggestions });
   } catch (error) {
     console.error("Error fetching session:", error);
     res.status(500).json({ error: "Failed to fetch session" });
+  }
+});
+
+/**
+ * GET /sessions
+ * List user's writing sessions
+ */
+router.get("/sessions", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    
+    const limit = parseInt(req.query.limit as string) || 20;
+    const sessions = await storage.platform.ai.getWritingSessions(userId, limit);
+    
+    res.json(sessions);
+  } catch (error) {
+    console.error("Error fetching sessions:", error);
+    res.status(500).json({ error: "Failed to fetch sessions" });
   }
 });
 

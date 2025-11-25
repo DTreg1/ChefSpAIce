@@ -16,16 +16,30 @@ The backend is an Express.js RESTful API, organized into domain-specific routers
 
 #### Router Organization (November 2024)
 The router architecture has been refactored into a hierarchical structure:
-- **user/** - User-facing features (inventory, recipes, meal planning, shopping lists)
-- **admin/** - Administrative functions
-- **platform/** - Platform-wide services
-- **ai/** - AI/ML endpoints consolidated into 4 specialized routers:
+- **user/** - User-facing features (inventory, recipes, meal planning, shopping lists, chat, appliances, nutrition)
+- **admin/** - Administrative functions (users, experiments, cohorts, maintenance, moderation, ai-metrics, pricing, tickets)
+- **platform/** - Platform-wide services (analytics, notifications, batch operations, feedback, activity logs)
+- **ai/** - AI/ML endpoints consolidated into specialized routers:
   - generation.router.ts - Recipe and content generation
   - analysis.router.ts - Nutrition and image analysis
   - vision.router.ts - OCR and receipt processing
   - voice.router.ts - Voice commands and TTS
+- **Standalone AI services:**
+  - email-drafting.router.ts - Smart email/message drafting with GPT-4o-mini
+  - writing-assistant.router.ts - Grammar, style, and tone analysis
+  - excerpt.router.ts - Content excerpt generation
+  - recommendations.router.ts - AI-powered recommendations
+  - insights.router.ts - Analytics insights generation
+- **Specialized services:**
+  - natural-query.router.ts - Natural language to SQL conversion
+  - fraud.router.ts - Fraud detection and monitoring
+  - scheduling.router.ts - Scheduling and calendar services
+  - images.router.ts - Image processing and manipulation
 
 Inventory management has been consolidated into a single inventory.router.ts combining all food item, storage location, shopping list, USDA lookup, barcode scanning, and AI enrichment functionality.
+
+#### API Documentation (November 2024)
+Comprehensive API documentation is available at `docs/API.md` covering all endpoints with request/response formats, authentication requirements, and error handling.
 
 ### Data Storage Architecture
 PostgreSQL, accessed via Drizzle ORM, is the primary data store. The schema is type-safe, defined in `shared/schema/*.ts` files, using Zod for runtime validation, foreign key relationships, and JSONB columns. Core tables include `users`, `food_items`, `recipes`, `meal_plans`, `shopping_list_items`, `chat_messages`, `push_tokens`, `appliance_library`, `user_appliances`, `cooking_terms`, and `activity_logs`. Data is isolated by `user_id`.
