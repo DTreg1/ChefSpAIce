@@ -1774,7 +1774,7 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
       confidence: interpretation.confidence,
       action: interpretation.action,
       result: interpretation.parameters as Record<string, any>,
-      metadata: { originalCommand: command },
+      metadata: { originalCommand: command } as any,
     });
     
     let executionResult = null;
@@ -1785,6 +1785,7 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
           if (interpretation.parameters?.items) {
             for (const item of interpretation.parameters.items) {
               await storage.user.inventory.createFoodItem(userId, {
+                userId,
                 name: item,
                 quantity: interpretation.parameters.quantity || "1",
                 unit: interpretation.parameters.unit || "item",
