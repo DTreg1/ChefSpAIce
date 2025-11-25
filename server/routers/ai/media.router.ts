@@ -1302,8 +1302,8 @@ router.post("/vision/alt-text", isAuthenticated, rateLimiters.openai.middleware(
     });
   } catch (error) {
     console.error("Failed to generate alt text:", error);
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -1365,8 +1365,8 @@ router.post("/vision/alt-text/bulk", isAuthenticated, rateLimiters.openai.middle
     });
   } catch (error) {
     console.error("Bulk alt text generation error:", error);
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -1451,8 +1451,8 @@ router.get("/vision/alt-text/:id/suggestions", isAuthenticated, async (req: Requ
     });
   } catch (error) {
     console.error("Failed to generate suggestions:", error);
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -1530,8 +1530,8 @@ router.post("/voice/transcribe", isAuthenticated, audioUpload.single("audio"), r
       }
       
       console.error("OpenAI API error:", apiError);
-      const errorResponse = handleOpenAIError(apiError);
-      res.status(errorResponse.status).json(errorResponse.body);
+      const aiError = handleOpenAIError(apiError);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
   } catch (error: any) {
     console.error("Error processing transcription:", error);
@@ -1816,8 +1816,8 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
     });
   } catch (error) {
     console.error("Error processing voice command:", error);
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 

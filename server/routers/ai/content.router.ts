@@ -349,8 +349,8 @@ Format as JSON array. Only return valid JSON, no other text.`;
       suggestions,
     });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -405,8 +405,8 @@ Return only the rewritten text, no explanations.`;
       targetTone,
     });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -461,8 +461,8 @@ Return only the expanded text, no explanations.`;
       targetLength,
     });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -523,8 +523,8 @@ Focus on the key points and main ideas. Return only the summary, no explanations
       compressionRatio: (countWords(summary) / countWords(text)).toFixed(2),
     });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -567,8 +567,8 @@ router.post("/paraphrase", isAuthenticated, rateLimiters.openai.middleware(), as
     const result = JSON.parse(completion.choices[0]?.message?.content || '{"variations":[]}');
     res.json({ variations: result.variations || [] });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -636,8 +636,8 @@ Return only the translated text, no explanations.`;
       },
     });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -680,8 +680,8 @@ Return only the 2-letter language code, nothing else.`;
       confidence: 0.95,
     });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -764,8 +764,8 @@ Format as JSON with these fields: name, prepTime, cookTime, totalTime, difficult
       },
     });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 
@@ -881,8 +881,8 @@ router.post("/conversations/:id/messages", isAuthenticated, rateLimiters.openai.
       conversationId: id,
     });
   } catch (error) {
-    const errorResponse = handleOpenAIError(error as Error);
-    res.status(errorResponse.status).json(errorResponse.body);
+    const aiError = handleOpenAIError(error as Error);
+    res.status(aiError.statusCode).json(createErrorResponse(aiError));
   }
 });
 

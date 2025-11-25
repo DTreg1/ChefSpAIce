@@ -165,8 +165,8 @@ router.post(
       });
     } catch (error) {
       console.error("Sentiment analysis error:", error);
-      const errorResponse = handleOpenAIError(error as Error);
-      res.status(errorResponse.status).json(errorResponse.body);
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
   })
 );
@@ -404,8 +404,8 @@ Format as JSON with fields: insights, recommendations, opportunities, risks.`;
       });
     } catch (error) {
       console.error("Trend analysis error:", error);
-      const errorResponse = handleOpenAIError(error as Error);
-      res.status(errorResponse.status).json(errorResponse.body);
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
   })
 );
@@ -560,8 +560,8 @@ router.post(
       });
     } catch (error) {
       console.error("Churn prediction error:", error);
-      const errorResponse = handleOpenAIError(error as Error);
-      res.status(errorResponse.status).json(errorResponse.body);
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
   })
 );
@@ -730,8 +730,8 @@ Format as JSON with fields: mainPoints, facts, conclusions, actionItems.`;
       });
     } catch (error) {
       console.error("Data extraction error:", error);
-      const errorResponse = handleOpenAIError(error as Error);
-      res.status(errorResponse.status).json(errorResponse.body);
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
   })
 );
@@ -798,8 +798,8 @@ Format as JSON with fields: summary, trends (array), recommendations (array), co
       });
     } catch (error) {
       console.error("Insights generation error:", error);
-      const errorResponse = handleOpenAIError(error as Error);
-      res.status(errorResponse.status).json(errorResponse.body);
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
   })
 );
@@ -921,8 +921,8 @@ Format as JSON with fields: trend, observations, recommendations, anomalies.`;
       });
     } catch (error) {
       console.error("Failed to generate insight:", error);
-      const errorResponse = handleOpenAIError(error as Error);
-      res.status(errorResponse.status).json(errorResponse.body);
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
   })
 );
@@ -1001,8 +1001,8 @@ Format as JSON with fields: definition, importance, interpretation, actions.`;
       res.json({ explanation });
     } catch (error) {
       console.error("Failed to explain metric:", error);
-      const errorResponse = handleOpenAIError(error as Error);
-      res.status(errorResponse.status).json(errorResponse.body);
+      const aiError = handleOpenAIError(error as Error);
+      res.status(aiError.statusCode).json(createErrorResponse(aiError));
     }
   })
 );
