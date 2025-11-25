@@ -36,7 +36,7 @@ The router architecture has been refactored into a hierarchical structure:
   - scheduling.router.ts - Scheduling and calendar services
   - images.router.ts - Image processing and manipulation
 
-Inventory management has been consolidated into a single inventory.router.ts combining all food item, storage location, shopping list, USDA lookup, barcode scanning, and AI enrichment functionality.
+Inventory management uses inventory.router.ts for food items, storage locations, USDA lookup, barcode scanning, and AI enrichment functionality. Shopping list operations have been separated into a dedicated shopping-list.router.ts mounted at both `/api/v1/shopping-list` (legacy) and `/api/v1/inventory/shopping-list` (primary) for backward compatibility.
 
 #### API Documentation (November 2024)
 Comprehensive API documentation is available at `docs/API.md` covering all endpoints with request/response formats, authentication requirements, and error handling.

@@ -85,6 +85,7 @@ import { activityLoggingMiddleware } from "../middleware/activity-logging.middle
 // ====================================================================
 import authRouter from "./user/oauth.router";
 import inventoryRouter from "./user/inventory.router";
+import shoppingListRouter from "./user/shopping-list.router";
 import recipesRouter from "./user/recipes.router";
 import chatRouter from "./user/chat.router";
 import mealPlanningRouter from "./user/meal-planning.router";
@@ -158,10 +159,11 @@ export function setupRouters(app: Application): void {
   
   // Core Food & Recipe Management
   app.use(`${API_PREFIX}/inventory`, inventoryRouter);
+  app.use(`${API_PREFIX}/inventory/shopping-list`, shoppingListRouter); // Primary shopping list path
   app.use(`${API_PREFIX}/food-items`, inventoryRouter); // Alias for backward compatibility
   app.use(`${API_PREFIX}/recipes`, recipesRouter);
   app.use(`${API_PREFIX}/meal-plans`, mealPlanningRouter);
-  app.use(`${API_PREFIX}/shopping-list`, mealPlanningRouter); // Backward compatibility
+  app.use(`${API_PREFIX}/shopping-list`, shoppingListRouter); // Legacy shopping list path (backward compatible)
   
   // Chat & Communication
   app.use(`${API_PREFIX}/chat`, chatRouter);
