@@ -13,14 +13,14 @@
  * 
  * All endpoints require authentication.
  * 
- * @module server/routers/natural-query.router
+ * @module server/routers/ai/natural-query.router
  */
 
 import { Router } from "express";
 import { z } from "zod";
-import { storage } from "../storage/index";
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { convertNaturalLanguageToSQL, executeValidatedQuery } from "../services/openai-query";
+import { storage } from "../../storage/index";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { convertNaturalLanguageToSQL, executeValidatedQuery } from "../../services/openai-query";
 
 const router = Router();
 

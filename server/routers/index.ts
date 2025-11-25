@@ -114,11 +114,13 @@ import generationRouter from "./ai/generation.router";
 import analysisRouter from "./ai/analysis.router";
 import visionRouter from "./ai/vision.router";
 import voiceRouter from "./ai/voice.router";
-import emailDraftingRouter from "./email-drafting.router";
-import writingAssistantRouter from "./writing-assistant.router";
-import { createExcerptRouter } from "./excerpt.router";
-import recommendationsRouter from "./recommendations.router";
-import insightsRouter from "./insights.router";
+import emailDraftingRouter from "./ai/drafting.router";
+import writingAssistantRouter from "./ai/writing.router";
+import { createExcerptRouter } from "./ai/excerpt.router";
+import recommendationsRouter from "./ai/recommendations.router";
+import insightsRouter from "./ai/insights.router";
+import naturalQueryRouter from "./ai/natural-query.router";
+import imagesRouter from "./ai/images.router";
 
 // ====================================================================
 // PLATFORM DOMAIN ROUTERS
@@ -130,14 +132,8 @@ import pushTokensRouter from "./platform/push-tokens.router";
 import notificationsRouter from "./platform/notifications.router";
 import activityLogsRouter from "./platform/activity-logs.router";
 import intelligentNotificationsRouter from "./platform/intelligent-notifications.router";
-
-// ====================================================================
-// SPECIALIZED SERVICE ROUTERS
-// ====================================================================
-import naturalQueryRouter from "./natural-query.router";
-import fraudRouter from "./fraud.router";
-import schedulingRouter from "./scheduling.router";
-import imagesRouter from "./images.router";
+import fraudRouter from "./platform/fraud.router";
+import schedulingRouter from "./platform/scheduling.router";
 
 // ====================================================================
 // UTILITIES & SEED DATA

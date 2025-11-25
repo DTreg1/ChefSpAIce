@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { isAuthenticated } from "../middleware";
-import { storage } from "../storage/index";
-import { EmbeddingsService } from "../services/embeddings";
-import { asyncHandler } from "../middleware/error.middleware";
-import { getAuthenticatedUserId, sendError, sendSuccess } from "../types/request-helpers";
+import { isAuthenticated } from "../../middleware";
+import { storage } from "../../storage/index";
+import { EmbeddingsService } from "../../services/embeddings";
+import { asyncHandler } from "../../middleware/error.middleware";
+import { getAuthenticatedUserId, sendError, sendSuccess } from "../../types/request-helpers";
 
 const router = Router();
 const embeddingsService = new EmbeddingsService(storage.platform.content);

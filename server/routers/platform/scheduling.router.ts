@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { storage } from "../storage/index";
+import { storage } from "../../storage/index";
 import { 
   insertSchedulingPreferencesSchema,
   insertMeetingSuggestionsSchema,
@@ -10,8 +10,8 @@ import {
   type SchedulingPatterns,
   type MeetingEvents
 } from "@shared/schema";
-import { isAuthenticated } from "../middleware/oauth.middleware";
-import { openai } from "../integrations/openai";
+import { isAuthenticated } from "../../middleware/oauth.middleware";
+import { openai } from "../../integrations/openai";
 
 const router = Router();
 

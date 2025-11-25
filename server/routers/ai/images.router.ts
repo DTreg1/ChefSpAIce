@@ -7,6 +7,8 @@
  * - Quality enhancement
  * - Smart filters
  * - Batch processing
+ * 
+ * @module server/routers/ai/images.router
  */
 
 import express from "express";
@@ -14,7 +16,7 @@ import multer from "multer";
 import sharp from "sharp";
 import axios from "axios";
 import FormData from "form-data";
-import { storage } from "../storage/index";
+import { storage } from "../../storage/index";
 import path from "path";
 import fs from "fs/promises";
 
@@ -111,11 +113,11 @@ async function processWithSharp(
 
   // Apply sharpening
   if (operations.sharpening) {
-    const sharp = operations.sharpening;
+    const sharpOpts = operations.sharpening;
     image = image.sharpen({
-      sigma: sharp.radius || 1,
-      m1: sharp.amount || 1,
-      m2: sharp.threshold || 10,
+      sigma: sharpOpts.radius || 1,
+      m1: sharpOpts.amount || 1,
+      m2: sharpOpts.threshold || 10,
     });
   }
 

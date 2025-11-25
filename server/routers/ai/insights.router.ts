@@ -6,14 +6,14 @@
  * 
  * Base path: /api/v1/ai/insights
  * 
- * @module server/routers/insights.router
+ * @module server/routers/ai/insights.router
  */
 
 import { Router, Request, Response } from "express";
-import { storage } from "../storage/index";
-import { isAuthenticated, getAuthenticatedUserId } from "../middleware/oauth.middleware";
-import { asyncHandler } from "../middleware/error.middleware";
-import { AnalyticsService } from "../services/analytics.service";
+import { storage } from "../../storage/index";
+import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
+import { asyncHandler } from "../../middleware/error.middleware";
+import { AnalyticsService } from "../../services/analytics.service";
 
 const router = Router();
 const analyticsService = new AnalyticsService();

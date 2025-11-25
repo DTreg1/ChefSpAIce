@@ -6,14 +6,14 @@
  * 
  * Base path: /api/v1/ai/writing
  * 
- * @module server/routers/writing-assistant.router
+ * @module server/routers/ai/writing.router
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated } from "../middleware";
-import { storage } from "../storage/index";
+import { isAuthenticated } from "../../middleware";
+import { storage } from "../../storage/index";
 import { z } from "zod";
-import { getOpenAIClient } from "../config/openai-config";
+import { getOpenAIClient } from "../../config/openai-config";
 
 const router = Router();
 

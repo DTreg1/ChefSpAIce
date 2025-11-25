@@ -6,19 +6,19 @@
  * 
  * Base path: /api/v1/fraud-detection
  * 
- * @module server/routers/fraud.router
+ * @module server/routers/platform/fraud.router
  */
 
 import { Router } from "express";
 import { z } from "zod";
-import { db } from "../db";
-import { storage } from "../storage/index";
+import { db } from "../../db";
+import { storage } from "../../storage/index";
 import {
   fraudScores,
   suspiciousActivities
 } from "@shared/schema";
-import { FraudDetectionService } from "../services/fraud.service";
-import { isAuthenticated, adminOnly } from "../middleware/oauth.middleware";
+import { FraudDetectionService } from "../../services/fraud.service";
+import { isAuthenticated, adminOnly } from "../../middleware/oauth.middleware";
 import { eq, gte, desc, sql } from "drizzle-orm";
 
 const router = Router();

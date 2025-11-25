@@ -14,13 +14,13 @@
  * - DELETE /api/excerpts/:excerptId - Delete an excerpt
  * - POST /api/excerpts/:excerptId/track - Track performance event
  * 
- * @module server/routers/excerpt
+ * @module server/routers/ai/excerpt.router
  */
 
 import { Router } from 'express';
-import type { IStorage } from '../storage/interfaces/IStorage';
-import { storage } from "../storage/index";
-import { excerptService } from '../services/excerpt.service';
+import type { IStorage } from '../../storage/interfaces/IStorage';
+import { storage } from "../../storage/index";
+import { excerptService } from '../../services/excerpt.service';
 import { insertExcerptSchema } from '@shared/schema';
 import { z } from 'zod';
 
