@@ -517,12 +517,12 @@ router.post(
       // Generate interventions if requested
       let interventions: Record<string, any> = {};
       if (includeInterventions && predictions.length > 0) {
-        for (const prediction of predictions.slice(0, Math.min(5, limit))) {
+        for (const pred of predictions.slice(0, Math.min(5, limit))) {
           const intervention = await predictionService.generateIntervention(
-            prediction.userId,
-            prediction
+            pred.userId,
+            pred as any
           );
-          interventions[prediction.userId] = intervention;
+          interventions[pred.userId] = intervention;
         }
       }
 
@@ -691,10 +691,10 @@ Format as JSON with fields: mainPoints, facts, conclusions, actionItems.`;
         sourceId: `text_${Date.now()}`,
         sourceType: 'document',
         templateId: null,
+        inputText: text,
         extractedFields: extractedData,
-        confidenceScore: 0.95,
-        validatedBy: null,
-        validatedAt: null,
+        confidence: 0.95,
+        validationStatus: 'pending',
       });
 
       res.json({
@@ -889,10 +889,12 @@ Format as JSON with fields: trend, observations, recommendations, anomalies.`;
         insightType: 'trend',
         title: `Analysis of ${metricName}`,
         description: insight.observations?.[0] || "No significant observations",
-        data: insight,
         category: 'analytics',
-        priority: insight.anomalies?.length > 0 ? 'high' : 'medium',
+        severity: insight.anomalies?.length > 0 ? 'warning' : 'info',
+        metrics: insight,
+        recommendations: insight.recommendations || [],
         isRead: false,
+        isActionable: true,
       });
 
       res.json({

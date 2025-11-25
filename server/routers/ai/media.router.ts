@@ -1784,8 +1784,7 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
         case 'add_item':
           if (interpretation.parameters?.items) {
             for (const item of interpretation.parameters.items) {
-              await storage.user.inventory.createFoodItem({
-                userId,
+              await storage.user.inventory.createFoodItem(userId, {
                 name: item,
                 quantity: interpretation.parameters.quantity || "1",
                 unit: interpretation.parameters.unit || "item",
