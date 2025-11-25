@@ -1515,6 +1515,14 @@ router.post("/voice/transcribe", isAuthenticated, audioUpload.single("audio"), r
         language: transcription.language || language || "en",
         duration: transcription.duration || 0,
         status: "completed",
+        segments: transcription.segments?.map((seg: any, idx: number) => ({
+          id: `seg_${idx}`,
+          start: seg.start || 0,
+          end: seg.end || 0,
+          text: seg.text || '',
+          confidence: seg.confidence,
+          speaker: seg.speaker,
+        })) || [],
         metadata: {
           title: title || `Transcription from ${new Date().toLocaleDateString()}`,
           audioFormat: req.file.mimetype,
@@ -1766,7 +1774,7 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
       confidence: interpretation.confidence,
       action: interpretation.action,
       result: interpretation.parameters,
-      metadata: { originalCommand: command },
+      metadata: { originalCommand: command } as Record<string, [any, ...any[]]>,
     });
     
     let executionResult = null;
@@ -1776,8 +1784,7 @@ router.post("/voice/commands/process", isAuthenticated, rateLimiters.openai.midd
         case 'add_item':
           if (interpretation.parameters?.items) {
             for (const item of interpretation.parameters.items) {
-              await storage.user.inventory.createFoodItem({
-                userId,
+              await storage.user.inventory.createFoodItem(userId, {
                 name: item,
                 quantity: interpretation.parameters.quantity || "1",
                 unit: interpretation.parameters.unit || "item",

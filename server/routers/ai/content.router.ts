@@ -278,8 +278,7 @@ router.post("/analyze", isAuthenticated, rateLimiters.openai.middleware(), async
     const readabilityScore = calculateReadability(text);
     const detectedTone = detectTone(text);
     
-    const session = await storage.platform.ai.createWritingSession({
-      userId,
+    const session = await storage.platform.ai.createWritingSession(userId, {
       originalText: text,
       documentId: null,
     });
@@ -330,9 +329,9 @@ Format as JSON array. Only return valid JSON, no other text.`;
       await storage.platform.ai.addWritingSuggestions(
         session.id,
         suggestions.map(s => ({
-          suggestionType: s.type || "style",
-          originalSnippet: s.original || "",
-          suggestedSnippet: s.suggested || "",
+          suggestionType: (s.type || "style") as "tone" | "grammar" | "style" | "clarity" | "vocabulary",
+          originalText: s.original || "",
+          suggestedText: s.suggested || "",
           reason: s.reason,
         }))
       );
@@ -611,12 +610,11 @@ Return only the translated text, no explanations.`;
     
     const translatedText = completion.choices[0]?.message?.content || "";
     
-    const translation = await storage.platform.ai.createTranslation({
-      userId,
+    const translation = await storage.platform.ai.translateContent(userId, {
       sourceText: text,
       translatedText,
-      sourceLang: sourceLang || "auto",
-      targetLang,
+      sourceLanguage: sourceLang || "auto",
+      targetLanguage: targetLang,
       confidence: 0.95,
       metadata: {
         preserveFormatting,
@@ -737,8 +735,8 @@ Format as JSON with these fields: name, prepTime, cookTime, totalTime, difficult
     const recipeData = JSON.parse(completion.choices[0]?.message?.content || "{}");
     
     const recipe = await storage.user.recipes.createRecipe(userId, {
-      name: recipeData.name || "AI Generated Recipe",
-      ingredients: recipeData.ingredients || ingredients.map(i => ({ item: i, amount: "", unit: "" })),
+      title: recipeData.name || "AI Generated Recipe",
+      ingredients: recipeData.ingredients || ingredients.map((i: string) => ({ item: i, amount: "", unit: "" })),
       instructions: recipeData.instructions || [],
       prepTime: recipeData.prepTime || 15,
       cookTime: recipeData.cookTime || 30,
