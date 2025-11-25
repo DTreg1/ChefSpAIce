@@ -519,7 +519,6 @@ router.post(
       if (includeInterventions && predictions.length > 0) {
         for (const pred of predictions.slice(0, Math.min(5, limit))) {
           const intervention = await predictionService.generateIntervention(
-            pred.userId,
             pred as any
           );
           interventions[pred.userId] = intervention;
