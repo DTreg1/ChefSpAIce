@@ -62,6 +62,8 @@ export const transcriptions = pgTable("transcriptions", {
     title?: string; // User-provided title
     description?: string; // User-provided description
     tags?: string[]; // User-defined tags
+    lastEditedAt?: string; // ISO timestamp of last edit
+    editReason?: string; // Reason for the most recent edit
   }>(),
   status: text("status", {
     enum: ["processing", "completed", "failed"]

@@ -165,6 +165,18 @@ const SUPPORTED_LANGUAGES = [
 
 // ==================== HELPER FUNCTIONS ====================
 
+function determineEditType(editReason?: string): "spelling" | "punctuation" | "speaker" | "content" | "other" {
+  if (!editReason) return "content";
+  
+  const lowerReason = editReason.toLowerCase();
+  if (lowerReason.includes("spell") || lowerReason.includes("typo")) return "spelling";
+  if (lowerReason.includes("punctuat") || lowerReason.includes("comma") || lowerReason.includes("period")) return "punctuation";
+  if (lowerReason.includes("speaker") || lowerReason.includes("attribution")) return "speaker";
+  if (lowerReason.includes("content") || lowerReason.includes("meaning") || lowerReason.includes("correction")) return "content";
+  
+  return "other";
+}
+
 async function saveUploadedFile(file: Express.Multer.File): Promise<string> {
   const tempDir = "/tmp/image-uploads";
   await fs.mkdir(tempDir, { recursive: true });
@@ -1507,7 +1519,7 @@ router.post("/voice/transcribe", isAuthenticated, audioUpload.single("audio"), r
           title: title || `Transcription from ${new Date().toLocaleDateString()}`,
           audioFormat: req.file.mimetype,
           processingTime: Date.now() - (req.body.startTime || Date.now()),
-        } as any,
+        },
       });
       
       res.json({
@@ -1606,18 +1618,25 @@ router.put("/voice/transcriptions/:id/edit", isAuthenticated, async (req: Reques
       return res.status(404).json({ error: "Transcription not found" });
     }
     
+    const editType = determineEditType(editReason);
+    
     await storage.platform.ai.createTranscriptEdit({
       transcriptionId: req.params.id,
       userId,
       originalSegment: original.transcript,
       editedSegment: editedTranscript,
       timestamp: 0,
-      editType: 'content',
+      editType,
       confidence: 100,
     });
     
     const updated = await storage.platform.ai.updateTranscription(userId, req.params.id, {
       transcript: editedTranscript,
+      metadata: {
+        ...original.metadata,
+        lastEditedAt: new Date().toISOString(),
+        editReason,
+      },
     });
     
     res.json({
