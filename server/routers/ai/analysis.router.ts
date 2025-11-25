@@ -364,11 +364,6 @@ Format as JSON with fields: insights, recommendations, opportunities, risks.`;
           timePeriod: trend.period || 'day',
           significance: trend.significance || 0.5,
           detectedAt: new Date(),
-          metadata: {
-            dataSource,
-            timeWindow,
-            detectedBy: "ai-analysis",
-          },
         });
       }
 
