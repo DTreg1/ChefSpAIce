@@ -74,11 +74,13 @@
  * /api/v1/info                            - API version & deprecation info
  */
 
-import { Application } from "express";
+import { Application, Router } from "express";
 import { createServer, type Server } from "http";
 import { API_CONFIG } from "../config/api.config";
 import { setupApiVersionRedirects, addDeprecationHeaders, handleRedirectErrors } from "../middleware/api-version-handler";
 import { activityLoggingMiddleware } from "../middleware/activity-logging.middleware";
+import { isAuthenticated } from "../middleware/auth.middleware";
+import { isAdmin } from "../middleware/rbac.middleware";
 
 // ====================================================================
 // USER DOMAIN ROUTERS
@@ -132,8 +134,7 @@ import schedulingRouter from "./platform/scheduling.router";
 // ====================================================================
 // UTILITIES & SEED DATA
 // ====================================================================
-import { createABTestSeedEndpoint } from "../seeds/seed-ab-tests";
-import { createCohortSeedEndpoint } from "../seeds/seed-cohorts";
+import { createSeedRouter } from "../seeds/index";
 import { createDataCompletionRoutes } from "../utils/dataCompletionEndpoints";
 import { storage } from "../storage/index";
 
@@ -179,21 +180,21 @@ export function setupRouters(app: Application): void {
   
   // ====================================================================
   // ADMIN ENDPOINTS
+  // All admin endpoints require authentication + admin role
+  // Note: adminRouter handles /users internally, so we only mount at /admin
   // ====================================================================
   
-  app.use(`${API_PREFIX}/admin`, adminRouter);
-  app.use(`${API_PREFIX}/admin/users`, adminRouter);
-  app.use(`${API_PREFIX}/admin/experiments`, abTestingRouter);
-  app.use(`${API_PREFIX}/admin/cohorts`, cohortsRouter);
-  app.use(`${API_PREFIX}/admin/maintenance`, maintenanceRouter);
-  app.use(`${API_PREFIX}/admin/tickets`, ticketRoutingRouter);
-  app.use(`${API_PREFIX}/admin/pricing`, pricingRouter);
-  app.use(`${API_PREFIX}/admin/moderation`, moderationRouter);
-  app.use(`${API_PREFIX}/admin/ai-metrics`, aiMetricsRouter);
+  app.use(`${API_PREFIX}/admin`, isAuthenticated, isAdmin, adminRouter);
+  app.use(`${API_PREFIX}/admin/experiments`, isAuthenticated, isAdmin, abTestingRouter);
+  app.use(`${API_PREFIX}/admin/cohorts`, isAuthenticated, isAdmin, cohortsRouter);
+  app.use(`${API_PREFIX}/admin/maintenance`, isAuthenticated, isAdmin, maintenanceRouter);
+  app.use(`${API_PREFIX}/admin/tickets`, isAuthenticated, isAdmin, ticketRoutingRouter);
+  app.use(`${API_PREFIX}/admin/pricing`, isAuthenticated, isAdmin, pricingRouter);
+  app.use(`${API_PREFIX}/admin/moderation`, isAuthenticated, isAdmin, moderationRouter);
+  app.use(`${API_PREFIX}/admin/ai-metrics`, isAuthenticated, isAdmin, aiMetricsRouter);
   
-  // Admin seed data endpoints
-  app.use(`${API_PREFIX}/admin/seed`, createABTestSeedEndpoint(storage));
-  app.use(`${API_PREFIX}/admin/seed`, createCohortSeedEndpoint(storage));
+  // Admin seed data endpoints (combined router to avoid double-mount)
+  app.use(`${API_PREFIX}/admin/seed`, isAuthenticated, isAdmin, createSeedRouter(storage));
   
   // ====================================================================
   // AI ENDPOINTS (Consolidated Router Structure)
