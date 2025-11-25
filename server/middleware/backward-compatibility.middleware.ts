@@ -26,9 +26,10 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
   let additionalQueryParams = '';
   
   // Check exact matches first (including query parameter transformations)
-  if (API_CONFIG.LEGACY_PATHS[originalPath]) {
+  const legacyPaths = API_CONFIG.LEGACY_PATHS as Record<string, string>;
+  if (legacyPaths[originalPath]) {
     isLegacyPath = true;
-    const mappedValue = API_CONFIG.LEGACY_PATHS[originalPath];
+    const mappedValue = legacyPaths[originalPath];
     
     // Handle mappings that include query parameters
     if (mappedValue.includes('?')) {
@@ -50,7 +51,7 @@ export function backwardCompatibilityMiddleware(req: Request, res: Response, nex
     
     if (matchingLegacyPath) {
       isLegacyPath = true;
-      const mappedPath = API_CONFIG.LEGACY_PATHS[matchingLegacyPath as keyof typeof API_CONFIG.LEGACY_PATHS];
+      const mappedPath = legacyPaths[matchingLegacyPath];
       const pathSuffix = originalPath.slice(matchingLegacyPath.length);
       
       // Handle mappings that include query parameters
@@ -326,7 +327,7 @@ export function requestTransformMiddleware(req: Request, res: Response, next: Ne
     // Convert offset/limit to page/limit
     const offset = parseInt(req.query.offset as string);
     const limit = parseInt(req.query.limit as string);
-    req.query.page = Math.floor(offset / limit) + 1;
+    req.query.page = String(Math.floor(offset / limit) + 1);
     delete req.query.offset;
   }
   
