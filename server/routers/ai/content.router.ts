@@ -279,7 +279,8 @@ router.post("/analyze", isAuthenticated, rateLimiters.openai.middleware(), async
     const detectedTone = detectTone(text);
     
     const session = await storage.platform.ai.createWritingSession(userId, {
-      originalText: text,
+      sessionType: 'review',
+      startContent: text,
       documentId: null,
     });
     
@@ -611,15 +612,11 @@ Return only the translated text, no explanations.`;
     const translatedText = completion.choices[0]?.message?.content || "";
     
     const translation = await storage.platform.ai.translateContent(userId, {
-      sourceText: text,
+      originalText: text,
       translatedText,
       sourceLanguage: sourceLang || "auto",
       targetLanguage: targetLang,
       confidence: 0.95,
-      metadata: {
-        preserveFormatting,
-        model: "gpt-4o",
-      },
     });
     
     res.json({
@@ -735,21 +732,19 @@ Format as JSON with these fields: name, prepTime, cookTime, totalTime, difficult
     const recipeData = JSON.parse(completion.choices[0]?.message?.content || "{}");
     
     const recipe = await storage.user.recipes.createRecipe(userId, {
+      userId,
       title: recipeData.name || "AI Generated Recipe",
-      ingredients: recipeData.ingredients || ingredients.map((i: string) => ({ item: i, amount: "", unit: "" })),
+      ingredients: recipeData.ingredients || ingredients.map((i: string) => i),
       instructions: recipeData.instructions || [],
-      prepTime: recipeData.prepTime || 15,
-      cookTime: recipeData.cookTime || 30,
+      usedIngredients: ingredients,
+      prepTime: String(recipeData.prepTime || 15),
+      cookTime: String(recipeData.cookTime || 30),
       servings: servings,
       difficulty: recipeData.difficulty || "medium",
       cuisine: preferences?.cuisineType || "International",
-      dietaryTags: preferences?.dietaryRestrictions || [],
-      nutritionPerServing: recipeData.nutrition || {},
-      sourceUrl: null,
+      dietaryInfo: preferences?.dietaryRestrictions || [],
       imageUrl: null,
-      notes: "AI-generated recipe based on available ingredients",
-      isPublic: false,
-      tags: ["ai-generated"],
+      source: "ai_generated",
     });
     
     res.json({
