@@ -477,13 +477,13 @@ Track your progress with this checklist:
 - [X] Verify application still runs
 
 ### Phase 2: Consolidation
-- [ ] Identify all AI/ML routers to consolidate
-- [ ] Create 4 new consolidated AI routers
-- [ ] Migrate endpoints from old AI routers
-- [ ] Update frontend API calls for AI endpoints
-- [ ] Remove old AI router files
-- [ ] Merge duplicate inventory routers
-- [ ] Remove deprecated router files
+- [X] Identify all AI/ML routers to consolidate
+- [X] Create 4 new consolidated AI routers
+- [X] Migrate endpoints from old AI routers
+- [X] Update frontend API calls for AI endpoints
+- [X] Remove old AI router files
+- [X] Merge duplicate inventory routers
+- [X] Remove deprecated router files
 
 ### Phase 3: Standardization
 - [ ] Create API standardization plan
