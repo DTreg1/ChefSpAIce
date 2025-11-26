@@ -290,7 +290,7 @@ class BatchedApiLogger {
           }
           
           try {
-            await storage.logApiUsage(item.userId, item.log);
+            await storage.platform.system.logApiUsage(item.userId, item.log);
             return { success: true, item };
           } catch (error) {
             // Check if error is retryable using consolidated function
