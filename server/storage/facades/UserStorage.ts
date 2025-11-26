@@ -3,7 +3,7 @@
  * Consolidates user-specific storage operations into organized sub-modules
  */
 
-import { UserAuthDomainStorage } from "../domains/user.storage";
+import { userStorage } from "../domains/user.storage";
 import { FoodStorage } from "../domains/food.storage";
 import { recipesStorage } from "../domains/recipes.storage";
 import { inventoryStorage } from "../domains/inventory.storage";
@@ -15,7 +15,7 @@ import { SchedulingStorage } from "../domains/scheduling.storage";
  * UserStorage facade that consolidates all user-related storage modules
  */
 export class UserStorage {
-  public readonly user: UserAuthDomainStorage;
+  public readonly user: typeof userStorage;
   public readonly food: FoodStorage;
   public readonly recipes: typeof recipesStorage;
   public readonly inventory: typeof inventoryStorage;
@@ -24,7 +24,7 @@ export class UserStorage {
   public readonly scheduling: SchedulingStorage;
 
   constructor() {
-    this.user = new UserAuthDomainStorage();
+    this.user = userStorage;
     this.food = new FoodStorage();
     this.recipes = recipesStorage;
     this.inventory = inventoryStorage;
