@@ -37,20 +37,9 @@
  * /admin/ai-metrics                        - AI usage metrics & monitoring
  * /admin/seed                              - Seed data endpoints
  * 
- * AI DOMAIN (/api/v1/ai/...)
- * ---------------------------
- * /ai/generation                           - Content generation services
- * /ai/analysis                             - Content analysis services
- * /ai/vision                               - Computer vision processing
- * /ai/voice                                - Voice processing & transcription
- * /ai/drafts                               - Email/message drafting
- * /ai/excerpts                             - Excerpt generation
- * /ai/recommendations                      - AI-powered recommendations
- * /ai/insights                             - AI-powered insights & analytics
- * /ai/writing                              - Writing assistance & grammar
- * 
  * PLATFORM DOMAIN (/api/v1/...)
  * ------------------------------
+ * Core Services:
  * /analytics                               - Analytics data & reporting
  * /activities                              - Activity logs & audit trail
  * /notifications                           - Notification management
@@ -59,13 +48,13 @@
  * /batch                                   - Batch operations
  * /data-completion                         - Data quality & completion
  * /feedback                                - User feedback collection
- * 
- * SPECIALIZED SERVICES (/api/v1/...)
- * -----------------------------------
- * /natural-query                           - Natural language query processing
  * /fraud-detection                         - Fraud detection services
  * /scheduling                              - Scheduling & calendar services
- * /images                                  - Image processing & manipulation
+ * 
+ * AI Services (/api/v1/ai/...):
+ * /ai/content                              - Content generation, drafting, writing
+ * /ai/analysis                             - Sentiment, trends, predictions, insights
+ * /ai/media                                - Images, vision, voice processing
  * 
  * HEALTH & STATUS
  * ---------------
@@ -111,16 +100,9 @@ import moderationRouter from "./admin/moderation.router";
 import aiMetricsRouter from "./admin/ai-metrics.router";
 
 // ====================================================================
-// AI DOMAIN ROUTERS (Consolidated)
-// ====================================================================
-// Consolidated routers for better organization and reduced redundancy
-import contentRouter from "./ai/content.router";       // Merges: generation, drafting, excerpt, writing
-import analysisRouter from "./ai/analysis.router";     // Includes: insights, recommendations, natural-query
-import mediaRouter from "./ai/media.router";           // Merges: images, vision, voice
-
-// ====================================================================
 // PLATFORM DOMAIN ROUTERS
 // ====================================================================
+// Core platform services
 import analyticsRouter from "./platform/analytics.router";
 import feedbackRouter from "./platform/feedback.router";
 import batchRouter from "./platform/batch.router";
@@ -130,6 +112,12 @@ import activityLogsRouter from "./platform/activity-logs.router";
 import intelligentNotificationsRouter from "./platform/intelligent-notifications.router";
 import fraudRouter from "./platform/fraud.router";
 import schedulingRouter from "./platform/scheduling.router";
+
+// AI services (consolidated under platform)
+import contentRouter from "./platform/ai/content.router";       // Merges: generation, drafting, excerpt, writing
+import analysisRouter from "./platform/ai/analysis.router";     // Includes: insights, recommendations, natural-query
+import mediaRouter from "./platform/ai/media.router";           // Merges: images, vision, voice
+
 
 // ====================================================================
 // UTILITIES & SEED DATA
@@ -197,33 +185,6 @@ export function setupRouters(app: Application): void {
   app.use(`${API_PREFIX}/admin/seed`, isAuthenticated, isAdmin, createSeedRouter(storage));
   
   // ====================================================================
-  // AI ENDPOINTS (Consolidated Router Structure)
-  // ====================================================================
-  
-  // Consolidated AI Content Router
-  // Handles: generation, drafting, excerpts, writing assistance
-  app.use(`${API_PREFIX}/ai/content`, contentRouter);
-  
-  // Consolidated AI Analysis Router
-  // Handles: sentiment, trends, predictions, insights, recommendations, natural-query
-  app.use(`${API_PREFIX}/ai/analysis`, analysisRouter);
-  
-  // Consolidated AI Media Router
-  // Handles: images, vision (OCR, face detection, alt-text), voice (transcription, commands)
-  app.use(`${API_PREFIX}/ai/media`, mediaRouter);
-  
-  // Backward compatibility routes for old API paths
-  // These redirect to the new consolidated endpoints
-  app.use(`${API_PREFIX}/ai/generation`, contentRouter);   // Legacy: now /ai/content
-  app.use(`${API_PREFIX}/ai/drafts`, contentRouter);       // Legacy: now /ai/content/drafts/*
-  app.use(`${API_PREFIX}/ai/writing`, contentRouter);      // Legacy: now /ai/content/writing/*
-  app.use(`${API_PREFIX}/ai/vision`, mediaRouter);         // Legacy: now /ai/media/vision/*
-  app.use(`${API_PREFIX}/ai/voice`, mediaRouter);          // Legacy: now /ai/media/voice/*
-  app.use(`${API_PREFIX}/ai/images`, mediaRouter);         // Legacy: now /ai/media/images/*
-  app.use(`${API_PREFIX}/ai/insights`, analysisRouter);    // Legacy: now /ai/analysis/insights/*
-  app.use(`${API_PREFIX}/ai/recommendations`, analysisRouter); // Legacy: now /ai/analysis/recommendations/*
-  
-  // ====================================================================
   // PLATFORM ENDPOINTS
   // ====================================================================
   
@@ -241,16 +202,26 @@ export function setupRouters(app: Application): void {
   app.use(`${API_PREFIX}/data-completion`, createDataCompletionRoutes(storage));
   app.use(`${API_PREFIX}/feedback`, feedbackRouter);
   
-  // ====================================================================
-  // SPECIALIZED SERVICES
-  // ====================================================================
-  
-  // Natural language query is now part of analysis router at /ai/analysis/query/*
-  app.use(`${API_PREFIX}/natural-query`, analysisRouter);  // Legacy: now /ai/analysis/query/*
+  // Specialized Services
   app.use(`${API_PREFIX}/fraud-detection`, fraudRouter);
   app.use(`${API_PREFIX}/scheduling`, schedulingRouter);
-  // Images are now part of media router at /ai/media/images/*
-  app.use(`${API_PREFIX}/images`, mediaRouter);  // Legacy: now /ai/media/images/*
+  
+  // AI Services (consolidated under platform)
+  app.use(`${API_PREFIX}/ai/content`, contentRouter);    // Generation, drafting, excerpts, writing
+  app.use(`${API_PREFIX}/ai/analysis`, analysisRouter);  // Sentiment, trends, predictions, insights
+  app.use(`${API_PREFIX}/ai/media`, mediaRouter);        // Images, vision, voice processing
+  
+  // Legacy backward compatibility routes for AI endpoints
+  app.use(`${API_PREFIX}/ai/generation`, contentRouter);
+  app.use(`${API_PREFIX}/ai/drafts`, contentRouter);
+  app.use(`${API_PREFIX}/ai/writing`, contentRouter);
+  app.use(`${API_PREFIX}/ai/vision`, mediaRouter);
+  app.use(`${API_PREFIX}/ai/voice`, mediaRouter);
+  app.use(`${API_PREFIX}/ai/images`, mediaRouter);
+  app.use(`${API_PREFIX}/ai/insights`, analysisRouter);
+  app.use(`${API_PREFIX}/ai/recommendations`, analysisRouter);
+  app.use(`${API_PREFIX}/natural-query`, analysisRouter);
+  app.use(`${API_PREFIX}/images`, mediaRouter);
   
   // ====================================================================
   // HEALTH & STATUS ENDPOINTS (No authentication required)

@@ -20,24 +20,24 @@
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/auth.middleware";
-import { storage } from "../../storage/index";
+import { isAuthenticated, getAuthenticatedUserId } from "../../../middleware/auth.middleware";
+import { storage } from "../../../storage/index";
 import { z } from "zod";
 import OpenAI from "openai";
-import { getOpenAIClient } from "../../config/openai-config";
-import { rateLimiters } from "../../middleware/rate-limit.middleware";
-import { circuitBreakers, executeWithBreaker } from "../../middleware/circuit-breaker.middleware";
+import { getOpenAIClient } from "../../../config/openai-config";
+import { rateLimiters } from "../../../middleware/rate-limit.middleware";
+import { circuitBreakers, executeWithBreaker } from "../../../middleware/circuit-breaker.middleware";
 import {
   AIError,
   handleOpenAIError,
   retryWithBackoff,
   createErrorResponse,
-} from "../../utils/ai-error-handler";
+} from "../../../utils/ai-error-handler";
 import { syllable } from "syllable";
 import Sentiment from "sentiment";
 import rs from "text-readability";
-import { excerptService } from "../../services/excerpt.service";
-import type { IStorage } from "../../storage/interfaces/IStorage";
+import { excerptService } from "../../../services/excerpt.service";
+import type { IStorage } from "../../../storage/interfaces/IStorage";
 
 const router = Router();
 

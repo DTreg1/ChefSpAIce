@@ -17,8 +17,8 @@
  */
 
 import { Router, Request, Response } from "express";
-import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/auth.middleware";
-import { storage } from "../../storage/index";
+import { isAuthenticated, getAuthenticatedUserId } from "../../../middleware/auth.middleware";
+import { storage } from "../../../storage/index";
 import { z } from "zod";
 import multer from "multer";
 import sharp from "sharp";
@@ -29,17 +29,17 @@ import path from "path";
 import fs from "fs/promises";
 import fsSync from "fs";
 import os from "os";
-import { getOpenAIClient } from "../../config/openai-config";
-import { faceDetectionService } from "../../services/faceDetection.service";
-import { generateAltText, analyzeAltTextQuality, generateAltTextSuggestions } from "../../services/alt-text-generator";
-import { rateLimiters } from "../../middleware/rate-limit.middleware";
-import { circuitBreakers, executeWithBreaker } from "../../middleware/circuit-breaker.middleware";
+import { getOpenAIClient } from "../../../config/openai-config";
+import { faceDetectionService } from "../../../services/faceDetection.service";
+import { generateAltText, analyzeAltTextQuality, generateAltTextSuggestions } from "../../../services/alt-text-generator";
+import { rateLimiters } from "../../../middleware/rate-limit.middleware";
+import { circuitBreakers, executeWithBreaker } from "../../../middleware/circuit-breaker.middleware";
 import {
   AIError,
   handleOpenAIError,
   createErrorResponse,
-} from "../../utils/ai-error-handler";
-import { getCircuitBreaker } from "../../utils/circuit-breaker";
+} from "../../../utils/ai-error-handler";
+import { getCircuitBreaker } from "../../../utils/circuit-breaker";
 
 const router = Router();
 
