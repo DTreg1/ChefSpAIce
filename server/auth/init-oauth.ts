@@ -8,7 +8,7 @@ import { Express } from "express";
 import passport from "passport";
 import { getSessionMiddleware } from "../config/session-config";
 import { initializeOAuthStrategies } from "./oauth";
-import oauthRoutes from "../routers/oauth.router.ts";
+import oauthRoutes from "../routers/user/oauth.router.ts";
 
 export async function setupOAuth(app: Express) {
   // Set up trust proxy for secure cookies
