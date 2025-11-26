@@ -275,7 +275,23 @@ export class StorageRoot {
   }
 
   async upsertNotificationPreferences(userId: string, preferences: Record<string, boolean>) {
-    return this.user.notifications.upsertNotificationPreferences(userId, preferences);
+    type NotificationType = "expiring-food" | "recipe-suggestion" | "meal-reminder" | "test" | "system" | "promotion" | "feature-update";
+    const validTypes: NotificationType[] = ["expiring-food", "recipe-suggestion", "meal-reminder", "test", "system", "promotion", "feature-update"];
+    const results = [];
+    for (const [key, enabled] of Object.entries(preferences)) {
+      if (validTypes.includes(key as NotificationType)) {
+        const result = await this.user.notifications.upsertNotificationPreferences({
+          userId,
+          notificationType: key as NotificationType,
+          enabled,
+          channels: ['push', 'email'],
+          minImportance: 3,
+          frequency: 'immediate'
+        });
+        results.push(result);
+      }
+    }
+    return results;
   }
 
   // ==================== Billing ====================
@@ -352,8 +368,8 @@ export class StorageRoot {
     return this.admin.support.updateTicket(ticketId, { priority: 'urgent' });
   }
 
-  async resolveTicket(ticketId: number, resolution: string, resolvedBy: string) {
-    return this.admin.support.resolveTicket(ticketId, resolution, resolvedBy);
+  async resolveTicket(ticketId: string, resolution: string, timeToResolution: number = 0) {
+    return this.admin.support.resolveTicket(ticketId, resolution, timeToResolution);
   }
 
   async addTicketResponse(response: any): Promise<any> {
