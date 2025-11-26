@@ -62,16 +62,16 @@ export class StorageRoot {
   }
 
   // ==================== Session Management ====================
-  async createSession(sessionData: any) {
-    return this.user.user.createSession(sessionData);
+  async createSession(sessionId: string, sessionData: any, sessionExpire: any) {
+    return this.user.user.createSession(sessionId, sessionData, sessionExpire);
   }
 
   async getSession(sessionId: string) {
     return this.user.user.getSession(sessionId);
   }
 
-  async updateSession(sessionId: string, data: any) {
-    return this.user.user.updateSession(sessionId, data);
+  async updateSession(sessionId: string, sessionData: any, sessionExpire: any) {
+    return this.user.user.updateSession(sessionId, sessionData, sessionExpire);
   }
 
   async deleteSession(sessionId: string) {
