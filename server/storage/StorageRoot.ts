@@ -144,8 +144,8 @@ export class StorageRoot {
     return this.user.inventory.getStorageLocation(id, userId);
   }
 
-  async createStorageLocation(data: any) {
-    return this.user.inventory.createStorageLocation(data);
+  async createStorageLocation(userId: string, data: any) {
+    return this.user.inventory.createStorageLocation(userId, data);
   }
 
   async updateStorageLocation(id: string, userId: string, data: any) {
