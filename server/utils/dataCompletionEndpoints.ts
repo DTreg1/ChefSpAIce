@@ -357,9 +357,8 @@ export function createDataCompletionRoutes(storage: typeof storageInstance) {
       }
 
       // Create the inventory item
-      const savedItem = await storage.createFoodItem({
+      const savedItem = await storage.createFoodItem(userId, {
         ...completedItem,
-        userId
       });
 
       return res.json({

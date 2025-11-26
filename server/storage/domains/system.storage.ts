@@ -47,7 +47,7 @@ export class SystemStorage {
     userId: string,
     log: Omit<InsertApiUsageLog, "userId">
   ): Promise<ApiUsageLog> {
-    const logToInsert = {
+    const logToInsert: InsertApiUsageLog = {
       ...log,
       userId,
       timestamp: new Date(),
@@ -584,7 +584,7 @@ export class SystemStorage {
   async recordSystemMetric(
     metric: Omit<InsertSystemMetric, "timestamp">
   ): Promise<SystemMetric> {
-    const metricToInsert = {
+    const metricToInsert: InsertSystemMetric = {
       ...metric,
       timestamp: new Date(),
     };

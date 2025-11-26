@@ -120,8 +120,8 @@ export class StorageRoot {
     return this.user.inventory.getFoodItem(id, userId);
   }
 
-  async createFoodItem(data: any) {
-    return this.user.inventory.createFoodItem(data);
+  async createFoodItem(userId: string, data: any) {
+    return this.user.inventory.createFoodItem(userId, data);
   }
 
   async updateFoodItem(id: string, userId: string, data: any) {
