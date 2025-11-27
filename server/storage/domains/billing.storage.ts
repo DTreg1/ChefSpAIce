@@ -20,6 +20,20 @@ import {
   type Donation,
   type InsertDonation,
 } from "@shared/schema/billing";
+import {
+  StorageError,
+  StorageNotFoundError,
+  StorageValidationError,
+  StorageConstraintError,
+  wrapDatabaseError,
+  type StorageErrorContext,
+} from "../errors";
+
+const DOMAIN = "billing";
+
+function createContext(operation: string, entityId?: string | number, entityType: string = "Donation"): StorageErrorContext {
+  return { domain: DOMAIN, operation, entityId, entityType };
+}
 
 /**
  * Billing Storage
@@ -33,84 +47,135 @@ export class BillingStorage implements IBillingStorage {
   async createDonation(
     donation: Omit<InsertDonation, "id" | "createdAt" | "completedAt">
   ): Promise<Donation> {
-    const [newDonation] = await db
-      .insert(donations)
-      .values(donation as any)
-      .returning();
-    return newDonation;
+    const context = createContext("createDonation");
+    context.additionalInfo = { userId: donation.userId, amount: donation.amount };
+    try {
+      const [newDonation] = await db
+        .insert(donations)
+        .values(donation as any)
+        .returning();
+      return newDonation;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error creating donation:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async updateDonation(
     stripePaymentIntentId: string,
     updates: Partial<Donation>
   ): Promise<Donation> {
-    const [updated] = await db
-      .update(donations)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-      })
-      .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
-      .returning();
+    const context = createContext("updateDonation");
+    context.additionalInfo = { stripePaymentIntentId };
+    try {
+      const [updated] = await db
+        .update(donations)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
+        .returning();
 
-    if (!updated) {
-      throw new Error("Donation not found");
+      if (!updated) {
+        throw new StorageNotFoundError(
+          `Donation with payment intent ${stripePaymentIntentId} not found`,
+          context
+        );
+      }
+      return updated;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error updating donation:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
-    return updated;
   }
 
   async getDonation(id: string): Promise<Donation | undefined> {
-    const [donation] = await db
-      .select()
-      .from(donations)
-      .where(eq(donations.id, id));
-    return donation;
+    const context = createContext("getDonation", id);
+    try {
+      const [donation] = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.id, id));
+      return donation;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting donation ${id}:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async getDonationByPaymentIntent(
     stripePaymentIntentId: string
   ): Promise<Donation | undefined> {
-    const [donation] = await db
-      .select()
-      .from(donations)
-      .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId));
-    return donation;
+    const context = createContext("getDonationByPaymentIntent");
+    context.additionalInfo = { stripePaymentIntentId };
+    try {
+      const [donation] = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId));
+      return donation;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting donation by payment intent:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async getDonations(
     limit: number = 50,
     offset: number = 0
   ): Promise<{ donations: Donation[]; total: number }> {
-    const [donationResults, totalResult] = await Promise.all([
-      db
-        .select()
-        .from(donations)
-        .orderBy(desc(donations.createdAt))
-        .limit(limit)
-        .offset(offset),
-      db.select({ count: sql<number>`COUNT(*)::int` }).from(donations),
-    ]);
+    const context = createContext("getDonations");
+    context.additionalInfo = { limit, offset };
+    try {
+      const [donationResults, totalResult] = await Promise.all([
+        db
+          .select()
+          .from(donations)
+          .orderBy(desc(donations.createdAt))
+          .limit(limit)
+          .offset(offset),
+        db.select({ count: sql<number>`COUNT(*)::int` }).from(donations),
+      ]);
 
-    return {
-      donations: donationResults,
-      total: totalResult[0]?.count || 0,
-    };
+      return {
+        donations: donationResults,
+        total: totalResult[0]?.count || 0,
+      };
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting donations:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async getUserDonations(
     userId: string,
     limit: number = 10
   ): Promise<Donation[]> {
-    return await db
-      .select()
-      .from(donations)
-      .where(eq(donations.userId, userId))
-      .orderBy(desc(donations.createdAt))
-      .limit(limit);
+    const context = createContext("getUserDonations");
+    context.additionalInfo = { userId, limit };
+    try {
+      return await db
+        .select()
+        .from(donations)
+        .where(eq(donations.userId, userId))
+        .orderBy(desc(donations.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting user donations for ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async deleteDonation(id: string): Promise<void> {
-    await db.delete(donations).where(eq(donations.id, id));
+    const context = createContext("deleteDonation", id);
+    try {
+      await db.delete(donations).where(eq(donations.id, id));
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error deleting donation ${id}:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   // ==================== Donation Statistics ====================
@@ -119,15 +184,21 @@ export class BillingStorage implements IBillingStorage {
     totalAmount: number;
     donationCount: number;
   }> {
-    const result = await db
-      .select({
-        totalAmount: sql<number>`COALESCE(SUM(${donations.amount}), 0)::int`,
-        donationCount: sql<number>`COUNT(*)::int`,
-      })
-      .from(donations)
-      .where(eq(donations.status, "completed"));
+    const context = createContext("getTotalDonations");
+    try {
+      const result = await db
+        .select({
+          totalAmount: sql<number>`COALESCE(SUM(${donations.amount}), 0)::int`,
+          donationCount: sql<number>`COUNT(*)::int`,
+        })
+        .from(donations)
+        .where(eq(donations.status, "completed"));
 
-    return result[0] || { totalAmount: 0, donationCount: 0 };
+      return result[0] || { totalAmount: 0, donationCount: 0 };
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting total donations:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async getDonationStats(startDate?: Date, endDate?: Date): Promise<{
@@ -139,69 +210,73 @@ export class BillingStorage implements IBillingStorage {
     recurringCount: number;
     recurringAmount: number;
   }> {
-    const conditions = [];
+    const context = createContext("getDonationStats");
+    context.additionalInfo = { startDate: startDate?.toISOString(), endDate: endDate?.toISOString() };
+    try {
+      const conditions = [];
 
-    if (startDate) {
-      conditions.push(gte(donations.createdAt, startDate));
-    }
-    if (endDate) {
-      conditions.push(lte(donations.createdAt, endDate));
-    }
-
-    const filteredDonations = conditions.length > 0
-      ? await db.select().from(donations).where(and(...conditions))
-      : await db.select().from(donations);
-
-    const byStatus: Record<string, { count: number; amount: number }> = {};
-    const byCurrency: Record<string, { count: number; amount: number }> = {};
-    let totalAmount = 0;
-    let totalCount = 0;
-    let recurringCount = 0;
-    let recurringAmount = 0;
-
-    for (const donation of filteredDonations) {
-      totalCount++;
-      
-      if (donation.status === "completed") {
-        totalAmount += donation.amount;
+      if (startDate) {
+        conditions.push(gte(donations.createdAt, startDate));
+      }
+      if (endDate) {
+        conditions.push(lte(donations.createdAt, endDate));
       }
 
-      // By status
-      if (!byStatus[donation.status]) {
-        byStatus[donation.status] = { count: 0, amount: 0 };
-      }
-      byStatus[donation.status].count++;
-      if (donation.status === "completed") {
-        byStatus[donation.status].amount += donation.amount;
-      }
+      const filteredDonations = conditions.length > 0
+        ? await db.select().from(donations).where(and(...conditions))
+        : await db.select().from(donations);
 
-      // By currency
-      if (!byCurrency[donation.currency]) {
-        byCurrency[donation.currency] = { count: 0, amount: 0 };
-      }
-      byCurrency[donation.currency].count++;
-      if (donation.status === "completed") {
-        byCurrency[donation.currency].amount += donation.amount;
-      }
+      const byStatus: Record<string, { count: number; amount: number }> = {};
+      const byCurrency: Record<string, { count: number; amount: number }> = {};
+      let totalAmount = 0;
+      let totalCount = 0;
+      let recurringCount = 0;
+      let recurringAmount = 0;
 
-      // Recurring
-      if (donation.isRecurring) {
-        recurringCount++;
+      for (const donation of filteredDonations) {
+        totalCount++;
+        
         if (donation.status === "completed") {
-          recurringAmount += donation.amount;
+          totalAmount += donation.amount;
+        }
+
+        if (!byStatus[donation.status]) {
+          byStatus[donation.status] = { count: 0, amount: 0 };
+        }
+        byStatus[donation.status].count++;
+        if (donation.status === "completed") {
+          byStatus[donation.status].amount += donation.amount;
+        }
+
+        if (!byCurrency[donation.currency]) {
+          byCurrency[donation.currency] = { count: 0, amount: 0 };
+        }
+        byCurrency[donation.currency].count++;
+        if (donation.status === "completed") {
+          byCurrency[donation.currency].amount += donation.amount;
+        }
+
+        if (donation.isRecurring) {
+          recurringCount++;
+          if (donation.status === "completed") {
+            recurringAmount += donation.amount;
+          }
         }
       }
-    }
 
-    return {
-      totalAmount,
-      totalCount,
-      averageAmount: totalCount > 0 ? totalAmount / totalCount : 0,
-      byStatus,
-      byCurrency,
-      recurringCount,
-      recurringAmount,
-    };
+      return {
+        totalAmount,
+        totalCount,
+        averageAmount: totalCount > 0 ? totalAmount / totalCount : 0,
+        byStatus,
+        byCurrency,
+        recurringCount,
+        recurringAmount,
+      };
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting donation stats:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async getUserDonationStats(userId: string): Promise<{
@@ -212,24 +287,31 @@ export class BillingStorage implements IBillingStorage {
     lastDonation?: Date;
     isRecurringDonor: boolean;
   }> {
-    const userDonations = await db
-      .select()
-      .from(donations)
-      .where(eq(donations.userId, userId))
-      .orderBy(desc(donations.createdAt));
+    const context = createContext("getUserDonationStats");
+    context.additionalInfo = { userId };
+    try {
+      const userDonations = await db
+        .select()
+        .from(donations)
+        .where(eq(donations.userId, userId))
+        .orderBy(desc(donations.createdAt));
 
-    const completedDonations = userDonations.filter(d => d.status === "completed");
-    const totalAmount = completedDonations.reduce((sum, d) => sum + d.amount, 0);
-    const isRecurringDonor = userDonations.some(d => d.isRecurring);
+      const completedDonations = userDonations.filter(d => d.status === "completed");
+      const totalAmount = completedDonations.reduce((sum, d) => sum + d.amount, 0);
+      const isRecurringDonor = userDonations.some(d => d.isRecurring);
 
-    return {
-      totalAmount,
-      totalCount: completedDonations.length,
-      averageAmount: completedDonations.length > 0 ? totalAmount / completedDonations.length : 0,
-      firstDonation: userDonations[userDonations.length - 1]?.createdAt || undefined,
-      lastDonation: userDonations[0]?.createdAt || undefined,
-      isRecurringDonor,
-    };
+      return {
+        totalAmount,
+        totalCount: completedDonations.length,
+        averageAmount: completedDonations.length > 0 ? totalAmount / completedDonations.length : 0,
+        firstDonation: userDonations[userDonations.length - 1]?.createdAt || undefined,
+        lastDonation: userDonations[0]?.createdAt || undefined,
+        isRecurringDonor,
+      };
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting user donation stats for ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async getDonationTrends(days: number = 30): Promise<
@@ -239,91 +321,132 @@ export class BillingStorage implements IBillingStorage {
       amount: number;
     }>
   > {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const context = createContext("getDonationTrends");
+    context.additionalInfo = { days };
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
 
-    const trends = await db
-      .select({
-        date: sql<string>`DATE(${donations.createdAt})::text`,
-        count: sql<number>`COUNT(*)::int`,
-        amount: sql<number>`COALESCE(SUM(${donations.amount}), 0)::int`,
-      })
-      .from(donations)
-      .where(
-        and(
-          gte(donations.createdAt, startDate),
-          eq(donations.status, "completed")
+      const trends = await db
+        .select({
+          date: sql<string>`DATE(${donations.createdAt})::text`,
+          count: sql<number>`COUNT(*)::int`,
+          amount: sql<number>`COALESCE(SUM(${donations.amount}), 0)::int`,
+        })
+        .from(donations)
+        .where(
+          and(
+            gte(donations.createdAt, startDate),
+            eq(donations.status, "completed")
+          )
         )
-      )
-      .groupBy(sql`DATE(${donations.createdAt})`)
-      .orderBy(sql`DATE(${donations.createdAt})`);
+        .groupBy(sql`DATE(${donations.createdAt})`)
+        .orderBy(sql`DATE(${donations.createdAt})`);
 
-    return trends;
+      return trends;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting donation trends:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   // ==================== Recurring Donations ====================
 
   async getRecurringDonations(status?: string): Promise<Donation[]> {
-    const conditions = [eq(donations.isRecurring, true)];
+    const context = createContext("getRecurringDonations");
+    context.additionalInfo = { status };
+    try {
+      const conditions = [eq(donations.isRecurring, true)];
 
-    if (status) {
-      conditions.push(eq(donations.status, status));
+      if (status) {
+        conditions.push(eq(donations.status, status));
+      }
+
+      return await db
+        .select()
+        .from(donations)
+        .where(and(...conditions))
+        .orderBy(desc(donations.createdAt));
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting recurring donations:`, error);
+      throw wrapDatabaseError(error, context);
     }
-
-    return await db
-      .select()
-      .from(donations)
-      .where(and(...conditions))
-      .orderBy(desc(donations.createdAt));
   }
 
   async getUserRecurringDonations(userId: string): Promise<Donation[]> {
-    return await db
-      .select()
-      .from(donations)
-      .where(
-        and(
-          eq(donations.userId, userId),
-          eq(donations.isRecurring, true)
+    const context = createContext("getUserRecurringDonations");
+    context.additionalInfo = { userId };
+    try {
+      return await db
+        .select()
+        .from(donations)
+        .where(
+          and(
+            eq(donations.userId, userId),
+            eq(donations.isRecurring, true)
+          )
         )
-      )
-      .orderBy(desc(donations.createdAt));
+        .orderBy(desc(donations.createdAt));
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting user recurring donations for ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async cancelRecurringDonation(donationId: string): Promise<Donation> {
-    const [cancelled] = await db
-      .update(donations)
-      .set({
-        status: "cancelled",
-        isRecurring: false,
-        updatedAt: new Date(),
-      })
-      .where(eq(donations.id, donationId))
-      .returning();
+    const context = createContext("cancelRecurringDonation", donationId);
+    try {
+      const [cancelled] = await db
+        .update(donations)
+        .set({
+          status: "cancelled",
+          isRecurring: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(donations.id, donationId))
+        .returning();
 
-    if (!cancelled) {
-      throw new Error("Donation not found");
+      if (!cancelled) {
+        throw new StorageNotFoundError(
+          `Donation with ID ${donationId} not found`,
+          context
+        );
+      }
+      return cancelled;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error cancelling recurring donation ${donationId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
-    return cancelled;
   }
 
   async updateRecurringDonation(
     donationId: string,
     updates: { amount?: number; recurringInterval?: string }
   ): Promise<Donation> {
-    const [updated] = await db
-      .update(donations)
-      .set({
-        ...updates,
-        updatedAt: new Date(),
-      })
-      .where(eq(donations.id, donationId))
-      .returning();
+    const context = createContext("updateRecurringDonation", donationId);
+    try {
+      const [updated] = await db
+        .update(donations)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(donations.id, donationId))
+        .returning();
 
-    if (!updated) {
-      throw new Error("Donation not found");
+      if (!updated) {
+        throw new StorageNotFoundError(
+          `Donation with ID ${donationId} not found`,
+          context
+        );
+      }
+      return updated;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error updating recurring donation ${donationId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
-    return updated;
   }
 
   // ==================== Payment Processing ====================
@@ -332,41 +455,63 @@ export class BillingStorage implements IBillingStorage {
     stripePaymentIntentId: string,
     metadata?: Record<string, any>
   ): Promise<Donation> {
-    const [completed] = await db
-      .update(donations)
-      .set({
-        status: "completed",
-        completedAt: new Date(),
-        metadata: metadata,
-        updatedAt: new Date(),
-      })
-      .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
-      .returning();
+    const context = createContext("completeDonation");
+    context.additionalInfo = { stripePaymentIntentId };
+    try {
+      const [completed] = await db
+        .update(donations)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+          metadata: metadata,
+          updatedAt: new Date(),
+        })
+        .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
+        .returning();
 
-    if (!completed) {
-      throw new Error("Donation not found");
+      if (!completed) {
+        throw new StorageNotFoundError(
+          `Donation with payment intent ${stripePaymentIntentId} not found`,
+          context
+        );
+      }
+      return completed;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error completing donation:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
-    return completed;
   }
 
   async failDonation(
     stripePaymentIntentId: string,
     errorMessage?: string
   ): Promise<Donation> {
-    const [failed] = await db
-      .update(donations)
-      .set({
-        status: "failed",
-        metadata: errorMessage ? { errorMessage } : undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
-      .returning();
+    const context = createContext("failDonation");
+    context.additionalInfo = { stripePaymentIntentId, errorMessage };
+    try {
+      const [failed] = await db
+        .update(donations)
+        .set({
+          status: "failed",
+          metadata: errorMessage ? { errorMessage } : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(donations.stripePaymentIntentId, stripePaymentIntentId))
+        .returning();
 
-    if (!failed) {
-      throw new Error("Donation not found");
+      if (!failed) {
+        throw new StorageNotFoundError(
+          `Donation with payment intent ${stripePaymentIntentId} not found`,
+          context
+        );
+      }
+      return failed;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error failing donation:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
-    return failed;
   }
 
   async refundDonation(
@@ -374,26 +519,45 @@ export class BillingStorage implements IBillingStorage {
     refundAmount?: number,
     reason?: string
   ): Promise<Donation> {
-    const donation = await this.getDonation(donationId);
-    if (!donation) {
-      throw new Error("Donation not found");
+    const context = createContext("refundDonation", donationId);
+    context.additionalInfo = { refundAmount, reason };
+    try {
+      const donation = await this.getDonation(donationId);
+      if (!donation) {
+        throw new StorageNotFoundError(
+          `Donation with ID ${donationId} not found`,
+          context
+        );
+      }
+
+      const actualRefundAmount = refundAmount || donation.amount;
+
+      if (refundAmount && refundAmount > donation.amount) {
+        throw new StorageValidationError(
+          "Refund amount cannot exceed original donation amount",
+          context,
+          ["refundAmount"]
+        );
+      }
+
+      const [refunded] = await db
+        .update(donations)
+        .set({
+          status: "refunded",
+          refundAmount: actualRefundAmount,
+          refundedAt: new Date(),
+          metadata: reason ? { ...donation.metadata, refundReason: reason } : donation.metadata,
+          updatedAt: new Date(),
+        })
+        .where(eq(donations.id, donationId))
+        .returning();
+
+      return refunded;
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error refunding donation ${donationId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
-
-    const actualRefundAmount = refundAmount || donation.amount;
-
-    const [refunded] = await db
-      .update(donations)
-      .set({
-        status: "refunded",
-        refundAmount: actualRefundAmount,
-        refundedAt: new Date(),
-        metadata: reason ? { ...donation.metadata, refundReason: reason } : donation.metadata,
-        updatedAt: new Date(),
-      })
-      .where(eq(donations.id, donationId))
-      .returning();
-
-    return refunded;
   }
 
   // ==================== Donor Management ====================
@@ -406,39 +570,53 @@ export class BillingStorage implements IBillingStorage {
       lastDonation: Date;
     }>
   > {
-    const topDonors = await db
-      .select({
-        userId: donations.userId,
-        totalAmount: sql<number>`SUM(${donations.amount})::int`,
-        donationCount: sql<number>`COUNT(*)::int`,
-        lastDonation: sql<Date>`MAX(${donations.createdAt})`,
-      })
-      .from(donations)
-      .where(
-        and(
-          eq(donations.status, "completed"),
-          sql`${donations.userId} IS NOT NULL`
+    const context = createContext("getTopDonors");
+    context.additionalInfo = { limit };
+    try {
+      const topDonors = await db
+        .select({
+          userId: donations.userId,
+          totalAmount: sql<number>`SUM(${donations.amount})::int`,
+          donationCount: sql<number>`COUNT(*)::int`,
+          lastDonation: sql<Date>`MAX(${donations.createdAt})`,
+        })
+        .from(donations)
+        .where(
+          and(
+            eq(donations.status, "completed"),
+            sql`${donations.userId} IS NOT NULL`
+          )
         )
-      )
-      .groupBy(donations.userId)
-      .orderBy(sql`SUM(${donations.amount}) DESC`)
-      .limit(limit);
+        .groupBy(donations.userId)
+        .orderBy(sql`SUM(${donations.amount}) DESC`)
+        .limit(limit);
 
-    return topDonors.map(donor => ({
-      userId: donor.userId!,
-      totalAmount: donor.totalAmount,
-      donationCount: donor.donationCount,
-      lastDonation: donor.lastDonation,
-    }));
+      return topDonors.map(donor => ({
+        userId: donor.userId!,
+        totalAmount: donor.totalAmount,
+        donationCount: donor.donationCount,
+        lastDonation: donor.lastDonation,
+      }));
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting top donors:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async getDonorsByStatus(status: string, limit: number = 50): Promise<Donation[]> {
-    return await db
-      .select()
-      .from(donations)
-      .where(eq(donations.status, status))
-      .orderBy(desc(donations.createdAt))
-      .limit(limit);
+    const context = createContext("getDonorsByStatus");
+    context.additionalInfo = { status, limit };
+    try {
+      return await db
+        .select()
+        .from(donations)
+        .where(eq(donations.status, status))
+        .orderBy(desc(donations.createdAt))
+        .limit(limit);
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error getting donors by status ${status}:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 
   async searchDonations(filters: {
@@ -451,45 +629,51 @@ export class BillingStorage implements IBillingStorage {
     isRecurring?: boolean;
     currency?: string;
   }): Promise<Donation[]> {
-    const conditions = [];
+    const context = createContext("searchDonations");
+    context.additionalInfo = { filters };
+    try {
+      const conditions = [];
 
-    if (filters.userId) {
-      conditions.push(eq(donations.userId, filters.userId));
-    }
-    if (filters.status) {
-      conditions.push(eq(donations.status, filters.status));
-    }
-    if (filters.minAmount !== undefined && filters.maxAmount !== undefined) {
-      conditions.push(between(donations.amount, filters.minAmount, filters.maxAmount));
-    } else if (filters.minAmount !== undefined) {
-      conditions.push(gte(donations.amount, filters.minAmount));
-    } else if (filters.maxAmount !== undefined) {
-      conditions.push(lte(donations.amount, filters.maxAmount));
-    }
-    if (filters.startDate) {
-      conditions.push(gte(donations.createdAt, filters.startDate));
-    }
-    if (filters.endDate) {
-      conditions.push(lte(donations.createdAt, filters.endDate));
-    }
-    if (filters.isRecurring !== undefined) {
-      conditions.push(eq(donations.isRecurring, filters.isRecurring));
-    }
-    if (filters.currency) {
-      conditions.push(eq(donations.currency, filters.currency));
-    }
+      if (filters.userId) {
+        conditions.push(eq(donations.userId, filters.userId));
+      }
+      if (filters.status) {
+        conditions.push(eq(donations.status, filters.status));
+      }
+      if (filters.minAmount !== undefined && filters.maxAmount !== undefined) {
+        conditions.push(between(donations.amount, filters.minAmount, filters.maxAmount));
+      } else if (filters.minAmount !== undefined) {
+        conditions.push(gte(donations.amount, filters.minAmount));
+      } else if (filters.maxAmount !== undefined) {
+        conditions.push(lte(donations.amount, filters.maxAmount));
+      }
+      if (filters.startDate) {
+        conditions.push(gte(donations.createdAt, filters.startDate));
+      }
+      if (filters.endDate) {
+        conditions.push(lte(donations.createdAt, filters.endDate));
+      }
+      if (filters.isRecurring !== undefined) {
+        conditions.push(eq(donations.isRecurring, filters.isRecurring));
+      }
+      if (filters.currency) {
+        conditions.push(eq(donations.currency, filters.currency));
+      }
 
-    if (conditions.length === 0) {
-      return await db.select().from(donations).orderBy(desc(donations.createdAt));
-    }
+      if (conditions.length === 0) {
+        return await db.select().from(donations).orderBy(desc(donations.createdAt));
+      }
 
-    return await db
-      .select()
-      .from(donations)
-      .where(and(...conditions))
-      .orderBy(desc(donations.createdAt));
+      return await db
+        .select()
+        .from(donations)
+        .where(and(...conditions))
+        .orderBy(desc(donations.createdAt));
+    } catch (error) {
+      console.error(`[${DOMAIN}] Error searching donations:`, error);
+      throw wrapDatabaseError(error, context);
+    }
   }
 }
 
-// Export singleton instance for convenience
 export const billingStorage = new BillingStorage();

@@ -30,11 +30,28 @@ import {
   lt,
 } from "drizzle-orm";
 import type { IUserStorage, UserPreferences } from "../interfaces/IUserStorage";
+import {
+  StorageError,
+  StorageNotFoundError,
+  StorageValidationError,
+  StorageConnectionError,
+  StorageConstraintError,
+  StorageErrorCode,
+  wrapDatabaseError,
+  type StorageErrorContext,
+} from "../errors";
+
+const DOMAIN = "user";
+
+function createContext(operation: string, entityId?: string | number): StorageErrorContext {
+  return { domain: DOMAIN, operation, entityId, entityType: "User" };
+}
 
 export class UserAuthDomainStorage implements IUserStorage {
   // ============= User Management =============
   
   async getUserById(id: string): Promise<User | undefined> {
+    const context = createContext("getUserById", id);
     try {
       const [user] = await db
         .select()
@@ -42,12 +59,13 @@ export class UserAuthDomainStorage implements IUserStorage {
         .where(eq(users.id, id));
       return user;
     } catch (error) {
-      console.error(`Error getting user by ID ${id}:`, error);
-      throw new Error("Failed to retrieve user");
+      console.error(`[${DOMAIN}] Error getting user by ID ${id}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
+    const context = createContext("getUserByEmail");
     try {
       if (!email) return undefined;
       
@@ -57,12 +75,14 @@ export class UserAuthDomainStorage implements IUserStorage {
         .where(eq(users.email, email));
       return user;
     } catch (error) {
-      console.error(`Error getting user by email ${email}:`, error);
-      throw new Error("Failed to retrieve user");
+      console.error(`[${DOMAIN}] Error getting user by email:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getUserByPrimaryProviderId(provider: string, providerId: string): Promise<User | undefined> {
+    const context = createContext("getUserByPrimaryProviderId");
+    context.additionalInfo = { provider, providerId };
     try {
       const [user] = await db
         .select()
@@ -75,12 +95,14 @@ export class UserAuthDomainStorage implements IUserStorage {
         );
       return user;
     } catch (error) {
-      console.error(`Error getting user by provider ${provider}:`, error);
-      throw new Error("Failed to retrieve user");
+      console.error(`[${DOMAIN}] Error getting user by provider ${provider}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async createUser(userData: Partial<User>): Promise<User> {
+    const context = createContext("createUser");
+    context.additionalInfo = { email: userData.email };
     try {
       const [newUser] = await db
         .insert(users)
@@ -91,7 +113,6 @@ export class UserAuthDomainStorage implements IUserStorage {
           profileImageUrl: userData.profileImageUrl || null,
           primaryProvider: userData.primaryProvider || "email",
           primaryProviderId: userData.primaryProviderId || null,
-          // Set default preferences
           dietaryRestrictions: userData.dietaryRestrictions || [],
           allergens: userData.allergens || [],
           foodsToAvoid: userData.foodsToAvoid || [],
@@ -102,30 +123,38 @@ export class UserAuthDomainStorage implements IUserStorage {
           expirationAlertDays: userData.expirationAlertDays || 3,
           storageAreasEnabled: userData.storageAreasEnabled || ["Fridge", "Pantry"],
           hasCompletedOnboarding: userData.hasCompletedOnboarding || false,
-          // Notification preferences
           notificationsEnabled: userData.notificationsEnabled || false,
           notifyExpiringFood: userData.notifyExpiringFood ?? true,
           notifyRecipeSuggestions: userData.notifyRecipeSuggestions || false,
           notifyMealReminders: userData.notifyMealReminders ?? true,
           notificationTime: userData.notificationTime || "09:00",
-          // Admin status
           isAdmin: userData.isAdmin || false,
         })
         .returning();
       
-      // Initialize default storage locations for new user
       await this.ensureDefaultDataForUser(newUser.id);
       
       return newUser;
     } catch (error) {
-      console.error("Error creating user:", error);
-      throw new Error("Failed to create user");
+      console.error(`[${DOMAIN}] Error creating user:`, error);
+      const originalError = error instanceof Error ? error : new Error(String(error));
+      
+      if (originalError.message.includes("unique") || originalError.message.includes("duplicate")) {
+        throw new StorageConstraintError(
+          "A user with this email already exists",
+          context,
+          "unique",
+          "users_email_unique",
+          originalError
+        );
+      }
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const context = createContext("updateUser", id);
     try {
-      // Remove fields that shouldn't be updated
       const { id: _id, createdAt, ...safeUpdates } = updates;
       
       const [updatedUser] = await db
@@ -139,17 +168,18 @@ export class UserAuthDomainStorage implements IUserStorage {
       
       return updatedUser;
     } catch (error) {
-      console.error(`Error updating user ${id}:`, error);
-      throw new Error("Failed to update user");
+      console.error(`[${DOMAIN}] Error updating user ${id}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async deleteUser(id: string): Promise<void> {
+    const context = createContext("deleteUser", id);
     try {
       await db.delete(users).where(eq(users.id, id));
     } catch (error) {
-      console.error(`Error deleting user ${id}:`, error);
-      throw new Error("Failed to delete user");
+      console.error(`[${DOMAIN}] Error deleting user ${id}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
@@ -169,11 +199,13 @@ export class UserAuthDomainStorage implements IUserStorage {
       storageAreasEnabled?: string[];
     }
   ): Promise<User | undefined> {
+    const context = createContext("updateUserPreferences", userId);
     try {
       return await this.updateUser(userId, preferences);
     } catch (error) {
-      console.error(`Error updating preferences for user ${userId}:`, error);
-      throw new Error("Failed to update user preferences");
+      console.error(`[${DOMAIN}] Error updating preferences for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
@@ -187,28 +219,37 @@ export class UserAuthDomainStorage implements IUserStorage {
       notificationTime?: string;
     }
   ): Promise<User | undefined> {
+    const context = createContext("updateUserNotificationPreferences", userId);
     try {
       return await this.updateUser(userId, preferences);
     } catch (error) {
-      console.error(`Error updating notification preferences for user ${userId}:`, error);
-      throw new Error("Failed to update notification preferences");
+      console.error(`[${DOMAIN}] Error updating notification preferences for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   // ============= Onboarding =============
   
   async markOnboardingComplete(userId: string): Promise<void> {
+    const context = createContext("markOnboardingComplete", userId);
     try {
       await this.updateUser(userId, { hasCompletedOnboarding: true });
     } catch (error) {
-      console.error(`Error marking onboarding complete for user ${userId}:`, error);
-      throw new Error("Failed to mark onboarding complete");
+      console.error(`[${DOMAIN}] Error marking onboarding complete for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   // ============= Session Management =============
   
   async createSession(sid: string, sess: SessionData, expire: Date): Promise<Session> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "createSession", 
+      entityType: "Session" 
+    };
     try {
       await db
         .insert(sessions)
@@ -227,12 +268,18 @@ export class UserAuthDomainStorage implements IUserStorage {
       
       return { sid, sess, expire };
     } catch (error) {
-      console.error("Error creating session:", error);
-      throw new Error("Failed to create session");
+      console.error(`[${DOMAIN}] Error creating session:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getSession(sid: string): Promise<Session | undefined> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "getSession", 
+      entityId: sid,
+      entityType: "Session" 
+    };
     try {
       const [session] = await db
         .select()
@@ -247,50 +294,68 @@ export class UserAuthDomainStorage implements IUserStorage {
         expire: session.expire,
       };
     } catch (error) {
-      console.error(`Error getting session ${sid}:`, error);
-      throw new Error("Failed to retrieve session");
+      console.error(`[${DOMAIN}] Error getting session ${sid}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async updateSession(sid: string, sess: SessionData, expire: Date): Promise<void> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "updateSession", 
+      entityId: sid,
+      entityType: "Session" 
+    };
     try {
       await db
         .update(sessions)
         .set({ sess, expire })
         .where(eq(sessions.sid, sid));
     } catch (error) {
-      console.error(`Error updating session ${sid}:`, error);
-      throw new Error("Failed to update session");
+      console.error(`[${DOMAIN}] Error updating session ${sid}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async deleteSession(sid: string): Promise<void> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "deleteSession", 
+      entityId: sid,
+      entityType: "Session" 
+    };
     try {
       await db.delete(sessions).where(eq(sessions.sid, sid));
     } catch (error) {
-      console.error(`Error deleting session ${sid}:`, error);
-      throw new Error("Failed to delete session");
+      console.error(`[${DOMAIN}] Error deleting session ${sid}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async cleanupExpiredSessions(): Promise<number> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "cleanupExpiredSessions", 
+      entityType: "Session" 
+    };
     try {
       const now = new Date();
       const result = await db
         .delete(sessions)
         .where(lt(sessions.expire, now));
       
-      // Return count of deleted sessions
       return result.rowCount || 0;
     } catch (error) {
-      console.error("Error cleaning up expired sessions:", error);
-      throw new Error("Failed to cleanup expired sessions");
+      console.error(`[${DOMAIN}] Error cleaning up expired sessions:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   // ============= OAuth Provider Management =============
   
   async linkOAuthProvider(userId: string, provider: string, providerId: string): Promise<void> {
+    const context = createContext("linkOAuthProvider", userId);
+    context.additionalInfo = { provider };
     try {
       const providerField = `${provider}Id`;
       const updates: Partial<User> = {};
@@ -298,12 +363,15 @@ export class UserAuthDomainStorage implements IUserStorage {
       
       await this.updateUser(userId, updates);
     } catch (error) {
-      console.error(`Error linking OAuth provider for user ${userId}:`, error);
-      throw new Error("Failed to link OAuth provider");
+      console.error(`[${DOMAIN}] Error linking OAuth provider for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async unlinkOAuthProvider(userId: string, provider: string): Promise<void> {
+    const context = createContext("unlinkOAuthProvider", userId);
+    context.additionalInfo = { provider };
     try {
       const providerField = `${provider}Id`;
       const updates: Partial<User> = {};
@@ -311,12 +379,19 @@ export class UserAuthDomainStorage implements IUserStorage {
       
       await this.updateUser(userId, updates);
     } catch (error) {
-      console.error(`Error unlinking OAuth provider for user ${userId}:`, error);
-      throw new Error("Failed to unlink OAuth provider");
+      console.error(`[${DOMAIN}] Error unlinking OAuth provider for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<AuthProviderInfo | undefined> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "getAuthProviderByProviderAndId", 
+      entityType: "AuthProvider",
+      additionalInfo: { provider, providerId }
+    };
     try {
       const providerField = `${provider}Id`;
       const query = db
@@ -338,12 +413,19 @@ export class UserAuthDomainStorage implements IUserStorage {
         email: user.email
       };
     } catch (error) {
-      console.error(`Error getting auth provider for ${provider}/${providerId}:`, error);
-      throw new Error("Failed to get auth provider");
+      console.error(`[${DOMAIN}] Error getting auth provider for ${provider}/${providerId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<AuthProviderInfo | undefined> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "getAuthProviderByProviderAndUserId", 
+      entityId: userId,
+      entityType: "AuthProvider",
+      additionalInfo: { provider }
+    };
     try {
       const user = await this.getUserById(userId);
       
@@ -363,18 +445,23 @@ export class UserAuthDomainStorage implements IUserStorage {
         email: user.email
       };
     } catch (error) {
-      console.error(`Error getting auth provider for user ${userId}:`, error);
-      throw new Error("Failed to get auth provider");
+      console.error(`[${DOMAIN}] Error getting auth provider for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async createAuthProvider(provider: InsertAuthProviderInfo): Promise<AuthProviderInfo> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "createAuthProvider", 
+      entityType: "AuthProvider",
+      additionalInfo: { provider: provider.provider }
+    };
     try {
-      // This creates or updates a user with provider info
       const user = provider.email ? await this.getUserByEmail(provider.email) : null;
       
       if (user) {
-        // Update existing user with provider info
         const providerField = `${provider.provider}Id`;
         const updates: Partial<User> = {};
         (updates as Record<string, unknown>)[providerField] = provider.providerId;
@@ -390,7 +477,6 @@ export class UserAuthDomainStorage implements IUserStorage {
           providerEmail: provider.providerEmail,
         };
       } else {
-        // Create new user with provider info
         const providerField = `${provider.provider}Id`;
         const userToCreate: Partial<User> = {
           email: provider.email || undefined,
@@ -411,18 +497,27 @@ export class UserAuthDomainStorage implements IUserStorage {
         };
       }
     } catch (error) {
-      console.error("Error creating auth provider:", error);
-      throw new Error("Failed to create auth provider");
+      console.error(`[${DOMAIN}] Error creating auth provider:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async updateAuthProvider(id: string, updates: UpdateAuthProviderInfo): Promise<AuthProviderInfo> {
+    const context: StorageErrorContext = { 
+      domain: DOMAIN, 
+      operation: "updateAuthProvider", 
+      entityId: id,
+      entityType: "AuthProvider"
+    };
     try {
-      // Update user with provider changes
       const user = await this.getUserById(id);
       
       if (!user) {
-        throw new Error("User not found");
+        throw new StorageNotFoundError(
+          `User with ID ${id} not found`,
+          context
+        );
       }
       
       if (updates.providerId && updates.provider) {
@@ -448,14 +543,16 @@ export class UserAuthDomainStorage implements IUserStorage {
         metadata: updates.metadata,
       };
     } catch (error) {
-      console.error(`Error updating auth provider for user ${id}:`, error);
-      throw new Error("Failed to update auth provider");
+      console.error(`[${DOMAIN}] Error updating auth provider for user ${id}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   // ============= Admin Management =============
   
   async updateUserAdminStatus(userId: string, isAdmin: boolean): Promise<User | undefined> {
+    const context = createContext("updateUserAdminStatus", userId);
     try {
       const [updated] = await db
         .update(users)
@@ -464,12 +561,13 @@ export class UserAuthDomainStorage implements IUserStorage {
         .returning();
       return updated;
     } catch (error) {
-      console.error(`Error updating admin status for user ${userId}:`, error);
-      throw new Error("Failed to update admin status");
+      console.error(`[${DOMAIN}] Error updating admin status for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getAdminCount(): Promise<number> {
+    const context = createContext("getAdminCount");
     try {
       const [result] = await db
         .select({ count: sql<number>`COUNT(*)::int` })
@@ -477,30 +575,31 @@ export class UserAuthDomainStorage implements IUserStorage {
         .where(eq(users.isAdmin, true));
       return result.count;
     } catch (error) {
-      console.error("Error getting admin count:", error);
-      throw new Error("Failed to get admin count");
+      console.error(`[${DOMAIN}] Error getting admin count:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getAllUsers(): Promise<User[]> {
+    const context = createContext("getAllUsers");
     try {
       return await db
         .select()
         .from(users)
         .orderBy(desc(users.createdAt));
     } catch (error) {
-      console.error("Error getting all users:", error);
-      throw new Error("Failed to get all users");
+      console.error(`[${DOMAIN}] Error getting all users:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+    const context = createContext("getUserPreferences", userId);
     try {
       const user = await this.getUserById(userId);
       
       if (!user) return undefined;
       
-      // Extract preference fields from user object
       return {
         dietaryRestrictions: user.dietaryRestrictions || [],
         allergens: user.allergens || [],
@@ -518,26 +617,29 @@ export class UserAuthDomainStorage implements IUserStorage {
         notificationTime: user.notificationTime || "09:00",
       };
     } catch (error) {
-      console.error(`Error getting preferences for user ${userId}:`, error);
-      throw new Error("Failed to get user preferences");
+      console.error(`[${DOMAIN}] Error getting preferences for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   // ============= Analytics =============
   
   async getUserCount(): Promise<number> {
+    const context = createContext("getUserCount");
     try {
       const [result] = await db
         .select({ count: sql<number>`COUNT(*)::int` })
         .from(users);
       return result.count;
     } catch (error) {
-      console.error("Error getting user count:", error);
-      throw new Error("Failed to get user count");
+      console.error(`[${DOMAIN}] Error getting user count:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getActiveUserCount(since: Date): Promise<number> {
+    const context = createContext("getActiveUserCount");
     try {
       const [result] = await db
         .select({ count: sql<number>`COUNT(*)::int` })
@@ -545,12 +647,14 @@ export class UserAuthDomainStorage implements IUserStorage {
         .where(gte(users.updatedAt, since));
       return result.count;
     } catch (error) {
-      console.error("Error getting active user count:", error);
-      throw new Error("Failed to get active user count");
+      console.error(`[${DOMAIN}] Error getting active user count:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getUsersByProvider(provider: string): Promise<User[]> {
+    const context = createContext("getUsersByProvider");
+    context.additionalInfo = { provider };
     try {
       return await db
         .select()
@@ -558,23 +662,22 @@ export class UserAuthDomainStorage implements IUserStorage {
         .where(eq(users.primaryProvider, provider))
         .orderBy(desc(users.createdAt));
     } catch (error) {
-      console.error(`Error getting users by provider ${provider}:`, error);
-      throw new Error("Failed to get users by provider");
+      console.error(`[${DOMAIN}] Error getting users by provider ${provider}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   // ============= Default Data Initialization =============
   
   async ensureDefaultDataForUser(userId: string): Promise<void> {
+    const context = createContext("ensureDefaultDataForUser", userId);
     try {
-      // Check if user already has storage locations
       const existingStorage = await db
         .select()
         .from(userStorageTable)
         .where(eq(userStorageTable.userId, userId));
       
       if (existingStorage.length === 0) {
-        // Create default storage locations
         const defaultLocations = [
           { name: "Fridge", icon: "🍎", isDefault: true, sortOrder: 1 },
           { name: "Pantry", icon: "🥫", isDefault: true, sortOrder: 2 },
@@ -593,11 +696,9 @@ export class UserAuthDomainStorage implements IUserStorage {
         );
       }
     } catch (error) {
-      console.error(`Error ensuring default data for user ${userId}:`, error);
-      // Don't throw here - this is a non-critical operation
+      console.error(`[${DOMAIN}] Error ensuring default data for user ${userId}:`, error);
     }
   }
 }
 
-// Export singleton instance for convenience
 export const userStorage = new UserAuthDomainStorage();

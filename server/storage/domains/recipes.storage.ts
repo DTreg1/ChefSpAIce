@@ -31,6 +31,20 @@ import {
   lte,
 } from "drizzle-orm";
 import type { IRecipesStorage } from "../interfaces/IRecipesStorage";
+import {
+  StorageError,
+  StorageNotFoundError,
+  StorageValidationError,
+  StorageConstraintError,
+  wrapDatabaseError,
+  type StorageErrorContext,
+} from "../errors";
+
+const DOMAIN = "recipes";
+
+function createContext(operation: string, entityId?: string | number, entityType: string = "Recipe"): StorageErrorContext {
+  return { domain: DOMAIN, operation, entityId, entityType };
+}
 
 export class RecipesDomainStorage implements IRecipesStorage {
   // ============= Recipe Management =============
@@ -45,6 +59,8 @@ export class RecipesDomainStorage implements IRecipesStorage {
       difficulty?: string;
     }
   ): Promise<Recipe[]> {
+    const context = createContext("getRecipes");
+    context.additionalInfo = { userId, filter };
     try {
       let conditions;
       
@@ -79,15 +95,14 @@ export class RecipesDomainStorage implements IRecipesStorage {
         .where(conditions!)
         .orderBy(desc(userRecipes.createdAt));
       
-      // Convert Date objects to ISO strings for legacy compatibility
       return rows.map(row => ({
         ...row,
         createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt
       })) as Recipe[];
     } catch (error) {
-      console.error(`Error getting recipes for user ${userId}:`, error);
-      throw new Error("Failed to retrieve recipes");
+      console.error(`[${DOMAIN}] Error getting recipes for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
@@ -103,6 +118,8 @@ export class RecipesDomainStorage implements IRecipesStorage {
       difficulty?: string;
     }
   ): Promise<{ recipes: Recipe[]; total: number }> {
+    const context = createContext("getRecipesPaginated");
+    context.additionalInfo = { userId, limit, offset, filter };
     try {
       let conditions;
       
@@ -131,13 +148,11 @@ export class RecipesDomainStorage implements IRecipesStorage {
         conditions = eq(userRecipes.userId, userId);
       }
       
-      // Get total count
       const [countResult] = await db
         .select({ count: sql<number>`COUNT(*)::int` })
         .from(userRecipes)
         .where(conditions);
       
-      // Get paginated recipes
       const recipes = await db
         .select()
         .from(userRecipes)
@@ -151,12 +166,13 @@ export class RecipesDomainStorage implements IRecipesStorage {
         total: countResult.count,
       };
     } catch (error) {
-      console.error(`Error getting paginated recipes for user ${userId}:`, error);
-      throw new Error("Failed to retrieve paginated recipes");
+      console.error(`[${DOMAIN}] Error getting paginated recipes for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getRecipe(userId: string, id: string): Promise<Recipe | undefined> {
+    const context = createContext("getRecipe", id);
     try {
       const [recipe] = await db
         .select()
@@ -169,12 +185,14 @@ export class RecipesDomainStorage implements IRecipesStorage {
         );
       return recipe;
     } catch (error) {
-      console.error(`Error getting recipe ${id} for user ${userId}:`, error);
-      throw new Error("Failed to retrieve recipe");
+      console.error(`[${DOMAIN}] Error getting recipe ${id} for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async searchRecipes(userId: string, query: string): Promise<Recipe[]> {
+    const context = createContext("searchRecipes");
+    context.additionalInfo = { userId, query };
     try {
       const searchTerm = `%${query}%`;
       
@@ -194,19 +212,19 @@ export class RecipesDomainStorage implements IRecipesStorage {
         )
         .orderBy(desc(userRecipes.createdAt));
     } catch (error) {
-      console.error(`Error searching recipes for user ${userId}:`, error);
-      throw new Error("Failed to search recipes");
+      console.error(`[${DOMAIN}] Error searching recipes for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async searchRecipesByIngredients(userId: string, ingredients: string[]): Promise<Recipe[]> {
+    const context = createContext("searchRecipesByIngredients");
+    context.additionalInfo = { userId, ingredientCount: ingredients.length };
     try {
       if (!ingredients || ingredients.length === 0) {
         return [];
       }
       
-      // Build SQL conditions for ingredient matching using JSONB operators
-      // This searches in the ingredients array for matching strings
       const ingredientConditions = ingredients.map(ingredient => 
         sql`EXISTS (
           SELECT 1 FROM jsonb_array_elements_text(${userRecipes.ingredients}) AS ing
@@ -214,11 +232,9 @@ export class RecipesDomainStorage implements IRecipesStorage {
         )`
       );
       
-      // Get all matching recipes with SQL-based filtering
       const rows = await db
         .select({
           recipe: userRecipes,
-          // Count matching ingredients for sorting
           matchCount: sql<number>`(
             SELECT COUNT(DISTINCT search_ing.value)
             FROM jsonb_array_elements_text(${userRecipes.ingredients}) AS recipe_ing,
@@ -233,19 +249,20 @@ export class RecipesDomainStorage implements IRecipesStorage {
         ))
         .orderBy(desc(sql`match_count`), desc(userRecipes.createdAt));
       
-      // Extract recipes and convert dates to ISO strings for legacy compatibility
       return rows.map(({ recipe }) => ({
         ...recipe,
         createdAt: recipe.createdAt instanceof Date ? recipe.createdAt.toISOString() : recipe.createdAt,
         updatedAt: recipe.updatedAt instanceof Date ? recipe.updatedAt.toISOString() : recipe.updatedAt
       })) as Recipe[];
     } catch (error) {
-      console.error(`Error searching recipes by ingredients for user ${userId}:`, error);
-      throw new Error("Failed to search recipes by ingredients");
+      console.error(`[${DOMAIN}] Error searching recipes by ingredients for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async createRecipe(userId: string, recipe: InsertRecipe): Promise<Recipe> {
+    const context = createContext("createRecipe");
+    context.additionalInfo = { userId, title: recipe.title };
     try {
       const [newRecipe] = await db
         .insert(userRecipes)
@@ -257,8 +274,19 @@ export class RecipesDomainStorage implements IRecipesStorage {
       
       return newRecipe;
     } catch (error) {
-      console.error(`Error creating recipe for user ${userId}:`, error);
-      throw new Error("Failed to create recipe");
+      console.error(`[${DOMAIN}] Error creating recipe for user ${userId}:`, error);
+      const originalError = error instanceof Error ? error : new Error(String(error));
+      
+      if (originalError.message.includes("unique") || originalError.message.includes("duplicate")) {
+        throw new StorageConstraintError(
+          "A recipe with this title already exists",
+          context,
+          "unique",
+          undefined,
+          originalError
+        );
+      }
+      throw wrapDatabaseError(error, context);
     }
   }
   
@@ -267,6 +295,7 @@ export class RecipesDomainStorage implements IRecipesStorage {
     id: string,
     updates: Partial<Recipe>
   ): Promise<Recipe | undefined> {
+    const context = createContext("updateRecipe", id);
     try {
       const { id: _id, userId: _userId, createdAt, ...safeUpdates } = updates;
       
@@ -286,12 +315,13 @@ export class RecipesDomainStorage implements IRecipesStorage {
       
       return updatedRecipe;
     } catch (error) {
-      console.error(`Error updating recipe ${id} for user ${userId}:`, error);
-      throw new Error("Failed to update recipe");
+      console.error(`[${DOMAIN}] Error updating recipe ${id} for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async deleteRecipe(userId: string, id: string): Promise<void> {
+    const context = createContext("deleteRecipe", id);
     try {
       await db
         .delete(userRecipes)
@@ -302,12 +332,13 @@ export class RecipesDomainStorage implements IRecipesStorage {
           )
         );
     } catch (error) {
-      console.error(`Error deleting recipe ${id} for user ${userId}:`, error);
-      throw new Error("Failed to delete recipe");
+      console.error(`[${DOMAIN}] Error deleting recipe ${id} for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async toggleRecipeFavorite(userId: string, id: string): Promise<Recipe | undefined> {
+    const context = createContext("toggleRecipeFavorite", id);
     try {
       const recipe = await this.getRecipe(userId, id);
       if (!recipe) return undefined;
@@ -316,21 +347,28 @@ export class RecipesDomainStorage implements IRecipesStorage {
         isFavorite: !recipe.isFavorite,
       });
     } catch (error) {
-      console.error(`Error toggling favorite for recipe ${id}:`, error);
-      throw new Error("Failed to toggle recipe favorite");
+      console.error(`[${DOMAIN}] Error toggling favorite for recipe ${id}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async rateRecipe(userId: string, id: string, rating: number): Promise<Recipe | undefined> {
+    const context = createContext("rateRecipe", id);
     try {
       if (rating < 1 || rating > 5) {
-        throw new Error("Rating must be between 1 and 5");
+        throw new StorageValidationError(
+          "Rating must be between 1 and 5",
+          context,
+          ["rating"]
+        );
       }
       
       return await this.updateRecipe(userId, id, { rating });
     } catch (error) {
-      console.error(`Error rating recipe ${id}:`, error);
-      throw new Error("Failed to rate recipe");
+      console.error(`[${DOMAIN}] Error rating recipe ${id}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
@@ -341,17 +379,17 @@ export class RecipesDomainStorage implements IRecipesStorage {
     title: string,
     ingredients: string[]
   ): Promise<Recipe[]> {
+    const context = createContext("findSimilarRecipes");
+    context.additionalInfo = { userId, title };
     try {
       const allRecipes = await this.getRecipes(userId);
       
       return allRecipes.filter((recipe) => {
-        // Check title similarity
         const titleSimilarity = recipe.title.toLowerCase().includes(title.toLowerCase()) ||
                                title.toLowerCase().includes(recipe.title.toLowerCase());
         
         if (titleSimilarity) return true;
         
-        // Check ingredient overlap (at least 70% match)
         const recipeIngredients = recipe.ingredients || [];
         const matchingIngredients = ingredients.filter((ing) =>
           recipeIngredients.some((rIng) =>
@@ -365,14 +403,17 @@ export class RecipesDomainStorage implements IRecipesStorage {
         return overlapPercentage >= 0.7;
       });
     } catch (error) {
-      console.error(`Error finding similar recipes for user ${userId}:`, error);
-      throw new Error("Failed to find similar recipes");
+      console.error(`[${DOMAIN}] Error finding similar recipes for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   // ============= Meal Planning =============
   
   async getMealPlans(userId: string, startDate?: string, endDate?: string): Promise<MealPlan[]> {
+    const context = createContext("getMealPlans", undefined, "MealPlan");
+    context.additionalInfo = { userId, startDate, endDate };
     try {
       let conditions;
       
@@ -392,20 +433,21 @@ export class RecipesDomainStorage implements IRecipesStorage {
         .where(conditions)
         .orderBy(asc(mealPlans.date), asc(mealPlans.mealType));
       
-      // Convert Date objects to ISO strings for legacy compatibility
       return rows.map(row => ({
         ...row,
-        date: row.date,  // Already stored as text YYYY-MM-DD
+        date: row.date,
         createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt
       })) as MealPlan[];
     } catch (error) {
-      console.error(`Error getting meal plans for user ${userId}:`, error);
-      throw new Error("Failed to retrieve meal plans");
+      console.error(`[${DOMAIN}] Error getting meal plans for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getMealPlansByDate(userId: string, date: string): Promise<MealPlan[]> {
+    const context = createContext("getMealPlansByDate", undefined, "MealPlan");
+    context.additionalInfo = { userId, date };
     try {
       const rows = await db
         .select()
@@ -418,20 +460,20 @@ export class RecipesDomainStorage implements IRecipesStorage {
         )
         .orderBy(asc(mealPlans.mealType));
       
-      // Convert Date objects to ISO strings for legacy compatibility
       return rows.map(row => ({
         ...row,
-        date: row.date,  // Already stored as text YYYY-MM-DD
+        date: row.date,
         createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
         updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt
       })) as MealPlan[];
     } catch (error) {
-      console.error(`Error getting meal plans for date ${date}:`, error);
-      throw new Error("Failed to retrieve meal plans by date");
+      console.error(`[${DOMAIN}] Error getting meal plans for date ${date}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getMealPlan(userId: string, id: string): Promise<MealPlan | undefined> {
+    const context = createContext("getMealPlan", id, "MealPlan");
     try {
       const [plan] = await db
         .select()
@@ -444,12 +486,14 @@ export class RecipesDomainStorage implements IRecipesStorage {
         );
       return plan;
     } catch (error) {
-      console.error(`Error getting meal plan ${id}:`, error);
-      throw new Error("Failed to retrieve meal plan");
+      console.error(`[${DOMAIN}] Error getting meal plan ${id}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async createMealPlan(plan: InsertMealPlan): Promise<MealPlan> {
+    const context = createContext("createMealPlan", undefined, "MealPlan");
+    context.additionalInfo = { userId: plan.userId, date: plan.date };
     try {
       const [newPlan] = await db
         .insert(mealPlans)
@@ -458,8 +502,8 @@ export class RecipesDomainStorage implements IRecipesStorage {
       
       return newPlan;
     } catch (error) {
-      console.error("Error creating meal plan:", error);
-      throw new Error("Failed to create meal plan");
+      console.error(`[${DOMAIN}] Error creating meal plan:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
@@ -468,6 +512,7 @@ export class RecipesDomainStorage implements IRecipesStorage {
     id: string,
     updates: Partial<MealPlan>
   ): Promise<MealPlan | undefined> {
+    const context = createContext("updateMealPlan", id, "MealPlan");
     try {
       const { id: _id, userId: _userId, createdAt, ...safeUpdates } = updates;
       
@@ -484,12 +529,13 @@ export class RecipesDomainStorage implements IRecipesStorage {
       
       return updatedPlan;
     } catch (error) {
-      console.error(`Error updating meal plan ${id}:`, error);
-      throw new Error("Failed to update meal plan");
+      console.error(`[${DOMAIN}] Error updating meal plan ${id}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async deleteMealPlan(userId: string, id: string): Promise<void> {
+    const context = createContext("deleteMealPlan", id, "MealPlan");
     try {
       await db
         .delete(mealPlans)
@@ -500,25 +546,28 @@ export class RecipesDomainStorage implements IRecipesStorage {
           )
         );
     } catch (error) {
-      console.error(`Error deleting meal plan ${id}:`, error);
-      throw new Error("Failed to delete meal plan");
+      console.error(`[${DOMAIN}] Error deleting meal plan ${id}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async markMealPlanCompleted(userId: string, id: string): Promise<void> {
+    const context = createContext("markMealPlanCompleted", id, "MealPlan");
     try {
       await this.updateMealPlan(userId, id, { isCompleted: true });
     } catch (error) {
-      console.error(`Error marking meal plan ${id} as completed:`, error);
-      throw new Error("Failed to mark meal plan as completed");
+      console.error(`[${DOMAIN}] Error marking meal plan ${id} as completed:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   // ============= Recipe Analytics =============
   
   async getMostUsedRecipes(userId: string, limit: number = 10): Promise<Recipe[]> {
+    const context = createContext("getMostUsedRecipes");
+    context.additionalInfo = { userId, limit };
     try {
-      // Get recipes that are most frequently used in meal plans
       const mealPlanCounts = await db
         .select({
           recipeId: mealPlans.recipeId,
@@ -546,19 +595,20 @@ export class RecipesDomainStorage implements IRecipesStorage {
           )
         );
       
-      // Sort recipes by usage count
       return recipes.sort((a, b) => {
         const aIndex = recipeIds.indexOf(a.id);
         const bIndex = recipeIds.indexOf(b.id);
         return aIndex - bIndex;
       });
     } catch (error) {
-      console.error(`Error getting most used recipes for user ${userId}:`, error);
-      throw new Error("Failed to get most used recipes");
+      console.error(`[${DOMAIN}] Error getting most used recipes for user ${userId}:`, error);
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getRecipeCategories(userId: string): Promise<string[]> {
+    const context = createContext("getRecipeCategories");
+    context.additionalInfo = { userId };
     try {
       const recipes = await this.getRecipes(userId);
       const categories = new Set<string>();
@@ -571,12 +621,15 @@ export class RecipesDomainStorage implements IRecipesStorage {
       
       return Array.from(categories).sort();
     } catch (error) {
-      console.error(`Error getting recipe categories for user ${userId}:`, error);
-      throw new Error("Failed to get recipe categories");
+      console.error(`[${DOMAIN}] Error getting recipe categories for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
   async getRecipeCuisines(userId: string): Promise<string[]> {
+    const context = createContext("getRecipeCuisines");
+    context.additionalInfo = { userId };
     try {
       const recipes = await this.getRecipes(userId);
       const cuisines = new Set<string>();
@@ -589,8 +642,9 @@ export class RecipesDomainStorage implements IRecipesStorage {
       
       return Array.from(cuisines).sort();
     } catch (error) {
-      console.error(`Error getting recipe cuisines for user ${userId}:`, error);
-      throw new Error("Failed to get recipe cuisines");
+      console.error(`[${DOMAIN}] Error getting recipe cuisines for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
@@ -600,8 +654,9 @@ export class RecipesDomainStorage implements IRecipesStorage {
     userId: string,
     limit: number = 5
   ): Promise<Recipe[]> {
+    const context = createContext("getRecipeSuggestionsBasedOnInventory");
+    context.additionalInfo = { userId, limit };
     try {
-      // Get user's current inventory
       const inventory = await db
         .select()
         .from(userInventory)
@@ -609,10 +664,8 @@ export class RecipesDomainStorage implements IRecipesStorage {
       
       const ingredientNames = inventory.map((item) => item.name.toLowerCase());
       
-      // Get all user recipes
       const allRecipes = await this.getRecipes(userId);
       
-      // Score recipes based on how many ingredients user has
       const scoredRecipes = allRecipes.map((recipe) => {
         const recipeIngredients = recipe.ingredients || [];
         const availableIngredients = recipeIngredients.filter((ing) =>
@@ -630,13 +683,13 @@ export class RecipesDomainStorage implements IRecipesStorage {
         };
       });
       
-      // Sort by score and return top recipes
       scoredRecipes.sort((a, b) => b.score - a.score);
       
       return scoredRecipes.slice(0, limit).map((sr) => sr.recipe);
     } catch (error) {
-      console.error(`Error getting recipe suggestions based on inventory for user ${userId}:`, error);
-      throw new Error("Failed to get recipe suggestions");
+      console.error(`[${DOMAIN}] Error getting recipe suggestions based on inventory for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
   
@@ -644,8 +697,9 @@ export class RecipesDomainStorage implements IRecipesStorage {
     userId: string,
     daysAhead: number = 3
   ): Promise<Recipe[]> {
+    const context = createContext("getRecipeSuggestionsBasedOnExpiring");
+    context.additionalInfo = { userId, daysAhead };
     try {
-      // Get expiring items
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayStr = today.toISOString().split('T')[0];
@@ -669,14 +723,13 @@ export class RecipesDomainStorage implements IRecipesStorage {
       
       const expiringIngredients = expiringItems.map((item) => item.name.toLowerCase());
       
-      // Find recipes that use expiring ingredients
       return await this.searchRecipesByIngredients(userId, expiringIngredients);
     } catch (error) {
-      console.error(`Error getting recipe suggestions based on expiring items for user ${userId}:`, error);
-      throw new Error("Failed to get recipe suggestions for expiring items");
+      console.error(`[${DOMAIN}] Error getting recipe suggestions based on expiring items for user ${userId}:`, error);
+      if (error instanceof StorageError) throw error;
+      throw wrapDatabaseError(error, context);
     }
   }
 }
 
-// Export singleton instance for convenience
 export const recipesStorage = new RecipesDomainStorage();
