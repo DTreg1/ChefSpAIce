@@ -7,9 +7,13 @@ import { db } from "../../db";
 import {
   users,
   sessions,
-  userStorage,
+  userStorage as userStorageTable,
   User,
   Session,
+  SessionData,
+  AuthProviderInfo,
+  InsertAuthProviderInfo,
+  UpdateAuthProviderInfo,
 } from "@shared/schema";
 import {
   eq,
@@ -20,7 +24,7 @@ import {
   gte,
   lt,
 } from "drizzle-orm";
-import type { IUserStorage } from "../interfaces/IUserStorage";
+import type { IUserStorage, UserPreferences } from "../interfaces/IUserStorage";
 
 export class UserAuthDomainStorage implements IUserStorage {
   // ============= User Management =============
@@ -199,7 +203,7 @@ export class UserAuthDomainStorage implements IUserStorage {
   
   // ============= Session Management =============
   
-  async createSession(sid: string, sess: any, expire: Date): Promise<Session> {
+  async createSession(sid: string, sess: SessionData, expire: Date): Promise<Session> {
     try {
       await db
         .insert(sessions)
@@ -243,7 +247,7 @@ export class UserAuthDomainStorage implements IUserStorage {
     }
   }
   
-  async updateSession(sid: string, sess: any, expire: Date): Promise<void> {
+  async updateSession(sid: string, sess: SessionData, expire: Date): Promise<void> {
     try {
       await db
         .update(sessions)
@@ -284,8 +288,8 @@ export class UserAuthDomainStorage implements IUserStorage {
   async linkOAuthProvider(userId: string, provider: string, providerId: string): Promise<void> {
     try {
       const providerField = `${provider}Id`;
-      const updates: any = {};
-      updates[providerField] = providerId;
+      const updates: Partial<User> = {};
+      (updates as Record<string, unknown>)[providerField] = providerId;
       
       await this.updateUser(userId, updates);
     } catch (error) {
@@ -297,8 +301,8 @@ export class UserAuthDomainStorage implements IUserStorage {
   async unlinkOAuthProvider(userId: string, provider: string): Promise<void> {
     try {
       const providerField = `${provider}Id`;
-      const updates: any = {};
-      updates[providerField] = null;
+      const updates: Partial<User> = {};
+      (updates as Record<string, unknown>)[providerField] = null;
       
       await this.updateUser(userId, updates);
     } catch (error) {
@@ -307,7 +311,7 @@ export class UserAuthDomainStorage implements IUserStorage {
     }
   }
   
-  async getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<any | undefined> {
+  async getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<AuthProviderInfo | undefined> {
     try {
       const providerField = `${provider}Id`;
       const query = db
@@ -318,68 +322,88 @@ export class UserAuthDomainStorage implements IUserStorage {
       
       const [user] = await query;
       
-      return user ? {
+      if (!user) return undefined;
+      
+      return {
         id: user.id,
-        provider,
+        provider: provider as AuthProviderInfo['provider'],
         providerId,
         userId: user.id,
         displayName: user.firstName || user.email || '',
         email: user.email
-      } : undefined;
+      };
     } catch (error) {
       console.error(`Error getting auth provider for ${provider}/${providerId}:`, error);
       throw new Error("Failed to get auth provider");
     }
   }
   
-  async getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<any | undefined> {
+  async getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<AuthProviderInfo | undefined> {
     try {
       const user = await this.getUserById(userId);
       
       if (!user) return undefined;
       
       const providerField = `${provider}Id`;
-      const providerId = (user as any)[providerField];
+      const providerId = (user as Record<string, unknown>)[providerField] as string | undefined;
       
-      return providerId ? {
+      if (!providerId) return undefined;
+      
+      return {
         id: user.id,
-        provider,
+        provider: provider as AuthProviderInfo['provider'],
         providerId,
         userId: user.id,
         displayName: user.firstName || user.email || '',
         email: user.email
-      } : undefined;
+      };
     } catch (error) {
       console.error(`Error getting auth provider for user ${userId}:`, error);
       throw new Error("Failed to get auth provider");
     }
   }
   
-  async createAuthProvider(provider: any): Promise<any> {
+  async createAuthProvider(provider: InsertAuthProviderInfo): Promise<AuthProviderInfo> {
     try {
       // This creates or updates a user with provider info
-      const user = await this.getUserByEmail(provider.email);
+      const user = provider.email ? await this.getUserByEmail(provider.email) : null;
       
       if (user) {
         // Update existing user with provider info
         const providerField = `${provider.provider}Id`;
-        const updates: any = {};
-        updates[providerField] = provider.providerId;
+        const updates: Partial<User> = {};
+        (updates as Record<string, unknown>)[providerField] = provider.providerId;
         
         await this.updateUser(user.id, updates);
-        return { ...provider, userId: user.id };
+        return { 
+          id: user.id,
+          userId: user.id,
+          provider: provider.provider,
+          providerId: provider.providerId,
+          displayName: provider.displayName,
+          email: user.email,
+          providerEmail: provider.providerEmail,
+        };
       } else {
         // Create new user with provider info
         const providerField = `${provider.provider}Id`;
-        const userToCreate: any = {
-          email: provider.email,
-          firstName: provider.displayName || provider.email,
+        const userToCreate: Partial<User> = {
+          email: provider.email || undefined,
+          firstName: provider.displayName || provider.email || undefined,
           primaryProvider: provider.provider,
         };
-        userToCreate[providerField] = provider.providerId;
+        (userToCreate as Record<string, unknown>)[providerField] = provider.providerId;
         
         const newUser = await this.createUser(userToCreate);
-        return { ...provider, userId: newUser.id };
+        return { 
+          id: newUser.id,
+          userId: newUser.id,
+          provider: provider.provider,
+          providerId: provider.providerId,
+          displayName: provider.displayName,
+          email: newUser.email,
+          providerEmail: provider.providerEmail,
+        };
       }
     } catch (error) {
       console.error("Error creating auth provider:", error);
@@ -387,7 +411,7 @@ export class UserAuthDomainStorage implements IUserStorage {
     }
   }
   
-  async updateAuthProvider(id: string, updates: any): Promise<any> {
+  async updateAuthProvider(id: string, updates: UpdateAuthProviderInfo): Promise<AuthProviderInfo> {
     try {
       // Update user with provider changes
       const user = await this.getUserById(id);
@@ -398,13 +422,26 @@ export class UserAuthDomainStorage implements IUserStorage {
       
       if (updates.providerId && updates.provider) {
         const providerField = `${updates.provider}Id`;
-        const userUpdates: any = {};
-        userUpdates[providerField] = updates.providerId;
+        const userUpdates: Partial<User> = {};
+        (userUpdates as Record<string, unknown>)[providerField] = updates.providerId;
         
         await this.updateUser(id, userUpdates);
       }
       
-      return { ...updates, userId: id };
+      return { 
+        id,
+        userId: id,
+        provider: updates.provider || user.primaryProvider as AuthProviderInfo['provider'] || 'email',
+        providerId: updates.providerId || user.primaryProviderId || '',
+        displayName: updates.displayName || user.firstName || undefined,
+        email: user.email,
+        providerEmail: updates.providerEmail,
+        accessToken: updates.accessToken,
+        refreshToken: updates.refreshToken,
+        tokenExpiry: updates.tokenExpiry,
+        isPrimary: updates.isPrimary,
+        metadata: updates.metadata,
+      };
     } catch (error) {
       console.error(`Error updating auth provider for user ${id}:`, error);
       throw new Error("Failed to update auth provider");
@@ -452,7 +489,7 @@ export class UserAuthDomainStorage implements IUserStorage {
     }
   }
   
-  async getUserPreferences(userId: string): Promise<any | undefined> {
+  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
     try {
       const user = await this.getUserById(userId);
       
@@ -460,7 +497,6 @@ export class UserAuthDomainStorage implements IUserStorage {
       
       // Extract preference fields from user object
       return {
-        userId: user.id,
         dietaryRestrictions: user.dietaryRestrictions || [],
         allergens: user.allergens || [],
         foodsToAvoid: user.foodsToAvoid || [],
@@ -529,8 +565,8 @@ export class UserAuthDomainStorage implements IUserStorage {
       // Check if user already has storage locations
       const existingStorage = await db
         .select()
-        .from(userStorage)
-        .where(eq(userStorage.userId, userId));
+        .from(userStorageTable)
+        .where(eq(userStorageTable.userId, userId));
       
       if (existingStorage.length === 0) {
         // Create default storage locations
@@ -540,7 +576,7 @@ export class UserAuthDomainStorage implements IUserStorage {
           { name: "Freezer", icon: "🧊", isDefault: false, sortOrder: 3 },
         ];
         
-        await db.insert(userStorage).values(
+        await db.insert(userStorageTable).values(
           defaultLocations.map((loc) => ({
             userId,
             name: loc.name,

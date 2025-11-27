@@ -24,7 +24,7 @@ export interface EventMetadata {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -34,8 +34,91 @@ export interface PredictionMetadata {
   confidence: number;
   factors: Record<string, number>;
   modelVersion: string;
-  features: Record<string, any>;
+  features: Record<string, unknown>;
 }
+
+// ==================== Analytics Stats Return Types ====================
+
+/**
+ * API usage logging metadata
+ * Used by IAnalyticsStorage.logApiUsage(metadata)
+ */
+export interface ApiUsageMetadata {
+  endpoint?: string;
+  method?: string;
+  statusCode?: number;
+  responseTime?: number;
+  userAgent?: string;
+  ipAddress?: string;
+  requestBody?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+/**
+ * API usage statistics return type
+ * Used by IAnalyticsStorage.getApiUsageStats()
+ */
+export interface ApiUsageStats {
+  totalRequests: number;
+  uniqueEndpoints: number;
+  averageResponseTime: number;
+  errorRate: number;
+  requestsByEndpoint: Record<string, number>;
+  requestsByHour: Record<string, number>;
+}
+
+/**
+ * Web vitals metrics statistics
+ * Used by IAnalyticsStorage.getWebVitalsStats()
+ */
+export interface WebVitalsMetricStats {
+  count: number;
+  min: number;
+  max: number;
+  median: number;
+  p75: number;
+  p95: number;
+  average: number;
+}
+
+export type WebVitalsStats = Record<string, WebVitalsMetricStats>;
+
+/**
+ * Session analytics statistics
+ * Used by IAnalyticsStorage.getAnalyticsStats('sessions')
+ */
+export interface SessionStats {
+  totalSessions: number;
+  averageDuration: number;
+  activeSessions: number;
+}
+
+/**
+ * Event analytics statistics
+ * Used by IAnalyticsStorage.getAnalyticsStats('events')
+ */
+export interface EventStats {
+  totalEvents: number;
+  eventsByType: Record<string, number>;
+  eventsPerDay: number;
+}
+
+/**
+ * Union type for analytics stats based on type parameter
+ * Used by IAnalyticsStorage.getAnalyticsStats()
+ */
+export type AnalyticsStatsResult = SessionStats | EventStats | ApiUsageStats;
+
+/**
+ * Prediction value - can be various types depending on prediction type
+ * Used by IAnalyticsStorage.updatePredictionStatus(actualValue)
+ */
+export type PredictionValue = 
+  | number 
+  | string 
+  | boolean 
+  | Record<string, unknown> 
+  | null;
 
 // ==================== Tables ====================
 

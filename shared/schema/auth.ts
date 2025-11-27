@@ -10,6 +10,94 @@ import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, uniq
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// ==================== Shared Type Definitions ====================
+// These must be defined before tables that reference them
+
+/**
+ * OAuth Provider types supported by the application
+ */
+export type OAuthProvider = 'google' | 'github' | 'twitter' | 'apple' | 'email' | 'replit';
+
+/**
+ * SessionUser - User data serialized in session by Passport.js
+ * Stored in session.sess.passport.user
+ */
+export interface SessionUser {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+  provider: OAuthProvider;
+  providerId: string;
+}
+
+/**
+ * SessionData - Structure of data stored in session.sess JSONB column
+ * Used by express-session/connect-pg-simple for session serialization
+ * 
+ * This replaces `any` usage in:
+ * - IUserStorage.createSession(sess)
+ * - IUserStorage.updateSession(sess)
+ * - sessions.sess column type
+ */
+export interface SessionData {
+  cookie: {
+    originalMaxAge: number | null;
+    expires?: string | Date | null;
+    secure?: boolean;
+    httpOnly?: boolean;
+    path?: string;
+    domain?: string;
+    sameSite?: 'strict' | 'lax' | 'none' | boolean;
+  };
+  passport?: {
+    user?: SessionUser;
+  };
+  [key: string]: unknown;
+}
+
+/**
+ * AuthProviderInfo - Normalized auth provider lookup result
+ * Used by storage methods that lookup auth providers
+ * 
+ * This replaces `any` usage in:
+ * - IUserStorage.getAuthProviderByProviderAndId() return type
+ * - IUserStorage.getAuthProviderByProviderAndUserId() return type
+ * - IUserStorage.createAuthProvider() parameter and return type
+ * - IUserStorage.updateAuthProvider() parameter and return type
+ */
+export interface AuthProviderInfo {
+  id: string;
+  userId: string;
+  provider: OAuthProvider;
+  providerId: string;
+  providerEmail?: string | null;
+  displayName?: string;
+  email?: string | null;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  tokenExpiry?: Date | null;
+  isPrimary?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Insert type for auth provider creation
+ * userId is optional because createAuthProvider can create new users
+ */
+export type InsertAuthProviderInfo = Omit<AuthProviderInfo, 'id' | 'userId'> & { 
+  id?: string;
+  userId?: string;  // Optional: will be assigned when user is created/found
+};
+
+/**
+ * Update type for auth provider modifications
+ */
+export type UpdateAuthProviderInfo = Partial<Omit<AuthProviderInfo, 'id' | 'userId'>>;
+
+// ==================== Tables ====================
+
 /**
  * Sessions Table
  * 
@@ -40,7 +128,7 @@ export const sessions = pgTable(
   "sessions",
   {
     sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").$type<Record<string, any>>().notNull(),
+    sess: jsonb("sess").$type<SessionData>().notNull(),
     expire: timestamp("expire").notNull(),
   },
   (table) => [index("IDX_session_expire").on(table.expire)],

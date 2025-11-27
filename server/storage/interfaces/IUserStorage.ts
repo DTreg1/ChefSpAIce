@@ -10,7 +10,31 @@ import type {
   InsertSession,
   AuthProvider,
   InsertAuthProvider,
+  SessionData,
+  AuthProviderInfo,
+  InsertAuthProviderInfo,
+  UpdateAuthProviderInfo,
 } from "@shared/schema";
+
+/**
+ * User preferences type (embedded in users table)
+ */
+export interface UserPreferences {
+  dietaryRestrictions?: string[] | null;
+  allergens?: string[] | null;
+  foodsToAvoid?: string[] | null;
+  favoriteCategories?: string[] | null;
+  householdSize?: number;
+  cookingSkillLevel?: string;
+  preferredUnits?: string;
+  expirationAlertDays?: number;
+  storageAreasEnabled?: string[] | null;
+  notificationsEnabled?: boolean;
+  notifyExpiringFood?: boolean;
+  notifyRecipeSuggestions?: boolean;
+  notifyMealReminders?: boolean;
+  notificationTime?: string | null;
+}
 
 export interface IUserStorage {
   // ============= User Management =============
@@ -46,25 +70,32 @@ export interface IUserStorage {
   markOnboardingComplete(userId: string): Promise<void>;
   
   // ============= Session Management =============
-  createSession(sid: string, sess: any, expire: Date): Promise<Session>;
+  /** Create or update a session with typed session data */
+  createSession(sid: string, sess: SessionData, expire: Date): Promise<Session>;
   getSession(sid: string): Promise<Session | undefined>;
-  updateSession(sid: string, sess: any, expire: Date): Promise<void>;
+  /** Update a session with typed session data */
+  updateSession(sid: string, sess: SessionData, expire: Date): Promise<void>;
   deleteSession(sid: string): Promise<void>;
   cleanupExpiredSessions(): Promise<number>;
   
   // ============= OAuth Provider Management =============
   linkOAuthProvider(userId: string, provider: string, providerId: string): Promise<void>;
   unlinkOAuthProvider(userId: string, provider: string): Promise<void>;
-  getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<any | undefined>;
-  getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<any | undefined>;
-  createAuthProvider(provider: any): Promise<any>;
-  updateAuthProvider(id: string, updates: any): Promise<any>;
+  /** Get auth provider info by provider name and provider ID */
+  getAuthProviderByProviderAndId(provider: string, providerId: string): Promise<AuthProviderInfo | undefined>;
+  /** Get auth provider info by provider name and user ID */
+  getAuthProviderByProviderAndUserId(provider: string, userId: string): Promise<AuthProviderInfo | undefined>;
+  /** Create a new auth provider record */
+  createAuthProvider(provider: InsertAuthProviderInfo): Promise<AuthProviderInfo>;
+  /** Update an existing auth provider record */
+  updateAuthProvider(id: string, updates: UpdateAuthProviderInfo): Promise<AuthProviderInfo>;
   
   // ============= Admin Management =============
   updateUserAdminStatus(userId: string, isAdmin: boolean): Promise<User | undefined>;
   getAdminCount(): Promise<number>;
   getAllUsers(): Promise<User[]>;
-  getUserPreferences(userId: string): Promise<any | undefined>;
+  /** Get user preferences from the users table */
+  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
   
   // ============= Analytics =============
   getUserCount(): Promise<number>;
