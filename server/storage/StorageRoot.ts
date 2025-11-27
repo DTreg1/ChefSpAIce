@@ -3,10 +3,9 @@
  * Maintains all existing method signatures while delegating to appropriate facades
  */
 
-import { UserStorage } from "./facades/UserStorage";
+import { UserStorage as UserStorageFacade } from "./facades/UserStorage";
 import { AdminStorage } from "./facades/AdminStorage";
 import { PlatformStorage } from "./facades/PlatformStorage";
-import type { NeonDatabase } from "@neondatabase/serverless";
 
 // Import types from schema modules
 import type {
@@ -20,7 +19,7 @@ import type {
   InsertUserInventory,
   UserInventory,
   InsertUserStorage,
-  UserStorage,
+  UserStorage as UserStorageType,
   InsertShoppingItem,
   ShoppingItem,
   InsertRecipe,
@@ -47,12 +46,12 @@ import type {
   InsertFraudScore,
   FraudScore,
   InsertSuspiciousActivity,
-  PrivacySetting,
+  PrivacySettings,
 } from "@shared/schema/security";
 
 import type {
-  InsertPricingRule,
-  PricingRule,
+  InsertPricingRules,
+  PricingRules,
   InsertPriceHistory,
   InsertPricingPerformance,
 } from "@shared/schema/pricing";
@@ -70,8 +69,11 @@ import type {
   InsertDraftTemplate,
   InsertGeneratedDraft,
   InsertSummary,
-  InsertTranscription,
 } from "@shared/schema/ai-ml";
+
+import type {
+  InsertTranscription,
+} from "@shared/schema/transcription";
 
 import type {
   InsertActivityLog,
@@ -106,12 +108,12 @@ import type {
  * This provides a single point of access for all storage operations
  */
 export class StorageRoot {
-  public readonly user: UserStorage;
+  public readonly user: UserStorageFacade;
   public readonly admin: AdminStorage;
   public readonly platform: PlatformStorage;
 
-  constructor(_db?: NeonDatabase<Record<string, unknown>>) {
-    this.user = new UserStorage();
+  constructor() {
+    this.user = new UserStorageFacade();
     this.admin = new AdminStorage();
     this.platform = new PlatformStorage();
   }
@@ -250,7 +252,7 @@ export class StorageRoot {
     return this.user.inventory.createStorageLocation(userId, data);
   }
 
-  async updateStorageLocation(userId: string, id: string, data: Partial<UserStorage>) {
+  async updateStorageLocation(userId: string, id: string, data: Partial<UserStorageType>) {
     return this.user.inventory.updateStorageLocation(userId, id, data);
   }
 
@@ -561,7 +563,7 @@ export class StorageRoot {
     return this.admin.security.getPrivacySettings(userId);
   }
 
-  async updatePrivacySettings(userId: string, settings: Partial<PrivacySetting>) {
+  async updatePrivacySettings(userId: string, settings: Partial<PrivacySettings>) {
     return this.admin.security.upsertPrivacySettings(userId, settings);
   }
 
@@ -589,11 +591,11 @@ export class StorageRoot {
     return this.admin.pricing.getPricingRule(id);
   }
 
-  async createPricingRule(rule: Omit<InsertPricingRule, 'id'>) {
+  async createPricingRule(rule: Omit<InsertPricingRules, 'id'>) {
     return this.admin.pricing.createPricingRule(rule);
   }
 
-  async updatePricingRule(id: string, rule: Partial<PricingRule>) {
+  async updatePricingRule(id: string, rule: Partial<PricingRules>) {
     return this.admin.pricing.updatePricingRule(id, rule);
   }
 
