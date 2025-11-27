@@ -7,3 +7,6 @@ import { db } from '../db';
 // - Admin tier: storage.admin.billing, storage.admin.security, etc.
 // - Platform tier: storage.platform.analytics, storage.platform.ai, etc.
 export const storage = new StorageRoot(db);
+
+// Export storage errors for use across the application
+export * from './errors';
