@@ -4,6 +4,11 @@
  * 
  * Domain: Security & Trust
  * Scope: Content moderation, fraud detection, suspicious activity tracking, privacy settings
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (SecurityStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (securityStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -704,3 +709,6 @@ export class SecurityStorage implements ISecurityStorage {
     this.invalidateCache(`privacy:${userId}`);
   }
 }
+
+// Export singleton instance for convenience
+export const securityStorage = new SecurityStorage();

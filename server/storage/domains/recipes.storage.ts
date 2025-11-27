@@ -1,6 +1,11 @@
 /**
  * Recipes Domain Storage
  * Implements IRecipesStorage interface for recipe and meal planning operations
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (RecipesDomainStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (recipesStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -673,5 +678,5 @@ export class RecipesDomainStorage implements IRecipesStorage {
   }
 }
 
-// Export singleton instance
+// Export singleton instance for convenience
 export const recipesStorage = new RecipesDomainStorage();

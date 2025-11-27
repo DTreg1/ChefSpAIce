@@ -4,6 +4,11 @@
  * 
  * Domain: Billing & Payments
  * Scope: Donation tracking, Stripe integration, payment processing, donor analytics
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (BillingStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (billingStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -485,3 +490,6 @@ export class BillingStorage implements IBillingStorage {
       .orderBy(desc(donations.createdAt));
   }
 }
+
+// Export singleton instance for convenience
+export const billingStorage = new BillingStorage();

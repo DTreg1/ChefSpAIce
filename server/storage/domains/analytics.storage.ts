@@ -1,6 +1,11 @@
 /**
  * @file server/storage/domains/analytics.storage.ts
  * @description Analytics domain storage implementation
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (AnalyticsStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (analyticsStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -588,3 +593,6 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     console.log(`User ${userId} subscribed to ${trendType} trend alerts`);
   }
 }
+
+// Export singleton instance for convenience
+export const analyticsStorage = new AnalyticsStorage();

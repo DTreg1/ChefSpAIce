@@ -4,6 +4,11 @@
  * 
  * Domain: Pricing & Revenue Optimization
  * Scope: Pricing rules, price history, performance tracking, market intelligence
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (PricingStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (pricingStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -688,3 +693,6 @@ export class PricingStorage implements IPricingStorage {
     };
   }
 }
+
+// Export singleton instance for convenience
+export const pricingStorage = new PricingStorage();

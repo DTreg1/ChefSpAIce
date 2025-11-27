@@ -1,6 +1,11 @@
 /**
  * @file server/storage/domains/notification.storage.ts
  * @description Notification and push token domain storage implementation
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (NotificationStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (notificationStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -359,3 +364,6 @@ export class NotificationStorage implements INotificationStorage {
     };
   }
 }
+
+// Export singleton instance for convenience
+export const notificationStorage = new NotificationStorage();

@@ -1,13 +1,16 @@
 /**
  * UserStorage Facade
  * Consolidates user-specific storage operations into organized sub-modules
+ * 
+ * PATTERN: Facades instantiate their own instances of domain storage classes.
+ * This enables dependency injection and isolated testing of each domain.
  */
 
-import { userStorage } from "../domains/user.storage";
+import { UserAuthDomainStorage } from "../domains/user.storage";
 import { FoodStorage } from "../domains/food.storage";
-import { recipesStorage } from "../domains/recipes.storage";
-import { inventoryStorage } from "../domains/inventory.storage";
-import { chatStorage } from "../domains/chat.storage";
+import { RecipesDomainStorage } from "../domains/recipes.storage";
+import { InventoryDomainStorage } from "../domains/inventory.storage";
+import { ChatDomainStorage } from "../domains/chat.storage";
 import { NotificationStorage } from "../domains/notification.storage";
 import { SchedulingStorage } from "../domains/scheduling.storage";
 
@@ -15,20 +18,20 @@ import { SchedulingStorage } from "../domains/scheduling.storage";
  * UserStorage facade that consolidates all user-related storage modules
  */
 export class UserStorage {
-  public readonly user: typeof userStorage;
+  public readonly user: UserAuthDomainStorage;
   public readonly food: FoodStorage;
-  public readonly recipes: typeof recipesStorage;
-  public readonly inventory: typeof inventoryStorage;
-  public readonly chat: typeof chatStorage;
+  public readonly recipes: RecipesDomainStorage;
+  public readonly inventory: InventoryDomainStorage;
+  public readonly chat: ChatDomainStorage;
   public readonly notifications: NotificationStorage;
   public readonly scheduling: SchedulingStorage;
 
   constructor() {
-    this.user = userStorage;
+    this.user = new UserAuthDomainStorage();
     this.food = new FoodStorage();
-    this.recipes = recipesStorage;
-    this.inventory = inventoryStorage;
-    this.chat = chatStorage;
+    this.recipes = new RecipesDomainStorage();
+    this.inventory = new InventoryDomainStorage();
+    this.chat = new ChatDomainStorage();
     this.notifications = new NotificationStorage();
     this.scheduling = new SchedulingStorage();
   }

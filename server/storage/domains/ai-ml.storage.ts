@@ -11,6 +11,11 @@
  * - Translations & language preferences
  * - Data extraction templates & results
  * - Natural language query logs
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (AiMlStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (aiMlStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -1390,3 +1395,6 @@ export class AiMlStorage {
     };
   }
 }
+
+// Export singleton instance for convenience
+export const aiMlStorage = new AiMlStorage();

@@ -4,6 +4,11 @@
  * 
  * Domain: Support & Customer Service
  * Scope: Ticket management, routing, agent expertise, help desk analytics
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (SupportStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (supportStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -577,3 +582,6 @@ export class SupportStorage implements ISupportStorage {
     }));
   }
 }
+
+// Export singleton instance for convenience
+export const supportStorage = new SupportStorage();

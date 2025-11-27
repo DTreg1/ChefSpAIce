@@ -1,6 +1,11 @@
 /**
  * User/Auth Domain Storage
  * Implements IUserStorage interface for user and authentication operations
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (UserAuthDomainStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (userStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -594,5 +599,5 @@ export class UserAuthDomainStorage implements IUserStorage {
   }
 }
 
-// Export singleton instance
+// Export singleton instance for convenience
 export const userStorage = new UserAuthDomainStorage();

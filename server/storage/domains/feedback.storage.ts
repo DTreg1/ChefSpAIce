@@ -1,6 +1,11 @@
 /**
  * @file server/storage/domains/feedback.storage.ts
  * @description Feedback and community features domain storage implementation
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (FeedbackStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (feedbackStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -335,3 +340,6 @@ export class FeedbackStorage implements IFeedbackStorage {
     return result?.total || 0;
   }
 }
+
+// Export singleton instance for convenience
+export const feedbackStorage = new FeedbackStorage();

@@ -8,6 +8,11 @@
  * - System metrics collection
  * - Maintenance predictions and history
  * - Log retention and cleanup operations
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (SystemStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (systemStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -1009,3 +1014,6 @@ export class SystemStorage {
     };
   }
 }
+
+// Export singleton instance for convenience
+export const systemStorage = new SystemStorage();

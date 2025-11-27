@@ -1,6 +1,11 @@
 /**
  * @file server/storage/domains/food.storage.ts
  * @description Food inventory and nutrition domain storage implementation
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (FoodStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (foodStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -395,3 +400,6 @@ export class FoodStorage {
       );
   }
 }
+
+// Export singleton instance for convenience
+export const foodStorage = new FoodStorage();

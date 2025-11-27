@@ -1,6 +1,9 @@
 /**
  * AdminStorage Facade
  * Consolidates administrative storage operations into organized sub-modules
+ * 
+ * PATTERN: Facades instantiate their own instances of domain storage classes.
+ * This enables dependency injection and isolated testing of each domain.
  */
 
 import { BillingStorage } from "../domains/billing.storage";

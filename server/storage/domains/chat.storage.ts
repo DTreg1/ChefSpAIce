@@ -1,7 +1,11 @@
 /**
  * Chat Domain Storage
- * 
  * Handles chat messages and AI assistant interactions
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (ChatDomainStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (chatStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { eq } from "drizzle-orm";
@@ -40,5 +44,5 @@ export class ChatDomainStorage implements IChatStorage {
   }
 }
 
-// Export instance for backward compatibility
+// Export singleton instance for convenience
 export const chatStorage = new ChatDomainStorage();

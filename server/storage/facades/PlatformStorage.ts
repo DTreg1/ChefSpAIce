@@ -1,6 +1,9 @@
 /**
  * PlatformStorage Facade
  * Consolidates platform-wide storage operations into organized sub-modules
+ * 
+ * PATTERN: Facades instantiate their own instances of domain storage classes.
+ * This enables dependency injection and isolated testing of each domain.
  */
 
 import { AnalyticsStorage } from "../domains/analytics.storage";

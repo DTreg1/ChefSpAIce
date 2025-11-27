@@ -9,6 +9,11 @@
  * 
  * This module is extracted from the monolithic storage.ts as part of the
  * domain-driven refactoring to improve maintainability and testability.
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (InventoryDomainStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (inventoryStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { and, eq, gte, isNull, lte, or, sql, desc, asc, ilike } from "drizzle-orm";
@@ -712,5 +717,5 @@ export class InventoryDomainStorage implements IInventoryStorage {
 
 }
 
-// Export singleton instance
+// Export singleton instance for convenience
 export const inventoryStorage = new InventoryDomainStorage();

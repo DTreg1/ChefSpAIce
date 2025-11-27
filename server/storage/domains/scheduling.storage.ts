@@ -4,6 +4,11 @@
  * 
  * Domain: Scheduling & Calendar
  * Scope: Meeting preferences, AI suggestions, scheduling patterns, calendar events
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (SchedulingStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (schedulingStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -550,3 +555,6 @@ export class SchedulingStorage implements ISchedulingStorage {
       .limit(limit);
   }
 }
+
+// Export singleton instance for convenience
+export const schedulingStorage = new SchedulingStorage();

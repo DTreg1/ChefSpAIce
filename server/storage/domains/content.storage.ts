@@ -4,6 +4,11 @@
  * 
  * Domain: Content Organization & Discovery
  * Scope: Categories, tags, embeddings, duplicate detection, related content
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (ContentStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (contentStorage) for convenience in production code
+ * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
 import { db } from "../../db";
@@ -838,3 +843,6 @@ export class ContentStorage implements IContentStorage {
     };
   }
 }
+
+// Export singleton instance for convenience
+export const contentStorage = new ContentStorage();
