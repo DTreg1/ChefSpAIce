@@ -49,3 +49,9 @@ integrations = ["javascript_mem_db:1.0.0", "javascript_openai_ai_integrations:1.
 
 [rules.formatter.fileExtensions.".ts"]
 id = "module:nodejs-20/formatter:prettier"
+
+[userenv]
+
+[userenv.shared]
+TESTING_VITE_STRIPE_PUBLIC_KEY = "pk_test_51R8iZXPJomzhsz4JgmNPtVurkzAX0SdFbq29XWkBWioSkouTAn6L92i8qC1q1n2giIuMC0YCBR7Lkh6qpTskdiEz00P5Alnt0a"
+TESTING_STRIPE_SECRET_KEY = "sk_test_51R8iZXPJomzhsz4Jf6LT82aYZQxCMF0IpeE8Pee3kmQueGMpcoWc8et3EenMW5SR1BrMhvrOOWlXuOp43z5qJXfM00ZU0qIuHp"
