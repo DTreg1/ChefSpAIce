@@ -50,7 +50,7 @@ import {
  * Provides comprehensive security monitoring and threat prevention capabilities.
  */
 export class SecurityStorage implements ISecurityStorage {
-  private cache = new Map<string, { data: any; expires: number }>();
+  private cache = new Map<string, { data: unknown; expires: number }>();
   private readonly USER_PREFS_TTL = 30 * 60 * 1000; // 30 minutes
 
   private getCached<T>(key: string): T | undefined {
@@ -62,7 +62,7 @@ export class SecurityStorage implements ISecurityStorage {
     return undefined;
   }
 
-  private setCached(key: string, data: any, ttl: number): void {
+  private setCached<T>(key: string, data: T, ttl: number): void {
     this.cache.set(key, { data, expires: Date.now() + ttl });
   }
 

@@ -6,6 +6,100 @@
 import { UserStorage } from "./facades/UserStorage";
 import { AdminStorage } from "./facades/AdminStorage";
 import { PlatformStorage } from "./facades/PlatformStorage";
+import type { NeonDatabase } from "@neondatabase/serverless";
+
+// Import types from schema modules
+import type {
+  // Auth types
+  InsertUser,
+  User,
+  SessionData,
+  InsertAuthProviderInfo,
+  UpdateAuthProviderInfo,
+  // Food types
+  InsertUserInventory,
+  UserInventory,
+  InsertUserStorage,
+  UserStorage,
+  InsertShoppingItem,
+  ShoppingItem,
+  InsertRecipe,
+  Recipe,
+  InsertCookingTerm,
+  CookingTerm,
+  // Chat types
+  InsertChatMessage,
+  // Billing types
+  InsertDonation,
+  Donation,
+  // Support types
+  InsertTicket,
+  Ticket,
+  InsertUserFeedback,
+  // Analytics types
+  ApiUsageMetadata,
+} from "@shared/schema";
+
+// Additional type imports for specific domains
+import type {
+  InsertModerationLog,
+  ModerationLog,
+  InsertFraudScore,
+  FraudScore,
+  InsertSuspiciousActivity,
+  PrivacySetting,
+} from "@shared/schema/security";
+
+import type {
+  InsertPricingRule,
+  PricingRule,
+  InsertPriceHistory,
+  InsertPricingPerformance,
+} from "@shared/schema/pricing";
+
+import type {
+  InsertAbTest,
+  AbTest,
+  InsertAbTestResult,
+  InsertCohort,
+  Cohort,
+} from "@shared/schema/experiments";
+
+import type {
+  InsertVoiceCommand,
+  InsertDraftTemplate,
+  InsertGeneratedDraft,
+  InsertSummary,
+  InsertTranscription,
+} from "@shared/schema/ai-ml";
+
+import type {
+  InsertActivityLog,
+  InsertSystemMetric,
+  InsertMaintenancePrediction,
+  InsertMaintenanceHistory,
+} from "@shared/schema/system";
+
+import type {
+  InsertContentCategory,
+  ContentCategory,
+} from "@shared/schema/content";
+
+import type {
+  InsertAnalyticsEvent,
+  InsertUserSession,
+  UserSession,
+  InsertWebVital,
+} from "@shared/schema/analytics";
+
+import type {
+  InsertSchedulingPreferences,
+  MeetingEvents,
+} from "@shared/schema/scheduling";
+
+import type {
+  InsertNotificationHistory,
+} from "@shared/schema/notifications";
 
 /**
  * StorageRoot class that composes all three storage tiers
@@ -16,7 +110,7 @@ export class StorageRoot {
   public readonly admin: AdminStorage;
   public readonly platform: PlatformStorage;
 
-  constructor(db?: any) {
+  constructor(_db?: NeonDatabase<Record<string, unknown>>) {
     this.user = new UserStorage();
     this.admin = new AdminStorage();
     this.platform = new PlatformStorage();
@@ -35,11 +129,11 @@ export class StorageRoot {
     return this.user.user.getUserByPrimaryProviderId(provider, providerId);
   }
 
-  async createUser(userData: any) {
+  async createUser(userData: InsertUser) {
     return this.user.user.createUser(userData);
   }
 
-  async updateUser(id: string, userData: any) {
+  async updateUser(id: string, userData: Partial<User>) {
     return this.user.user.updateUser(id, userData);
   }
 
@@ -47,7 +141,17 @@ export class StorageRoot {
     return this.user.user.deleteUser(id);
   }
 
-  async updateUserPreferences(userId: string, preferences: any) {
+  async updateUserPreferences(userId: string, preferences: {
+    dietaryRestrictions?: string[];
+    allergens?: string[];
+    foodsToAvoid?: string[];
+    favoriteCategories?: string[];
+    householdSize?: number;
+    cookingSkillLevel?: string;
+    preferredUnits?: string;
+    expirationAlertDays?: number;
+    storageAreasEnabled?: string[];
+  }) {
     return this.user.user.updateUserPreferences(userId, preferences);
   }
 
@@ -60,7 +164,7 @@ export class StorageRoot {
   }
 
   // ==================== Session Management ====================
-  async createSession(sessionId: string, sessionData: any, sessionExpire: any) {
+  async createSession(sessionId: string, sessionData: SessionData, sessionExpire: Date) {
     return this.user.user.createSession(sessionId, sessionData, sessionExpire);
   }
 
@@ -68,7 +172,7 @@ export class StorageRoot {
     return this.user.user.getSession(sessionId);
   }
 
-  async updateSession(sessionId: string, sessionData: any, sessionExpire: any) {
+  async updateSession(sessionId: string, sessionData: SessionData, sessionExpire: Date) {
     return this.user.user.updateSession(sessionId, sessionData, sessionExpire);
   }
 
@@ -97,11 +201,11 @@ export class StorageRoot {
     return this.user.user.getAuthProviderByProviderAndUserId(provider, userId);
   }
 
-  async createAuthProvider(data: any) {
+  async createAuthProvider(data: InsertAuthProviderInfo) {
     return this.user.user.createAuthProvider(data);
   }
 
-  async updateAuthProvider(id: string, data: any) {
+  async updateAuthProvider(id: string, data: UpdateAuthProviderInfo) {
     return this.user.user.updateAuthProvider(id, data);
   }
 
@@ -118,11 +222,11 @@ export class StorageRoot {
     return this.user.inventory.getFoodItem(userId, id);
   }
 
-  async createFoodItem(userId: string, data: any) {
+  async createFoodItem(userId: string, data: Omit<InsertUserInventory, 'userId'>) {
     return this.user.inventory.createFoodItem(userId, data);
   }
 
-  async updateFoodItem(userId: string, id: string, data: any) {
+  async updateFoodItem(userId: string, id: string, data: Partial<UserInventory>) {
     return this.user.inventory.updateFoodItem(userId, id, data);
   }
 
@@ -142,11 +246,11 @@ export class StorageRoot {
     return this.user.inventory.getStorageLocation(userId, id);
   }
 
-  async createStorageLocation(userId: string, data: any) {
+  async createStorageLocation(userId: string, data: Omit<InsertUserStorage, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) {
     return this.user.inventory.createStorageLocation(userId, data);
   }
 
-  async updateStorageLocation(userId: string, id: string, data: any) {
+  async updateStorageLocation(userId: string, id: string, data: Partial<UserStorage>) {
     return this.user.inventory.updateStorageLocation(userId, id, data);
   }
 
@@ -163,11 +267,11 @@ export class StorageRoot {
     return this.user.inventory.getGroupedShoppingItems(userId);
   }
 
-  async createShoppingItem(data: any) {
+  async createShoppingItem(data: InsertShoppingItem) {
     return this.user.inventory.createShoppingItem(data);
   }
 
-  async updateShoppingItem(userId: string, id: string, data: any) {
+  async updateShoppingItem(userId: string, id: string, data: Partial<ShoppingItem>) {
     return this.user.inventory.updateShoppingItem(userId, id, data);
   }
 
@@ -196,11 +300,11 @@ export class StorageRoot {
     return this.user.recipes.searchRecipes(userId, query);
   }
 
-  async createRecipe(userId: string, data: any) {
+  async createRecipe(userId: string, data: Omit<InsertRecipe, 'userId'>) {
     return this.user.recipes.createRecipe(userId, data);
   }
 
-  async updateRecipe(userId: string, id: string, data: any) {
+  async updateRecipe(userId: string, id: string, data: Partial<Recipe>) {
     return this.user.recipes.updateRecipe(userId, id, data);
   }
 
@@ -225,7 +329,7 @@ export class StorageRoot {
     return this.user.chat.getChatMessagesPaginated(userId, page, limit);
   }
 
-  async createChatMessage(userId: string, data: any) {
+  async createChatMessage(userId: string, data: Omit<InsertChatMessage, 'userId'>) {
     return this.user.chat.createChatMessage(userId, data);
   }
 
@@ -246,7 +350,7 @@ export class StorageRoot {
     return this.user.notifications.deletePushToken(tokenId);
   }
 
-  async createNotification(data: any) {
+  async createNotification(data: Omit<InsertNotificationHistory, 'id'>) {
     return this.user.notifications.createNotification(data);
   }
 
@@ -295,11 +399,11 @@ export class StorageRoot {
   }
 
   // ==================== Billing ====================
-  async createDonation(donation: any) {
+  async createDonation(donation: Omit<InsertDonation, 'id' | 'createdAt' | 'completedAt'>) {
     return this.admin.billing.createDonation(donation);
   }
 
-  async updateDonation(stripePaymentIntentId: string, updates: any) {
+  async updateDonation(stripePaymentIntentId: string, updates: Partial<Donation>) {
     return this.admin.billing.updateDonation(stripePaymentIntentId, updates);
   }
 
@@ -340,7 +444,7 @@ export class StorageRoot {
   }
 
   // ==================== Support Tickets ====================
-  async getTickets(filters?: any) {
+  async getTickets(filters?: { status?: string; priority?: string; userId?: string; limit?: number }) {
     return this.admin.support.getTickets(filters);
   }
 
@@ -348,11 +452,11 @@ export class StorageRoot {
     return this.admin.support.getTicket(ticketId);
   }
 
-  async createTicket(ticket: any) {
+  async createTicket(ticket: Omit<InsertTicket, 'id'>) {
     return this.admin.support.createTicket(ticket);
   }
 
-  async updateTicket(ticketId: string, updates: any) {
+  async updateTicket(ticketId: string, updates: Partial<Ticket>) {
     return this.admin.support.updateTicket(ticketId, updates);
   }
 
@@ -364,7 +468,7 @@ export class StorageRoot {
     return this.admin.support.assignTicket(ticketId, agentId);
   }
 
-  async escalateTicket(ticketId: string, reason: string): Promise<any> {
+  async escalateTicket(ticketId: string, _reason: string): Promise<Ticket> {
     return this.admin.support.updateTicket(ticketId, { priority: 'urgent' });
   }
 
@@ -372,12 +476,12 @@ export class StorageRoot {
     return this.admin.support.resolveTicket(ticketId, resolution, timeToResolution);
   }
 
-  async addTicketResponse(response: any): Promise<any> {
+  async addTicketResponse(response: { ticketId: string; content: string; authorId: string }): Promise<{ id: string; ticketId: string; content: string; authorId: string }> {
     console.warn("addTicketResponse: stub method - use ticket notes or comments instead");
     return { id: `response_${Date.now()}`, ...response };
   }
 
-  async getTicketResponses(ticketId: string): Promise<any[]> {
+  async getTicketResponses(_ticketId: string): Promise<Array<{ id: string; ticketId: string; content: string; authorId: string }>> {
     console.warn("getTicketResponses: stub method - use ticket notes or comments instead");
     return [];
   }
@@ -387,25 +491,25 @@ export class StorageRoot {
   }
 
   // ==================== Security ====================
-  async createModerationLog(log: any) {
+  async createModerationLog(log: Omit<InsertModerationLog, 'id'>) {
     return this.admin.security.createModerationLog(log);
   }
 
-  async getModerationLogs(filters?: any): Promise<any[]> {
+  async getModerationLogs(_filters?: { userId?: string; status?: string; limit?: number }): Promise<ModerationLog[]> {
     console.warn("getModerationLogs: stub method - moderation log retrieval not implemented");
     return [];
   }
 
-  async getModerationLogById(id: string): Promise<any | null> {
+  async getModerationLogById(_id: string): Promise<ModerationLog | null> {
     console.warn("getModerationLogById: stub method - moderation log retrieval not implemented");
     return null;
   }
 
-  async updateModerationLog(id: string, updates: any) {
+  async updateModerationLog(id: string, updates: Partial<ModerationLog>) {
     return this.admin.security.updateModerationLog(id, updates);
   }
 
-  async getUserModerationHistory(userId: string): Promise<any[]> {
+  async getUserModerationHistory(_userId: string): Promise<ModerationLog[]> {
     console.warn("getUserModerationHistory: stub method - moderation history not implemented");
     return [];
   }
@@ -414,7 +518,7 @@ export class StorageRoot {
     return this.admin.security.getModerationStats(dateRange);
   }
 
-  async createFraudScore(score: any) {
+  async createFraudScore(score: Omit<InsertFraudScore, 'id'>) {
     return this.admin.security.createFraudScore(score);
   }
 
@@ -445,7 +549,7 @@ export class StorageRoot {
     return this.admin.security.getHighRiskUsers(threshold, limit);
   }
 
-  async recordFraudAttempt(activity: any) {
+  async recordFraudAttempt(activity: Omit<InsertSuspiciousActivity, 'id'>) {
     return this.admin.security.createSuspiciousActivity(activity);
   }
 
@@ -457,21 +561,21 @@ export class StorageRoot {
     return this.admin.security.getPrivacySettings(userId);
   }
 
-  async updatePrivacySettings(userId: string, settings: any) {
+  async updatePrivacySettings(userId: string, settings: Partial<PrivacySetting>) {
     return this.admin.security.upsertPrivacySettings(userId, settings);
   }
 
-  async logPrivacyRequest(request: any): Promise<any> {
+  async logPrivacyRequest(request: { userId: string; type: string; reason?: string }): Promise<{ id: string; userId: string; type: string; reason?: string }> {
     console.warn("logPrivacyRequest: stub method - privacy requests not implemented in security domain");
     return { id: `privacy_${Date.now()}`, ...request };
   }
 
-  async getPrivacyRequests(userId?: string, status?: string): Promise<any[]> {
+  async getPrivacyRequests(_userId?: string, _status?: string): Promise<Array<{ id: string; userId: string; type: string; status: string }>> {
     console.warn("getPrivacyRequests: stub method - privacy requests not implemented in security domain");
     return [];
   }
 
-  async processPrivacyRequest(requestId: string, status: string, processedBy: string): Promise<any> {
+  async processPrivacyRequest(requestId: string, status: string, processedBy: string): Promise<{ id: string; status: string; processedBy: string; processedAt: Date }> {
     console.warn("processPrivacyRequest: stub method - privacy requests not implemented in security domain");
     return { id: requestId, status, processedBy, processedAt: new Date() };
   }
@@ -485,11 +589,11 @@ export class StorageRoot {
     return this.admin.pricing.getPricingRule(id);
   }
 
-  async createPricingRule(rule: any) {
+  async createPricingRule(rule: Omit<InsertPricingRule, 'id'>) {
     return this.admin.pricing.createPricingRule(rule);
   }
 
-  async updatePricingRule(id: string, rule: any) {
+  async updatePricingRule(id: string, rule: Partial<PricingRule>) {
     return this.admin.pricing.updatePricingRule(id, rule);
   }
 
@@ -501,7 +605,7 @@ export class StorageRoot {
     return this.admin.pricing.getPricingRuleByProduct(productId);
   }
 
-  async recordPriceChange(history: any) {
+  async recordPriceChange(history: Omit<InsertPriceHistory, 'id'>) {
     return this.admin.pricing.recordPriceChange(history);
   }
 
@@ -509,7 +613,7 @@ export class StorageRoot {
     return this.admin.pricing.getPriceHistory(productId, options);
   }
 
-  async recordPricingPerformance(performance: any) {
+  async recordPricingPerformance(performance: Omit<InsertPricingPerformance, 'id'>) {
     return this.admin.pricing.recordPricingPerformance(performance);
   }
 
@@ -522,7 +626,7 @@ export class StorageRoot {
   }
 
   // ==================== Experiments ====================
-  async createAbTest(test: any) {
+  async createAbTest(test: Omit<InsertAbTest, 'id'>) {
     return this.admin.experiments.createAbTest(test);
   }
 
@@ -530,11 +634,11 @@ export class StorageRoot {
     return this.admin.experiments.getAbTest(testId);
   }
 
-  async getAbTests(filters?: any) {
+  async getAbTests(filters?: { status?: string; createdBy?: string; limit?: number }) {
     return this.admin.experiments.getAbTests(filters);
   }
 
-  async updateAbTest(testId: string, update: any) {
+  async updateAbTest(testId: string, update: Partial<AbTest>) {
     return this.admin.experiments.updateAbTest(testId, update);
   }
 
@@ -542,7 +646,7 @@ export class StorageRoot {
     return this.admin.experiments.deleteAbTest(testId);
   }
 
-  async upsertAbTestResult(result: any) {
+  async upsertAbTestResult(result: Omit<InsertAbTestResult, 'id'>) {
     return this.admin.experiments.upsertAbTestResult(result);
   }
 
@@ -550,7 +654,7 @@ export class StorageRoot {
     return this.admin.experiments.getAbTestResults(testId, variant);
   }
 
-  async createAbTestInsight(insight: any): Promise<any> {
+  async createAbTestInsight(insight: { testId: string; variant: string; insight: string }): Promise<{ id: string; testId: string; variant: string; insight: string }> {
     console.warn("createAbTestInsight: stub method - use getAbTestInsights instead");
     return { id: `insight_${Date.now()}`, ...insight };
   }
@@ -559,7 +663,7 @@ export class StorageRoot {
     return this.admin.experiments.getAbTestInsights(testId);
   }
 
-  async createCohort(cohort: any) {
+  async createCohort(cohort: Omit<InsertCohort, 'id'>) {
     return this.admin.experiments.createCohort(cohort);
   }
 
@@ -567,11 +671,11 @@ export class StorageRoot {
     return this.admin.experiments.getCohort(cohortId);
   }
 
-  async getCohorts(filters?: any) {
+  async getCohorts(filters?: { isActive?: boolean; limit?: number }) {
     return this.admin.experiments.getCohorts(filters);
   }
 
-  async updateCohort(cohortId: string, updates: any) {
+  async updateCohort(cohortId: string, updates: Partial<Cohort>) {
     return this.admin.experiments.updateCohort(cohortId, updates);
   }
 
@@ -580,7 +684,7 @@ export class StorageRoot {
   }
 
   // ==================== Analytics ====================
-  async logApiUsage(userId: string, endpoint: string, method: string, statusCode: number, responseTime: number, metadata?: any) {
+  async logApiUsage(userId: string, endpoint: string, method: string, statusCode: number, responseTime: number, metadata?: ApiUsageMetadata) {
     return this.platform.analytics.logApiUsage(userId, endpoint, method, statusCode, responseTime, metadata);
   }
 
@@ -588,7 +692,7 @@ export class StorageRoot {
     return this.platform.analytics.getApiUsageLogs(userId, startDate, endDate);
   }
 
-  async recordWebVital(vital: any) {
+  async recordWebVital(vital: Omit<InsertWebVital, 'id'>) {
     return this.platform.analytics.recordWebVital(vital);
   }
 
@@ -596,11 +700,11 @@ export class StorageRoot {
     return this.platform.analytics.getWebVitals(userId, limit);
   }
 
-  async createUserSession(session: any) {
+  async createUserSession(session: Omit<InsertUserSession, 'id'>) {
     return this.platform.analytics.createUserSession(session);
   }
 
-  async updateUserSession(sessionId: string, updates: any) {
+  async updateUserSession(sessionId: string, updates: Partial<InsertUserSession>) {
     return this.platform.analytics.updateUserSession(sessionId, updates);
   }
 
@@ -608,7 +712,7 @@ export class StorageRoot {
     return this.platform.analytics.getUserSessions(userId, limit);
   }
 
-  async recordAnalyticsEvent(event: any) {
+  async recordAnalyticsEvent(event: Omit<InsertAnalyticsEvent, 'id'>) {
     return this.platform.analytics.recordAnalyticsEvent(event);
   }
 
@@ -621,7 +725,7 @@ export class StorageRoot {
   }
 
   // ==================== AI/ML ====================
-  async createVoiceCommand(command: any) {
+  async createVoiceCommand(command: Omit<InsertVoiceCommand, 'id'>) {
     return this.platform.ai.createVoiceCommand(command);
   }
 
@@ -645,11 +749,11 @@ export class StorageRoot {
     return this.platform.ai.getDraftTemplate(id);
   }
 
-  async createDraftTemplate(template: any) {
+  async createDraftTemplate(template: Omit<InsertDraftTemplate, 'id'>) {
     return this.platform.ai.createDraftTemplate(template);
   }
 
-  async updateDraftTemplate(id: string, updates: any) {
+  async updateDraftTemplate(id: string, updates: Partial<InsertDraftTemplate>) {
     return this.platform.ai.updateDraftTemplate(id, updates);
   }
 
@@ -657,7 +761,7 @@ export class StorageRoot {
     return this.platform.ai.deleteDraftTemplate(id);
   }
 
-  async createGeneratedDraft(userId: string, draft: any) {
+  async createGeneratedDraft(userId: string, draft: Omit<InsertGeneratedDraft, 'id' | 'userId'>) {
     return this.platform.ai.createGeneratedDraft(userId, draft);
   }
 
@@ -669,7 +773,7 @@ export class StorageRoot {
     return this.platform.ai.getGeneratedDraft(userId, id);
   }
 
-  async updateGeneratedDraft(userId: string, id: string, updates: any) {
+  async updateGeneratedDraft(userId: string, id: string, updates: Partial<InsertGeneratedDraft>) {
     return this.platform.ai.updateGeneratedDraft(userId, id, updates);
   }
 
@@ -677,7 +781,7 @@ export class StorageRoot {
     return this.platform.ai.deleteGeneratedDraft(userId, id);
   }
 
-  async createSummary(userId: string, summary: any) {
+  async createSummary(userId: string, summary: Omit<InsertSummary, 'id' | 'userId'>) {
     return this.platform.ai.createSummary(userId, summary);
   }
 
@@ -689,7 +793,7 @@ export class StorageRoot {
     return this.platform.ai.getSummary(userId, id);
   }
 
-  async updateSummary(userId: string, id: string, updates: any) {
+  async updateSummary(userId: string, id: string, updates: Partial<InsertSummary>) {
     return this.platform.ai.updateSummary(userId, id, updates);
   }
 
@@ -697,7 +801,7 @@ export class StorageRoot {
     return this.platform.ai.deleteSummary(userId, id);
   }
 
-  async createTranslation(userId: string, translation: any) {
+  async createTranslation(userId: string, translation: { sourceText: string; sourceLanguage: string; targetLanguage: string }) {
     return this.platform.ai.translateContent(userId, translation);
   }
 
@@ -709,7 +813,7 @@ export class StorageRoot {
     return this.platform.ai.getTranslation(userId, id);
   }
 
-  async createTranscription(userId: string, transcription: any) {
+  async createTranscription(userId: string, transcription: Omit<InsertTranscription, 'id' | 'userId'>) {
     return this.platform.ai.createTranscription(userId, transcription);
   }
 
@@ -721,7 +825,7 @@ export class StorageRoot {
     return this.platform.ai.getTranscription(userId, id);
   }
 
-  async updateTranscription(userId: string, id: string, updates: any) {
+  async updateTranscription(userId: string, id: string, updates: Partial<InsertTranscription>) {
     return this.platform.ai.updateTranscription(userId, id, updates);
   }
 
@@ -730,7 +834,7 @@ export class StorageRoot {
   }
 
   // ==================== System ====================
-  async logSystemApiUsage(userId: string, log: any) {
+  async logSystemApiUsage(userId: string, log: { apiName: string; requestCount?: number; tokensUsed?: number; cost?: number }) {
     return this.platform.system.logApiUsage(userId, log);
   }
 
@@ -742,15 +846,15 @@ export class StorageRoot {
     return this.platform.system.getApiUsageStats(userId, apiName, days);
   }
 
-  async createActivityLog(log: any) {
+  async createActivityLog(log: Omit<InsertActivityLog, 'id'>) {
     return this.platform.system.createActivityLog(log);
   }
 
-  async getActivityLogs(filters?: any) {
+  async getActivityLogs(filters?: { userId?: string; action?: string; entityType?: string; limit?: number }) {
     return this.platform.system.getActivityLogs(filters);
   }
 
-  async recordSystemMetric(metric: any) {
+  async recordSystemMetric(metric: Omit<InsertSystemMetric, 'id'>) {
     return this.platform.system.recordSystemMetric(metric);
   }
 
@@ -758,7 +862,7 @@ export class StorageRoot {
     return this.platform.system.getSystemMetrics(metricType, limit);
   }
 
-  async createMaintenancePrediction(prediction: any) {
+  async createMaintenancePrediction(prediction: Omit<InsertMaintenancePrediction, 'id'>) {
     return this.platform.system.createMaintenancePrediction(prediction);
   }
 
@@ -766,7 +870,7 @@ export class StorageRoot {
     return this.platform.system.getMaintenancePredictions(componentType);
   }
 
-  async recordMaintenanceHistory(history: any) {
+  async recordMaintenanceHistory(history: Omit<InsertMaintenanceHistory, 'id'>) {
     return this.platform.system.recordMaintenanceHistory(history);
   }
 
@@ -791,11 +895,11 @@ export class StorageRoot {
     return this.platform.content.getCategoryBySlug(slug);
   }
 
-  async createCategory(category: any) {
+  async createCategory(category: Omit<InsertContentCategory, 'id'>) {
     return this.platform.content.createCategory(category);
   }
 
-  async updateCategory(id: number, updates: any) {
+  async updateCategory(id: number, updates: Partial<ContentCategory>) {
     return this.platform.content.updateCategory(id, updates);
   }
 
@@ -847,7 +951,7 @@ export class StorageRoot {
   }
 
   // ==================== Feedback ====================
-  async createFeedback(feedbackData: any) {
+  async createFeedback(feedbackData: Omit<InsertUserFeedback, 'id'>) {
     return this.platform.feedback.createFeedback(feedbackData);
   }
 
@@ -933,35 +1037,35 @@ export class StorageRoot {
   }
 
   // ==================== Scheduling ====================
-  async getMeetingSchedules(userId: string): Promise<any[]> {
+  async getMeetingSchedules(_userId: string): Promise<MeetingEvents[]> {
     console.warn("getMeetingSchedules: stub method - meeting schedules not implemented in scheduling domain");
     return [];
   }
 
-  async getMeetingSchedule(id: string): Promise<any | null> {
+  async getMeetingSchedule(_id: string): Promise<MeetingEvents | null> {
     console.warn("getMeetingSchedule: stub method - meeting schedules not implemented in scheduling domain");
     return null;
   }
 
-  async createMeetingSchedule(data: any): Promise<any> {
+  async createMeetingSchedule(data: Omit<MeetingEvents, 'id'>): Promise<MeetingEvents> {
     console.warn("createMeetingSchedule: stub method - meeting schedules not implemented in scheduling domain");
-    return { id: `meeting_${Date.now()}`, ...data };
+    return { id: `meeting_${Date.now()}`, ...data } as MeetingEvents;
   }
 
-  async updateMeetingSchedule(id: string, data: any): Promise<any> {
+  async updateMeetingSchedule(id: string, data: Partial<MeetingEvents>): Promise<MeetingEvents> {
     console.warn("updateMeetingSchedule: stub method - meeting schedules not implemented in scheduling domain");
-    return { id, ...data };
+    return { id, ...data } as MeetingEvents;
   }
 
-  async deleteMeetingSchedule(id: string): Promise<void> {
+  async deleteMeetingSchedule(_id: string): Promise<void> {
     console.warn("deleteMeetingSchedule: stub method - meeting schedules not implemented in scheduling domain");
   }
 
-  async getUpcomingMeetings(userId: string, limit?: number) {
+  async getUpcomingMeetings(userId: string, _limit?: number) {
     return this.user.scheduling.getMeetingEvents(userId, { startTime: new Date() });
   }
 
-  async getMeetingsByDateRange(userId: string, startDate: Date, endDate: Date): Promise<any[]> {
+  async getMeetingsByDateRange(_userId: string, _startDate: Date, _endDate: Date): Promise<MeetingEvents[]> {
     console.warn("getMeetingsByDateRange: stub method - meeting schedules not implemented in scheduling domain");
     return [];
   }
@@ -970,16 +1074,16 @@ export class StorageRoot {
     return this.user.scheduling.getSchedulingPreferences(userId);
   }
 
-  async upsertMeetingPreferences(userId: string, preferences: any) {
+  async upsertMeetingPreferences(userId: string, preferences: Partial<InsertSchedulingPreferences>) {
     return this.user.scheduling.upsertSchedulingPreferences(userId, preferences);
   }
 
-  async checkConflicts(userId: string, startTime: Date, endTime: Date): Promise<boolean> {
+  async checkConflicts(_userId: string, _startTime: Date, _endTime: Date): Promise<boolean> {
     console.warn("checkConflicts: stub method - conflict checking not implemented in scheduling domain");
     return false;
   }
 
-  async getAvailableSlots(userId: string, date: Date, duration: number, startHour?: number, endHour?: number): Promise<any[]> {
+  async getAvailableSlots(_userId: string, _date: Date, _duration: number, _startHour?: number, _endHour?: number): Promise<Array<{ start: Date; end: Date }>> {
     console.warn("getAvailableSlots: stub method - availability slots not implemented in scheduling domain");
     return [];
   }
@@ -1001,11 +1105,11 @@ export class StorageRoot {
     return this.user.food.getCookingTermsByCategory(category);
   }
 
-  async createCookingTerm(data: any) {
+  async createCookingTerm(data: Omit<InsertCookingTerm, 'id'>) {
     return this.user.food.createCookingTerm(data);
   }
 
-  async updateCookingTerm(id: number, data: any) {
+  async updateCookingTerm(id: number, data: Partial<CookingTerm>) {
     return this.user.food.updateCookingTerm(id, data);
   }
 
@@ -1018,33 +1122,35 @@ export class StorageRoot {
   }
 
   // ==================== Image Processing Stubs (TODO: Implement) ====================
+  // Note: These are placeholder methods for future image processing features.
+  // Parameters use underscore prefix to indicate they are intentionally unused.
 
-  async createImageProcessingJob(_data: any): Promise<any> {
+  async createImageProcessingJob(_data: { userId: string; imageUrl: string; operation: string }): Promise<{ id: string; status: string; userId?: string; imageUrl?: string; operation?: string }> {
     console.warn("createImageProcessingJob: stub method called");
     return { id: `job_${Date.now()}`, status: 'pending', ...(_data || {}) };
   }
 
-  async updateImageProcessingJob(_jobId: string, _data: any): Promise<any> {
+  async updateImageProcessingJob(_jobId: string, _data: { status?: string; result?: string }): Promise<{ id: string; status?: string; result?: string }> {
     console.warn("updateImageProcessingJob: stub method called");
     return { id: _jobId, ...(_data || {}) };
   }
 
-  async getImageProcessingJob(_jobId: string): Promise<any | null> {
+  async getImageProcessingJob(_jobId: string): Promise<{ id: string; status: string } | null> {
     console.warn("getImageProcessingJob: stub method called");
     return null;
   }
 
-  async getImageProcessingJobs(_userId: string, _status?: string): Promise<any[]> {
+  async getImageProcessingJobs(_userId: string, _status?: string): Promise<Array<{ id: string; status: string }>> {
     console.warn("getImageProcessingJobs: stub method called");
     return [];
   }
 
-  async getImagePresets(_userId?: string, _category?: string): Promise<any[]> {
+  async getImagePresets(_userId?: string, _category?: string): Promise<Array<{ id: string; name: string; settings: Record<string, unknown> }>> {
     console.warn("getImagePresets: stub method called");
     return [];
   }
 
-  async createImagePreset(_data: any): Promise<any> {
+  async createImagePreset(_data: { name: string; settings: Record<string, unknown>; userId?: string; category?: string }): Promise<{ id: string; name: string; settings: Record<string, unknown> }> {
     console.warn("createImagePreset: stub method called");
     return { id: `preset_${Date.now()}`, ...(_data || {}) };
   }
