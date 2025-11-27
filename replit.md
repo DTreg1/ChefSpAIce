@@ -169,3 +169,38 @@ Type safety improvements have been completed for high-priority storage domains a
 - Content/billing/analytics storage: Drizzle ORM type casts for complex insert operations
 
 **Note:** The `as any` casts in Drizzle ORM operations are intentional workarounds for type mismatches between the schema definition and runtime types, particularly for JSONB columns. These do not affect runtime safety.
+
+### Storage Layer Test Suite (November 2024)
+Comprehensive test coverage for the three-tier storage architecture with 310 passing tests:
+
+**Unit Tests (239 tests) - `server/storage/__tests__/*.test.ts`:**
+- `mockDb.ts` - Mock database infrastructure with in-memory tables and query simulation
+- `storageErrors.test.ts` - Error boundary and error handling verification
+- `userStorage.test.ts` - User domain storage methods (user CRUD, sessions, preferences)
+- `recipesStorage.test.ts` - Recipe domain storage methods (recipes, cooking terms, favorites)
+- Additional domain tests for inventory, admin, and platform storage
+
+**Integration Tests (71 tests) - `server/storage/__tests__/integration/*.test.ts`:**
+- `testUtils.ts` - Test utilities with actual Neon PostgreSQL connection and cleanup helpers
+- `storageFlow.integration.test.ts` - End-to-end storage flows with real database
+- `dataPersistence.integration.test.ts` - Data persistence and retrieval verification
+- `errorPropagation.integration.test.ts` - Error propagation through storage layers
+
+**Test Infrastructure:**
+- Uses Node.js built-in test module (`node:test` and `node:assert`)
+- Mock database for unit tests (isolated, fast execution)
+- Actual Neon PostgreSQL for integration tests (real database operations)
+- Drizzle ORM for type-safe database interactions
+- Test data isolation with unique user IDs and cleanup utilities
+
+**Running Tests:**
+```bash
+# All storage tests
+npx tsx --test server/storage/__tests__/*.test.ts server/storage/__tests__/integration/*.test.ts
+
+# Unit tests only
+npx tsx --test server/storage/__tests__/*.test.ts
+
+# Integration tests only
+npx tsx --test server/storage/__tests__/integration/*.test.ts
+```
