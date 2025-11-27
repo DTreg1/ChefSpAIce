@@ -12,6 +12,7 @@ import type {
   InsertSchedulingPatterns,
   MeetingEvents,
   InsertMeetingEvents,
+  SelectedTimeSlot,
 } from "@shared/schema/scheduling";
 
 export interface ISchedulingStorage {
@@ -36,9 +37,10 @@ export interface ISchedulingStorage {
   createMeetingSuggestions(
     suggestions: InsertMeetingSuggestions
   ): Promise<MeetingSuggestions>;
+  /** Update meeting suggestion status when a time is selected */
   updateMeetingSuggestionStatus(
     meetingId: string,
-    selectedTime?: any,
+    selectedTime?: SelectedTimeSlot,
     selectedBy?: string
   ): Promise<MeetingSuggestions>;
   deleteMeetingSuggestions(meetingId: string): Promise<void>;

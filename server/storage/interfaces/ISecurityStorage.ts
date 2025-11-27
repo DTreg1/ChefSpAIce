@@ -20,6 +20,7 @@ import type {
   InsertFraudDetectionResult,
   PrivacySettings,
   InsertPrivacySettings,
+  FraudReviewRestrictions,
 } from "@shared/schema/security";
 
 export interface ISecurityStorage {
@@ -122,11 +123,12 @@ export interface ISecurityStorage {
   getActiveRestrictions(
     userId: string
   ): Promise<FraudReview | undefined>;
+  /** Block a user for fraud with optional restrictions */
   blockUserForFraud(
     userId: string,
     reviewerId: string,
     reason: string,
-    restrictions?: any
+    restrictions?: FraudReviewRestrictions
   ): Promise<FraudReview>;
 
   // ==================== Fraud Statistics ====================

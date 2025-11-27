@@ -11,6 +11,23 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./auth";
 
+// ==================== TypeScript Interfaces ====================
+
+/**
+ * Selected Time Slot
+ * Represents a selected meeting time from suggestions
+ * Maps to meetingSuggestions.selectedTime JSONB column
+ * Used by ISchedulingStorage.updateMeetingSuggestionStatus()
+ */
+export interface SelectedTimeSlot {
+  /** Start time in ISO format */
+  start: string;
+  /** End time in ISO format */
+  end: string;
+  /** Timezone identifier (e.g., "America/New_York") */
+  timezone: string;
+}
+
 // ==================== Tables ====================
 
 /**

@@ -116,18 +116,23 @@ The following storage methods are stub implementations that return placeholder d
 All stub methods log warnings when called to help identify when they need implementation.
 
 ### Storage Layer Type Safety Improvements (November 2024)
-Phase 1 type safety improvements have been completed for high-priority storage domains:
+Type safety improvements have been completed for high-priority storage domains across two phases:
 
 **Shared Type Definitions (shared/schema/):**
 - `auth.ts`: SessionData, SessionUser, AuthProviderInfo, InsertAuthProviderInfo, UpdateAuthProviderInfo
 - `analytics.ts`: ApiUsageMetadata, ApiUsageStats, WebVitalsStats, WebVitalsMetricStats, SessionStats, EventStats, AnalyticsStatsResult, PredictionValue
+- `security.ts`: FraudReviewRestrictions (restrictions for blocked users)
+- `scheduling.ts`: SelectedTimeSlot (selected meeting times)
 
 **Updated Interfaces and Implementations:**
 - IUserStorage / user.storage.ts: 8 'any' usages eliminated (session data, auth providers, user preferences)
 - IAnalyticsStorage / analytics.storage.ts: 5 'any' usages eliminated (API stats, web vitals, analytics stats, prediction values)
+- ISecurityStorage / security.storage.ts: 2 interface 'any' usages eliminated (fraud review restrictions)
+- ISchedulingStorage / scheduling.storage.ts: 2 interface 'any' usages eliminated (selected time slots)
+
+**Total Eliminated: 17 high-priority 'any' types across User, Analytics, Security, and Scheduling domains**
 
 **Remaining Low-Priority 'any' Usages:**
-- Security domain: 3 usages (restrictions field, internal cache) - Phase 2
-- Scheduling domain: 2 usages (selectedTime field) - Phase 2
-- AI-ML domain: 8 stub method parameters - acceptable until specs mature
+- AI-ML domain: 8 stub method parameters - acceptable until feature specs mature
 - System domain: Internal Drizzle query condition arrays - acceptable pattern
+- Internal cache types: Private implementation details, not exposed via interfaces

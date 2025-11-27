@@ -35,6 +35,7 @@ import {
   type InsertFraudDetectionResult,
   type PrivacySettings,
   type InsertPrivacySettings,
+  type FraudReviewRestrictions,
 } from "@shared/schema/security";
 
 /**
@@ -542,7 +543,7 @@ export class SecurityStorage implements ISecurityStorage {
     userId: string,
     reviewerId: string,
     reason: string,
-    restrictions?: any
+    restrictions?: FraudReviewRestrictions
   ): Promise<FraudReview> {
     const [review] = await db
       .insert(fraudReviews)

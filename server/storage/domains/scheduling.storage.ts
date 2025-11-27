@@ -23,6 +23,7 @@ import {
   type InsertSchedulingPatterns,
   type MeetingEvents,
   type InsertMeetingEvents,
+  type SelectedTimeSlot,
 } from "@shared/schema/scheduling";
 
 /**
@@ -130,10 +131,10 @@ export class SchedulingStorage implements ISchedulingStorage {
 
   async updateMeetingSuggestionStatus(
     meetingId: string,
-    selectedTime?: any,
+    selectedTime?: SelectedTimeSlot,
     selectedBy?: string
   ): Promise<MeetingSuggestions> {
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (selectedTime) {
       updateData.selectedTime = selectedTime;

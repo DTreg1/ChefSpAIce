@@ -60,6 +60,25 @@ export interface ModerationResult {
 }
 
 /**
+ * Fraud Review Restrictions
+ * Restrictions that can be applied to a user during fraud review
+ * Maps to fraudReviews.restrictions JSONB column
+ * Used by ISecurityStorage.blockUserForFraud()
+ */
+export interface FraudReviewRestrictions {
+  /** Whether user can post content */
+  canPost?: boolean;
+  /** Whether user can send messages */
+  canMessage?: boolean;
+  /** Whether user can perform transactions */
+  canTransaction?: boolean;
+  /** Daily spending/action limit */
+  dailyLimit?: number;
+  /** Whether user requires additional verification */
+  requiresVerification?: boolean;
+}
+
+/**
  * Additional context about blocked content
  * Provides context for moderation decisions
  * Maps to blockedContent.metadata JSONB column
