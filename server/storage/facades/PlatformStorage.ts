@@ -1,6 +1,10 @@
 /**
- * PlatformStorage Facade
- * Consolidates platform-wide storage operations into organized sub-modules
+ * @file server/storage/facades/PlatformStorage.ts
+ * @description PlatformStorage facade consolidating platform-wide storage operations
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (PlatformStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (platformStorageFacade) for convenience in production code
  * 
  * PATTERN: Facades instantiate their own instances of domain storage classes.
  * This enables dependency injection and isolated testing of each domain.
@@ -30,3 +34,9 @@ export class PlatformStorage {
     this.feedback = new FeedbackStorage();
   }
 }
+
+/**
+ * Singleton instance for convenient usage in production code.
+ * Import this when you don't need dependency injection.
+ */
+export const platformStorageFacade = new PlatformStorage();

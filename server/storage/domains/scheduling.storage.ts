@@ -58,22 +58,24 @@ export class SchedulingStorage implements ISchedulingStorage {
     const existing = await this.getSchedulingPreferences(userId);
 
     if (existing) {
+      const updateData: Record<string, unknown> = {
+        ...preferences,
+        updatedAt: new Date(),
+      };
       const [updated] = await db
         .update(schedulingPreferences)
-        .set({
-          ...(preferences),
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(schedulingPreferences.userId, userId))
         .returning();
       return updated;
     } else {
+      const insertData = {
+        ...preferences,
+        userId,
+      } as typeof schedulingPreferences.$inferInsert;
       const [created] = await db
         .insert(schedulingPreferences)
-        .values([{
-          ...(preferences),
-          userId,
-        }])
+        .values([insertData])
         .returning();
       return created;
     }
@@ -129,7 +131,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   ): Promise<MeetingSuggestions> {
     const [created] = await db
       .insert(meetingSuggestions)
-      .values([suggestions])
+      .values([suggestions as typeof meetingSuggestions.$inferInsert])
       .returning();
     return created;
   }
@@ -205,22 +207,24 @@ export class SchedulingStorage implements ISchedulingStorage {
       .limit(1);
 
     if (existing[0]) {
+      const updateData: Record<string, unknown> = {
+        ...pattern,
+        updatedAt: new Date(),
+      };
       const [updated] = await db
         .update(schedulingPatterns)
-        .set({
-          ...(pattern),
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(schedulingPatterns.id, existing[0].id))
         .returning();
       return updated;
     } else {
+      const insertData = {
+        ...pattern,
+        userId,
+      } as typeof schedulingPatterns.$inferInsert;
       const [created] = await db
         .insert(schedulingPatterns)
-        .values([{
-          ...(pattern),
-          userId,
-        }])
+        .values([insertData])
         .returning();
       return created;
     }
@@ -350,7 +354,7 @@ export class SchedulingStorage implements ISchedulingStorage {
   async createMeetingEvent(event: InsertMeetingEvents): Promise<MeetingEvents> {
     const [created] = await db
       .insert(meetingEvents)
-      .values([event])
+      .values([event as typeof meetingEvents.$inferInsert])
       .returning();
     return created;
   }

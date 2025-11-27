@@ -52,14 +52,14 @@ export class SystemStorage {
     userId: string,
     log: Omit<InsertApiUsageLog, "userId">
   ): Promise<ApiUsageLog> {
-    const logToInsert: InsertApiUsageLog = {
+    const logToInsert = {
       ...log,
       userId,
       timestamp: new Date(),
-    };
+    } as typeof apiUsageLogs.$inferInsert;
     const [newLog] = await db
       .insert(apiUsageLogs)
-      .values(logToInsert)
+      .values([logToInsert])
       .returning();
     return newLog;
   }
@@ -589,13 +589,13 @@ export class SystemStorage {
   async recordSystemMetric(
     metric: Omit<InsertSystemMetric, "timestamp">
   ): Promise<SystemMetric> {
-    const metricToInsert: InsertSystemMetric = {
+    const metricToInsert = {
       ...metric,
       timestamp: new Date(),
-    };
+    } as typeof systemMetrics.$inferInsert;
     const [newMetric] = await db
       .insert(systemMetrics)
-      .values(metricToInsert)
+      .values([metricToInsert])
       .returning();
     return newMetric;
   }

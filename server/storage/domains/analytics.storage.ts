@@ -433,7 +433,7 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     status: 'pending' | 'completed' | 'failed',
     actualValue?: PredictionValue
   ): Promise<UserPrediction> {
-    const updates: Partial<InsertUserPrediction> = {};
+    const updates: Record<string, unknown> = {};
     
     if (actualValue !== undefined) {
       updates.prediction = actualValue;

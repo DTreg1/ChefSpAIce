@@ -1,6 +1,10 @@
 /**
- * AdminStorage Facade
- * Consolidates administrative storage operations into organized sub-modules
+ * @file server/storage/facades/AdminStorage.ts
+ * @description AdminStorage facade consolidating administrative storage operations
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (AdminStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (adminStorageFacade) for convenience in production code
  * 
  * PATTERN: Facades instantiate their own instances of domain storage classes.
  * This enables dependency injection and isolated testing of each domain.
@@ -30,3 +34,9 @@ export class AdminStorage {
     this.support = new SupportStorage();
   }
 }
+
+/**
+ * Singleton instance for convenient usage in production code.
+ * Import this when you don't need dependency injection.
+ */
+export const adminStorageFacade = new AdminStorage();

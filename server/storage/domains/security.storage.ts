@@ -75,7 +75,7 @@ export class SecurityStorage implements ISecurityStorage {
   async createModerationLog(log: InsertModerationLog): Promise<ModerationLog> {
     const [result] = await db
       .insert(moderationLogs)
-      .values([log])
+      .values([log as typeof moderationLogs.$inferInsert])
       .returning();
     return result;
   }
@@ -84,12 +84,13 @@ export class SecurityStorage implements ISecurityStorage {
     id: string,
     updates: Partial<InsertModerationLog>
   ): Promise<void> {
+    const updateData: Record<string, unknown> = {
+      ...updates,
+      updatedAt: new Date(),
+    };
     await db
       .update(moderationLogs)
-      .set({
-        ...(updates),
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(moderationLogs.id, id));
   }
 
@@ -229,7 +230,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<BlockedContent> {
     const [result] = await db
       .insert(blockedContent)
-      .values([content])
+      .values([content as typeof blockedContent.$inferInsert])
       .returning();
     return result;
   }
@@ -375,7 +376,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<FraudDetectionResult> {
     const [created] = await db
       .insert(fraudDetectionResults)
-      .values([result])
+      .values([result as typeof fraudDetectionResults.$inferInsert])
       .returning();
     return created;
   }
@@ -394,13 +395,13 @@ export class SecurityStorage implements ISecurityStorage {
 
     if (filters?.analysisType) {
       conditions.push(
-        eq(fraudDetectionResults.analysisType, filters.analysisType)
+        eq(fraudDetectionResults.analysisType, filters.analysisType as typeof fraudDetectionResults.analysisType._.data)
       );
     }
 
     if (filters?.riskLevel) {
       conditions.push(
-        eq(fraudDetectionResults.riskLevel, filters.riskLevel)
+        eq(fraudDetectionResults.riskLevel, filters.riskLevel as typeof fraudDetectionResults.riskLevel._.data)
       );
     }
 
@@ -445,7 +446,7 @@ export class SecurityStorage implements ISecurityStorage {
   ): Promise<SuspiciousActivity> {
     const [result] = await db
       .insert(suspiciousActivities)
-      .values([activity])
+      .values([activity as typeof suspiciousActivities.$inferInsert])
       .returning();
     return result;
   }
@@ -504,7 +505,7 @@ export class SecurityStorage implements ISecurityStorage {
   async createFraudReview(review: InsertFraudReview): Promise<FraudReview> {
     const [result] = await db
       .insert(fraudReviews)
-      .values([review])
+      .values([review as typeof fraudReviews.$inferInsert])
       .returning();
     return result;
   }
@@ -683,18 +684,22 @@ export class SecurityStorage implements ISecurityStorage {
     userId: string,
     settings: Omit<InsertPrivacySettings, "userId">
   ): Promise<PrivacySettings> {
+    const insertData = {
+      ...settings,
+      userId,
+    } as typeof privacySettings.$inferInsert;
+    
+    const updateData: Record<string, unknown> = {
+      ...settings,
+      updatedAt: new Date(),
+    };
+    
     const [upserted] = await db
       .insert(privacySettings)
-      .values([{
-        ...settings,
-        userId,
-      }])
+      .values([insertData])
       .onConflictDoUpdate({
         target: privacySettings.userId,
-        set: {
-          ...(settings),
-          updatedAt: new Date(),
-        },
+        set: updateData,
       })
       .returning();
 

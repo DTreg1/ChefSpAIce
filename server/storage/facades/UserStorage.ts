@@ -1,6 +1,10 @@
 /**
- * UserStorage Facade
- * Consolidates user-specific storage operations into organized sub-modules
+ * @file server/storage/facades/UserStorage.ts
+ * @description UserStorage facade consolidating user-specific storage operations
+ * 
+ * EXPORT PATTERN:
+ * - Export CLASS (UserStorage) for dependency injection and testing
+ * - Export singleton INSTANCE (userStorageFacade) for convenience in production code
  * 
  * PATTERN: Facades instantiate their own instances of domain storage classes.
  * This enables dependency injection and isolated testing of each domain.
@@ -36,3 +40,9 @@ export class UserStorage {
     this.scheduling = new SchedulingStorage();
   }
 }
+
+/**
+ * Singleton instance for convenient usage in production code.
+ * Import this when you don't need dependency injection.
+ */
+export const userStorageFacade = new UserStorage();
