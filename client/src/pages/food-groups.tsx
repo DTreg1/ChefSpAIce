@@ -36,9 +36,14 @@ export default function FoodGroups() {
     }
   }, [selectedCategory]);
 
-  const { data: foodItems, isLoading: itemsLoading } = useQuery<FoodItem[]>({
+  const { data: foodItemsResponse, isLoading: itemsLoading } = useQuery<{ data: FoodItem[], pagination?: unknown }>({
     queryKey: ["/api/food-items"],
   });
+  
+  // Extract the data array from the paginated response
+  const foodItems = Array.isArray(foodItemsResponse) 
+    ? foodItemsResponse 
+    : foodItemsResponse?.data || [];
 
   const { data: storageLocations, isLoading: locationsLoading } = useStorageLocations();
 
@@ -198,7 +203,7 @@ export default function FoodGroups() {
                     <CollapsibleContent>
                       <CardContent className="pt-0">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                          {items.map((item) => {
+                          {items.map((item: FoodItem) => {
                             const location = storageLocations?.find(
                               (loc) => loc.id === item.storageLocationId
                             );

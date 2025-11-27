@@ -18,12 +18,17 @@ interface RecipeGeneratorProps {
 export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
   const { toast } = useToast();
 
-  const { data: foodItems } = useQuery<FoodItem[]>({
+  const { data: foodItemsResponse } = useQuery<{ data: FoodItem[], pagination?: unknown }>({
     queryKey: ["/api/food-items"],
   });
+  
+  // Extract the data array from the paginated response
+  const foodItems = Array.isArray(foodItemsResponse) 
+    ? foodItemsResponse 
+    : foodItemsResponse?.data || [];
 
   // Calculate expiring items count
-  const expiringCount = foodItems?.filter((item) => {
+  const expiringCount = foodItems.filter((item) => {
     if (!item.expirationDate) return false;
     const daysUntilExpiration = Math.floor(
       (new Date(item.expirationDate).getTime() - new Date().getTime()) / 

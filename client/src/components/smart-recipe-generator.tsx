@@ -144,12 +144,17 @@ export function SmartRecipeGenerator({
   const { toast } = useToast();
   const preferences = getPreferences();
 
-  const { data: foodItems } = useQuery<FoodItem[]>({
+  const { data: foodItemsResponse } = useQuery<{ data: FoodItem[], pagination?: unknown }>({
     queryKey: ["/api/food-items"],
   });
+  
+  // Extract the data array from the paginated response
+  const foodItems = Array.isArray(foodItemsResponse) 
+    ? foodItemsResponse 
+    : foodItemsResponse?.data || [];
 
   // Calculate expiring items and analyze inventory
-  const inventoryAnalysis = foodItems?.reduce((acc, item) => {
+  const inventoryAnalysis = foodItems.reduce((acc, item) => {
     if (item.expirationDate) {
       const daysUntilExpiration = Math.floor(
         (new Date(item.expirationDate).getTime() - new Date().getTime()) / 
@@ -194,7 +199,7 @@ export function SmartRecipeGenerator({
 
       // Add expiring items to prioritize
       if ((inventoryAnalysis?.expiringCount ?? 0) > 0) {
-        smartRequest.expiringItems = inventoryAnalysis!.expiring.map(item => ({
+        smartRequest.expiringItems = inventoryAnalysis!.expiring.map((item: FoodItem) => ({
           name: item.name,
           quantity: item.quantity,
           unit: item.unit,
@@ -207,7 +212,7 @@ export function SmartRecipeGenerator({
 
       // Add high quantity items to use up
       if ((inventoryAnalysis?.highQuantity?.length ?? 0) > 0) {
-        smartRequest.abundantItems = inventoryAnalysis!.highQuantity.map(item => ({
+        smartRequest.abundantItems = inventoryAnalysis!.highQuantity.map((item: FoodItem) => ({
           name: item.name,
           quantity: item.quantity,
           unit: item.unit

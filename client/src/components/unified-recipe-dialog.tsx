@@ -144,12 +144,17 @@ export function UnifiedRecipeDialog({
   
   const [preferences, setPreferences] = useState<RecipePreferences>(getSmartDefaults());
 
-  const { data: foodItems } = useQuery<FoodItem[]>({
+  const { data: foodItemsResponse } = useQuery<{ data: FoodItem[], pagination?: unknown }>({
     queryKey: ["/api/food-items"],
   });
+  
+  // Extract the data array from the paginated response
+  const foodItems = Array.isArray(foodItemsResponse) 
+    ? foodItemsResponse 
+    : foodItemsResponse?.data || [];
 
   // Calculate expiring items and analyze inventory
-  const inventoryAnalysis = foodItems?.reduce((acc, item) => {
+  const inventoryAnalysis = foodItems.reduce((acc: { expiring: FoodItem[], expiringCount: number, highQuantity: FoodItem[] }, item: FoodItem) => {
     if (item.expirationDate) {
       const daysUntilExpiration = Math.floor(
         (new Date(item.expirationDate).getTime() - new Date().getTime()) / 
@@ -173,7 +178,7 @@ export function UnifiedRecipeDialog({
   });
 
   const smartPreferences = getSmartPreferences();
-  const hasItems = (foodItems?.length || 0) > 0;
+  const hasItems = foodItems.length > 0;
   const expiringCount = inventoryAnalysis?.expiringCount || 0;
 
   // 1-Click Smart Generation Mutation
@@ -187,7 +192,7 @@ export function UnifiedRecipeDialog({
       };
 
       if (expiringCount > 0) {
-        smartRequest.expiringItems = inventoryAnalysis!.expiring.map(item => ({
+        smartRequest.expiringItems = inventoryAnalysis.expiring.map((item: FoodItem) => ({
           name: item.name,
           quantity: item.quantity,
           unit: item.unit,
@@ -198,8 +203,8 @@ export function UnifiedRecipeDialog({
         }));
       }
 
-      if ((inventoryAnalysis?.highQuantity?.length ?? 0) > 0) {
-        smartRequest.abundantItems = inventoryAnalysis!.highQuantity.map(item => ({
+      if ((inventoryAnalysis.highQuantity.length ?? 0) > 0) {
+        smartRequest.abundantItems = inventoryAnalysis.highQuantity.map((item: FoodItem) => ({
           name: item.name,
           quantity: item.quantity,
           unit: item.unit
