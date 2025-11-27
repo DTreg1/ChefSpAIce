@@ -6,6 +6,7 @@ import compression from "compression";
 import { createServer } from "http";
 // Use centralized router setup
 import { setupRouters } from "./routers";
+import { setupOAuth } from "./auth/init-oauth";
 import { setupVite, serveStatic, log } from "./vite";
 import { logRetentionService } from "./services/log-retention.service";
 import PushStatusService from "./services/push-status.service";
@@ -130,6 +131,10 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize and validate environment variables
   initializeEnvironment();
+  
+  // Setup OAuth authentication (session, passport, strategies)
+  // Must be called before setupRouters so session middleware is available
+  await setupOAuth(app);
   
   // Setup all API routes with proper versioning and organization
   setupRouters(app);

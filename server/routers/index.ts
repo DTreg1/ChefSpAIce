@@ -145,6 +145,8 @@ export function setupRouters(app: Application): void {
   
   // Authentication & User Management
   app.use(`${API_PREFIX}/auth`, authRouter);
+  // Legacy auth path for OAuth callbacks (OAuth providers are configured with /api/auth/* URLs)
+  app.use('/api/auth', authRouter);
   
   // Core Food & Recipe Management
   app.use(`${API_PREFIX}/inventory`, inventoryRouter);
