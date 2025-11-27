@@ -104,16 +104,17 @@ The following storage methods are stub implementations that return placeholder d
 - `getImagePresets` - Enhancement preset retrieval
 - `createImagePreset` - Custom preset creation
 
-**In ai-ml.storage.ts:**
-- `createOcrResult` - OCR result persistence
-- `getUserOcrResults` - OCR history retrieval
-- `createFaceDetection` - Face detection result storage
-- `getPrivacySettings` / `upsertPrivacySettings` - Privacy preference management
-- `createImageMetadata` / `updateImageMetadata` - Image metadata tracking
-- `upsertAltTextQuality` - Alt text quality metrics
-- `getImageMetadataByUrl` - Image lookup by URL
+**In ai-ml.storage.ts (now properly typed):**
+- `createOcrResult` - Returns `OcrResult` with proper `InsertOcrResult` input
+- `getUserOcrResults` - Returns `OcrResult[]` 
+- `createFaceDetection` - Returns `FaceDetection` with proper `InsertFaceDetection` input
+- `getPrivacySettings` / `upsertPrivacySettings` - Returns `PrivacySettings` with proper field types
+- `createImageMetadata` / `updateImageMetadata` - Returns `ImageMetadata` with proper input types
+- `upsertAltTextQuality` - Returns `AltTextQuality` with proper input types
+- `getImageMetadataByUrl` - Returns `ImageMetadata | null`
+- `getTranscriptionsPaginated` - Returns `{ data: Transcription[]; total: number; page: number; limit: number }`
 
-All stub methods log warnings when called to help identify when they need implementation.
+All stub methods log warnings when called and return properly typed placeholder data.
 
 ### Storage Layer Type Safety Improvements (November 2024)
 Type safety improvements have been completed for high-priority storage domains across multiple phases:
@@ -162,6 +163,9 @@ Type safety improvements have been completed for high-priority storage domains a
 **Total Eliminated: 100+ 'any' types across StorageRoot.ts + 17 high-priority types across domain interfaces**
 
 **Remaining Low-Priority 'any' Usages:**
-- AI-ML domain storage: 8 stub method parameters - acceptable until feature specs mature
-- System domain storage: Internal Drizzle query condition arrays - acceptable pattern
-- Internal cache types: Private implementation details, not exposed via interfaces
+- AI-ML domain storage: Drizzle ORM `as any` casts for insert/update operations with JSONB fields - required due to Drizzle type constraints
+- System domain storage: Internal Drizzle query condition arrays - acceptable pattern for dynamic query building
+- Security storage cache: Uses `unknown` type with generic getters for type-safe retrieval
+- Content/billing/analytics storage: Drizzle ORM type casts for complex insert operations
+
+**Note:** The `as any` casts in Drizzle ORM operations are intentional workarounds for type mismatches between the schema definition and runtime types, particularly for JSONB columns. These do not affect runtime safety.
