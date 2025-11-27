@@ -27,7 +27,7 @@ const checkOAuthConfig = (provider: string) => (req: Request, res: Response, nex
 };
 
 // Google OAuth
-router.get("/auth/google/login", checkOAuthConfig("google"), (req, res, next) => {
+router.get("/google/login", checkOAuthConfig("google"), (req, res, next) => {
   // Store redirect URL if provided
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
@@ -38,7 +38,7 @@ router.get("/auth/google/login", checkOAuthConfig("google"), (req, res, next) =>
   })(req, res, next);
 });
 
-router.get("/auth/google/callback", checkOAuthConfig("google"), 
+router.get("/google/callback", checkOAuthConfig("google"), 
   passport.authenticate("google", { failureRedirect: "/login?error=oauth_failed" }),
   (req, res) => {
     const redirectTo = req.session.returnTo || "/";
@@ -48,7 +48,7 @@ router.get("/auth/google/callback", checkOAuthConfig("google"),
 );
 
 // GitHub OAuth
-router.get("/auth/github/login", checkOAuthConfig("github"), (req, res, next) => {
+router.get("/github/login", checkOAuthConfig("github"), (req, res, next) => {
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
@@ -58,7 +58,7 @@ router.get("/auth/github/login", checkOAuthConfig("github"), (req, res, next) =>
   })(req, res, next);
 });
 
-router.get("/auth/github/callback", checkOAuthConfig("github"),
+router.get("/github/callback", checkOAuthConfig("github"),
   passport.authenticate("github", { failureRedirect: "/login?error=oauth_failed" }),
   (req, res) => {
     const redirectTo = req.session.returnTo || "/";
@@ -68,7 +68,7 @@ router.get("/auth/github/callback", checkOAuthConfig("github"),
 );
 
 // Twitter OAuth
-router.get("/auth/twitter/login", checkOAuthConfig("twitter"), (req, res, next) => {
+router.get("/twitter/login", checkOAuthConfig("twitter"), (req, res, next) => {
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
@@ -77,7 +77,7 @@ router.get("/auth/twitter/login", checkOAuthConfig("twitter"), (req, res, next) 
 });
 
 // Twitter OAuth 1.0a requires GET for callback (not POST)
-router.get("/auth/twitter/callback", checkOAuthConfig("twitter"),
+router.get("/twitter/callback", checkOAuthConfig("twitter"),
   passport.authenticate("twitter", { failureRedirect: "/login?error=oauth_failed" }),
   (req, res) => {
     const redirectTo = req.session.returnTo || "/";
@@ -87,7 +87,7 @@ router.get("/auth/twitter/callback", checkOAuthConfig("twitter"),
 );
 
 // Apple Sign In
-router.get("/auth/apple/login", checkOAuthConfig("apple"), (req, res, next) => {
+router.get("/apple/login", checkOAuthConfig("apple"), (req, res, next) => {
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
@@ -95,7 +95,7 @@ router.get("/auth/apple/login", checkOAuthConfig("apple"), (req, res, next) => {
   passport.authenticate("apple")(req, res, next);
 });
 
-router.post("/auth/apple/callback", checkOAuthConfig("apple"),
+router.post("/apple/callback", checkOAuthConfig("apple"),
   passport.authenticate("apple", { failureRedirect: "/login?error=oauth_failed" }),
   (req, res) => {
     const redirectTo = req.session.returnTo || "/";
@@ -105,7 +105,7 @@ router.post("/auth/apple/callback", checkOAuthConfig("apple"),
 );
 
 // Replit OIDC
-router.get("/auth/replit/login", checkOAuthConfig("replit"), (req, res, next) => {
+router.get("/replit/login", checkOAuthConfig("replit"), (req, res, next) => {
   if (req.query.redirect_to) {
     req.session.returnTo = req.query.redirect_to as string;
   }
@@ -113,7 +113,7 @@ router.get("/auth/replit/login", checkOAuthConfig("replit"), (req, res, next) =>
   passport.authenticate("replit")(req, res, next);
 });
 
-router.get("/auth/replit/callback", checkOAuthConfig("replit"),
+router.get("/replit/callback", checkOAuthConfig("replit"),
   passport.authenticate("replit", { failureRedirect: "/login?error=oauth_failed" }),
   (req, res) => {
     const redirectTo = req.session.returnTo || "/";
@@ -123,7 +123,7 @@ router.get("/auth/replit/callback", checkOAuthConfig("replit"),
 );
 
 // Email/Password Authentication
-router.post("/auth/email/register", async (req, res) => {
+router.post("/email/register", async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
 
@@ -159,7 +159,7 @@ router.post("/auth/email/register", async (req, res) => {
   }
 });
 
-router.post("/auth/email/login", (req, res, next) => {
+router.post("/email/login", (req, res, next) => {
   passport.authenticate("local", (err: any, user: any, info: any) => {
     if (err) {
       console.error("Authentication error:", err);
@@ -183,7 +183,7 @@ router.post("/auth/email/login", (req, res, next) => {
 });
 
 // Logout
-router.post("/auth/logout", (req, res) => {
+router.post("/logout", (req, res) => {
   req.logout((err) => {
     if (err) {
       console.error("Logout error:", err);
@@ -200,8 +200,17 @@ router.post("/auth/logout", (req, res) => {
   });
 });
 
-// Get current user
-router.get("/auth/user", isAuthenticated, async (req, res) => {
+// Get current user - /api/v1/auth/me
+router.get("/me", (req, res) => {
+  if (!req.isAuthenticated || !req.isAuthenticated() || !req.user) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  const sessionUser = req.user;
+  res.json(sessionUser);
+});
+
+// Get current user with full details - /api/v1/auth/user  
+router.get("/user", isAuthenticated, async (req, res) => {
   try {
     const sessionUser = req.user;
     if (!sessionUser || !('id' in sessionUser)) {
@@ -216,7 +225,7 @@ router.get("/auth/user", isAuthenticated, async (req, res) => {
 });
 
 // Link additional OAuth provider
-router.post("/auth/link/:provider", isAuthenticated, (req, res, next) => {
+router.post("/link/:provider", isAuthenticated, (req, res, next) => {
   const { provider } = req.params;
 
   if (!["google", "github", "twitter", "apple", "replit"].includes(provider)) {
@@ -239,12 +248,12 @@ router.post("/auth/link/:provider", isAuthenticated, (req, res, next) => {
 
   // Redirect to OAuth flow
   res.json({ 
-    redirectUrl: `/api/auth/${provider}/login` 
+    redirectUrl: `/api/v1/auth/${provider}/login` 
   });
 });
 
 // Check OAuth configuration status
-router.get("/auth/config-status", (req, res) => {
+router.get("/config-status", (req, res) => {
   // Check both configured and actually registered strategies
   const providers = {
     google: isOAuthConfigured("google") && registeredStrategies.has("google"),
@@ -268,13 +277,13 @@ router.get("/auth/config-status", (req, res) => {
 router.get("/login", (req, res) => {
   res.status(410).json({
     error: "Replit Auth has been replaced with OAuth",
-    message: "Please use the new OAuth endpoints: /api/auth/[provider]/login",
+    message: "Please use the new OAuth endpoints: /api/v1/auth/[provider]/login",
     availableProviders: [
-      "/api/auth/google/login",
-      "/api/auth/github/login", 
-      "/api/auth/twitter/login",
-      "/api/auth/apple/login",
-      "/api/auth/email/login"
+      "/api/v1/auth/google/login",
+      "/api/v1/auth/github/login", 
+      "/api/v1/auth/twitter/login",
+      "/api/v1/auth/apple/login",
+      "/api/v1/auth/email/login"
     ]
   });
 });
