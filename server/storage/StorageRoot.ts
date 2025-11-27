@@ -131,7 +131,7 @@ export class StorageRoot {
     return this.user.user.getUserByPrimaryProviderId(provider, providerId);
   }
 
-  async createUser(userData: InsertUser) {
+  async createUser(userData: Partial<User>) {
     return this.user.user.createUser(userData);
   }
 

@@ -15,7 +15,7 @@ import { Strategy as OAuth2Strategy } from "passport-oauth2";
 import bcrypt from "bcryptjs";
 import { oauthConfig, isOAuthConfigured, getCallbackURL } from "../config/oauth-config";
 import { storage } from "../storage";
-import { UpsertUser, InsertAuthProvider } from "../../shared/schema";
+import { UpsertUser, InsertAuthProviderInfo } from "../../shared/schema";
 
 // Valid OAuth provider types
 export type OAuthProvider = 'google' | 'github' | 'twitter' | 'apple' | 'email' | 'replit';
@@ -80,7 +80,6 @@ async function findOrCreateUser(
     await storage.updateAuthProvider(existingAuth.id, {
       accessToken,
       refreshToken,
-      updatedAt: new Date(),
     });
     
     return {
@@ -112,14 +111,14 @@ async function findOrCreateUser(
   }
   
   // Create auth provider entry
-  const authProvider: InsertAuthProvider = {
+  const authProvider: InsertAuthProviderInfo = {
     userId: user.id,
     provider: provider,
     providerId: profile.id,
     providerEmail: email,
     accessToken,
     refreshToken,
-    isPrimary: user.primaryProvider === provider && user.primaryProviderId === profile.id,
+    isPrimary: !!(user.primaryProvider === provider && user.primaryProviderId === profile.id),
     metadata: profile._json,
   };
   
@@ -411,7 +410,7 @@ export async function registerEmailUser(
   const user = await storage.createUser(newUser);
   
   // Create auth provider with hashed password
-  const authProvider: InsertAuthProvider = {
+  const authProvider: InsertAuthProviderInfo = {
     userId: user.id,
     provider: "email",
     providerId: email,
