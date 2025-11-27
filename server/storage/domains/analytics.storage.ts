@@ -33,7 +33,12 @@ import {
   type Trend,
   type InsertTrend,
   type TrendAlert,
-  type InsertTrendAlert
+  type InsertTrendAlert,
+  type ApiUsageMetadata,
+  type ApiUsageStats,
+  type WebVitalsStats,
+  type AnalyticsStatsResult,
+  type PredictionValue,
 } from "@shared/schema";
 import type { IAnalyticsStorage } from "../interfaces/IAnalyticsStorage";
 
@@ -45,7 +50,7 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     method: string,
     statusCode: number,
     responseTime: number,
-    metadata?: any
+    metadata?: ApiUsageMetadata
   ): Promise<void> {
     await db.insert(activityLogs).values({
       userId: userId,
@@ -96,7 +101,7 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   async getApiUsageStats(
     userId?: string,
     period: 'day' | 'week' | 'month' = 'day'
-  ): Promise<any> {
+  ): Promise<ApiUsageStats> {
     const now = new Date();
     let startDate = new Date();
     
@@ -114,16 +119,20 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     const logs = await this.getApiUsageLogs(userId, startDate, now);
     
     // Calculate stats
-    const stats = {
+    const stats: ApiUsageStats = {
       totalRequests: logs.length,
       uniqueEndpoints: new Set(logs.map(l => l.action?.split(' ')[1])).size,
       averageResponseTime: logs.reduce((sum, l) => {
-        const responseTime = (l.details)?.responseTime || 0;
+        const details = l.details as Record<string, unknown> | null;
+        const responseTime = (details?.responseTime as number) || 0;
         return sum + responseTime;
       }, 0) / logs.length || 0,
-      errorRate: logs.filter(l => (l.details)?.statusCode >= 400).length / logs.length || 0,
-      requestsByEndpoint: {} as Record<string, number>,
-      requestsByHour: {} as Record<string, number>
+      errorRate: logs.filter(l => {
+        const details = l.details as Record<string, unknown> | null;
+        return (details?.statusCode as number) >= 400;
+      }).length / logs.length || 0,
+      requestsByEndpoint: {},
+      requestsByHour: {}
     };
     
     // Count by endpoint
@@ -175,7 +184,7 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   async getWebVitalsStats(
     userId?: string,
     period: 'day' | 'week' | 'month' = 'day'
-  ): Promise<any> {
+  ): Promise<WebVitalsStats> {
     const now = new Date();
     let startDate = new Date();
     
@@ -208,7 +217,7 @@ export class AnalyticsStorage implements IAnalyticsStorage {
       return acc;
     }, {});
     
-    const stats: any = {};
+    const stats: WebVitalsStats = {};
     
     for (const [metric, values] of Object.entries(metricGroups)) {
       const sortedValues = (values as number[]).sort((a, b) => a - b);
@@ -297,7 +306,7 @@ export class AnalyticsStorage implements IAnalyticsStorage {
     type: 'sessions' | 'events' | 'usage',
     userId?: string,
     period: 'day' | 'week' | 'month' = 'day'
-  ): Promise<any> {
+  ): Promise<AnalyticsStatsResult> {
     const now = new Date();
     let startDate = new Date();
     
@@ -417,7 +426,7 @@ export class AnalyticsStorage implements IAnalyticsStorage {
   async updatePredictionStatus(
     predictionId: string,
     status: 'pending' | 'completed' | 'failed',
-    actualValue?: any
+    actualValue?: PredictionValue
   ): Promise<UserPrediction> {
     const updates: Partial<InsertUserPrediction> = {};
     

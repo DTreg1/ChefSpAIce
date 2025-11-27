@@ -21,20 +21,28 @@ import type {
   Trend,
   InsertTrend,
   TrendAlert,
-  InsertTrendAlert
+  InsertTrendAlert,
+  ApiUsageMetadata,
+  ApiUsageStats,
+  WebVitalsStats,
+  AnalyticsStatsResult,
+  PredictionValue,
 } from "@shared/schema";
 
 export interface IAnalyticsStorage {
   // Activity Logging
-  logApiUsage(userId: string, endpoint: string, method: string, statusCode: number, responseTime: number, metadata?: any): Promise<void>;
+  /** Log API usage with optional typed metadata */
+  logApiUsage(userId: string, endpoint: string, method: string, statusCode: number, responseTime: number, metadata?: ApiUsageMetadata): Promise<void>;
   getApiUsageLogs(userId?: string, startDate?: Date, endDate?: Date): Promise<ActivityLog[]>;
-  getApiUsageStats(userId?: string, period?: 'day' | 'week' | 'month'): Promise<any>;
+  /** Get API usage statistics */
+  getApiUsageStats(userId?: string, period?: 'day' | 'week' | 'month'): Promise<ApiUsageStats>;
   
   // Web Vitals
   recordWebVital(vital: InsertWebVital): Promise<WebVital>;
   getWebVitals(userId?: string, limit?: number): Promise<WebVital[]>;
   getWebVitalsByMetric(metric: string, userId?: string): Promise<WebVital[]>;
-  getWebVitalsStats(userId?: string, period?: 'day' | 'week' | 'month'): Promise<any>;
+  /** Get web vitals statistics by metric */
+  getWebVitalsStats(userId?: string, period?: 'day' | 'week' | 'month'): Promise<WebVitalsStats>;
   
   // Analytics Events
   recordAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
@@ -45,7 +53,8 @@ export interface IAnalyticsStorage {
   createUserSession(session: InsertUserSession): Promise<UserSession>;
   updateUserSession(sessionId: string, updates: Partial<InsertUserSession>): Promise<UserSession>;
   getUserSessions(userId: string, limit?: number): Promise<UserSession[]>;
-  getAnalyticsStats(type: 'sessions' | 'events' | 'usage', userId?: string, period?: 'day' | 'week' | 'month'): Promise<any>;
+  /** Get analytics statistics based on type */
+  getAnalyticsStats(type: 'sessions' | 'events' | 'usage', userId?: string, period?: 'day' | 'week' | 'month'): Promise<AnalyticsStatsResult>;
   
   // Analytics Insights
   createAnalyticsInsight(insight: InsertAnalyticsInsight): Promise<AnalyticsInsight>;
@@ -57,7 +66,8 @@ export interface IAnalyticsStorage {
   createUserPrediction(prediction: InsertUserPrediction): Promise<UserPrediction>;
   getUserPredictions(userId: string, type?: string): Promise<UserPrediction[]>;
   getPredictionById(predictionId: string): Promise<UserPrediction | null>;
-  updatePredictionStatus(predictionId: string, status: 'pending' | 'completed' | 'failed', actualValue?: any): Promise<UserPrediction>;
+  /** Update prediction status with optional typed actual value */
+  updatePredictionStatus(predictionId: string, status: 'pending' | 'completed' | 'failed', actualValue?: PredictionValue): Promise<UserPrediction>;
   getChurnRiskUsers(threshold?: number): Promise<UserPrediction[]>;
   createPredictionAccuracy(accuracy: InsertPredictionAccuracy): Promise<PredictionAccuracy>;
   getPredictionAccuracy(predictionType: string): Promise<PredictionAccuracy[]>;
