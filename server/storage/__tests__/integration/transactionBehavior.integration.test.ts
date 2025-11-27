@@ -133,9 +133,9 @@ describe('Transaction Behavior Integration Tests', () => {
 
       assert.deepStrictEqual(retrieved?.ingredients, ingredients);
       assert.deepStrictEqual(retrieved?.instructions, instructions);
-      assert.strictEqual(retrieved?.prepTime, 15);
-      assert.strictEqual(retrieved?.cookTime, 30);
-      assert.strictEqual(retrieved?.servings, 8);
+      assert.strictEqual(Number(retrieved?.prepTime), 15);
+      assert.strictEqual(Number(retrieved?.cookTime), 30);
+      assert.strictEqual(Number(retrieved?.servings), 8);
     });
   });
 

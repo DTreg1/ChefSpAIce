@@ -93,9 +93,9 @@ describe('Data Persistence Integration Tests', () => {
       const retrievedRecipe = await storage.user.recipes.getRecipe(user.id, createdRecipe.id);
 
       assert.strictEqual(retrievedRecipe?.title, 'Persistence Test Recipe');
-      assert.strictEqual(retrievedRecipe?.prepTime, 20);
-      assert.strictEqual(retrievedRecipe?.cookTime, 45);
-      assert.strictEqual(retrievedRecipe?.servings, 6);
+      assert.strictEqual(Number(retrievedRecipe?.prepTime), 20);
+      assert.strictEqual(Number(retrievedRecipe?.cookTime), 45);
+      assert.strictEqual(Number(retrievedRecipe?.servings), 6);
       assert.strictEqual(retrievedRecipe?.difficulty, 'medium');
     });
 
@@ -346,9 +346,9 @@ describe('Data Persistence Integration Tests', () => {
 
       const retrievedRecipe = await storage.user.recipes.getRecipe(user.id, createdRecipe.id);
 
-      assert.strictEqual(retrievedRecipe?.prepTime, 25);
-      assert.strictEqual(retrievedRecipe?.cookTime, 90);
-      assert.strictEqual(retrievedRecipe?.servings, 12);
+      assert.strictEqual(Number(retrievedRecipe?.prepTime), 25);
+      assert.strictEqual(Number(retrievedRecipe?.cookTime), 90);
+      assert.strictEqual(Number(retrievedRecipe?.servings), 12);
     });
   });
 
