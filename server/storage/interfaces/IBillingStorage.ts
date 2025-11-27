@@ -70,7 +70,7 @@ export interface IBillingStorage {
   // ==================== Payment Processing ====================
   completeDonation(
     stripePaymentIntentId: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<Donation>;
   failDonation(
     stripePaymentIntentId: string,
