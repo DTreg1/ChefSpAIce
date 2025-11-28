@@ -247,13 +247,110 @@ export function getTwitterCodeVerifier(state: string): string | undefined {
 }
 
 /**
- * Generate Twitter OAuth 2.0 PKCE values
+ * Custom Twitter OAuth 2.0 Strategy with PKCE support
+ * Extends passport-oauth2 to add proper PKCE challenge/verifier handling
+ * 
+ * Storage strategy:
+ * - PKCE verifiers stored in server-side Map keyed by state (primary)
+ * - Session stores mapping of state → verifier as backup (keyed by state)
+ * - This handles concurrent logins properly by using unique state values
  */
-export function generateTwitterPKCE(): { codeVerifier: string; codeChallenge: string; state: string } {
-  const { codeVerifier, codeChallenge } = generatePKCE();
-  const state = crypto.randomBytes(16).toString('hex');
-  storeTwitterCodeVerifier(state, codeVerifier);
-  return { codeVerifier, codeChallenge, state };
+class TwitterOAuth2Strategy extends OAuth2Strategy {
+  // Temporary storage for current request's PKCE values (used within single auth call)
+  private _currentPkce: { state: string; challenge: string } | null = null;
+  private _currentReq: any = null;
+  
+  constructor(options: any, verify: any) {
+    // Enable passReqToCallback so we can access request in the verify function
+    super({ ...options, passReqToCallback: true }, verify);
+    this.name = 'twitter';
+  }
+  
+  // Override authenticate to set up PKCE
+  authenticate(req: any, options?: any): void {
+    this._currentReq = req;
+    
+    // On the initial login request (no code), generate and store PKCE values
+    if (!req.query?.code) {
+      const { codeVerifier, codeChallenge } = generatePKCE();
+      const state = crypto.randomBytes(16).toString('hex');
+      
+      // Store PKCE for this request (used by authorizationParams synchronously)
+      this._currentPkce = { state, challenge: codeChallenge };
+      
+      // Store verifier in server-side map (primary storage, keyed by state)
+      storeTwitterCodeVerifier(state, codeVerifier);
+      
+      // Also store in session as backup, keyed by state for concurrent request safety
+      if (req.session) {
+        if (!req.session.twitterPkceVerifiers) {
+          req.session.twitterPkceVerifiers = {};
+        }
+        req.session.twitterPkceVerifiers[state] = codeVerifier;
+      }
+    }
+    
+    super.authenticate(req, options);
+    
+    // Clear after auth call completes
+    this._currentPkce = null;
+  }
+  
+  // Override authorizationParams to add PKCE challenge
+  authorizationParams(options: any): object {
+    if (this._currentPkce) {
+      return {
+        state: this._currentPkce.state,
+        code_challenge: this._currentPkce.challenge,
+        code_challenge_method: 'S256'
+      };
+    }
+    
+    // Fallback: generate new PKCE values (shouldn't happen in normal flow)
+    console.warn("Twitter OAuth: PKCE values not set, generating fallback");
+    const { codeVerifier, codeChallenge } = generatePKCE();
+    const state = crypto.randomBytes(16).toString('hex');
+    storeTwitterCodeVerifier(state, codeVerifier);
+    
+    return {
+      state: state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256'
+    };
+  }
+  
+  // Override tokenParams to add code_verifier
+  tokenParams(options: any): object {
+    const params: any = {};
+    const req = this._currentReq;
+    const state = req?.query?.state;
+    
+    if (!state) {
+      console.warn("Twitter OAuth: No state in callback query");
+      return params;
+    }
+    
+    // Try server-side map first (primary storage)
+    let verifier = getTwitterCodeVerifier(state);
+    
+    // Fallback to session storage if not found in map
+    if (!verifier && req?.session?.twitterPkceVerifiers?.[state]) {
+      verifier = req.session.twitterPkceVerifiers[state];
+    }
+    
+    // Always clean up session entry for this state to prevent growth
+    if (req?.session?.twitterPkceVerifiers?.[state]) {
+      delete req.session.twitterPkceVerifiers[state];
+    }
+    
+    if (verifier) {
+      params.code_verifier = verifier;
+    } else {
+      console.warn("Twitter OAuth: PKCE verifier not found for state:", state);
+    }
+    
+    return params;
+  }
 }
 
 /**
@@ -264,8 +361,9 @@ export function configureTwitterStrategy(hostname: string) {
   if (isOAuthConfigured("twitter")) {
     const callbackURL = getCallbackURL("twitter", hostname);
     
-    // Create OAuth 2.0 strategy for Twitter
-    const strategy = new OAuth2Strategy(
+    // Create custom OAuth 2.0 strategy for Twitter with PKCE
+    // Note: state is managed manually in authorizationParams for PKCE correlation
+    const strategy = new TwitterOAuth2Strategy(
       {
         authorizationURL: "https://twitter.com/i/oauth2/authorize",
         tokenURL: "https://api.twitter.com/2/oauth2/token",
@@ -273,10 +371,10 @@ export function configureTwitterStrategy(hostname: string) {
         clientSecret: oauthConfig.twitter.clientSecret,
         callbackURL: callbackURL,
         scope: oauthConfig.twitter.scope.join(" "),
-        state: true,
-        pkce: true,
+        state: false, // We manage state ourselves for PKCE
       },
-      async (accessToken: string, refreshToken: string, params: any, profile: any, done: any) => {
+      // Note: passReqToCallback is true, so first param is req
+      async (req: any, accessToken: string, refreshToken: string, params: any, profile: any, done: any) => {
         try {
           // Fetch user profile from Twitter API v2
           const userResponse = await fetch("https://api.twitter.com/2/users/me?user.fields=id,name,username,profile_image_url", {
@@ -315,9 +413,6 @@ export function configureTwitterStrategy(hostname: string) {
         }
       }
     );
-    
-    // Set the strategy name
-    strategy.name = "twitter";
     
     passport.use("twitter", strategy);
     registeredStrategies.add("twitter");

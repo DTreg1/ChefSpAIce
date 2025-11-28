@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +28,16 @@ import {
   Loader2
 } from "lucide-react";
 
+interface OAuthConfigStatus {
+  providers: {
+    google: boolean;
+    github: boolean;
+    twitter: boolean;
+    apple: boolean;
+    replit: boolean;
+  };
+}
+
 export default function AuthUI() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<string>("");
@@ -39,6 +49,34 @@ export default function AuthUI() {
     lastName: ""
   });
   const [emailFormError, setEmailFormError] = useState("");
+  const [configuredProviders, setConfiguredProviders] = useState<string[]>(["Email"]);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchOAuthConfig() {
+      try {
+        const response = await fetch("/api/auth/config-status");
+        if (response.ok) {
+          const config: OAuthConfigStatus = await response.json();
+          const available: string[] = ["Email"];
+          
+          if (config.providers.google) available.push("Google");
+          if (config.providers.github) available.push("GitHub");
+          if (config.providers.twitter) available.push("X");
+          if (config.providers.apple) available.push("Apple");
+          if (config.providers.replit) available.push("Replit");
+          
+          setConfiguredProviders(available);
+        }
+      } catch (error) {
+        console.error("Failed to fetch OAuth config:", error);
+      } finally {
+        setConfigLoading(false);
+      }
+    }
+    
+    fetchOAuthConfig();
+  }, []);
 
   const handleEmailRegister = async () => {
     setIsLoading(true);
@@ -354,9 +392,15 @@ export default function AuthUI() {
                         )}
                       </Button>
                     </div>
+                  ) : configLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
                   ) : (
                     <div className="space-y-3">
-                      {providers.map((provider) => (
+                      {providers
+                        .filter(provider => configuredProviders.includes(provider.name))
+                        .map((provider) => (
                         <Button
                           key={provider.name}
                           variant="outline"
@@ -471,9 +515,15 @@ export default function AuthUI() {
                         )}
                       </Button>
                     </div>
+                  ) : configLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    </div>
                   ) : (
                     <div className="space-y-3">
-                      {providers.map((provider) => (
+                      {providers
+                        .filter(provider => configuredProviders.includes(provider.name))
+                        .map((provider) => (
                         <Button
                           key={provider.name}
                           variant="outline"

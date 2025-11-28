@@ -75,16 +75,16 @@ const ENV_CONFIGS: Record<string, EnvVarConfig[]> = {
       description: 'GitHub OAuth client secret'
     },
     {
-      name: 'TWITTER_CONSUMER_KEY',
+      name: 'TWITTER_CLIENT_ID',
       required: false,
       sensitive: true,
-      description: 'Twitter OAuth consumer key'
+      description: 'Twitter/X OAuth 2.0 client ID'
     },
     {
-      name: 'TWITTER_CONSUMER_SECRET',
+      name: 'TWITTER_CLIENT_SECRET',
       required: false,
       sensitive: true,
-      description: 'Twitter OAuth consumer secret'
+      description: 'Twitter/X OAuth 2.0 client secret'
     },
     {
       name: 'APPLE_CLIENT_ID',
@@ -384,7 +384,7 @@ export function initializeEnvironment(): void {
   
   if (getSafeEnvVar('GOOGLE_CLIENT_ID')) configuredServices.push('Google OAuth');
   if (getSafeEnvVar('GITHUB_CLIENT_ID')) configuredServices.push('GitHub OAuth');
-  if (getSafeEnvVar('TWITTER_CONSUMER_KEY')) configuredServices.push('Twitter OAuth');
+  if (getSafeEnvVar('TWITTER_CLIENT_ID')) configuredServices.push('Twitter/X OAuth');
   if (getSafeEnvVar('APPLE_CLIENT_ID')) configuredServices.push('Apple OAuth');
   if (getSafeEnvVar('REPLIT_CLIENT_ID') || process.env.REPLIT_DOMAINS) configuredServices.push('Replit OAuth');
   if (getSafeEnvVar('OPENAI_API_KEY') || getSafeEnvVar('AI_INTEGRATIONS_OPENAI_API_KEY')) configuredServices.push('OpenAI');
