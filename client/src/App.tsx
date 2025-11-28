@@ -169,12 +169,17 @@ function Router() {
   // Show landing page for non-authenticated users
   if (isLoading || !isAuthenticated) {
     return (
-      <Switch>
-        <Route path="/" component={Landing} />
-        <Route path="/recommendations-public-demo" component={RecommendationsPublicDemo} />
-        <Route path="/ocr" component={OCRPage} />
-        <Route component={Landing} />
-      </Switch>
+      <Suspense fallback={<RouteLoading />}>
+        <Switch>
+          <Route path="/" component={Landing} />
+          <Route path="/about" component={About} />
+          <Route path="/privacy" component={Privacy} />
+          <Route path="/terms" component={Terms} />
+          <Route path="/recommendations-public-demo" component={RecommendationsPublicDemo} />
+          <Route path="/ocr" component={OCRPage} />
+          <Route component={Landing} />
+        </Switch>
+      </Suspense>
     );
   }
 
