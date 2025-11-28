@@ -139,6 +139,12 @@ export const oauthConfig = {
   },
 };
 
+// Debug: Log Apple OAuth config status (not the actual values)
+const appleClientID = getSafeEnvVar('APPLE_CLIENT_ID');
+const appleTeamID = getSafeEnvVar('APPLE_TEAM_ID');
+const appleKeyID = getSafeEnvVar('APPLE_KEY_ID');
+console.log(`[Apple OAuth] Config check: clientID=${appleClientID ? `set (${appleClientID.length} chars)` : 'MISSING'}, teamID=${appleTeamID ? `set (${appleTeamID.length} chars)` : 'MISSING'}, keyID=${appleKeyID ? `set (${appleKeyID.length} chars)` : 'MISSING'}`);
+
 import type { OAuthProvider } from "../auth/oauth";
 
 /**
