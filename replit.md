@@ -81,7 +81,7 @@ All tiers are composed through a central StorageRoot class accessible via `stora
 ### Authentication Providers
 - Google OAuth 2.0
 - GitHub OAuth
-- Twitter/X OAuth 1.0a
+- Twitter/X OAuth 2.0 with PKCE
 - Apple Sign In
 - Replit Auth (development only)
 

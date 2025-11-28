@@ -5,7 +5,7 @@
 ChefSpAIce uses OAuth-only authentication across all environments. The application supports six authentication providers:
 - Google OAuth 2.0
 - GitHub OAuth 
-- X (Twitter) OAuth 1.0a
+- X (Twitter) OAuth 2.0 with PKCE
 - Apple Sign In
 - Replit OAuth 2.0
 - Email/Password (local authentication)
@@ -43,17 +43,25 @@ Setup:
 2. Click "New OAuth App"
 3. Set Authorization callback URL: `https://your-domain.replit.app/api/auth/github/callback`
 
-### X (Twitter) OAuth 1.0a
+### X (Twitter) OAuth 2.0 with PKCE
 ```bash
-TWITTER_CONSUMER_KEY=your-twitter-consumer-key
-TWITTER_CONSUMER_SECRET=your-twitter-consumer-secret
+TWITTER_CLIENT_ID=your-twitter-client-id
+TWITTER_CLIENT_SECRET=your-twitter-client-secret
 ```
 
 Setup:
 1. Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
-2. Create a new app
-3. Enable OAuth 1.0a under User authentication settings
-4. Set Callback URL: `https://your-domain.replit.app/api/auth/twitter/callback`
+2. Create a new project and app (or select existing)
+3. Navigate to "User authentication settings"
+4. Enable OAuth 2.0 with these settings:
+   - Type of App: Web App
+   - App permissions: Read (minimum)
+   - Request email from users: Enable
+5. Set Callback URL: `https://your-domain.replit.app/api/auth/twitter/callback`
+6. Set Website URL: `https://your-domain.replit.app`
+7. Copy the Client ID and Client Secret
+
+Note: This implementation uses OAuth 2.0 with PKCE (Proof Key for Code Exchange) for enhanced security. The old OAuth 1.0a credentials (TWITTER_CONSUMER_KEY/SECRET) are no longer used.
 
 ### Apple Sign In
 ```bash

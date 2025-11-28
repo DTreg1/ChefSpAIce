@@ -11,7 +11,7 @@ This document provides step-by-step instructions with copyable prompts to config
 | Storage Tests (310) | ✅ Passing | - |
 | Google OAuth | ✅ Working | Requires credentials |
 | GitHub OAuth | ✅ Working | Requires credentials |
-| Twitter/X OAuth | ⏭️ Skipped | Not implemented per user request |
+| Twitter/X OAuth | ✅ Working | OAuth 2.0 with PKCE, requires credentials |
 | Apple OAuth | ✅ Working | Requires credentials |
 | Replit OAuth | ✅ Working | Uses OIDC integration |
 | Email/Password Auth | ✅ Working | Full registration/login flow |
@@ -181,14 +181,34 @@ curl -X POST https://YOUR_REPLIT_DOMAIN/api/auth/email/login \
 
 ---
 
-### 1.6 Twitter/X OAuth
+### 1.6 Twitter/X OAuth 2.0
 
-**Status:** ⏭️ Skipped (not implemented per user request)
+**Status:** ✅ Code implemented, requires credentials
 
-Twitter/X OAuth has been intentionally skipped. If needed in the future, it would require:
-- Twitter Developer account with Elevated access
-- OAuth 1.0a credentials
-- Additional implementation work
+**What you need:**
+- Twitter Developer account
+- OAuth 2.0 Client ID and Client Secret
+
+**Steps:**
+
+1. Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+2. Create a new project and app (or select existing)
+3. Navigate to "User authentication settings"
+4. Enable OAuth 2.0 with these settings:
+   - Type of App: Web App
+   - App permissions: Read (minimum)
+   - Request email from users: Enable
+5. Add Callback URL: `https://YOUR_REPLIT_DOMAIN/api/auth/twitter/callback`
+6. Add Website URL: `https://YOUR_REPLIT_DOMAIN`
+7. Copy the Client ID and Client Secret
+
+**Required Secrets:**
+```
+TWITTER_CLIENT_ID=your_client_id
+TWITTER_CLIENT_SECRET=your_client_secret
+```
+
+**Note:** This implementation uses OAuth 2.0 with PKCE (Proof Key for Code Exchange) for enhanced security.
 
 ---
 
@@ -311,6 +331,10 @@ GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 
+# Twitter/X OAuth 2.0
+TWITTER_CLIENT_ID=
+TWITTER_CLIENT_SECRET=
+
 # Apple Sign In
 APPLE_CLIENT_ID=
 APPLE_TEAM_ID=
@@ -358,6 +382,9 @@ https://YOUR_REPLIT_DOMAIN/api/auth/google/login
 
 # GitHub OAuth - opens login flow
 https://YOUR_REPLIT_DOMAIN/api/auth/github/login
+
+# Twitter/X OAuth 2.0 - opens login flow
+https://YOUR_REPLIT_DOMAIN/api/auth/twitter/login
 
 # Apple Sign In - opens login flow
 https://YOUR_REPLIT_DOMAIN/api/auth/apple/login
