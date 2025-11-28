@@ -68,8 +68,9 @@ export const oauthConfig = {
     scope: ["user:email"],
   },
   twitter: {
-    consumerKey: getSafeEnvVar('TWITTER_CONSUMER_KEY') || '',
-    consumerSecret: getSafeEnvVar('TWITTER_CONSUMER_SECRET') || '',
+    clientID: getSafeEnvVar('TWITTER_CLIENT_ID') || '',
+    clientSecret: getSafeEnvVar('TWITTER_CLIENT_SECRET') || '',
+    scope: ["tweet.read", "users.read", "offline.access"],
   },
   apple: {
     clientID: getSafeEnvVar('APPLE_CLIENT_ID') || '',
@@ -99,7 +100,7 @@ export function isOAuthConfigured(provider: OAuthProvider | string): boolean {
     case "github":
       return !!oauthConfig.github.clientID && !!oauthConfig.github.clientSecret;
     case "twitter":
-      return !!oauthConfig.twitter.consumerKey && !!oauthConfig.twitter.consumerSecret;
+      return !!oauthConfig.twitter.clientID && !!oauthConfig.twitter.clientSecret;
     case "apple":
       return !!oauthConfig.apple.clientID && !!oauthConfig.apple.teamID;
     case "replit":
