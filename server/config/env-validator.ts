@@ -355,8 +355,6 @@ export function getSafeEnvVar(name: string): string | undefined {
  * Should be called at application startup
  */
 export function initializeEnvironment(): void {
-  console.log('🔧 Validating environment variables...');
-  
   const validation = validateEnvironment();
   
   if (!validation.valid) {
@@ -366,35 +364,6 @@ export function initializeEnvironment(): void {
     if (process.env.NODE_ENV === 'production') {
       console.error('\n⚠️  Cannot start application in production with invalid environment');
       process.exit(1);
-    } else {
-      console.warn('\n⚠️  Running in development mode with missing configuration');
-      console.warn('   Some features may not work properly');
     }
-  } else {
-    console.log('✅ Environment validation passed');
-  }
-  
-  if (validation.warnings.length > 0) {
-    console.warn('⚠️  Environment warnings:');
-    validation.warnings.forEach(warning => console.warn(`   - ${warning}`));
-  }
-  
-  // Log configured services (without exposing sensitive values)
-  const configuredServices: string[] = [];
-  
-  if (getSafeEnvVar('GOOGLE_CLIENT_ID')) configuredServices.push('Google OAuth');
-  if (getSafeEnvVar('GITHUB_CLIENT_ID')) configuredServices.push('GitHub OAuth');
-  if (getSafeEnvVar('TWITTER_CLIENT_ID')) configuredServices.push('Twitter/X OAuth');
-  if (getSafeEnvVar('APPLE_CLIENT_ID')) configuredServices.push('Apple OAuth');
-  if (getSafeEnvVar('REPLIT_CLIENT_ID') || process.env.REPLIT_DOMAINS) configuredServices.push('Replit OAuth');
-  if (getSafeEnvVar('OPENAI_API_KEY') || getSafeEnvVar('AI_INTEGRATIONS_OPENAI_API_KEY')) configuredServices.push('OpenAI');
-  if (getSafeEnvVar('STRIPE_SECRET_KEY')) configuredServices.push('Stripe');
-  if (getSafeEnvVar('TWILIO_ACCOUNT_SID')) configuredServices.push('Twilio');
-  if (getSafeEnvVar('FCM_PROJECT_ID')) configuredServices.push('Firebase Push');
-  if (getSafeEnvVar('VAPID_PUBLIC_KEY')) configuredServices.push('Web Push');
-  if (getSafeEnvVar('APNS_KEY_ID')) configuredServices.push('Apple Push');
-  
-  if (configuredServices.length > 0) {
-    console.log(`📦 Configured services: ${configuredServices.join(', ')}`);
   }
 }

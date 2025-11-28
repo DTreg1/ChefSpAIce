@@ -40,7 +40,7 @@ class PredictionService {
   private modelInitialized = true; // Lightweight models are always ready
 
   constructor() {
-    console.log('✓ Lightweight prediction models initialized (no training required)');
+    // Lightweight prediction models ready
   }
 
 

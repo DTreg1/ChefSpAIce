@@ -40,7 +40,7 @@ interface DetectedTrend {
 
 class TrendAnalyzerService {
   constructor() {
-    console.log('✓ Lightweight trend detection initialized (no training required)');
+    // Lightweight trend detection ready
   }
   
   /**

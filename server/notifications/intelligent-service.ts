@@ -40,7 +40,7 @@ export interface NotificationPayload {
 
 export class IntelligentNotificationService {
   constructor() {
-    console.log('✓ Lightweight notification timing model initialized (no training required)');
+    // Lightweight notification timing model initialized
   }
 
   /**

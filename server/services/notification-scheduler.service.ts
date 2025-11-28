@@ -23,7 +23,6 @@ export class NotificationSchedulerService {
    * Start all notification-related scheduled tasks
    */
   start(): void {
-    console.log('Starting notification scheduler service...');
     
     // Process notification queue every minute
     // TEMPORARILY DISABLED: This is blocking server startup
@@ -98,8 +97,6 @@ export class NotificationSchedulerService {
         console.error('Error in cleanup task:', error);
       }
     });
-    
-    console.log('Notification scheduler service started successfully');
   }
   
   /**
@@ -120,8 +117,6 @@ export class NotificationSchedulerService {
       this.cleanupTask.stop();
       this.cleanupTask = null;
     }
-    
-    console.log('Notification scheduler service stopped');
   }
 }
 

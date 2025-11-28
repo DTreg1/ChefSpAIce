@@ -416,7 +416,6 @@ export function configureTwitterStrategy(hostname: string) {
     
     passport.use("twitter", strategy);
     registeredStrategies.add("twitter");
-    console.log("✓ Twitter/X OAuth 2.0 configured with callback:", callbackURL);
   }
 }
 
@@ -467,7 +466,6 @@ export async function configureReplitOIDCStrategy(hostname: string) {
   // Configure Replit OAuth as a provider alongside others
   // Always available when on Replit environment
   if (process.env.REPLIT_DOMAINS) {
-    console.log("Configuring Replit OAuth provider");
     
     const strategy = new OAuth2Strategy(
       {
@@ -507,7 +505,6 @@ export async function configureReplitOIDCStrategy(hostname: string) {
     
     passport.use("replit", strategy);
     registeredStrategies.add("replit");
-    console.log("✓ Replit OAuth provider configured");
   }
 }
 

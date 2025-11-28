@@ -59,12 +59,9 @@ export class FcmService {
             ? JSON.parse(fcmServiceAccount) 
             : fcmServiceAccount;
           
-          // Check if this is a dummy credential
+          // Check if this is a dummy credential - silently skip
           if (serviceAccount.project_id === 'dummy-project' || 
               serviceAccount.private_key_id === 'dummy-key-id') {
-            console.warn('⚠️  FCM using dummy credentials. Push notifications will NOT work.');
-            console.warn('   To enable real push notifications, replace with actual Firebase credentials.');
-            // Mark as initialized even though it's dummy, to prevent errors
             this.isInitialized = true;
             return;
           }
