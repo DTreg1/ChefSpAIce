@@ -172,14 +172,12 @@ export default function Onboarding() {
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
       // Single POST request to complete onboarding
-      const response = await apiRequest("POST", "/api/auth/onboarding/complete", {
+      const result = await apiRequest("/api/auth/onboarding/complete", "POST", {
         preferences: data,
         customStorageAreas: customStorageAreas,
         selectedCommonItems: selectedCommonItems,
         selectedEquipment: selectedEquipment,
       });
-
-      const result = await response.json();
       return {
         successCount: result.foodItemsCreated,
         failedItems: result.failedItems,

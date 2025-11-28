@@ -121,11 +121,14 @@ export function AppSidebar() {
 
   const { data: storageLocations, refetch: _refetchStorageLocations } = useStorageLocations();
 
-  const { data: foodItems } = useQuery<FoodItem[]>({
+  const { data: foodItemsResponse } = useQuery<{ data: FoodItem[], pagination?: { total: number } }>({
     queryKey: [API_ENDPOINTS.inventory.foodItems],
   });
+  
+  // Extract the array from the paginated response structure
+  const foodItems = Array.isArray(foodItemsResponse) ? foodItemsResponse : (foodItemsResponse?.data || []);
 
-  const totalItems = foodItems?.length || 0;
+  const totalItems = foodItemsResponse?.pagination?.total || foodItems?.length || 0;
 
   const chatItem = {
     id: "chat",

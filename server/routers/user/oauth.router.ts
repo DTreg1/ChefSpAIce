@@ -224,6 +224,73 @@ router.get("/user", isAuthenticated, async (req, res) => {
   }
 });
 
+// Complete onboarding - /api/v1/auth/onboarding/complete
+router.post("/onboarding/complete", isAuthenticated, async (req, res) => {
+  try {
+    const sessionUser = req.user;
+    if (!sessionUser || !('id' in sessionUser)) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    const userId = sessionUser.id;
+    const { preferences, customStorageAreas, selectedEquipment } = req.body;
+    
+    const results = {
+      foodItemsCreated: 0,
+      failedItems: [] as string[],
+      createdStorageLocations: [] as string[],
+      equipmentAdded: selectedEquipment?.length || 0,
+    };
+    
+    // 1. Update user preferences
+    if (preferences) {
+      await storage.updateUserPreferences(userId, {
+        householdSize: preferences.householdSize,
+        cookingSkillLevel: preferences.cookingSkillLevel,
+        preferredUnits: preferences.preferredUnits,
+        dietaryRestrictions: preferences.dietaryRestrictions,
+        allergens: preferences.allergens,
+        foodsToAvoid: preferences.foodsToAvoid,
+        expirationAlertDays: preferences.expirationAlertDays,
+      });
+    }
+    
+    // 2. Create storage locations from selected areas
+    const storageAreas = [...(preferences?.storageAreasEnabled || []), ...(customStorageAreas || [])];
+    for (const areaName of storageAreas) {
+      try {
+        const location = await storage.createStorageLocation(userId, {
+          name: areaName,
+          icon: getStorageIcon(areaName),
+        });
+        if (location) {
+          results.createdStorageLocations.push(areaName);
+        }
+      } catch (err) {
+        // Location may already exist, that's ok
+      }
+    }
+    
+    // 3. Mark onboarding as complete
+    await storage.markOnboardingComplete(userId);
+    
+    res.json(results);
+  } catch (error) {
+    console.error("Error completing onboarding:", error);
+    res.status(500).json({ error: "Failed to complete onboarding" });
+  }
+});
+
+// Helper function to get storage icon based on name
+function getStorageIcon(name: string): string {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('fridge') || lowerName.includes('refrigerator')) return 'refrigerator';
+  if (lowerName.includes('freezer')) return 'snowflake';
+  if (lowerName.includes('pantry')) return 'utensils-crossed';
+  if (lowerName.includes('counter')) return 'pizza';
+  return 'box';
+}
+
 // Link additional OAuth provider
 router.post("/link/:provider", isAuthenticated, (req, res, next) => {
   const { provider } = req.params;
