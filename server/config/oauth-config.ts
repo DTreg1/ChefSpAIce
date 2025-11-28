@@ -64,12 +64,39 @@ function getSessionSecret(): string {
 function formatApplePrivateKey(key: string | undefined): string {
   if (!key) return '';
   
+  let formattedKey = key;
+  
   // Replace literal \n with actual newlines
-  let formattedKey = key.replace(/\\n/g, '\n');
+  formattedKey = formattedKey.replace(/\\n/g, '\n');
+  
+  // Also handle cases where newlines might be URL-encoded
+  formattedKey = formattedKey.replace(/%0A/g, '\n');
+  
+  // Trim whitespace
+  formattedKey = formattedKey.trim();
   
   // Ensure proper PEM format with headers
   if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----')) {
+    // Key content without headers - add them
     formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
+  }
+  
+  // Debug: log key format info (not the key itself)
+  const hasBegin = formattedKey.includes('-----BEGIN PRIVATE KEY-----');
+  const hasEnd = formattedKey.includes('-----END PRIVATE KEY-----');
+  const lineCount = formattedKey.split('\n').length;
+  
+  // Extract just the base64 content for length check
+  const keyContent = formattedKey
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s/g, '');
+  
+  console.log(`[Apple OAuth] Key format check: hasBegin=${hasBegin}, hasEnd=${hasEnd}, lines=${lineCount}, contentLength=${keyContent.length}`);
+  
+  // Valid ES256 P8 key content is typically 121 characters (base64)
+  if (keyContent.length < 100) {
+    console.error(`[Apple OAuth] WARNING: Key content seems too short (${keyContent.length} chars). Expected ~121 chars for ES256.`);
   }
   
   return formattedKey;
