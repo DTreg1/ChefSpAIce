@@ -30,6 +30,7 @@ export async function setupOAuth(app: Express) {
   console.log("Available providers:");
   console.log("  - Google:", process.env.GOOGLE_CLIENT_ID ? "✓ Configured" : "✗ Needs configuration");
   console.log("  - GitHub:", process.env.GITHUB_CLIENT_ID ? "✓ Configured" : "✗ Needs configuration");
+  console.log("  - Twitter/X:", process.env.TWITTER_CLIENT_ID ? "✓ Configured (OAuth 2.0)" : "✗ Needs configuration");
   console.log("  - Apple:", process.env.APPLE_CLIENT_ID ? "✓ Configured" : "✗ Needs configuration");
   console.log("  - Replit:", (process.env.REPLIT_CLIENT_ID || process.env.REPLIT_DOMAINS) ? "✓ Configured" : "✗ Needs configuration");
   console.log("  - Email/Password: ✓ Always available");

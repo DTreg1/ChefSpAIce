@@ -8,11 +8,11 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GitHubStrategy } from "passport-github2";
-import { Strategy as TwitterStrategy } from "passport-twitter";
 import AppleStrategy from "@nicokaiser/passport-apple";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as OAuth2Strategy } from "passport-oauth2";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { oauthConfig, isOAuthConfigured, getCallbackURL } from "../config/oauth-config";
 import { storage } from "../storage";
 import { UpsertUser, InsertAuthProviderInfo } from "../../shared/schema";
@@ -209,29 +209,119 @@ export function configureGitHubStrategy(hostname: string) {
   }
 }
 
+// Store PKCE code verifiers for Twitter OAuth 2.0
+const twitterCodeVerifiers = new Map<string, string>();
+
 /**
- * Configure Twitter OAuth Strategy
+ * Generate PKCE code verifier and challenge for Twitter OAuth 2.0
+ */
+function generatePKCE(): { codeVerifier: string; codeChallenge: string } {
+  // Generate a random code verifier (43-128 characters)
+  const codeVerifier = crypto.randomBytes(32).toString('base64url');
+  
+  // Generate code challenge using S256 method
+  const codeChallenge = crypto
+    .createHash('sha256')
+    .update(codeVerifier)
+    .digest('base64url');
+  
+  return { codeVerifier, codeChallenge };
+}
+
+/**
+ * Store code verifier for a state
+ */
+export function storeTwitterCodeVerifier(state: string, codeVerifier: string) {
+  twitterCodeVerifiers.set(state, codeVerifier);
+  // Clean up after 10 minutes
+  setTimeout(() => twitterCodeVerifiers.delete(state), 10 * 60 * 1000);
+}
+
+/**
+ * Get and remove code verifier for a state
+ */
+export function getTwitterCodeVerifier(state: string): string | undefined {
+  const verifier = twitterCodeVerifiers.get(state);
+  twitterCodeVerifiers.delete(state);
+  return verifier;
+}
+
+/**
+ * Generate Twitter OAuth 2.0 PKCE values
+ */
+export function generateTwitterPKCE(): { codeVerifier: string; codeChallenge: string; state: string } {
+  const { codeVerifier, codeChallenge } = generatePKCE();
+  const state = crypto.randomBytes(16).toString('hex');
+  storeTwitterCodeVerifier(state, codeVerifier);
+  return { codeVerifier, codeChallenge, state };
+}
+
+/**
+ * Configure Twitter/X OAuth 2.0 Strategy
+ * Uses Authorization Code Flow with PKCE for enhanced security
  */
 export function configureTwitterStrategy(hostname: string) {
   if (isOAuthConfigured("twitter")) {
-    passport.use(
-      new TwitterStrategy(
-        {
-          consumerKey: oauthConfig.twitter.consumerKey,
-          consumerSecret: oauthConfig.twitter.consumerSecret,
-          callbackURL: getCallbackURL("twitter", hostname),
-        },
-        async (token: string, tokenSecret: string, profile: any, done: any) => {
-          try {
-            const user = await findOrCreateUser("twitter", profile as OAuthProfile, token, tokenSecret);
-            done(null, user);
-          } catch (error) {
-            done(error);
+    const callbackURL = getCallbackURL("twitter", hostname);
+    
+    // Create OAuth 2.0 strategy for Twitter
+    const strategy = new OAuth2Strategy(
+      {
+        authorizationURL: "https://twitter.com/i/oauth2/authorize",
+        tokenURL: "https://api.twitter.com/2/oauth2/token",
+        clientID: oauthConfig.twitter.clientID,
+        clientSecret: oauthConfig.twitter.clientSecret,
+        callbackURL: callbackURL,
+        scope: oauthConfig.twitter.scope.join(" "),
+        state: true,
+        pkce: true,
+      },
+      async (accessToken: string, refreshToken: string, params: any, profile: any, done: any) => {
+        try {
+          // Fetch user profile from Twitter API v2
+          const userResponse = await fetch("https://api.twitter.com/2/users/me?user.fields=id,name,username,profile_image_url", {
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+            },
+          });
+          
+          if (!userResponse.ok) {
+            const errorText = await userResponse.text();
+            console.error("Twitter API error:", errorText);
+            return done(new Error(`Failed to fetch Twitter profile: ${userResponse.status}`));
           }
+          
+          const userData = await userResponse.json();
+          const twitterUser = userData.data;
+          
+          // Create OAuth profile from Twitter data
+          const twitterProfile: OAuthProfile = {
+            id: twitterUser.id,
+            displayName: twitterUser.name,
+            name: {
+              givenName: twitterUser.name?.split(" ")[0] || twitterUser.username,
+              familyName: twitterUser.name?.split(" ").slice(1).join(" ") || "",
+            },
+            photos: twitterUser.profile_image_url ? [{ value: twitterUser.profile_image_url.replace("_normal", "_400x400") }] : [],
+            provider: "twitter",
+            _json: twitterUser,
+          };
+          
+          const user = await findOrCreateUser("twitter", twitterProfile, accessToken, refreshToken);
+          done(null, user);
+        } catch (error) {
+          console.error("Twitter OAuth error:", error);
+          done(error);
         }
-      )
+      }
     );
+    
+    // Set the strategy name
+    strategy.name = "twitter";
+    
+    passport.use("twitter", strategy);
     registeredStrategies.add("twitter");
+    console.log("✓ Twitter/X OAuth 2.0 configured with callback:", callbackURL);
   }
 }
 
