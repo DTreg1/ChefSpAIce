@@ -176,5 +176,7 @@ export function isOAuthConfigured(provider: OAuthProvider | string): boolean {
 export function getCallbackURL(provider: OAuthProvider | string, hostname: string): string {
   const protocol = hostname === "localhost" ? "http" : "https";
   const port = hostname === "localhost" ? ":5000" : "";
-  return `${protocol}://${hostname}${port}/api/auth/${provider}/callback`;
+  const callbackURL = `${protocol}://${hostname}${port}/api/auth/${provider}/callback`;
+  console.log(`[OAuth] Callback URL for ${provider}: ${callbackURL}`);
+  return callbackURL;
 }
