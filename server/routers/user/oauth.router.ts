@@ -76,7 +76,7 @@ router.get("/twitter/login", checkOAuthConfig("twitter"), (req, res, next) => {
   passport.authenticate("twitter")(req, res, next);
 });
 
-// Twitter OAuth 1.0a requires GET for callback (not POST)
+// Twitter OAuth 2.0 callback
 router.get("/twitter/callback", checkOAuthConfig("twitter"),
   passport.authenticate("twitter", { failureRedirect: "/login?error=oauth_failed" }),
   (req, res) => {
