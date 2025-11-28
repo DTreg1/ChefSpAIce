@@ -46,7 +46,7 @@ export class NotificationSchedulerService {
           .selectDistinct({ userId: notificationFeedback.userId })
           .from(notificationFeedback)
           .where(
-            gte(notificationFeedback.actionAt, sevenDaysAgo)
+            gte(notificationFeedback.createdAt, sevenDaysAgo)
           )
           .limit(100);
         
