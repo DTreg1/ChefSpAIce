@@ -56,6 +56,25 @@ function getSessionSecret(): string {
   return devSecret;
 }
 
+/**
+ * Format Apple private key
+ * Apple P8 keys have newlines that get escaped when stored as env vars.
+ * This function converts escaped \n back to actual newlines.
+ */
+function formatApplePrivateKey(key: string | undefined): string {
+  if (!key) return '';
+  
+  // Replace literal \n with actual newlines
+  let formattedKey = key.replace(/\\n/g, '\n');
+  
+  // Ensure proper PEM format with headers
+  if (!formattedKey.includes('-----BEGIN PRIVATE KEY-----')) {
+    formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
+  }
+  
+  return formattedKey;
+}
+
 export const oauthConfig = {
   google: {
     clientID: getSafeEnvVar('GOOGLE_CLIENT_ID') || '',
@@ -76,7 +95,7 @@ export const oauthConfig = {
     clientID: getSafeEnvVar('APPLE_CLIENT_ID') || '',
     teamID: getSafeEnvVar('APPLE_TEAM_ID') || '',
     keyID: getSafeEnvVar('APPLE_KEY_ID') || '',
-    privateKey: getSafeEnvVar('APPLE_PRIVATE_KEY') || '',
+    privateKey: formatApplePrivateKey(getSafeEnvVar('APPLE_PRIVATE_KEY')),
   },
   replit: {
     clientID: getSafeEnvVar('REPLIT_CLIENT_ID') || '',
