@@ -34,7 +34,6 @@ interface Attachment {
 interface ChatInputProps {
   onSend: (message: string, attachments?: Attachment[]) => void;
   disabled?: boolean;
-  showFeedbackWidget?: boolean;
   voiceState?: VoiceState;
   voiceTranscript?: string;
   onVoiceModeToggle?: () => void;

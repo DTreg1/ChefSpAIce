@@ -427,7 +427,6 @@ export default function Chat() {
         <ChatInput
           onSend={handleSendMessage}
           disabled={isStreaming}
-          showFeedbackWidget={true}
         />
       </div>
     </div>

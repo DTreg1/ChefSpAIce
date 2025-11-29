@@ -23,7 +23,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { PushNotificationHandler } from "@/components/PushNotificationHandler";
 import { VoiceControl } from "@/components/voice/VoiceControl";
 import { ChatWidget } from "@/components/ChatWidget";
-import { FeedbackWidget } from "@/components/feedback-widget";
 
 // Eagerly loaded pages (critical path)
 import Landing from "@/pages/landing";
@@ -339,6 +338,7 @@ function AppContent() {
           </div>
         </div>
       </SidebarProvider>
+      {!showOnboarding && <ChatWidget />}
     </>
   );
 }
