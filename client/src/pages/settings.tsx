@@ -513,7 +513,7 @@ export default function Settings() {
                       variant="outline"
                       onClick={() => {
                         CacheStorage.clear();
-                        window.location.href = "/api/logout";
+                        window.location.href = "/api/auth/logout";
                       }}
                       data-testid="button-logout"
                     >

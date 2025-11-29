@@ -216,10 +216,10 @@ export const API_ENDPOINTS = {
   
   // User & Auth endpoints
   auth: {
-    login: '/auth/login', // OAuth handled separately, not versioned
-    logout: '/auth/logout',
-    callback: '/auth/callback',
-    session: '/auth/session',
+    login: '/api/auth/login', // OAuth handled separately, not versioned
+    logout: '/api/auth/logout',
+    callback: '/api/auth/callback',
+    session: '/api/auth/session',
   },
   
   users: {
