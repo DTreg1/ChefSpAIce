@@ -1,10 +1,19 @@
 /**
  * ML Service Layer
  * 
- * Handles all machine learning operations including embeddings, categorization,
- * tagging, duplicate detection, and natural language processing.
+ * @experimental This service is aspirational and NOT YET OPERATIONAL.
+ * The required storage methods (upsertContentEmbedding, searchByEmbedding, 
+ * getRelatedContent, etc.) do not exist in AiMlStorage yet.
  * 
- * Features:
+ * This file represents planned ML capabilities that require:
+ * 1. Implementing the missing storage.platform.ai methods
+ * 2. Adding vector database support for embeddings
+ * 3. Creating the content_embeddings, search_logs, and related_content tables
+ * 
+ * DO NOT attempt to use this service until the storage layer is implemented.
+ * See Sprint 3 (Aggressive) for activation plan.
+ * 
+ * Planned Features:
  * - Semantic search using OpenAI embeddings
  * - Auto-categorization with GPT
  * - Auto-tagging using NLP
