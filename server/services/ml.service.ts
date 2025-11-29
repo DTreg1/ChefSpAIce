@@ -1,25 +1,18 @@
 /**
  * ML Service Layer
  * 
- * @experimental This service is aspirational and NOT YET OPERATIONAL.
- * The required storage methods (upsertContentEmbedding, searchByEmbedding, 
- * getRelatedContent, etc.) do not exist in AiMlStorage yet.
- * 
- * This file represents planned ML capabilities that require:
- * 1. Implementing the missing storage.platform.ai methods
- * 2. Adding vector database support for embeddings
- * 3. Creating the content_embeddings, search_logs, and related_content tables
- * 
- * DO NOT attempt to use this service until the storage layer is implemented.
- * See Sprint 3 (Aggressive) for activation plan.
- * 
- * Planned Features:
+ * Provides AI/ML capabilities for the application including:
  * - Semantic search using OpenAI embeddings
  * - Auto-categorization with GPT
  * - Auto-tagging using NLP
  * - Duplicate detection with cosine similarity
  * - Related content discovery
  * - Natural language to SQL query
+ * 
+ * Storage is handled through storage.platform.content for embeddings
+ * and storage.platform.analytics for search logs.
+ * 
+ * @since Sprint 3 - Activated with ContentStorage integration
  */
 
 import { openai } from "../integrations/openai";
@@ -121,7 +114,7 @@ export class MLService {
 
   /**
    * Create or update embedding for content
-   * Note: This is a placeholder - full implementation requires content embeddings storage
+   * Uses storage.platform.content.upsertContentEmbedding for persistence
    */
   async createContentEmbedding(
     content: any,
@@ -133,28 +126,25 @@ export class MLService {
     const text = prepareTextForEmbedding(content, contentType);
     const embedding = await this.generateEmbedding(text);
     
-    // Return a ContentEmbedding-like object (placeholder implementation)
-    return {
-      id: contentId,
+    const embeddingData = {
       contentId,
-      contentType,
+      contentType: contentType as 'recipe' | 'article' | 'product' | 'document' | 'media',
       embedding,
-      embeddingModel: "text-embedding-ada-002",
-      contentText: text,
+      embeddingType: "full" as const,
       metadata: metadata || {
         title: content.name || content.title,
         category: content.category || content.foodCategory,
         tags: content.tags,
+        userId,
       },
-      userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as unknown as ContentEmbedding;
+    };
+    
+    return await storage.platform.content.upsertContentEmbedding(embeddingData);
   }
 
   /**
    * Perform semantic search across content
-   * Note: This is a placeholder - full implementation requires content embeddings storage
+   * Uses storage.platform.content.searchByEmbedding for vector similarity search
    */
   async semanticSearch(
     query: string,
@@ -162,14 +152,21 @@ export class MLService {
     userId: string,
     limit: number = 10
   ): Promise<Array<{
-    content: any;
+    content: ContentEmbedding;
     similarity: number;
   }>> {
-    // Placeholder: Full implementation requires content embeddings storage
-    console.log(`Semantic search for "${query}" in ${contentType} (userId: ${userId}, limit: ${limit})`);
+    const queryEmbedding = await this.generateEmbedding(query);
     
-    // Return empty results - full implementation would search through embeddings
-    return [];
+    const results = await storage.platform.content.searchByEmbedding(
+      queryEmbedding,
+      contentType,
+      limit
+    );
+    
+    return results.map(result => ({
+      content: result,
+      similarity: result.similarity,
+    }));
   }
 
   /**

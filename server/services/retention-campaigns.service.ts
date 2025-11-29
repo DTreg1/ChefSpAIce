@@ -1,21 +1,19 @@
 /**
  * Retention Campaign Service
  * 
- * @experimental This service is aspirational and NOT YET OPERATIONAL.
- * The required storage methods (getChurnRiskUsers, updatePredictionStatus,
- * createPredictionAccuracy) do not exist in AnalyticsStorage yet.
- * 
- * This file represents planned retention features that require:
- * 1. Implementing the missing storage.platform.analytics methods
- * 2. Creating the user_predictions and prediction_accuracy tables
- * 3. Integrating with an email service provider (e.g., SendGrid)
- * 
- * DO NOT attempt to use this service until the storage layer is implemented.
- * See Sprint 3 (Aggressive) for activation plan.
- * 
- * Planned Features:
+ * Provides automated user retention capabilities including:
  * - Automated email campaign system for user retention
  * - Integration with prediction service for targeted interventions
+ * - Churn risk assessment and intervention scheduling
+ * - Campaign metrics tracking
+ * 
+ * Storage is handled through storage.platform.analytics for predictions
+ * and campaign tracking data.
+ * 
+ * Email Integration: Requires EMAIL_SERVICE_PROVIDER environment variable
+ * to be configured (e.g., 'sendgrid', 'mailgun', 'console' for testing)
+ * 
+ * @since Sprint 3 - Activated with AnalyticsStorage integration
  */
 
 import { storage } from "../storage/index";
