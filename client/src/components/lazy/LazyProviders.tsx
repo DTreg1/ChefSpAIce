@@ -7,18 +7,20 @@ import { lazy, Suspense } from "react";
 import { useLocation } from "wouter";
 
 // Lazy load heavy visual component (handling named export)
-const AnimatedBackground = lazy(() => 
-  import("@/components/animated-background").then(module => ({ default: module.AnimatedBackground }))
+const AnimatedBackground = lazy(() =>
+  import("@/components/animated-background").then((module) => ({
+    default: module.AnimatedBackground,
+  })),
 );
 
 export function LazyAnimatedBackground() {
   const [location] = useLocation();
-  
+
   // Only load on chat/home page
   if (location !== "/" && location !== "/chat") {
     return null;
   }
-  
+
   return (
     <Suspense fallback={null}>
       <AnimatedBackground

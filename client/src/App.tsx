@@ -280,7 +280,6 @@ function AppContent() {
       {/* Lazy-loaded animated background only on chat pages */}
       <LazyAnimatedBackground />
 
-
       {/* Critical providers - eagerly loaded for proper initialization */}
       {location !== "/" && <PushNotificationHandler />}
       {location !== "/" && <ChatWidget />}
