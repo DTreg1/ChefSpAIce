@@ -257,13 +257,24 @@ export function getTwitterCodeVerifier(state: string): string | undefined {
  */
 class TwitterOAuth2Strategy extends OAuth2Strategy {
   // Temporary storage for current request's PKCE values (used within single auth call)
-  private _currentPkce: { state: string; challenge: string } | null = null;
+  private _currentPkce: { state: string; challenge: string; verifier: string } | null = null;
   private _currentReq: any = null;
   
   constructor(options: any, verify: any) {
     // Enable passReqToCallback so we can access request in the verify function
     super({ ...options, passReqToCallback: true }, verify);
     this.name = 'twitter';
+    
+    // Configure OAuth2 client to use Basic Auth for token exchange
+    // This is required by Twitter OAuth 2.0
+    (this as any)._oauth2.useAuthorizationHeaderforGET(true);
+    
+    // Set custom headers for token requests
+    const credentials = Buffer.from(`${options.clientID}:${options.clientSecret}`).toString('base64');
+    (this as any)._oauth2._customHeaders = {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    };
   }
   
   // Override authenticate to set up PKCE
@@ -276,7 +287,7 @@ class TwitterOAuth2Strategy extends OAuth2Strategy {
       const state = crypto.randomBytes(16).toString('hex');
       
       // Store PKCE for this request (used by authorizationParams synchronously)
-      this._currentPkce = { state, challenge: codeChallenge };
+      this._currentPkce = { state, challenge: codeChallenge, verifier: codeVerifier };
       
       // Store verifier in server-side map (primary storage, keyed by state)
       storeTwitterCodeVerifier(state, codeVerifier);
@@ -287,7 +298,11 @@ class TwitterOAuth2Strategy extends OAuth2Strategy {
           req.session.twitterPkceVerifiers = {};
         }
         req.session.twitterPkceVerifiers[state] = codeVerifier;
+        // Force session save to ensure it's persisted before redirect
+        req.session.save?.();
       }
+      
+      console.log(`[Twitter OAuth] Generated PKCE for state ${state.substring(0, 8)}...`);
     }
     
     super.authenticate(req, options);
@@ -330,11 +345,14 @@ class TwitterOAuth2Strategy extends OAuth2Strategy {
       return params;
     }
     
+    console.log(`[Twitter OAuth] Looking for PKCE verifier for state ${state.substring(0, 8)}...`);
+    
     // Try server-side map first (primary storage)
     let verifier = getTwitterCodeVerifier(state);
     
     // Fallback to session storage if not found in map
     if (!verifier && req?.session?.twitterPkceVerifiers?.[state]) {
+      console.log(`[Twitter OAuth] Found verifier in session for state ${state.substring(0, 8)}...`);
       verifier = req.session.twitterPkceVerifiers[state];
     }
     
@@ -345,6 +363,7 @@ class TwitterOAuth2Strategy extends OAuth2Strategy {
     
     if (verifier) {
       params.code_verifier = verifier;
+      console.log(`[Twitter OAuth] Added code_verifier to token params`);
     } else {
       console.warn("Twitter OAuth: PKCE verifier not found for state:", state);
     }
@@ -361,13 +380,9 @@ export function configureTwitterStrategy(hostname: string) {
   if (isOAuthConfigured("twitter")) {
     const callbackURL = getCallbackURL("twitter", hostname);
     
-    // Twitter OAuth 2.0 requires Basic Auth for token exchange
-    const credentials = Buffer.from(
-      `${oauthConfig.twitter.clientID}:${oauthConfig.twitter.clientSecret}`
-    ).toString('base64');
-    
     // Create custom OAuth 2.0 strategy for Twitter with PKCE
     // Note: state is managed manually in authorizationParams for PKCE correlation
+    // Basic Auth headers are configured in the TwitterOAuth2Strategy constructor
     const strategy = new TwitterOAuth2Strategy(
       {
         authorizationURL: "https://twitter.com/i/oauth2/authorize",
@@ -377,9 +392,6 @@ export function configureTwitterStrategy(hostname: string) {
         callbackURL: callbackURL,
         scope: oauthConfig.twitter.scope.join(" "),
         state: false, // We manage state ourselves for PKCE
-        customHeaders: {
-          Authorization: `Basic ${credentials}`,
-        },
       },
       // Note: passReqToCallback is true, so first param is req
       async (req: any, accessToken: string, refreshToken: string, params: any, profile: any, done: any) => {
