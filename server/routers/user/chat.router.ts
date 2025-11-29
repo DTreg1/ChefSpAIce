@@ -11,7 +11,6 @@
 
 import { Router, Request, Response } from "express";
 import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
-import { openai } from "../../integrations/openai";
 import { batchedApiLogger } from "../../utils/batchedApiLogger";
 import rateLimiters from "../../middleware/rateLimit";
 import {
@@ -106,17 +105,6 @@ router.post(
         return res.end();
       }
 
-      if (!openai) {
-        writeSSEError(res, new AIError(
-          'OpenAI not configured',
-          AIErrorCode.AUTH_ERROR,
-          500,
-          false,
-          'AI service is not configured'
-        ));
-        return res.end();
-      }
-
       // Save user message via service
       await chatService.saveUserMessage(userId, message);
 
@@ -128,42 +116,23 @@ router.post(
       await chatCircuitBreaker.execute(async () => {
         return await retryWithBackoff(async () => {
           try {
-            const response = await openai.chat.completions.create({
-              model: "gpt-4o-mini",
-              messages,
-              temperature: 0.7,
-              max_tokens: 500,
-              stream: streamingEnabled,
-            });
-
             if (!streamingEnabled) {
-              // Non-streaming response
-              const completion = response as any;
-              const content = completion.choices[0].message?.content || "";
-
+              // Non-streaming response via service
+              const content = await chatService.createChatCompletion(messages);
               writeSSE(res, 'message', content);
               accumulatedContent = content;
               contentStarted = true;
-
             } else {
-              // Streaming response
-              const stream = response as any;
-              for await (const chunk of stream) {
-                try {
-                  const content = chunk.choices[0]?.delta?.content || "";
-                  if (content) {
-                    writeSSE(res, 'message', content);
-                    accumulatedContent += content;
-                    contentStarted = true;
+              // Streaming response via service
+              const stream = await chatService.createChatStream(messages);
+              for await (const content of stream) {
+                writeSSE(res, 'message', content);
+                accumulatedContent += content;
+                contentStarted = true;
 
-                    // Flush the response to ensure client receives data immediately
-                    if (res.flush) {
-                      res.flush();
-                    }
-                  }
-                } catch (chunkError) {
-                  console.error('[Stream] Error processing chunk:', chunkError);
-                  // Continue processing other chunks
+                // Flush the response to ensure client receives data immediately
+                if (res.flush) {
+                  res.flush();
                 }
               }
             }

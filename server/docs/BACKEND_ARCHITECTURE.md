@@ -547,8 +547,13 @@ The schema is defined in `shared/schema.ts` and includes:
 
 ### Sprint 2 (Moderate) - Complete
 - Wired `barcode-lookup.service.ts` into `inventory.router.ts` (removed ~50 lines inline code)
-- Refactored `chat.service.ts` with proper storage integration (storage.getChatMessages, storage.createChatMessage)
-- Updated `chat.router.ts` to use `chatService` for business logic (context building, message persistence, term detection)
+- Refactored `chat.service.ts` with proper storage integration:
+  - `buildChatContext()` - Builds context with inventory and history
+  - `createChatStream()` - Returns async iterable for SSE streaming
+  - `saveUserMessage()` / `saveAssistantMessage()` - Persistence layer
+  - `detectCookingTerms()` - Term detection integration
+  - `sendMessage()` - High-level non-streaming chat exchange
+- Updated `chat.router.ts` to use `chatService` for business logic (SSE presentation only in router)
 - Fixed `getChatMessages` signature in `StorageRoot.ts` to accept optional limit parameter
 - Marked `ml.service.ts` and `retention-campaigns.service.ts` as @experimental (require storage layer work)
 
