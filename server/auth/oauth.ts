@@ -436,17 +436,39 @@ export function configureAppleStrategy(hostname: string) {
         } as any,
         async (accessToken: string, refreshToken: string, idToken: any, profile: any, done: any) => {
           try {
-            // Apple provides limited profile info
+            // Apple user ID comes from idToken.sub, not profile.id
+            const appleUserId = idToken?.sub || profile?.id;
+            
+            if (!appleUserId) {
+              console.error("[Apple OAuth] No user ID found in idToken or profile:", { 
+                hasIdToken: !!idToken, 
+                idTokenSub: idToken?.sub,
+                profileId: profile?.id 
+              });
+              return done(new Error("No Apple user ID found"));
+            }
+            
+            // Extract email from idToken if not in profile
+            const email = profile?.email || idToken?.email;
+            const emails = email ? [{ value: email, verified: idToken?.email_verified }] : profile?.emails || [];
+            
+            // Apple only provides name on first login
             const appleProfile: OAuthProfile = {
-              id: profile.id,
-              emails: profile.emails,
-              displayName: profile.displayName,
+              id: appleUserId,
+              emails,
+              displayName: profile?.displayName || profile?.name?.firstName || email?.split('@')[0] || 'Apple User',
+              name: profile?.name || {
+                givenName: profile?.name?.firstName || '',
+                familyName: profile?.name?.lastName || '',
+              },
               provider: "apple",
               _json: idToken,
             };
+            
             const user = await findOrCreateUser("apple", appleProfile, accessToken, refreshToken);
             done(null, user);
           } catch (error) {
+            console.error("[Apple OAuth] Error in verify callback:", error);
             done(error);
           }
         }
