@@ -64,7 +64,9 @@ const SemanticSearchDemo = lazy(() => import("@/pages/SemanticSearchDemo"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const TagDemo = lazy(() => import("@/pages/TagDemo"));
 const RecommendationsDemo = lazy(() => import("@/pages/recommendations-demo"));
-const RecommendationsPublicDemo = lazy(() => import("@/pages/recommendations-public-demo"));
+const RecommendationsPublicDemo = lazy(
+  () => import("@/pages/recommendations-public-demo"),
+);
 const QueryBuilder = lazy(() => import("@/pages/QueryBuilder"));
 const Drafts = lazy(() => import("@/pages/Drafts"));
 const WritingAssistant = lazy(() => import("@/pages/writing-assistant"));
@@ -175,7 +177,10 @@ function Router() {
           <Route path="/about" component={About} />
           <Route path="/privacy" component={Privacy} />
           <Route path="/terms" component={Terms} />
-          <Route path="/recommendations-public-demo" component={RecommendationsPublicDemo} />
+          <Route
+            path="/recommendations-public-demo"
+            component={RecommendationsPublicDemo}
+          />
           <Route path="/ocr" component={OCRPage} />
           <Route component={Landing} />
         </Switch>
@@ -241,7 +246,8 @@ function AppContent() {
   }, []);
 
   // Check if onboarding needs to be shown
-  const showOnboarding = !prefLoading && (!preferences || !preferences.hasCompletedOnboarding);
+  const showOnboarding =
+    !prefLoading && (!preferences || !preferences.hasCompletedOnboarding);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -273,20 +279,21 @@ function AppContent() {
     <>
       {/* Lazy-loaded animated background only on chat pages */}
       <LazyAnimatedBackground />
-      
+
+
       {/* Critical providers - eagerly loaded for proper initialization */}
-      <PushNotificationHandler />
-      <ChatWidget />
-      
+      {location !== "/" && <PushNotificationHandler />}
+      {location !== "/" && <ChatWidget />}
+
       <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <UnifiedRecipeDialog
         open={recipeDialogOpen}
         onOpenChange={setRecipeDialogOpen}
       />
-      
+
       {/* Conditionally show feedback widget on non-chat pages */}
       {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
-      
+
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
           {/* Header outside the sidebar container but inside SidebarProvider */}
@@ -327,11 +334,11 @@ function AppContent() {
               </div>
             )}
           </header>
-          
+
           {/* Main content area with sidebar (if completed onboarding) and main content */}
           <div className="flex flex-1 min-h-0 w-full">
             {showOnboarding ? (
-              <main 
+              <main
                 ref={mainRef}
                 className="flex-1 overflow-y-auto overflow-x-hidden"
               >
