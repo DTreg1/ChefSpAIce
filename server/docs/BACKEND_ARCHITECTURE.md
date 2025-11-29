@@ -650,10 +650,25 @@ The schema is defined in `shared/schema.ts` and includes:
 - Fixed `getChatMessages` signature in `StorageRoot.ts` to accept optional limit parameter
 - Marked `ml.service.ts` and `retention-campaigns.service.ts` as @experimental (require storage layer work)
 
-### Sprint 3 (Aggressive) - In Progress
-- Implement missing storage methods for ml.service.ts
-- Activate retention-campaigns.service.ts with proper email provider
-- Full router consolidation with service layer
+### Sprint 3 (ML Services Activation) - Complete
+- Activated `ml.service.ts` with ContentStorage integration:
+  - Semantic search using OpenAI embeddings (text-embedding-ada-002)
+  - Auto-categorization with GPT
+  - Auto-tagging using NLP (natural library)
+  - Duplicate detection with cosine similarity
+  - Related content discovery
+  - Natural language to SQL query
+- Activated `retention-campaigns.service.ts` with AnalyticsStorage integration:
+  - Automated email campaign system for user retention
+  - Integration with prediction service for targeted interventions
+  - Churn risk assessment and intervention scheduling (>80% probability threshold)
+  - Campaign metrics tracking
+  - Scheduled jobs: Daily churn check (9 AM), Weekly re-engagement (Mondays), Monthly reports (1st)
+
+**Current Limitations:**
+- Retention campaigns use in-memory queue (not persisted across restarts)
+- Email delivery uses console fallback unless `EMAIL_SERVICE_PROVIDER` is configured (e.g., 'sendgrid', 'mailgun')
+- ML embeddings require OpenAI API key for generation
 
 ### Sprint 4 (Utilities Consolidation) - Complete
 - Created `server/utils/vectorMath.ts` with shared vector operations
@@ -673,12 +688,14 @@ Routers (thin)          →  Services (business logic)  →  Storage (data)
                            - API orchestration
 ```
 
-### Experimental Services (Deferred)
-The following services are marked `@experimental` and NOT operational:
-- `ml.service.ts` - Requires vector DB and embeddings storage
-- `retention-campaigns.service.ts` - Requires analytics storage and email provider
+### Active ML/AI Services
+- `ml.service.ts` - Semantic search, auto-categorization, tagging, duplicate detection
+- `retention-campaigns.service.ts` - Automated retention campaigns with churn prediction
+- `prediction.service.ts` - User behavior prediction and intervention generation
+- `embeddings.service.ts` - Vector embeddings for content similarity
+- `sentiment.service.ts` - Sentiment analysis for user feedback
 
 ---
 
 *Last updated: November 2025*
-*Sprint 4 (Utilities Consolidation) Complete*
+*Sprint 3 (ML Services Activation) and Sprint 4 (Utilities Consolidation) Complete*

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the REST API endpoints for the Meal Planner application. The API follows RESTful conventions and uses JSON for request/response bodies.
+This document describes the REST API endpoints for the ChefSpAIce application. The API follows RESTful conventions and uses JSON for request/response bodies.
 
 **Base URL:** `/api/v1`
 
@@ -521,15 +521,22 @@ Deprecated endpoints will include headers:
 
 ## Authentication
 
-The API uses session-based authentication with OAuth providers:
-- Google
-- GitHub
-- Replit
+The API uses session-based authentication with multiple providers:
+- Google OAuth 2.0
+- GitHub OAuth
+- X (Twitter) OAuth 2.0 with PKCE
+- Apple Sign In
+- Email/Password (local authentication)
+- Replit Auth (OIDC, development/testing only)
 
 To authenticate:
 1. Redirect user to `/api/v1/auth/login?provider=<provider>`
 2. After OAuth flow, user is redirected back with session cookie
 3. Include session cookie in all subsequent requests
+
+For email/password authentication:
+1. POST to `/api/auth/email/register` for new users
+2. POST to `/api/auth/email/login` for existing users
 
 To check authentication status:
 ```bash

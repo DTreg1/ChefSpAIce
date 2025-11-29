@@ -467,4 +467,4 @@ Frontend components extract the `data` array from this response.
 
 ---
 
-*Last Updated: November 2024*
+*Last Updated: November 2025*

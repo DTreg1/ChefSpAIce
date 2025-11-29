@@ -1,5 +1,16 @@
 # Server Utils Fixes - Step by Step Prompts
 
+> **Historical Reference Document**
+> 
+> This document contains suggested fixes for utility files. Many of these issues may have been addressed in subsequent development.
+> 
+> **Status Summary:**
+> - Issue 1 (BatchQueryBuilder): Review for current implementation status
+> - Issue 2 (USDA Cache): Review for current implementation status  
+> - Issue 3 (Type Safety): Review for current implementation status
+> 
+> Use as a reference for understanding past technical patterns and improvements.
+
 ## Issue 1: BatchQueryBuilder Transaction Handling (Critical)
 
 **File:** `server/utils/batchQueries.ts`

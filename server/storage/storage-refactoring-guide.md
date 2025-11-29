@@ -1,5 +1,17 @@
 # Storage Layer Refactoring Guide
 
+> **Historical Reference Document**
+> 
+> This document provides step-by-step prompts for storage layer improvements. The storage layer has undergone significant refactoring, including Sprint 3 changes with ML service activation and storage integration.
+> 
+> **Status Summary:**
+> - Phase 1 (Audit): Complete - see STORAGE_AUDIT_REPORT.md for current interface/implementation alignment
+> - Phase 2 (StorageRoot): Addressed - legacy methods cleaned up
+> - Phase 3 (Export Patterns): Addressed - consistent singleton exports
+> - Phase 4+ (Remaining): Review for current applicability
+> 
+> Use as a reference for understanding architectural patterns.
+
 This document provides step-by-step prompts to fix the identified issues in the storage layer.
 
 ---

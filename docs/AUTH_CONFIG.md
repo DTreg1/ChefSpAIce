@@ -1,21 +1,30 @@
 # Authentication Configuration Guide
 
 ## Overview
-This application supports dual-mode authentication to work seamlessly with both development/testing and production environments.
+ChefSpAIce supports multiple authentication methods to provide flexible, secure access across all environments. The application uses a unified authentication system that supports OAuth providers, email/password, and Replit Auth for development.
 
-## Authentication Modes
+## Supported Authentication Methods
 
-### 1. Replit Auth Mode
+### 1. OAuth Providers (Production)
+Primary authentication method supporting:
+- **Google OAuth 2.0** - Most common for general users
+- **GitHub OAuth** - Popular with developer users
+- **X (Twitter) OAuth 2.0** - Uses PKCE for enhanced security
+- **Apple Sign In** - Required for iOS App Store compliance
+
+### 2. Email/Password Authentication
+- Local authentication with secure password hashing (bcrypt)
+- Full registration and login flow
+- Works in all environments
+
+### 3. Replit Auth Mode (Development/Testing)
+Uses OpenID Connect (OIDC) protocol for authentication within Replit environments.
 Used for:
 - Development and testing environments
 - Replit Agent automated testing
 - Quick local development without OAuth setup
 
-### 2. OAuth Mode
-Used for:
-- Production deployments
-- Custom authentication providers (Google, GitHub, Twitter, Apple)
-- Advanced authentication requirements
+**Note:** Replit Auth uses OIDC (not OAuth 2.0 with client credentials). The `ISSUER_URL` is automatically set to `https://replit.com/oidc` in Replit environments.
 
 ## Environment Variables
 
@@ -24,11 +33,11 @@ Used for:
 - `ISSUER_URL`: Automatically overridden by Replit Agent during testing (do not set manually)
 
 ### OAuth Configuration
-Configure these for OAuth mode:
+Configure these for OAuth providers:
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: Google OAuth credentials
 - `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`: GitHub OAuth credentials
-- `TWITTER_CONSUMER_KEY` and `TWITTER_CONSUMER_SECRET`: Twitter OAuth credentials
-- `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`: Apple OAuth credentials
+- `TWITTER_CLIENT_ID` and `TWITTER_CLIENT_SECRET`: Twitter/X OAuth 2.0 credentials (PKCE)
+- `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_CLIENT_SECRET`: Apple Sign In credentials
 
 ### Session Configuration
 - `SESSION_SECRET`: Required for session management (auto-generated in development if not set)

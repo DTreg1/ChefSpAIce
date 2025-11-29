@@ -28,6 +28,8 @@ PostgreSQL, accessed via Drizzle ORM, is the primary data store. The schema is t
 
 ### AI & Machine Learning
 - **OpenAI API**: GPT-4/GPT-4o for recipe generation, chat, and content moderation, with streaming via SSE.
+- **ML Services**: Semantic search (embeddings), auto-categorization, auto-tagging (NLP), duplicate detection, natural language to SQL.
+- **Retention Campaigns**: Automated user retention system with churn prediction, email campaigns, and intervention scheduling.
 
 ### Food & Nutrition Data
 - **USDA FoodData Central API**: Authoritative nutrition data.
@@ -54,3 +56,9 @@ PostgreSQL, accessed via Drizzle ORM, is the primary data store. The schema is t
 
 ### Infrastructure
 - **PostgreSQL Database**: Primary data store.
+
+## Recent Changes (Sprint 3)
+- Activated ML service with ContentStorage integration for semantic search and content analysis.
+- Activated retention campaigns service with AnalyticsStorage integration for automated user retention.
+- Completed utilities consolidation with shared vectorMath functions.
+- Updated authentication documentation to clarify multi-provider support.

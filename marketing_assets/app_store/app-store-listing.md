@@ -13,7 +13,7 @@ AI chef that knows what's in your fridge. Reduce waste, save money, eat better.
 
 ### Full Description
 
-Transform your kitchen with ChefSpAIce, the intelligent cooking companion powered by GPT-5 AI technology. Say goodbye to food waste and hello to delicious, personalized meals tailored to what you already have at home.
+Transform your kitchen with ChefSpAIce, the intelligent cooking companion powered by GPT-4 AI technology. Say goodbye to food waste and hello to delicious, personalized meals tailored to what you already have at home.
 
 **AI-POWERED RECIPE GENERATION**
 Our advanced AI analyzes your pantry, fridge, and freezer to create custom recipes that match your ingredients, dietary preferences, and cooking skills. Never wonder "what's for dinner?" again.
