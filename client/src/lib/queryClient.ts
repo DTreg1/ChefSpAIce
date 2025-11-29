@@ -2,31 +2,100 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    
-    // Handle session expiry specifically
+    // For 401, check if we need to redirect before consuming the body
     if (res.status === 401) {
+      // Clone the response so we can read it without affecting the original
+      const clonedRes = res.clone();
       try {
+        const text = await clonedRes.text();
         const errorData = JSON.parse(text);
         if (errorData.requiresReauth || errorData.error === 'session_expired') {
           // Force page refresh to trigger re-authentication
           window.location.href = '/';
-          return;
+          // Throw to stop further processing after redirect
+          throw new Error('Session expired - redirecting to login');
         }
-      } catch (_e) {
-        // If parsing fails, continue with normal error handling
+      } catch (e) {
+        // If it's our redirect error, re-throw it
+        if (e instanceof Error && e.message.includes('redirecting to login')) {
+          throw e;
+        }
+        // If parsing fails, continue with normal error handling below
       }
     }
     
+    // Now read the original response body for the error message
+    const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
 }
 
+const HTTP_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
+
+/**
+ * Determine if a string is an HTTP method.
+ * Uses exact match (case-insensitive) to avoid misclassifying URLs like "/api/get-data".
+ */
+function isHttpMethod(value: string): boolean {
+  return typeof value === 'string' && HTTP_METHODS.has(value.toUpperCase());
+}
+
+/**
+ * Make an API request with automatic JSON handling.
+ * Supports both argument orders for backwards compatibility:
+ * - apiRequest(url, method, data) - URL first
+ * - apiRequest(method, url, data) - Method first (legacy pattern)
+ * 
+ * Detection logic: If the first argument is a valid HTTP method AND the second 
+ * argument is NOT a valid HTTP method, assume method-first order.
+ */
 export async function apiRequest<T = any>(
-  url: string,
-  method: string,
+  urlOrMethod: string,
+  methodOrUrl: string,
   data?: unknown | undefined,
 ): Promise<T> {
+  // Validate inputs
+  if (!urlOrMethod || typeof urlOrMethod !== 'string') {
+    throw new Error('apiRequest: first argument must be a non-empty string');
+  }
+  if (!methodOrUrl || typeof methodOrUrl !== 'string') {
+    throw new Error('apiRequest: second argument must be a non-empty string');
+  }
+  
+  // Detect argument order: if first is HTTP method AND second is NOT, assume method-first
+  let url: string;
+  let method: string;
+  
+  const firstIsMethod = isHttpMethod(urlOrMethod);
+  const secondIsMethod = isHttpMethod(methodOrUrl);
+  
+  if (firstIsMethod && !secondIsMethod) {
+    // Called with (method, url, data) - most common pattern in codebase
+    method = urlOrMethod.toUpperCase();
+    url = methodOrUrl;
+  } else if (!firstIsMethod && secondIsMethod) {
+    // Called with (url, method, data)
+    url = urlOrMethod;
+    method = methodOrUrl.toUpperCase();
+  } else if (firstIsMethod && secondIsMethod) {
+    // Both look like methods - ambiguous but rare. Assume url-first since that's the function signature.
+    console.warn(`apiRequest: Ambiguous arguments (${urlOrMethod}, ${methodOrUrl}). Assuming url-first order.`);
+    url = urlOrMethod;
+    method = methodOrUrl.toUpperCase();
+  } else {
+    // Neither is a recognized HTTP method - this is likely a bug
+    // Check if first arg looks like a URL (common case: typo in method)
+    if (urlOrMethod.startsWith('/') || urlOrMethod.startsWith('http')) {
+      console.warn(`apiRequest: Unrecognized HTTP method "${methodOrUrl}". Defaulting to GET.`);
+      url = urlOrMethod;
+      method = 'GET';
+    } else {
+      throw new Error(`apiRequest: Unable to determine URL and method from arguments. ` +
+        `Neither "${urlOrMethod}" nor "${methodOrUrl}" is a recognized HTTP method ` +
+        `(GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS).`);
+    }
+  }
+  
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
@@ -46,16 +115,85 @@ export async function apiRequest<T = any>(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+
+/**
+ * Flatten an object into key-value pairs suitable for URLSearchParams.
+ * Handles nested objects by using dot notation (e.g., {filters: {status: 'open'}} -> 'filters.status=open')
+ * Arrays use repeated keys (e.g., {tags: ['a', 'b']} -> 'tags=a&tags=b')
+ */
+function flattenObjectToParams(obj: Record<string, unknown>, prefix = ''): [string, string][] {
+  const params: [string, string][] = [];
+  
+  for (const [key, value] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    
+    if (value === null || value === undefined) {
+      continue;
+    } else if (Array.isArray(value)) {
+      // Arrays use repeated keys (standard form format)
+      for (const item of value) {
+        if (item !== null && item !== undefined) {
+          if (typeof item === 'object') {
+            // For object items in array, use JSON
+            params.push([fullKey, JSON.stringify(item)]);
+          } else {
+            params.push([fullKey, String(item)]);
+          }
+        }
+      }
+    } else if (typeof value === 'object') {
+      // Recursively flatten nested objects
+      params.push(...flattenObjectToParams(value as Record<string, unknown>, fullKey));
+    } else {
+      params.push([fullKey, String(value)]);
+    }
+  }
+  
+  return params;
+}
+
+/**
+ * Build a URL from query key segments.
+ * - String segments are joined with "/"
+ * - Object segments are converted to URL search params (supports nested objects)
+ * - Other primitive types (numbers, booleans) are converted to strings
+ */
+function buildUrlFromQueryKey(queryKey: readonly unknown[]): string {
+  const pathSegments: string[] = [];
+  const searchParams = new URLSearchParams();
+  
+  for (const segment of queryKey) {
+    if (typeof segment === 'string') {
+      pathSegments.push(segment);
+    } else if (typeof segment === 'number' || typeof segment === 'boolean') {
+      pathSegments.push(String(segment));
+    } else if (segment !== null && typeof segment === 'object' && !Array.isArray(segment)) {
+      // Convert object to query params with nested object support
+      const flatParams = flattenObjectToParams(segment as Record<string, unknown>);
+      for (const [key, value] of flatParams) {
+        searchParams.append(key, value);
+      }
+    }
+    // Skip null, undefined, and arrays (arrays at top level of queryKey are unusual)
+  }
+  
+  const path = pathSegments.join('/').replace(/\/+/g, '/');
+  const queryString = searchParams.toString();
+  
+  return queryString ? `${path}?${queryString}` : path;
+}
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Ensure queryKey is an array and all elements are converted to strings before joining
+    // Ensure queryKey is an array and has at least one element
     if (!Array.isArray(queryKey) || queryKey.length === 0) {
       throw new Error("Invalid queryKey: must be a non-empty array");
     }
-    const url = queryKey.map(key => String(key)).join("/");
+    
+    const url = buildUrlFromQueryKey(queryKey);
     const res = await fetch(url, {
       credentials: "include",
     });
