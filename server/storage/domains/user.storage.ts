@@ -355,13 +355,13 @@ export class UserAuthDomainStorage implements IUserStorage {
   
   async linkOAuthProvider(userId: string, provider: string, providerId: string): Promise<void> {
     const context = createContext("linkOAuthProvider", userId);
-    context.additionalInfo = { provider };
+    context.additionalInfo = { provider, providerId };
     try {
-      const providerField = `${provider}Id`;
-      const updates: Partial<User> = {};
-      (updates as Record<string, unknown>)[providerField] = providerId;
-      
-      await this.updateUser(userId, updates);
+      // Update user's primary provider info
+      await this.updateUser(userId, {
+        primaryProvider: provider,
+        primaryProviderId: providerId,
+      } as Partial<User>);
     } catch (error) {
       console.error(`[${DOMAIN}] Error linking OAuth provider for user ${userId}:`, error);
       if (error instanceof StorageError) throw error;
@@ -373,11 +373,14 @@ export class UserAuthDomainStorage implements IUserStorage {
     const context = createContext("unlinkOAuthProvider", userId);
     context.additionalInfo = { provider };
     try {
-      const providerField = `${provider}Id`;
-      const updates: Partial<User> = {};
-      (updates as Record<string, unknown>)[providerField] = null;
-      
-      await this.updateUser(userId, updates);
+      // Only unlink if it matches the current primary provider
+      const user = await this.getUserById(userId);
+      if (user?.primaryProvider === provider) {
+        await this.updateUser(userId, {
+          primaryProvider: null,
+          primaryProviderId: null,
+        } as Partial<User>);
+      }
     } catch (error) {
       console.error(`[${DOMAIN}] Error unlinking OAuth provider for user ${userId}:`, error);
       if (error instanceof StorageError) throw error;
@@ -393,14 +396,15 @@ export class UserAuthDomainStorage implements IUserStorage {
       additionalInfo: { provider, providerId }
     };
     try {
-      const providerField = `${provider}Id`;
-      const query = db
+      // Query using primaryProvider and primaryProviderId columns
+      const [user] = await db
         .select()
         .from(users)
-        .where(sql`${sql.identifier(providerField)} = ${providerId}`)
+        .where(and(
+          eq(users.primaryProvider, provider),
+          eq(users.primaryProviderId, providerId)
+        ))
         .limit(1);
-      
-      const [user] = await query;
       
       if (!user) return undefined;
       
@@ -431,15 +435,15 @@ export class UserAuthDomainStorage implements IUserStorage {
       
       if (!user) return undefined;
       
-      const providerField = `${provider}Id`;
-      const providerId = (user as Record<string, unknown>)[providerField] as string | undefined;
-      
-      if (!providerId) return undefined;
+      // Check if this user's primary provider matches
+      if (user.primaryProvider !== provider || !user.primaryProviderId) {
+        return undefined;
+      }
       
       return {
         id: user.id,
         provider: provider as AuthProviderInfo['provider'],
-        providerId,
+        providerId: user.primaryProviderId,
         userId: user.id,
         displayName: user.firstName || user.email || '',
         email: user.email
