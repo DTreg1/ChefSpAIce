@@ -265,15 +265,70 @@ class TwitterOAuth2Strategy extends OAuth2Strategy {
     super({ ...options, passReqToCallback: true }, verify);
     this.name = 'twitter';
     
-    // Configure OAuth2 client to use Basic Auth for token exchange
-    // This is required by Twitter OAuth 2.0
-    (this as any)._oauth2.useAuthorizationHeaderforGET(true);
-    
-    // Set custom headers for token requests
+    // Override the OAuth2 client's getOAuthAccessToken to use Basic Auth
+    // Twitter OAuth 2.0 requires Basic Auth header for token exchange
+    const oauth2 = (this as any)._oauth2;
     const credentials = Buffer.from(`${options.clientID}:${options.clientSecret}`).toString('base64');
-    (this as any)._oauth2._customHeaders = {
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded'
+    const tokenURL = options.tokenURL;
+    
+    // Replace the getOAuthAccessToken method to use proper Basic Auth
+    oauth2.getOAuthAccessToken = function(
+      code: string, 
+      params: any, 
+      callback: (err: any, accessToken?: string, refreshToken?: string, results?: any) => void
+    ) {
+      // Build the request body (without client credentials - they go in header)
+      const postData = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: params.redirect_uri,
+        code_verifier: params.code_verifier,
+      }).toString();
+      
+      console.log('[Twitter OAuth] Making token request with Basic Auth');
+      
+      // Make the request with Basic Auth header
+      const https = require('https');
+      const url = new URL(tokenURL);
+      
+      const reqOptions = {
+        hostname: url.hostname,
+        path: url.pathname,
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(postData),
+        }
+      };
+      
+      const req = https.request(reqOptions, (res: any) => {
+        let data = '';
+        res.on('data', (chunk: any) => data += chunk);
+        res.on('end', () => {
+          try {
+            const result = JSON.parse(data);
+            if (result.error) {
+              console.error('[Twitter OAuth] Token error:', result);
+              callback(new Error(result.error_description || result.error));
+            } else {
+              console.log('[Twitter OAuth] Token exchange successful');
+              callback(null, result.access_token, result.refresh_token, result);
+            }
+          } catch (e) {
+            console.error('[Twitter OAuth] Parse error:', data);
+            callback(e);
+          }
+        });
+      });
+      
+      req.on('error', (e: any) => {
+        console.error('[Twitter OAuth] Request error:', e);
+        callback(e);
+      });
+      
+      req.write(postData);
+      req.end();
     };
   }
   
