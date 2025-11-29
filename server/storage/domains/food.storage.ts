@@ -23,13 +23,14 @@ import {
 } from "@shared/schema";
 
 import { PaginationHelper, PaginatedResponse } from "../../utils/pagination";
+import type { IFoodStorage } from "../interfaces/IFoodStorage";
 
 // Type for storage location with item count
 export interface StorageLocationWithCount extends UserStorage {
   itemCount?: number;
 }
 
-export class FoodStorage {
+export class FoodStorage implements IFoodStorage {
   // ==================== Food Inventory Methods ====================
 
   async getFoodItems(

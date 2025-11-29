@@ -34,6 +34,7 @@ import {
   type InsertMaintenanceHistory,
   maintenanceHistory,
 } from "@shared/schema/system";
+import type { ISystemStorage } from "../interfaces/ISystemStorage";
 
 // Type for paginated response
 interface PaginatedResponse<T> {
@@ -45,7 +46,7 @@ interface PaginatedResponse<T> {
   offset: number;
 }
 
-export class SystemStorage {
+export class SystemStorage implements ISystemStorage {
   // ==================== API Usage Logging ====================
 
   async logApiUsage(

@@ -89,13 +89,14 @@ import {
   type SavePattern,
   savePatterns,
 } from "@shared/schema/forms";
+import type { IAiMlStorage } from "../interfaces/IAiMlStorage";
 
 // Local type aliases for Insert types (not exported from schema)
 type InsertExcerpt = Omit<Excerpt, "id" | "createdAt">;
 type InsertExcerptPerformance = Omit<ExcerptPerformance, "id" | "createdAt">;
 type InsertLanguagePreference = Omit<LanguagePreference, "id" | "createdAt" | "updatedAt">;
 
-export class AiMlStorage {
+export class AiMlStorage implements IAiMlStorage {
   // ==================== Voice Commands ====================
 
   async createVoiceCommand(command: InsertVoiceCommand): Promise<VoiceCommand> {
