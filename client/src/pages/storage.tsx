@@ -298,12 +298,14 @@ export default function Storage() {
   const bulkUpdateExpirationMutation = useMutation({
     mutationFn: async ({ ids, date }: { ids: string[], date: string }) => {
       const promises = ids.map(id => 
-        apiRequest(`/api/v1/food-items/${id}`, "PATCH", { expirationDate: date })
+        apiRequest(API_ENDPOINTS.inventory.foodItem(id), "PATCH", { expirationDate: date })
       );
       return await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.list] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.nutrition.data] });
       toast({
         title: "Expiration dates updated",
         description: `Successfully updated ${selectedItems.size} items`,

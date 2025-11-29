@@ -123,16 +123,23 @@ router.post(
   }
 );
 
-// Food items CRUD
+// Food items CRUD - Get single food item by ID
 router.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const items = await storage.user.inventory.getFoodItems(userId);
-    res.json(items);
+    const itemId = req.params.id;
+    
+    const item = await storage.user.inventory.getFoodItem(userId, itemId);
+    
+    if (!item) {
+      return res.status(404).json({ error: "Food item not found" });
+    }
+    
+    res.json(item);
   } catch (error) {
-    console.error("Error fetching food items:", error);
-    res.status(500).json({ error: "Failed to fetch food items" });
+    console.error("Error fetching food item:", error);
+    res.status(500).json({ error: "Failed to fetch food item" });
   }
 });
 

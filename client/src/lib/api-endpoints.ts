@@ -9,15 +9,15 @@ export const API_BASE = '/api/v1';
 export const API_ENDPOINTS = {
   // User & Inventory endpoints
   inventory: {
-    list: `${API_BASE}/inventories`,
-    item: (id: string) => `${API_BASE}/inventories/${id}`,
-    storageLocations: `${API_BASE}/storage-locations`,
+    list: `${API_BASE}/inventory`,
+    item: (id: string) => `${API_BASE}/inventory/${id}`,
+    storageLocations: `${API_BASE}/inventory/storage-locations`,
     foodItems: `${API_BASE}/food-items`,
-    foodItem: (id: string) => `${API_BASE}/food-items/${id}`,
-    foodCategories: `${API_BASE}/food-categories`,
-    enrichFood: `${API_BASE}/food/enrich`,
-    foodImages: `${API_BASE}/food-images`,
-    onboardingItems: `${API_BASE}/onboarding/common-items`,
+    foodItem: (id: string) => `${API_BASE}/inventory/${id}`,
+    foodCategories: `${API_BASE}/inventory/categories`,
+    enrichFood: `${API_BASE}/inventory/enrichment`,
+    foodImages: `${API_BASE}/inventory/images`,
+    onboardingItems: `${API_BASE}/inventory/common-items`,
   },
   
   // Shopping List endpoints
