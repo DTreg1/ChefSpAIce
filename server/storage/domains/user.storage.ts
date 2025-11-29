@@ -132,7 +132,8 @@ export class UserAuthDomainStorage implements IUserStorage {
         })
         .returning();
       
-      await this.ensureDefaultDataForUser(newUser.id);
+      // Note: Default storage locations are now created during the onboarding flow
+      // to avoid duplicate key conflicts and ensure consistent naming
       
       return newUser;
     } catch (error) {
