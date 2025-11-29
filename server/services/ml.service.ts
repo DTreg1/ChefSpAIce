@@ -55,6 +55,29 @@ function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 /**
+ * Supported content types for storage embeddings
+ */
+type EmbeddingContentType = 'recipe' | 'article' | 'product' | 'document' | 'media';
+
+/**
+ * Map application content types to storage-supported embedding content types
+ */
+function mapToEmbeddingContentType(contentType: string): EmbeddingContentType {
+  const mapping: Record<string, EmbeddingContentType> = {
+    'recipe': 'recipe',
+    'inventory': 'product',
+    'meal_plan': 'document',
+    'chat': 'document',
+    'article': 'article',
+    'product': 'product',
+    'document': 'document',
+    'media': 'media',
+  };
+  
+  return mapping[contentType] || 'document';
+}
+
+/**
  * Prepare text for embedding by combining relevant fields
  */
 function prepareTextForEmbedding(content: any, contentType: string): string {
@@ -128,7 +151,7 @@ export class MLService {
     
     const embeddingData = {
       contentId,
-      contentType: contentType as 'recipe' | 'article' | 'product' | 'document' | 'media',
+      contentType: mapToEmbeddingContentType(contentType),
       embedding,
       embeddingType: "full" as const,
       metadata: metadata || {
@@ -136,6 +159,7 @@ export class MLService {
         category: content.category || content.foodCategory,
         tags: content.tags,
         userId,
+        originalContentType: contentType,
       },
     };
     
@@ -156,10 +180,11 @@ export class MLService {
     similarity: number;
   }>> {
     const queryEmbedding = await this.generateEmbedding(query);
+    const mappedContentType = mapToEmbeddingContentType(contentType);
     
     const results = await storage.platform.content.searchByEmbedding(
       queryEmbedding,
-      contentType,
+      mappedContentType,
       limit
     );
     
