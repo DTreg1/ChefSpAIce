@@ -361,6 +361,11 @@ export function configureTwitterStrategy(hostname: string) {
   if (isOAuthConfigured("twitter")) {
     const callbackURL = getCallbackURL("twitter", hostname);
     
+    // Twitter OAuth 2.0 requires Basic Auth for token exchange
+    const credentials = Buffer.from(
+      `${oauthConfig.twitter.clientID}:${oauthConfig.twitter.clientSecret}`
+    ).toString('base64');
+    
     // Create custom OAuth 2.0 strategy for Twitter with PKCE
     // Note: state is managed manually in authorizationParams for PKCE correlation
     const strategy = new TwitterOAuth2Strategy(
@@ -372,6 +377,9 @@ export function configureTwitterStrategy(hostname: string) {
         callbackURL: callbackURL,
         scope: oauthConfig.twitter.scope.join(" "),
         state: false, // We manage state ourselves for PKCE
+        customHeaders: {
+          Authorization: `Basic ${credentials}`,
+        },
       },
       // Note: passReqToCallback is true, so first param is req
       async (req: any, accessToken: string, refreshToken: string, params: any, profile: any, done: any) => {
