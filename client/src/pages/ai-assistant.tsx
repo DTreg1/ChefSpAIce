@@ -26,9 +26,9 @@ export default function AIAssistant() {
   };
 
   return (
-    <div className="flex h-full gap-4">
+    <div className="flex gap-4 p-4 min-h-[calc(100vh-5rem)]">
       {/* Sidebar with conversation history */}
-      <div className="w-80 flex-shrink-0">
+      <div className="w-80 flex-shrink-0 h-[calc(100vh-7rem)] sticky top-4">
         <ConversationSidebar 
           currentConversationId={currentConversationId}
           onSelectConversation={handleConversationSelect}
@@ -58,7 +58,7 @@ export default function AIAssistant() {
         )}
 
         {/* Chat Interface */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-[400px]">
           <ChatInterface 
             conversationId={currentConversationId}
             onNewConversation={handleConversationSelect}
