@@ -353,16 +353,17 @@ The Team
   private async recordCampaignResult(campaign: EmailCampaign, success: boolean) {
     if (campaign.predictionId) {
       try {
+        const outcomeData = { 
+          result: success ? 'intervention_successful' : 'intervention_failed',
+          campaignId: campaign.id,
+          campaignType: campaign.campaignType,
+          subject: campaign.subject,
+          sentAt: campaign.sentAt?.toISOString(),
+          interventionMetadata: campaign.metadata?.intervention || null,
+        };
         const accuracy: InsertPredictionAccuracy = {
           predictionId: campaign.predictionId,
-          actualOutcome: { 
-            result: success ? 'intervention_successful' : 'intervention_failed',
-            campaignId: campaign.id,
-            campaignType: campaign.campaignType,
-            subject: campaign.subject,
-            sentAt: campaign.sentAt?.toISOString(),
-            interventionMetadata: campaign.metadata?.intervention || null,
-          },
+          actualOutcome: outcomeData as unknown as InsertPredictionAccuracy['actualOutcome'],
           isCorrect: success,
           accuracyScore: success ? 0.9 : 0.3,
           evaluatedAt: new Date(),
