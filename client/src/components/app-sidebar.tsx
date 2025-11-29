@@ -718,9 +718,10 @@ export function AppSidebar() {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => {
+              onClick={async () => {
                 CacheStorage.clear();
-                window.location.href = API_ENDPOINTS.auth.logout;
+                await fetch(API_ENDPOINTS.auth.logout, { method: 'POST', credentials: 'include' });
+                window.location.href = '/';
               }}
               data-testid="button-logout"
             >

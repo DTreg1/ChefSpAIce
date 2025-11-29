@@ -511,9 +511,10 @@ export default function Settings() {
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => {
+                      onClick={async () => {
                         CacheStorage.clear();
-                        window.location.href = "/api/auth/logout";
+                        await fetch("/api/auth/logout", { method: 'POST', credentials: 'include' });
+                        window.location.href = '/';
                       }}
                       data-testid="button-logout"
                     >
