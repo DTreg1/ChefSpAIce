@@ -24,8 +24,6 @@ import { PushNotificationHandler } from "@/components/PushNotificationHandler";
 import { VoiceControl } from "@/components/voice/VoiceControl";
 import { ChatWidget } from "@/components/ChatWidget";
 import { FeedbackWidget } from "@/components/feedback-widget";
-// Only lazy load non-critical visual components
-import { LazyAnimatedBackground } from "@/components/lazy/LazyProviders";
 
 // Eagerly loaded pages (critical path)
 import Landing from "@/pages/landing";
@@ -277,22 +275,6 @@ function AppContent() {
   // Show app layout with header (with or without sidebar based on onboarding status)
   return (
     <>
-      {/* Lazy-loaded animated background only on chat pages */}
-      <LazyAnimatedBackground />
-
-      {/* Critical providers - eagerly loaded for proper initialization */}
-      {location !== "/" && <PushNotificationHandler />}
-      {location !== "/" && <ChatWidget />}
-
-      <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
-      <UnifiedRecipeDialog
-        open={recipeDialogOpen}
-        onOpenChange={setRecipeDialogOpen}
-      />
-
-      {/* Conditionally show feedback widget on non-chat pages */}
-      {location !== "/" && !location.startsWith("/chat") && <FeedbackWidget />}
-
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
           {/* Header outside the sidebar container but inside SidebarProvider */}

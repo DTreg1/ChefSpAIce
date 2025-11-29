@@ -82,8 +82,8 @@ export function ChatMessage({
             />
           ) : (
             <div className="text-base leading-relaxed whitespace-pre-wrap">
-              <EnrichedContent 
-                text={content} 
+              <EnrichedContent
+                text={content}
                 usePopover={true}
                 enableDetection={true}
               />
@@ -95,7 +95,11 @@ export function ChatMessage({
 
         <div className="flex items-center gap-2 mt-1">
           {!isUser && (
-            <VoiceControls text={content} autoPlay={autoPlayVoice} className="h-6 w-6" />
+            <VoiceControls
+              text={content}
+              autoPlay={autoPlayVoice}
+              className="h-6 w-6"
+            />
           )}
           {timestamp && (
             <span
