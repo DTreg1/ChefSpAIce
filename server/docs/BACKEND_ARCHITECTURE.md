@@ -192,6 +192,13 @@ server/
 │   └── channels/
 │
 └── utils/                   # Shared utilities
+    ├── vectorMath.ts        # Vector operations (cosine similarity, etc.)
+    ├── retry-handler.ts     # Generic retry with exponential backoff
+    ├── ai-error-handler.ts  # AI-specific error handling
+    ├── circuit-breaker.ts   # Circuit breaker pattern
+    ├── cache.ts             # Caching utilities
+    ├── pagination.ts        # Pagination helpers
+    └── ...                  # Other utilities
 ```
 
 ---
@@ -492,6 +499,92 @@ Example: ai-routing.service.ts, push-notification.service.ts
 
 ---
 
+## Shared Utilities
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            SHARED UTILITIES                                   │
+│                              server/utils/                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+VECTOR MATH (vectorMath.ts)
+───────────────────────────
+Centralized vector operations for embedding-based features:
+• cosineSimilarity()    - Similarity between vectors (-1 to 1)
+• dotProduct()          - Dot product of two vectors
+• euclideanNorm()       - Vector magnitude (L2 norm)
+• normalizeVector()     - Normalize to unit length
+• euclideanDistance()   - Distance between vectors
+• addVectors()          - Element-wise addition
+• subtractVectors()     - Element-wise subtraction
+• scaleVector()         - Scalar multiplication
+• meanVector()          - Average of multiple vectors
+
+Used by: embeddings.service.ts, duplicate-detection.service.ts
+
+
+RETRY HANDLING (retry-handler.ts)
+─────────────────────────────────
+Generic retry mechanism with exponential backoff:
+• retryWithBackoff()    - Retry async operations with backoff
+• calculateRetryDelay() - Compute delay with jitter
+• isRetryableError()    - Check if error is retryable
+• createRetryWrapper()  - Create preconfigured retry function
+• RetryTracker class    - Track retry attempts/failures
+
+Configuration: maxRetries, initialDelay, maxDelay, backoffMultiplier, jitter
+
+
+AI ERROR HANDLING (ai-error-handler.ts)
+───────────────────────────────────────
+OpenAI-specific error handling layer (wraps retry-handler):
+• AIError class         - Structured error with code/status/retry info
+• handleOpenAIError()   - Convert errors to AIError
+• retryWithBackoff()    - AI-aware retry with error conversion
+• formatErrorForLogging() - Structured error logging
+• createErrorResponse() - User-friendly error responses
+
+Error Codes: RATE_LIMIT, AUTH_ERROR, SERVER_ERROR, CONTENT_POLICY,
+             TIMEOUT, NETWORK_ERROR, CONTEXT_LENGTH_EXCEEDED
+
+
+CIRCUIT BREAKER (circuit-breaker.ts)
+────────────────────────────────────
+Prevent cascade failures for external services:
+• CircuitBreaker class  - State machine (CLOSED → OPEN → HALF_OPEN)
+• Configurable thresholds and timeouts
+• Auto-recovery with half-open testing
+
+
+CACHING (cache.ts)
+──────────────────
+In-memory caching utilities:
+• LRU cache implementation
+• TTL-based expiration
+• Cache key generators
+
+
+OTHER UTILITIES
+───────────────
+• pagination.ts         - Pagination helpers (offset/limit, cursors)
+• dateRangeFilter.ts    - Date range query helpers
+• unitConverter.ts      - Unit conversion (cooking measurements)
+• nutritionCalculator.ts - Nutrition calculations
+• batchQueries.ts       - Batch database operations
+• apiError.ts           - API error classes
+
+
+UTILITY DESIGN PRINCIPLES
+─────────────────────────
+1. Single Responsibility: Each utility handles one concern
+2. Zero Side Effects: Pure functions where possible
+3. Type Safety: Full TypeScript types for all parameters
+4. Layered Abstractions: ai-error-handler wraps retry-handler
+5. Backward Compatibility: Re-exports for existing imports
+```
+
+---
+
 ## Data Model Summary
 
 The schema is defined in `shared/schema.ts` and includes:
@@ -557,10 +650,19 @@ The schema is defined in `shared/schema.ts` and includes:
 - Fixed `getChatMessages` signature in `StorageRoot.ts` to accept optional limit parameter
 - Marked `ml.service.ts` and `retention-campaigns.service.ts` as @experimental (require storage layer work)
 
-### Sprint 3 (Aggressive) - Planned
+### Sprint 3 (Aggressive) - In Progress
 - Implement missing storage methods for ml.service.ts
 - Activate retention-campaigns.service.ts with proper email provider
 - Full router consolidation with service layer
+
+### Sprint 4 (Utilities Consolidation) - Complete
+- Created `server/utils/vectorMath.ts` with shared vector operations
+- Consolidated `cosineSimilarity` function used by multiple services
+- Updated `embeddings.service.ts` to use shared vectorMath utility
+- Updated `duplicate-detection.service.ts` to use:
+  - Centralized OpenAI client from `server/integrations/openai.ts`
+  - Shared `cosineSimilarity` from `vectorMath.ts`
+- Documented layered utility pattern (ai-error-handler → retry-handler)
 
 ### Service Layer Pattern
 ```
@@ -579,4 +681,4 @@ The following services are marked `@experimental` and NOT operational:
 ---
 
 *Last updated: November 2025*
-*Sprint 2 (Moderate) Cleanup Complete*
+*Sprint 4 (Utilities Consolidation) Complete*
