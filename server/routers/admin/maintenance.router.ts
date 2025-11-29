@@ -261,9 +261,9 @@ router.get("/api/maintenance/metrics", isAuthenticated, async (req, res, next) =
     
     const metrics = await storage.platform.system.getSystemMetrics(
       params.component,
-      params.startDate,
-      params.endDate,
-      params.limit || 100
+      params.startDate as any,
+      params.endDate as any,
+      (params.limit || 100) as any
     );
     
     // Calculate statistics
@@ -334,10 +334,9 @@ router.post("/api/maintenance/simulate", isAuthenticated, adminOnly, async (req,
         baseValue + (Math.random() - 0.5) * 10;
       
       const metric = await predictiveMaintenanceService.ingestMetric({
-        component,
+        metricType: metricType as "performance" | "resource" | "error_rate" | "availability" | "latency",
         metricName: metricType,
         value,
-        timestamp: new Date(),
         metadata: {
           cpu: { usage: value, cores: 4 },
           memory: { used: value * 10, total: 1000, percentage: value },

@@ -708,7 +708,7 @@ export default function SentimentDashboard() {
               description="Track sentiment changes over time"
               height={400}
               showCounts
-              onPeriodChange={(period) => setPeriodType(period)}
+              onPeriodChange={(period) => setPeriodType(period as "day" | "week" | "month")}
             />
           ) : (
             <Alert>

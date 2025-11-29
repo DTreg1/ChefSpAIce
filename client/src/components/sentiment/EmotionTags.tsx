@@ -79,16 +79,18 @@ export function EmotionTags({
           const intensitySize = emotionData.intensity > 0.7 ? 'text-base' :
                                 emotionData.intensity > 0.4 ? 'text-sm' : 'text-xs';
 
+          const wrapperProps = animated && tagVariants ? {
+            variants: tagVariants,
+            initial: "hidden" as const,
+            animate: "visible" as const,
+            exit: "exit" as const,
+            transition: { delay: index * 0.05 },
+          } : {};
+
           return (
             <TagWrapper
               key={emotionData.emotion}
-              {...(animated && tagVariants ? {
-                variants: tagVariants,
-                initial: "hidden" as const,
-                animate: "visible" as const,
-                exit: "exit" as const,
-                transition: { delay: index * 0.05 },
-              }: {})}
+              {...(wrapperProps as any)}
             >
               <Badge
                 variant="outline"

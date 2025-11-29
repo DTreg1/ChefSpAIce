@@ -91,7 +91,7 @@ class PushNotificationService {
 
       // Request notification permission
       const permission = await Notification.requestPermission();
-      this.permissionState = permission;
+      this.permissionState = permission as "prompt" | "unknown" | "granted" | "denied";
       
       if (permission !== 'granted') {
         const message = permission === 'denied' 

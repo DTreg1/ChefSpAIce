@@ -171,7 +171,7 @@ export default function ModerationTest() {
                       {result.allowed ? 'Allowed' : result.blocked ? 'Blocked' : 'Flagged'}
                     </Badge>
                     {result.severity && (
-                      <Badge variant={getSeverityColor(result.severity)}>
+                      <Badge variant={getSeverityColor(result.severity) as "default" | "outline" | "destructive" | "secondary"}>
                         Severity: {result.severity}
                       </Badge>
                     )}

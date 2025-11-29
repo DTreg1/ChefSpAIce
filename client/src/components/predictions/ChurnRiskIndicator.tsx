@@ -148,7 +148,7 @@ export function ChurnRiskIndicator({ userId, onInterventionClick }: ChurnRiskInd
         </div>
 
         <div className="text-xs text-muted-foreground">
-          Prediction generated: {new Date(churnPrediction.createdAt).toLocaleDateString()}
+          Prediction generated: {new Date(churnPrediction.createdAt as any).toLocaleDateString()}
         </div>
       </CardContent>
     </Card>

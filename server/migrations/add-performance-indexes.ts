@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "../db";
 import { sql } from "drizzle-orm";
 
 // This script adds performance indexes for common query patterns

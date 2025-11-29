@@ -208,8 +208,7 @@ Return as JSON with format:
         allowWeekends,
         preferredTimeOfDay
       },
-      status: "pending",
-    });
+    } as any);
     
     res.json(suggestions);
   } catch (error) {

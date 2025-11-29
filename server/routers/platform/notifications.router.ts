@@ -152,9 +152,8 @@ router.post("/:id/dismiss", isAuthenticated, async (req, res) => {
     }
 
     const { id } = req.params;
-    const { dismissedBy  } = req.body || {};
 
-    await storage.user.notifications.dismissNotification(userId, id, dismissedBy);
+    await storage.user.notifications.dismissNotification(id);
 
     res.json({ message: "Notification dismissed successfully" });
   } catch (error: unknown) {

@@ -105,17 +105,19 @@ export const trackEvent = (
   const sessionId = getOrCreateSessionId();
   
   const event: Partial<InsertAnalyticsEvent> = {
-    sessionId,
-    eventType,
-    eventCategory,
-    eventAction,
-    eventLabel,
-    eventValue,
-    properties,
-    pageUrl: window.location.href,
-    referrer: document.referrer || undefined,
-    ...deviceInfo,
-    timeOnPage: Math.floor((Date.now() - performance.timing.navigationStart) / 1000),
+    eventName: eventType,
+    eventCategory: eventCategory as "system" | "ui" | "api" | "error" | "user" | undefined,
+    metadata: {
+      sessionId,
+      eventAction,
+      eventLabel,
+      eventValue,
+      ...properties,
+      pageUrl: window.location.href,
+      referrer: document.referrer || undefined,
+      ...deviceInfo,
+      timeOnPage: Math.floor((Date.now() - performance.timing.navigationStart) / 1000),
+    },
   };
   
   eventQueue.push(event);

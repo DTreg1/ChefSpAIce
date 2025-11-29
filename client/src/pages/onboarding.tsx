@@ -403,7 +403,7 @@ export default function Onboarding() {
                       {/* Group equipment by category */}
                       {["appliance", "cookware", "bakeware", "utensil"].map((category) => {
                         const categoryItems = commonEquipment.filter(
-                          (item) => item.category === category
+                          (item) => item.type === category
                         );
                         if (categoryItems.length === 0) return null;
                         

@@ -497,7 +497,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
         ) : (
           // Search interface
           <div className="flex-1 overflow-hidden flex flex-col">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} className="flex-1 flex flex-col">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "search" | "scan" | "browse")} className="flex-1 flex flex-col">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="search">
                   <Search className="h-4 w-4 mr-2" />

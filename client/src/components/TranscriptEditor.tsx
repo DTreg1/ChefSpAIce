@@ -300,7 +300,7 @@ export function TranscriptEditor({
                         )}
                         {segment.confidence && (
                           <Badge 
-                            variant={getConfidenceColor(segment.confidence)}
+                            variant={getConfidenceColor(segment.confidence) as "default" | "outline" | "destructive" | "secondary"}
                             className="text-xs"
                           >
                             {Math.round(segment.confidence * 100)}%

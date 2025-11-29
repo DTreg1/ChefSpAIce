@@ -383,7 +383,7 @@ export default function OCRPage() {
                 <ExtractedText
                   text={extractedText}
                   confidence={confidence}
-                  corrections={corrections}
+                  corrections={corrections as any}
                   onSaveCorrection={handleSaveCorrection}
                 />
                 <div className="mt-4 flex justify-end">

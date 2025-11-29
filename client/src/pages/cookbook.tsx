@@ -24,7 +24,7 @@ export default function Cookbook() {
 
   // Get the names of equipment the user owns
   const userEquipmentNames = useMemo(() => {
-    const equipment = userEquipmentResponse;
+    const equipment = userEquipmentResponse as any;
     return equipment?.data?.map((eq: any) => eq.applianceName?.toLowerCase()) || [];
   }, [userEquipmentResponse]);
 

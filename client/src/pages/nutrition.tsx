@@ -234,7 +234,7 @@ export default function Nutrition() {
                       const servingSize = parseFloat(item.nutrition?.servingSize || "100") || 100;
                       const multiplier = item.weightInGrams / servingSize;
                       const protein = (item.nutrition?.protein || 0) * multiplier;
-                      const carbs = (item.nutrition?.carbs || 0) * multiplier;
+                      const carbs = (item.nutrition?.carbohydrates || 0) * multiplier;
                       const fat = (item.nutrition?.fat || 0) * multiplier;
                       const itemTotalMacros = protein + carbs + fat;
                       

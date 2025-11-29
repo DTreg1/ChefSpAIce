@@ -76,10 +76,9 @@ export function SearchResults({
       onResultClick(
         {
           ...result,
-          searchLogId,
           clickPosition: index + 1, // 1-based position
           timeToClick,
-        },
+        } as any,
         index + 1
       );
     }

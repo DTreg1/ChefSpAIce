@@ -618,7 +618,7 @@ export const FoodCard = React.memo(function FoodCard({ item, storageLocationName
                       </div>
                       <div className="flex flex-col">
                         <span className="text-muted-foreground">Carbs</span>
-                        <span className="font-medium" data-testid={`text-carbs-${item.id}`}>{nutritionData.carbs}g</span>
+                        <span className="font-medium" data-testid={`text-carbs-${item.id}`}>{nutritionData.carbohydrates}g</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-muted-foreground">Fat</span>

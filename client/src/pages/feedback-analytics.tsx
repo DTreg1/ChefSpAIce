@@ -203,7 +203,7 @@ export default function FeedbackAnalyticsPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{analytics.topIssues.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {analytics.topIssues[0]?.category || "No issues"}
+                  {(analytics.topIssues[0] as any)?.category || "No issues"}
                 </p>
               </CardContent>
             </Card>

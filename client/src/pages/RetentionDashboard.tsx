@@ -202,10 +202,10 @@ export default function RetentionDashboard() {
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge 
-                              variant={risk.probability >= 0.8 ? "destructive" : "default"}
+                              variant={risk.confidence >= 0.8 ? "destructive" : "default"}
                               data-testid={`badge-risk-${risk.userId}`}
                             >
-                              {Math.round(risk.probability * 100)}% risk
+                              {Math.round(risk.confidence * 100)}% risk
                             </Badge>
                             {churnData?.interventions?.[risk.userId] && (
                               <CheckCircle className="h-4 w-4 text-green-600" />

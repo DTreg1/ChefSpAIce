@@ -212,8 +212,8 @@ export const createLogger = (context: string) => logger.createContext(context);
 
 // Make available globally for debugging
 if (import.meta.env.DEV) {
-  (window).logger = logger;
-  (window).LogLevel = LogLevel;
+  (window as any).logger = logger;
+  (window as any).LogLevel = LogLevel;
 }
 
 export default logger;

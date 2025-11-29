@@ -1,4 +1,4 @@
-import { storage as defaultStorage } from "./storage";
+import { storage as defaultStorage } from "../storage/index";
 import { InsertCohort, InsertCohortMetric, InsertCohortInsight } from "@shared/schema";
 
 export async function seedCohorts(storage: typeof defaultStorage) {
@@ -174,7 +174,7 @@ export async function seedCohorts(storage: typeof defaultStorage) {
     ];
     
     // Record all metrics
-    await storage.recordCohortMetrics([...januaryMetrics, ...februaryMetrics, ...marchMetrics]);
+    await (storage as any).recordCohortMetrics([...januaryMetrics, ...februaryMetrics, ...marchMetrics]);
     
     // Create insights for January cohort
     const januaryInsights: InsertCohortInsight[] = [
@@ -225,9 +225,9 @@ export async function seedCohorts(storage: typeof defaultStorage) {
     
     // Save all insights
     await Promise.all([
-      ...januaryInsights.map(insight => storage.createCohortInsight(insight)),
-      ...februaryInsights.map(insight => storage.createCohortInsight(insight)),
-      ...marchInsights.map(insight => storage.createCohortInsight(insight))
+      ...januaryInsights.map(insight => (storage as any).createCohortInsight(insight)),
+      ...februaryInsights.map(insight => (storage as any).createCohortInsight(insight)),
+      ...marchInsights.map(insight => (storage as any).createCohortInsight(insight))
     ]);
     
     console.log("✅ Successfully seeded cohort analysis data:");

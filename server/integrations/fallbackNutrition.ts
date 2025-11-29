@@ -90,7 +90,7 @@ function averageNutrition(profiles: Partial<NutritionInfo>[]): Partial<Nutrition
   for (const key of keys) {
     const values = profiles.map(p => p[key]).filter(v => v !== undefined) as number[];
     if (values.length > 0) {
-      result[key] = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+      (result as any)[key] = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
     }
   }
   
@@ -125,7 +125,14 @@ function createFallbackFoodItem(
     description: foodName,
     dataType: "Fallback",
     brandOwner: "",
+    servingSize: 100,
+    servingSizeUnit: "g",
+    ingredients: "",
+    foodCategory: "General",
+    foodNutrients: [],
     nutrition: {
+      servingSize: "100",
+      servingUnit: "g",
       calories: nutrition.calories || 0,
       protein: nutrition.protein || 0,
       carbohydrates: nutrition.carbohydrates || 0,
@@ -133,13 +140,11 @@ function createFallbackFoodItem(
       fiber: nutrition.fiber || 0,
       sugar: nutrition.sugar || 0,
       sodium: nutrition.sodium || 0,
-      // Optional nutrients
       saturatedFat: nutrition.saturatedFat,
       transFat: nutrition.transFat,
       cholesterol: nutrition.cholesterol,
       calcium: nutrition.calcium,
       iron: nutrition.iron,
-      potassiumMg: nutrition.potassiumMg,
       vitaminA: nutrition.vitaminA,
       vitaminC: nutrition.vitaminC,
       vitaminD: nutrition.vitaminD

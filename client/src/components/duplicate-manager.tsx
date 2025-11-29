@@ -411,7 +411,7 @@ export function DuplicateManager() {
             <DuplicateComparison
               content1={selectedPair.content1}
               content2={selectedPair.content2}
-              contentType={selectedPair.contentType1}
+              contentType={selectedPair.contentType1 as "recipe" | "inventory" | "chat"}
               similarity={selectedPair.similarityScore}
               onMerge={(keepId, mergeFromId) => {
                 handleResolve('merged');

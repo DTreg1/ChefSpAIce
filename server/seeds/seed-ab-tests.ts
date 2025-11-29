@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { storage as defaultStorage } from './storage';
+import { storage as defaultStorage } from '../storage/index';
 import { type InsertAbTest, type InsertAbTestResult, type InsertAbTestInsight, type AbTest } from '@shared/schema';
 
 export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
@@ -228,7 +228,7 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
         ];
 
         for (const insight of insights) {
-          await storage.upsertAbTestInsight(insight);
+          await (storage as any).upsertAbTestInsight(insight);
         }
 
         res.json({ 

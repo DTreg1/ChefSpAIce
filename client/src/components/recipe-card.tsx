@@ -113,7 +113,7 @@ export const RecipeCard = React.memo(function RecipeCard({
       });
       
       // Find this recipe and update its ingredient matches
-      const thisRecipe = updatedRecipes?.find((r: any) => r.id === id);
+      const thisRecipe = (updatedRecipes as any)?.find((r: any) => r.id === id);
       if (thisRecipe?.ingredientMatches) {
         setLocalIngredientMatches(thisRecipe.ingredientMatches);
         toast({

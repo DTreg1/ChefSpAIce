@@ -34,7 +34,7 @@ router.get('/test', async (_req: Request, res: Response) => {
     // Score the test notification
     const score = await intelligentNotificationService.scoreNotificationRelevance(
       'test-user',
-      testNotification
+      testNotification as any
     );
     
     res.json({
@@ -162,7 +162,7 @@ router.post('/smart-send', isAuthenticated, async (req: Request, res: Response) 
     // Process the notification through the intelligent service
     const scoreData = await intelligentNotificationService.processNotification(
       userId,
-      validatedData,
+      validatedData as any,
       validatedData.userContext
     );
     

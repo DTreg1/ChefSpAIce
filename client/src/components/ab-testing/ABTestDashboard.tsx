@@ -241,7 +241,7 @@ export default function ABTestDashboard() {
         <div className="space-y-6">
           {tests.filter(t => t.id === selectedTest).map(test => (
             <div key={test.id} className="space-y-6">
-              <VariantComparison test={test} />
+              <VariantComparison test={test as any} />
               <SignificanceCalculator test={test} />
             </div>
           ))}

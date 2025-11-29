@@ -74,6 +74,7 @@ router.post("/analyze", isAuthenticated, async (req, res) => {
       await storage.admin.security.createSuspiciousActivity({
         userId,
         activityType: 'transaction',
+        status: 'pending',
         details: {
           description: `High-risk transaction detected: $${validatedData.amount} via ${validatedData.paymentMethod}`,
           evidence: [
@@ -83,8 +84,10 @@ router.post("/analyze", isAuthenticated, async (req, res) => {
           ]
         },
         riskLevel: analysisResult.fraudScore > 0.9 ? 'critical' : 
-                   analysisResult.fraudScore > 0.75 ? 'high' : 'medium'
-      });
+                   analysisResult.fraudScore > 0.75 ? 'high' : 'medium',
+        severity: analysisResult.fraudScore > 0.9 ? 'critical' : 
+                  analysisResult.fraudScore > 0.75 ? 'high' : 'medium',
+      } as any);
     }
 
     res.json(analysisResult);
@@ -109,7 +112,7 @@ router.get("/alerts", isAuthenticated, async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
     
-    const isAdmin = req.user?.role === 'admin';
+    const isAdmin = (req.user as any)?.role === 'admin';
 
     const activities = await storage.admin.security.getSuspiciousActivities(
       isAdmin ? undefined : userId,
@@ -175,7 +178,7 @@ router.get("/report/:period", isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: "Invalid period. Use 'day', 'week', or 'month'" });
     }
     
-    const isAdmin = req.user?.role === 'admin';
+    const isAdmin = (req.user as any)?.role === 'admin';
 
     if (!isAdmin) {
       const userScores = await storage.admin.security.getFraudScores(userId, 100);

@@ -28,7 +28,7 @@ export async function initializeApplianceLibrary() {
       searchTerms: item.searchTerms,
     }));
     
-    await db.insert(applianceLibrary).values(insertData);
+    await db.insert(applianceLibrary).values(insertData as any);
     
     // console.log(`Successfully initialized appliance library with ${insertData.length} items`);
   } catch (error) {

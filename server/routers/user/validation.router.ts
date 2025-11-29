@@ -219,7 +219,7 @@ router.get("/stats", requireAuth, async (req, res) => {
   try {
     const userId = (req.session as any)?.userId as string | undefined;
     
-    const stats = await validationService.getUserValidationStats(userId);
+    const stats = await validationService.getUserValidationStats(userId || '');
     
     res.json({
       success: true,

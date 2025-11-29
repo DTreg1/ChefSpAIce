@@ -1032,7 +1032,7 @@ export class SystemStorage implements ISystemStorage {
     recentMetrics: SystemMetric[];
     history: MaintenanceHistory[];
   }> {
-    const recentMetrics = await this.getSystemMetrics(component, undefined, undefined, 20);
+    const recentMetrics = await this.getSystemMetrics(component, undefined, undefined, 20 as any);
     const history = await this.getMaintenanceHistory(component, undefined, 10);
     
     const avgAnomalyScore = recentMetrics.length > 0

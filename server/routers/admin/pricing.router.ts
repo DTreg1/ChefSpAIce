@@ -411,7 +411,7 @@ router.put("/rules", asyncHandler(async (req: any, res: any) => {
       productId: ruleData.productId,
       price: ruleData.basePrice,
       previousPrice: existingRule?.basePrice,
-      changeReason: existingRule ? 'rule_update' : 'initial_setup',
+      changeReason: existingRule ? 'manual' : 'scheduled',
       demandLevel: 50,
       inventoryLevel: 50,
       metadata: {

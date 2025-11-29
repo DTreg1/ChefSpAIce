@@ -186,7 +186,7 @@ export function validateQuery<T>(schema: z.ZodSchema<T>) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = await schema.parseAsync(req.query);
-      req.query = validated;
+      req.query = validated as any;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -255,7 +255,7 @@ export function validateParams<T>(schema: z.ZodSchema<T>) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const validated = await schema.parseAsync(req.params);
-      req.params = validated;
+      req.params = validated as any;
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {
