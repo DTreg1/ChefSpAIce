@@ -10,10 +10,8 @@
  */
 
 import { Router, Request, Response } from "express";
-// Use OAuth authentication middleware
 import { isAuthenticated, getAuthenticatedUserId } from "../../middleware/oauth.middleware";
 import { openai } from "../../integrations/openai";
-import { storage } from "../../storage/index";
 import { batchedApiLogger } from "../../utils/batchedApiLogger";
 import rateLimiters from "../../middleware/rateLimit";
 import {
@@ -25,8 +23,7 @@ import {
   formatErrorForLogging
 } from "../../utils/ai-error-handler";
 import { getCircuitBreaker } from "../../utils/circuit-breaker";
-import { termDetector } from "../../services/term-detector.service";
-import type { Message } from "@shared/schema";
+import { chatService } from "../../services/chat.service";
 
 const router = Router();
 
@@ -120,35 +117,12 @@ router.post(
         return res.end();
       }
 
-      // Save user message
-      await storage.createChatMessage(userId, {
-        role: "user",
-        content: message,
-      });
+      // Save user message via service
+      await chatService.saveUserMessage(userId, message);
 
-      // Build context
-      let inventoryContext = "";
-      if (includeInventory) {
-        const items = await storage.getFoodItems(userId);
-        if (items.length > 0) {
-          inventoryContext = `\n\nUser's current food inventory:\n${items
-            .map((item: any) => `- ${item.name}: ${item.quantity} ${item.unit || ""} (${item.foodCategory || "uncategorized"})`)
-            .join("\n")}`;
-        }
-      }
-
-      // Get chat history
-      const history = await storage.getChatMessages(userId, 10);
-      const messages: any[] = [
-        {
-          role: "system",
-          content: `You are ChefSpAIce, a helpful cooking assistant. You provide recipe suggestions, cooking tips, and meal planning advice. Be concise but friendly.${inventoryContext}`,
-        },
-        ...history.reverse().map((msg: any) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-      ];
+      // Build context via service (includes inventory and history)
+      const context = await chatService.buildChatContext(userId, includeInventory, 10);
+      const messages = context.messages;
 
       // Execute through circuit breaker with retry logic
       await chatCircuitBreaker.execute(async () => {
@@ -196,41 +170,11 @@ router.post(
 
             // Save assistant response if we have content
             if (accumulatedContent) {
-              await storage.createChatMessage(userId, {
-                role: "assistant",
-                content: accumulatedContent,
-              });
+              // Save via service
+              await chatService.saveAssistantMessage(userId, accumulatedContent);
 
-              // Detect cooking terms in the response
-              let detectedTerms: Array<{
-                term: string;
-                termId: string;
-                category: string;
-                shortDefinition: string;
-                difficulty?: string | null;
-                start: number;
-                end: number;
-              }> = [];
-              try {
-                const matches = await termDetector.detectTerms(accumulatedContent, {
-                  maxMatches: 50,
-                  contextAware: true
-                });
-
-                // Convert matches to simpler format for client
-                detectedTerms = matches.map(match => ({
-                  term: match.originalTerm,
-                  termId: match.termId,
-                  category: match.category,
-                  shortDefinition: match.shortDefinition,
-                  difficulty: match.difficulty,
-                  start: match.start,
-                  end: match.end
-                }));
-              } catch (termError) {
-                console.error('[Chat Stream] Error detecting cooking terms:', termError);
-                // Continue without terms - don't fail the whole response
-              }
+              // Detect cooking terms via service
+              const detectedTerms = await chatService.detectCookingTerms(accumulatedContent);
 
               // Log successful API usage
               await batchedApiLogger.logApiUsage(userId, {

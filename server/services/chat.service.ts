@@ -1,57 +1,194 @@
-import OpenAI from 'openai';
-import { db } from '../db';
-import { 
-  type InsertChatMessage,
-  type ChatMessage
-} from '@shared/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
-
-// Initialize OpenAI client using Replit AI Integrations
-// This uses Replit's AI Integrations service, which provides OpenAI-compatible API access 
-// without requiring your own OpenAI API key.
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
-});
-
-const SYSTEM_PROMPT = `You are a helpful AI assistant for this application. You can answer questions about:
-- App features and functionality
-- How to use different parts of the application
-- General assistance with tasks
-- Provide helpful suggestions and tips
-
-Be conversational, friendly, and helpful. Keep your responses concise but informative.
-If you're not sure about something specific to the application, provide general guidance and suggest the user explore the relevant features.`;
-
-const CONTEXT_SUMMARY_THRESHOLD = 20; // Summarize context every 20 messages
-const MAX_CONTEXT_MESSAGES = 15; // Maximum messages to include in context
-
 /**
- * ChatService - Stubbed implementation
+ * Chat Service
  * 
- * The legacy conversations, messages, and conversationContext tables have been removed
- * and replaced with the userChats table. This service has been stubbed out to prevent
- * errors while the migration is completed.
+ * Handles business logic for AI chat interactions including:
+ * - Message persistence (user and assistant messages)
+ * - Context building (inventory, chat history)
+ * - OpenAI API interactions (streaming and non-streaming)
+ * - Cooking term detection in responses
  * 
- * TODO: Rewrite this service to use the userChats table directly
+ * Router layer handles SSE presentation concerns.
  */
-export class ChatService {
+
+import { openai } from "../integrations/openai";
+import { storage } from "../storage";
+import { termDetector } from "./term-detector.service";
+import type { ChatMessage } from "@shared/schema";
+
+const SYSTEM_PROMPT = `You are ChefSpAIce, a helpful cooking assistant. You provide recipe suggestions, cooking tips, and meal planning advice. Be concise but friendly.`;
+
+export interface ChatContext {
+  systemPrompt: string;
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+}
+
+export interface DetectedTerm {
+  term: string;
+  termId: string;
+  category: string;
+  shortDefinition: string;
+  difficulty?: string | null;
+  start: number;
+  end: number;
+}
+
+export interface ChatStreamConfig {
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  streaming?: boolean;
+}
+
+class ChatService {
   /**
-   * @deprecated Legacy conversations table has been removed
+   * Save a user message to chat history
    */
-  async getOrCreateConversation(userId: string, conversationId?: string): Promise<string> {
-    console.warn("ChatService.getOrCreateConversation is deprecated - conversations table removed");
-    return conversationId || "default-conversation";
+  async saveUserMessage(userId: string, content: string): Promise<void> {
+    await storage.createChatMessage(userId, {
+      role: "user",
+      content,
+    });
+  }
+
+  /**
+   * Save an assistant message to chat history
+   */
+  async saveAssistantMessage(userId: string, content: string): Promise<void> {
+    await storage.createChatMessage(userId, {
+      role: "assistant",
+      content,
+    });
+  }
+
+  /**
+   * Build context for chat including inventory and history
+   */
+  async buildChatContext(
+    userId: string,
+    includeInventory: boolean = false,
+    historyLimit: number = 10
+  ): Promise<ChatContext> {
+    let inventoryContext = "";
+    
+    if (includeInventory) {
+      const items = await storage.getFoodItems(userId);
+      if (items.length > 0) {
+        inventoryContext = `\n\nUser's current food inventory:\n${items
+          .map((item: any) => `- ${item.name}: ${item.quantity} ${item.unit || ""} (${item.foodCategory || "uncategorized"})`)
+          .join("\n")}`;
+      }
+    }
+
+    const history = await storage.getChatMessages(userId, historyLimit);
+    
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      {
+        role: "system",
+        content: `${SYSTEM_PROMPT}${inventoryContext}`,
+      },
+      ...history.reverse().map((msg: ChatMessage) => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      })),
+    ];
+
+    return {
+      systemPrompt: `${SYSTEM_PROMPT}${inventoryContext}`,
+      messages,
+    };
+  }
+
+  /**
+   * Create OpenAI chat completion (non-streaming)
+   * Returns the full response content
+   */
+  async createChatCompletion(
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+    config: ChatStreamConfig = {}
+  ): Promise<string> {
+    if (!openai) {
+      throw new Error('OpenAI not configured');
+    }
+
+    const response = await openai.chat.completions.create({
+      model: config.model || "gpt-4o-mini",
+      messages,
+      temperature: config.temperature ?? 0.7,
+      max_tokens: config.maxTokens || 500,
+      stream: false,
+    });
+
+    return response.choices[0]?.message?.content || "";
+  }
+
+  /**
+   * Create OpenAI chat completion stream
+   * Returns an async iterable for streaming chunks
+   */
+  async createChatStream(
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+    config: ChatStreamConfig = {}
+  ): Promise<AsyncIterable<string>> {
+    if (!openai) {
+      throw new Error('OpenAI not configured');
+    }
+
+    const stream = await openai.chat.completions.create({
+      model: config.model || "gpt-4o-mini",
+      messages,
+      temperature: config.temperature ?? 0.7,
+      max_tokens: config.maxTokens || 500,
+      stream: true,
+    });
+
+    return {
+      [Symbol.asyncIterator]: async function* () {
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || "";
+          if (content) {
+            yield content;
+          }
+        }
+      }
+    };
+  }
+
+  /**
+   * Detect cooking terms in text content
+   */
+  async detectCookingTerms(content: string): Promise<DetectedTerm[]> {
+    try {
+      const matches = await termDetector.detectTerms(content, {
+        maxMatches: 50,
+        contextAware: true
+      });
+
+      return matches.map(match => ({
+        term: match.originalTerm,
+        termId: match.termId,
+        category: match.category,
+        shortDefinition: match.shortDefinition,
+        difficulty: match.difficulty,
+        start: match.start,
+        end: match.end
+      }));
+    } catch (error) {
+      console.error('[ChatService] Error detecting cooking terms:', error);
+      return [];
+    }
   }
 
   /**
    * Generate a conversation title from the first message
    */
-  async generateConversationTitle(content: string): Promise<string> {
+  async generateTitle(content: string): Promise<string> {
+    if (!openai) {
+      return content.substring(0, 30) + '...';
+    }
+
     try {
       const response = await openai.chat.completions.create({
-        model: 'gpt-5',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -62,113 +199,61 @@ export class ChatService {
             content: content
           }
         ],
-        max_completion_tokens: 20,
+        max_tokens: 20,
       });
 
       const title = response.choices[0]?.message?.content?.trim() || 'New Conversation';
       return title.substring(0, 50);
     } catch (error) {
-      console.error('Error generating title:', error);
+      console.error('[ChatService] Error generating title:', error);
       return content.substring(0, 30) + '...';
     }
   }
 
   /**
-   * @deprecated Legacy function - uses deleted tables
+   * Get chat history for a user
    */
-  async getConversationContext(conversationId: string): Promise<any[]> {
-    console.warn("ChatService.getConversationContext is deprecated - using empty context");
-    return [];
+  async getChatHistory(userId: string, limit?: number): Promise<ChatMessage[]> {
+    return storage.getChatMessages(userId, limit);
   }
 
   /**
-   * @deprecated Legacy function - uses deleted tables
+   * Clear chat history for a user
    */
-  async updateContextSummary(conversationId: string): Promise<void> {
-    console.warn("ChatService.updateContextSummary is deprecated - no-op");
+  async clearChatHistory(userId: string): Promise<void> {
+    await storage.deleteChatHistory(userId);
   }
 
   /**
-   * Send a message to the chat assistant
-   * Temporary implementation without database persistence
-   * TODO: Implement proper chat storage when tables are available
+   * High-level method for a complete non-streaming chat exchange
+   * Saves user message, generates response, saves assistant message
    */
   async sendMessage(
     userId: string,
-    content: string,
-    conversationId?: string
+    userMessage: string,
+    options: { includeInventory?: boolean; historyLimit?: number } = {}
   ): Promise<{
-    conversationId: string;
     response: string;
-    messageId: string;
+    detectedTerms: DetectedTerm[];
   }> {
-    try {
-      // Call OpenAI API directly without database persistence
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-5',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content }
-        ],
-        max_completion_tokens: 1000,
-      });
+    await this.saveUserMessage(userId, userMessage);
 
-      const assistantResponse = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.';
+    const context = await this.buildChatContext(
+      userId,
+      options.includeInventory || false,
+      options.historyLimit || 10
+    );
 
-      // Return response without database IDs (using temporary IDs)
-      return {
-        conversationId: conversationId || "default",
-        response: assistantResponse,
-        messageId: `msg-${Date.now()}`
-      };
-    } catch (error) {
-      console.error('Error in sendMessage:', error);
-      throw error;
-    }
-  }
+    const response = await this.createChatCompletion(context.messages);
 
-  /**
-   * @deprecated Legacy function - conversations table removed
-   */
-  async getUserConversations(userId: string): Promise<any[]> {
-    console.warn("ChatService.getUserConversations is deprecated");
-    // Return empty array as conversations table no longer exists
-    return [];
-  }
+    await this.saveAssistantMessage(userId, response);
 
-  /**
-   * Get messages for a user
-   * Temporary implementation without database
-   */
-  async getConversationMessages(conversationId: string, userId: string) {
-    console.warn("ChatService.getConversationMessages - no database persistence available");
-    // Return empty messages array as chat tables no longer exist
+    const detectedTerms = await this.detectCookingTerms(response);
+
     return {
-      conversation: { id: conversationId, title: "Chat" },
-      messages: []
+      response,
+      detectedTerms,
     };
-  }
-
-  /**
-   * @deprecated Legacy function - conversations table removed
-   */
-  async deleteConversation(conversationId: string, userId: string): Promise<void> {
-    console.warn("ChatService.deleteConversation is deprecated");
-    // No-op as conversations table no longer exists
-  }
-
-  /**
-   * Save feedback for a message
-   * Simplified implementation
-   */
-  async saveFeedback(
-    messageId: string,
-    userId: string,
-    rating: number,
-    comment?: string
-  ): Promise<void> {
-    console.log(`Feedback saved: messageId=${messageId}, rating=${rating}, comment=${comment}`);
-    // TODO: Implement feedback storage in a separate table if needed
   }
 }
 
