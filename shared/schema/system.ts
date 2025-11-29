@@ -169,7 +169,22 @@ export const maintenanceHistory = pgTable("maintenance_history", {
 export const apiNameSchema = z.enum(['openai', 'stripe', 'usda', 'barcode', 'twilio', 'sendgrid', 'aws', 'google']);
 export const httpMethodSchema = z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 export const activityTypeSchema = z.enum(['create', 'update', 'delete', 'view', 'export', 'import', 'login', 'logout']);
-export const resourceTypeSchema = z.enum(['recipe', 'inventory', 'user', 'meal_plan', 'shopping_list', 'settings']);
+export const resourceTypeSchema = z.enum([
+  'recipe', 
+  'inventory', 
+  'user', 
+  'meal_plan', 
+  'shopping_list', 
+  'settings',
+  'food_item',
+  'chat',
+  'storage_location',
+  'appliance',
+  'notification',
+  'admin',
+  'feedback',
+  'api'
+]);
 export const metricTypeSchema = z.enum(['performance', 'resource', 'error_rate', 'availability', 'latency']);
 export const riskLevelSchema = z.enum(['low', 'medium', 'high', 'critical']);
 export const maintenanceTypeSchema = z.enum(['scheduled', 'emergency', 'preventive', 'corrective']);

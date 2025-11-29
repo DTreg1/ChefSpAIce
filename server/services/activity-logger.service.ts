@@ -87,18 +87,19 @@ export type ActivityAction = typeof ActivityActions[keyof typeof ActivityActions
 export interface ActivityLogParams {
   userId?: string | null;
   action: ActivityAction | string;
-  entity: string;
-  entityId?: string | null;
-  metadata?: Record<string, any>;
+  activityType?: 'view' | 'login' | 'logout' | 'create' | 'update' | 'delete' | 'export' | 'import';
+  resourceType: 'user' | 'recipe' | 'shopping_list' | 'meal_plan' | 'inventory' | 'settings' | 'food_item' | 'chat' | 'storage_location' | 'appliance' | 'notification' | 'admin' | 'feedback' | 'api';
+  resourceId?: string | null;
+  details?: Record<string, any>;
   ipAddress?: string | null;
   userAgent?: string | null;
-  sessionId?: string | null;
+  success?: boolean;
 }
 
 export interface ActivityFilters {
   action?: string | string[];
-  entity?: string;
-  entityId?: string;
+  resourceType?: string;
+  resourceId?: string;
   startDate?: Date;
   endDate?: Date;
   limit?: number;
@@ -134,12 +135,13 @@ export class ActivityLogger {
       const logEntry: InsertActivityLog = {
         userId: params.userId || null,
         action: params.action,
-        entity: params.entity,
-        entityId: params.entityId || null,
-        metadata: params.metadata || undefined,
+        activityType: params.activityType || 'view',
+        resourceType: params.resourceType as any,
+        resourceId: params.resourceId || null,
+        details: params.details || undefined,
         ipAddress: params.ipAddress || null,
         userAgent: params.userAgent || null,
-        sessionId: params.sessionId || null,
+        success: params.success ?? true,
       };
 
       // Add to queue for batch processing
@@ -163,12 +165,13 @@ export class ActivityLogger {
       const logEntry: InsertActivityLog = {
         userId: params.userId || null,
         action: params.action,
-        entity: params.entity,
-        entityId: params.entityId || null,
-        metadata: params.metadata || undefined,
+        activityType: params.activityType || 'view',
+        resourceType: params.resourceType as any,
+        resourceId: params.resourceId || null,
+        details: params.details || undefined,
         ipAddress: params.ipAddress || null,
         userAgent: params.userAgent || null,
-        sessionId: params.sessionId || null,
+        success: params.success ?? true,
       };
 
       await db.insert(activityLogs).values(logEntry);
@@ -207,12 +210,12 @@ export class ActivityLogger {
         }
       }
 
-      // Entity filters
-      if (filters?.entity) {
-        conditions.push(eq(activityLogs.entity, filters.entity));
+      // Resource filters
+      if (filters?.resourceType) {
+        conditions.push(eq(activityLogs.resourceType, filters.resourceType));
       }
-      if (filters?.entityId) {
-        conditions.push(eq(activityLogs.entityId, filters.entityId));
+      if (filters?.resourceId) {
+        conditions.push(eq(activityLogs.resourceId, filters.resourceId));
       }
 
       // Date range filters
@@ -337,15 +340,15 @@ export class ActivityLogger {
         .where(whereClause)
         .groupBy(activityLogs.action);
 
-      // Get entity counts
-      const entityCounts = await db
+      // Get resource type counts
+      const resourceTypeCounts = await db
         .select({
-          entity: activityLogs.entity,
+          resourceType: activityLogs.resourceType,
           count: sql<number>`count(*)::int`,
         })
         .from(activityLogs)
         .where(whereClause)
-        .groupBy(activityLogs.entity);
+        .groupBy(activityLogs.resourceType);
 
       // Get total count
       const totalResult = await db
@@ -360,7 +363,7 @@ export class ActivityLogger {
       return {
         total,
         byAction: actionCounts,
-        byEntity: entityCounts,
+        byResourceType: resourceTypeCounts,
       };
     } catch (error) {
       console.error('[ActivityLogger] Error fetching activity stats:', error);
@@ -401,8 +404,9 @@ export class ActivityLogger {
       // Log the cleanup as a system event
       await this.logActivity({
         action: ActivityActions.CLEANUP_JOB,
-        entity: 'system',
-        metadata: {
+        activityType: 'delete',
+        resourceType: 'settings',
+        details: {
           type: 'activity_logs_cleanup',
           retentionDays,
           deletedCount,
@@ -428,9 +432,10 @@ export class ActivityLogger {
       await this.logActivity({
         userId,
         action: ActivityActions.DATA_EXPORTED,
-        entity: 'user',
-        entityId: userId,
-        metadata: {
+        activityType: 'export',
+        resourceType: 'user',
+        resourceId: userId,
+        details: {
           type: 'activity_logs',
           count: logs.length,
         },

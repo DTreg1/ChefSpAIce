@@ -155,6 +155,45 @@ function isSuccessResponse(statusCode: number): boolean {
   return statusCode >= 200 && statusCode < 300;
 }
 
+// Map HTTP method to activity type
+function getActivityTypeFromMethod(method: string): 'view' | 'login' | 'logout' | 'create' | 'update' | 'delete' | 'export' | 'import' {
+  switch (method.toUpperCase()) {
+    case 'POST':
+      return 'create';
+    case 'PUT':
+    case 'PATCH':
+      return 'update';
+    case 'DELETE':
+      return 'delete';
+    case 'GET':
+    default:
+      return 'view';
+  }
+}
+
+// Map route entity to valid resourceType from schema
+type ResourceType = 'user' | 'recipe' | 'shopping_list' | 'meal_plan' | 'inventory' | 'settings' | 'food_item' | 'chat' | 'storage_location' | 'appliance' | 'notification' | 'admin' | 'feedback' | 'api';
+
+function mapEntityToResourceType(entity: string): ResourceType {
+  const entityMapping: Record<string, ResourceType> = {
+    'user': 'user',
+    'recipe': 'recipe',
+    'shopping_list': 'shopping_list',
+    'meal_plan': 'meal_plan',
+    'inventory': 'inventory',
+    'settings': 'settings',
+    'food_item': 'food_item',
+    'chat': 'chat',
+    'storage_location': 'storage_location',
+    'appliance': 'appliance',
+    'notification': 'notification',
+    'admin': 'admin',
+    'feedback': 'feedback',
+    'api': 'api',
+  };
+  return entityMapping[entity] || 'api';
+}
+
 // Build metadata object from request and response
 function buildMetadata(req: Request, res: Response, responseBody?: any): Record<string, any> {
   const metadata: Record<string, any> = {
@@ -255,12 +294,13 @@ export function activityLoggingMiddleware(
           activityLogger.logActivity({
             userId: req.user?.id || null,
             action: ActivityActions.API_CALL,
-            entity: 'api',
-            entityId: extractEntityId(req.path, req.method),
-            metadata: buildMetadata(req, res, responseBody),
+            activityType: getActivityTypeFromMethod(req.method),
+            resourceType: 'api',
+            resourceId: extractEntityId(req.path, req.method),
+            details: buildMetadata(req, res, responseBody),
             ipAddress: getClientIp(req),
             userAgent: req.headers['user-agent'] as string || null,
-            sessionId: getSessionId(req),
+            success: isSuccessResponse(res.statusCode),
           }).catch(error => {
             console.error('[ActivityLoggingMiddleware] Error logging activity:', error);
           });
@@ -269,7 +309,7 @@ export function activityLoggingMiddleware(
       }
       
       // Log specific action
-      const entityId = extractEntityId(req.path, req.method) || 
+      const resourceId = extractEntityId(req.path, req.method) || 
                       responseBody?.id || 
                       req.params?.id || 
                       null;
@@ -277,12 +317,13 @@ export function activityLoggingMiddleware(
       activityLogger.logActivity({
         userId: req.user?.id || null,
         action: routeConfig.action,
-        entity: routeConfig.entity,
-        entityId,
-        metadata: buildMetadata(req, res, responseBody),
+        activityType: getActivityTypeFromMethod(req.method),
+        resourceType: mapEntityToResourceType(routeConfig.entity),
+        resourceId,
+        details: buildMetadata(req, res, responseBody),
         ipAddress: getClientIp(req),
         userAgent: req.headers['user-agent'] as string || null,
-        sessionId: getSessionId(req),
+        success: isSuccessResponse(res.statusCode),
       }).catch(error => {
         console.error('[ActivityLoggingMiddleware] Error logging activity:', error);
       });
@@ -292,15 +333,16 @@ export function activityLoggingMiddleware(
         activityLogger.logActivity({
           userId: req.user?.id || null,
           action: ActivityActions.AI_RESPONSE_RECEIVED,
-          entity: 'chat',
-          metadata: {
+          activityType: 'view',
+          resourceType: 'recipe',
+          details: {
             responseLength: responseBody.response.length,
             hasRecipes: !!responseBody.recipes,
             recipeCount: responseBody.recipes?.length || 0,
           },
           ipAddress: getClientIp(req),
           userAgent: req.headers['user-agent'] as string || null,
-          sessionId: getSessionId(req),
+          success: true,
         }).catch(error => {
           console.error('[ActivityLoggingMiddleware] Error logging AI response:', error);
         });
@@ -321,24 +363,25 @@ export function activityLoggingMiddleware(
 export function logRouteActivity(
   req: Request,
   action: string,
-  entity: string,
-  entityId?: string,
-  additionalMetadata?: Record<string, any>
+  resourceType: string,
+  resourceId?: string,
+  additionalDetails?: Record<string, any>
 ): void {
-  const metadata = {
+  const details = {
     ...buildMetadata(req, {} as Response),
-    ...additionalMetadata,
+    ...additionalDetails,
   };
   
   activityLogger.logActivity({
     userId: req.user?.id || null,
     action,
-    entity,
-    entityId,
-    metadata,
+    activityType: getActivityTypeFromMethod(req.method),
+    resourceType: mapEntityToResourceType(resourceType),
+    resourceId,
+    details,
     ipAddress: getClientIp(req),
     userAgent: req.headers['user-agent'] as string || null,
-    sessionId: getSessionId(req),
+    success: true,
   }).catch(error => {
     console.error('[logRouteActivity] Error logging activity:', error);
   });
