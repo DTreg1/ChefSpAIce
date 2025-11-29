@@ -68,7 +68,7 @@ export abstract class BasePushNotificationService {
    */
   async getUserTokens(userId: string): Promise<PushToken[]> {
     try {
-      const tokens = await storage.user.notifications.getPushTokens(userId);
+      const tokens = await storage.user.notifications.getUserPushTokens(userId);
       return tokens || [];
     } catch (error) {
       console.error(`[${this.serviceName}] Error fetching user tokens:`, error);
@@ -81,11 +81,8 @@ export abstract class BasePushNotificationService {
    */
   async registerToken(userId: string, token: string, metadata?: any): Promise<void> {
     try {
-      await storage.user.notifications.upsertPushToken(userId, {
-        token,
-        platform: this.serviceName.toLowerCase(),
-        deviceInfo: metadata,
-      });
+      const platform = this.serviceName.toLowerCase() as 'web' | 'ios' | 'android';
+      await storage.user.notifications.savePushToken(userId, token, platform, metadata?.deviceId);
       
       // console.log(`[${this.serviceName}] Token registered for user ${userId}`);
     } catch (error) {
@@ -99,7 +96,7 @@ export abstract class BasePushNotificationService {
    */
   async removeInvalidToken(userId: string, token: string): Promise<void> {
     try {
-      await storage.user.notifications.deletePushToken(userId, token);
+      await storage.user.notifications.deletePushToken(token);
       // console.log(`[${this.serviceName}] Removed invalid token for user ${userId}`);
     } catch (error) {
       console.error(`[${this.serviceName}] Error removing invalid token:`, error);
@@ -163,11 +160,7 @@ export abstract class BasePushNotificationService {
           if (result.success) {
             successCount++;
             
-            // Update last used timestamp by upserting with new timestamp
-            await storage.user.notifications.upsertPushToken(userId, {
-              token,
-              platform: this.serviceName.toLowerCase(),
-            });
+            // Token still valid, no update needed
           } else {
             failureCount++;
             

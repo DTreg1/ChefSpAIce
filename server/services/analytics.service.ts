@@ -179,7 +179,7 @@ Example for a traffic spike:
       );
 
       // Create the insight record
-      const insightData: InsertAnalyticsInsight = {
+      const insightData = {
         insightType: analysis.isAnomaly ? "anomaly" : "trend",
         category: "performance",
         title: `${metricData.metricName} Analysis`,
@@ -198,7 +198,7 @@ Example for a traffic spike:
           trend: analysis.trend
         },
         recommendations: response.suggestedActions
-      };
+      } as InsertAnalyticsInsight;
 
       return await storage.platform.analytics.createAnalyticsInsight(insightData);
     } catch (error) {
@@ -222,7 +222,7 @@ Example for a traffic spike:
         insightText = `Alert: ${analysis.anomalyDetails} for ${metricData.metricName}. Current value is ${currentValue}.`;
       }
 
-      const fallbackInsight: InsertAnalyticsInsight = {
+      const fallbackInsight = {
         insightType: analysis.isAnomaly ? "anomaly" : "trend",
         category: "performance",
         title: `${metricData.metricName} Analysis`,
@@ -236,7 +236,7 @@ Example for a traffic spike:
           dataPoints: metricData.dataPoints,
           trend: analysis.trend
         }
-      };
+      } as InsertAnalyticsInsight;
 
       return await storage.platform.analytics.createAnalyticsInsight(fallbackInsight);
     }

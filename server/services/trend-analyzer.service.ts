@@ -119,10 +119,8 @@ class TrendAnalyzerService {
     
     try {
       if (config.dataSource === 'analytics' || config.dataSource === 'all') {
-        // Fetch analytics events
-        const events = await storage.platform.analytics.getAnalyticsEvents(undefined, {
-          startDate, endDate
-        });
+        // Fetch analytics events using correct method signature
+        const events = await storage.platform.analytics.getAnalyticsEvents(undefined, undefined, startDate, endDate);
         
         // Group events by type and create time series
         const eventGroups = this.groupEventsByType(events);
@@ -137,17 +135,17 @@ class TrendAnalyzerService {
       }
       
       if (config.dataSource === 'feedback' || config.dataSource === 'all') {
-        // Fetch user feedback - use getAllFeedback for trend analysis
-        const feedbackPage = await storage.platform.analytics.getAllFeedback(1, 1000);
+        // Fetch user feedback from feedback storage domain
+        const feedback = await storage.platform.feedback.getAllFeedback();
         
         // Analyze feedback sentiment and topics
-        const feedbackSeries = this.processFeedbackData(feedbackPage.data);
+        const feedbackSeries = this.processFeedbackData(feedback);
         data.push(...feedbackSeries);
       }
       
       if (config.dataSource === 'inventory' || config.dataSource === 'all') {
-        // Fetch inventory changes
-        const activityLogs = await storage.platform.analytics.getActivityLogs(null, {
+        // Fetch inventory changes from system storage domain
+        const activityLogs = await storage.platform.system.getActivityLogs(null, {
           action: ['item_added', 'item_removed', 'item_updated']
         });
         
@@ -157,8 +155,8 @@ class TrendAnalyzerService {
       }
       
       if (config.dataSource === 'recipes' || config.dataSource === 'all') {
-        // Fetch recipe interactions
-        const recipeLogs = await storage.platform.analytics.getActivityLogs(null, {
+        // Fetch recipe interactions from system storage domain
+        const recipeLogs = await storage.platform.system.getActivityLogs(null, {
           action: ['recipe_viewed', 'recipe_created', 'recipe_favorited']
         });
         
@@ -373,27 +371,34 @@ class TrendAnalyzerService {
    * Format trend for database storage
    */
   private async formatTrendForStorage(trend: DetectedTrend): Promise<InsertTrend> {
-    // Note: status is auto-generated in the database, omitted from InsertTrend
+    // Map DetectedTrend to InsertTrend schema
+    // Extract current and previous values from dataPoints
+    const timeSeries = trend.dataPoints?.timeSeries || [];
+    const currentValue = timeSeries.length > 0 ? timeSeries[timeSeries.length - 1]?.value || 0 : 0;
+    const previousValue = timeSeries.length > 1 ? timeSeries[0]?.value || 0 : currentValue;
+    const changePercent = previousValue !== 0 ? ((currentValue - previousValue) / previousValue) * 100 : 0;
     
     return {
       trendName: trend.name,
       trendType: this.mapTrendType(trend.type),
-      strength: trend.strength,
-      confidence: trend.confidence,
-      growthRate: trend.growthRate,
-      startDate: trend.startDate,
-      peakDate: trend.peakDate,
-      dataPoints: trend.dataPoints,
-      metadata: {
-        detectionMethod: trend.type,
-        modelVersion: '1.0.0',
-        dataWindow: {
-          start: trend.dataPoints.timeSeries?.[0]?.date,
-          end: trend.dataPoints.timeSeries?.[trend.dataPoints.timeSeries.length - 1]?.date
-        },
-        sampleSize: trend.dataPoints.timeSeries?.length || 0
-      }
+      metric: trend.dataPoints?.keywords?.[0] || 'general',
+      currentValue,
+      previousValue,
+      changePercent,
+      timePeriod: this.inferTimePeriod(timeSeries.length),
+      significance: trend.confidence
     };
+  }
+  
+  /**
+   * Infer time period based on sample size
+   */
+  private inferTimePeriod(sampleSize: number): 'day' | 'week' | 'month' | 'quarter' | 'year' {
+    if (sampleSize <= 7) return 'day';
+    if (sampleSize <= 30) return 'week';
+    if (sampleSize <= 90) return 'month';
+    if (sampleSize <= 180) return 'quarter';
+    return 'year';
   }
   
   /**

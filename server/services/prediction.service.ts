@@ -92,14 +92,23 @@ class PredictionService {
     // Analyze factors
     const factors = this.analyzeChurnFactors(metrics);
 
+    // Set validity period (30 days)
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + 30);
+
     return {
       userId: metrics.userId,
       predictionType: 'churn_risk',
-      probability,
-      predictedDate: new Date(),
-      factors,
-      modelVersion: 'v1.0',
-    };
+      confidence: probability,
+      prediction: { probability, factors } as any,
+      validUntil,
+      metadata: {
+        confidence: probability,
+        factors: factors as unknown as Record<string, number>,
+        modelVersion: 'v1.0',
+        features: metrics as unknown as Record<string, unknown>
+      }
+    } as InsertUserPrediction;
   }
 
   /**
@@ -152,14 +161,23 @@ class PredictionService {
     // Normalize to 0-1 range
     const probability = Math.min(Math.max(churnScore + Math.random() * 0.1, 0), 1);
 
+    // Set validity period (30 days)
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + 30);
+
     return {
       userId: metrics.userId,
       predictionType: 'churn_risk',
-      probability,
-      predictedDate: new Date(),
-      factors,
-      modelVersion: 'v1.0',
-    };
+      confidence: probability,
+      prediction: { probability, factors } as any,
+      validUntil,
+      metadata: {
+        confidence: probability,
+        factors: factors as unknown as Record<string, number>,
+        modelVersion: 'v1.0',
+        features: {}
+      }
+    } as InsertUserPrediction;
   }
 
   /**
@@ -188,14 +206,23 @@ class PredictionService {
       prev.probability > current.probability ? prev : current
     );
 
+    // Set validity period (7 days for behavior predictions)
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + 7);
+
     return {
       userId: metrics.userId,
       predictionType: 'next_action',
-      probability: mostLikely.probability,
-      predictedDate: new Date(),
-      factors: { activityPattern: mostLikely.action },
-      modelVersion: 'v1.0',
-    };
+      confidence: mostLikely.probability,
+      prediction: { action: mostLikely.action, probability: mostLikely.probability } as any,
+      validUntil,
+      metadata: {
+        confidence: mostLikely.probability,
+        factors: { activityPattern: 1 }, // Numeric factor representation
+        modelVersion: 'v1.0',
+        features: { predictedAction: mostLikely.action }
+      }
+    } as InsertUserPrediction;
   }
 
   /**
@@ -229,17 +256,28 @@ class PredictionService {
     const isDropping = metrics.activityTrend < -0.2 && probability < 0.5;
 
     if (isDropping) {
+      const dropProbability = 1 - probability; // Invert for drop probability
+      
+      // Set validity period (14 days)
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + 14);
+      
       return {
         userId: metrics.userId,
         predictionType: 'engagement_drop',
-        probability: 1 - probability, // Invert for drop probability
-        predictedDate: new Date(),
-        factors: {
-          engagementScore: probability,
-          activityPattern: metrics.activityTrend < -0.3 ? 'declining' : 'stable',
-        },
-        modelVersion: 'v1.0',
-      };
+        confidence: dropProbability,
+        prediction: { engagementScore: probability, dropProbability } as any,
+        validUntil,
+        metadata: {
+          confidence: dropProbability,
+          factors: {
+            engagementScore: probability,
+            activityTrend: metrics.activityTrend,
+          },
+          modelVersion: 'v1.0',
+          features: { pattern: metrics.activityTrend < -0.3 ? 'declining' : 'stable' }
+        }
+      } as InsertUserPrediction;
     }
 
     return null;
@@ -287,9 +325,9 @@ class PredictionService {
    * Build intervention prompt for OpenAI
    */
   private buildInterventionPrompt(prediction: UserPrediction): string {
-    const factors = prediction.factors as PredictionFactors;
+    const factors = (prediction.metadata?.factors || {}) as unknown as PredictionFactors;
     
-    let prompt = `User ${prediction.userId} has a ${(prediction.probability * 100).toFixed(1)}% churn risk.\n\n`;
+    let prompt = `User ${prediction.userId} has a ${(prediction.confidence * 100).toFixed(1)}% churn risk.\n\n`;
     prompt += 'Risk factors:\n';
     
     if (factors.activityDecline > 0.2) {
@@ -327,7 +365,7 @@ class PredictionService {
     const intervention = {
       predictionId: prediction.id,
       userId: prediction.userId,
-      riskLevel: prediction.probability > 0.8 ? 'critical' : prediction.probability > 0.6 ? 'high' : 'medium',
+      riskLevel: prediction.confidence > 0.8 ? 'critical' : prediction.confidence > 0.6 ? 'high' : 'medium',
       recommendedAction: lines[0] || 'Send re-engagement email',
       strategies: {
         immediate: {
@@ -360,7 +398,7 @@ class PredictionService {
    * Generate fallback intervention (without AI)
    */
   private generateFallbackIntervention(prediction: UserPrediction): any {
-    const riskLevel = prediction.probability > 0.8 ? 'critical' : prediction.probability > 0.6 ? 'high' : 'medium';
+    const riskLevel = prediction.confidence > 0.8 ? 'critical' : prediction.confidence > 0.6 ? 'high' : 'medium';
     
     const strategies = {
       critical: {

@@ -156,7 +156,9 @@ export class ModerationService {
           userId,
           reason: message || 'Content violated community guidelines',
           blockedCategories: categories,
-          toxicityLevel: Math.max(...Object.values(combinedScores))
+          toxicityLevel: Math.max(...Object.values(combinedScores)),
+          status: 'blocked',
+          autoBlocked: true
         });
       }
       
@@ -312,7 +314,9 @@ export class ModerationService {
         userId,
         reason: message || 'Content violated community guidelines',
         blockedCategories: categories,
-        toxicityLevel: Math.max(...Object.values(combinedScores))
+        toxicityLevel: Math.max(...Object.values(combinedScores)),
+        status: 'blocked',
+        autoBlocked: true
       });
     }
     

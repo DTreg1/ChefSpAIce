@@ -111,7 +111,7 @@ class ValidationService {
     }
 
     // Get AI suggestions if validation failed
-    if (!result.isValid && rules.some(r => r.aiConfig?.useAI)) {
+    if (!result.isValid && rules.some(r => r.aiConfig?.enabled)) {
       const aiSuggestions = await this.getAISuggestions(fieldType, value, result.errors?.[0], context);
       result.suggestions?.push(...aiSuggestions);
     }
@@ -552,6 +552,7 @@ Format your response as JSON array: [{"value": "...", "confidence": 0.9, "reason
             if (!hasExistingPattern) {
               // Create new rule with the learned pattern
               await db.insert(validationRules).values({
+                fieldType: params.fieldType,
                 rules: {
                   patterns: [{ 
                     regex: rulePattern, 

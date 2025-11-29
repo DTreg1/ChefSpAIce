@@ -37,7 +37,7 @@ const MODEL_CONFIG = {
   THRESHOLD_PERCENTILE: 95, // Anomaly threshold percentile
 };
 
-// Component types we monitor
+// Component types we monitor (stored in metricName prefix)
 export const MONITORED_COMPONENTS = {
   DATABASE: 'database',
   SERVER: 'server', 
@@ -46,8 +46,19 @@ export const MONITORED_COMPONENTS = {
   STORAGE: 'storage'
 } as const;
 
-// Metric types we track
-export const METRIC_TYPES = {
+// Valid metric types per schema
+export const VALID_METRIC_TYPES = {
+  PERFORMANCE: 'performance',
+  RESOURCE: 'resource',
+  ERROR_RATE: 'error_rate',
+  AVAILABILITY: 'availability',
+  LATENCY: 'latency'
+} as const;
+
+type ValidMetricType = typeof VALID_METRIC_TYPES[keyof typeof VALID_METRIC_TYPES];
+
+// Metric names we track (stored in metricName)
+export const METRIC_NAMES = {
   CPU_USAGE: 'cpu_usage',
   MEMORY_USAGE: 'memory_usage',
   QUERY_TIME: 'query_time',
@@ -56,6 +67,30 @@ export const METRIC_TYPES = {
   DISK_USAGE: 'disk_usage',
   CONNECTION_COUNT: 'connection_count'
 } as const;
+
+// Map metric names to valid metric types
+function getMetricType(metricName: string): ValidMetricType {
+  switch (metricName) {
+    case METRIC_NAMES.CPU_USAGE:
+    case METRIC_NAMES.MEMORY_USAGE:
+    case METRIC_NAMES.DISK_USAGE:
+      return 'resource';
+    case METRIC_NAMES.QUERY_TIME:
+    case METRIC_NAMES.RESPONSE_TIME:
+      return 'latency';
+    case METRIC_NAMES.ERROR_RATE:
+      return 'error_rate';
+    case METRIC_NAMES.CONNECTION_COUNT:
+      return 'performance';
+    default:
+      return 'performance';
+  }
+}
+
+// Extended metric interface with computed anomaly score
+interface MetricWithAnomalyScore extends SystemMetric {
+  anomalyScore?: number;
+}
 
 /**
  * LSTM Autoencoder Model for Anomaly Detection
@@ -363,6 +398,7 @@ export class PredictiveMaintenanceService {
   private forecaster: TimeSeriesForecaster;
   private metricsBuffer: Map<string, number[][]> = new Map();
   private lastAnalysis: Map<string, Date> = new Map();
+  private anomalyScores: Map<string, number> = new Map(); // Track anomaly scores in memory
 
   private constructor() {
     this.anomalyDetector = new LSTMAutoencoder();
@@ -383,7 +419,6 @@ export class PredictiveMaintenanceService {
     try {
       // Try to load existing models
       await this.anomalyDetector.loadModel('./models/anomaly-detector');
-      // Note: Forecaster model saving handled internally if needed
       console.log('✓ Loaded existing predictive maintenance models');
     } catch (error) {
       console.log('Training new predictive maintenance models...');
@@ -400,11 +435,12 @@ export class PredictiveMaintenanceService {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     for (const component of Object.values(MONITORED_COMPONENTS)) {
+      // Check for metrics that have component prefix in metricName
       const metrics = await db.select()
         .from(systemMetrics)
         .where(
           and(
-            eq(systemMetrics.component, component),
+            sql`${systemMetrics.metricName} LIKE ${component + '_%'}`,
             gte(systemMetrics.timestamp, thirtyDaysAgo)
           )
         )
@@ -416,15 +452,10 @@ export class PredictiveMaintenanceService {
       }
     }
 
-    // Train anomaly detector on normal data (low anomaly scores)
+    // Train anomaly detector on normal data
     const normalMetrics = await db.select()
       .from(systemMetrics)
-      .where(
-        and(
-          gte(systemMetrics.timestamp, thirtyDaysAgo),
-          sql`${systemMetrics.anomalyScore} IS NULL OR ${systemMetrics.anomalyScore} < 0.3`
-        )
-      )
+      .where(gte(systemMetrics.timestamp, thirtyDaysAgo))
       .orderBy(asc(systemMetrics.timestamp));
 
     const trainingData = this.prepareTrainingData(normalMetrics);
@@ -463,41 +494,44 @@ export class PredictiveMaintenanceService {
         const baselineLatency = 100 + Math.sin(hour / 24 * 2 * Math.PI) * 20;
         const baselineErrorRate = 0.01 + Math.random() * 0.005;
 
+        // Use component prefix in metricName for grouping
         metrics.push({
-          component,
-          metricName: METRIC_TYPES.CPU_USAGE,
+          metricType: 'resource',
+          metricName: `${component}_${METRIC_NAMES.CPU_USAGE}`,
           value: baselineCpu + (Math.random() - 0.5) * 10,
           timestamp,
-          metadata: { unit: 'percent' }
+          unit: 'percent'
         });
 
         metrics.push({
-          component,
-          metricName: METRIC_TYPES.MEMORY_USAGE,
+          metricType: 'resource',
+          metricName: `${component}_${METRIC_NAMES.MEMORY_USAGE}`,
           value: baselineMemory + (Math.random() - 0.5) * 5,
           timestamp,
-          metadata: { unit: 'percent' }
+          unit: 'percent'
         });
 
         metrics.push({
-          component,
-          metricName: METRIC_TYPES.QUERY_TIME,
+          metricType: 'latency',
+          metricName: `${component}_${METRIC_NAMES.QUERY_TIME}`,
           value: baselineLatency + (Math.random() - 0.5) * 30,
           timestamp,
-          metadata: { unit: 'ms' }
+          unit: 'ms'
         });
 
         metrics.push({
-          component,
-          metricName: METRIC_TYPES.ERROR_RATE,
+          metricType: 'error_rate',
+          metricName: `${component}_${METRIC_NAMES.ERROR_RATE}`,
           value: baselineErrorRate,
           timestamp,
-          metadata: { unit: 'rate' }
+          unit: 'rate'
         });
       }
     }
 
-    await db.insert(systemMetrics).values(metrics);
+    if (metrics.length > 0) {
+      await db.insert(systemMetrics).values(metrics as (typeof systemMetrics.$inferInsert)[]);
+    }
   }
 
   /**
@@ -506,15 +540,12 @@ export class PredictiveMaintenanceService {
   private prepareTrainingData(metrics: SystemMetric[]): number[][][] {
     const componentData = new Map<string, number[][]>();
 
-    // Group by component and prepare feature vectors
+    // Group by component (metricType) and prepare feature vectors
     for (const metric of metrics) {
-      const key = `${metric.component}_${metric.timestamp}`;
-      if (!componentData.has(metric.component)) {
-        componentData.set(metric.component, []);
+      const key = metric.metricType;
+      if (!componentData.has(key)) {
+        componentData.set(key, []);
       }
-      
-      // Aggregate metrics by timestamp
-      // In real implementation, would properly group by timestamp
     }
 
     const windows: number[][][] = [];
@@ -540,7 +571,7 @@ export class PredictiveMaintenanceService {
         timeSeriesMap.set(timeKey, new Map());
       }
       timeSeriesMap.get(timeKey)!.set(
-        `${metric.component}_${metric.metricName}`,
+        `${metric.metricType}_${metric.metricName}`,
         metric.value
       );
     }
@@ -555,8 +586,8 @@ export class PredictiveMaintenanceService {
    * Ingest new metrics and perform real-time analysis
    */
   async ingestMetric(metric: InsertSystemMetric): Promise<{ anomalyScore: number; isAnomaly: boolean }> {
-    // Add to buffer
-    const key = metric.component;
+    // Add to buffer using metricType as component key
+    const key = metric.metricType;
     if (!this.metricsBuffer.has(key)) {
       this.metricsBuffer.set(key, []);
     }
@@ -579,13 +610,12 @@ export class PredictiveMaintenanceService {
       const anomalies = this.anomalyDetector.detectAnomalies([buffer]);
       const result = anomalies[anomalies.length - 1];
       
-      // Store anomaly score in database
+      // Store anomaly score in memory map
       const [savedMetric] = await db.insert(systemMetrics)
-        .values({
-          ...metric,
-          anomalyScore: result.score
-        })
+        .values(metric as typeof systemMetrics.$inferInsert)
         .returning();
+      
+      this.anomalyScores.set(savedMetric.id, result.score);
 
       // Trigger prediction if anomaly detected
       if (result.isAnomaly && this.shouldAnalyzeComponent(key)) {
@@ -596,8 +626,15 @@ export class PredictiveMaintenanceService {
     }
 
     // No anomaly detection yet (not enough data)
-    await db.insert(systemMetrics).values(metric);
+    await db.insert(systemMetrics).values(metric as typeof systemMetrics.$inferInsert);
     return { anomalyScore: 0, isAnomaly: false };
+  }
+
+  /**
+   * Get anomaly score for a metric
+   */
+  getAnomalyScore(metricId: string): number {
+    return this.anomalyScores.get(metricId) || 0;
   }
 
   /**
@@ -617,7 +654,7 @@ export class PredictiveMaintenanceService {
   async analyzeComponent(component: string): Promise<MaintenancePrediction[]> {
     this.lastAnalysis.set(component, new Date());
 
-    // Fetch recent metrics
+    // Fetch recent metrics that have this component prefix in metricName
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -625,7 +662,7 @@ export class PredictiveMaintenanceService {
       .from(systemMetrics)
       .where(
         and(
-          eq(systemMetrics.component, component),
+          sql`${systemMetrics.metricName} LIKE ${component + '_%'}`,
           gte(systemMetrics.timestamp, sevenDaysAgo)
         )
       )
@@ -638,8 +675,12 @@ export class PredictiveMaintenanceService {
 
     // Calculate trend and patterns
     const trend = this.calculateTrend(recentMetrics);
-    const anomalyCount = recentMetrics.filter(m => (m.anomalyScore || 0) > 0.5).length;
-    const avgAnomalyScore = recentMetrics.reduce((sum, m) => sum + (m.anomalyScore || 0), 0) / recentMetrics.length;
+    const metricsWithScores = recentMetrics.map(m => ({
+      ...m,
+      anomalyScore: this.getAnomalyScore(m.id)
+    }));
+    const anomalyCount = metricsWithScores.filter(m => (m.anomalyScore || 0) > 0.5).length;
+    const avgAnomalyScore = metricsWithScores.reduce((sum, m) => sum + (m.anomalyScore || 0), 0) / metricsWithScores.length;
 
     // Forecast future values
     const timeSeriesData = this.prepareTimeSeriesData(recentMetrics);
@@ -653,43 +694,25 @@ export class PredictiveMaintenanceService {
     // Database-specific predictions
     if (component === MONITORED_COMPONENTS.DATABASE) {
       if (trend.queryTime > 0.2 && avgAnomalyScore > 0.3) {
+        const riskLevel: 'low' | 'medium' | 'high' | 'critical' = avgAnomalyScore > 0.7 ? 'high' : 'medium';
         predictions.push({
           component,
-          predictedIssue: 'index_fragmentation',
-          probability: Math.min(0.9, avgAnomalyScore + trend.queryTime),
-          recommendedDate: this.calculateMaintenanceDate(7), // 7 days from now
-          urgencyLevel: avgAnomalyScore > 0.7 ? 'high' : 'medium',
-          estimatedDowntime: 30,
-          preventiveActions: [
-            'Analyze slow queries',
-            'Rebuild fragmented indexes',
-            'Update table statistics',
-            'Vacuum and analyze tables'
-          ],
-          features: {
-            trendSlope: trend.queryTime,
-            recentAnomalies: anomalyCount
-          }
+          predictionType: 'degradation' as const,
+          confidence: Math.min(0.9, avgAnomalyScore + trend.queryTime),
+          predictedDate: this.calculateMaintenanceDate(7),
+          risk: riskLevel,
+          recommendation: `Index fragmentation detected (trend: ${trend.queryTime.toFixed(3)}, anomalies: ${anomalyCount}). Actions: Analyze slow queries, rebuild fragmented indexes, update table statistics, vacuum and analyze tables. Estimated downtime: 30 min.`
         });
       }
 
       if (trend.connectionCount > 0.3) {
         predictions.push({
           component,
-          predictedIssue: 'connection_pool_exhaustion',
-          probability: Math.min(0.8, trend.connectionCount * 2),
-          recommendedDate: this.calculateMaintenanceDate(3),
-          urgencyLevel: 'high',
-          estimatedDowntime: 10,
-          preventiveActions: [
-            'Increase connection pool size',
-            'Identify long-running transactions',
-            'Optimize connection lifecycle'
-          ],
-          features: {
-            trendSlope: trend.connectionCount,
-            recentAnomalies: anomalyCount
-          }
+          predictionType: 'capacity' as const,
+          confidence: Math.min(0.8, trend.connectionCount * 2),
+          predictedDate: this.calculateMaintenanceDate(3),
+          risk: 'high' as const,
+          recommendation: `Connection pool exhaustion risk (trend: ${trend.connectionCount.toFixed(3)}, anomalies: ${anomalyCount}). Actions: Increase connection pool size, identify long-running transactions, optimize connection lifecycle. Estimated downtime: 10 min.`
         });
       }
     }
@@ -699,22 +722,17 @@ export class PredictiveMaintenanceService {
       if (trend.memory > 0.15 && forecast && forecast[6] > 85) {
         predictions.push({
           component,
-          predictedIssue: 'memory_leak',
-          probability: Math.min(0.85, trend.memory * 3),
-          recommendedDate: this.calculateMaintenanceDate(5),
-          urgencyLevel: 'high',
-          estimatedDowntime: 15,
-          preventiveActions: [
-            'Identify memory leak sources',
-            'Restart application servers',
-            'Update memory allocation settings'
-          ],
-          features: {
-            trendSlope: trend.memory,
-            recentAnomalies: anomalyCount
-          }
+          predictionType: 'failure' as const,
+          confidence: Math.min(0.85, trend.memory * 3),
+          predictedDate: this.calculateMaintenanceDate(5),
+          risk: 'high' as const,
+          recommendation: `Memory leak detected (trend: ${trend.memory.toFixed(3)}, anomalies: ${anomalyCount}). Actions: Identify memory leak sources, restart application servers, update memory allocation settings. Estimated downtime: 15 min.`
         });
       }
+    }
+
+    if (predictions.length === 0) {
+      return [];
     }
 
     // Save predictions to database
@@ -760,12 +778,12 @@ export class PredictiveMaintenanceService {
       
       const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
       
-      // Map metric name to trend key
-      if (metricName === METRIC_TYPES.QUERY_TIME) trends.queryTime = slope;
-      if (metricName === METRIC_TYPES.MEMORY_USAGE) trends.memory = slope;
-      if (metricName === METRIC_TYPES.CPU_USAGE) trends.cpu = slope;
-      if (metricName === METRIC_TYPES.ERROR_RATE) trends.errorRate = slope;
-      if (metricName === METRIC_TYPES.CONNECTION_COUNT) trends.connectionCount = slope;
+      // Map metric name to trend key (check if metricName includes the metric suffix)
+      if (metricName.includes(METRIC_NAMES.QUERY_TIME)) trends.queryTime = slope;
+      if (metricName.includes(METRIC_NAMES.MEMORY_USAGE)) trends.memory = slope;
+      if (metricName.includes(METRIC_NAMES.CPU_USAGE)) trends.cpu = slope;
+      if (metricName.includes(METRIC_NAMES.ERROR_RATE)) trends.errorRate = slope;
+      if (metricName.includes(METRIC_NAMES.CONNECTION_COUNT)) trends.connectionCount = slope;
     });
 
     return trends;
@@ -801,11 +819,11 @@ export class PredictiveMaintenanceService {
       .from(maintenancePredictions)
       .where(
         and(
-          eq(maintenancePredictions.status, 'active'),
-          lte(maintenancePredictions.recommendedDate, thirtyDaysFromNow)
+          eq(maintenancePredictions.isAddressed, false),
+          lte(maintenancePredictions.predictedDate, thirtyDaysFromNow)
         )
       )
-      .orderBy(asc(maintenancePredictions.recommendedDate));
+      .orderBy(asc(maintenancePredictions.predictedDate));
   }
 
   /**
@@ -829,24 +847,28 @@ export class PredictiveMaintenanceService {
     // Get active predictions
     const activePredictions = await db.select()
       .from(maintenancePredictions)
-      .where(eq(maintenancePredictions.status, 'active'));
+      .where(eq(maintenancePredictions.isAddressed, false));
 
     // Calculate component health scores
     const componentScores: Record<string, number> = {};
     
     for (const component of Object.values(MONITORED_COMPONENTS)) {
-      const componentMetrics = recentMetrics.filter(m => m.component === component);
-      const avgAnomalyScore = componentMetrics.length > 0 ?
-        componentMetrics.reduce((sum, m) => sum + (m.anomalyScore || 0), 0) / componentMetrics.length :
+      const componentMetrics = recentMetrics.filter(m => m.metricType === component);
+      const metricsWithScores = componentMetrics.map(m => ({
+        ...m,
+        anomalyScore: this.getAnomalyScore(m.id)
+      }));
+      const avgAnomalyScore = metricsWithScores.length > 0 ?
+        metricsWithScores.reduce((sum, m) => sum + (m.anomalyScore || 0), 0) / metricsWithScores.length :
         0;
       
       const componentPredictions = activePredictions.filter(p => p.component === component);
-      const maxProbability = componentPredictions.length > 0 ?
-        Math.max(...componentPredictions.map(p => p.probability)) :
+      const maxConfidence = componentPredictions.length > 0 ?
+        Math.max(...componentPredictions.map(p => p.confidence)) :
         0;
       
       // Health score: 100 - (anomaly impact + prediction impact)
-      componentScores[component] = Math.max(0, 100 - (avgAnomalyScore * 50 + maxProbability * 50));
+      componentScores[component] = Math.max(0, 100 - (avgAnomalyScore * 50 + maxConfidence * 50));
     }
 
     // Overall system health (weighted average)
@@ -864,7 +886,8 @@ export class PredictiveMaintenanceService {
       recommendations.push('Server resources are strained. Review memory allocation.');
     }
     
-    if (activePredictions.filter(p => p.urgencyLevel === 'critical').length > 0) {
+    const criticalPredictions = activePredictions.filter(p => p.risk === 'critical');
+    if (criticalPredictions.length > 0) {
       recommendations.push('Critical maintenance required. Review urgent predictions.');
     }
 

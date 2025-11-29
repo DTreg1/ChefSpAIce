@@ -212,8 +212,12 @@ export class CookingTermsService {
    */
   static async getTerm(term: string): Promise<CookingTerm | null> {
     try {
-      const result = await storage.user.food.getCookingTerm(term.toLowerCase());
-      return result || null;
+      const terms = await storage.user.food.getCookingTermsByCategory(term);
+      const found = terms.find(t => t.term.toLowerCase() === term.toLowerCase());
+      if (found) return found;
+      
+      const allTerms = await this.getTerms();
+      return allTerms.find(t => t.term.toLowerCase() === term.toLowerCase()) || null;
     } catch (error) {
       console.error("Error fetching cooking term:", error);
       return null;

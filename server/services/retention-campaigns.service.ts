@@ -129,9 +129,9 @@ class RetentionCampaignService {
    */
   async runWeeklyReengagementCampaign() {
     try {
-      // Get medium-risk users (60-80% probability)
+      // Get medium-risk users (60-80% confidence)
       const mediumRisks = await storage.platform.analytics.getChurnRiskUsers(0.6);
-      const targetUsers = mediumRisks.filter(r => r.probability < 0.8);
+      const targetUsers = mediumRisks.filter(r => r.confidence < 0.8);
       
       console.log(`Running re-engagement campaign for ${targetUsers.length} users`);
 
@@ -211,8 +211,8 @@ class RetentionCampaignService {
       if (campaign.predictionId) {
         await storage.platform.analytics.updatePredictionStatus(
           campaign.predictionId,
-          'intervention_sent',
-          campaign.subject
+          'completed',
+          { interventionSent: true, subject: campaign.subject }
         );
       }
 
@@ -355,12 +355,14 @@ The Team
   private async recordCampaignResult(campaign: EmailCampaign, success: boolean) {
     if (campaign.predictionId) {
       try {
-        await storage.platform.analytics.createPredictionAccuracy({
+        // Cast to avoid drizzle-zod type inference issue with jsonb
+        const accuracy = {
           predictionId: campaign.predictionId,
           actualOutcome: success ? 'intervention_successful' : 'intervention_failed',
+          isCorrect: success,
           accuracyScore: success ? 0.9 : 0.3,
-          outcomeDate: new Date(),
-        });
+        } as any;
+        await storage.platform.analytics.createPredictionAccuracy(accuracy);
       } catch (error) {
         console.error('Error recording campaign result:', error);
       }

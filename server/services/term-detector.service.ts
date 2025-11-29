@@ -3,7 +3,7 @@ import { cookingTerms, type CookingTerm } from "@shared/schema";
 
 interface TermMatch {
   term: string;
-  termId: string;
+  termId: number;
   originalTerm: string;
   start: number;
   end: number;
@@ -64,10 +64,13 @@ export class TermDetector {
         // Store main term
         this.terms.set(term.term.toLowerCase(), term);
         
-        // Store search term variations
-        if (term.searchTerms && term.searchTerms.length > 0) {
-          for (const searchTerm of term.searchTerms) {
-            this.terms.set(searchTerm.toLowerCase(), term);
+        // Store related terms as variations (if available)
+        if (term.relatedTerms && term.relatedTerms.length > 0) {
+          for (const relatedTerm of term.relatedTerms) {
+            // Only add if not already mapped to another term
+            if (!this.terms.has(relatedTerm.toLowerCase())) {
+              this.terms.set(relatedTerm.toLowerCase(), term);
+            }
           }
         }
 
@@ -98,9 +101,9 @@ export class TermDetector {
     try {
       const variations: string[] = [term.term];
       
-      // Add search terms as variations
-      if (term.searchTerms && term.searchTerms.length > 0) {
-        variations.push(...term.searchTerms);
+      // Add related terms as variations
+      if (term.relatedTerms && term.relatedTerms.length > 0) {
+        variations.push(...term.relatedTerms);
       }
 
       // Generate verb variations for cooking methods
@@ -158,7 +161,7 @@ export class TermDetector {
       // Calculate priority (longer, more specific terms get higher priority)
       const priority = term.term.length * 10 + 
                       (term.category === 'cooking_methods' ? 5 : 0) +
-                      (term.searchTerms ? term.searchTerms.length : 0);
+                      (term.relatedTerms ? term.relatedTerms.length : 0);
 
       return {
         pattern,
@@ -257,7 +260,7 @@ export class TermDetector {
     const usedRanges: Array<[number, number]> = [];
 
     // Track which terms we've already matched to avoid duplicates
-    const matchedTermIds = new Set<string>();
+    const matchedTermIds = new Set<number>();
 
     for (const { pattern, term } of this.patterns) {
       // Skip excluded categories

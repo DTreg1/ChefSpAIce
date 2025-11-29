@@ -11,7 +11,7 @@ import * as tf from '@tensorflow/tfjs-node';
 import OpenAI from "openai";
 import Sentiment from 'sentiment';
 import * as natural from 'natural';
-import * as keywordExtractor from 'keyword-extractor';
+import keywordExtractor from 'keyword-extractor';
 import { storage } from "../storage/index";
 import type { InsertSentimentResults, SentimentResults, InsertSentimentTrends } from "@shared/schema";
 
@@ -582,7 +582,7 @@ Respond in JSON format: {"aspect_name": "sentiment"}`
    */
   private extractKeywords(content: string): string[] {
     try {
-      const extraction = (keywordExtractor).extract(content, {
+      const extraction = keywordExtractor.extract(content, {
         language: 'english',
         remove_digits: true,
         return_changed_case: true,
