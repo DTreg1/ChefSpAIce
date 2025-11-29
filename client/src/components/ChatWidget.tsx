@@ -116,15 +116,11 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
   const isOnChatPage = location === "/" || location.startsWith("/chat");
 
   return (
-    <>
+    <div className="fixed bottom-6 right-6 z-[9999]">
       {!isOpen && (
         <Button
           onClick={toggleChat}
-          className={cn(
-            "fixed rounded-full w-14 h-14 shadow-lg z-50",
-            mode === "floating" &&
-              (isOnChatPage ? "bottom-48 right-6" : "bottom-6 right-6"),
-          )}
+          className="rounded-full w-14 h-14 shadow-lg"
           size="icon"
           data-testid="button-chat-widget-toggle"
         >
@@ -135,7 +131,7 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
       {isOpen && (
         <Card
           className={cn(
-            "fixed bottom-4 right-4 w-96 h-[600px] shadow-xl z-50",
+            "w-96 h-[600px] shadow-xl",
             "flex flex-col",
             "animate-in fade-in slide-in-from-bottom-5 duration-300",
           )}
@@ -333,6 +329,6 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
           </div>
         </Card>
       )}
-    </>
+    </div>
   );
 }
