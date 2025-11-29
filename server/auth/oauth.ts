@@ -435,41 +435,62 @@ export function configureAppleStrategy(hostname: string) {
           scope: ["email", "name"],
         } as any,
         async (accessToken: string, refreshToken: string, idToken: any, profile: any, done: any) => {
+          // Ensure done is a function (passport-apple may call with different args in error cases)
+          const safeCallback = typeof done === 'function' ? done : (typeof profile === 'function' ? profile : null);
+          
+          if (!safeCallback) {
+            console.error("[Apple OAuth] No valid callback function found");
+            return;
+          }
+          
           try {
-            // Apple user ID comes from idToken.sub, not profile.id
-            const appleUserId = idToken?.sub || profile?.id;
+            // Debug: Log what we received from Apple
+            console.log("[Apple OAuth] Received callback:", {
+              hasAccessToken: !!accessToken,
+              hasRefreshToken: !!refreshToken,
+              idTokenType: typeof idToken,
+              idTokenKeys: idToken ? Object.keys(idToken) : [],
+              profileType: typeof profile,
+              profileKeys: profile ? Object.keys(profile) : [],
+            });
+            
+            // Apple user ID comes from idToken.sub or profile.id
+            // The idToken from passport-apple should be the decoded JWT
+            const appleUserId = idToken?.sub || profile?.id || profile?.sub;
             
             if (!appleUserId) {
-              console.error("[Apple OAuth] No user ID found in idToken or profile:", { 
-                hasIdToken: !!idToken, 
-                idTokenSub: idToken?.sub,
-                profileId: profile?.id 
-              });
-              return done(new Error("No Apple user ID found"));
+              console.error("[Apple OAuth] No user ID found. Full idToken:", JSON.stringify(idToken, null, 2));
+              console.error("[Apple OAuth] Full profile:", JSON.stringify(profile, null, 2));
+              return safeCallback(new Error("No Apple user ID found in response"));
             }
             
-            // Extract email from idToken if not in profile
-            const email = profile?.email || idToken?.email;
-            const emails = email ? [{ value: email, verified: idToken?.email_verified }] : profile?.emails || [];
+            // Extract email - Apple provides it in the idToken
+            const email = idToken?.email || profile?.email;
+            const emails = email ? [{ value: email, verified: idToken?.email_verified }] : [];
             
-            // Apple only provides name on first login
+            // Apple only provides name on first login, in the profile object
+            const firstName = profile?.name?.firstName || '';
+            const lastName = profile?.name?.lastName || '';
+            
             const appleProfile: OAuthProfile = {
               id: appleUserId,
               emails,
-              displayName: profile?.displayName || profile?.name?.firstName || email?.split('@')[0] || 'Apple User',
-              name: profile?.name || {
-                givenName: profile?.name?.firstName || '',
-                familyName: profile?.name?.lastName || '',
+              displayName: firstName || email?.split('@')[0] || 'Apple User',
+              name: {
+                givenName: firstName,
+                familyName: lastName,
               },
               provider: "apple",
               _json: idToken,
             };
             
+            console.log("[Apple OAuth] Created profile with ID:", appleUserId);
+            
             const user = await findOrCreateUser("apple", appleProfile, accessToken, refreshToken);
-            done(null, user);
+            safeCallback(null, user);
           } catch (error) {
             console.error("[Apple OAuth] Error in verify callback:", error);
-            done(error);
+            safeCallback(error);
           }
         }
       )
