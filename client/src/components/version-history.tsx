@@ -78,10 +78,12 @@ export function VersionHistory({
   const [isConfirmRestoreOpen, setIsConfirmRestoreOpen] = useState(false);
 
   // Fetch version history
-  const { data: versions, isLoading } = useQuery<{ versions: DraftVersion[] }>({
+  const { data: versions, isLoading, isError } = useQuery<{ versions: DraftVersion[] }>({
     queryKey: ['/api/autosave/versions', documentId],
     queryFn: () => apiRequest(`/api/autosave/versions?documentId=${documentId}&limit=20`, 'GET'),
     refetchInterval: 30000, // Refresh every 30 seconds
+    retry: 1, // Only retry once to avoid long loading states
+    staleTime: 10000, // Consider data fresh for 10 seconds
   });
 
   // Delete version mutation
@@ -144,15 +146,8 @@ export function VersionHistory({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className={cn('space-y-2', className)}>
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-20 w-full" />
-      </div>
-    );
-  }
-
+  // Don't show skeleton - just render the button immediately
+  // The button will show "Version History" with count once data loads
   const versionList = versions?.versions || [];
 
   return (
@@ -179,7 +174,17 @@ export function VersionHistory({
           <DropdownMenuLabel>Version History</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <ScrollArea className="h-72">
-            {versionList.length === 0 ? (
+            {isLoading ? (
+              <div className="p-4 text-center text-muted-foreground">
+                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+                <p className="text-sm">Loading versions...</p>
+              </div>
+            ) : isError ? (
+              <div className="p-4 text-center text-muted-foreground">
+                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Unable to load versions</p>
+              </div>
+            ) : versionList.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">
                 <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No versions saved yet</p>
