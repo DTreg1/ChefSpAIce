@@ -14,7 +14,7 @@
 
 import { OpenAI } from 'openai';
 import { storage } from '../storage';
-import { calculateEngagementProbability } from '../services/lightweightPrediction';
+import { calculateEngagementProbability } from '../services/lightweight-prediction.service';
 import {
   type NotificationScores,
   type InsertNotificationScores,

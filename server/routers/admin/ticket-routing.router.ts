@@ -11,7 +11,7 @@ import { storage } from "../../storage/index";
 import { isAuthenticated, adminOnly } from "../../middleware/oauth.middleware";
 import { asyncHandler } from "../../middleware/error.middleware";
 import { Request } from "express";
-import * as aiRoutingService from "../../services/aiRoutingService";
+import * as aiRoutingService from "../../services/ai-routing.service";
 
 const router = Router();
 

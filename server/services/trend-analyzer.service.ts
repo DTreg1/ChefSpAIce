@@ -8,7 +8,7 @@
 import { storage } from "../storage/index";
 import { InsertTrend } from '@shared/schema';
 import { openai } from '../integrations/openai';
-import { detectSimpleTrend, detectAnomalies, detectSeasonality } from './lightweightPrediction';
+import { detectSimpleTrend, detectAnomalies, detectSeasonality } from './lightweight-prediction.service';
 
 interface TrendAnalysisConfig {
   dataSource: 'analytics' | 'feedback' | 'inventory' | 'recipes' | 'all';

@@ -6,7 +6,7 @@
  */
 
 import { storage } from "../storage/index";
-import { predictionService } from './predictionService';
+import { predictionService } from './prediction.service';
 import type { UserPrediction, InsertUserPrediction } from '@shared/schema';
 import cron, { type ScheduledTask } from 'node-cron';
 

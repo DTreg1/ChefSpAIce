@@ -20,9 +20,9 @@ import { storage } from "../../../storage/index";
 import { z } from "zod";
 import { getOpenAIClient } from "../../../config/openai-config";
 import { asyncHandler } from "../../../middleware/error.middleware";
-import { sentimentService } from "../../../services/sentimentService";
+import { sentimentService } from "../../../services/sentiment.service";
 import { trendAnalyzer } from "../../../services/trend-analyzer.service";
-import { predictionService } from "../../../services/predictionService";
+import { predictionService } from "../../../services/prediction.service";
 import { rateLimiters } from "../../../middleware/rateLimit";
 import {
   AIError,
@@ -1198,7 +1198,7 @@ router.get(
       const validated = schema.parse({ userId, type, limit });
 
       // Import and use embeddings service
-      const { EmbeddingsService } = await import("../../services/embeddings");
+      const { EmbeddingsService } = await import("../../../services/embeddings.service");
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       const recommendations =
@@ -1257,7 +1257,7 @@ router.get(
     try {
       const validated = schema.parse({ id, type, limit });
 
-      const { EmbeddingsService } = await import("../../services/embeddings");
+      const { EmbeddingsService } = await import("../../../services/embeddings.service");
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       const relatedContent = await embeddingsService.findRelatedContent(
@@ -1316,7 +1316,7 @@ router.post(
     try {
       const validated = schema.parse(req.body);
 
-      const { EmbeddingsService } = await import("../../services/embeddings");
+      const { EmbeddingsService } = await import("../../../services/embeddings.service");
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       const embedding = await embeddingsService.createContentEmbedding(
@@ -1387,7 +1387,7 @@ router.post(
     try {
       const validated = schema.parse(req.body);
 
-      const { EmbeddingsService } = await import("../../services/embeddings");
+      const { EmbeddingsService } = await import("../../../services/embeddings.service");
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       const result = await embeddingsService.refreshEmbeddings(
@@ -1444,7 +1444,7 @@ router.post(
     try {
       const validated = schema.parse(req.body);
 
-      const { EmbeddingsService } = await import("../../services/embeddings");
+      const { EmbeddingsService } = await import("../../../services/embeddings.service");
       const embeddingsService = new EmbeddingsService(storage.platform.content);
 
       // Generate embedding for the query
@@ -1566,7 +1566,7 @@ router.post(
       const { naturalQuery } = naturalQuerySchema.parse(req.body);
 
       const { convertNaturalLanguageToSQL } = await import(
-        "../../services/openai-query"
+        "../../../services/openai-query.service"
       );
       const result = await convertNaturalLanguageToSQL(naturalQuery, userId);
 
@@ -1625,7 +1625,7 @@ router.post(
       const startTime = Date.now();
       try {
         const { executeValidatedQuery } = await import(
-          "../../services/openai-query"
+          "../../../services/openai-query.service"
         );
         const { results, rowCount } = await executeValidatedQuery(
           sql,

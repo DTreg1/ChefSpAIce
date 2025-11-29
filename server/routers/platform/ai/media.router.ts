@@ -30,8 +30,8 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import os from "os";
 import { getOpenAIClient } from "../../../config/openai-config";
-import { faceDetectionService } from "../../../services/faceDetection.service";
-import { generateAltText, analyzeAltTextQuality, generateAltTextSuggestions } from "../../../services/alt-text-generator";
+import { faceDetectionService } from "../../../services/face-detection.service";
+import { generateAltText, analyzeAltTextQuality, generateAltTextSuggestions } from "../../../services/alt-text-generator.service";
 import { rateLimiters } from "../../../middleware/rate-limit.middleware";
 import { circuitBreakers, executeWithBreaker } from "../../../middleware/circuit-breaker.middleware";
 import {

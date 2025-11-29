@@ -177,7 +177,7 @@ router.post("/api/push-tokens/test", isAuthenticated, async (req: Request, res) 
     }
 
     // Dynamically import to avoid circular dependencies
-    const { default: PushNotificationService } = await import("../services/push-notification.service");
+    const { default: PushNotificationService } = await import("../../services/push-notification.service");
     
     const result = await PushNotificationService.sendTestNotification(userId);
     res.json({ 
@@ -199,7 +199,7 @@ router.post("/api/push-tokens/trigger-expiring", isAuthenticated, adminOnly, asy
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { default: NotificationScheduler } = await import("../services/notification-scheduler");
+    const { default: NotificationScheduler } = await import("../../services/push-notification-scheduler.service");
     
     const result = await NotificationScheduler.triggerExpiringFoodNotifications();
     res.json({ 
@@ -221,7 +221,7 @@ router.post("/api/push-tokens/trigger-recipes", isAuthenticated, adminOnly, asyn
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { default: NotificationScheduler } = await import("../services/notification-scheduler");
+    const { default: NotificationScheduler } = await import("../../services/push-notification-scheduler.service");
     
     const result = await NotificationScheduler.triggerRecipeSuggestions();
     res.json({ 

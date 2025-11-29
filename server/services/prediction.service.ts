@@ -8,7 +8,7 @@
 import OpenAI from 'openai';
 import { storage } from "../storage/index";
 import type { UserPrediction, InsertUserPrediction } from '@shared/schema';
-import { predictChurnLightweight } from './lightweightPrediction';
+import { predictChurnLightweight } from './lightweight-prediction.service';
 
 // Initialize OpenAI client (uses Replit AI Integrations)
 const openai = new OpenAI({

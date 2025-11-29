@@ -12,7 +12,7 @@ import { logRetentionService } from "./services/log-retention.service";
 import PushStatusService from "./services/push-status.service";
 import { preloadCommonSearches } from "./utils/usdaCache";
 import { termDetector } from "./services/term-detector.service";
-import { notificationScheduler } from "./services/notification-scheduler.service";
+import { notificationScheduler } from "./services/ml-notification-scheduler.service";
 import { initializeEnvironment } from "./config/env-validator";
 
 /**
