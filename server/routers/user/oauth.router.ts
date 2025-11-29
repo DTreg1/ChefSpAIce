@@ -224,6 +224,46 @@ router.get("/user", isAuthenticated, async (req, res) => {
   }
 });
 
+// Get common items for onboarding - /api/v1/auth/onboarding/common-items
+router.get("/onboarding/common-items", async (_req, res) => {
+  try {
+    const { onboardingUsdaMapping } = await import("../../data/onboarding-usda-mapping");
+    
+    const categories: Record<string, Array<{
+      displayName: string;
+      fdcId: string;
+      description: string;
+      storage: string;
+      quantity: string;
+      unit: string;
+      expirationDays: number;
+      category: string;
+    }>> = {};
+    
+    for (const [name, item] of Object.entries(onboardingUsdaMapping)) {
+      const category = item.foodCategory || "Other";
+      if (!categories[category]) {
+        categories[category] = [];
+      }
+      categories[category].push({
+        displayName: item.displayName || name,
+        fdcId: item.fdcId,
+        description: item.description,
+        storage: item.storage,
+        quantity: item.quantity,
+        unit: item.unit,
+        expirationDays: item.expirationDays,
+        category: category,
+      });
+    }
+    
+    res.json({ categories });
+  } catch (error) {
+    console.error("Error getting common items:", error);
+    res.status(500).json({ error: "Failed to get common items" });
+  }
+});
+
 // Complete onboarding - /api/v1/auth/onboarding/complete
 router.post("/onboarding/complete", isAuthenticated, async (req, res) => {
   try {

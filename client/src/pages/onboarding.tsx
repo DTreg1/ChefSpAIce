@@ -139,7 +139,7 @@ export default function Onboarding() {
   // Fetch common equipment from API
   const { data: commonEquipment, isLoading: equipmentLoading } =
     useQuery<ApplianceLibrary[]>({
-      queryKey: ["/api/appliance-library/common"],
+      queryKey: ["/api/v1/appliances/appliance-library/common"],
     });
 
   // Set all items as selected by default when data loads

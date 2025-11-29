@@ -453,8 +453,50 @@ export class FoodStorage implements IFoodStorage {
   }
 
   async getCommonAppliances(): Promise<any[]> {
-    console.warn("getCommonAppliances: stub method called");
-    return [];
+    return [
+      { id: "stove", name: "Stove/Range", type: "appliance", isCommon: true },
+      { id: "oven", name: "Oven", type: "appliance", isCommon: true },
+      { id: "microwave", name: "Microwave", type: "appliance", isCommon: true },
+      { id: "refrigerator", name: "Refrigerator", type: "appliance", isCommon: true },
+      { id: "freezer", name: "Freezer", type: "appliance", isCommon: true },
+      { id: "toaster", name: "Toaster", type: "appliance", isCommon: true },
+      { id: "blender", name: "Blender", type: "appliance", isCommon: true },
+      { id: "food-processor", name: "Food Processor", type: "appliance", isCommon: true },
+      { id: "stand-mixer", name: "Stand Mixer", type: "appliance", isCommon: true },
+      { id: "hand-mixer", name: "Hand Mixer", type: "appliance", isCommon: true },
+      { id: "air-fryer", name: "Air Fryer", type: "appliance", isCommon: true },
+      { id: "slow-cooker", name: "Slow Cooker/Crock Pot", type: "appliance", isCommon: true },
+      { id: "instant-pot", name: "Instant Pot/Pressure Cooker", type: "appliance", isCommon: true },
+      { id: "coffee-maker", name: "Coffee Maker", type: "appliance", isCommon: true },
+      { id: "kettle", name: "Electric Kettle", type: "appliance", isCommon: true },
+      { id: "grill", name: "Grill (outdoor/indoor)", type: "appliance", isCommon: true },
+      { id: "skillet", name: "Skillet/Frying Pan", type: "cookware", isCommon: true },
+      { id: "saucepan", name: "Saucepan", type: "cookware", isCommon: true },
+      { id: "stockpot", name: "Stock Pot", type: "cookware", isCommon: true },
+      { id: "dutch-oven", name: "Dutch Oven", type: "cookware", isCommon: true },
+      { id: "cast-iron", name: "Cast Iron Skillet", type: "cookware", isCommon: true },
+      { id: "wok", name: "Wok", type: "cookware", isCommon: true },
+      { id: "baking-sheet", name: "Baking Sheet", type: "bakeware", isCommon: true },
+      { id: "casserole-dish", name: "Casserole Dish", type: "bakeware", isCommon: true },
+      { id: "cake-pan", name: "Cake Pan", type: "bakeware", isCommon: true },
+      { id: "muffin-tin", name: "Muffin Tin", type: "bakeware", isCommon: true },
+      { id: "loaf-pan", name: "Loaf Pan", type: "bakeware", isCommon: true },
+      { id: "pie-dish", name: "Pie Dish", type: "bakeware", isCommon: true },
+      { id: "cutting-board", name: "Cutting Board", type: "utensil", isCommon: true },
+      { id: "knife-set", name: "Knife Set", type: "utensil", isCommon: true },
+      { id: "measuring-cups", name: "Measuring Cups", type: "utensil", isCommon: true },
+      { id: "measuring-spoons", name: "Measuring Spoons", type: "utensil", isCommon: true },
+      { id: "mixing-bowls", name: "Mixing Bowls", type: "utensil", isCommon: true },
+      { id: "colander", name: "Colander/Strainer", type: "utensil", isCommon: true },
+      { id: "spatula", name: "Spatula", type: "utensil", isCommon: true },
+      { id: "whisk", name: "Whisk", type: "utensil", isCommon: true },
+      { id: "tongs", name: "Tongs", type: "utensil", isCommon: true },
+      { id: "ladle", name: "Ladle", type: "utensil", isCommon: true },
+      { id: "peeler", name: "Vegetable Peeler", type: "utensil", isCommon: true },
+      { id: "grater", name: "Cheese Grater", type: "utensil", isCommon: true },
+      { id: "can-opener", name: "Can Opener", type: "utensil", isCommon: true },
+      { id: "rolling-pin", name: "Rolling Pin", type: "utensil", isCommon: true },
+    ];
   }
 
   async addUserAppliance(_userId: string, _data: any): Promise<any> {
