@@ -18,7 +18,7 @@
 
 import { storage } from "../storage/index";
 import { predictionService } from './prediction.service';
-import type { UserPrediction, InsertUserPrediction } from '@shared/schema';
+import type { UserPrediction, InsertUserPrediction, InsertPredictionAccuracy } from '@shared/schema';
 import cron, { type ScheduledTask } from 'node-cron';
 
 interface EmailCampaign {
@@ -209,8 +209,7 @@ class RetentionCampaignService {
       if (campaign.predictionId) {
         await storage.platform.analytics.updatePredictionStatus(
           campaign.predictionId,
-          'completed',
-          { interventionSent: true, subject: campaign.subject }
+          'completed'
         );
       }
 
@@ -349,17 +348,25 @@ The Team
 
   /**
    * Record campaign result for accuracy tracking
+   * Stores intervention metadata in actualOutcome for analytics visibility
    */
   private async recordCampaignResult(campaign: EmailCampaign, success: boolean) {
     if (campaign.predictionId) {
       try {
-        // Cast to avoid drizzle-zod type inference issue with jsonb
-        const accuracy = {
+        const accuracy: InsertPredictionAccuracy = {
           predictionId: campaign.predictionId,
-          actualOutcome: success ? 'intervention_successful' : 'intervention_failed',
+          actualOutcome: { 
+            result: success ? 'intervention_successful' : 'intervention_failed',
+            campaignId: campaign.id,
+            campaignType: campaign.campaignType,
+            subject: campaign.subject,
+            sentAt: campaign.sentAt?.toISOString(),
+            interventionMetadata: campaign.metadata?.intervention || null,
+          },
           isCorrect: success,
           accuracyScore: success ? 0.9 : 0.3,
-        } as any;
+          evaluatedAt: new Date(),
+        };
         await storage.platform.analytics.createPredictionAccuracy(accuracy);
       } catch (error) {
         console.error('Error recording campaign result:', error);
