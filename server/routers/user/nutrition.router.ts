@@ -5,6 +5,7 @@ import { storage } from "../../storage/index";
 import { isAuthenticated } from "../../middleware/oauth.middleware";
 import { extractNutrition } from "../../utils/nutritionCalculator";
 import { z } from "zod";
+import type { UserInventory } from "@shared/schema";
 
 const router = Router();
 
@@ -24,12 +25,12 @@ router.get(
       const { days } = daysQuerySchema.parse(req.query);
       
       // Get food items for the user
-      const items = await storage.user.recipes.getFoodItems(userId);
+      const items = await storage.user.inventory.getFoodItems(userId);
       
       // Calculate nutrition stats based on items
       const stats = {
         totalItems: items.length,
-        itemsWithNutrition: items.filter((item) => item.usdaData).length,
+        itemsWithNutrition: items.filter((item: UserInventory) => item.usdaData).length,
         averageCalories: 0,
         averageProtein: 0,
         averageCarbs: 0,
@@ -38,16 +39,16 @@ router.get(
       };
       
       // Calculate averages if there are items with nutrition data
-      const itemsWithNutrition = items.filter((item) => item.usdaData);
+      const itemsWithNutrition = items.filter((item: UserInventory) => item.usdaData);
       if (itemsWithNutrition.length > 0) {
-        const totals = itemsWithNutrition.reduce((acc, item) => {
+        const totals = itemsWithNutrition.reduce((acc: {calories: number; protein: number; carbs: number; fat: number}, item: UserInventory) => {
           const nutrition = extractNutrition(item.usdaData);
           if (!nutrition) return acc;
           
           return {
             calories: acc.calories + (nutrition.calories || 0),
             protein: acc.protein + (nutrition.protein || 0),
-            carbs: acc.carbs + (nutrition.carbs || 0),
+            carbs: acc.carbs + (nutrition.carbohydrates || 0),
             fat: acc.fat + (nutrition.fat || 0),
           };
         }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
@@ -77,16 +78,16 @@ router.get(
       const { category, minCalories, maxCalories, sortBy = "name" } = req.query;
       
       // Get food items with nutrition data
-      let items = await storage.user.recipes.getFoodItems(userId);
-      items = items.filter((item) => item.usdaData);
+      let items = await storage.user.inventory.getFoodItems(userId);
+      items = items.filter((item: UserInventory) => item.usdaData);
       
       // Apply filters
       if (category) {
-        items = items.filter((item) => item.foodCategory === category);
+        items = items.filter((item: UserInventory) => item.foodCategory === category);
       }
       
       if (minCalories || maxCalories) {
-        items = items.filter((item) => {
+        items = items.filter((item: UserInventory) => {
           const nutrition = extractNutrition(item.usdaData);
           if (!nutrition) return false;
           
@@ -100,30 +101,30 @@ router.get(
       
       // Sort items
       if (sortBy === "calories") {
-        items.sort((a, b) => {
+        items.sort((a: UserInventory, b: UserInventory) => {
           const aNutrition = extractNutrition(a.usdaData);
           const bNutrition = extractNutrition(b.usdaData);
           return (bNutrition?.calories || 0) - (aNutrition?.calories || 0);
         });
       } else if (sortBy === "protein") {
-        items.sort((a, b) => {
+        items.sort((a: UserInventory, b: UserInventory) => {
           const aNutrition = extractNutrition(a.usdaData);
           const bNutrition = extractNutrition(b.usdaData);
           return (bNutrition?.protein || 0) - (aNutrition?.protein || 0);
         });
       } else {
-        items.sort((a, b) => a.name.localeCompare(b.name));
+        items.sort((a: UserInventory, b: UserInventory) => a.name.localeCompare(b.name));
       }
       
       // Add nutrition summary to each item
-      const itemsWithNutrition = items.map((item) => {
+      const itemsWithNutrition = items.map((item: UserInventory) => {
         const nutrition = extractNutrition(item.usdaData);
         return {
           ...item,
           nutritionSummary: nutrition ? {
             calories: nutrition.calories,
             protein: nutrition.protein,
-            carbohydrates: nutrition.carbs,
+            carbohydrates: nutrition.carbohydrates,
             fat: nutrition.fat,
             fiber: nutrition.fiber,
             sugar: nutrition.sugar,
@@ -191,7 +192,7 @@ router.get(
           
           dailyNutrition.totalCalories += Number(nutrition.calories || 0) * servingMultiplier;
           dailyNutrition.totalProtein += Number(nutrition.protein || 0) * servingMultiplier;
-          dailyNutrition.totalCarbs += Number(nutrition.carbs || 0) * servingMultiplier;
+          dailyNutrition.totalCarbs += Number(nutrition.carbohydrates || 0) * servingMultiplier;
           dailyNutrition.totalFat += Number(nutrition.fat || 0) * servingMultiplier;
           dailyNutrition.totalFiber += Number(nutrition.fiber || 0) * servingMultiplier;
           
@@ -202,7 +203,7 @@ router.get(
             nutrition: {
               calories: Number(nutrition.calories || 0) * servingMultiplier,
               protein: Number(nutrition.protein || 0) * servingMultiplier,
-              carbs: Number(nutrition.carbs || 0) * servingMultiplier,
+              carbs: Number(nutrition.carbohydrates || 0) * servingMultiplier,
               fat: Number(nutrition.fat || 0) * servingMultiplier,
             },
           });

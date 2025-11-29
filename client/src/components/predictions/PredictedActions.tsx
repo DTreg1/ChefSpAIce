@@ -107,16 +107,16 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
           <div className="p-3 bg-muted rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Engagement Status</span>
-              <Badge variant={engagementPrediction.probability > 0.5 ? "destructive" : "default"}>
-                {engagementPrediction.probability > 0.5 ? "Declining" : "Stable"}
+              <Badge variant={engagementPrediction.confidence > 0.5 ? "destructive" : "default"}>
+                {engagementPrediction.confidence > 0.5 ? "Declining" : "Stable"}
               </Badge>
             </div>
             <Progress 
-              value={100 - Math.round(engagementPrediction.probability * 100)} 
+              value={100 - Math.round(engagementPrediction.confidence * 100)} 
               className="h-2"
             />
             <p className="text-xs text-muted-foreground">
-              Current engagement level: {100 - Math.round(engagementPrediction.probability * 100)}%
+              Current engagement level: {100 - Math.round(engagementPrediction.confidence * 100)}%
             </p>
           </div>
         )}
@@ -125,9 +125,9 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Likely Next Actions</h4>
             {actionPredictions.map((prediction) => {
-              const action = (prediction.factors)?.predictedAction || 'unknown';
+              const action = (prediction.metadata as any)?.predictedAction || 'unknown';
               const Icon = ACTION_ICONS[action] || Zap;
-              const confidence = Math.round((prediction.probability || 0) * 100);
+              const confidence = Math.round((prediction.confidence || 0) * 100);
               
               return (
                 <div

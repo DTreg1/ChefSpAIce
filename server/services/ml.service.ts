@@ -549,13 +549,13 @@ Return a safe SELECT query and a brief explanation in JSON format:
       console.log(`Updating embeddings for user ${userId} (placeholder implementation)`);
       
       // Get recipes from user storage
-      const recipes = await storage.user.recipes.getUserRecipes(userId);
+      const recipes = await storage.user.recipes.getRecipes(userId);
       for (const recipe of recipes) {
         await this.createContentEmbedding(recipe, 'recipe', recipe.id, userId);
       }
       
       // Get inventory from user storage
-      const inventory = await storage.user.inventory.getUserInventory(userId);
+      const inventory = await storage.user.inventory.getFoodItems(userId);
       for (const item of inventory) {
         await this.createContentEmbedding(item, 'inventory', item.id, userId);
       }

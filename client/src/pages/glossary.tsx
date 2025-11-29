@@ -44,7 +44,7 @@ export default function Glossary() {
         term.term.toLowerCase().includes(query) ||
         (term.shortDefinition && term.shortDefinition.toLowerCase().includes(query)) ||
         (term.longDefinition && term.longDefinition.toLowerCase().includes(query)) ||
-        (term.searchTerms && term.searchTerms.some(st => st.toLowerCase().includes(query)))
+        (term.relatedTerms && term.relatedTerms.some((st: string) => st.toLowerCase().includes(query)))
       );
     }
 
@@ -201,10 +201,10 @@ export default function Glossary() {
                             )}
                           </CardTitle>
                         </div>
-                        {term.searchTerms && term.searchTerms.length > 0 && (
+                        {term.relatedTerms && term.relatedTerms.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
-                            <span className="text-xs text-muted-foreground">Also known as:</span>
-                            {term.searchTerms.map((alt, idx) => (
+                            <span className="text-xs text-muted-foreground">Related terms:</span>
+                            {term.relatedTerms.map((alt: string, idx: number) => (
                               <Badge 
                                 key={idx} 
                                 variant="outline" 

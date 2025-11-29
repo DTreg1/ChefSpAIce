@@ -10,9 +10,10 @@ import { isAuthenticated, adminOnly } from "../../middleware/oauth.middleware";
 import { storage } from "../../storage/index";
 import { 
   predictiveMaintenanceService,
-  MONITORED_COMPONENTS,
-  METRIC_TYPES
+  MONITORED_COMPONENTS
 } from "../../services/predictive-maintenance.service";
+
+const METRIC_TYPES = ['cpu', 'memory', 'disk', 'latency', 'errorRate'] as const;
 import { z } from "zod";
 import { 
   insertSystemMetricSchema,
@@ -80,19 +81,19 @@ router.get("/api/maintenance/predict", isAuthenticated, async (req, res, next) =
       component as string | undefined
     );
 
-    // Group predictions by urgency
+    // Group predictions by risk level
     const grouped = {
-      critical: predictions.filter(p => p.urgencyLevel === 'critical'),
-      high: predictions.filter(p => p.urgencyLevel === 'high'),
-      medium: predictions.filter(p => p.urgencyLevel === 'medium'),
-      low: predictions.filter(p => p.urgencyLevel === 'low')
+      critical: predictions.filter(p => p.risk === 'critical'),
+      high: predictions.filter(p => p.risk === 'high'),
+      medium: predictions.filter(p => p.risk === 'medium'),
+      low: predictions.filter(p => p.risk === 'low')
     };
 
     res.json({
       predictions,
       grouped,
       total: predictions.length,
-      nextMaintenance: predictions[0]?.recommendedDate || null
+      nextMaintenance: predictions[0]?.predictedDate || null
     });
   } catch (error) {
     next(error);
@@ -110,22 +111,24 @@ router.post("/api/maintenance/analyze", isAuthenticated, async (req, res, next) 
     // Run analysis
     const predictions = await predictiveMaintenanceService.analyzeComponent(component);
     
-    // Get component health
-    const health = await storage.platform.system.getComponentHealth(component);
+    // Get recent metrics for health calculation
+    const recentMetrics = await storage.platform.system.getSystemMetrics(component);
+    const avgAnomalyScore = recentMetrics.length > 0 
+      ? recentMetrics.reduce((sum, m) => sum + ((m.metadata as any)?.anomalyScore || 0), 0) / recentMetrics.length 
+      : 0;
     
     res.json({
       component,
       analysis: {
         predictions,
         health: {
-          score: Math.round(100 - health.avgAnomalyScore * 100),
-          avgAnomalyScore: health.avgAnomalyScore,
-          recentAnomalies: health.recentMetrics.filter(m => (m.anomalyScore || 0) > 0.5).length,
-          status: health.avgAnomalyScore > 0.7 ? 'critical' : 
-                  health.avgAnomalyScore > 0.5 ? 'warning' : 'healthy'
+          score: Math.round(100 - avgAnomalyScore * 100),
+          avgAnomalyScore,
+          recentAnomalies: recentMetrics.filter((m: any) => ((m.metadata as any)?.anomalyScore || 0) > 0.5).length,
+          status: avgAnomalyScore > 0.7 ? 'critical' : 
+                  avgAnomalyScore > 0.5 ? 'warning' : 'healthy'
         },
-        recentMetrics: health.recentMetrics.slice(0, 10),
-        history: health.history
+        recentMetrics: recentMetrics.slice(0, 10),
       }
     });
   } catch (error) {
@@ -143,7 +146,7 @@ router.get("/api/maintenance/schedule", isAuthenticated, async (req, res, next) 
     
     // Group by date
     const byDate = schedule.reduce((acc, pred) => {
-      const date = new Date(pred.recommendedDate).toISOString().split('T')[0];
+      const date = pred.predictedDate ? new Date(pred.predictedDate).toISOString().split('T')[0] : 'unscheduled';
       if (!acc[date]) {
         acc[date] = [];
       }
@@ -151,15 +154,15 @@ router.get("/api/maintenance/schedule", isAuthenticated, async (req, res, next) 
       return acc;
     }, {} as Record<string, MaintenancePrediction[]>);
     
-    // Calculate estimated total downtime
-    const totalDowntime = schedule.reduce((sum, p) => sum + (p.estimatedDowntime || 0), 0);
+    // Calculate estimated total downtime from metadata
+    const totalDowntime = schedule.reduce((sum, p) => sum + ((p.metadata as any)?.estimatedDowntime || 0), 0);
     
     res.json({
       schedule,
       byDate,
       totalItems: schedule.length,
       estimatedDowntimeHours: Math.round(totalDowntime / 60),
-      nextWindow: schedule[0]?.recommendedDate || null
+      nextWindow: schedule[0]?.predictedDate || null
     });
   } catch (error) {
     next(error);
@@ -174,26 +177,27 @@ router.post("/api/maintenance/complete", isAuthenticated, async (req, res, next)
   try {
     const data = completeMaintenanceSchema.parse(req.body);
     
-    const history = await storage.platform.system.saveMaintenanceHistory({
+    // Get prediction recommendation if predictionId provided
+    const prediction = data.predictionId ? 
+      (await storage.platform.system.getMaintenancePredictions(undefined, data.component))
+        .find(p => p.id === data.predictionId) : 
+      undefined;
+    
+    const history = await storage.platform.system.createMaintenanceHistory({
       component: data.component,
-      issue: data.issue,
-      predictedIssue: data.predictionId ? 
-        (await storage.platform.system.getMaintenancePredictions(undefined, data.component))
-          .find(p => p.id === data.predictionId)?.predictedIssue : 
-        undefined,
-      predictionId: data.predictionId,
-      resolvedAt: new Date(),
-      downtimeMinutes: data.downtimeMinutes,
-      performedActions: data.performedActions,
-      outcome: data.outcome,
-      performanceMetrics: data.performanceMetrics,
-      notes: data.notes
+      maintenanceType: 'corrective',
+      action: data.issue,
+      duration: data.downtimeMinutes,
+      downtime: data.downtimeMinutes > 0,
+      result: data.outcome === 'successful' ? 'success' : data.outcome,
+      notes: data.notes,
+      startedAt: new Date(),
     });
     
     res.json({
       message: "Maintenance recorded successfully",
       history,
-      predictionAccuracy: history.predictedIssue === history.issue ? 'accurate' : 'inaccurate'
+      predictionAccuracy: prediction?.recommendation === data.issue ? 'accurate' : 'inaccurate'
     });
   } catch (error) {
     next(error);
@@ -210,7 +214,7 @@ router.get("/api/maintenance/health", isAuthenticated, async (req, res, next) =>
     
     // Add additional context
     const predictions = await storage.platform.system.getMaintenancePredictions('active');
-    const criticalIssues = predictions.filter(p => p.urgencyLevel === 'critical');
+    const criticalIssues = predictions.filter(p => p.risk === 'critical');
     
     res.json({
       ...health,
@@ -257,8 +261,8 @@ router.get("/api/maintenance/metrics", isAuthenticated, async (req, res, next) =
     
     const metrics = await storage.platform.system.getSystemMetrics(
       params.component,
-      params.startDate ? new Date(params.startDate) : undefined,
-      params.endDate ? new Date(params.endDate) : undefined,
+      params.startDate,
+      params.endDate,
       params.limit || 100
     );
     
@@ -268,7 +272,7 @@ router.get("/api/maintenance/metrics", isAuthenticated, async (req, res, next) =
       avgValue: metrics.reduce((sum, m) => sum + m.value, 0) / metrics.length,
       maxValue: Math.max(...metrics.map(m => m.value)),
       minValue: Math.min(...metrics.map(m => m.value)),
-      anomalies: metrics.filter(m => (m.anomalyScore || 0) > 0.5).length
+      anomalies: metrics.filter(m => ((m.metadata as any)?.anomalyScore || 0) > 0.5).length
     };
     
     res.json({
@@ -291,14 +295,15 @@ router.get("/api/maintenance/history", isAuthenticated, async (req, res, next) =
     
     const history = await storage.platform.system.getMaintenanceHistory(
       component as string | undefined,
+      undefined,
       Number(limit)
     );
     
     // Calculate statistics
     const stats = {
       totalMaintenance: history.length,
-      avgDowntime: history.reduce((sum, h) => sum + h.downtimeMinutes, 0) / history.length,
-      successRate: history.filter(h => h.outcome === 'successful').length / history.length * 100,
+      avgDowntime: history.reduce((sum, h) => sum + (h.duration || 0), 0) / history.length,
+      successRate: history.filter(h => h.result === 'success').length / history.length * 100,
       componentsServiced: Array.from(new Set(history.map(h => h.component)))
     };
     
@@ -323,8 +328,8 @@ router.post("/api/maintenance/simulate", isAuthenticated, adminOnly, async (req,
     const baseValue = anomaly ? 80 + Math.random() * 20 : 30 + Math.random() * 20;
     const metrics = [];
     
-    for (const metricType of Object.values(METRIC_TYPES)) {
-      const value = metricType === METRIC_TYPES.ERROR_RATE ? 
+    for (const metricType of METRIC_TYPES) {
+      const value = metricType === 'errorRate' ? 
         (anomaly ? 0.05 + Math.random() * 0.05 : 0.01 + Math.random() * 0.01) :
         baseValue + (Math.random() - 0.5) * 10;
       
@@ -334,9 +339,9 @@ router.post("/api/maintenance/simulate", isAuthenticated, adminOnly, async (req,
         value,
         timestamp: new Date(),
         metadata: {
-          source: 'simulation',
-          // Note: anomaly field added as custom field
-          customFields: { anomaly }
+          cpu: { usage: value, cores: 4 },
+          memory: { used: value * 10, total: 1000, percentage: value },
+          disk: { used: value * 100, total: 10000, percentage: value },
         }
       });
       
@@ -370,10 +375,10 @@ router.get("/api/maintenance/components", isAuthenticated, async (req, res, next
           status: health.avgAnomalyScore > 0.7 ? 'critical' : 
                   health.avgAnomalyScore > 0.5 ? 'warning' : 'healthy',
           activePredictions: predictions.length,
-          lastMaintenance: health.history[0]?.resolvedAt || null,
+          lastMaintenance: health.history[0]?.completedAt || null,
           metrics: {
             recent: health.recentMetrics.length,
-            anomalies: health.recentMetrics.filter(m => (m.anomalyScore || 0) > 0.5).length
+            anomalies: health.recentMetrics.filter((m: any) => ((m.metadata as any)?.anomalyScore || 0) > 0.5).length
           }
         };
       })

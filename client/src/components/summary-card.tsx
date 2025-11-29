@@ -16,13 +16,13 @@ interface SummaryCardProps {
 export default function SummaryCard({ summary, onEdit, showOriginal = false }: SummaryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedText, setEditedText] = useState(summary.editedText || summary.summaryText);
+  const [editedText, setEditedText] = useState(summary.summary || '');
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  const compressionRatio = summary.originalWordCount
-    ? Math.round((1 - summary.wordCount / summary.originalWordCount) * 100)
-    : 0;
+  const compressionRatio = summary.wordCountOriginal && summary.wordCountSummary
+    ? Math.round((1 - summary.wordCountSummary / summary.wordCountOriginal) * 100)
+    : summary.compressionRatio ? Math.round(summary.compressionRatio * 100) : 0;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(editedText);
@@ -51,7 +51,7 @@ export default function SummaryCard({ summary, onEdit, showOriginal = false }: S
   };
 
   const handleCancel = () => {
-    setEditedText(summary.editedText || summary.summaryText);
+    setEditedText(summary.summary || '');
     setIsEditing(false);
   };
 
@@ -75,20 +75,15 @@ export default function SummaryCard({ summary, onEdit, showOriginal = false }: S
           <CardTitle className="text-lg">Summary</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" data-testid="badge-summary-type">
-              {formatSummaryType(summary.summaryType)}
+              {formatSummaryType(summary.summaryType || 'summary')}
             </Badge>
             <Badge variant="outline" className="text-green-600 dark:text-green-400" data-testid="badge-compression">
               -{compressionRatio}%
             </Badge>
-            {summary.isEdited && (
-              <Badge variant="default" data-testid="badge-edited">
-                Edited
-              </Badge>
-            )}
           </div>
         </div>
         <CardDescription>
-          {summary.wordCount} words • {summary.summaryLength || 2} {summary.summaryType === 'bullet' ? 'bullets' : 'sentences'}
+          {summary.wordCountSummary || 0} words • {summary.summaryType === 'bullets' ? 'bullets' : 'summary'}
         </CardDescription>
       </CardHeader>
 
@@ -158,7 +153,7 @@ export default function SummaryCard({ summary, onEdit, showOriginal = false }: S
               className="w-full justify-between"
               data-testid="button-toggle-original"
             >
-              <span>Original Content ({summary.originalWordCount} words)</span>
+              <span>Original Content ({summary.wordCountOriginal || 0} words)</span>
               {isExpanded ? (
                 <ChevronUp className="h-4 w-4" />
               ) : (

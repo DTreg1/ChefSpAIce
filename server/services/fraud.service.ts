@@ -176,9 +176,10 @@ export class FraudDetectionService {
           details: {
             totalActivities: userBehavior.activities.length,
             accountAgeHours: userBehavior.accountAge,
-            suspiciousCount: suspiciousActivities.length
-          }
-        }
+            suspiciousCount: suspiciousActivities.length,
+          } as Record<string, any>
+        },
+        modelVersion: 'fraud-detection-v1',
       });
       
       // Log suspicious activities
@@ -189,14 +190,12 @@ export class FraudDetectionService {
           details: {
             description: activity.description,
             evidence: activity.evidence,
-            relatedActivities: [],
-            metadata: {
-              fraudScore,
-              timestamp: new Date(),
-              autoBlocked: shouldBlock
-            }
+            relatedEntities: [],
+            timestamp: new Date().toISOString(),
           },
-          riskLevel: activity.riskLevel
+          riskLevel: activity.riskLevel,
+          status: 'pending',
+          autoBlocked: shouldBlock,
         });
       }
       

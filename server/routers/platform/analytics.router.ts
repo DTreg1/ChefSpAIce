@@ -122,7 +122,7 @@ router.post("/sessions/start", asyncHandler(async (req: Request, res) => {
   
   try {
     const session = await storage.platform.analytics.createUserSession(sessionData);
-    res.json({ success: true, sessionId: session.sessionId });
+    res.json({ success: true, sessionId: session.id });
   } catch (error) {
     console.error("Failed to create session:", error);
     res.status(500).json({ error: "Failed to create session" });
@@ -142,22 +142,25 @@ router.post("/sessions/end", asyncHandler(async (req: Request, res) => {
     const endTime = new Date();
     
     // Get session to calculate duration - scoped to current user for security
-    const sessions = await storage.platform.analytics.getUserSessions(userId ?? undefined, { limit: 100 });
-    const session = sessions.find(s => s.sessionId === sessionId);
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const sessions = await storage.platform.analytics.getUserSessions(userId, 100);
+    const session = sessions.find(s => s.id === sessionId);
     
     if (!session) {
       // Session not found or doesn't belong to this user
       return res.status(403).json({ error: "Session not found or access denied" });
     }
     
-    if (session.startTime) {
-      const duration = Math.floor((endTime.getTime() - new Date(session.startTime).getTime()) / 1000);
+    if (session.startedAt) {
+      const duration = Math.floor((endTime.getTime() - new Date(session.startedAt).getTime()) / 1000);
       
       // Only update sessions that belong to the current user
       await storage.platform.analytics.updateUserSession(sessionId, {
-        endTime,
+        endedAt: endTime,
         exitPage,
-        duration,
+        durationSeconds: duration,
       });
     }
     
@@ -170,13 +173,28 @@ router.post("/sessions/end", asyncHandler(async (req: Request, res) => {
 
 // Get Analytics Dashboard Stats
 router.get("/dashboard", asyncHandler(async (req: Request, res) => {
-  const { startDate, endDate } = req.query;
+  const { type, period } = req.query;
   
-  const start = startDate ? new Date(startDate as string) : undefined;
-  const end = endDate ? new Date(endDate as string) : undefined;
+  // Validate type parameter
+  const statsType = (type as string) || 'sessions';
+  const validTypes = ['sessions', 'events', 'usage'];
+  if (!validTypes.includes(statsType)) {
+    return res.status(400).json({ error: "Invalid type parameter. Must be 'sessions', 'events', or 'usage'" });
+  }
+  
+  // Validate period parameter
+  const validPeriods = ['day', 'week', 'month'];
+  const statsPeriod = period ? (period as 'day' | 'week' | 'month') : undefined;
+  if (statsPeriod && !validPeriods.includes(statsPeriod)) {
+    return res.status(400).json({ error: "Invalid period parameter. Must be 'day', 'week', or 'month'" });
+  }
   
   try {
-    const stats = await storage.platform.analytics.getAnalyticsStats(start, end);
+    const stats = await storage.platform.analytics.getAnalyticsStats(
+      statsType as 'sessions' | 'events' | 'usage',
+      undefined, // userId
+      statsPeriod
+    );
     res.json(stats);
   } catch (error) {
     console.error("Failed to get analytics stats:", error);
@@ -202,7 +220,14 @@ router.get(
       daysNum = parsed;
     }
     
-    const stats = await storage.platform.analytics.getWebVitalsStats(metric as string | undefined, daysNum);
+    // Map days to period
+    const periodMap: { [key: number]: 'day' | 'week' | 'month' } = {
+      1: 'day',
+      7: 'week',
+      30: 'month'
+    };
+    const period = periodMap[daysNum] || 'week';
+    const stats = await storage.platform.analytics.getWebVitalsStats(metric as string | undefined, period);
     res.json(stats);
   })
 );
@@ -226,26 +251,37 @@ router.get(
       daysNum = parsed;
     }
     
+    // Map days to period
+    const periodMapHealth: { [key: number]: 'day' | 'week' | 'month' } = {
+      1: 'day',
+      7: 'week',
+      30: 'month'
+    };
+    const period = periodMapHealth[daysNum] || 'week';
+    
     // Get stats for all APIs if no userId, or user-specific stats
     const stats = userId 
-      ? await storage.platform.analytics.getApiUsageStats(userId, '', daysNum)  // Empty string for all APIs
-      : { totalCalls: 0, successfulCalls: 0, failedCalls: 0 };
+      ? await storage.platform.analytics.getApiUsageStats(userId, period)
+      : await storage.platform.analytics.getApiUsageStats(undefined, period);
     
-    // Calculate success rate
-    const successRate = stats.totalCalls > 0
-      ? (stats.successfulCalls / stats.totalCalls) * 100
+    // Calculate success rate using ApiUsageStats type fields
+    const totalCalls = stats.totalRequests || 0;
+    const failedCalls = Math.round((stats.errorRate || 0) * totalCalls);
+    const successfulCalls = totalCalls - failedCalls;
+    const successRate = totalCalls > 0
+      ? ((successfulCalls / totalCalls) * 100)
       : 100;
     
     res.json({
       period: `${daysNum} days`,
-      totalCalls: stats.totalCalls,
-      successfulCalls: stats.successfulCalls,
-      failedCalls: stats.failedCalls,
+      totalCalls,
+      successfulCalls,
+      failedCalls,
       successRate: successRate.toFixed(2),
-      // These fields might not exist in basic stats, so we provide defaults
-      apiBreakdown: (stats).apiBreakdown || {},
-      errorTypes: (stats).errorTypes || {},
-      averageResponseTime: (stats).averageResponseTime || null,
+      // Use correct property names from ApiUsageStats
+      apiBreakdown: stats.requestsByEndpoint || {},
+      errorTypes: {},
+      averageResponseTime: stats.averageResponseTime || null,
     });
   })
 );

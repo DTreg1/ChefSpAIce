@@ -65,7 +65,7 @@ router.get("/appliances/categories", isAuthenticated, async (req: Request, res: 
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const categories = await storage.user.food.getApplianceCategories(userId);
+    const categories = await storage.user.food.getApplianceCategories();
     res.json(categories);
   } catch (error) {
     console.error("Error fetching appliance categories:", error);
@@ -142,7 +142,7 @@ router.delete("/appliances/:id", isAuthenticated, async (req: Request, res: Resp
 });
 
 // Appliance categories - get unique categories from appliance library
-router.get("/appliance-categories", async (_req: Request, res: ExpressResponse) => {
+router.get("/appliance-categories", async (_req: Request, res: Response) => {
   try {
     const library = await storage.user.food.getApplianceLibrary();
     // Extract unique categories from the appliance library
@@ -193,7 +193,7 @@ router.get("/appliance-library", async (req: Request, res: Response) => {
 });
 
 // Get common appliances (for onboarding)
-router.get("/appliance-library/common", async (_req: Request, res: ExpressResponse) => {
+router.get("/appliance-library/common", async (_req: Request, res: Response) => {
   try {
     const commonAppliances = await storage.user.food.getCommonAppliances();
     res.json(commonAppliances);
@@ -229,7 +229,7 @@ router.get("/user-appliances/categories", isAuthenticated, async (req: Request, 
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const categories = await storage.user.food.getApplianceCategories(userId);
+    const categories = await storage.user.food.getApplianceCategories();
     res.json(categories);
   } catch (error) {
     console.error("Error fetching user appliance categories:", error);
@@ -261,13 +261,7 @@ router.post("/user-appliances", isAuthenticated, async (req: Request, res: Respo
     
     const newUserAppliance = await storage.user.food.addUserAppliance(
       userId,
-      validation.data.applianceLibraryId,
-      {
-        nickname: validation.data.nickname,
-        notes: validation.data.notes,
-        purchaseDate: validation.data.purchaseDate,
-        warrantyEndDate: validation.data.warrantyEndDate,
-      }
+      validation.data.applianceLibraryId
     );
     
     res.json(newUserAppliance);

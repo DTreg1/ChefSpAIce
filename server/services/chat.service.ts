@@ -165,7 +165,7 @@ class ChatService {
 
       return matches.map(match => ({
         term: match.originalTerm,
-        termId: match.termId,
+        termId: String(match.termId),
         category: match.category,
         shortDefinition: match.shortDefinition,
         difficulty: match.difficulty,

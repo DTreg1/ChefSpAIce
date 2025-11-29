@@ -175,11 +175,12 @@ class LogRetentionService {
       
       await storage.platform.system.createActivityLog({
         userId: null, // System action
-        activityType: "system",
-        resourceType: "log_retention",
+        activityType: "view", // Using 'view' for system monitoring actions
+        resourceType: "admin", // Using 'admin' for system maintenance
         action: "log_cleanup_completed",
-        entity: "activity_logs",
-        metadata,
+        resourceId: "activity_logs",
+        details: metadata,
+        success: true,
       });
       
       console.log(
@@ -196,11 +197,13 @@ class LogRetentionService {
       
       await storage.platform.system.createActivityLog({
         userId: null,
-        activityType: "system",
-        resourceType: "log_retention",
+        activityType: "view", // Using 'view' for system monitoring actions
+        resourceType: "admin", // Using 'admin' for system maintenance
         action: "log_cleanup_error",
-        entity: "activity_logs",
-        metadata: errorMetadata,
+        resourceId: "activity_logs",
+        details: errorMetadata,
+        success: false,
+        errorMessage: errorMetadata.error,
       });
     } finally {
       this.isRunning = false;

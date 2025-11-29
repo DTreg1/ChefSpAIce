@@ -95,7 +95,15 @@ export class EmbeddingsService {
     
     if (cached && new Date(cached.expiresAt) > new Date()) {
       console.log(`Using cached related content for ${contentId}`);
-      return cached.relatedContent;
+      // Convert RelatedContentData to expected format
+      const relatedData = cached.relatedContent;
+      return relatedData.contentIds.map((id: string, index: number) => ({
+        id,
+        type: contentType,
+        title: 'Untitled',
+        score: relatedData.scores[index] || 0,
+        metadata: relatedData.parameters,
+      }));
     }
 
     // Get the embedding for the source content
@@ -129,7 +137,11 @@ export class EmbeddingsService {
     await this.storage.cacheRelatedContent({
       contentId,
       contentType: contentType as 'recipe' | 'article' | 'product' | 'document' | 'media',
-      relatedContent: relatedItems,
+      relatedContent: {
+        contentIds: relatedItems.map(item => item.id),
+        scores: relatedItems.map(item => item.score),
+        algorithm: 'cosine_similarity',
+      },
       expiresAt,
     });
 
@@ -216,7 +228,7 @@ export class EmbeddingsService {
 
 // Export standalone functions for backward compatibility
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const service = new EmbeddingsService(null);
+  const service = new EmbeddingsService(undefined as any);
   return service.generateEmbedding(text);
 }
 

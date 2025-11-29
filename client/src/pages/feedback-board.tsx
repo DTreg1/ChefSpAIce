@@ -10,7 +10,10 @@ import { ArrowBigUp, MessageSquare, Bug, Lightbulb, FileText, Clock } from "luci
 import { cn } from "@/lib/utils";
 import type { Feedback } from "@shared/schema";
 
-type FeedbackWithUpvote = Feedback & { userUpvoted: boolean };
+type FeedbackWithUpvote = Feedback & { 
+  userUpvoted: boolean;
+  upvoteCount?: number;
+};
 
 export default function FeedbackBoard() {
   const [featureSortBy, setFeatureSortBy] = useState<'upvotes' | 'recent'>('upvotes');
@@ -138,7 +141,7 @@ export default function FeedbackBoard() {
               >
                 <ArrowBigUp className={cn("w-6 h-6", item.userUpvoted && "fill-current")} />
                 <span className="text-sm font-medium" data-testid={`text-upvotes-${item.id}`}>
-                  {item.upvoteCount || 0}
+                  {'upvoteCount' in item ? (item as FeedbackWithUpvote).upvoteCount || 0 : 0}
                 </span>
               </button>
             )}
@@ -149,31 +152,21 @@ export default function FeedbackBoard() {
                   {getPriorityBadge(item.priority)}
                   {showStatus && getStatusBadge(item.status)}
                 </div>
-                {item.tags && item.tags.length > 0 && (
-                  <div className="flex gap-1 flex-wrap">
-                    {item.tags.slice(0, 3).map((tag, i) => (
-                      <Badge key={i} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+                {item.category && (
+                  <Badge variant="outline" className="text-xs">
+                    {item.category}
+                  </Badge>
                 )}
               </div>
               <p className="text-sm" data-testid={`text-content-${item.id}`}>
-                {item.content || item.description || 'No description provided'}
+                {item.message || 'No description provided'}
               </p>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span>
-                  {new Date(item.createdAt).toLocaleDateString()}
+                  {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Unknown date'}
                 </span>
-                {showStatus && item.estimatedTurnaround && (
-                  <div className="flex items-center gap-1" data-testid={`text-eta-${item.id}`}>
-                    <Clock className="w-3 h-3" />
-                    <span>ETA: {item.estimatedTurnaround}</span>
-                  </div>
-                )}
-                {item.category && (
-                  <span className="capitalize">{item.category}</span>
+                {item.subject && (
+                  <span className="capitalize">{item.subject}</span>
                 )}
               </div>
             </div>

@@ -401,6 +401,22 @@ export class StorageRoot {
     return results;
   }
 
+  async getPendingNotifications() {
+    return this.user.notifications.getPendingNotifications();
+  }
+
+  async getNotificationScores(userId: string) {
+    return this.user.notifications.getNotificationScores(userId);
+  }
+
+  async updateNotificationScore(scoreId: string, updates: Record<string, any>) {
+    return this.user.notifications.updateNotificationScore(scoreId, updates);
+  }
+
+  async getUserNotificationFeedback(userId: string) {
+    return this.user.notifications.getUserNotificationFeedback(userId);
+  }
+
   // ==================== Billing ====================
   async createDonation(donation: Omit<InsertDonation, 'id' | 'createdAt' | 'completedAt'>) {
     return this.admin.billing.createDonation(donation);

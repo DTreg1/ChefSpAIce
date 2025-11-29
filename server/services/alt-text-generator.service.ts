@@ -228,17 +228,9 @@ Respond with JSON containing scores and analysis.`;
       contextScore: result.contextScore || 0,
       keywordScore: result.keywordScore || 0,
       screenReaderScore: result.screenReaderScore || 0,
-      wcagLevel: result.wcagLevel || null,
-      hasColorDescription: result.hasColorDescription || false,
-      hasTextDescription: result.hasTextDescription || false,
+      wcagCompliance: result.wcagLevel ? true : false,
       issues: result.issues || [],
       suggestions: result.suggestions || [],
-      metadata: {
-        wordCount: altText.split(/\s+/).length,
-        readabilityScore: result.readabilityScore,
-        sentimentScore: result.sentimentScore,
-        technicalTerms: result.technicalTerms || []
-      }
     };
   } catch (error) {
     console.error("Failed to analyze alt text quality:", error);
@@ -255,12 +247,9 @@ Respond with JSON containing scores and analysis.`;
       contextScore: 50,
       keywordScore: 50,
       screenReaderScore: 60,
-      metadata: {
-        wordCount,
-        readabilityScore: 0,
-        sentimentScore: 0,
-        technicalTerms: []
-      }
+      wcagCompliance: false,
+      issues: [],
+      suggestions: [],
     };
   }
 }

@@ -157,7 +157,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             </PopoverTrigger>
           </TooltipTrigger>
           <TooltipContent className="max-w-sm">
-            <p className="text-sm">{data.definition}</p>
+            <p className="text-sm">{data.shortDefinition}</p>
             <p className="text-xs text-muted-foreground mt-1">Click for detailed instructions</p>
           </TooltipContent>
         </Tooltip>
@@ -189,7 +189,7 @@ function HighlightedTerm({ term, data }: HighlightedTermProps) {
             {/* Definition */}
             <div>
               <h4 className="font-semibold mb-2 text-sm">How to {data.term}</h4>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{data.definition}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{data.longDefinition || data.shortDefinition}</p>
             </div>
 
             {/* Example */}

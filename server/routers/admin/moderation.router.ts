@@ -58,7 +58,7 @@ router.post(
         severity: result.severity,
         categories: result.categories,
         confidence: result.confidence,
-        modelUsed: "tensorflow-toxicity+openai-moderation",
+        modelUsed: "both",
         toxicityScores: result.toxicityScores,
         manualReview: result.requiresManualReview || false,
       };
@@ -129,25 +129,28 @@ router.get(
     const user = await storage.user.user.getUserById(userId);
     const isAdmin = user?.isAdmin || false;
     
-    // Get moderation queue
+    // Get moderation queue with validated params
+    const parsedPage = Number(page) || 1;
+    const parsedLimit = Number(limit) || 20;
+    
     const logs = await storage.admin.security.getModerationQueue(userId, isAdmin, {
-      status,
-      severity,
-      contentType,
+      status: status as string | undefined,
+      severity: severity as string | undefined,
+      contentType: contentType as string | undefined,
     });
     
     // Apply pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
+    const startIndex = (parsedPage - 1) * parsedLimit;
+    const endIndex = startIndex + parsedLimit;
     const paginatedLogs = logs.slice(startIndex, endIndex);
     
     res.json({
       data: paginatedLogs,
       pagination: {
-        page,
-        limit,
+        page: parsedPage,
+        limit: parsedLimit,
         total: logs.length,
-        totalPages: Math.ceil(logs.length / limit),
+        totalPages: Math.ceil(logs.length / parsedLimit),
       },
     });
   })
@@ -248,6 +251,7 @@ router.post(
         supportingEvidence: additionalContext,
         status: "pending",
         appealType: "false_positive", // Default type
+        userNotified: false,
       };
       
       const createdAppeal = await storage.admin.security.createModerationAppeal(appeal);
@@ -375,8 +379,8 @@ router.get(
       let timeRange;
       if (startDate && endDate) {
         timeRange = {
-          start: new Date(startDate),
-          end: new Date(endDate),
+          start: new Date(startDate as string),
+          end: new Date(endDate as string),
         };
       } else if (period) {
         const now = new Date();

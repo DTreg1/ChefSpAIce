@@ -5,7 +5,7 @@
  * that don't block the server startup
  */
 
-import type { UserMetrics } from './predictionService';
+import type { UserMetrics } from './prediction.service';
 
 /**
  * Rule-based churn prediction

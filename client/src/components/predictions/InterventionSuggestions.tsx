@@ -119,7 +119,7 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
     );
   }
 
-  const riskPercentage = Math.round((prediction.probability || 0) * 100);
+  const riskPercentage = Math.round((prediction.confidence || 0) * 100);
   const intervention = interventionData?.intervention;
 
   return (
@@ -173,7 +173,7 @@ export function InterventionSuggestions({ userId, prediction, onInterventionSent
               </AlertDescription>
             </Alert>
 
-            <Tabs value={selectedStrategy} onValueChange={(v) => setSelectedStrategy(v)}>
+            <Tabs value={selectedStrategy} onValueChange={(v) => setSelectedStrategy(v as "immediate" | "shortTerm" | "longTerm")}>
               <TabsList className="grid grid-cols-3 w-full">
                 <TabsTrigger value="immediate">
                   <Clock className="h-4 w-4 mr-2" />

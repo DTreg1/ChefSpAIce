@@ -112,7 +112,18 @@ router.put('/preferences', isAuthenticated, async (req: Request, res: Response) 
       .omit({ userId: true })
       .parse(req.body);
     
-    const updated = await storage.user.notifications.upsertNotificationPreferences(userId, validatedData);
+    const prefsToUpdate = {
+      userId,
+      notificationType: validatedData.notificationType || 'general',
+      enabled: validatedData.enabled ?? true,
+      frequency: validatedData.frequency,
+      quietHoursStart: validatedData.quietHoursStart,
+      quietHoursEnd: validatedData.quietHoursEnd,
+      minImportance: validatedData.minImportance,
+      channels: validatedData.channels,
+      metadata: validatedData.metadata,
+    };
+    const updated = await storage.user.notifications.upsertNotificationPreferences(prefsToUpdate);
     res.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -158,8 +169,9 @@ router.post('/smart-send', isAuthenticated, async (req: Request, res: Response) 
     // Save the notification score to the database
     const score = await storage.user.notifications.createNotificationScore(scoreData);
     
-    // If immediate urgency or smart timing disabled, send now
-    if (validatedData.urgency === 'immediate' || !prefs?.enableSmartTiming) {
+    // If immediate urgency or smart timing disabled (in metadata), send now
+    const enableSmartTiming = prefs?.metadata?.enableSmartTiming !== false;
+    if (validatedData.urgency === 'immediate' || !enableSmartTiming) {
       // This would integrate with your existing push notification system
       // For now, we just mark it as ready to send
       await storage.user.notifications.updateNotificationScore(score.id, {
@@ -179,7 +191,7 @@ router.post('/smart-send', isAuthenticated, async (req: Request, res: Response) 
       notificationScoreId: score.id,
       scheduledFor: score.holdUntil,
       relevanceScore: score.relevanceScore,
-      reason: score.features?.userContext || 'Optimally scheduled',
+      reason: score.factors?.userContext || 'Optimally scheduled',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -214,9 +226,19 @@ router.post('/feedback', isAuthenticated, async (req: Request, res: Response) =>
     const userId = req.user!.id;
     const validatedData = feedbackSchema.parse(req.body);
     
+    // Map action to feedbackType for schema compatibility
+    type FeedbackType = 'useful' | 'not_useful' | 'too_frequent' | 'wrong_time' | 'irrelevant';
+    const feedbackTypeMap: Record<string, FeedbackType> = {
+      'clicked': 'useful',
+      'dismissed': 'not_useful',
+      'disabled': 'too_frequent',
+      'snoozed': 'wrong_time',
+    };
     const feedback = await storage.user.notifications.createNotificationFeedback({
       userId,
-      ...validatedData,
+      notificationId: validatedData.notificationId,
+      feedbackType: feedbackTypeMap[validatedData.action] || 'not_useful',
+      reason: validatedData.followupAction,
     });
     
     // Trigger model update with new feedback (async, non-blocking)
@@ -258,11 +280,11 @@ router.get('/engagement', isAuthenticated, async (req: Request, res: Response) =
     const engagement = await storage.user.notifications.getRecentUserEngagement(userId, days);
     
     // Get notification scores for additional insights
-    const scores = await storage.user.notifications.getNotificationScores(userId, 100);
+    const scores = await storage.user.notifications.getNotificationScores(userId);
     
-    // Calculate average relevance scores
+    // Calculate average relevance scores (use score or relevanceScore)
     const avgRelevanceScore = scores.length > 0
-      ? scores.reduce((sum, s) => sum + s.relevanceScore, 0) / scores.length
+      ? scores.reduce((sum, s) => sum + (s.relevanceScore ?? s.score ?? 0), 0) / scores.length
       : 0;
     
     // Calculate timing accuracy (how often we hit optimal times)
@@ -270,18 +292,23 @@ router.get('/engagement', isAuthenticated, async (req: Request, res: Response) =
     const timingAccuracy = sentScores.length > 0
       ? sentScores.filter(s => {
           const actualTime = new Date(s.actualSentAt!).getTime();
-          const optimalTime = s.optimalTime ? new Date(s.optimalTime).getTime() : actualTime;
+          // Use holdUntil as optimal time since optimalTime doesn't exist in schema
+          const optimalTime = s.holdUntil ? new Date(s.holdUntil).getTime() : actualTime;
           const diff = Math.abs(actualTime - optimalTime);
           return diff < 60 * 60 * 1000; // Within 1 hour
         }).length / sentScores.length
       : 0;
+    
+    // Compute click rate from engagement counts
+    const totalSent = engagement.sent || 0;
+    const clickRate = totalSent > 0 ? (engagement.clicked || 0) / totalSent : 0;
     
     res.json({
       ...engagement,
       avgRelevanceScore,
       timingAccuracy,
       period: `${days} days`,
-      improvementRate: engagement.clickRate > 0.3 ? 'achieving-target' : 'improving',
+      improvementRate: clickRate > 0.3 ? 'achieving-target' : 'improving',
     });
   } catch (error) {
     console.error('Error getting engagement metrics:', error);
@@ -298,8 +325,8 @@ router.get('/insights', isAuthenticated, async (req: Request, res: Response) => 
     const userId = req.user!.id;
     
     // Get recent feedback and scores
-    const feedback = await storage.user.notifications.getNotificationFeedback(userId);
-    const scores = await storage.user.notifications.getNotificationScores(userId, 50);
+    const feedbackList = await storage.user.notifications.getNotificationFeedback(userId);
+    const scores = await storage.user.notifications.getNotificationScores(userId);
     const engagement = await storage.user.notifications.getRecentUserEngagement(userId, 30);
     
     // Analyze patterns
@@ -308,17 +335,18 @@ router.get('/insights', isAuthenticated, async (req: Request, res: Response) => 
     // Best performing notification types
     const typePerformance = new Map<string, { sent: number; clicked: number }>();
     scores.forEach(score => {
-      const type = score.features?.notificationType || 'unknown';
+      const type = score.notificationType || 'unknown';
       if (!typePerformance.has(type)) {
         typePerformance.set(type, { sent: 0, clicked: 0 });
       }
       const perf = typePerformance.get(type)!;
       perf.sent++;
       
-      const waClicked = feedback.some(f => 
-        f.notificationId === score.notificationId && f.action === 'clicked'
+      // Check if notification was clicked by checking feedbackType
+      const wasClicked = feedbackList.some(f => 
+        f.notificationId === score.id && f.feedbackType === 'useful'
       );
-      if (waClicked) {
+      if (wasClicked) {
         perf.clicked++;
       }
     });
@@ -347,8 +375,8 @@ router.get('/insights', isAuthenticated, async (req: Request, res: Response) => 
     const clicksByHour = new Array(24).fill(0);
     const sentByHour = new Array(24).fill(0);
     
-    feedback.filter(f => f.action === 'clicked').forEach(f => {
-      const hour = new Date(f.actionAt).getHours();
+    feedbackList.filter(f => f.feedbackType === 'useful').forEach(f => {
+      const hour = f.createdAt ? new Date(f.createdAt).getHours() : 0;
       clicksByHour[hour]++;
     });
     
@@ -371,17 +399,20 @@ router.get('/insights', isAuthenticated, async (req: Request, res: Response) => 
       });
     }
     
-    // Overall improvement
-    if (engagement.clickRate > 0) {
+    // Overall improvement - compute from engagement data
+    const totalSentForInsights = engagement.sent || 0;
+    const clickRateInsights = totalSentForInsights > 0 ? (engagement.clicked || 0) / totalSentForInsights : 0;
+    
+    if (clickRateInsights > 0) {
       const improvementTarget = 0.5; // 50% improvement target
-      const currentImprovement = engagement.clickRate - 0.2; // Assuming 20% baseline
+      const currentImprovement = clickRateInsights - 0.2; // Assuming 20% baseline
       const percentToTarget = (currentImprovement / (improvementTarget - 0.2)) * 100;
       
       insights.push({
         type: 'improvement',
         title: 'Engagement Improvement',
         description: `${percentToTarget.toFixed(0)}% toward 50% engagement improvement goal`,
-        metric: engagement.clickRate,
+        metric: clickRateInsights,
       });
     }
     
@@ -389,9 +420,9 @@ router.get('/insights', isAuthenticated, async (req: Request, res: Response) => 
       insights,
       summary: {
         totalNotifications: scores.length,
-        totalFeedback: feedback.length,
-        currentClickRate: engagement.clickRate,
-        avgEngagementTime: engagement.avgEngagementTime,
+        totalFeedback: feedbackList.length,
+        currentClickRate: clickRateInsights,
+        avgEngagementTime: null, // Not available in current schema
       },
     });
   } catch (error) {

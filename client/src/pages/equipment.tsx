@@ -130,18 +130,17 @@ export default function Equipment() {
     const query = searchQuery.toLowerCase();
     return (
       item.name.toLowerCase().includes(query) ||
-      item.description?.toLowerCase().includes(query) ||
-      item.subcategory?.toLowerCase().includes(query)
+      item.type?.toLowerCase().includes(query)
     );
   });
 
-  // Group items by subcategory
+  // Group items by type
   const groupedItems = filteredLibrary?.reduce((acc, item) => {
-    const subcategory = item.subcategory || "Other";
-    if (!acc[subcategory]) {
-      acc[subcategory] = [];
+    const category = item.type || "Other";
+    if (!acc[category]) {
+      acc[category] = [];
     }
-    acc[subcategory].push(item);
+    acc[category].push(item);
     return acc;
   }, {} as Record<string, ApplianceLibrary[]>);
 
@@ -230,19 +229,14 @@ export default function Equipment() {
                                       <Badge variant="secondary" className="text-xs">Common</Badge>
                                     )}
                                   </div>
-                                  {item.description && (
+                                  {item.capacity && (
                                     <p className="text-xs text-muted-foreground mt-1">
-                                      {item.description}
+                                      Capacity: {item.capacity}
                                     </p>
                                   )}
-                                  {item.sizeOrCapacity && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Size: {item.sizeOrCapacity}
-                                    </p>
-                                  )}
-                                  {item.material && (
+                                  {item.brand && (
                                     <p className="text-xs text-muted-foreground">
-                                      Material: {item.material}
+                                      Brand: {item.brand}
                                     </p>
                                   )}
                                 </div>

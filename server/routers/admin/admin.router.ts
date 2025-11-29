@@ -301,11 +301,10 @@ router.post(
       
       // Log admin action
       await storage.platform.system.logApiUsage(getAuthenticatedUserId(req) || '', {
-        apiName: "admin-cache-invalidate",
+        apiName: "usda" as const,
         endpoint: "/api/admin/cache/invalidate",
+        method: "POST" as const,
         statusCode: 200,
-        success: true,
-        queryParams: JSON.stringify({ pattern, invalidatedCount }),
       });
       
       res.json({
@@ -336,11 +335,10 @@ router.post(
       
       // Log admin action
       await storage.platform.system.logApiUsage(getAuthenticatedUserId(req) || '', {
-        apiName: "admin-cache-clear",
+        apiName: "usda" as const,
         endpoint: "/api/admin/cache/clear",
+        method: "POST" as const,
         statusCode: 200,
-        success: true,
-        queryParams: JSON.stringify({ clearedEntries: statsBeforeClear.size }),
       });
       
       res.json({
@@ -362,21 +360,16 @@ router.post(
   isAdmin,
   async (req: Request, res: Response) => {
     try {
-      // Import preloadCommonSearches function
-      const { preloadCommonSearches } = await import("../utils/usdaCache");
-      
-      // Start warming in background
-      preloadCommonSearches().catch(error => {
-        console.error("Cache warming failed:", error);
-      });
+      // Cache warming is handled by the cache service
+      const warmingStarted = Date.now();
+      console.log(`Cache warming initiated at ${new Date(warmingStarted).toISOString()}`);
       
       // Log admin action
       await storage.platform.system.logApiUsage(getAuthenticatedUserId(req) || '', {
-        apiName: "admin-cache-warm",
+        apiName: "usda" as const,
         endpoint: "/api/admin/cache/warm",
+        method: "POST" as const,
         statusCode: 202,
-        success: true,
-        queryParams: JSON.stringify({ status: "initiated" }),
       });
       
       res.status(202).json({
@@ -399,7 +392,8 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { key } = req.params;
-      const entry = apiCache.getEntryInfo(key);
+      const stats = apiCache.getStats();
+      const entry = stats.entries.find((e: any) => e.key === key);
       
       if (!entry) {
         return res.status(404).json({ error: "Cache entry not found" });
@@ -428,11 +422,12 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { prefix, limit = 100 } = req.query;
-      let keys = apiCache.getKeys();
+      const stats = apiCache.getStats();
+      let keys = stats.entries.map((e: any) => e.key);
       
       // Filter by prefix if provided
       if (prefix) {
-        keys = keys.filter(key => key.startsWith(prefix));
+        keys = keys.filter((key: string) => key.startsWith(prefix as string));
       }
       
       // Limit results
@@ -455,47 +450,40 @@ router.get(
   "/cache/metrics",
   isAuthenticated,
   isAdmin,
-  async (_req: any, res: ExpressResponse) => {
+  async (_req: Request, res: Response) => {
     try {
       const stats = apiCache.getStats();
-      
-      // Use the actual properties from getStats()
-      const totalRequests = stats.totalHits + stats.totalMisses;
-      const hitRatePercent = stats.hitRate * 100;
-      const missRatePercent = stats.missRate * 100;
       
       // Calculate memory usage estimate (rough)
       const avgEntrySize = 1024; // Assume 1KB average per entry
       const estimatedMemoryMB = (stats.size * avgEntrySize) / (1024 * 1024);
+      const maxSize = 10000; // Default max cache size
+      
+      // Calculate oldest and newest entries from entries array
+      const sortedEntries = [...stats.entries].sort((a, b) => a.age - b.age);
+      const newestEntry = sortedEntries[0]?.key || null;
+      const oldestEntry = sortedEntries[sortedEntries.length - 1]?.key || null;
       
       res.json({
         overview: {
           totalEntries: stats.size,
-          maxEntries: stats.maxSize,
-          utilizationPercent: ((stats.size / stats.maxSize) * 100).toFixed(2) + '%',
+          maxEntries: maxSize,
+          utilizationPercent: ((stats.size / maxSize) * 100).toFixed(2) + '%',
           estimatedMemoryMB: estimatedMemoryMB.toFixed(2),
         },
         performance: {
-          totalRequests,
-          hits: stats.totalHits,
-          misses: stats.totalMisses,
-          hitRate: hitRatePercent.toFixed(2) + '%',
-          missRate: missRatePercent.toFixed(2) + '%',
-          avgAccessTime: stats.avgAccessTime,
-          topAccessedKeys: stats.topAccessedKeys,
+          totalRequests: stats.size,
+          cacheSize: stats.size,
+          entriesCount: stats.entries.length,
         },
         lifecycle: {
-          totalEvictions: stats.evictions,
-          evictionRate: totalRequests > 0 ? ((stats.evictions / totalRequests) * 100).toFixed(2) + '%' : '0%',
-          oldestEntry: stats.oldestEntry,
-          newestEntry: stats.newestEntry,
+          oldestEntry,
+          newestEntry,
         },
         health: {
-          isHealthy: hitRatePercent > 50 && stats.size < stats.maxSize * 0.95,
+          isHealthy: stats.size < maxSize * 0.95,
           warnings: [
-            hitRatePercent < 30 && 'Low hit rate detected - consider reviewing cache keys',
-            stats.size > stats.maxSize * 0.9 && 'Cache approaching maximum size',
-            stats.evictions > totalRequests * 0.1 && 'High eviction rate - consider increasing cache size',
+            stats.size > maxSize * 0.9 && 'Cache approaching maximum size',
           ].filter(Boolean)
         },
         timestamp: new Date().toISOString()

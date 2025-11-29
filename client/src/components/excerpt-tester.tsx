@@ -140,7 +140,7 @@ export function ExcerptTester({
                   <div>
                     <p className="text-sm text-muted-foreground">Best Performer</p>
                     <p className="text-2xl font-bold">
-                      Variant {bestPerformer?.excerpt.variant}
+                      {bestPerformer?.excerpt.category || 'Top Excerpt'}
                     </p>
                   </div>
                   <Award className="h-8 w-8 text-yellow-500" />
@@ -211,7 +211,7 @@ export function ExcerptTester({
                     selectedVariant === stat.excerpt.id ? 'ring-2 ring-primary' : ''
                   }`}
                   onClick={() => testMode === 'manual' && setSelectedVariant(stat.excerpt.id)}
-                  data-testid={`variant-${stat.excerpt.variant}`}
+                  data-testid={`variant-${stat.excerpt.category || 'default'}`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -226,18 +226,12 @@ export function ExcerptTester({
                         htmlFor={`variant-${stat.excerpt.id}`}
                         className="text-base font-medium cursor-pointer"
                       >
-                        {getVariantLabel(stat.excerpt.variant ?? '')}
+                        {getVariantLabel(stat.excerpt.category ?? '')}
                       </Label>
                       {isLeading && (
                         <Badge className="bg-green-500 text-white">
                           <Award className="h-3 w-3 mr-1" />
                           Leading
-                        </Badge>
-                      )}
-                      {stat.excerpt.isActive && (
-                        <Badge variant="outline">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Active
                         </Badge>
                       )}
                       <Badge variant={
@@ -259,7 +253,7 @@ export function ExcerptTester({
 
                   <div className="mb-3">
                     <p className="text-sm text-muted-foreground line-clamp-2">
-                      {stat.excerpt.excerptText}
+                      {stat.excerpt.excerpt}
                     </p>
                   </div>
 
@@ -297,7 +291,7 @@ export function ExcerptTester({
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <strong>Recommendation:</strong> Based on performance data, 
-                Variant {bestPerformer.excerpt.variant} is performing {
+                {bestPerformer.excerpt.category || 'this excerpt'} is performing {
                   ((bestPerformer.performance.ctr - avgCTR) / avgCTR * 100).toFixed(0)
                 }% better than average. 
                 Consider making it the active excerpt.
@@ -323,7 +317,7 @@ export function ExcerptTester({
               >
                 <CheckCircle2 className="h-4 w-4 mr-1" />
                 {testMode === 'auto' 
-                  ? `Activate Variant ${bestPerformer?.excerpt.variant}`
+                  ? `Activate ${bestPerformer?.excerpt.category || 'Best Excerpt'}`
                   : 'Activate Selected'
                 }
               </Button>

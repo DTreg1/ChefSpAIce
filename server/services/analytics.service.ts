@@ -183,22 +183,9 @@ Example for a traffic spike:
         insightType: analysis.isAnomaly ? "anomaly" : "trend",
         category: "performance",
         title: `${metricData.metricName} Analysis`,
-        description: response.insightText,
+        description: response.insightText as string,
         severity: analysis.isAnomaly ? "warning" : "info",
-        metrics: {
-          metricName: metricData.metricName,
-          period: metricData.period,
-          currentValue,
-          previousValue,
-          percentageChange: analysis.percentageChange,
-          dataPoints: metricData.dataPoints,
-          average,
-          min,
-          max,
-          trend: analysis.trend
-        },
-        recommendations: response.suggestedActions
-      } as InsertAnalyticsInsight;
+      } as unknown as InsertAnalyticsInsight;
 
       return await storage.platform.analytics.createAnalyticsInsight(insightData);
     } catch (error) {
@@ -228,15 +215,7 @@ Example for a traffic spike:
         title: `${metricData.metricName} Analysis`,
         description: insightText,
         severity: analysis.isAnomaly ? "warning" : "info",
-        metrics: {
-          metricName: metricData.metricName,
-          period: metricData.period,
-          currentValue,
-          percentageChange: analysis.percentageChange,
-          dataPoints: metricData.dataPoints,
-          trend: analysis.trend
-        }
-      } as InsertAnalyticsInsight;
+      } as unknown as InsertAnalyticsInsight;
 
       return await storage.platform.analytics.createAnalyticsInsight(fallbackInsight);
     }

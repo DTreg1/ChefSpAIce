@@ -63,11 +63,11 @@ export function ChurnRiskIndicator({ userId, onInterventionClick }: ChurnRiskInd
     );
   }
 
-  const riskPercentage = Math.round((churnPrediction.probability || 0) * 100);
+  const riskPercentage = Math.round((churnPrediction.confidence || 0) * 100);
   const riskLevel = riskPercentage >= 80 ? 'critical' : riskPercentage >= 60 ? 'high' : riskPercentage >= 40 ? 'medium' : 'low';
   const riskColor = riskLevel === 'critical' ? 'destructive' : riskLevel === 'high' ? 'default' : riskLevel === 'medium' ? 'secondary' : 'outline';
 
-  const factors = churnPrediction.factors || {};
+  const factors = (churnPrediction.metadata as any)?.factors || {};
   const topFactors = Object.entries(factors)
     .filter(([_, value]) => typeof value === 'number' && value > 0)
     .sort((a, b) => (b[1] as number) - (a[1] as number))

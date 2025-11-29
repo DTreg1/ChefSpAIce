@@ -25,16 +25,16 @@ export function FeedbackButtons({
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const submitFeedbackMutation = useMutation({
-    mutationFn: async (data: Partial<InsertFeedback>) => {
-      const res = await apiRequest('POST', '/api/feedback', data);
-      return res.json();
+    mutationFn: async (data: { localSentiment: 'positive' | 'negative'; feedback: Partial<InsertFeedback> }) => {
+      const res = await apiRequest('POST', '/api/feedback', data.feedback);
+      return { result: await res.json(), localSentiment: data.localSentiment };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (response) => {
       setHasSubmitted(true);
-      setSentiment(variables.sentiment as 'positive' | 'negative');
+      setSentiment(response.localSentiment);
       void queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
-      if (onFeedbackSubmit && variables.sentiment) {
-        onFeedbackSubmit(variables.sentiment as 'positive' | 'negative');
+      if (onFeedbackSubmit) {
+        onFeedbackSubmit(response.localSentiment);
       }
     }
   });
@@ -45,15 +45,16 @@ export function FeedbackButtons({
       return;
     }
 
-    // Map contextType to valid feedback type values
-    const feedbackType: InsertFeedback['type'] = 'improvement';
+    // Map sentiment to valid feedback type values
+    const feedbackType: InsertFeedback['type'] = newSentiment === 'positive' ? 'praise' : 'complaint';
 
     submitFeedbackMutation.mutate({
-      type: feedbackType,
-      subject: `${newSentiment === 'positive' ? 'Positive' : 'Negative'} feedback on ${contextType}`,
-      description: `User provided ${newSentiment} feedback for ${contextType} with ID: ${contextId}`,
-      sentiment: newSentiment,
-      tags: [contextType, contextId, newSentiment]
+      localSentiment: newSentiment,
+      feedback: {
+        type: feedbackType,
+        message: `User provided ${newSentiment} feedback for ${contextType} with ID: ${contextId}`,
+        rating: newSentiment === 'positive' ? 5 : 1,
+      }
     });
   };
 

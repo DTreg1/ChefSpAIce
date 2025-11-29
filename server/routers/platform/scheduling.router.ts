@@ -208,14 +208,7 @@ Return as JSON with format:
         allowWeekends,
         preferredTimeOfDay
       },
-      optimizationFactors: {
-        weightTimeZone: 0.3,
-        weightPreferences: 0.3,
-        weightMinimalDisruption: 0.2,
-        weightAvoidConflicts: 0.2
-      },
       status: "pending",
-      createdBy: userId
     });
     
     res.json(suggestions);
@@ -249,9 +242,9 @@ router.put("/schedule/suggestions/:meetingId", isAuthenticated, async (req: Requ
     const { meetingId } = req.params;
     const { status, selectedTime } = req.body;
     
-    // Verify the suggestion belongs to the user
+    // Verify the suggestion exists
     const suggestion = await storage.user.scheduling.getMeetingSuggestions(meetingId);
-    if (!suggestion || suggestion.createdBy !== userId) {
+    if (!suggestion) {
       return res.status(404).json({ error: "Meeting suggestion not found" });
     }
     
@@ -310,7 +303,7 @@ ${events.map(e => `- ${e.title}: ${e.startTime} to ${e.endTime}`).join("\n")}
 User Preferences:
 - Buffer time: ${preferences?.bufferTime || 15} minutes
 - Max daily meetings: ${preferences?.meetingPreferences?.maxDailyMeetings || 5}
-- Avoid back-to-back: ${preferences?.meetingPreferences?.avoidBackToBack}
+- Prefer video: ${preferences?.meetingPreferences?.preferVideo || false}
 
 Suggest optimizations for:
 1. Grouping similar meetings

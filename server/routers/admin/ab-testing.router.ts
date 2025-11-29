@@ -145,16 +145,21 @@ router.post(
           });
 
           try {
+            // Extract metadata for AI analysis
+            const metaA = (aggregated.variantA.metadata || {}) as Record<string, any>;
+            const metaB = (aggregated.variantB.metadata || {}) as Record<string, any>;
+            const configVariants = ((test.configuration as any)?.variants || []) as Array<{name: string}>;
+            
             const prompt = `
           Analyze this A/B test result and provide actionable insights:
           
-          Test Name: ${test.name}
-          Variant A (Control): ${test.variantA}
-          Variant B (Test): ${test.variantB}
+          Test Name: ${test.testName}
+          Variant A (Control): ${configVariants[0]?.name || 'Control'}
+          Variant B (Test): ${configVariants[1]?.name || 'Test'}
           
           Results:
-          Variant A: ${aggregated.variantA.conversions} conversions from ${aggregated.variantA.visitors} visitors (${((aggregated.variantA.conversions / aggregated.variantA.visitors) * 100).toFixed(2)}% conversion rate)
-          Variant B: ${aggregated.variantB.conversions} conversions from ${aggregated.variantB.visitors} visitors (${((aggregated.variantB.conversions / aggregated.variantB.visitors) * 100).toFixed(2)}% conversion rate)
+          Variant A: ${metaA.totalConversions || 0} conversions from ${metaA.totalExposures || 0} visitors (${((metaA.conversionRate || 0) * 100).toFixed(2)}% conversion rate)
+          Variant B: ${metaB.totalConversions || 0} conversions from ${metaB.totalExposures || 0} visitors (${((metaB.conversionRate || 0) * 100).toFixed(2)}% conversion rate)
           
           Statistical Analysis:
           - P-value: ${significance.pValue.toFixed(4)}
@@ -249,42 +254,24 @@ router.post(
               }
             }
 
-            // Save insights to database
+            // Save insights to database - using schema-compatible fields
+            const variant = significance.winner === 'A' ? 'A' : 'B';
+            const sampleSize = (metaA.totalExposures || 0) + (metaB.totalExposures || 0);
+            const conversionRate = significance.winner === 'A' 
+              ? (metaA.conversionRate || 0) 
+              : (metaB.conversionRate || 0);
+            
             aiInsights = await storage.admin.experiments.upsertAbTestInsight({
               testId,
-              winner: significance.winner,
+              variant,
+              sampleSize,
+              conversionRate,
               confidence: significance.confidence,
               pValue: significance.pValue,
-              liftPercentage: significance.liftPercentage,
               recommendation:
                 significance.winner !== "inconclusive"
-                  ? "implement"
-                  : "continue",
-              explanation: explanation.trim() || aiContent.substring(0, 500),
-              insights: {
-                keyFindings,
-                nextSteps,
-                warnings,
-                learnings: keyFindings.slice(0, 3),
-                bestPractices: nextSteps.slice(0, 3),
-              },
-              statisticalAnalysis: {
-                sampleSizeA: aggregated.variantA.visitors,
-                sampleSizeB: aggregated.variantB.visitors,
-                conversionRateA:
-                  aggregated.variantA.visitors > 0
-                    ? aggregated.variantA.conversions /
-                      aggregated.variantA.visitors
-                    : 0,
-                conversionRateB:
-                  aggregated.variantB.visitors > 0
-                    ? aggregated.variantB.conversions /
-                      aggregated.variantB.visitors
-                    : 0,
-                zScore: 0, // Calculated in storage
-                power: 0.8, // Standard assumption
-                minimumDetectableEffect: 0.05,
-              },
+                  ? `implement_${significance.winner.toLowerCase()}: ${explanation.trim().substring(0, 200)}`
+                  : "continue_testing",
             });
           } catch (aiError) {
             console.error("Error generating AI insights:", aiError);
@@ -355,7 +342,7 @@ router.post(
 
         // Check if user has permission (created the test or is admin)
         if (test.createdBy !== userId) {
-          const user = await storage.admin.experiments.getUser(userId);
+          const user = await storage.user.user.getUserById(userId);
           if (!user?.isAdmin) {
             return res.status(403).json({ error: "Permission denied" });
           }
@@ -365,7 +352,7 @@ router.post(
 
         res.json({
           success: true,
-          message: `Variant ${variant} has been implemented for test "${test.name}"`,
+          message: `Variant ${variant} has been implemented for test "${test.testName}"`,
         });
       } catch (error: any) {
         console.error("Error implementing winner:", error);
@@ -395,7 +382,7 @@ router.put(
 
         // Check permission
         if (test.createdBy !== userId) {
-          const user = await storage.admin.experiments.getUser(userId);
+          const user = await storage.user.user.getUserById(userId);
           if (!user?.isAdmin) {
             return res.status(403).json({ error: "Permission denied" });
           }
@@ -431,7 +418,7 @@ router.delete(
 
         // Check permission
         if (test.createdBy !== userId) {
-          const user = await storage.admin.experiments.getUser(userId);
+          const user = await storage.user.user.getUserById(userId);
           if (!user?.isAdmin) {
             return res.status(403).json({ error: "Permission denied" });
           }

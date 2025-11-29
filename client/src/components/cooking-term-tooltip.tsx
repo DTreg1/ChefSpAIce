@@ -170,7 +170,7 @@ export function CookingTermTooltip({
                 {termData.term}
               </h4>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant={categoryConfig.color} className="text-xs">
+                <Badge variant={categoryConfig.color as "default" | "outline" | "destructive" | "secondary"} className="text-xs">
                   {formatCategory(termData.category)}
                 </Badge>
                 {!!termData.difficulty && !!difficultyConfig.label && (
@@ -188,7 +188,7 @@ export function CookingTermTooltip({
         {/* Definition */}
         <div className="space-y-2">
           <p className="text-sm leading-relaxed">
-            {termData.definition}
+            {termData.shortDefinition || termData.longDefinition}
           </p>
           
           {!!termData.example && (

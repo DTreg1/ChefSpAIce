@@ -484,10 +484,8 @@ router.post("/images/enhance", imageUpload.single("image"), async (req: any, res
     
     job = await storage.createImageProcessingJob({
       userId,
-      originalUrl: inputPath,
-      operations,
-      status: "processing",
-      originalFileSize: req.file.size,
+      imageUrl: inputPath,
+      operation: 'enhance',
     });
 
     const startTime = Date.now();
@@ -498,17 +496,19 @@ router.post("/images/enhance", imageUpload.single("image"), async (req: any, res
     await fs.writeFile(outputPath, buffer);
 
     await storage.updateImageProcessingJob(job.id, {
-      processedUrl: outputPath,
-      processedFileSize: buffer.length,
-      processingTime: Date.now() - startTime,
       status: "completed",
-      metadata: {
-        width: metadata.width,
-        height: metadata.height,
-        format: metadata.format,
-        colorSpace: metadata.space,
-        hasTransparency: metadata.hasAlpha,
-      },
+      result: JSON.stringify({
+        processedUrl: outputPath,
+        processedFileSize: buffer.length,
+        processingTime: Date.now() - startTime,
+        metadata: {
+          width: metadata.width,
+          height: metadata.height,
+          format: metadata.format,
+          colorSpace: metadata.space,
+          hasTransparency: metadata.hasAlpha,
+        },
+      }),
     });
 
     await fs.unlink(inputPath).catch(() => {});
@@ -532,7 +532,7 @@ router.post("/images/enhance", imageUpload.single("image"), async (req: any, res
     if (job) {
       await storage.updateImageProcessingJob(job.id, {
         status: "failed",
-        errorMessage: error.message,
+        result: JSON.stringify({ error: error.message }),
       });
     }
     res.status(500).json({ error: error.message || "Failed to process image" });
@@ -566,10 +566,8 @@ router.post("/images/background", imageUpload.single("image"), async (req: any, 
     
     job = await storage.createImageProcessingJob({
       userId,
-      originalUrl: inputPath,
-      operations: { backgroundRemoval: true },
-      status: "processing",
-      originalFileSize: req.file.size,
+      imageUrl: inputPath,
+      operation: 'background_removal',
     });
 
     const startTime = Date.now();
@@ -582,16 +580,18 @@ router.post("/images/background", imageUpload.single("image"), async (req: any, 
     const metadata = await sharp(processedBuffer).metadata();
 
     await storage.updateImageProcessingJob(job.id, {
-      processedUrl: outputPath,
-      processedFileSize: processedBuffer.length,
-      processingTime: Date.now() - startTime,
       status: "completed",
-      metadata: {
-        width: metadata.width,
-        height: metadata.height,
-        format: metadata.format,
-        hasTransparency: true,
-      },
+      result: JSON.stringify({
+        processedUrl: outputPath,
+        processedFileSize: processedBuffer.length,
+        processingTime: Date.now() - startTime,
+        metadata: {
+          width: metadata.width,
+          height: metadata.height,
+          format: metadata.format,
+          hasTransparency: true,
+        },
+      }),
     });
 
     await fs.unlink(inputPath).catch(() => {});
@@ -615,7 +615,7 @@ router.post("/images/background", imageUpload.single("image"), async (req: any, 
     if (job) {
       await storage.updateImageProcessingJob(job.id, {
         status: "failed",
-        errorMessage: error.message,
+        result: JSON.stringify({ error: error.message }),
       });
     }
     res.status(500).json({ error: error.message || "Failed to process image" });
@@ -644,10 +644,8 @@ router.post("/images/crop", imageUpload.single("image"), async (req: any, res: a
     
     job = await storage.createImageProcessingJob({
       userId,
-      originalUrl: inputPath,
-      operations: { autoCrop: true },
-      status: "processing",
-      originalFileSize: req.file.size,
+      imageUrl: inputPath,
+      operation: 'crop',
     });
 
     const startTime = Date.now();
@@ -672,15 +670,17 @@ router.post("/images/crop", imageUpload.single("image"), async (req: any, res: a
     await fs.writeFile(outputPath, buffer);
 
     await storage.updateImageProcessingJob(job.id, {
-      processedUrl: outputPath,
-      processedFileSize: buffer.length,
-      processingTime: Date.now() - startTime,
       status: "completed",
-      metadata: {
-        width: metadata.width,
-        height: metadata.height,
-        format: metadata.format,
-      },
+      result: JSON.stringify({
+        processedUrl: outputPath,
+        processedFileSize: buffer.length,
+        processingTime: Date.now() - startTime,
+        metadata: {
+          width: metadata.width,
+          height: metadata.height,
+          format: metadata.format,
+        },
+      }),
     });
 
     await fs.unlink(inputPath).catch(() => {});
@@ -703,7 +703,7 @@ router.post("/images/crop", imageUpload.single("image"), async (req: any, res: a
     if (job) {
       await storage.updateImageProcessingJob(job.id, {
         status: "failed",
-        errorMessage: error.message,
+        result: JSON.stringify({ error: error.message }),
       });
     }
     res.status(500).json({ error: error.message || "Failed to process image" });
@@ -739,10 +739,8 @@ router.post("/images/batch", imageUpload.array("images", 10), async (req: any, r
       
       const job = await storage.createImageProcessingJob({
         userId,
-        originalUrl: inputPath,
-        operations,
-        status: "processing",
-        originalFileSize: file.size,
+        imageUrl: inputPath,
+        operation: 'batch',
       });
 
       try {
@@ -754,15 +752,17 @@ router.post("/images/batch", imageUpload.array("images", 10), async (req: any, r
         await fs.writeFile(outputPath, buffer);
 
         await storage.updateImageProcessingJob(job.id, {
-          processedUrl: outputPath,
-          processedFileSize: buffer.length,
-          processingTime: Date.now() - startTime,
           status: "completed",
-          metadata: {
-            width: metadata.width,
-            height: metadata.height,
-            format: metadata.format,
-          },
+          result: JSON.stringify({
+            processedUrl: outputPath,
+            processedFileSize: buffer.length,
+            processingTime: Date.now() - startTime,
+            metadata: {
+              width: metadata.width,
+              height: metadata.height,
+              format: metadata.format,
+            },
+          }),
         });
 
         await fs.unlink(inputPath).catch(() => {});
@@ -779,7 +779,7 @@ router.post("/images/batch", imageUpload.array("images", 10), async (req: any, r
       } catch (error: any) {
         await storage.updateImageProcessingJob(job.id, {
           status: "failed",
-          errorMessage: error.message,
+          result: JSON.stringify({ error: error.message }),
         });
 
         results.push({
@@ -816,12 +816,10 @@ router.get("/images/presets", async (req: any, res: any) => {
     if (presets.length === 0) {
       const defaultPresets = [
         {
-          userId: null,
           name: "Product Photo",
-          description: "Clean white background, enhanced colors, sharp details",
-          category: "product" as const,
-          isPublic: true,
-          operations: {
+          category: "product",
+          settings: {
+            description: "Clean white background, enhanced colors, sharp details",
             backgroundRemoval: true,
             qualityEnhancement: true,
             autoCrop: true,
@@ -840,12 +838,10 @@ router.get("/images/presets", async (req: any, res: any) => {
           },
         },
         {
-          userId: null,
           name: "Portrait Enhancement",
-          description: "Soft skin, enhanced colors, background blur",
-          category: "portrait" as const,
-          isPublic: true,
-          operations: {
+          category: "portrait",
+          settings: {
+            description: "Soft skin, enhanced colors, background blur",
             qualityEnhancement: true,
             format: "jpeg",
             compression: 85,
@@ -860,12 +856,10 @@ router.get("/images/presets", async (req: any, res: any) => {
           },
         },
         {
-          userId: null,
           name: "Social Media",
-          description: "Optimized for web, vibrant colors, compressed size",
-          category: "social_media" as const,
-          isPublic: true,
-          operations: {
+          category: "social_media",
+          settings: {
+            description: "Optimized for web, vibrant colors, compressed size",
             qualityEnhancement: true,
             resize: {
               width: 1080,
@@ -917,10 +911,12 @@ router.post("/images/presets", isAuthenticated, async (req: any, res: any) => {
     const preset = await storage.createImagePreset({
       userId,
       name,
-      description,
-      operations,
       category: category || "custom",
-      isPublic: isPublic || false,
+      settings: {
+        description,
+        isPublic: isPublic || false,
+        ...operations,
+      },
     });
 
     res.json(preset);
@@ -1001,17 +997,17 @@ router.post("/vision/ocr/extract", isAuthenticated, imageUpload.single("image"),
     
     const ocrResult = await storage.platform.ai.createOcrResult(userId, {
       imageId,
-      fileName: req.file.originalname,
-      fileType: req.file.mimetype,
-      extractedText: extractionResult.text,
+      text: extractionResult.text,
       confidence: extractionResult.confidence,
       language,
       processingTime,
-      boundingBoxes: extractionResult.boundingBoxes,
-      metadata: {
-        ocrEngine: "tesseract.js",
-        engineVersion: "4.0.0",
-        structuredData,
+      engine: "tesseract" as const,
+      structuredData: {
+        blocks: extractionResult.boundingBoxes?.map((box: any) => ({
+          text: box.text || "",
+          confidence: box.confidence || extractionResult.confidence,
+          bbox: [box.x, box.y, box.width, box.height] as [number, number, number, number],
+        })),
       },
     });
     
@@ -1105,7 +1101,6 @@ router.post("/vision/faces/detect", isAuthenticated, imageUpload.single("image")
       processingType: "detect_only",
       metadata: {
         modelVersion: "blazeface",
-        minConfidence,
       }
     });
     
@@ -1174,7 +1169,6 @@ router.post("/vision/faces/blur", isAuthenticated, imageUpload.single("image"), 
       processingType: "blur",
       metadata: {
         blurIntensity,
-        excludedFaces: excludeIndexes,
         modelVersion: "blazeface"
       }
     });
@@ -1273,23 +1267,24 @@ router.post("/vision/alt-text", isAuthenticated, rateLimiters.openai.middleware(
     if (saveToDb) {
       if (!imageMetadata) {
         imageMetadata = await storage.platform.ai.createImageMetadata(userId, {
-          imageUrl,
-          generatedAlt: result.altText,
+          url: imageUrl,
+          filename: imageUrl.split('/').pop() || 'image',
+          mimeType: 'image/jpeg',
+          size: 0,
+          autoGeneratedAlt: result.altText,
           altText: result.altText,
-          context,
-          aiModel: "gpt-4o-vision",
-          generatedAt: new Date(),
-          confidence: result.confidence,
-          objectsDetected: result.objectsDetected
+          metadata: {
+            objects: result.objectsDetected,
+            scene: context,
+          },
         });
       } else {
         imageMetadata = await storage.platform.ai.updateImageMetadata(userId, imageMetadata.id, {
-          generatedAlt: result.altText,
+          autoGeneratedAlt: result.altText,
           altText: imageMetadata.altText || result.altText,
-          aiModel: "gpt-4o-vision",
-          generatedAt: new Date(),
-          confidence: result.confidence,
-          objectsDetected: result.objectsDetected
+          metadata: {
+            objects: result.objectsDetected,
+          },
         });
       }
       
@@ -1342,14 +1337,16 @@ router.post("/vision/alt-text/bulk", isAuthenticated, rateLimiters.openai.middle
         const result = await generateAltText(image.url, image.context);
         
         const imageMetadata = await storage.platform.ai.createImageMetadata(userId, {
-          imageUrl: image.url,
-          generatedAlt: result.altText,
+          url: image.url,
+          filename: image.url.split('/').pop() || 'image',
+          mimeType: 'image/jpeg',
+          size: 0,
+          autoGeneratedAlt: result.altText,
           altText: result.altText,
-          context: image.context,
-          aiModel: "gpt-4o-vision",
-          generatedAt: new Date(),
-          confidence: result.confidence,
-          objectsDetected: result.objectsDetected
+          metadata: {
+            objects: result.objectsDetected,
+            scene: image.context,
+          },
         });
         
         results.push({
@@ -1401,14 +1398,12 @@ router.put("/vision/alt-text/:id", isAuthenticated, async (req: Request, res: Re
     
     const imageMetadata = await storage.platform.ai.updateImageMetadata(userId, imageId, {
       altText,
-      isDecorative,
-      title
     });
     
     const quality = await analyzeAltTextQuality(
       altText,
-      imageMetadata.imageUrl,
-      imageMetadata.context || undefined
+      imageMetadata.url,
+      (imageMetadata.metadata as any)?.context || undefined
     );
     
     await storage.platform.ai.upsertAltTextQuality(imageId, quality);
@@ -1449,9 +1444,9 @@ router.get("/vision/alt-text/:id/suggestions", isAuthenticated, async (req: Requ
     }
     
     const suggestions = await generateAltTextSuggestions(
-      imageMetadata.altText || imageMetadata.generatedAlt || "",
-      imageMetadata.imageUrl,
-      imageMetadata.context || undefined
+      imageMetadata.altText || imageMetadata.autoGeneratedAlt || "",
+      imageMetadata.url,
+      (imageMetadata.metadata as any)?.context || undefined
     );
     
     res.json({

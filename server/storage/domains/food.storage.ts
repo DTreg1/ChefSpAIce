@@ -400,6 +400,88 @@ export class FoodStorage implements IFoodStorage {
              )`,
       );
   }
+
+  // ==================== Appliance Methods (Stubs) ====================
+
+  async getAppliances(_userId: string): Promise<any[]> {
+    console.warn("getAppliances: stub method called");
+    return [];
+  }
+
+  async getUserAppliances(_userId: string): Promise<any[]> {
+    console.warn("getUserAppliances: stub method called");
+    return [];
+  }
+
+  async getUserAppliancesByCategory(_userId: string, _category?: string): Promise<any[]> {
+    console.warn("getUserAppliancesByCategory: stub method called");
+    return [];
+  }
+
+  async createAppliance(_userId: string, _data: any): Promise<any> {
+    console.warn("createAppliance: stub method called");
+    return { id: "stub" };
+  }
+
+  async updateAppliance(_userId: string, _id: string, _data: any): Promise<any> {
+    console.warn("updateAppliance: stub method called");
+    return { id: _id };
+  }
+
+  async deleteAppliance(_userId: string, _id: string): Promise<void> {
+    console.warn("deleteAppliance: stub method called");
+  }
+
+  async getApplianceCategories(): Promise<string[]> {
+    console.warn("getApplianceCategories: stub method called");
+    return [];
+  }
+
+  async getApplianceLibrary(_category?: string): Promise<any[]> {
+    console.warn("getApplianceLibrary: stub method called");
+    return [];
+  }
+
+  async getApplianceLibraryByCategory(_category: string): Promise<any[]> {
+    console.warn("getApplianceLibraryByCategory: stub method called");
+    return [];
+  }
+
+  async searchApplianceLibrary(_query: string): Promise<any[]> {
+    console.warn("searchApplianceLibrary: stub method called");
+    return [];
+  }
+
+  async getCommonAppliances(): Promise<any[]> {
+    console.warn("getCommonAppliances: stub method called");
+    return [];
+  }
+
+  async addUserAppliance(_userId: string, _data: any): Promise<any> {
+    console.warn("addUserAppliance: stub method called");
+    return { id: "stub" };
+  }
+
+  async updateUserAppliance(_userId: string, _id: string, _data: any): Promise<any> {
+    console.warn("updateUserAppliance: stub method called");
+    return { id: _id };
+  }
+
+  async deleteUserAppliance(_userId: string, _id: string): Promise<void> {
+    console.warn("deleteUserAppliance: stub method called");
+  }
+
+  // ==================== Cache Methods (Stubs) ====================
+
+  async getUSDACacheStats(): Promise<any> {
+    console.warn("getUSDACacheStats: stub method called");
+    return { size: 0, entries: [] };
+  }
+
+  async clearOldCache(_maxAge?: number): Promise<number> {
+    console.warn("clearOldCache: stub method called");
+    return 0;
+  }
 }
 
 // Export singleton instance for convenience

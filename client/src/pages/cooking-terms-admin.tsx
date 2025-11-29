@@ -24,7 +24,8 @@ export default function CookingTermsAdmin() {
   const [formData, setFormData] = useState<Partial<InsertCookingTerm>>({
     term: "",
     category: "cooking_methods",
-    definition: "",
+    shortDefinition: "",
+    longDefinition: "",
     difficulty: "beginner",
     tips: [],
     relatedTerms: [],
@@ -124,7 +125,8 @@ export default function CookingTermsAdmin() {
     setFormData({
       term: "",
       category: "cooking_methods",
-      definition: "",
+      shortDefinition: "",
+      longDefinition: "",
       difficulty: "beginner",
       tips: [],
       relatedTerms: [],
@@ -132,7 +134,7 @@ export default function CookingTermsAdmin() {
   };
 
   const handleSubmit = () => {
-    if (!formData.term || !formData.definition || !formData.category) {
+    if (!formData.term || !formData.shortDefinition || !formData.category) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -153,7 +155,8 @@ export default function CookingTermsAdmin() {
     setFormData({
       term: term.term,
       category: term.category,
-      definition: term.definition,
+      shortDefinition: term.shortDefinition,
+      longDefinition: term.longDefinition || "",
       difficulty: term.difficulty || "beginner",
       tips: term.tips || [],
       relatedTerms: term.relatedTerms || [],
@@ -168,7 +171,7 @@ export default function CookingTermsAdmin() {
   // Filter terms based on search and category
   const filteredTerms = cookingTerms.filter(term => {
     const matchesSearch = term.term.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         term.definition.toLowerCase().includes(searchQuery.toLowerCase());
+                         term.shortDefinition?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || term.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -298,7 +301,7 @@ export default function CookingTermsAdmin() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteMutation.mutate(term.id)}
+                          onClick={() => deleteMutation.mutate(String(term.id))}
                           data-testid={`button-delete-${term.term}`}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -482,17 +485,17 @@ export default function CookingTermsAdmin() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="searchTerms">Search Terms / Alternative Names (comma-separated)</Label>
+                <Label htmlFor="tools">Required Tools (comma-separated)</Label>
                 <Textarea
-                  id="searchTerms"
-                  value={formData.searchTerms?.join(", ") || ""}
-                  onChange={(e) => handleArrayInput("searchTerms", e.target.value)}
-                  placeholder="e.g., julienne cut, matchstick cut"
+                  id="tools"
+                  value={formData.tools?.join(", ") || ""}
+                  onChange={(e) => handleArrayInput("tools", e.target.value)}
+                  placeholder="e.g., chef's knife, cutting board"
                   rows={2}
-                  data-testid="textarea-search-terms"
+                  data-testid="textarea-tools"
                 />
                 <p className="text-xs text-muted-foreground">
-                  These alternative names will also trigger the term highlighting
+                  Tools needed to perform this cooking technique
                 </p>
               </div>
             </TabsContent>

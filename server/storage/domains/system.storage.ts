@@ -1014,6 +1014,37 @@ export class SystemStorage implements ISystemStorage {
       apiStatus,
     };
   }
+
+  // ==================== Missing Methods (Stubs) ====================
+
+  async createMaintenanceHistory(
+    data: Omit<InsertMaintenanceHistory, "id">
+  ): Promise<MaintenanceHistory> {
+    const [result] = await db
+      .insert(maintenanceHistory)
+      .values(data)
+      .returning();
+    return result;
+  }
+
+  async getComponentHealth(component: string): Promise<{
+    avgAnomalyScore: number;
+    recentMetrics: SystemMetric[];
+    history: MaintenanceHistory[];
+  }> {
+    const recentMetrics = await this.getSystemMetrics(component, undefined, undefined, 20);
+    const history = await this.getMaintenanceHistory(component, undefined, 10);
+    
+    const avgAnomalyScore = recentMetrics.length > 0
+      ? recentMetrics.reduce((sum, m) => sum + ((m.metadata as any)?.anomalyScore || 0), 0) / recentMetrics.length
+      : 0;
+    
+    return {
+      avgAnomalyScore,
+      recentMetrics,
+      history,
+    };
+  }
 }
 
 // Export singleton instance for convenience

@@ -71,7 +71,7 @@ export default function SummarizationPage() {
       setCurrentSummary(data);
       setShowSummaryView(true);
       toast({
-        description: `Summary generated successfully (${data.wordCount} words)`,
+        description: `Summary generated successfully (${data.wordCountSummary || 0} words)`,
       });
     },
     onError: (error) => {
@@ -278,7 +278,7 @@ export default function SummarizationPage() {
                         <CardTitle>Formatted View</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <BulletSummary bullets={currentSummary.summaryText.split('\n')} />
+                        <BulletSummary bullets={currentSummary.summary.split('\n')} />
                       </CardContent>
                     </Card>
                   )}
@@ -289,7 +289,7 @@ export default function SummarizationPage() {
                   <CardHeader>
                     <CardTitle>Original Text</CardTitle>
                     <CardDescription>
-                      {currentSummary.originalWordCount} words
+                      {currentSummary.wordCountOriginal || 0} words
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

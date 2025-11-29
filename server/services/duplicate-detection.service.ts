@@ -117,15 +117,12 @@ export class DuplicateDetectionService {
       // Generate embedding for the new content
       const embedding = await this.generateEmbedding(content);
 
-      // Get existing embeddings for the user's content
+      // Get existing embeddings for this content type
       const existingEmbeddings = await db
         .select()
         .from(contentEmbeddings)
         .where(
-          and(
-            eq(contentEmbeddings.userId, userId),
-            eq(contentEmbeddings.contentType, contentType)
-          )
+          eq(contentEmbeddings.contentType, contentType)
         );
 
       const potentialDuplicates: Array<{
@@ -166,12 +163,11 @@ export class DuplicateDetectionService {
           // Store duplicate pair for review
           const duplicatePair: InsertDuplicatePair = {
             contentId1: contentId || 'pending',
-            contentType1: contentType,
             contentId2: existing.contentId,
-            contentType2: contentType,
-            similarityScore: similarity,
-            status: 'pending',
-            userId
+            contentType: contentType as 'recipe' | 'document' | 'article' | 'product' | 'media',
+            similarity,
+            isConfirmed: null,
+            isDismissed: false,
           };
 
           await db.insert(duplicatePairs).values(duplicatePair);
@@ -180,27 +176,16 @@ export class DuplicateDetectionService {
 
       // Store the new embedding (if contentId provided)
       if (contentId) {
-        const newEmbedding: InsertContentEmbedding = {
-          contentId,
-          contentType,
-          embedding,
-          embeddingModel: this.EMBEDDING_MODEL,
-          contentText: content,
-          metadata: {},
-          userId
-        };
-
         await db
           .insert(contentEmbeddings)
-          .values(newEmbedding)
-          .onConflictDoUpdate({
-            target: [contentEmbeddings.contentId, contentEmbeddings.contentType, contentEmbeddings.userId],
-            set: {
-              embedding,
-              contentText: content,
-              updatedAt: new Date()
-            }
-          });
+          .values({
+            contentId,
+            contentType,
+            embedding,
+            embeddingType: 'full',
+            metadata: {},
+          })
+          .onConflictDoNothing();
       }
 
       return {
@@ -219,16 +204,17 @@ export class DuplicateDetectionService {
    */
   static async getPendingDuplicates(userId: string, limit: number = 10) {
     try {
+      // Get pending pairs (not confirmed and not dismissed)
       const pending = await db
         .select()
         .from(duplicatePairs)
         .where(
           and(
-            eq(duplicatePairs.userId, userId),
-            eq(duplicatePairs.status, 'pending')
+            eq(duplicatePairs.isConfirmed, false),
+            eq(duplicatePairs.isDismissed, false)
           )
         )
-        .orderBy(desc(duplicatePairs.similarityScore))
+        .orderBy(desc(duplicatePairs.similarity))
         .limit(limit);
 
       // Enrich with content details
@@ -237,7 +223,7 @@ export class DuplicateDetectionService {
           let content1Details: any = null;
           let content2Details: any = null;
 
-          if (pair.contentType1 === 'recipe') {
+          if (pair.contentType === 'recipe') {
             const recipes1 = await db
               .select()
               .from(userRecipes)
@@ -277,10 +263,14 @@ export class DuplicateDetectionService {
     reviewedBy: string
   ) {
     try {
+      const isConfirmed = status === 'duplicate';
+      const isDismissed = status === 'unique' || status === 'merged';
+      
       await db
         .update(duplicatePairs)
         .set({
-          status,
+          isConfirmed,
+          isDismissed,
           reviewedBy,
           reviewedAt: new Date()
         })
@@ -298,19 +288,20 @@ export class DuplicateDetectionService {
    */
   static async getDuplicateStats(userId: string) {
     try {
+      // Note: userId filtering would require adding a userId column to duplicatePairs
+      // For now, get all pairs
       const allPairs = await db
         .select()
-        .from(duplicatePairs)
-        .where(eq(duplicatePairs.userId, userId));
+        .from(duplicatePairs);
 
       const stats = {
         total: allPairs.length,
-        pending: allPairs.filter(p => p.status === 'pending').length,
-        confirmed: allPairs.filter(p => p.status === 'duplicate').length,
-        unique: allPairs.filter(p => p.status === 'unique').length,
-        merged: allPairs.filter(p => p.status === 'merged').length,
+        pending: allPairs.filter(p => p.isConfirmed === null && !p.isDismissed).length,
+        confirmed: allPairs.filter(p => p.isConfirmed === true).length,
+        unique: allPairs.filter(p => p.isDismissed === true).length,
+        merged: 0, // Would need a separate merged field
         averageSimilarity: 
-          allPairs.reduce((sum, p) => sum + p.similarityScore, 0) / allPairs.length || 0
+          allPairs.reduce((sum, p) => sum + p.similarity, 0) / allPairs.length || 0
       };
 
       return stats;
@@ -347,16 +338,13 @@ export class DuplicateDetectionService {
           contentId,
           contentType,
           embedding,
-          embeddingModel: this.EMBEDDING_MODEL,
-          contentText,
+          embeddingType: 'full',
           metadata,
-          userId
         })
         .onConflictDoUpdate({
-          target: [contentEmbeddings.contentId, contentEmbeddings.contentType, contentEmbeddings.userId],
+          target: [contentEmbeddings.contentId, contentEmbeddings.contentType],
           set: {
             embedding,
-            contentText,
             metadata,
             updatedAt: new Date()
           }
@@ -368,12 +356,8 @@ export class DuplicateDetectionService {
           .update(userRecipes)
           .set({ similarityHash })
           .where(eq(userRecipes.id, contentId));
-      } else if (contentType === 'chat') {
-        await db
-          .update(userChats)
-          .set({ similarityHash })
-          .where(eq(userChats.id, contentId));
       }
+      // Note: userChats table is a legacy stub, similarity hash updates for chat are handled separately
 
       return { success: true, similarityHash };
     } catch (error) {

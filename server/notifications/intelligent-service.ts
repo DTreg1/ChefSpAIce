@@ -28,7 +28,7 @@ const openai = new OpenAI({
 });
 
 export interface NotificationPayload {
-  type: 'expiring_food' | 'meal_reminder' | 'recipe_suggestion' | 'shopping_alert' | 'achievement' | 'system';
+  type: 'expiring-food' | 'recipe-suggestion' | 'meal-reminder' | 'test' | 'system' | 'promotion' | 'feature-update';
   title: string;
   body: string;
   data?: Record<string, any>;
@@ -152,11 +152,11 @@ export class IntelligentNotificationService {
         };
       }
 
-      // Check quiet hours
-      if (prefs?.quietHours?.enabled && prefs.quietHours.periods?.length > 0) {
-        const inQuietHours = this.isInQuietHours(now, prefs.quietHours.periods);
+      // Check quiet hours using quietHoursStart/quietHoursEnd
+      if (prefs?.quietHoursStart && prefs.quietHoursEnd) {
+        const inQuietHours = this.isInQuietHoursSimple(now, prefs.quietHoursStart, prefs.quietHoursEnd);
         if (inQuietHours) {
-          const endOfQuietHours = this.getEndOfQuietHours(now, prefs.quietHours.periods);
+          const endOfQuietHours = this.getEndOfQuietHoursSimple(now, prefs.quietHoursEnd);
           return {
             optimalTime: endOfQuietHours,
             confidence: 0.9,
@@ -165,8 +165,8 @@ export class IntelligentNotificationService {
         }
       }
 
-      // Get user engagement patterns
-      const feedbackHistory = await storage.getNotificationFeedback(userId);
+      // Get user engagement patterns - use the notification storage directly
+      const feedbackHistory = await storage.getUserNotificationFeedback(userId);
       
       // Use lightweight prediction
       const now2 = new Date();
@@ -174,9 +174,10 @@ export class IntelligentNotificationService {
       const dayOfWeek = now2.getDay();
       
       // Extract user's active hours from feedback history
+      // feedbackType contains 'opened', 'clicked', etc., and createdAt is the timestamp
       const userActiveHours = feedbackHistory
-        .filter(f => f.action === 'opened' || f.action === 'clicked')
-        .map(f => new Date(f.actionAt).getHours())
+        .filter((f: any) => f.feedbackType === 'opened' || f.feedbackType === 'clicked')
+        .map((f: any) => new Date(f.createdAt).getHours())
         .slice(0, 20); // Use last 20 engagements
       
       const engagementProb = calculateEngagementProbability(
@@ -260,12 +261,12 @@ export class IntelligentNotificationService {
   ): { optimalTime: Date; confidence: number; reason: string } {
     const now = new Date();
     
-    // Analyze click patterns by hour
+    // Analyze click patterns by hour - use feedbackType and createdAt
     const clicksByHour = new Map<number, number>();
     feedbackHistory
-      .filter(f => f.action === 'clicked')
-      .forEach(feedback => {
-        const hour = new Date(feedback.actionAt).getHours();
+      .filter((f: any) => f.feedbackType === 'clicked')
+      .forEach((feedback: any) => {
+        const hour = new Date(feedback.createdAt).getHours();
         clicksByHour.set(hour, (clicksByHour.get(hour) || 0) + 1);
       });
 
@@ -351,23 +352,21 @@ export class IntelligentNotificationService {
     };
 
     // Create notification score record
+    // factors is Record<string, number> so only include numeric values
     const score: InsertNotificationScores = {
       userId,
-      notificationId: notification.notificationId,
-      relevanceScore,
+      notificationType: notification.type,
+      score: relevanceScore,
       urgencyLevel: urgencyLevels[notification.urgency] || 2,
-      optimalTime,
       holdUntil: optimalTime,
       modelVersion: 'v1.0.0',
-      features: {
+      factors: {
         hourOfDay: optimalTime.getHours(),
         dayOfWeek: optimalTime.getDay(),
-        notificationType: notification.type,
         contentLength: notification.body.length,
-        hasActionItems: !!notification.actionUrl,
+        hasActionItems: notification.actionUrl ? 1 : 0,
         recentEngagementRate: confidence,
         timeSinceLastOpen: 0, // Would be calculated from user session data
-        userContext: userContext || {},
       },
     };
 
@@ -458,10 +457,49 @@ export class IntelligentNotificationService {
   }
 
   /**
+   * Helper: Check if current time is in quiet hours (simple version)
+   */
+  private isInQuietHoursSimple(time: Date, startHour: string, endHour: string): boolean {
+    const hour = time.getHours();
+    const minute = time.getMinutes();
+    const currentMinutes = hour * 60 + minute;
+    
+    const [startH, startM] = startHour.split(':').map(Number);
+    const [endH, endM] = endHour.split(':').map(Number);
+    
+    const startMinutes = startH * 60 + (startM || 0);
+    const endMinutes = endH * 60 + (endM || 0);
+    
+    if (startMinutes <= endMinutes) {
+      // Quiet hours don't cross midnight
+      return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    } else {
+      // Quiet hours cross midnight
+      return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+    }
+  }
+
+  /**
+   * Helper: Get end of quiet hours (simple version)
+   */
+  private getEndOfQuietHoursSimple(time: Date, endHour: string): Date {
+    const [endH, endM] = endHour.split(':').map(Number);
+    const endTime = new Date(time);
+    endTime.setHours(endH, endM || 0, 0, 0);
+    
+    // If end time has passed today, it's tomorrow
+    if (endTime <= time) {
+      endTime.setDate(endTime.getDate() + 1);
+    }
+    
+    return endTime;
+  }
+
+  /**
    * Helper: Encode notification type as number
    */
   private encodeNotificationType(type: string): number {
-    const types = ['expiring_food', 'meal_reminder', 'recipe_suggestion', 'shopping_alert', 'achievement', 'system'];
+    const types = ['expiring-food', 'meal-reminder', 'recipe-suggestion', 'test', 'system', 'promotion', 'feature-update'];
     return types.indexOf(type) / (types.length - 1);
   }
 
@@ -475,45 +513,51 @@ export class IntelligentNotificationService {
 
   /**
    * Process notification queue and send pending notifications
+   * NOTE: This method requires proper storage integration - simplified for now
    */
   async processNotificationQueue(): Promise<void> {
     try {
       const now = new Date();
-      const pendingNotifications = await storage.getPendingNotifications(now);
+      // Get pending notifications from notification history with 'sent' status
+      const pendingNotifications = await storage.getPendingNotifications();
       
       console.log(`Processing ${pendingNotifications.length} pending notifications`);
       
-      for (const notification of pendingNotifications) {
+      for (const notification of pendingNotifications as any[]) {
         try {
           // Check user preferences for frequency limits
           const prefs = await storage.getNotificationPreferences(notification.userId);
           
-          if (prefs?.frequencyLimit) {
+          // Use metadata for frequency limit if available
+          const frequencyLimit = prefs?.metadata?.frequencyLimit as number | undefined;
+          if (frequencyLimit) {
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
             
-            const recentNotifs = await storage.getNotificationScores(notification.userId, 100);
-            const todayCount = recentNotifs.filter(n => 
+            const recentNotifs = await storage.getNotificationScores(notification.userId);
+            const todayCount = recentNotifs.filter((n: any) => 
               n.actualSentAt && new Date(n.actualSentAt) >= todayStart
             ).length;
             
             // Check daily limit
-            if (todayCount >= prefs.frequencyLimit) {
+            if (todayCount >= frequencyLimit) {
               console.log(`User ${notification.userId} has reached daily notification limit`);
               continue;
             }
           }
           
           // Send the notification (this would integrate with your push notification system)
-          const notificationInfo = notification.notificationId ? 
-            `Notification ID: ${notification.notificationId}` : 
-            `Relevance: ${notification.relevanceScore.toFixed(2)}`;
+          const notificationInfo = notification.id ? 
+            `Notification ID: ${notification.id}` : 
+            `Notification for user ${notification.userId}`;
           console.log(`Sending notification to user ${notification.userId}: ${notificationInfo}`);
           
-          // Update the notification as sent
-          await storage.updateNotificationScore(notification.id, {
-            actualSentAt: now,
-          });
+          // Update the notification as sent via notification score update
+          if (notification.scoreId) {
+            await storage.updateNotificationScore(notification.scoreId, {
+              actualSentAt: now,
+            });
+          }
           
           // You would integrate with your existing push notification system here
           // For example: await sendPushNotification(notification.userId, notification);

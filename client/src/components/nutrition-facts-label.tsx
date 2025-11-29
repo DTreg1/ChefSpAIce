@@ -21,7 +21,7 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
 
   const totalFatDV = calculateDV(nutrition.fat, 78);
   const sodiumDV = calculateDV(nutrition.sodium, 2300);
-  const totalCarbDV = calculateDV(nutrition.carbs, 275);
+  const totalCarbDV = calculateDV(nutrition.carbohydrates, 275);
   const fiberDV = calculateDV(nutrition.fiber, 28);
   const proteinDV = calculateDV(nutrition.protein, 50);
 
@@ -93,7 +93,7 @@ export function NutritionFactsLabel({ nutrition, foodName }: NutritionFactsLabel
 
       <div className="border-b border-foreground py-1 flex justify-between">
         <div>
-          <span className="font-bold">Total Carbohydrate</span> {nutrition.carbs?.toFixed(1) || 0}g
+          <span className="font-bold">Total Carbohydrate</span> {nutrition.carbohydrates?.toFixed(1) || 0}g
         </div>
         <span className="font-bold" data-testid="carbs-dv">{totalCarbDV}%</span>
       </div>

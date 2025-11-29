@@ -61,20 +61,18 @@ export function StarRating({
     } else {
       // Submit immediately without text feedback
       submitRatingMutation.mutate({
-        type: newRating >= 4 ? 'praise' : 'improvement',
-        sentiment: newRating >= 4 ? 'positive' : newRating <= 2 ? 'negative' : 'neutral',
-        subject: `${newRating} star rating for ${contextType}`,
-        description: `User gave ${newRating} stars (${contextId})`
+        type: newRating >= 4 ? 'praise' : 'complaint',
+        message: `User gave ${newRating} stars (${contextId})`,
+        rating: newRating,
       });
     }
   };
 
   const handleSubmitWithComment = () => {
     submitRatingMutation.mutate({
-      type: rating >= 4 ? 'praise' : 'improvement',
-      subject: `${rating} star rating for ${contextType}`,
-      description: comment ? `${comment} (${rating} stars - ${contextId})` : `User gave ${rating} stars (${contextId})`,
-      sentiment: rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral'
+      type: rating >= 4 ? 'praise' : 'complaint',
+      message: comment ? `${comment} (${rating} stars - ${contextId})` : `User gave ${rating} stars (${contextId})`,
+      rating: rating,
     });
   };
 
@@ -146,10 +144,9 @@ export function StarRating({
                 setIsOpen(false);
                 // Submit without comment
                 submitRatingMutation.mutate({
-                  type: rating >= 4 ? 'praise' : 'improvement',
-                  sentiment: rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral',
-                  subject: `${rating} star rating for ${contextType}`,
-                  description: `User gave ${rating} stars (${contextId})`
+                  type: rating >= 4 ? 'praise' : 'complaint',
+                  message: `User gave ${rating} stars (${contextId})`,
+                  rating: rating,
                 });
               }}
               data-testid="button-skip-comment"

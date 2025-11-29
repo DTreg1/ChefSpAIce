@@ -10,7 +10,6 @@ import { z } from "zod";
 import { storage } from "../../storage/index";
 import { isAuthenticated, adminOnly } from "../../middleware/oauth.middleware";
 import { asyncHandler } from "../../middleware/error.middleware";
-import { Request } from "express";
 import * as aiRoutingService from "../../services/ai-routing.service";
 
 const router = Router();
@@ -95,7 +94,18 @@ router.post(
     }
 
     try {
-      const ticket = await storage.admin.support.createTicket(validation.data);
+      // Transform to match InsertTicket schema
+      const ticketData = {
+        title: validation.data.title,
+        description: validation.data.description,
+        category: (validation.data.category || 'general') as 'technical' | 'billing' | 'account' | 'general' | 'feature-request',
+        priority: (validation.data.priority || 'medium') as 'low' | 'medium' | 'high' | 'urgent',
+        status: 'open' as const,
+        userId: validation.data.submittedBy,
+        ticketNumber: `TKT-${Date.now()}`,
+        metadata: validation.data.metadata as any,
+      };
+      const ticket = await storage.admin.support.createTicket(ticketData);
       res.json({
         success: true,
         ticket,
@@ -359,7 +369,15 @@ router.post(
     }
 
     try {
-      const rule = await storage.admin.support.createRoutingRule(validation.data);
+      // Transform to match InsertRoutingRule schema
+      const ruleData = {
+        ruleName: validation.data.name,
+        ruleOrder: validation.data.priority || 100,
+        conditions: validation.data.condition as any,
+        assignTo: validation.data.assigned_to,
+        isActive: validation.data.isActive ?? true,
+      };
+      const rule = await storage.admin.support.createRoutingRule(ruleData);
       res.json({
         success: true,
         rule,
@@ -494,7 +512,17 @@ router.post(
     }
 
     try {
-      const agent = await storage.admin.support.upsertAgentExpertise(validation.data);
+      // Transform to match InsertAgentExpertise schema
+      const agentData = {
+        agentId: validation.data.agent_id,
+        expertiseArea: validation.data.skills?.[0]?.skill || 'general',
+        skillLevel: validation.data.skills?.[0]?.level || 1,
+        languages: validation.data.languages,
+        maxConcurrentTickets: validation.data.max_capacity || 10,
+        currentTicketCount: 0,
+        availability: validation.data.availability,
+      };
+      const agent = await storage.admin.support.upsertAgentExpertise(agentData);
       res.json({
         success: true,
         agent,

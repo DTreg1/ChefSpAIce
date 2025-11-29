@@ -1023,10 +1023,10 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
                             <span className="font-medium">{food.nutrition.protein}g</span>
                           </div>
                         )}
-                        {food.nutrition?.carbs !== undefined && (
+                        {food.nutrition?.carbohydrates !== undefined && (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Carbs:</span>
-                            <span className="font-medium">{food.nutrition.carbs}g</span>
+                            <span className="font-medium">{food.nutrition.carbohydrates}g</span>
                           </div>
                         )}
                         {food.nutrition?.fat !== undefined && (
