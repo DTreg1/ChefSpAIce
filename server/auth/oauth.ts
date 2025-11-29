@@ -454,19 +454,20 @@ export function configureAppleStrategy(hostname: string) {
               profileKeys: profile ? Object.keys(profile) : [],
             });
             
-            // Apple user ID comes from idToken.sub or profile.id
-            // The idToken from passport-apple should be the decoded JWT
-            const appleUserId = idToken?.sub || profile?.id || profile?.sub;
+            // Apple user ID - passport-apple provides it in idToken.id (not sub!)
+            const appleUserId = idToken?.id || idToken?.sub || profile?.id;
             
             if (!appleUserId) {
               console.error("[Apple OAuth] No user ID found. Full idToken:", JSON.stringify(idToken, null, 2));
-              console.error("[Apple OAuth] Full profile:", JSON.stringify(profile, null, 2));
               return safeCallback(new Error("No Apple user ID found in response"));
             }
             
+            console.log("[Apple OAuth] Found user ID:", appleUserId);
+            
             // Extract email - Apple provides it in the idToken
             const email = idToken?.email || profile?.email;
-            const emails = email ? [{ value: email, verified: idToken?.email_verified }] : [];
+            const emailVerified = idToken?.emailVerified || idToken?.email_verified || false;
+            const emails = email ? [{ value: email, verified: emailVerified }] : [];
             
             // Apple only provides name on first login, in the profile object
             const firstName = profile?.name?.firstName || '';
