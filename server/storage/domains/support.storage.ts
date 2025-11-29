@@ -100,7 +100,7 @@ export class SupportStorage implements ISupportStorage {
   async createTicket(ticket: InsertTicket): Promise<Ticket> {
     const [newTicket] = await db
       .insert(tickets)
-      .values([ticket])
+      .values(ticket as any)
       .returning();
     return newTicket;
   }
@@ -273,7 +273,7 @@ export class SupportStorage implements ISupportStorage {
   async createRoutingRule(rule: InsertRoutingRule): Promise<RoutingRule> {
     const [newRule] = await db
       .insert(routingRules)
-      .values(rule)
+      .values(rule as any)
       .returning();
     return newRule;
   }

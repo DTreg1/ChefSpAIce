@@ -24,7 +24,7 @@ import type { IFeedbackStorage, FeedbackAnalytics, FeedbackResponse, InsertFeedb
 export class FeedbackStorage implements IFeedbackStorage {
   // Feedback Management
   async createFeedback(feedbackData: InsertUserFeedback): Promise<UserFeedback> {
-    const [result] = await db.insert(userFeedback).values([feedbackData]).returning();
+    const [result] = await db.insert(userFeedback).values(feedbackData as any).returning();
     return result;
   }
 
@@ -281,7 +281,7 @@ export class FeedbackStorage implements IFeedbackStorage {
   
   // Donations
   async createDonation(donation: InsertDonation): Promise<Donation> {
-    const [result] = await db.insert(donations).values([donation]).returning();
+    const [result] = await db.insert(donations).values(donation as any).returning();
     return result;
   }
 
@@ -290,7 +290,7 @@ export class FeedbackStorage implements IFeedbackStorage {
       .set({
         ...updates,
         updatedAt: new Date()
-      })
+      } as any)
       .where(eq(donations.id, donationId))
       .returning();
     return result;

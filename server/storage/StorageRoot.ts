@@ -83,8 +83,9 @@ import type {
 } from "@shared/schema/system";
 
 import type {
+  InsertCategory,
+  Category,
   InsertContentCategory,
-  ContentCategory,
 } from "@shared/schema/content";
 
 import type {
@@ -225,7 +226,7 @@ export class StorageRoot {
   }
 
   async createFoodItem(userId: string, data: Omit<InsertUserInventory, 'userId'>) {
-    return this.user.inventory.createFoodItem(userId, data);
+    return this.user.inventory.createFoodItem(userId, { ...data, userId } as InsertUserInventory);
   }
 
   async updateFoodItem(userId: string, id: string, data: Partial<UserInventory>) {
@@ -303,7 +304,7 @@ export class StorageRoot {
   }
 
   async createRecipe(userId: string, data: Omit<InsertRecipe, 'userId'>) {
-    return this.user.recipes.createRecipe(userId, data);
+    return this.user.recipes.createRecipe(userId, { ...data, userId } as InsertRecipe);
   }
 
   async updateRecipe(userId: string, id: string, data: Partial<Recipe>) {
@@ -507,7 +508,7 @@ export class StorageRoot {
     return null;
   }
 
-  async updateModerationLog(id: string, updates: Partial<ModerationLog>) {
+  async updateModerationLog(id: string, updates: Partial<InsertModerationLog>) {
     return this.admin.security.updateModerationLog(id, updates);
   }
 
@@ -563,7 +564,7 @@ export class StorageRoot {
     return this.admin.security.getPrivacySettings(userId);
   }
 
-  async updatePrivacySettings(userId: string, settings: Partial<PrivacySettings>) {
+  async updatePrivacySettings(userId: string, settings: Omit<PrivacySettings, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) {
     return this.admin.security.upsertPrivacySettings(userId, settings);
   }
 
@@ -677,7 +678,7 @@ export class StorageRoot {
     return this.admin.experiments.getCohorts(filters);
   }
 
-  async updateCohort(cohortId: string, updates: Partial<Cohort>) {
+  async updateCohort(cohortId: string, updates: Partial<InsertCohort>) {
     return this.admin.experiments.updateCohort(cohortId, updates);
   }
 
@@ -803,7 +804,7 @@ export class StorageRoot {
     return this.platform.ai.deleteSummary(userId, id);
   }
 
-  async createTranslation(userId: string, translation: { sourceText: string; sourceLanguage: string; targetLanguage: string }) {
+  async createTranslation(userId: string, translation: { originalText: string; translatedText: string; sourceLanguage: string; targetLanguage: string }) {
     return this.platform.ai.translateContent(userId, translation);
   }
 
@@ -836,7 +837,7 @@ export class StorageRoot {
   }
 
   // ==================== System ====================
-  async logSystemApiUsage(userId: string, log: { apiName: string; requestCount?: number; tokensUsed?: number; cost?: number }) {
+  async logSystemApiUsage(userId: string, log: { apiName: "barcode" | "openai" | "stripe" | "usda" | "twilio" | "sendgrid" | "aws" | "google"; endpoint: string; method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; requestCount?: number; tokensUsed?: number; cost?: number }) {
     return this.platform.system.logApiUsage(userId, log);
   }
 
@@ -852,8 +853,8 @@ export class StorageRoot {
     return this.platform.system.createActivityLog(log);
   }
 
-  async getActivityLogs(filters?: { userId?: string; action?: string; entityType?: string; limit?: number }) {
-    return this.platform.system.getActivityLogs(filters);
+  async getActivityLogs(userId?: string | null, filters?: { activityType?: string | string[]; resourceType?: string; action?: string | string[]; limit?: number }) {
+    return this.platform.system.getActivityLogs(userId, filters);
   }
 
   async recordSystemMetric(metric: Omit<InsertSystemMetric, 'id'>) {
@@ -897,11 +898,11 @@ export class StorageRoot {
     return this.platform.content.getCategoryBySlug(slug);
   }
 
-  async createCategory(category: Omit<InsertContentCategory, 'id'>) {
+  async createCategory(category: InsertCategory) {
     return this.platform.content.createCategory(category);
   }
 
-  async updateCategory(id: number, updates: Partial<ContentCategory>) {
+  async updateCategory(id: number, updates: Partial<Category>) {
     return this.platform.content.updateCategory(id, updates);
   }
 
@@ -1076,7 +1077,7 @@ export class StorageRoot {
     return this.user.scheduling.getSchedulingPreferences(userId);
   }
 
-  async upsertMeetingPreferences(userId: string, preferences: Partial<InsertSchedulingPreferences>) {
+  async upsertMeetingPreferences(userId: string, preferences: Omit<InsertSchedulingPreferences, 'userId'>) {
     return this.user.scheduling.upsertSchedulingPreferences(userId, preferences);
   }
 

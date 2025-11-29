@@ -39,7 +39,7 @@ export class PricingStorage implements IPricingStorage {
   async createPricingRule(rule: InsertPricingRules): Promise<PricingRules> {
     const [result] = await db
       .insert(pricingRules)
-      .values([rule])
+      .values(rule as any)
       .returning();
     return result;
   }
@@ -51,9 +51,9 @@ export class PricingStorage implements IPricingStorage {
     const [result] = await db
       .update(pricingRules)
       .set({
-        ...(rule),
+        ...rule,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(pricingRules.id, id))
       .returning();
     return result;
@@ -112,7 +112,7 @@ export class PricingStorage implements IPricingStorage {
   async recordPriceChange(history: InsertPriceHistory): Promise<PriceHistory> {
     const [result] = await db
       .insert(priceHistory)
-      .values([history])
+      .values(history as any)
       .returning();
     return result;
   }
@@ -134,17 +134,17 @@ export class PricingStorage implements IPricingStorage {
       conditions.push(lte(priceHistory.changedAt, params.endDate));
     }
 
-    let query = db
+    const baseQuery = db
       .select()
       .from(priceHistory)
       .where(and(...conditions))
       .orderBy(desc(priceHistory.changedAt));
 
     if (params?.limit) {
-      query = query.limit(params.limit);
+      return await baseQuery.limit(params.limit);
     }
 
-    return await query;
+    return await baseQuery;
   }
 
   async getLatestPrice(productId: string): Promise<PriceHistory | undefined> {
