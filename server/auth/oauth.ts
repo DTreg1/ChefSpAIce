@@ -13,6 +13,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as OAuth2Strategy } from "passport-oauth2";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import https from "https";
 import { oauthConfig, isOAuthConfigured, getCallbackURL } from "../config/oauth-config";
 import { storage } from "../storage";
 import { UpsertUser, InsertAuthProviderInfo } from "../../shared/schema";
@@ -288,7 +289,6 @@ class TwitterOAuth2Strategy extends OAuth2Strategy {
       console.log('[Twitter OAuth] Making token request with Basic Auth');
       
       // Make the request with Basic Auth header
-      const https = require('https');
       const url = new URL(tokenURL);
       
       const reqOptions = {
