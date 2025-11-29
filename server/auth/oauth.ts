@@ -287,6 +287,11 @@ class TwitterOAuth2Strategy extends OAuth2Strategy {
       }).toString();
       
       console.log('[Twitter OAuth] Making token request with Basic Auth');
+      console.log('[Twitter OAuth] Client ID length:', options.clientID?.length);
+      console.log('[Twitter OAuth] Client Secret length:', options.clientSecret?.length);
+      console.log('[Twitter OAuth] Token URL:', tokenURL);
+      console.log('[Twitter OAuth] Redirect URI:', params.redirect_uri);
+      console.log('[Twitter OAuth] Code verifier present:', !!params.code_verifier);
       
       // Make the request with Basic Auth header
       const url = new URL(tokenURL);
