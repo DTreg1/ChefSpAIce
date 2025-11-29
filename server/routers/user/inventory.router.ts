@@ -6,12 +6,13 @@ import { insertUserInventorySchema, insertShoppingListItemSchema, type UserInven
 import { isAuthenticated } from "../../middleware/oauth.middleware";
 import { batchedApiLogger } from "../../utils/batchedApiLogger";
 import { validateBody } from "../../middleware";
-import axios from "axios";
 import { openai } from "../../integrations/openai";
 import rateLimiters from "../../middleware/rateLimit";
 // USDA FoodData Central integration
 import { searchUSDAFoods, getFoodByFdcId } from "../../integrations/usda";
 import { searchUSDAFoodsCached } from "../../utils/usdaCache";
+// Barcode lookup service
+import { barcodeLookupService } from "../../services/barcode-lookup.service";
 
 const router = Router();
 
@@ -388,10 +389,7 @@ router.post("/cache/fdc/clear", async (_req: Request, res: Response) => {
   res.json({ message: "FDC cache is managed by the USDA integration module" });
 });
 
-// Barcode lookup endpoints
-const barcodeCache = new Map<string, { data: any; timestamp: number }>();
-const BARCODE_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
-
+// Barcode lookup endpoints - uses barcode-lookup.service.ts
 router.get("/barcodes", isAuthenticated, rateLimiters.barcode.middleware(), async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -402,40 +400,25 @@ router.get("/barcodes", isAuthenticated, rateLimiters.barcode.middleware(), asyn
       return res.status(400).json({ error: "Barcode parameter is required" });
     }
 
-    const cacheKey = `barcode:${barcode}`;
-    const cached = barcodeCache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < BARCODE_CACHE_TTL) {
-      return res.json(cached.data);
-    }
-
-    const apiKey = process.env.BARCODABLE_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "Barcode API key not configured" });
-    }
-
     // Log API usage
     await batchedApiLogger.logApiUsage(userId, {
       apiName: "barcode",
-      endpoint: "search",
+      endpoint: "lookup",
       method: "GET",
       statusCode: 200,
     });
 
-    const response = await axios.get(
-      `https://www.barcodable.com/api/v1/${apiKey}/${barcode}`
-    );
-
-    const result = response.data;
-    barcodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
-
-    res.json(result);
-  } catch (error: any) {
-    if (error?.response?.status === 404) {
+    // Use the barcode lookup service (handles caching internally)
+    const product = await barcodeLookupService.lookupByBarcode(barcode);
+    
+    if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-    console.error("Barcode search error:", error instanceof Error ? error.message : String(error));
-    res.status(500).json({ error: "Failed to search barcode" });
+
+    res.json(product);
+  } catch (error) {
+    console.error("Barcode lookup error:", error instanceof Error ? error.message : String(error));
+    res.status(500).json({ error: "Failed to lookup barcode" });
   }
 });
 

@@ -323,8 +323,8 @@ export class StorageRoot {
   }
 
   // ==================== Chat ====================
-  async getChatMessages(userId: string) {
-    return this.user.chat.getChatMessages(userId);
+  async getChatMessages(userId: string, limit?: number) {
+    return this.user.chat.getChatMessages(userId, limit);
   }
 
   async getChatMessagesPaginated(userId: string, page: number = 1, limit: number = 50) {

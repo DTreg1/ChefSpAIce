@@ -413,3 +413,5 @@ export class BarcodeLookupService {
     }
   }
 }
+
+export const barcodeLookupService = new BarcodeLookupService();
