@@ -46,7 +46,7 @@ export default function ShoppingList() {
     return date.toLocaleDateString("en-CA");
   }, [endDate]);
 
-  const { data: shoppingListItems, isLoading } = useQuery<any[]>({
+  const { data: shoppingListResponse, isLoading } = useQuery<ShoppingItem[] | { items: ShoppingItem[] }>({
     queryKey: [API_ENDPOINTS.shoppingList.items],
   });
 
@@ -83,12 +83,15 @@ export default function ShoppingList() {
     setEndDate(endOfWeek(nextWeek, { weekStartsOn: 0 }));
   };
 
-  const items = shoppingListItems || [];
+  // Handle both array response and object response with items property
+  const items: ShoppingItem[] = Array.isArray(shoppingListResponse) 
+    ? shoppingListResponse 
+    : (shoppingListResponse?.items || []);
   const uncheckedCount =
-    items.filter((item: any) => !checkedItems.has(item.ingredient || item.id))
+    items.filter((item) => !checkedItems.has(item.name || String(item.id)))
       .length || 0;
   const checkedCount =
-    items.filter((item: any) => checkedItems.has(item.ingredient || item.id))
+    items.filter((item) => checkedItems.has(item.name || String(item.id)))
       .length || 0;
 
   return (
@@ -215,8 +218,8 @@ export default function ShoppingList() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {items.map((item: any, idx: number) => {
-                  const itemId = item.ingredient || item.id;
+                {items.map((item, idx: number) => {
+                  const itemId = item.name || item.id;
                   const isChecked = checkedItems.has(itemId);
                   return (
                     <div
@@ -226,7 +229,7 @@ export default function ShoppingList() {
                     >
                       <Checkbox
                         id={`item-${idx}`}
-                        checked={isChecked || item.isChecked}
+                        checked={isChecked || item.isPurchased}
                         onCheckedChange={() => handleCheckItem(itemId)}
                         className="mt-0.5"
                         data-testid={`checkbox-${idx}`}
@@ -238,7 +241,7 @@ export default function ShoppingList() {
                         <div
                           className={`font-medium ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}
                         >
-                          {item.ingredient}
+                          {item.name}
                         </div>
                         {item.quantity && (
                           <div className="text-sm text-muted-foreground mt-1">
