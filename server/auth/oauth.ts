@@ -581,54 +581,67 @@ export function configureAppleStrategy(hostname: string) {
 }
 
 /**
- * Configure Replit OAuth Strategy
+ * Configure Replit OAuth Strategy using OpenID Connect
  * 
- * Provides OAuth authentication through Replit's OAuth2 endpoints
- * Available when running on Replit platform
+ * Provides OAuth authentication through Replit's OIDC endpoints
+ * Available when running on Replit platform (uses REPL_ID as client)
  */
 export async function configureReplitOIDCStrategy(hostname: string) {
-  // Configure Replit OAuth as a provider alongside others
-  // Always available when on Replit environment
-  if (process.env.REPLIT_DOMAINS) {
-    
-    const strategy = new OAuth2Strategy(
-      {
-        authorizationURL: "https://replit.com/oauth/authorize",
-        tokenURL: "https://replit.com/oauth/token", 
-        clientID: process.env.REPLIT_CLIENT_ID || "replit_oauth_client",
-        clientSecret: process.env.REPLIT_CLIENT_SECRET || "replit_oauth_secret",
-        callbackURL: getCallbackURL("replit", hostname),
-        scope: ["openid", "email", "profile"],
-      },
-      async (accessToken: string, refreshToken: string, params: any, profile: any, done: any) => {
-        try {
-          // Parse the ID token or user info from params
-          const replitProfile: OAuthProfile = {
-            id: params.sub || params.id || "replit_user",
-            emails: params.email ? [{ value: params.email, verified: true }] : [],
-            displayName: params.name || params.username || "Replit User",
-            name: {
-              givenName: params.given_name || params.name?.split(' ')[0] || "Replit",
-              familyName: params.family_name || params.name?.split(' ')[1] || "User",
-            },
-            photos: params.picture || params.avatar_url ? [{ value: params.picture || params.avatar_url }] : [],
-            provider: "replit",
-            _json: params,
-          };
-          
-          const user = await findOrCreateUser("replit", replitProfile, accessToken, refreshToken);
-          done(null, user);
-        } catch (error) {
-          done(error);
+  // Configure Replit OAuth as a provider - always available on Replit environment
+  if (process.env.REPL_ID && process.env.REPLIT_DOMAINS) {
+    try {
+      // Use dynamic import for openid-client
+      const oidc = await import("openid-client");
+      const { Strategy } = await import("openid-client/passport");
+      
+      // Discover OIDC configuration from Replit
+      const issuerUrl = process.env.ISSUER_URL || "https://replit.com/oidc";
+      const config = await oidc.discovery(new URL(issuerUrl), process.env.REPL_ID!);
+      
+      const callbackURL = getCallbackURL("replit", hostname);
+      console.log("[Replit OAuth] Configured with callback:", callbackURL);
+      
+      const strategy = new Strategy(
+        {
+          name: "replit",
+          config,
+          scope: "openid email profile offline_access",
+          callbackURL: callbackURL,
+        },
+        async (tokens: any, verified: any) => {
+          try {
+            const claims = tokens.claims();
+            
+            const replitProfile: OAuthProfile = {
+              id: claims.sub,
+              emails: claims.email ? [{ value: claims.email, verified: true }] : [],
+              displayName: claims.first_name || claims.email?.split('@')[0] || "Replit User",
+              name: {
+                givenName: claims.first_name || "",
+                familyName: claims.last_name || "",
+              },
+              photos: claims.profile_image_url ? [{ value: claims.profile_image_url }] : [],
+              provider: "replit",
+              _json: claims,
+            };
+            
+            const user = await findOrCreateUser("replit", replitProfile, tokens.access_token, tokens.refresh_token);
+            verified(null, user);
+          } catch (error) {
+            console.error("[Replit OAuth] Error in verify callback:", error);
+            verified(error);
+          }
         }
-      }
-    );
-    
-    // Set the strategy name
-    strategy.name = "replit";
-    
-    passport.use("replit", strategy);
-    registeredStrategies.add("replit");
+      );
+      
+      passport.use("replit", strategy);
+      registeredStrategies.add("replit");
+      console.log("[Replit OAuth] Strategy configured successfully");
+    } catch (error) {
+      console.error("[Replit OAuth] Failed to configure strategy:", error);
+    }
+  } else {
+    console.log("[Replit OAuth] Not on Replit platform, skipping configuration");
   }
 }
 
