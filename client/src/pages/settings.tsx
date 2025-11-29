@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, Clock } from "lucide-react";
+import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, Clock, Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationSettings } from "@/components/NotificationSettings";
@@ -72,6 +72,89 @@ export default function Settings() {
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [foodToAvoid, setFoodToAvoid] = useState("");
   const [foodsToAvoidList, setFoodsToAvoidList] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadProfilePictureMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("picture", file);
+      
+      const response = await fetch("/api/v1/profile/picture", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to upload profile picture");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Success",
+        description: "Profile picture updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload profile picture.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeProfilePictureMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/v1/profile/picture", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to remove profile picture");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Success",
+        description: "Profile picture removed.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove profile picture.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Image must be less than 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      uploadProfilePictureMutation.mutate(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const { data: preferences } = useCachedQuery<User>({
     queryKey: ["/api/auth/user"],
@@ -265,7 +348,8 @@ export default function Settings() {
         description: "Custom storage area added.",
       });
     } catch (error: unknown) {
-      const errorMsg = (error)?.message?.includes("already exists") || (error)?.status === 409
+      const err = error as { message?: string; status?: number } | null;
+      const errorMsg = err?.message?.includes("already exists") || err?.status === 409
         ? "This storage area already exists."
         : "Failed to add custom storage area.";
       
@@ -317,10 +401,50 @@ export default function Settings() {
             <AccordionContent className="px-6 pb-6">
               <div className="flex flex-col md:flex-row gap-6 pt-4">
                 <div className="flex-shrink-0">
-                  <Avatar className="w-32 h-32 border-4 border-border rounded-md">
-                    <AvatarImage src={user?.profileImageUrl || undefined} />
-                    <AvatarFallback className="text-3xl rounded-md">{getUserInitials()}</AvatarFallback>
-                  </Avatar>
+                  <div className="relative group">
+                    <Avatar className="w-32 h-32 border-4 border-border rounded-md">
+                      <AvatarImage src={user?.profileImageUrl || undefined} />
+                      <AvatarFallback className="text-3xl rounded-md">{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                      data-testid="input-profile-picture"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadProfilePictureMutation.isPending}
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md cursor-pointer"
+                      data-testid="button-upload-picture"
+                    >
+                      {uploadProfilePictureMutation.isPending ? (
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      ) : (
+                        <Camera className="w-8 h-8 text-white" />
+                      )}
+                    </button>
+                  </div>
+                  {user?.profileImageUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2 w-full text-muted-foreground"
+                      onClick={() => removeProfilePictureMutation.mutate()}
+                      disabled={removeProfilePictureMutation.isPending}
+                      data-testid="button-remove-picture"
+                    >
+                      {removeProfilePictureMutation.isPending ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3 h-3 mr-1" />
+                      )}
+                      Remove
+                    </Button>
+                  )}
                 </div>
                 
                 <div className="flex-1 space-y-4">

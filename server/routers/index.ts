@@ -86,6 +86,7 @@ import cookingTermsRouter from "./user/cooking-terms.router";
 import autosaveRouter from "./user/autosave.router";
 import autocompleteRouter from "./user/autocomplete.router";
 import validationRouter from "./user/validation.router";
+import profileRouter from "./user/profile.router";
 
 // ====================================================================
 // ADMIN DOMAIN ROUTERS
@@ -167,6 +168,10 @@ export function setupRouters(app: Application): void {
   app.use(`${API_PREFIX}/autosave`, autosaveRouter);
   app.use(`${API_PREFIX}/autocomplete`, autocompleteRouter);
   app.use(`${API_PREFIX}/validation`, validationRouter);
+  
+  // User Profile
+  app.use(`${API_PREFIX}/profile`, profileRouter);
+  app.use(`${API_PREFIX}/user/profile`, profileRouter); // Alias for user-prefixed path
   
   // ====================================================================
   // ADMIN ENDPOINTS
