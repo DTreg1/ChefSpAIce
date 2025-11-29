@@ -21,31 +21,34 @@ router.post("/draft", isAuthenticated, async (req: any, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Validate request body
-    const draftSchema = insertAutoSaveDraftSchema.extend({
-      documentId: z.string().min(1),
-      documentType: z.enum(["chat", "recipe", "note", "meal_plan", "shopping_list", "other"]).optional(),
-      content: z.string(),
-      metadata: z.object({
-        cursorPosition: z.number().optional(),
-        scrollPosition: z.number().optional(),
-        selectedText: z.string().optional(),
-        editorState: z.any().optional(),
-        deviceInfo: z.object({
-          browser: z.string().optional(),
-          os: z.string().optional(),
-          screenSize: z.string().optional(),
+    // Validate request body - omit userId since it comes from auth session
+    const draftSchema = insertAutoSaveDraftSchema
+      .omit({ userId: true, id: true, savedAt: true, contentHash: true, version: true })
+      .extend({
+        documentId: z.string().min(1),
+        documentType: z.enum(["chat", "recipe", "note", "meal_plan", "shopping_list", "other"]).optional(),
+        content: z.string(),
+        metadata: z.object({
+          cursorPosition: z.number().optional(),
+          scrollPosition: z.number().optional(),
+          selectedText: z.string().optional(),
+          editorState: z.any().optional(),
+          deviceInfo: z.object({
+            browser: z.string().optional(),
+            os: z.string().optional(),
+            screenSize: z.string().optional(),
+          }).optional(),
         }).optional(),
-      }).optional(),
-      isAutoSave: z.boolean().optional(),
-    });
+        isAutoSave: z.boolean().optional(),
+      });
 
     const validatedData = draftSchema.parse(req.body);
     
-    // Save the draft
+    // Save the draft (version is calculated internally by saveDraft)
     const savedDraft = await storage.platform.ai.saveDraft({
       ...validatedData,
       userId,
+      version: 1, // Default version, actual version is calculated in storage
     });
 
     // Typing event recording not implemented yet

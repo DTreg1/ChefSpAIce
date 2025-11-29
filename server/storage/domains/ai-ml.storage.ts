@@ -1159,13 +1159,6 @@ export class AiMlStorage implements IAiMlStorage {
   // ==================== Auto-Save Drafts ====================
 
   async saveDraft(draft: InsertAutoSaveDraft): Promise<AutoSaveDraft> {
-    // Get the latest version for this document to increment
-    const latestDraft = await this.getLatestDraft(
-      draft.userId,
-      draft.documentId
-    );
-    const nextVersion = latestDraft ? (latestDraft.version || 0) + 1 : 1;
-
     // Calculate content hash for duplicate detection
     const crypto = await import("crypto");
     const contentHash = crypto
@@ -1173,45 +1166,79 @@ export class AiMlStorage implements IAiMlStorage {
       .update(draft.content)
       .digest("hex");
 
+    // Get the latest version for this document to increment
+    const latestDraft = await this.getLatestDraft(
+      draft.userId,
+      draft.documentId
+    );
+
     // Skip saving if content hasn't changed
     if (latestDraft && latestDraft.contentHash === contentHash) {
       return latestDraft;
     }
 
-    // Save the draft with incremented version
-    const [savedDraft] = await db
-      .insert(autoSaveDrafts)
-      .values({
-        userId: draft.userId,
-        documentId: draft.documentId,
-        documentType: draft.documentType,
-        content: draft.content,
-        contentHash,
-        version: nextVersion,
-        metadata: draft.metadata,
-        isAutoSave: draft.isAutoSave ?? true,
-        conflictResolved: draft.conflictResolved ?? false,
-      } as any)
-      .returning();
+    // Retry logic to handle concurrent version conflicts
+    const maxRetries = 3;
+    let lastError: Error | null = null;
 
-    // Clean up old versions (keep only last 10)
-    const allVersions = await this.getDraftVersions(
-      draft.userId,
-      draft.documentId
-    );
-    if (allVersions.length > 10) {
-      const versionsToDelete = allVersions.slice(10).map((v) => v.id);
-      await db
-        .delete(autoSaveDrafts)
-        .where(
-          and(
-            eq(autoSaveDrafts.userId, draft.userId),
-            sql`${autoSaveDrafts.id} = ANY(${versionsToDelete})`
-          )
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Re-fetch latest version on retry to get updated version number
+        const currentLatest = attempt > 0 
+          ? await this.getLatestDraft(draft.userId, draft.documentId)
+          : latestDraft;
+        const nextVersion = currentLatest ? (currentLatest.version || 0) + 1 : 1;
+
+        // Save the draft with incremented version
+        const [savedDraft] = await db
+          .insert(autoSaveDrafts)
+          .values({
+            userId: draft.userId,
+            documentId: draft.documentId,
+            documentType: draft.documentType,
+            content: draft.content,
+            contentHash,
+            version: nextVersion,
+            metadata: draft.metadata,
+            isAutoSave: draft.isAutoSave ?? true,
+            conflictResolved: draft.conflictResolved ?? false,
+          } as any)
+          .returning();
+
+        // Success - continue with cleanup
+        // Clean up old versions (keep only last 10)
+        const allVersions = await this.getDraftVersions(
+          draft.userId,
+          draft.documentId
         );
+        if (allVersions.length > 10) {
+          const versionsToDelete = allVersions.slice(10).map((v) => v.id);
+          await db
+            .delete(autoSaveDrafts)
+            .where(
+              and(
+                eq(autoSaveDrafts.userId, draft.userId),
+                sql`${autoSaveDrafts.id} = ANY(${versionsToDelete})`
+              )
+            );
+        }
+
+        return savedDraft;
+      } catch (error: any) {
+        // Check if it's a unique constraint violation (PostgreSQL error code 23505)
+        if (error?.code === '23505' && error?.constraint?.includes('unique_version')) {
+          lastError = error;
+          // Wait a small random delay before retrying to reduce collision chance
+          await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+          continue;
+        }
+        // Re-throw non-conflict errors
+        throw error;
+      }
     }
 
-    return savedDraft;
+    // If all retries failed, throw the last error
+    throw lastError || new Error("Failed to save draft after retries");
   }
 
   async getLatestDraft(
