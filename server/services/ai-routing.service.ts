@@ -31,6 +31,9 @@ const openai = hasAICredentials ? new OpenAI({
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const AI_MODEL = "gpt-5";
 
+// Default confidence threshold for rule matching
+const DEFAULT_CONFIDENCE_THRESHOLD = 0.7;
+
 export interface RoutingDecision {
   recommendedAssignment: string;
   confidence: number;
@@ -244,46 +247,31 @@ export async function evaluateRoutingRules(
         }
       }
       
-      // Check category match
-      if (conditions.categories && conditions.categories.length > 0) {
+      // Check category match (conditions uses 'category' as array)
+      const conditionCategories = conditions.category || [];
+      if (conditionCategories.length > 0) {
         maxScore += 2;
-        if (conditions.categories.includes(ticket.category) || 
-            conditions.categories.includes(aiAnalysis.detectedCategory)) {
+        if (conditionCategories.includes(ticket.category) || 
+            conditionCategories.includes(aiAnalysis.detectedCategory)) {
           matchScore += 2;
         }
       }
       
       // Check priority match
-      if (conditions.priorities && conditions.priorities.length > 0) {
+      const conditionPriorities = conditions.priority || [];
+      if (conditionPriorities.length > 0) {
         maxScore += 1;
-        if (conditions.priorities.includes(ticket.priority) ||
-            conditions.priorities.includes(aiAnalysis.suggestedPriority)) {
+        if (conditionPriorities.includes(ticket.priority) ||
+            conditionPriorities.includes(aiAnalysis.suggestedPriority)) {
           matchScore += 1;
-        }
-      }
-      
-      // Check pattern matches (regex)
-      if (conditions.patterns && conditions.patterns.length > 0) {
-        maxScore += conditions.patterns.length * 2;
-        const ticketText = `${ticket.title} ${ticket.description}`;
-        
-        for (const pattern of conditions.patterns) {
-          try {
-            const regex = new RegExp(pattern, 'i');
-            if (regex.test(ticketText)) {
-              matchScore += 2;
-            }
-          } catch (e) {
-            console.error(`Invalid regex pattern: ${pattern}`);
-          }
         }
       }
       
       // Calculate confidence based on match percentage
       const confidence = maxScore > 0 ? matchScore / maxScore : 0;
       
-      // Check if this rule meets the confidence threshold
-      if (confidence >= rule.confidenceThreshold) {
+      // Check if this rule meets the confidence threshold (use default if not specified)
+      if (confidence >= DEFAULT_CONFIDENCE_THRESHOLD) {
         return { rule, confidence };
       }
     }
@@ -311,10 +299,10 @@ export async function findBestAgent(
     let candidateAgents = agents;
     if (teamId) {
       candidateAgents = agents.filter(agent => {
-        const metadata = agent.expertiseArea;
+        // Check if agent's expertise area matches the team
         return agent.agentId === teamId || 
-               metadata?.team === teamId ||
-               metadata?.department === teamId;
+               agent.expertiseArea === teamId ||
+               agent.expertiseArea.includes(teamId);
       });
     }
     
@@ -325,32 +313,32 @@ export async function findBestAgent(
     // Score each agent
     const scoredAgents = candidateAgents.map(agent => {
       let skillScore = 0;
-      let maxSkillScore = 0;
+      let maxSkillScore = 1;
       
-      // Check skill matches
-      const agentSkills = agent.languages || [];
-      if (agentSkills && agentSkills.length > 0) {
-        for (const skill of agentSkills) {
-          maxSkillScore += skill.level || 1;
-          
-          // Check if skill matches technical indicators
-          const skillName = skill.skill.toLowerCase();
-          for (const indicator of aiAnalysis.technicalIndicators) {
-            if (skillName.includes(indicator.toLowerCase()) || 
-                indicator.toLowerCase().includes(skillName)) {
-              skillScore += skill.level || 1;
-            }
-          }
-          
-          // Check if skill matches category
-          if (skill.categories && skill.categories.includes(aiAnalysis.detectedCategory)) {
-            skillScore += (skill.level || 1) * 0.5;
+      // Check skill matches based on expertise area and languages
+      const agentLanguages = agent.languages || [];
+      
+      // Match expertise area with detected category
+      if (agent.expertiseArea.toLowerCase().includes(aiAnalysis.detectedCategory.toLowerCase())) {
+        skillScore += agent.skillLevel * 0.5;
+        maxSkillScore += agent.skillLevel * 0.5;
+      }
+      
+      // Check if languages (skills) match technical indicators
+      for (const skill of agentLanguages) {
+        maxSkillScore += 1;
+        for (const indicator of aiAnalysis.technicalIndicators) {
+          if (skill.toLowerCase().includes(indicator.toLowerCase()) || 
+              indicator.toLowerCase().includes(skill.toLowerCase())) {
+            skillScore += 1;
           }
         }
       }
       
       // Calculate workload score (inverse of load percentage)
-      const loadPercentage = agent.currentLoad / agent.maxCapacity;
+      const currentLoad = agent.currentTicketCount || 0;
+      const maxCapacity = agent.maxConcurrentTickets || 10;
+      const loadPercentage = maxCapacity > 0 ? currentLoad / maxCapacity : 0;
       const workloadScore = 1 - loadPercentage;
       
       // Calculate skill match score
@@ -414,35 +402,34 @@ export async function routeTicket(ticketId: string): Promise<{
     
     if (rule && ruleConfidence >= 0.8) {
       // High confidence rule match - still apply workload balancing
-      const agentSuggestion = await findBestAgent(ticket, aiAnalysis, rule.assignTo);
+      const agentSuggestion = await findBestAgent(ticket, aiAnalysis, rule.assignTo ?? undefined);
       
       // Use the best available agent from the team/department specified by the rule
       const finalAssignment = agentSuggestion && agentSuggestion.confidence >= 0.4 
         ? agentSuggestion.agentId 
-        : rule.assignTo;
+        : (rule.assignTo || 'support-team');
       
       const finalConfidence = agentSuggestion 
         ? (ruleConfidence * 0.7 + agentSuggestion.confidence * 0.3)
         : ruleConfidence;
       
+      const analysisNotes = JSON.stringify({
+        detected_intent: aiAnalysis.reasoning,
+        detected_category: aiAnalysis.detectedCategory,
+        detected_urgency: aiAnalysis.detectedUrgency,
+        key_phrases: aiAnalysis.keyPhrases,
+        sentiment: aiAnalysis.sentiment,
+        technical_indicators: aiAnalysis.technicalIndicators,
+        matched_rule: rule.ruleName,
+        agent_suggestion: agentSuggestion?.agentName
+      });
+      
       await storage.admin.support.createTicketRouting({
         ticketId: ticketId,
         toAssignee: finalAssignment,
         routingReason: 'rule',
-        confidence: finalConfidence,
-        notes: `Matched rule: ${rule.ruleName}${agentSuggestion ? ` (assigned to ${agentSuggestion.agentName} based on workload)` : ''}`,
         ruleId: rule.id,
-        notes: {
-          detected_intent: aiAnalysis.reasoning,
-          detected_category: aiAnalysis.detectedCategory,
-          detected_urgency: aiAnalysis.detectedUrgency,
-          key_phrases: aiAnalysis.keyPhrases,
-          sentiment: aiAnalysis.sentiment,
-          technical_indicators: aiAnalysis.technicalIndicators
-        },
-        metadata: {
-          
-        }
+        notes: analysisNotes
       });
       
       // Update ticket assignment
@@ -471,24 +458,22 @@ export async function routeTicket(ticketId: string): Promise<{
     
     if (agentSuggestion && agentSuggestion.confidence >= 0.6) {
       // Good agent match found
+      const analysisNotes = JSON.stringify({
+        detected_intent: aiAnalysis.reasoning,
+        detected_category: aiAnalysis.detectedCategory,
+        detected_urgency: aiAnalysis.detectedUrgency,
+        key_phrases: aiAnalysis.keyPhrases,
+        sentiment: aiAnalysis.sentiment,
+        technical_indicators: aiAnalysis.technicalIndicators,
+        ai_model: AI_MODEL,
+        processing_time_ms: Date.now()
+      });
+      
       await storage.admin.support.createTicketRouting({
         ticketId: ticketId,
         toAssignee: agentSuggestion.agentId,
-        routingReason: 'ai',
-        confidence: agentSuggestion.confidence,
-        notes: agentSuggestion.reasoning,
-        notes: {
-          detected_intent: aiAnalysis.reasoning,
-          detected_category: aiAnalysis.detectedCategory,
-          detected_urgency: aiAnalysis.detectedUrgency,
-          key_phrases: aiAnalysis.keyPhrases,
-          sentiment: aiAnalysis.sentiment,
-          technical_indicators: aiAnalysis.technicalIndicators
-        },
-        metadata: {
-          ai_model: AI_MODEL,
-          processing_time_ms: Date.now()
-        }
+        routingReason: 'expertise',
+        notes: analysisNotes
       });
       
       // Update ticket assignment and agent workload
@@ -512,24 +497,22 @@ export async function routeTicket(ticketId: string): Promise<{
     // Fallback to default assignment
     const fallbackAssignment = aiAnalysis.recommendedAssignment || 'support-team';
     
+    const fallbackNotes = JSON.stringify({
+      detected_intent: aiAnalysis.reasoning,
+      detected_category: aiAnalysis.detectedCategory,
+      detected_urgency: aiAnalysis.detectedUrgency,
+      key_phrases: aiAnalysis.keyPhrases,
+      sentiment: aiAnalysis.sentiment,
+      technical_indicators: aiAnalysis.technicalIndicators,
+      ai_model: AI_MODEL,
+      fallback_applied: true
+    });
+    
     await storage.admin.support.createTicketRouting({
       ticketId: ticketId,
       toAssignee: fallbackAssignment,
-      routingReason: 'ai',
-      confidence: aiAnalysis.confidence * 0.5,
-      notes: 'Fallback assignment based on AI analysis',
-      notes: {
-        detected_intent: aiAnalysis.reasoning,
-        detected_category: aiAnalysis.detectedCategory,
-        detected_urgency: aiAnalysis.detectedUrgency,
-        key_phrases: aiAnalysis.keyPhrases,
-        sentiment: aiAnalysis.sentiment,
-        technical_indicators: aiAnalysis.technicalIndicators
-      },
-      metadata: {
-        ai_model: AI_MODEL,
-        fallback_applied: true
-      }
+      routingReason: 'workload',
+      notes: fallbackNotes
     });
     
     await storage.admin.support.updateTicket(ticketId, {
@@ -594,6 +577,16 @@ export async function suggestRoutings(ticketId: string): Promise<RoutingSuggesti
   }
 }
 
+interface RoutingMetadata {
+  outcome_recorded?: boolean;
+  was_correct?: boolean;
+  actual_team?: string;
+  outcome_notes?: string;
+  outcome_timestamp?: string;
+  detected_category?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Records the outcome of a ticket routing for accuracy tracking
  */
@@ -601,7 +594,7 @@ export async function recordRoutingOutcome(
   ticketId: string,
   wasCorrect: boolean,
   actualTeam?: string,
-  notes?: string
+  outcomeNotes?: string
 ): Promise<void> {
   try {
     const routing = await storage.admin.support.getTicketRouting(ticketId);
@@ -611,18 +604,30 @@ export async function recordRoutingOutcome(
     }
     
     const latestRouting = routing[0];
-    const metadata = latestRouting.notes || {};
+    
+    // Parse existing notes as metadata if possible
+    let existingMetadata: RoutingMetadata = {};
+    if (latestRouting.notes) {
+      try {
+        existingMetadata = JSON.parse(latestRouting.notes);
+      } catch {
+        existingMetadata = { original_notes: latestRouting.notes };
+      }
+    }
+    
+    // Create updated notes with outcome
+    const updatedNotes = JSON.stringify({
+      ...existingMetadata,
+      outcome_recorded: true,
+      was_correct: wasCorrect,
+      actual_team: actualTeam,
+      outcome_notes: outcomeNotes,
+      outcome_timestamp: new Date().toISOString()
+    });
     
     // Update routing with outcome
     await storage.admin.support.updateTicketRouting(latestRouting.id, {
-      metadata: {
-        ...notes,
-        outcome_recorded: true,
-        was_correct: wasCorrect,
-        actual_team: actualTeam,
-        outcome_notes: notes,
-        outcome_timestamp: new Date().toISOString()
-      }
+      notes: updatedNotes
     });
     
     // If incorrect, log for improvement
@@ -671,12 +676,19 @@ export async function calculateRoutingAccuracy(
     const byMethod: Record<string, { correct: number; total: number }> = {};
     
     for (const routing of routings) {
-      const metadata = routing.notes;
-      const analysis = routing.notes;
+      // Parse notes as metadata
+      let metadata: RoutingMetadata = {};
+      if (routing.notes) {
+        try {
+          metadata = JSON.parse(routing.notes);
+        } catch {
+          continue; // Skip if notes can't be parsed
+        }
+      }
       
-      if (metadata?.outcome_recorded) {
-        const wasCorrect = metadata.was_correct;
-        const method = routing.routingReason;
+      if (metadata.outcome_recorded) {
+        const wasCorrect = metadata.was_correct ?? false;
+        const method = routing.routingReason || 'unknown';
         
         if (wasCorrect) {
           totalCorrect++;
@@ -692,7 +704,7 @@ export async function calculateRoutingAccuracy(
         }
         
         // Track technical routing accuracy
-        if (analysis?.detected_category === 'technical' || 
+        if (metadata.detected_category === 'technical' || 
             routing.toAssignee?.includes('backend') || 
             routing.toAssignee?.includes('engineering')) {
           technicalTotal++;
@@ -702,7 +714,7 @@ export async function calculateRoutingAccuracy(
         }
         
         // Track billing routing accuracy
-        if (analysis?.detected_category === 'billing' || 
+        if (metadata.detected_category === 'billing' || 
             routing.toAssignee?.includes('finance') || 
             routing.toAssignee?.includes('billing')) {
           billingTotal++;
@@ -763,32 +775,15 @@ export async function escalateTicket(
     const currentRouting = routingHistory[0];
     
     // Determine escalation target
-    let escalationTarget = targetLevel || 'escalation-team';
-    
-    if (currentRouting) {
-      // Try to find an escalation path from routing rules
-      const rules = await storage.admin.support.getRoutingRules(true);
-      const currentRule = rules.find(r => r.assigned_to === currentRouting.toAssignee);
-      
-      if (currentRule) {
-        const metadata = currentRule.notes;
-        if (metadata?.escalation_path && metadata.escalation_path.length > 0) {
-          escalationTarget = metadata.escalation_path[0];
-        }
-      }
-    }
+    const escalationTarget = targetLevel || 'escalation-team';
     
     // Create escalation routing
     await storage.admin.support.createTicketRouting({
       ticketId: ticketId,
       toAssignee: escalationTarget,
-      routed_from: currentRouting?.toAssignee,
-      routingReason: 'manual',
-      confidence: 1.0,
-      notes: `Escalated: ${reason}`,
-      is_escalation: true,
-      metadata: {
-      }
+      fromAssignee: currentRouting?.toAssignee,
+      routingReason: 'escalation',
+      notes: `Escalated: ${reason}`
     });
     
     // Update ticket
