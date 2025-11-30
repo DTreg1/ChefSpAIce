@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,10 @@ interface SignificanceCalculatorProps {
 export default function SignificanceCalculator({ test }: SignificanceCalculatorProps) {
   const { toast } = useToast();
   const [analysis, setAnalysis] = useState<any>(null);
+
+  useEffect(() => {
+    setAnalysis(null);
+  }, [test.id]);
 
   const analyzeTest = useMutation({
     mutationFn: async () => {
