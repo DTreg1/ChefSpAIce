@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Calendar, ChevronLeft, ChevronRight, Users, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { format, addDays, startOfWeek, addWeeks, getHours, setHours, setMinutes, isSameDay } from "date-fns";
+import { format, addDays, startOfWeek, addWeeks, getHours, setHours, setMinutes, isSameDay, startOfMonth, endOfMonth } from "date-fns";
 import type { MeetingEvents } from "@shared/schema";
 
 interface AvailabilityGridProps {
@@ -34,13 +34,27 @@ export function AvailabilityGrid({
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
 
+  // Calculate date range based on navigation state
+  const dateRange = useMemo(() => {
+    if (viewMode === 'month') {
+      return {
+        startDate: startOfMonth(currentWeek),
+        endDate: endOfMonth(currentWeek)
+      };
+    }
+    return {
+      startDate: currentWeek,
+      endDate: addDays(currentWeek, 7)
+    };
+  }, [currentWeek, viewMode]);
+
   // Fetch meeting events for availability calculation
   const { data: events = [] } = useQuery({
-    queryKey: ["/api/schedule/events", { startTime: startDate, endTime: endDate }],
+    queryKey: ["/api/schedule/events", dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
     queryFn: async () => {
       const params = new URLSearchParams({
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString(),
+        startTime: dateRange.startDate.toISOString(),
+        endTime: dateRange.endDate.toISOString(),
         status: "confirmed"
       });
       const response = await fetch(`/api/schedule/events?${params}`);
