@@ -393,7 +393,7 @@ export function useAutoSave(
   useEffect(() => {
     const restoreDraft = async () => {
       try {
-        const response = await apiRequest(`/api/autosave/restore?documentId=${documentId}`, 'GET');
+        const response = await apiRequest(API_ENDPOINTS.autosave.restore(documentId), 'GET');
         if (response.draft && response.draft.content !== content) {
           onRestore?.(response.draft.content);
           lastSaveRef.current = response.draft.content;

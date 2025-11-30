@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface ValidationResult {
   isValid: boolean;
@@ -41,7 +42,7 @@ export function useSmartValidation() {
       value: string;
       context?: any;
     }) => {
-      const response = await apiRequest("/api/validate/field", "POST", params);
+      const response = await apiRequest(API_ENDPOINTS.validation.field, "POST", params);
       return response;
     },
   });
@@ -53,7 +54,7 @@ export function useSmartValidation() {
       fields: Array<{ name: string; type: string; value: string; required?: boolean }>;
       context?: any;
     }) => {
-      const response = await apiRequest("/api/validate/form", "POST", params);
+      const response = await apiRequest(API_ENDPOINTS.validation.form, "POST", params);
       return response;
     },
   });
@@ -70,7 +71,7 @@ export function useSmartValidation() {
       context?: any;
       resolutionTime?: number;
     }) => {
-      const response = await apiRequest("/api/validate/learn", "POST", params);
+      const response = await apiRequest(API_ENDPOINTS.validation.learn, "POST", params);
       return response;
     },
   });

@@ -44,11 +44,12 @@
 
 // Referenced from blueprint:javascript_log_in_with_replit
 import { useQuery } from "@tanstack/react-query";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { User } from "@shared/schema";
 
 export function useAuth() {
   const { data: user, isLoading, refetch } = useQuery<User>({
-    queryKey: ["/api/auth/user"],
+    queryKey: [API_ENDPOINTS.auth.user],
     retry: 1, // Allow one retry for transient failures
     refetchOnWindowFocus: true, // Refetch when window regains focus
     refetchOnMount: true, // Always refetch on component mount

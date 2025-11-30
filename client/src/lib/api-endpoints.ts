@@ -222,11 +222,12 @@ export const API_ENDPOINTS = {
     tracking: `${API_BASE}/nutrition/tracking`,
   },
   
-  // User & Auth endpoints
+  // User & Auth endpoints (Note: auth uses /api without /v1 prefix for backward compat)
   auth: {
-    login: '/api/auth/login', // OAuth handled separately, not versioned
+    user: '/api/auth/user',
+    login: '/api/auth/login',
     logout: '/api/auth/logout',
-    callback: '/api/auth/callback',
+    callback: (provider: string) => `/api/auth/${provider}/callback`,
     session: '/api/auth/session',
   },
   
@@ -329,6 +330,9 @@ export const API_ENDPOINTS = {
   validation: {
     validate: `${API_BASE}/validation`,
     rules: `${API_BASE}/validation/rules`,
+    field: `${API_BASE}/validate/field`,
+    form: `${API_BASE}/validate/form`,
+    learn: `${API_BASE}/validate/learn`,
   },
   
   autosave: {
@@ -339,6 +343,7 @@ export const API_ENDPOINTS = {
     versions: (documentId: string) => `${API_BASE}/autosave/versions/${documentId}`,
     typingEvent: `${API_BASE}/autosave/typing-event`,
     checkConflicts: `${API_BASE}/autosave/check-conflicts`,
+    restore: (documentId: string) => `${API_BASE}/autosave/restore?documentId=${documentId}`,
   },
   
   // Batch processing endpoints
