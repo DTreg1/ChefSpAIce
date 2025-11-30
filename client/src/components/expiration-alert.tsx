@@ -1,10 +1,10 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Lightbulb, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type WasteReductionSuggestion = {
   suggestions: string[];
@@ -13,32 +13,6 @@ type WasteReductionSuggestion = {
 export function ExpirationAlert() {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Check for expiring items on mount
-  const checkMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest(
-        "POST",
-        "/api/notifications/expiration/check",
-        {},
-      );
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["/api/notifications/expiration"],
-      });
-    },
-    onError: (error: Error | unknown) => {
-      console.error("Failed to check for expiring items:", error);
-      localStorage.removeItem("lastExpirationCheck");
-      toast({
-        title: "Error checking expiration dates",
-        description:
-          "Unable to check for expiring items. Please try again later.",
-        variant: "destructive",
-      });
-    },
-  });
 
   const { data: suggestions } = useQuery<WasteReductionSuggestion>({
     queryKey: ["/api/suggestions/waste-reduction"],
@@ -69,16 +43,6 @@ export function ExpirationAlert() {
       setIsRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const lastCheck = localStorage.getItem("lastExpirationCheck");
-
-    if (lastCheck !== today) {
-      localStorage.setItem("lastExpirationCheck", today);
-      checkMutation.mutate();
-    }
-  }, []);
 
   const hasSuggestions = suggestions && suggestions.suggestions.length > 0;
 
