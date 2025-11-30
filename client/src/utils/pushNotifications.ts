@@ -156,7 +156,7 @@ class PushNotificationService {
 
   private async sendWebSubscriptionToBackend(subscription: PushSubscription): Promise<void> {
     try {
-      const response = await fetch(`${API_ENDPOINTS.notifications.registerToken}/register`, {
+      const response = await fetch(API_ENDPOINTS.notifications.register, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ class PushNotificationService {
         appVersion: '1.0.0', // You can get this from package.json or config
       };
 
-      const response = await fetch(`${API_ENDPOINTS.notifications.registerToken}/register`, {
+      const response = await fetch(API_ENDPOINTS.notifications.register, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
