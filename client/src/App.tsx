@@ -201,7 +201,11 @@ function AppContent() {
   // Initialize global keyboard shortcuts
   useGlobalKeyboardShortcuts();
 
-  const { data: preferences, isLoading: prefLoading, isError: prefError } = useCachedQuery<{
+  const {
+    data: preferences,
+    isLoading: prefLoading,
+    isError: prefError,
+  } = useCachedQuery<{
     hasCompletedOnboarding?: boolean;
     [key: string]: any;
   }>({
@@ -250,7 +254,10 @@ function AppContent() {
   // Only show onboarding when we have a successful response that explicitly indicates it's required
   // If the query fails or errors, we default to NOT showing onboarding to avoid trapping users
   const showOnboarding =
-    !prefLoading && !prefError && preferences && preferences.hasCompletedOnboarding === false;
+    !prefLoading &&
+    !prefError &&
+    preferences &&
+    preferences.hasCompletedOnboarding === false;
 
   useEffect(() => {
     const handleScroll = () => {
