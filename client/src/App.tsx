@@ -11,7 +11,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ProgressiveDisclosureProvider } from "@/contexts/ProgressiveDisclosureContext";
 import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
-import { UnifiedAddFood } from "@/components/unified-add-food";
+import { UnifiedAddFood } from "@/components/inventory";
 import { UnifiedRecipeDialog } from "@/components/recipes";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { RouteLoading } from "@/components/loaders";

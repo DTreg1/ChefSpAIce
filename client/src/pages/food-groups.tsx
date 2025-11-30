@@ -6,14 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { FoodCard } from "@/components/food-card";
+import { FoodCard, AddFoodDialog } from "@/components/inventory";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, ChevronRight, Package, Plus } from "lucide-react";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { FoodCardSkeletonGrid } from "@/components/loaders";
-import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipes";
 import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";
 

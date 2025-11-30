@@ -18,7 +18,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useDebouncedCallback } from "@/lib/debounce";
 import { useToast } from "@/hooks/use-toast";
-import { UnifiedFoodSearch } from "@/components/unified-food-search";
+import { UnifiedFoodSearch } from "./unified-food-search";
 import type {
   StorageLocation,
   InsertUserInventory as InsertFoodItem,
