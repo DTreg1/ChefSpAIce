@@ -6,11 +6,23 @@ import { pushTokens } from "@shared/schema";
 import { isAuthenticated, adminOnly } from "../../middleware/oauth.middleware";
 import crypto from "crypto";
 import PushStatusService from "../../services/push-status.service";
+import PushNotificationCoreService from "../../services/push-notification.service";
 
 const router = Router();
 
+// Get VAPID public key (no auth required - needed for push subscription)
+router.get("/vapid-public-key", async (_req: Request, res: Response) => {
+  try {
+    const status = PushNotificationCoreService.getStatus();
+    res.json({ publicKey: status.publicKey, configured: status.vapidConfigured });
+  } catch (error) {
+    console.error("Error getting VAPID public key:", error);
+    res.status(500).json({ error: "Failed to get VAPID public key" });
+  }
+});
+
 // Register a push token
-router.post("/api/push-tokens/register", isAuthenticated, async (req: Request, res) => {
+router.post("/register", isAuthenticated, async (req: Request, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -78,7 +90,7 @@ router.post("/api/push-tokens/register", isAuthenticated, async (req: Request, r
 });
 
 // Unregister a push token
-router.delete("/api/push-tokens/unregister", isAuthenticated, async (req: Request, res) => {
+router.delete("/unregister", isAuthenticated, async (req: Request, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -109,7 +121,7 @@ router.delete("/api/push-tokens/unregister", isAuthenticated, async (req: Reques
 });
 
 // Update push token status
-router.put("/api/push-tokens/:id/status", isAuthenticated, async (req: Request, res) => {
+router.put("/:id/status", isAuthenticated, async (req: Request, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -146,7 +158,7 @@ router.put("/api/push-tokens/:id/status", isAuthenticated, async (req: Request, 
 });
 
 // Get user's push tokens
-router.get("/api/push-tokens", isAuthenticated, async (req: Request, res) => {
+router.get("/", isAuthenticated, async (req: Request, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -168,7 +180,7 @@ router.get("/api/push-tokens", isAuthenticated, async (req: Request, res) => {
 });
 
 // Test push notification
-router.post("/api/push-tokens/test", isAuthenticated, async (req: Request, res) => {
+router.post("/test", isAuthenticated, async (req: Request, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -192,7 +204,7 @@ router.post("/api/push-tokens/test", isAuthenticated, async (req: Request, res) 
 });
 
 // Trigger expiring food notifications (admin only)
-router.post("/api/push-tokens/trigger-expiring", isAuthenticated, adminOnly, async (req: Request, res) => {
+router.post("/trigger-expiring", isAuthenticated, adminOnly, async (req: Request, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
@@ -214,7 +226,7 @@ router.post("/api/push-tokens/trigger-expiring", isAuthenticated, adminOnly, asy
 });
 
 // Trigger recipe suggestions (admin only)
-router.post("/api/push-tokens/trigger-recipes", isAuthenticated, adminOnly, async (req: Request, res) => {
+router.post("/trigger-recipes", isAuthenticated, adminOnly, async (req: Request, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
     if (!userId) {
@@ -236,7 +248,7 @@ router.post("/api/push-tokens/trigger-recipes", isAuthenticated, adminOnly, asyn
 });
 
 // Get push notification services status
-router.get("/api/push-tokens/status", isAuthenticated, async (req: Request, res) => {
+router.get("/status", isAuthenticated, async (req: Request, res) => {
   try {
     const status = PushStatusService.getStatus();
     res.json(status);
