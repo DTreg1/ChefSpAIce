@@ -1,5 +1,5 @@
 import { toast } from "@/hooks/use-toast";
-import { CookLoader } from "@/components/loading-cook";
+import { CookLoader } from "@/components/loaders";
 import { ToastAction } from "@/components/ui/toast";
 import { ReactNode } from "react";
 

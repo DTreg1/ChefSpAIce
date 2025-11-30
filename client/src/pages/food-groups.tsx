@@ -12,7 +12,7 @@ import { ChevronDown, ChevronRight, Package, Plus } from "lucide-react";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
-import { FoodCardSkeletonGrid } from "@/components/food-card-skeleton";
+import { FoodCardSkeletonGrid } from "@/components/loaders";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipe-generator";
 import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";

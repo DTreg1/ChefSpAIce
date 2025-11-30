@@ -5,7 +5,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { EmptyState } from "@/components/empty-state";
 import { FoodCard } from "@/components/food-card";
-import { FoodCardSkeletonGrid } from "@/components/food-card-skeleton";
+import { FoodCardSkeletonGrid } from "@/components/loaders";
 import { AddFoodDialog } from "@/components/add-food-dialog";
 import { RecipeGenerator } from "@/components/recipe-generator";
 import { ExpirationAlert } from "@/components/expiration-alert";

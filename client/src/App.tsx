@@ -14,7 +14,7 @@ import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { UnifiedAddFood } from "@/components/unified-add-food";
 import { UnifiedRecipeDialog } from "@/components/unified-recipe-dialog";
 import { OfflineIndicator } from "@/components/offline-indicator";
-import { RouteLoading } from "@/components/route-loading";
+import { RouteLoading } from "@/components/loaders";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";

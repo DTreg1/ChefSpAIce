@@ -9,7 +9,7 @@ import type { Recipe, UserAppliance } from "@shared/schema";
 import { PageTransition } from "@/components/page-transition";
 import { StaggerContainer, StaggerItem } from "@/components/stagger-children";
 import { AnimatedCard } from "@/components/animated-card";
-import { CardSkeleton } from "@/components/skeleton-loader";
+import { BasicCardSkeleton } from "@/components/loaders";
 
 export default function Cookbook() {
   const [filter, setFilter] = useState<"all" | "favorites" | "available_equipment">("all");

@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { RecipeCard } from "@/components/recipe-card";
 import { UnifiedRecipeDialog } from "@/components/unified-recipe-dialog";
 import { ExpirationAlert } from "@/components/expiration-alert";
-import { LoadingDots } from "@/components/loading-dots";
+import { LoadingDots } from "@/components/loaders";
 import { FeedbackButtons } from "@/components/feedback-buttons";
 import { VoiceActivityIndicator } from "@/components/voice-activity-indicator";
 import { Button } from "@/components/ui/button";
