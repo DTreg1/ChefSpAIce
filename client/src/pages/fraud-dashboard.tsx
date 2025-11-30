@@ -15,8 +15,11 @@ import {
   Shield,
   RefreshCw,
   Download,
-  Filter
+  Filter,
+  Eye
 } from "lucide-react";
+import { SuspiciousActivityAlert } from "@/components/suspicious-activity-alert";
+import { UserRiskProfile } from "@/components/user-risk-profile";
 import {
   Card,
   CardContent,
@@ -96,6 +99,8 @@ export default function FraudDashboard() {
   const [selectedActivity, setSelectedActivity] = useState<SuspiciousActivity | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
 
   // Fetch fraud alerts
   const { data: alertData, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery<{ alerts: SuspiciousActivity[] }>({
@@ -210,6 +215,13 @@ export default function FraudDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Real-time Suspicious Activity Alert Banner */}
+      <SuspiciousActivityAlert 
+        className="mb-4"
+        dismissable={true}
+        autoHideDelay={0}
+      />
 
       {/* Stats Overview */}
       {statsData && (
@@ -357,6 +369,16 @@ export default function FraudDashboard() {
                               >
                                 <Shield className="mr-2 h-4 w-4" />
                                 Review
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUserId(activity.userId);
+                                  setShowUserProfile(true);
+                                }}
+                                data-testid={`button-view-profile-${activity.id}`}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View User Profile
                               </DropdownMenuItem>
                               <DropdownMenuItem className="text-red-600">
                                 <AlertTriangle className="mr-2 h-4 w-4" />
@@ -533,6 +555,27 @@ export default function FraudDashboard() {
               Dismiss
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Risk Profile Dialog */}
+      <Dialog open={showUserProfile} onOpenChange={setShowUserProfile}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>User Risk Profile</DialogTitle>
+            <DialogDescription>
+              Detailed fraud risk analysis for this user
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUserId && (
+            <UserRiskProfile
+              userId={selectedUserId}
+              onClose={() => {
+                setShowUserProfile(false);
+                setSelectedUserId(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

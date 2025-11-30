@@ -8,11 +8,13 @@ import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loaders";
 import { FeedbackButtons } from "@/components/feedback-buttons";
 import { VoiceActivityIndicator } from "@/components/voice";
+import { AIErrorDisplay, ConnectionStatus } from "@/components/ai-error-display";
 import { Button } from "@/components/ui/button";
 import { ChefHat, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceConversation } from "@/hooks/useVoiceConversation";
+import { useAIErrorHandler, parseAPIError } from "@/hooks/use-ai-error-handler";
 import type { Recipe } from "@shared/schema";
 
 // Define ChatMessageType locally since it's not exported from schema
@@ -52,9 +54,29 @@ export default function Chat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<RecipeUI | null>(null);
   const [wasVoiceInput, setWasVoiceInput] = useState(false);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
+  
+  // AI Error Handler for better error display
+  const {
+    error: aiError,
+    isRetrying,
+    retryCount,
+    canRetry,
+    handleError: handleAIError,
+    clearError: clearAIError,
+    retry: retryLastMessage
+  } = useAIErrorHandler({
+    showToast: false, // We'll use the AIErrorDisplay component instead
+    maxRetries: 3,
+    onRetry: () => {
+      if (lastFailedMessage) {
+        handleSendMessage(lastFailedMessage);
+      }
+    }
+  });
   
   // Use batched streaming hook for better performance
   const {
@@ -289,15 +311,25 @@ export default function Chat() {
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "AbortError") {
-        // console.log("Chat stream aborted");
         abortControllerRef.current = null;
         return;
       }
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Store the failed message for potential retry
+      setLastFailedMessage(content);
+      
+      // Handle AI error with our error handler
+      if (error instanceof Response) {
+        const aiErr = await parseAPIError(error);
+        handleAIError(aiErr);
+      } else {
+        handleAIError({
+          message: error instanceof Error ? error.message : "Failed to send message. Please try again.",
+          code: "NETWORK_ERROR",
+          retryable: true
+        });
+      }
+      
       setIsStreaming(false);
       resetStreaming();
       abortControllerRef.current = null;
@@ -344,6 +376,21 @@ export default function Chat() {
           <div className="mt-6 mb-6">
             <ExpirationAlert />
           </div>
+          
+          {/* AI Error Display */}
+          {aiError && (
+            <div className="mb-6">
+              <AIErrorDisplay
+                error={aiError}
+                isRetrying={isRetrying}
+                canRetry={canRetry ?? false}
+                retryCount={retryCount}
+                maxRetries={3}
+                onRetry={retryLastMessage}
+                onDismiss={clearAIError}
+              />
+            </div>
+          )}
 
           {messages.length === 0 && !isStreaming && !generatedRecipe ? (
             <EmptyState type="chat" />
@@ -427,6 +474,9 @@ export default function Chat() {
           disabled={isStreaming}
         />
       </div>
+      
+      {/* Connection Status Indicator - shows when offline */}
+      <ConnectionStatus />
     </div>
   );
 }

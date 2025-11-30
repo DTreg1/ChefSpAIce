@@ -14,7 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { ComponentHealth } from "@/components/component-health";
 import {
   Activity,
   AlertTriangle,
@@ -122,6 +124,7 @@ const urgencyColors: Record<string, string> = {
 export default function SystemHealthDashboard() {
   const { toast } = useToast();
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+  const [showComponentDetails, setShowComponentDetails] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   // Fetch system health
@@ -332,10 +335,14 @@ export default function SystemHealthDashboard() {
               return (
                 <Card
                   key={component.name}
-                  className={`cursor-pointer transition-all ${
+                  className={`cursor-pointer transition-all hover-elevate ${
                     selectedComponent === component.name ? 'ring-2 ring-primary' : ''
                   }`}
                   onClick={() => setSelectedComponent(component.name)}
+                  onDoubleClick={() => {
+                    setSelectedComponent(component.name);
+                    setShowComponentDetails(true);
+                  }}
                   data-testid={`card-component-${component.name}`}
                 >
                   <CardContent className="p-4">
@@ -365,14 +372,23 @@ export default function SystemHealthDashboard() {
 
           {/* Component Actions */}
           {selectedComponent && (
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex gap-2 flex-wrap">
               <Button
                 size="sm"
+                onClick={() => setShowComponentDetails(true)}
+                data-testid="button-view-details"
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                View Details
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => analyzeMutation.mutate(selectedComponent)}
                 disabled={analyzeMutation.isPending}
                 data-testid="button-analyze"
               >
-                <Activity className="w-4 h-4 mr-2" />
+                <Wrench className="w-4 h-4 mr-2" />
                 Analyze {selectedComponent}
               </Button>
               <Button
@@ -555,6 +571,23 @@ export default function SystemHealthDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Component Health Details Dialog */}
+      <Dialog open={showComponentDetails} onOpenChange={setShowComponentDetails}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="capitalize">
+              {selectedComponent} Component Health
+            </DialogTitle>
+            <DialogDescription>
+              Detailed health metrics, predictions, and maintenance history
+            </DialogDescription>
+          </DialogHeader>
+          {selectedComponent && (
+            <ComponentHealth component={selectedComponent} detailed={true} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
