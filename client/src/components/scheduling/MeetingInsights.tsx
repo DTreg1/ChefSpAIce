@@ -27,9 +27,13 @@ export function MeetingInsights({
 }: MeetingInsightsProps) {
   // Fetch analytics data
   const { data: analytics, isLoading } = useQuery({
-    queryKey: ["/api/schedule/analytics", timeRange],
+    queryKey: ["/api/schedule/analytics", timeRange, userId],
     queryFn: async () => {
-      const response = await fetch("/api/schedule/analytics");
+      const params = new URLSearchParams({
+        timeRange,
+        ...(userId && { userId })
+      });
+      const response = await fetch(`/api/schedule/analytics?${params}`);
       if (!response.ok) throw new Error("Failed to fetch analytics");
       return response.json();
     }
@@ -37,7 +41,7 @@ export function MeetingInsights({
 
   // Fetch recent events for trends
   const { data: events = [] } = useQuery({
-    queryKey: ["/api/schedule/events", timeRange],
+    queryKey: ["/api/schedule/events", timeRange, userId],
     queryFn: async () => {
       const startDate = timeRange === 'week' 
         ? startOfWeek(new Date())
@@ -47,7 +51,8 @@ export function MeetingInsights({
       
       const params = new URLSearchParams({
         startTime: startDate.toISOString(),
-        endTime: new Date().toISOString()
+        endTime: new Date().toISOString(),
+        ...(userId && { userId })
       });
       
       const response = await fetch(`/api/schedule/events?${params}`);
