@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,13 +36,21 @@ export function ConflictResolver({
   const [resolving, setResolving] = useState(false);
   const { toast } = useToast();
 
+  // Persist date range to keep query key stable
+  const dateRange = useMemo(() => ({
+    startTime,
+    endTime,
+    startISO: startTime.toISOString(),
+    endISO: endTime.toISOString()
+  }), [startTime.getTime(), endTime.getTime()]);
+
   // Fetch conflicts
   const { data: conflictData, isLoading } = useQuery({
-    queryKey: ["/api/schedule/conflicts", startTime, endTime],
+    queryKey: ["/api/schedule/conflicts", dateRange.startISO, dateRange.endISO],
     queryFn: async () => {
       const params = new URLSearchParams({
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString()
+        startTime: dateRange.startISO,
+        endTime: dateRange.endISO
       });
       const response = await fetch(`/api/schedule/conflicts?${params}`);
       if (!response.ok) throw new Error("Failed to fetch conflicts");
@@ -101,8 +109,8 @@ export function ConflictResolver({
     mutationFn: async (resolution: { conflictId: string; action: string }) => {
       // This would call an AI endpoint to resolve the conflict
       const response = await apiRequest("/api/schedule/optimize", "POST", {
-        startDate: startTime,
-        endDate: endTime,
+        startDate: dateRange.startISO,
+        endDate: dateRange.endISO,
         action: resolution.action
       });
       return response;
