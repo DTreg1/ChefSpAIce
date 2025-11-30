@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ChatMessage, ChatInput } from "@/components/chat";
-import { EmptyState } from "@/components/empty-state";
+import { EmptyState } from "@/components/cards";
 import { RecipeCard, UnifiedRecipeDialog } from "@/components/recipes";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loaders";

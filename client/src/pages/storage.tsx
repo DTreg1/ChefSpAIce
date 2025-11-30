@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
-import { EmptyState } from "@/components/empty-state";
+import { EmptyState } from "@/components/cards";
 import { FoodCard, AddFoodDialog } from "@/components/inventory";
 import { FoodCardSkeletonGrid } from "@/components/loaders";
 import { RecipeGenerator } from "@/components/recipes";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RelatedContentSidebar } from "@/components/RelatedContent";
-import { ContentCard } from "@/components/ContentCard";
+import { ContentCard } from "@/components/cards";
 import { RecommendationCarousel } from "@/components/RecommendationCarousel";
 import { MoreLikeThis } from "@/components/MoreLikeThis";
 import { Button } from "@/components/ui/button";

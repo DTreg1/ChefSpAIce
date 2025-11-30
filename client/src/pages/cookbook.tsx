@@ -7,7 +7,7 @@ import { useState, useMemo } from "react";
 import type { Recipe, UserAppliance } from "@shared/schema";
 import { PageTransition } from "@/components/page-transition";
 import { StaggerContainer, StaggerItem } from "@/components/stagger-children";
-import { AnimatedCard } from "@/components/animated-card";
+import { AnimatedCard } from "@/components/cards";
 import { BasicCardSkeleton } from "@/components/loaders";
 
 export default function Cookbook() {

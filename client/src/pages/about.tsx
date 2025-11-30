@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ChefHat, Heart, Code2, Database, Shield, Sparkles } from "lucide-react";
 import { PageTransition } from "@/components/page-transition";
-import { AnimatedCard } from "@/components/animated-card";
+import { AnimatedCard } from "@/components/cards";
 
 export default function About() {
   const technologies = [

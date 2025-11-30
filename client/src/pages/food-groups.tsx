@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, ChevronRight, Package, Plus } from "lucide-react";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/empty-state";
+import { EmptyState } from "@/components/cards";
 import { FoodCardSkeletonGrid } from "@/components/loaders";
 import { RecipeGenerator } from "@/components/recipes";
 import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";
