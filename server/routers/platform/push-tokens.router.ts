@@ -177,7 +177,7 @@ router.post("/api/push-tokens/test", isAuthenticated, async (req: Request, res) 
     }
 
     // Dynamically import to avoid circular dependencies
-    const { default: PushNotificationService } = await import("../../services/push-notification.service");
+    const { default: PushNotificationService } = await import("../../services/push-notification-core.service");
     
     const result = await PushNotificationService.sendTestNotification(userId);
     res.json({ 

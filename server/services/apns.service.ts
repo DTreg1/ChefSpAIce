@@ -1,5 +1,5 @@
 import apn from '@parse/node-apn';
-import { NotificationPayload } from './push-notification.service';
+import { NotificationPayload } from './push-notification-core.service';
 import fs from 'fs';
 import path from 'path';
 
