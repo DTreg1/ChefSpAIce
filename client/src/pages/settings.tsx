@@ -21,8 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, AlertTriangle, Plus, Package, Trash2, CreditCard, Calendar, Users, ChefHat, Palette, User2, Settings2, Shield, Database, Bell, Clock, Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { NotificationSettings } from "@/components/NotificationSettings";
-import { IntelligentNotificationSettings } from "@/components/IntelligentNotificationSettings";
+import { NotificationSettings, IntelligentNotificationSettings } from "@/components/notifications";
 import ActivityTimeline from "@/components/ActivityTimeline";
 import ActivityPrivacyControls from "@/components/ActivityPrivacyControls";
 import type { User } from "@shared/schema";

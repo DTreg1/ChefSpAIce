@@ -20,7 +20,7 @@ import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import ErrorBoundary from "@/components/ErrorBoundary";
 // Keep critical providers eagerly loaded for proper initialization
-import { PushNotificationHandler } from "@/components/PushNotificationHandler";
+import { PushNotificationHandler } from "@/components/notifications";
 import { VoiceControl } from "@/components/voice/VoiceControl";
 import { ChatWidget } from "@/components/ChatWidget";
 
