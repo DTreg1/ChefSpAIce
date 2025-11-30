@@ -299,10 +299,10 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-black/80 p-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <Card data-testid="card-onboarding" animate={false}>
-          <CardHeader className="text-center">
+    <div className="h-screen bg-black/80 p-4 py-8 overflow-hidden flex flex-col">
+      <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col min-h-0">
+        <Card data-testid="card-onboarding" animate={false} className="flex flex-col min-h-0 max-h-full">
+          <CardHeader className="text-center flex-shrink-0">
             <div className="flex justify-center mb-4">
               <ChefHat className="w-16 h-16 text-primary" />
             </div>
@@ -312,9 +312,10 @@ export default function Onboarding() {
               later.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 overflow-y-auto min-h-0">
             <Form {...form}>
               <form
+                id="onboarding-form"
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
@@ -742,40 +743,42 @@ export default function Onboarding() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      // Skip onboarding for testing - set equipment state first
-                      setSelectedEquipment(["Stove"]);
-                      // Then submit with correct preferences schema
-                      saveMutation.mutate({
-                        storageAreasEnabled: ["Fridge", "Pantry"],
-                        householdSize: 2,
-                        cookingSkillLevel: "intermediate",
-                        preferredUnits: "metric",
-                        expirationAlertDays: 3,
-                        foodsToAvoid: []
-                      });
-                    }}
-                    data-testid="button-skip-onboarding"
-                  >
-                    Skip Setup
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1"
-                    disabled={saveMutation.isPending}
-                    data-testid="button-complete-onboarding"
-                  >
-                    {saveMutation.isPending ? "Setting up..." : "Complete Setup"}
-                  </Button>
-                </div>
+                <div className="h-20" aria-hidden="true" />
               </form>
             </Form>
           </CardContent>
+          <div className="flex-shrink-0 p-6 pt-0 border-t bg-card sticky bottom-0">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setSelectedEquipment(["Stove"]);
+                  saveMutation.mutate({
+                    storageAreasEnabled: ["Fridge", "Pantry"],
+                    householdSize: 2,
+                    cookingSkillLevel: "intermediate",
+                    preferredUnits: "metric",
+                    expirationAlertDays: 3,
+                    foodsToAvoid: []
+                  });
+                }}
+                data-testid="button-skip-onboarding"
+              >
+                Skip Setup
+              </Button>
+              <Button
+                type="submit"
+                form="onboarding-form"
+                className="flex-1"
+                disabled={saveMutation.isPending}
+                data-testid="button-complete-onboarding"
+              >
+                {saveMutation.isPending ? "Setting up..." : "Complete Setup"}
+              </Button>
+            </div>
+          </div>
         </Card>
       </div>
     </div>
