@@ -164,9 +164,8 @@ export default function SentimentDashboard() {
         params.append('periodType', periodType);
       }
       
-      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.sentiment}/dashboard?${params}`);
-      const data = await response.json();
-      return data as DashboardData;
+      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/dashboard?${params}`, 'GET');
+      return response as DashboardData;
     }
   });
 
@@ -174,9 +173,8 @@ export default function SentimentDashboard() {
   const { data: activeAlerts, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery({
     queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'alerts', 'active'],
     queryFn: async () => {
-      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.sentiment}/alerts/active?limit=10`);
-      const data = await response.json();
-      return data.alerts as SentimentAlert[];
+      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/alerts/active?limit=10`, 'GET');
+      return response.alerts as SentimentAlert[];
     }
   });
 
@@ -187,9 +185,8 @@ export default function SentimentDashboard() {
       const params = new URLSearchParams();
       if (viewMode === 'global') params.append('global', 'true');
       
-      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.insights.all}?${params}`);
-      const data = await response.json();
-      return data.insights as SentimentInsights;
+      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.insights.all}?${params}`, 'GET');
+      return response.insights as SentimentInsights;
     }
   });
 
@@ -202,9 +199,8 @@ export default function SentimentDashboard() {
       if (viewMode === 'global') params.append('global', 'true');
       params.append('limit', '30');
       
-      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.trends.current}?${params}`);
-      const data = await response.json();
-      return data.trends;
+      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.trends.current}?${params}`, 'GET');
+      return response.trends;
     }
   });
 
@@ -212,9 +208,8 @@ export default function SentimentDashboard() {
   const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'user', 'current'],
     queryFn: async () => {
-      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.sentiment}/user/current`);
-      const data = await response.json();
-      return data.analyses as SentimentAnalysis[];
+      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/user/current`, 'GET');
+      return response.analyses as SentimentAnalysis[];
     }
   });
 
@@ -228,9 +223,8 @@ export default function SentimentDashboard() {
       params.append('period', selectedPeriod);
       params.append('periodType', periodType);
       
-      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.sentiment}/breakdown?${params}`);
-      const data = await response.json();
-      return data.breakdown;
+      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/breakdown?${params}`, 'GET');
+      return response.breakdown;
     },
     enabled: !!selectedPeriod
   });
@@ -238,12 +232,11 @@ export default function SentimentDashboard() {
   // Mutation for analyzing text
   const analyzeMutation = useMutation({
     mutationFn: async (text: string) => {
-      const response = await apiRequest('POST', API_ENDPOINTS.ai.analysis.sentiment, { 
+      const response = await apiRequest(API_ENDPOINTS.ai.analysis.sentiment, 'POST', { 
         content: text,
         contentType: 'test'
       });
-      const data = await response.json();
-      return data.analysis as SentimentAnalysis;
+      return response.analysis as SentimentAnalysis;
     },
     onSuccess: (data) => {
       setAnalysisResult(data);
@@ -266,9 +259,8 @@ export default function SentimentDashboard() {
   // Mutation for acknowledging alerts
   const acknowledgeAlertMutation = useMutation({
     mutationFn: async ({ alertId, status }: { alertId: string; status: 'acknowledged' | 'resolved' }) => {
-      const response = await apiRequest('PATCH', `${API_ENDPOINTS.ai.analysis.sentiment}/alerts/${alertId}`, { status });
-      const data = await response.json();
-      return data.alert;
+      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.sentiment}/alerts/${alertId}`, 'PATCH', { status });
+      return response.alert;
     },
     onSuccess: (data, variables) => {
       toast({

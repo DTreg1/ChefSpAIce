@@ -69,7 +69,7 @@ export const MoreLikeThis = ({
     setIsRefreshing(true);
     try {
       // Clear cache first
-      await apiRequest("DELETE", `/api/content/${contentId}/cache?type=${contentType}`);
+      await apiRequest(`/api/content/${contentId}/cache?type=${contentType}`, "DELETE");
       // Then refetch
       await refetch();
       toast({

@@ -27,8 +27,8 @@ export function FeedbackButtons({
 
   const submitFeedbackMutation = useMutation({
     mutationFn: async (data: { localSentiment: 'positive' | 'negative'; feedback: Partial<InsertFeedback> }) => {
-      const res = await apiRequest('POST', API_ENDPOINTS.feedback.submit, data.feedback);
-      return { result: await res.json(), localSentiment: data.localSentiment };
+      const res = await apiRequest(API_ENDPOINTS.feedback.submit, 'POST', data.feedback);
+      return { result: res, localSentiment: data.localSentiment };
     },
     onSuccess: (response) => {
       setHasSubmitted(true);

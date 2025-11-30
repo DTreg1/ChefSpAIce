@@ -29,10 +29,10 @@ export default function DonateSuccessPage() {
     const confirmDonation = async () => {
       if (paymentIntent) {
         try {
-          const response = await apiRequest("POST", "/api/donations/confirm", {
+          const response = await apiRequest("/api/donations/confirm", "POST", {
             paymentIntentId: paymentIntent
           });
-          const data = await response.json();
+          const data = response;
           
           if (data.status !== 'succeeded') {
             console.warn('Payment not yet confirmed:', data.status);

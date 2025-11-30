@@ -66,12 +66,12 @@ export function AppealForm({
         throw new Error("Please provide a reason for your appeal");
       }
 
-      const response = await apiRequest('POST', '/api/moderate/appeal', {
+      const response = await apiRequest('/api/moderate/appeal', 'POST', {
         blockedContentId,
         reason: appealReason,
         additionalContext: `Type: ${appealType}\n${additionalContext}`.trim()
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       toast({

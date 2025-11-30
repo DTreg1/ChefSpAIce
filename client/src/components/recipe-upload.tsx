@@ -25,10 +25,10 @@ export function RecipeUpload() {
 
   const uploadRecipeMutation = useMutation({
     mutationFn: async (imageBase64: string) => {
-      const response = await apiRequest("POST", "/api/recipes/from-image", {
+      const response = await apiRequest("/api/recipes/from-image", "POST", {
         image: imageBase64
       });
-      return await response.json();
+      return response;
     },
     onSuccess: (recipe: Recipe) => {
       toast({

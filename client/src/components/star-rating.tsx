@@ -38,8 +38,8 @@ export function StarRating({
 
   const submitRatingMutation = useMutation({
     mutationFn: async (data: Partial<InsertFeedback>) => {
-      const res = await apiRequest('POST', API_ENDPOINTS.feedback.submit, data);
-      return res.json();
+      const res = await apiRequest(API_ENDPOINTS.feedback.submit, 'POST', data);
+      return res;
     },
     onSuccess: () => {
       setHasSubmitted(true);

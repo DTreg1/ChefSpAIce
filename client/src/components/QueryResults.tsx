@@ -65,8 +65,8 @@ export function QueryResults({
     mutationFn: async () => {
       if (!queryId || !sql) throw new Error("No query to execute");
       
-      const response = await apiRequest("POST", "/api/query/execute", { queryId, sql });
-      return response.json();
+      const response = await apiRequest("/api/query/execute", "POST", { queryId, sql });
+      return response;
     },
     onSuccess: (data) => {
       setResults(data.results);
@@ -90,8 +90,8 @@ export function QueryResults({
     mutationFn: async () => {
       if (!queryId) throw new Error("No query to save");
       
-      const response = await apiRequest("POST", "/api/query/save", { queryId, savedName });
-      return response.json();
+      const response = await apiRequest("/api/query/save", "POST", { queryId, savedName });
+      return response;
     },
     onSuccess: () => {
       toast({

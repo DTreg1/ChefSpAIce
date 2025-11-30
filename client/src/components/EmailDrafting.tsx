@@ -101,12 +101,12 @@ export function EmailDrafting() {
         previousMessage: previousMessage || undefined
       };
 
-      const response = await apiRequest("POST", "/api/drafts/generate", {
+      const response = await apiRequest("/api/drafts/generate", "POST", {
         contextType,
         context,
         numberOfVariations
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data: any[]) => {
       queryClient.invalidateQueries({ queryKey: ["/api/drafts/history"] });
@@ -127,7 +127,7 @@ export function EmailDrafting() {
   // Select draft
   const selectDraftMutation = useMutation({
     mutationFn: async ({ id, edited }: { id: string; edited: boolean }) => {
-      return apiRequest("POST", `/api/drafts/${id}/select`, { edited });
+      return apiRequest(`/api/drafts/${id}/select`, "POST", { edited });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/drafts/history"] });
@@ -141,8 +141,8 @@ export function EmailDrafting() {
   // Improve draft
   const improveDraftMutation = useMutation({
     mutationFn: async (draft: string) => {
-      const response = await apiRequest("POST", "/api/drafts/improve", { draft });
-      return response.json();
+      const response = await apiRequest("/api/drafts/improve", "POST", { draft });
+      return response;
     },
     onSuccess: (data: any) => {
       toast({
@@ -155,11 +155,11 @@ export function EmailDrafting() {
   // Generate quick replies
   const quickReplyMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/drafts/quick-reply", {
+      const response = await apiRequest("/api/drafts/quick-reply", "POST", {
         message: previousMessage,
         sentiment: "positive"
       });
-      return response.json();
+      return response;
     },
     onSuccess: () => {
       toast({

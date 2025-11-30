@@ -472,8 +472,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   };
 
   const handleGetUploadURL = async () => {
-    const response = await apiRequest("POST", "/api/objects/upload", {});
-    const data = await response.json();
+    const response = await apiRequest("/api/objects/upload", "POST", {});
+    const data = response;
     return {
       method: "PUT" as const,
       url: data.uploadURL,
@@ -485,10 +485,10 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
   ) => {
     if (result.successful && result.successful.length > 0) {
       const uploadedUrl = result.successful[0].uploadURL;
-      const response = await apiRequest("PUT", "/api/food-images", {
+      const response = await apiRequest("/api/food-images", "PUT", {
         imageURL: uploadedUrl,
       });
-      const data = await response.json();
+      const data = response;
       setImageUrl(data.objectPath);
       // Reset analysis when new image is uploaded
       setImageAnalysis(null);

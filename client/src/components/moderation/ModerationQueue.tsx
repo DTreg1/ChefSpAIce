@@ -89,8 +89,8 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
       if (selectedSeverity && selectedSeverity !== 'all') {
         params.append('severity', selectedSeverity);
       }
-      const response = await apiRequest('GET', `${API_ENDPOINTS.admin.moderation}/queue?${params}`);
-      return response.json();
+      const response = await apiRequest(`${API_ENDPOINTS.admin.moderation}/queue?${params}`, 'GET');
+      return response;
     },
     enabled: isAdmin
   });
@@ -103,8 +103,8 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
       reason?: string;
       notes?: string;
     }) => {
-      const response = await apiRequest('POST', `${API_ENDPOINTS.admin.moderation}/action`, { logId, action, reason, notes });
-      return response.json();
+      const response = await apiRequest(`${API_ENDPOINTS.admin.moderation}/action`, 'POST', { logId, action, reason, notes });
+      return response;
     },
     onSuccess: () => {
       toast({

@@ -141,8 +141,8 @@ export function RecipeCustomizationDialog({
       // Store preferences for next time
       storePreferences(prefs);
       
-      const response = await apiRequest("POST", "/api/recipes/generate", prefs);
-      return await response.json();
+      const response = await apiRequest("/api/recipes/generate", "POST", prefs);
+      return response;
     },
     onSuccess: async (recipe: Recipe) => {
       // First invalidate to get fresh inventory data

@@ -82,15 +82,11 @@ export default function ActivityPrivacyControls() {
   // Delete all activity logs
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("DELETE", "/api/activity-logs", {
+      const response = await apiRequest("/api/activity-logs", "DELETE", {
         confirm: true,
       });
       
-      if (!response.ok) {
-        throw new Error("Failed to delete activity logs");
-      }
-      
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["/api/activity-logs"] });

@@ -161,12 +161,12 @@ export function WritingAssistant() {
   // Adjust tone
   const adjustToneMutation = useMutation({
     mutationFn: async (newTone: string) => {
-      const response = await apiRequest("POST", "/api/writing/adjust-tone", {
+      const response = await apiRequest("/api/writing/adjust-tone", "POST", {
         text,
         currentTone: analysisResult?.metrics.tone,
         targetTone: newTone
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       setText(data.adjustedText);
@@ -180,11 +180,11 @@ export function WritingAssistant() {
   // Paraphrase text
   const paraphraseMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/writing/paraphrase", {
+      const response = await apiRequest("/api/writing/paraphrase", "POST", {
         text,
         style: textType
       });
-      return response.json();
+      return response;
     },
     onSuccess: () => {
       toast({
@@ -197,10 +197,10 @@ export function WritingAssistant() {
   // Check plagiarism
   const plagiarismMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/writing/check-plagiarism", { 
+      const response = await apiRequest("/api/writing/check-plagiarism", "POST", { 
         text 
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       toast({

@@ -229,8 +229,8 @@ export function SmartRecipeGenerator({
         smartRequest.dietaryRestrictions = preferences.lastDietaryRestrictions;
       }
 
-      const response = await apiRequest("POST", "/api/recipes/generate", smartRequest);
-      return await response.json();
+      const response = await apiRequest("/api/recipes/generate", "POST", smartRequest);
+      return response;
     },
     onSuccess: async (recipe: Recipe) => {
       // Update preferences with any new settings from this generation

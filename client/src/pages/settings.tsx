@@ -218,11 +218,11 @@ export default function Settings() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: z.infer<typeof preferenceSchema>) => {
-      const response = await apiRequest("PUT", "/api/user/preferences", {
+      const response = await apiRequest("/api/user/preferences", "PUT", {
         ...data,
         hasCompletedOnboarding: true,
       });
-      return response.json();
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
@@ -243,8 +243,8 @@ export default function Settings() {
 
   const resetMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/user/reset", null);
-      return response.json();
+      const response = await apiRequest("/api/user/reset", "POST", null);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
@@ -331,7 +331,7 @@ export default function Settings() {
     pendingStorageNamesRef.current.add(newStorageName);
     
     try {
-      await apiRequest("POST", "/api/storage-locations", {
+      await apiRequest("/api/storage-locations", "POST", {
         name: newStorageName,
         icon: "package",
       });
@@ -1188,8 +1188,8 @@ function AdminManagementSection() {
 
   const toggleAdminMutation = useMutation({
     mutationFn: async ({ userId, makeAdmin }: { userId: string; makeAdmin: boolean }) => {
-      const response = await apiRequest("PATCH", `/api/admin/users/${userId}/admin`, { isAdmin: makeAdmin });
-      return response.json();
+      const response = await apiRequest(`/api/admin/users/${userId}/admin`, "PATCH", { isAdmin: makeAdmin });
+      return response;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -1214,8 +1214,8 @@ function AdminManagementSection() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const response = await apiRequest("DELETE", `/api/admin/users/${userId}`, null);
-      return response.json();
+      const response = await apiRequest(`/api/admin/users/${userId}`, "DELETE", null);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });

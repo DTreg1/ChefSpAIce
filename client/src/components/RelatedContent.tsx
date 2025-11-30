@@ -58,7 +58,7 @@ export const RelatedContentSidebar = ({
     setIsRefreshing(true);
     try {
       // Clear cache and refresh embeddings
-      await apiRequest("DELETE", `/api/content/${contentId}/cache?type=${contentType}`);
+      await apiRequest(`/api/content/${contentId}/cache?type=${contentType}`, "DELETE");
       await refetch();
       toast({
         title: "Content refreshed",

@@ -47,8 +47,8 @@ export function SavedQueries({ onSelectQuery }: SavedQueriesProps) {
 
   const deleteMutation = useMutation({
     mutationFn: async (queryId: string) => {
-      const response = await apiRequest("DELETE", `/api/query/${queryId}`);
-      return response.json();
+      const response = await apiRequest(`/api/query/${queryId}`, "DELETE");
+      return response;
     },
     onSuccess: () => {
       toast({

@@ -48,8 +48,8 @@ export function AltTextEditor({
   // Update alt text mutation
   const updateMutation = useMutation({
     mutationFn: async (data: { altText: string; isDecorative: boolean }) => {
-      const res = await apiRequest("PUT", `/api/images/${imageId}/alt-text`, data);
-      return res.json();
+      const res = await apiRequest(`/api/images/${imageId}/alt-text`, "PUT", data);
+      return res;
     },
     onSuccess: (response) => {
       setQuality(response.data?.quality);
@@ -72,8 +72,8 @@ export function AltTextEditor({
   // Regenerate alt text mutation
   const regenerateMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/images/alt-text", { imageUrl });
-      return res.json();
+      const res = await apiRequest("/api/images/alt-text", "POST", { imageUrl });
+      return res;
     },
     onSuccess: (response) => {
       setAltText(response.data?.altText);

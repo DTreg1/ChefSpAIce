@@ -25,8 +25,8 @@ export function NotificationSettings() {
   // Update preferences mutation
   const updatePreferencesMutation = useMutation({
     mutationFn: async (preferences: Partial<User>) => {
-      const response = await apiRequest("PUT", "/api/user/preferences", preferences);
-      return response.json();
+      const response = await apiRequest("/api/user/preferences", "PUT", preferences);
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
@@ -230,8 +230,8 @@ export function NotificationSettings() {
                 size="sm"
                 onClick={async () => {
                   try {
-                    const response = await apiRequest("POST", API_ENDPOINTS.notifications.test);
-                    const result = await response.json();
+                    const response = await apiRequest(API_ENDPOINTS.notifications.test, "POST");
+                    const result = response;
                     toast({
                       title: "Test Sent",
                       description: `Notification sent to ${result.sent} device(s)`,

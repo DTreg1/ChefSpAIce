@@ -55,7 +55,7 @@ export default function Nutrition() {
 
   const refreshNutritionMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      return await apiRequest("POST", `/api/food-items/${itemId}/refresh-nutrition`, {});
+      return await apiRequest(`/api/food-items/${itemId}/refresh-nutrition`, "POST", {});
     },
     onSuccess: (data, itemId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/nutrition/stats"] });

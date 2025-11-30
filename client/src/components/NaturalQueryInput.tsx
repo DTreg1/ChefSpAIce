@@ -28,8 +28,8 @@ export function NaturalQueryInput({ onQueryConverted }: NaturalQueryInputProps) 
 
   const convertMutation = useMutation({
     mutationFn: async (naturalQuery: string) => {
-      const response = await apiRequest("POST", "/api/query/natural", { naturalQuery });
-      return response.json();
+      const response = await apiRequest("/api/query/natural", "POST", { naturalQuery });
+      return response;
     },
     onSuccess: (data: QueryConversionResult) => {
       toast({

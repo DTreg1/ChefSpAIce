@@ -37,11 +37,11 @@ export default function SmartSearch() {
   // Semantic search mutation
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      const response = await apiRequest('POST', '/api/ml/search/semantic', { 
+      const response = await apiRequest('/api/ml/search/semantic', 'POST', { 
         query, 
         contentType: 'all' 
       });
-      return response.json();
+      return response;
     },
     onError: (error: any) => {
       toast({
@@ -55,10 +55,10 @@ export default function SmartSearch() {
   // Natural language query mutation
   const nlQueryMutation = useMutation({
     mutationFn: async (query: string) => {
-      const response = await apiRequest('POST', '/api/ml/natural-query', { 
+      const response = await apiRequest('/api/ml/natural-query', 'POST', { 
         query 
       });
-      return response.json();
+      return response;
     },
     onError: (error: any) => {
       toast({
@@ -85,8 +85,8 @@ export default function SmartSearch() {
   // Update embeddings mutation
   const updateEmbeddingsMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/ml/embeddings/update');
-      return response.json();
+      const response = await apiRequest('/api/ml/embeddings/update', 'POST');
+      return response;
     },
     onSuccess: () => {
       toast({

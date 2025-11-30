@@ -115,8 +115,8 @@ export function VoiceCommands() {
   const { data: availableCommands = [] } = useQuery<CommandInfo[]>({
     queryKey: [API_ENDPOINTS.ai.media.voice.commands.list],
     queryFn: async () => {
-      const response = await apiRequest("GET", API_ENDPOINTS.ai.media.voice.commands.list);
-      return response.json();
+      const response = await apiRequest(API_ENDPOINTS.ai.media.voice.commands.list, "GET");
+      return response;
     }
   });
 
@@ -124,8 +124,8 @@ export function VoiceCommands() {
   const { data: commandHistory = [], isLoading: historyLoading } = useQuery<VoiceCommand[]>({
     queryKey: [API_ENDPOINTS.ai.media.voice.commands.history],
     queryFn: async () => {
-      const response = await apiRequest("GET", API_ENDPOINTS.ai.media.voice.commands.history);
-      return response.json();
+      const response = await apiRequest(API_ENDPOINTS.ai.media.voice.commands.history, "GET");
+      return response;
     },
     enabled: showHistory
   });
@@ -138,16 +138,16 @@ export function VoiceCommands() {
   }>({
     queryKey: [API_ENDPOINTS.ai.media.voice.commands.stats],
     queryFn: async () => {
-      const response = await apiRequest("GET", API_ENDPOINTS.ai.media.voice.commands.stats);
-      return response.json();
+      const response = await apiRequest(API_ENDPOINTS.ai.media.voice.commands.stats, "GET");
+      return response;
     }
   });
 
   // Process voice command
   const processCommandMutation = useMutation({
     mutationFn: async (text: string) => {
-      const response = await apiRequest("POST", API_ENDPOINTS.ai.media.voice.commands.process, { text });
-      return response.json();
+      const response = await apiRequest(API_ENDPOINTS.ai.media.voice.commands.process, "POST", { text });
+      return response;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.commands.history] });

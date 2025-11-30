@@ -70,8 +70,8 @@ export function ModerationStats({ isAdmin = false }: ModerationStatsProps) {
         endDate,
         period: timePeriod
       });
-      const response = await apiRequest('GET', `/api/moderate/stats?${params}`);
-      return response.json();
+      const response = await apiRequest(`/api/moderate/stats?${params}`, 'GET');
+      return response;
     },
     enabled: isAdmin
   });

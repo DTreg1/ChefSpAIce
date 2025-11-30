@@ -58,7 +58,7 @@ export default function SemanticSearchDemo() {
   // Generate embeddings for demo content
   const generateEmbeddingsMutation = useMutation({
     mutationFn: async (content: typeof DEMO_CONTENT[0]) => {
-      const response = await apiRequest("POST", "/api/ml/embeddings/generate", {
+      const response = await apiRequest("/api/ml/embeddings/generate", "POST", {
         contentId: content.id,
         contentType: content.type,
         content: {
@@ -72,7 +72,7 @@ export default function SemanticSearchDemo() {
           isDemo: true,
         }
       });
-      return response.json();
+      return response;
     },
     onSuccess: (_, content) => {
       console.log(`Generated embedding for: ${content.title}`);
@@ -90,12 +90,12 @@ export default function SemanticSearchDemo() {
   // Semantic search mutation
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      const response = await apiRequest("POST", "/api/ml/search/semantic", {
+      const response = await apiRequest("/api/ml/search/semantic", "POST", {
         query,
         contentType: "all",
         limit: 10,
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       if (data.results && Array.isArray(data.results)) {
@@ -137,8 +137,8 @@ export default function SemanticSearchDemo() {
       clickPosition: number;
       timeToClick: number;
     }) => {
-      const response = await apiRequest("POST", "/api/ml/search/feedback", data);
-      return response.json();
+      const response = await apiRequest("/api/ml/search/feedback", "POST", data);
+      return response;
     },
     onSuccess: () => {
       console.log("Search feedback recorded");

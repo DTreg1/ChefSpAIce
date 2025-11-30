@@ -303,7 +303,7 @@ export default function FdcSearch() {
       foodCategory?: string;
       nutrition?: string;
     }) => {
-      return apiRequest('POST', '/api/food-items', data);
+      return apiRequest('/api/food-items', 'POST', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });

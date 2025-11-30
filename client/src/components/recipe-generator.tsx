@@ -39,8 +39,8 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
 
   const generateRecipeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/recipes/generate", {});
-      return await response.json();
+      const response = await apiRequest("/api/recipes/generate", "POST", {});
+      return response;
     },
     onSuccess: async (recipe: Recipe) => {
       // First invalidate to get fresh inventory data

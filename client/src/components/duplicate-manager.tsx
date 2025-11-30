@@ -70,7 +70,7 @@ export function DuplicateManager() {
   const reindexMutation = useMutation({
     mutationFn: async (contentType: 'recipe' | 'chat' | 'inventory') => {
       setIsReindexing(true);
-      return apiRequest('POST', '/api/duplicates/reindex', { 
+      return apiRequest('/api/duplicates/reindex', 'POST', { 
         contentType, 
         limit: 50 
       });
@@ -102,7 +102,7 @@ export function DuplicateManager() {
       duplicatePairId: string; 
       status: 'duplicate' | 'unique' | 'merged' 
     }) => {
-      return apiRequest('POST', '/api/duplicates/resolve', { 
+      return apiRequest('/api/duplicates/resolve', 'POST', { 
         duplicatePairId, 
         status 
       });

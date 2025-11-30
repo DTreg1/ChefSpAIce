@@ -219,8 +219,8 @@ export function UnifiedRecipeDialog({
         smartRequest.dietaryRestrictions = smartPreferences.lastDietaryRestrictions;
       }
 
-      const response = await apiRequest("POST", "/api/recipes/generate", smartRequest);
-      return await response.json();
+      const response = await apiRequest("/api/recipes/generate", "POST", smartRequest);
+      return response;
     },
     onSuccess: async (recipe: Recipe) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });
@@ -260,8 +260,8 @@ export function UnifiedRecipeDialog({
     mutationFn: async (prefs: RecipePreferences) => {
       storePreferences(prefs);
       
-      const response = await apiRequest("POST", "/api/recipes/generate", prefs);
-      return await response.json();
+      const response = await apiRequest("/api/recipes/generate", "POST", prefs);
+      return response;
     },
     onSuccess: async (recipe: Recipe) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/food-items"] });

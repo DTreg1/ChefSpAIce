@@ -65,8 +65,8 @@ export default function SummarizationDemo() {
 
   const summarizeMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/summarize', data);
-      return await response.json();
+      const response = await apiRequest('/api/summarize', 'POST', data);
+      return response;
     },
     onSuccess: (data) => {
       setSummaryResult(data);

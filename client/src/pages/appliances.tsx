@@ -155,7 +155,7 @@ export default function Appliances() {
   // Add from barcode mutation  
   const fromBarcodeMutation = useMutation({
     mutationFn: async (data: { barcode: string; nickname?: string; notes?: string }) => 
-      apiRequest("POST", '/api/appliances/from-barcode', data),
+      apiRequest('/api/appliances/from-barcode', "POST", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appliances"] });
       setIsScanDialogOpen(false);

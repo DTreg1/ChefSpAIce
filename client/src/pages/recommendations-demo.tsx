@@ -84,7 +84,7 @@ export default function RecommendationsDemo() {
       
       // Generate embeddings for all sample content
       for (const content of sampleContent) {
-        await apiRequest("POST", "/api/content/embeddings/generate", {
+        await apiRequest("/api/content/embeddings/generate", "POST", {
           contentId: content.id,
           contentType: content.type,
           text: content.text,
@@ -97,7 +97,7 @@ export default function RecommendationsDemo() {
       
       // If custom content is provided, generate embedding for it too
       if (customContent && customTitle) {
-        await apiRequest("POST", "/api/content/embeddings/generate", {
+        await apiRequest("/api/content/embeddings/generate", "POST", {
           contentId: `custom-${Date.now()}`,
           contentType: "article",
           text: customContent,

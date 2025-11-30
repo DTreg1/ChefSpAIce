@@ -69,7 +69,7 @@ export function MealPlanningDialog({
 
       // Validate with Zod schema
       const validated = insertMealPlanSchema.parse(mealPlan);
-      return await apiRequest("POST", "/api/meal-plans", validated);
+      return await apiRequest("/api/meal-plans", "POST", validated);
     },
     onSuccess: (_, values) => {
       void queryClient.invalidateQueries({ queryKey: ["/api/meal-plans"] });

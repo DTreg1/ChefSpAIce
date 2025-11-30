@@ -51,7 +51,7 @@ export default function ModerationTest() {
   // Mutation for checking content
   const checkContentMutation = useMutation({
     mutationFn: async (text: string) => {
-      return apiRequest('POST', '/api/moderate/check', {
+      return apiRequest('/api/moderate/check', 'POST', {
         content: text,
         contentType: 'recipe'  // Using 'recipe' as a valid content type for testing
       });

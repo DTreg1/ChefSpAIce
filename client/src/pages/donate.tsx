@@ -45,7 +45,7 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
       // We'll extract the payment intent ID from the clientSecret
       const paymentIntentId = clientSecret.split('_secret_')[0];
       
-      await apiRequest("POST", `${API_ENDPOINTS.donations.create}/update-donor-info`, {
+      await apiRequest(`${API_ENDPOINTS.donations.create}/update-donor-info`, "POST", {
         paymentIntentId,
         donorName: donorInfo.donorName,
         donorEmail: donorInfo.donorEmail,
@@ -267,11 +267,11 @@ export default function DonatePage() {
   }) => {
     setIsCreatingIntent(true);
     try {
-      const response = await apiRequest("POST", "/api/donations/create-payment-intent", { 
+      const response = await apiRequest("/api/donations/create-payment-intent", "POST", { 
         amount: amountInCents,
         ...donorData
       });
-      const data = await response.json();
+      const data = response;
       
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);

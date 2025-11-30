@@ -36,8 +36,8 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
   // Generate alt text mutation
   const generateAltTextMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; context?: string }) => {
-      const res = await apiRequest("POST", API_ENDPOINTS.ai.media.vision.altText.generate, data);
-      return res.json();
+      const res = await apiRequest(API_ENDPOINTS.ai.media.vision.altText.generate, "POST", data);
+      return res;
     },
     onSuccess: (response) => {
       toast({
@@ -62,8 +62,8 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
   // Check if decorative mutation
   const checkDecorativeMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; context?: string }) => {
-      const res = await apiRequest("POST", `${API_ENDPOINTS.ai.media.vision.altText.generate}/check-decorative`, data);
-      return res.json();
+      const res = await apiRequest(`${API_ENDPOINTS.ai.media.vision.altText.generate}/check-decorative`, "POST", data);
+      return res;
     },
   });
 

@@ -298,7 +298,7 @@ export function BarcodeScannerDialog({ open, onOpenChange }: BarcodeScannerDialo
         nutrition: scannedFood.nutrition || null,
       };
 
-      await apiRequest("POST", "/api/food-items", foodData);
+      await apiRequest("/api/food-items", "POST", foodData);
       
       return continueScanning;
     },

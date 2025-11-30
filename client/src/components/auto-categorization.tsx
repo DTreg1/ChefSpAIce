@@ -33,11 +33,11 @@ export function AutoCategorization({
   // Categorization mutation
   const categorizeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', API_ENDPOINTS.ml.categorize, {
+      const response = await apiRequest(API_ENDPOINTS.ml.categorize, 'POST', {
         contentId,
         contentType
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       if (data.category && onCategoryUpdate) {
@@ -61,11 +61,11 @@ export function AutoCategorization({
   // Auto-tagging mutation
   const autoTagMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', API_ENDPOINTS.ml.tags.generate, {
+      const response = await apiRequest(API_ENDPOINTS.ml.tags.generate, 'POST', {
         contentId,
         contentType
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       if (data.tags && onTagsUpdate) {
@@ -90,10 +90,9 @@ export function AutoCategorization({
   const batchCategorizeMutation = useMutation({
     mutationFn: async () => {
       setIsProcessing(true);
-      const response = await apiRequest('POST', API_ENDPOINTS.ml.categorizeBatch);
-      const data = await response.json();
+      const response = await apiRequest(API_ENDPOINTS.ml.categorizeBatch, 'POST');
       setIsProcessing(false);
-      return data;
+      return response;
     },
     onSuccess: (data) => {
       toast({
@@ -192,8 +191,8 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
   const { data: stats } = useQuery({
     queryKey: [API_ENDPOINTS.ml.stats.uncategorized],
     queryFn: async () => {
-      const response = await apiRequest('GET', API_ENDPOINTS.ml.stats.uncategorized);
-      return response.json();
+      const response = await apiRequest(API_ENDPOINTS.ml.stats.uncategorized, 'GET');
+      return response;
     },
   });
 
@@ -209,11 +208,10 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
       }, 1000);
       
       try {
-        const response = await apiRequest('POST', API_ENDPOINTS.ml.categorizeBatch);
-        const data = await response.json();
+        const response = await apiRequest(API_ENDPOINTS.ml.categorizeBatch, 'POST');
         clearInterval(progressInterval);
         setProgress(100);
-        return data;
+        return response;
       } catch (error) {
         clearInterval(progressInterval);
         throw error;
