@@ -361,7 +361,7 @@ DOMAIN STORAGES (17 domains):
 
 AI/ML SERVICES                 NOTIFICATION SERVICES         CONTENT SERVICES
 ────────────────               ─────────────────────         ────────────────
-ai-routing.service             push-notification-core        face-detection.service
+ai-routing.service             push-notification             face-detection.service
 embeddings.service             ml-notification-scheduler     alt-text-generator.service
 prediction.service             push-notification-scheduler   duplicate-detection.service
 sentiment.service              apns.service                  summarization.service
@@ -381,7 +381,7 @@ analytics.service              activity-logger.service       log-retention.servi
 NAMING CONVENTION: kebab-case.service.ts
 ─────────────────
 All service files follow the pattern: {name}.service.ts
-Example: ai-routing.service.ts, push-notification-core.service.ts
+Example: ai-routing.service.ts, push-notification.service.ts
 ```
 
 ---

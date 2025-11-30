@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
 import * as fs from 'fs';
-import { NotificationPayload } from './push-notification-core.service';
+import { NotificationPayload } from './push-notification.service';
 import Logger from './logger.service';
 
 /**

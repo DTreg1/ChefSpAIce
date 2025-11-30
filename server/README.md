@@ -155,7 +155,7 @@ Custom storage errors (`storage/errors/`):
 - `predictive-maintenance.service.ts` - System health prediction
 
 ### Notification Services
-- `push-notification-core.service.ts` - Unified push notification delivery (web, iOS, Android)
+- `push-notification.service.ts` - Unified push notification delivery (web, iOS, Android)
 - `push-notification-scheduler.service.ts` - Scheduled notifications
 - `ml-notification-scheduler.service.ts` - ML-powered scheduling
 - `fcm.service.ts` - Firebase Cloud Messaging

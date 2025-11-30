@@ -1,5 +1,5 @@
 import cron, { ScheduledTask } from "node-cron";
-import { PushNotificationService } from "./push-notification-core.service";
+import { PushNotificationService } from "./push-notification.service";
 import { db } from "../db";
 import { users, mealPlans } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
