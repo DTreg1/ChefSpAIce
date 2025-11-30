@@ -2,7 +2,7 @@ import { ChefHat, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DOMPurify from "isomorphic-dompurify";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { VoiceControls } from "@/components/voice-controls";
+import { VoiceControls } from "@/components/voice";
 import { EnrichedContent } from "@/components/enriched-content";
 
 interface ChatMessageProps {

@@ -126,7 +126,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Edit, Trash2, UtensilsCrossed, Info, Plus, Minus, Calendar, Check, X, MapPin, ChevronDown, ChevronUp, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditFoodDialog } from "./edit-food-dialog";
-import { NutritionFactsDialog } from "./nutrition-facts-dialog";
+import { NutritionFactsDialog } from "@/components/nutrition-facts-dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";

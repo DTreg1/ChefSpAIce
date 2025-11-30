@@ -3,3 +3,8 @@ export { VoicePermissionModal } from './VoicePermissionModal';
 export { TranscriptDisplay } from './TranscriptDisplay';
 export { VoiceCommandHelper } from './VoiceCommandHelper';
 export { VoiceFeedback, useVoiceFeedback } from './VoiceFeedback';
+export { VoiceControl } from './VoiceControl';
+export { VoiceControls } from './voice-controls';
+export { VoiceActivityIndicator } from './voice-activity-indicator';
+export { AudioRecorder } from './AudioRecorder';
+export { VoiceCommands } from './VoiceCommands';

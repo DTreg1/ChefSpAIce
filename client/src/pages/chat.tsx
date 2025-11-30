@@ -7,7 +7,7 @@ import { RecipeCard, UnifiedRecipeDialog } from "@/components/recipes";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { LoadingDots } from "@/components/loaders";
 import { FeedbackButtons } from "@/components/feedback-buttons";
-import { VoiceActivityIndicator } from "@/components/voice-activity-indicator";
+import { VoiceActivityIndicator } from "@/components/voice";
 import { Button } from "@/components/ui/button";
 import { ChefHat, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

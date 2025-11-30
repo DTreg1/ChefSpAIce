@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { AudioRecorder } from "@/components/AudioRecorder";
+import { AudioRecorder } from "@/components/voice";
 import { TranscriptEditor } from "@/components/TranscriptEditor";
 import { PlaybackControls, TimestampJump } from "@/components/PlaybackControls";
 import { ExportOptions, ExportFormat } from "@/components/ExportOptions";

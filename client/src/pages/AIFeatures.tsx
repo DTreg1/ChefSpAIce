@@ -20,7 +20,7 @@ import {
 
 // Import all ML feature components
 import { AIChatAssistant } from "@/components/chat";
-import { VoiceCommands } from "@/components/VoiceCommands";
+import { VoiceCommands } from "@/components/voice";
 import { EmailDrafting } from "@/components/EmailDrafting";
 import { WritingAssistant } from "@/components/WritingAssistant";
 
