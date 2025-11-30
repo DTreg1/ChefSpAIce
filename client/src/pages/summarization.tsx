@@ -7,11 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileText, Sparkles, Copy } from "lucide-react";
-import SummaryCard from "@/components/summary-card";
-import SummaryToggle from "@/components/summary-toggle";
-import SummaryLengthSelector from "@/components/summary-length-selector";
-import BulletSummary from "@/components/bullet-summary";
-import KeyPointsHighlighter from "@/components/key-points-highlighter";
+import {
+  SummaryCardLegacy as SummaryCard,
+  SummaryToggleLegacy as SummaryToggle,
+  SummaryLengthSelector,
+  BulletSummaryLegacy as BulletSummary,
+  KeyPointsHighlighter,
+} from "@/components/summaries";
 import type { Summary } from "@shared/schema";
 
 // Sample article for testing (approximately 1000 words)
