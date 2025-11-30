@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, LineChart, TrendingUp, Activity, Users, DollarSign, RefreshCw } from "lucide-react";
-import { InsightCard, AnomalyAlert, InsightDigest, AskAnalytics } from "@/components/analytics";
+import { InsightCard, AnomalyAlert, InsightDigest, AskAnalytics, PerformanceMetrics } from "@/components/analytics";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { AnalyticsInsight } from "@shared/schema";
@@ -221,6 +221,7 @@ export default function AnalyticsDashboard() {
         <TabsList>
           <TabsTrigger value="insights" data-testid="tab-insights">All Insights</TabsTrigger>
           <TabsTrigger value="digest" data-testid="tab-digest">Daily Digest</TabsTrigger>
+          <TabsTrigger value="performance" data-testid="tab-performance">Performance</TabsTrigger>
           <TabsTrigger value="ask" data-testid="tab-ask">Ask Analytics</TabsTrigger>
         </TabsList>
 
@@ -266,6 +267,10 @@ export default function AnalyticsDashboard() {
 
         <TabsContent value="digest">
           <InsightDigest insights={dailySummary} />
+        </TabsContent>
+
+        <TabsContent value="performance">
+          <PerformanceMetrics />
         </TabsContent>
 
         <TabsContent value="ask">

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { SuspiciousActivityAlert } from "@/components/suspicious-activity-alert";
 import { UserRiskProfile } from "@/components/user-risk-profile";
+import { FraudMetrics } from "@/components/analytics/fraud-metrics";
 import {
   Card,
   CardContent,
@@ -439,6 +440,8 @@ export default function FraudDashboard() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
+          <FraudMetrics refreshInterval={30000} />
+          
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>

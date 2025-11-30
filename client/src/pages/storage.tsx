@@ -13,11 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, X, Trash2, Package, Calendar, CheckSquare, Square, Check } from "lucide-react";
+import { Plus, X, Trash2, Package, Calendar, CheckSquare, Square, Check, ScanLine, Sparkles } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { format, addDays } from "date-fns";
 import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";
+import { BarcodeScanQueue } from "@/components/barcode-scan-queue";
+import { BatchCategorizationDialog } from "@/components/auto-categorization";
 
 // Virtual scrolling component for large food grids with multi-select support
 interface VirtualizedFoodGridProps {
@@ -139,6 +141,7 @@ export default function Storage() {
   const [, params] = useRoute("/storage/:location");
   const [, setLocation] = useLocation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [barcodeScanQueueOpen, setBarcodeScanQueueOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -211,6 +214,18 @@ export default function Storage() {
   const handleRecipeGenerated = (_recipe: Recipe) => {
     // Navigate to chat to see the recipe
     setLocation("/");
+  };
+
+  // Handle barcode scan queue submission
+  const handleBarcodeQueueSubmit = async (scannedItems: Array<{ barcode: string; title?: string; brand?: string }>) => {
+    toast({
+      title: "Processing scanned items",
+      description: `Adding ${scannedItems.length} items to inventory...`,
+    });
+    
+    // For now, just open the add dialog - in the future, this could batch-add items
+    setAddDialogOpen(true);
+    queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.list] });
   };
 
   const handleItemSelect = (id: string) => {
@@ -518,6 +533,22 @@ export default function Storage() {
                 </Button>
               )}
               <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
+              <BatchCategorizationDialog 
+                trigger={
+                  <Button variant="outline" data-testid="button-batch-categorize">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Auto-Categorize</span>
+                  </Button>
+                }
+              />
+              <Button 
+                variant="outline"
+                onClick={() => setBarcodeScanQueueOpen(true)}
+                data-testid="button-rapid-scan"
+              >
+                <ScanLine className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Rapid Scan</span>
+              </Button>
               <Button 
                 onClick={() => setAddDialogOpen(true)} 
                 className="touch-target"
@@ -574,6 +605,11 @@ export default function Storage() {
       </div>
 
       <AddFoodDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <BarcodeScanQueue 
+        open={barcodeScanQueueOpen} 
+        onOpenChange={setBarcodeScanQueueOpen}
+        onSubmitQueue={handleBarcodeQueueSubmit}
+      />
     </>
   );
 }

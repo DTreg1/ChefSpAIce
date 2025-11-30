@@ -2,9 +2,12 @@ import { Redirect } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Activity, Users, BarChart3, Settings } from "lucide-react";
+import { Shield, Activity, Users, BarChart3, Settings, Copy, MessageSquareWarning } from "lucide-react";
 import { AdminActivityMonitor } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge";
+import { DuplicateManager } from "@/components/duplicate-manager";
+import { DuplicateDetection } from "@/components/duplicate-detection";
+import { ModerationQueue, ModerationStats } from "@/components/moderation";
 
 export default function AdminDashboard() {
   const { user, isLoading } = useAuth();
@@ -46,14 +49,22 @@ export default function AdminDashboard() {
       </div>
       
       <Tabs defaultValue="activity" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="activity" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
-            Activity Monitor
+            Activity
+          </TabsTrigger>
+          <TabsTrigger value="moderation" className="flex items-center gap-2">
+            <MessageSquareWarning className="h-4 w-4" />
+            Moderation
+          </TabsTrigger>
+          <TabsTrigger value="duplicates" className="flex items-center gap-2">
+            <Copy className="h-4 w-4" />
+            Duplicates
           </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            User Management
+            Users
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
@@ -61,13 +72,27 @@ export default function AdminDashboard() {
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            System Settings
+            Settings
           </TabsTrigger>
         </TabsList>
         
         {/* Activity Monitor Tab */}
         <TabsContent value="activity" className="space-y-6">
           <AdminActivityMonitor />
+        </TabsContent>
+        
+        {/* Moderation Tab */}
+        <TabsContent value="moderation" className="space-y-6">
+          <ModerationStats isAdmin={true} />
+          <ModerationQueue isAdmin={true} />
+        </TabsContent>
+        
+        {/* Duplicates Tab */}
+        <TabsContent value="duplicates" className="space-y-6">
+          <div className="grid gap-6">
+            <DuplicateDetection />
+            <DuplicateManager />
+          </div>
         </TabsContent>
         
         {/* User Management Tab */}

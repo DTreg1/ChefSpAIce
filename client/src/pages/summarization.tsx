@@ -8,10 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileText, Sparkles, Copy } from "lucide-react";
 import {
-  SummaryCardLegacy as SummaryCard,
-  SummaryToggleLegacy as SummaryToggle,
+  SummaryCard,
+  SummaryToggle,
   SummaryLengthSelector,
-  BulletSummaryLegacy as BulletSummary,
+  BulletSummary,
   KeyPointsHighlighter,
 } from "@/components/summaries";
 import type { Summary } from "@shared/schema";
@@ -251,7 +251,7 @@ export default function SummarizationPage() {
               {/* Toggle between summary and original */}
               <div className="flex justify-end">
                 <SummaryToggle
-                  showSummary={showSummaryView}
+                  isVisible={showSummaryView}
                   onToggle={() => setShowSummaryView(!showSummaryView)}
                 />
               </div>
@@ -260,9 +260,13 @@ export default function SummarizationPage() {
                 <div className="space-y-4">
                   {/* Summary Card */}
                   <SummaryCard
-                    summary={currentSummary}
-                    onEdit={handleEditSummary}
-                    showOriginal={true}
+                    summary={currentSummary.summary}
+                    type={currentSummary.summaryType as 'tldr' | 'bullet' | 'paragraph'}
+                    wordCount={currentSummary.wordCountSummary || 0}
+                    originalWordCount={currentSummary.wordCountOriginal || undefined}
+                    originalContent={currentSummary.originalContent}
+                    keyPoints={currentSummary.keyPoints || undefined}
+                    onEdit={(newText) => handleEditSummary(currentSummary.id, newText)}
                   />
 
                   {/* Key Points if available */}
