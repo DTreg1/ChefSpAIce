@@ -1,75 +1,69 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, memo } from "react";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Copy, Edit2, Check, X, Save } from "lucide-react";
+import { 
+  ChevronDown, 
+  ChevronUp, 
+  FileText, 
+  Edit, 
+  Save, 
+  X,
+  Zap
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import type { Summary } from "@shared/schema";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SummaryCardProps {
-  summary: Summary;
-  onEdit?: (summaryId: string, editedText: string) => Promise<void>;
-  showOriginal?: boolean;
+  summary: string;
+  originalContent?: string;
+  type: 'tldr' | 'bullet' | 'paragraph';
+  wordCount: number;
+  originalWordCount?: number;
+  keyPoints?: string[];
+  isEdited?: boolean;
+  compressionRatio?: number;
+  onEdit?: (newText: string) => void;
+  onDelete?: () => void;
+  className?: string;
 }
 
-export default function SummaryCard({ summary, onEdit, showOriginal = false }: SummaryCardProps) {
+export const SummaryCard = memo(function SummaryCard({
+  summary,
+  originalContent,
+  type,
+  wordCount,
+  originalWordCount,
+  keyPoints,
+  isEdited = false,
+  compressionRatio,
+  onEdit,
+  onDelete,
+  className = ""
+}: SummaryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedText, setEditedText] = useState(summary.summary || '');
-  const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
+  const [editedText, setEditedText] = useState(summary);
 
   useEffect(() => {
-    setEditedText(summary.summary || '');
+    setEditedText(summary);
     setIsEditing(false);
-    setCopied(false);
-  }, [summary.id, summary.summary]);
+    setIsExpanded(false);
+  }, [summary]);
 
-  const compressionRatio = summary.wordCountOriginal && summary.wordCountSummary
-    ? Math.round((1 - summary.wordCountSummary / summary.wordCountOriginal) * 100)
-    : summary.compressionRatio ? Math.round(summary.compressionRatio * 100) : 0;
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(editedText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast({
-        description: "Summary copied to clipboard",
-      });
-    } catch (error) {
-      toast({
-        title: "Copy failed",
-        description: "Could not copy summary to clipboard",
-        variant: "destructive",
-      });
+  const handleSave = () => {
+    if (onEdit && editedText !== summary) {
+      onEdit(editedText);
     }
-  };
-
-  const handleSave = async () => {
-    if (onEdit) {
-      try {
-        await onEdit(summary.id, editedText);
-        setIsEditing(false);
-        toast({
-          description: "Summary updated successfully",
-        });
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          description: "Failed to update summary",
-        });
-      }
-    }
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setEditedText(summary.summary || '');
+    setEditedText(summary);
     setIsEditing(false);
   };
 
-  const formatSummaryType = (type: string) => {
+  const formatType = (type: string) => {
     switch (type) {
       case 'tldr':
         return 'TL;DR';
@@ -82,136 +76,179 @@ export default function SummaryCard({ summary, onEdit, showOriginal = false }: S
     }
   };
 
+  const renderSummary = () => {
+    if (isEditing) {
+      return (
+        <Textarea
+          value={editedText}
+          onChange={(e) => setEditedText(e.target.value)}
+          className="min-h-[100px] resize-y"
+          data-testid="textarea-edit-summary"
+        />
+      );
+    }
+
+    if (type === 'bullet') {
+      const bullets = summary.split('\n').filter(line => line.trim());
+      return (
+        <ul className="space-y-2">
+          {bullets.map((bullet, index) => (
+            <li key={index} className="flex items-start gap-2">
+              <span className="text-muted-foreground mt-1">•</span>
+              <span className="flex-1">{bullet.replace(/^[•\-*]\s*/, '')}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    return <p className="whitespace-pre-wrap">{summary}</p>;
+  };
+
   return (
-    <Card className="w-full" data-testid="card-summary">
-      <CardHeader>
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-lg">Summary</CardTitle>
+    <Card className={`hover-elevate ${className}`}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
             <Badge variant="secondary" data-testid="badge-summary-type">
-              {formatSummaryType(summary.summaryType || 'summary')}
+              {formatType(type)}
             </Badge>
-            <Badge variant="outline" className="text-green-600 dark:text-green-400" data-testid="badge-compression">
-              -{compressionRatio}%
-            </Badge>
+            {isEdited && (
+              <Badge variant="outline" data-testid="badge-edited">
+                <Edit className="h-3 w-3 mr-1" />
+                Edited
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {!isEditing && onEdit && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsEditing(true)}
+                data-testid="button-edit-summary"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {originalContent && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsExpanded(!isExpanded)}
+                data-testid="button-toggle-expand"
+              >
+                {isExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onDelete}
+                data-testid="button-delete-summary"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
-        <CardDescription>
-          {summary.wordCountSummary || 0} words • {summary.summaryType === 'bullets' ? 'bullets' : 'summary'}
-        </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Summary Text */}
-        <div className="space-y-2">
-          {isEditing ? (
-            <div className="space-y-2">
-              <Textarea
-                value={editedText}
-                onChange={(e) => setEditedText(e.target.value)}
-                className="min-h-[100px] resize-none"
-                placeholder="Edit your summary..."
-                data-testid="textarea-edit-summary"
-              />
-              <div className="flex gap-2 justify-end">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleCancel}
-                  data-testid="button-cancel-edit"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  data-testid="button-save-edit"
-                >
-                  <Save className="h-4 w-4 mr-1" />
-                  Save
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="prose dark:prose-invert max-w-none">
-              <div className="whitespace-pre-wrap" data-testid="text-summary">
-                {editedText}
-              </div>
-            </div>
-          )}
-        </div>
+        {renderSummary()}
 
-        {/* Key Points */}
-        {summary.keyPoints && summary.keyPoints.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-semibold text-muted-foreground">Key Points</h4>
-            <ul className="space-y-1" data-testid="list-key-points">
-              {summary.keyPoints.map((point, idx) => (
-                <li key={idx} className="text-sm flex items-start">
-                  <span className="text-primary mr-2 mt-0.5">•</span>
+        {isEditing && (
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              onClick={handleSave}
+              data-testid="button-save-edit"
+            >
+              <Save className="h-4 w-4 mr-1" />
+              Save
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleCancel}
+              data-testid="button-cancel-edit"
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        <AnimatePresence>
+          {isExpanded && originalContent && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="border-t pt-4"
+            >
+              <h4 className="font-semibold text-sm mb-2 text-muted-foreground">
+                Original Content
+              </h4>
+              <div className="max-h-[400px] overflow-y-auto">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {originalContent}
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {keyPoints && keyPoints.length > 0 && (
+          <div className="border-t pt-4">
+            <h4 className="font-semibold text-sm mb-2 flex items-center gap-1">
+              <Zap className="h-4 w-4" />
+              Key Points
+            </h4>
+            <ul className="space-y-1">
+              {keyPoints.map((point, index) => (
+                <li 
+                  key={index} 
+                  className="text-sm text-muted-foreground flex items-start gap-2"
+                  data-testid={`text-keypoint-${index}`}
+                >
+                  <span className="text-primary">→</span>
                   <span>{point}</span>
                 </li>
               ))}
             </ul>
           </div>
         )}
-
-        {/* Original Content (Expandable) */}
-        {showOriginal && summary.originalContent && (
-          <div className="border-t pt-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full justify-between"
-              data-testid="button-toggle-original"
-            >
-              <span>Original Content ({summary.wordCountOriginal || 0} words)</span>
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-            
-            {isExpanded && (
-              <div className="mt-4 p-4 bg-muted rounded-md max-h-96 overflow-y-auto">
-                <p className="text-sm whitespace-pre-wrap" data-testid="text-original-content">
-                  {summary.originalContent}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
 
-      <CardFooter className="flex justify-end gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          data-testid="button-copy-summary"
-        >
-          {copied ? (
-            <Check className="h-4 w-4 mr-1" />
-          ) : (
-            <Copy className="h-4 w-4 mr-1" />
+      <CardFooter className="pt-3 border-t">
+        <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <span data-testid="text-word-count">
+              {wordCount} words
+            </span>
+            {originalWordCount && (
+              <>
+                <span>•</span>
+                <span data-testid="text-original-word-count">
+                  Original: {originalWordCount} words
+                </span>
+              </>
+            )}
+          </div>
+          {compressionRatio !== undefined && (
+            <Badge variant="outline" className="ml-auto" data-testid="badge-compression">
+              {compressionRatio}% reduction
+            </Badge>
           )}
-          {copied ? 'Copied' : 'Copy'}
-        </Button>
-        {onEdit && !isEditing && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsEditing(true)}
-            data-testid="button-edit-summary"
-          >
-            <Edit2 className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
-        )}
+        </div>
       </CardFooter>
     </Card>
   );
-}
+});

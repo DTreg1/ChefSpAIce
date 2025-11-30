@@ -1,32 +1,46 @@
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, ListChecks } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 
 interface SummaryToggleProps {
-  showSummary: boolean;
-  onToggle: () => void;
+  isVisible: boolean;
   isLoading?: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+  className?: string;
+  size?: "sm" | "default" | "lg" | "icon";
+  variant?: "default" | "outline" | "secondary" | "ghost" | "destructive";
 }
 
-export default function SummaryToggle({ showSummary, onToggle, isLoading = false }: SummaryToggleProps) {
+export const SummaryToggle = memo(function SummaryToggle({
+  isVisible,
+  isLoading = false,
+  onToggle,
+  disabled = false,
+  className = "",
+  size = "default",
+  variant = "outline"
+}: SummaryToggleProps) {
   return (
     <Button
-      variant={showSummary ? "default" : "outline"}
       onClick={onToggle}
-      disabled={isLoading}
-      size="sm"
+      disabled={disabled || isLoading}
+      className={className}
+      size={size}
+      variant={variant}
       data-testid="button-toggle-summary"
     >
-      {showSummary ? (
+      {isLoading ? (
         <>
-          <FileText className="h-4 w-4 mr-2" />
-          Show Full Text
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Generating...
         </>
       ) : (
         <>
-          <ListChecks className="h-4 w-4 mr-2" />
-          Show TL;DR
+          <FileText className="mr-2 h-4 w-4" />
+          {isVisible ? "Hide TL;DR" : "Show TL;DR"}
         </>
       )}
     </Button>
   );
-}
+});
