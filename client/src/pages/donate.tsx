@@ -14,11 +14,9 @@ import { Heart, Loader2, ChevronLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 
-// Load Stripe with public key
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Load Stripe with public key (conditionally to avoid crashes)
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
 
 // Donation form component that handles payment processing
 const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: { 
@@ -290,10 +288,42 @@ export default function DonatePage() {
     }
   };
 
-  // Create initial payment intent
+  // Create initial payment intent only if Stripe is configured
   useEffect(() => {
-    createPaymentIntent(selectedAmount);
+    if (stripePromise) {
+      createPaymentIntent(selectedAmount);
+    }
   }, []);
+
+  // Show a friendly message if Stripe is not configured
+  if (!stripePromise) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-6">
+          <Link href="/">
+            <Button variant="ghost" size="sm" data-testid="button-back">
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Home
+            </Button>
+          </Link>
+        </div>
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <Heart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <CardTitle>Donations Coming Soon</CardTitle>
+            <CardDescription>
+              We're still setting up our donation system. Please check back later!
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Thank you for your interest in supporting us. We appreciate your patience.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
