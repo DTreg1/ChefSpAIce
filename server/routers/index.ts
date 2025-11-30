@@ -113,6 +113,7 @@ import activityLogsRouter from "./platform/activity-logs.router";
 import intelligentNotificationsRouter from "./platform/intelligent-notifications.router";
 import fraudRouter from "./platform/fraud.router";
 import schedulingRouter from "./platform/scheduling.router";
+import donationsRouter from "./platform/donations.router";
 
 // AI services (consolidated under platform)
 import contentRouter from "./platform/ai/content.router";       // Merges: generation, drafting, excerpt, writing
@@ -212,6 +213,10 @@ export function setupRouters(app: Application): void {
   // Specialized Services
   app.use(`${API_PREFIX}/fraud-detection`, fraudRouter);
   app.use(`${API_PREFIX}/scheduling`, schedulingRouter);
+  
+  // Donations (no auth required for public access)
+  app.use(`${API_PREFIX}/donations`, donationsRouter);
+  app.use('/api/donations', donationsRouter); // Legacy path
   
   // AI Services (consolidated under platform)
   app.use(`${API_PREFIX}/ai/content`, contentRouter);    // Generation, drafting, excerpts, writing
