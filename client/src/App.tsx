@@ -21,7 +21,7 @@ import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import ErrorBoundary from "@/components/error-boundary";
 // Keep critical providers eagerly loaded for proper initialization
 import { PushNotificationHandler } from "@/components/notifications";
-import { VoiceControl } from "@/components/voice/voice-control";
+import { VoiceControl } from "@/components/voice";
 import { ChatWidget } from "@/components/chat";
 
 // Eagerly loaded pages (critical path)

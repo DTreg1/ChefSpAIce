@@ -14,11 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { SummaryCard } from "@/components/summaries/summary-card";
-import { SummaryToggle } from "@/components/summaries/summary-toggle";
-import { SummaryLength } from "@/components/summaries/summary-length";
-import { BulletSummary, QuickBulletList } from "@/components/summaries/bullet-summary";
-import { KeyPoints, InlineKeyPoints } from "@/components/summaries/key-points";
+import { SummaryCard, SummaryToggle, SummaryLength, BulletSummary, QuickBulletList, KeyPoints, InlineKeyPoints } from "@/components/summaries";
 import { Loader2, FileText, Sparkles, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
