@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,11 @@ export default function SummaryCard({ summary, onEdit, showOriginal = false }: S
   const [editedText, setEditedText] = useState(summary.summary || '');
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setEditedText(summary.summary || '');
+    setIsEditing(false);
+  }, [summary.id, summary.summary]);
 
   const compressionRatio = summary.wordCountOriginal && summary.wordCountSummary
     ? Math.round((1 - summary.wordCountSummary / summary.wordCountOriginal) * 100)

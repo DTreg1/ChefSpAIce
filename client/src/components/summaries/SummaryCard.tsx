@@ -1,4 +1,4 @@
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,11 @@ export const SummaryCard = memo(function SummaryCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(summary);
+
+  useEffect(() => {
+    setEditedText(summary);
+    setIsEditing(false);
+  }, [summary]);
 
   const handleSave = () => {
     if (onEdit && editedText !== summary) {
