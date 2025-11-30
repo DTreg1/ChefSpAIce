@@ -26,6 +26,26 @@ interface RevenueImpactProps {
   confidence: number;
 }
 
+// Helper function to parse formatted numeric strings (e.g., "+$12.3K", "-5.2%")
+const parseFormattedValue = (value: string): number => {
+  if (typeof value !== 'string') return 0;
+  
+  // Remove currency symbols, spaces, and percent signs
+  let cleaned = value.replace(/[$%\s]/g, '');
+  
+  // Handle K (thousands) and M (millions) suffixes
+  if (cleaned.endsWith('K')) {
+    return parseFloat(cleaned.slice(0, -1)) * 1000 || 0;
+  }
+  if (cleaned.endsWith('M')) {
+    return parseFloat(cleaned.slice(0, -1)) * 1000000 || 0;
+  }
+  
+  // Parse as regular number
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 export function RevenueImpact({
   productId,
   productName,
@@ -37,10 +57,10 @@ export function RevenueImpact({
   // Calculate price change percentage
   const priceChange = ((recommendedPrice - currentPrice) / currentPrice) * 100;
   
-  // Parse impact values
-  const revenueImpact = parseFloat(projectedImpact.revenue);
-  const conversionImpact = parseFloat(projectedImpact.conversionRate);
-  const demandImpact = parseFloat(projectedImpact.demandChange);
+  // Parse impact values robustly
+  const revenueImpact = parseFormattedValue(projectedImpact.revenue);
+  const conversionImpact = parseFormattedValue(projectedImpact.conversionRate);
+  const demandImpact = parseFormattedValue(projectedImpact.demandChange);
 
   // Generate projection data (30 days)
   const projectionData = useMemo(() => {
