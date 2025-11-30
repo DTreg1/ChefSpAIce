@@ -2,10 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Calendar, TrendingUp, TrendingDown, Users, Activity } from "lucide-react";
+import { Calendar, TrendingUp, TrendingDown, Users, Activity, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
+import { useToast } from "@/hooks/use-toast";
 import type { Cohort, CohortMetric } from "@shared/schema";
 
 interface CohortTimelineProps {
@@ -14,11 +16,16 @@ interface CohortTimelineProps {
 }
 
 export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
+  const { toast } = useToast();
+  
   const metricsQuery = useQuery({
     queryKey: [API_ENDPOINTS.admin.cohorts.item(cohortId), 'metrics'],
     queryFn: async () => {
       const response = await fetch(`${API_ENDPOINTS.admin.cohorts.item(cohortId)}/metrics`);
-      if (!response.ok) throw new Error("Failed to fetch metrics");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch metrics");
+      }
       const data = await response.json();
       
       // Group metrics by date
@@ -58,6 +65,7 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
   }
   
   if (metricsQuery.error) {
+    const errorMessage = (metricsQuery.error as Error).message || "Failed to load timeline data";
     return (
       <Card>
         <CardHeader>
@@ -66,9 +74,17 @@ export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
             Timeline
           </CardTitle>
           <CardDescription>
-            Error loading timeline: {(metricsQuery.error as Error).message}
+            Failed to load timeline metrics
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
       </Card>
     );
   }

@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Target, 
   TrendingUp, 
@@ -11,7 +12,8 @@ import {
   Settings,
   Zap,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
 import type { UserPrediction } from "@shared/schema";
 
@@ -37,7 +39,7 @@ const ACTION_DESCRIPTIONS: Record<string, string> = {
 };
 
 export function PredictedActions({ userId, onActionClick }: PredictedActionsProps) {
-  const { data, isLoading, refetch } = useQuery<{ predictions: UserPrediction[] }>({
+  const { data, isLoading, error, refetch } = useQuery<{ predictions: UserPrediction[] }>({
     queryKey: ['/api/predict/user', userId],
     queryFn: async () => {
       if (!userId) return null;
@@ -45,7 +47,10 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!response.ok) throw new Error('Failed to fetch predictions');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch predictions');
+      }
       return response.json();
     },
     enabled: !!userId,
@@ -67,6 +72,33 @@ export function PredictedActions({ userId, onActionClick }: PredictedActionsProp
               <div key={i} className="h-12 bg-muted rounded"></div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    const errorMessage = (error as Error).message || "Failed to load predictions";
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Predicted User Actions
+          </CardTitle>
+          <CardDescription>Unable to load behavioral predictions</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+          <Button onClick={() => refetch()} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
         </CardContent>
       </Card>
     );

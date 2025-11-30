@@ -23,7 +23,10 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
     queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)],
     queryFn: async () => {
       const response = await fetch(API_ENDPOINTS.admin.cohorts.insights(cohortId));
-      if (!response.ok) throw new Error("Failed to fetch insights");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch insights");
+      }
       const data = await response.json();
       return data.insights as CohortInsight[];
     },
@@ -133,6 +136,26 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
             </Card>
           ))}
         </div>
+      </div>
+    );
+  }
+  
+  if (insightsQuery.error) {
+    const errorMessage = (insightsQuery.error as Error).message || "Failed to load insights";
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            AI Insights
+          </h3>
+        </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {errorMessage}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
