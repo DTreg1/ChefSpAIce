@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Copy, Check, Edit, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { type GeneratedDraft } from "@shared/schema";
 
 interface DraftSuggestionsProps {
@@ -30,6 +31,7 @@ export function DraftSuggestions({
   onRegenerateDraft,
 }: DraftSuggestionsProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleCopyDraft = async (draft: GeneratedDraft) => {
     try {
@@ -37,8 +39,16 @@ export function DraftSuggestions({
       setCopiedId(draft.id);
       onSelectDraft(draft);
       setTimeout(() => setCopiedId(null), 2000);
+      toast({
+        title: "Copied to clipboard",
+        description: "Draft copied successfully",
+      });
     } catch (err) {
-      console.error("Failed to copy text:", err);
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy draft. Please check your browser permissions or try again.",
+        variant: "destructive",
+      });
     }
   };
 

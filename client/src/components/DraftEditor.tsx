@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Save, X, Copy, Check } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { type GeneratedDraft } from "@shared/schema";
 
 interface DraftEditorProps {
@@ -29,6 +30,7 @@ export function DraftEditor({ draft, onSave, onCancel, onCopy }: DraftEditorProp
   const [tone, setTone] = useState(draft.metadata?.tone || "formal");
   const [copied, setCopied] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setContent(draft.editedContent || draft.generatedContent);
@@ -52,8 +54,16 @@ export function DraftEditor({ draft, onSave, onCancel, onCopy }: DraftEditorProp
       setCopied(true);
       onCopy?.(content);
       setTimeout(() => setCopied(false), 2000);
+      toast({
+        title: "Copied to clipboard",
+        description: "Draft content copied successfully",
+      });
     } catch (err) {
-      console.error("Failed to copy text:", err);
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy content. Please check your browser permissions or try again.",
+        variant: "destructive",
+      });
     }
   };
 
