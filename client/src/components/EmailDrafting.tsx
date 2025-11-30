@@ -169,15 +169,23 @@ export function EmailDrafting() {
     }
   });
 
-  const handleCopyDraft = (draft: GeneratedDraft) => {
-    navigator.clipboard.writeText(draft.draftContent);
-    setCopiedId(draft.id);
-    setTimeout(() => setCopiedId(null), 2000);
-    selectDraftMutation.mutate({ id: draft.id, edited: false });
-    toast({
-      title: "Copied",
-      description: "Draft copied to clipboard."
-    });
+  const handleCopyDraft = async (draft: GeneratedDraft) => {
+    try {
+      await navigator.clipboard.writeText(draft.draftContent);
+      setCopiedId(draft.id);
+      setTimeout(() => setCopiedId(null), 2000);
+      selectDraftMutation.mutate({ id: draft.id, edited: false });
+      toast({
+        title: "Copied",
+        description: "Draft copied to clipboard."
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy draft to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

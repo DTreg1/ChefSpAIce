@@ -210,14 +210,22 @@ export function WritingAssistant() {
     }
   });
 
-  const handleCopyText = () => {
-    navigator.clipboard.writeText(text);
-    setCopiedText(true);
-    setTimeout(() => setCopiedText(false), 2000);
-    toast({
-      title: "Copied",
-      description: "Text copied to clipboard"
-    });
+  const handleCopyText = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(true);
+      setTimeout(() => setCopiedText(false), 2000);
+      toast({
+        title: "Copied",
+        description: "Text copied to clipboard"
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy text to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   const getSuggestionIcon = (type: string) => {

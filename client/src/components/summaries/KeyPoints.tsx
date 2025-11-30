@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 interface KeyPointsProps {
   keyPoints: string[];
@@ -33,14 +34,22 @@ export const KeyPoints = memo(function KeyPoints({
   className = ""
 }: KeyPointsProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const { toast } = useToast();
 
   const handleCopy = async (point: string, index: number) => {
     try {
       await navigator.clipboard.writeText(point);
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 2000);
+      toast({
+        description: "Key point copied to clipboard",
+      });
     } catch (err) {
-      console.error("Failed to copy:", err);
+      toast({
+        title: "Copy failed",
+        description: "Could not copy key point to clipboard",
+        variant: "destructive",
+      });
     }
   };
 

@@ -20,6 +20,7 @@ import {
   TestTube
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface FieldDefinition {
   id: string;
@@ -54,6 +55,7 @@ export function TemplateBuilder({
   onSave,
   className
 }: TemplateBuilderProps) {
+  const { toast } = useToast();
   const [templateName, setTemplateName] = useState(initialTemplate?.name || '');
   const [templateDescription, setTemplateDescription] = useState(initialTemplate?.description || '');
   const [fields, setFields] = useState<FieldDefinition[]>(
@@ -164,9 +166,21 @@ export function TemplateBuilder({
   };
 
   // Copy template JSON
-  const copyTemplateJson = () => {
-    const template = generateTemplate();
-    navigator.clipboard.writeText(JSON.stringify(template, null, 2));
+  const copyTemplateJson = async () => {
+    try {
+      const template = generateTemplate();
+      await navigator.clipboard.writeText(JSON.stringify(template, null, 2));
+      toast({
+        title: "Copied",
+        description: "Template JSON copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy template to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle save

@@ -7,18 +7,55 @@ import { HelpCircle, Send, Loader2, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
+import { useToast } from "@/hooks/use-toast";
 
 export function AskAnalytics() {
   const [question, setQuestion] = useState("");
   const [explanation, setExplanation] = useState("");
+  const { toast } = useToast();
 
   const explainMutation = useMutation({
     mutationFn: async (metricName: string) => {
-      const response = await apiRequest(API_ENDPOINTS.ai.analysis.insights.explain, "POST", { metricName });
-      return response as unknown as { explanation: string };
+      try {
+        const response = await apiRequest(API_ENDPOINTS.ai.analysis.insights.explain, "POST", { metricName });
+        
+        // Validate API response structure
+        if (!response || typeof response !== 'object') {
+          throw new Error("Invalid response format from server");
+        }
+        
+        // Check for error response from API
+        const data = response as { explanation?: string; error?: string };
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        if (typeof data.explanation !== 'string') {
+          throw new Error("Missing or invalid explanation in response");
+        }
+        
+        return { explanation: data.explanation };
+      } catch (error) {
+        // Re-throw with a user-friendly message
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error("Failed to get explanation. Please try again.");
+      }
+    },
+    onMutate: () => {
+      // Clear previous explanation when starting a new request
+      setExplanation("");
     },
     onSuccess: (data) => {
       setExplanation(data.explanation);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Request failed",
+        description: error.message || "Failed to get explanation. Please try again.",
+        variant: "destructive",
+      });
     }
   });
 

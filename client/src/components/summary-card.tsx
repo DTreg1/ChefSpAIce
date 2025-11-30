@@ -31,12 +31,20 @@ export default function SummaryCard({ summary, onEdit, showOriginal = false }: S
     : summary.compressionRatio ? Math.round(summary.compressionRatio * 100) : 0;
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(editedText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({
-      description: "Summary copied to clipboard",
-    });
+    try {
+      await navigator.clipboard.writeText(editedText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({
+        description: "Summary copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy summary to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = async () => {
