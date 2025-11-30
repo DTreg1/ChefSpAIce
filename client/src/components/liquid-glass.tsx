@@ -61,11 +61,7 @@ export function LiquidGlassButton({
     if (enableHaptics) {
       hapticButton();
     }
-    if (onClick) {
-      onClick(e);
-    } else if (buttonProps.onClick) {
-      buttonProps.onClick(e);
-    }
+    onClick?.();
   };
 
   // Map custom sizes to Button component sizes
