@@ -8,7 +8,7 @@ import { termDetector } from "../../services/term-detector.service";
 const router = Router();
 
 // Get all cooking terms
-router.get("/api/cooking-terms", asyncHandler(async (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   const { category, search } = req.query;
   
   let terms;
@@ -25,8 +25,26 @@ router.get("/api/cooking-terms", asyncHandler(async (req, res) => {
   res.json(terms);
 }));
 
+// Get cooking term categories
+router.get("/categories", asyncHandler(async (req, res) => {
+  const categories = await CookingTermsService.getCategories();
+  res.json(categories);
+}));
+
+// Search cooking terms
+router.get("/search/:query", asyncHandler(async (req, res) => {
+  const { query } = req.params;
+  
+  if (!query || query.length < 2) {
+    return res.status(400).json({ error: "Search query must be at least 2 characters" });
+  }
+  
+  const results = await CookingTermsService.searchTerms(query);
+  res.json(results);
+}));
+
 // Get a single cooking term
-router.get("/api/cooking-terms/:term", asyncHandler(async (req, res) => {
+router.get("/:term", asyncHandler(async (req, res) => {
   const { term } = req.params;
   
   const termData = await CookingTermsService.getTerm(term);
@@ -38,14 +56,16 @@ router.get("/api/cooking-terms/:term", asyncHandler(async (req, res) => {
   res.json(termData);
 }));
 
-// Get cooking term categories
-router.get("/api/cooking-terms-categories", asyncHandler(async (req, res) => {
-  const categories = await CookingTermsService.getCategories();
-  res.json(categories);
+// Get related terms
+router.get("/:term/related", asyncHandler(async (req, res) => {
+  const { term } = req.params;
+  
+  const relatedTerms = await CookingTermsService.getRelatedTerms(term);
+  res.json(relatedTerms);
 }));
 
 // Detect cooking terms in text
-router.post("/api/cooking-terms/detect", asyncHandler(async (req, res) => {
+router.post("/detect", asyncHandler(async (req, res) => {
   const { text  } = req.body || {};
   
   if (!text || typeof text !== "string") {
@@ -57,7 +77,7 @@ router.post("/api/cooking-terms/detect", asyncHandler(async (req, res) => {
 }));
 
 // Format recipe instructions with cooking terms
-router.post("/api/cooking-terms/format", asyncHandler(async (req, res) => {
+router.post("/format", asyncHandler(async (req, res) => {
   const { instructions  } = req.body || {};
   
   if (!instructions || typeof instructions !== "string") {
@@ -68,28 +88,8 @@ router.post("/api/cooking-terms/format", asyncHandler(async (req, res) => {
   res.json({ formatted: formattedInstructions });
 }));
 
-// Get related terms
-router.get("/api/cooking-terms/:term/related", asyncHandler(async (req, res) => {
-  const { term } = req.params;
-  
-  const relatedTerms = await CookingTermsService.getRelatedTerms(term);
-  res.json(relatedTerms);
-}));
-
-// Search cooking terms
-router.get("/api/cooking-terms/search/:query", asyncHandler(async (req, res) => {
-  const { query } = req.params;
-  
-  if (!query || query.length < 2) {
-    return res.status(400).json({ error: "Search query must be at least 2 characters" });
-  }
-  
-  const results = await CookingTermsService.searchTerms(query);
-  res.json(results);
-}));
-
 // Enhanced term detection - detect terms with variations
-router.post("/api/cooking-terms/detect-enhanced", asyncHandler(async (req, res) => {
+router.post("/detect-enhanced", asyncHandler(async (req, res) => {
   const { text, excludeCategories, maxMatches, contextAware  } = req.body || {};
   
   if (!text || typeof text !== "string") {
@@ -110,7 +110,7 @@ router.post("/api/cooking-terms/detect-enhanced", asyncHandler(async (req, res) 
 }));
 
 // Enrich text with HTML markup for terms
-router.post("/api/cooking-terms/enrich", asyncHandler(async (req, res) => {
+router.post("/enrich", asyncHandler(async (req, res) => {
   const { text, excludeCategories, linkToGlossary, includeTooltip  } = req.body || {};
   
   if (!text || typeof text !== "string") {
@@ -131,7 +131,7 @@ router.post("/api/cooking-terms/enrich", asyncHandler(async (req, res) => {
 }));
 
 // Get detection statistics for text
-router.post("/api/cooking-terms/stats", asyncHandler(async (req, res) => {
+router.post("/stats", asyncHandler(async (req, res) => {
   const { text  } = req.body || {};
   
   if (!text || typeof text !== "string") {
@@ -143,7 +143,7 @@ router.post("/api/cooking-terms/stats", asyncHandler(async (req, res) => {
 }));
 
 // Initialize/refresh term detector
-router.post("/api/cooking-terms/refresh", asyncHandler(async (req, res) => {
+router.post("/refresh", asyncHandler(async (req, res) => {
   await termDetector.refresh();
   res.json({ message: "Term detector refreshed successfully" });
 }));

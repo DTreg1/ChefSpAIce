@@ -8,6 +8,33 @@ import { storage } from "../../storage/index";
 const router = Router();
 const objectStorage = new ObjectStorageService();
 
+/**
+ * GET /
+ * Returns the authenticated user's profile information.
+ */
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const user = req.user;
+    res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      username: user.username,
+      profileImageUrl: user.profileImageUrl,
+      createdAt: user.createdAt,
+    });
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    res.status(500).json({ 
+      message: error instanceof Error ? error.message : "Failed to fetch profile" 
+    });
+  }
+});
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {

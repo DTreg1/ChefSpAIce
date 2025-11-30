@@ -18,7 +18,7 @@ const router = Router();
 // ==================== MEAL PLAN ENDPOINTS ====================
 
 /**
- * GET /meal-plans
+ * GET /
  * 
  * Retrieves meal plans for the authenticated user with optional filtering.
  * 
@@ -28,7 +28,7 @@ const router = Router();
  * - endDate: String (optional) - Filter by date range end
  * - mealType: String (optional) - Filter by meal type (breakfast, lunch, dinner, snack)
  */
-router.get("/meal-plans", isAuthenticated, async (req: Request, res: Response) => {
+router.get("/", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -57,7 +57,7 @@ router.get("/meal-plans", isAuthenticated, async (req: Request, res: Response) =
 });
 
 /**
- * POST /meal-plans
+ * POST /
  * 
  * Creates a new meal plan entry.
  * 
@@ -69,7 +69,7 @@ router.get("/meal-plans", isAuthenticated, async (req: Request, res: Response) =
  * - notes: String (optional) - Additional notes
  */
 router.post(
-  "/meal-plans",
+  "/",
   isAuthenticated,
   async (req: Request, res: Response) => {
     try {
@@ -98,7 +98,7 @@ router.post(
 );
 
 /**
- * PUT /meal-plans/:id
+ * PUT /:id
  * 
  * Updates an existing meal plan.
  * 
@@ -108,7 +108,7 @@ router.post(
  * Request Body: Partial meal plan fields to update
  */
 router.put(
-  "/meal-plans/:id",
+  "/:id",
   isAuthenticated,
   async (req: Request, res: Response) => {
     try {
@@ -134,14 +134,14 @@ router.put(
 );
 
 /**
- * DELETE /meal-plans/:id
+ * DELETE /:id
  * 
  * Deletes a meal plan.
  * 
  * Path Parameters:
  * - id: String - Meal plan ID to delete
  */
-router.delete("/meal-plans/:id", isAuthenticated, async (req: Request, res: Response) => {
+router.delete("/:id", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });

@@ -23,6 +23,9 @@ import {
 } from "../../utils/ai-error-handler";
 import { getCircuitBreaker } from "../../utils/circuit-breaker";
 import { chatService } from "../../services/chat.service";
+import { storage } from "../../storage/index";
+import { openai } from "../../integrations/openai";
+import { insertChatMessageSchema, type ChatMessage } from "@shared/schema";
 
 const router = Router();
 
@@ -216,6 +219,209 @@ router.post(
     }
   }
 );
+
+/**
+ * POST /messages
+ * 
+ * Creates a new chat message (typically from client-side storage sync).
+ */
+router.post("/messages", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const validation = insertChatMessageSchema.safeParse(req.body);
+    
+    if (!validation.success) {
+      return res.status(400).json({
+        error: "Validation error",
+        details: validation.error.errors
+      });
+    }
+
+    const message = await storage.user.chat.createChatMessage(userId, validation.data);
+    res.json(message);
+  } catch (error) {
+    console.error("Error creating chat message:", error);
+    res.status(500).json({ error: "Failed to create chat message" });
+  }
+});
+
+/**
+ * POST /
+ * 
+ * Main AI chat endpoint powered by OpenAI GPT-4.
+ * Provides conversational cooking assistance with inventory awareness.
+ */
+router.post(
+  "/",
+  isAuthenticated,
+  rateLimiters.openai.middleware(),
+  async (req: Request, res: Response) => {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    let assistantMessage = "";
+    
+    try {
+      const { message, includeInventory } = req.body || {};
+
+      if (!message) {
+        const error = new AIError(
+          'Message is required',
+          AIErrorCode.UNKNOWN,
+          400,
+          false,
+          'Please provide a message'
+        );
+        return res.status(400).json(createErrorResponse(error));
+      }
+
+      if (!openai) {
+        const error = new AIError(
+          'OpenAI API not configured',
+          AIErrorCode.UNKNOWN,
+          500,
+          false,
+          'AI service is not configured. Please contact support.'
+        );
+        return res.status(500).json(createErrorResponse(error));
+      }
+
+      // Persist user message to database for conversation history
+      await storage.user.chat.createChatMessage(userId, {
+        role: "user",
+        content: message,
+      });
+
+      // Build inventory context when requested
+      let inventoryContext = "";
+      if (includeInventory) {
+        const items = await storage.user.inventory.getFoodItems(userId);
+        
+        if (items.length > 0) {
+          inventoryContext = `\n\nUser's current food inventory:\n${items
+            .map((item: any) => `- ${item.name}: ${item.quantity} ${item.unit || ""} (${item.foodCategory || "uncategorized"})`)
+            .join("\n")}`;
+        }
+      }
+
+      // Fetch recent conversation history to maintain context
+      const history = await storage.user.chat.getChatMessages(userId, 10);
+
+      const messages: any[] = [
+        {
+          role: "system",
+          content: `You are ChefSpAIce, a helpful cooking assistant. You provide recipe suggestions, cooking tips, and meal planning advice. Be concise but friendly.${inventoryContext}`,
+        },
+        ...history.reverse().map((msg: ChatMessage) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+      ];
+
+      // Execute through circuit breaker with retry logic
+      const completion = await chatCircuitBreaker.execute(async () => {
+        return await retryWithBackoff(async () => {
+          return await openai.chat.completions.create({
+            model: "gpt-4-turbo",
+            messages,
+            temperature: 0.7,
+            max_tokens: 500,
+          });
+        }, {
+          maxRetries: 3,
+          initialDelay: 1000,
+          maxDelay: 10000
+        });
+      });
+
+      assistantMessage = completion.choices[0].message?.content || "";
+
+      if (!assistantMessage) {
+        throw new AIError(
+          'Empty response from AI',
+          AIErrorCode.UNKNOWN,
+          502,
+          true,
+          'AI returned an empty response. Please try again.'
+        );
+      }
+
+      // Save assistant message
+      const saved = await storage.user.chat.createChatMessage(userId, {
+        role: "assistant",
+        content: assistantMessage,
+      });
+
+      // Log successful API usage
+      await batchedApiLogger.logApiUsage(userId, {
+        apiName: "openai",
+        endpoint: "chat",
+        method: "POST" as const,
+        statusCode: 200,
+      });
+
+      res.json({
+        message: assistantMessage,
+        saved,
+      });
+    } catch (error: Error | unknown) {
+      // Log the error details
+      console.error("Error in chat:", formatErrorForLogging(error));
+      
+      // Log failed API usage
+      const aiError = error instanceof AIError ? error : handleOpenAIError(error);
+      await batchedApiLogger.logApiUsage(userId, {
+        apiName: "openai",
+        endpoint: "chat",
+        method: "POST" as const,
+        statusCode: aiError.statusCode,
+      }).catch(logError => {
+        console.error('Failed to log API error:', logError);
+      });
+      
+      // Send error response
+      const errorResponse = createErrorResponse(error);
+      res.status(aiError.statusCode).json(errorResponse);
+    }
+  }
+);
+
+/**
+ * GET /messages
+ * 
+ * Retrieves chat message history for the authenticated user.
+ * Messages are ordered chronologically for display in the chat UI.
+ */
+router.get("/messages", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const messages = await storage.user.chat.getChatMessages(userId, limit);
+    res.json(messages.reverse());
+  } catch (error) {
+    console.error("Error fetching chat messages:", error);
+    res.status(500).json({ error: "Failed to fetch chat messages" });
+  }
+});
+
+/**
+ * DELETE /messages
+ * 
+ * Clears all chat history for the authenticated user.
+ */
+router.delete("/messages", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    await storage.user.chat.deleteChatHistory(userId);
+    res.json({ message: "Chat history cleared" });
+  } catch (error) {
+    console.error("Error clearing chat messages:", error);
+    res.status(500).json({ error: "Failed to clear chat messages" });
+  }
+});
 
 /**
  * GET /api/chat/stream/health
