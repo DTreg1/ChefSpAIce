@@ -23,7 +23,7 @@ import {
   WifiOff
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 import { errorCodeToIcon, getErrorTitle } from '@/hooks/use-ai-error-handler';
 
 interface ErrorMetrics {
@@ -61,6 +61,29 @@ export function AIErrorMonitor() {
   const { data: metrics, isLoading, refetch } = useQuery<ErrorMetrics>({
     queryKey: ['/api/admin/ai-metrics'],
     refetchInterval: 5000, // Auto-refresh every 5 seconds
+    select: (data) => {
+      // Parse ISO string timestamps to Date objects
+      return {
+        ...data,
+        recentErrors: data.recentErrors?.map(error => ({
+          ...error,
+          timestamp: typeof error.timestamp === 'string' ? parseISO(error.timestamp) : error.timestamp
+        })) || [],
+        circuitBreakerStatus: {
+          ...data.circuitBreakerStatus,
+          lastFailureTime: data.circuitBreakerStatus?.lastFailureTime
+            ? (typeof data.circuitBreakerStatus.lastFailureTime === 'string' 
+              ? parseISO(data.circuitBreakerStatus.lastFailureTime) 
+              : data.circuitBreakerStatus.lastFailureTime)
+            : undefined,
+          nextAttemptTime: data.circuitBreakerStatus?.nextAttemptTime
+            ? (typeof data.circuitBreakerStatus.nextAttemptTime === 'string' 
+              ? parseISO(data.circuitBreakerStatus.nextAttemptTime) 
+              : data.circuitBreakerStatus.nextAttemptTime)
+            : undefined
+        }
+      };
+    }
   });
 
   const [selectedTimeRange, setSelectedTimeRange] = useState('1h');
@@ -173,7 +196,7 @@ export function AIErrorMonitor() {
             </div>
             {metrics?.circuitBreakerStatus?.nextAttemptTime && (
               <p className="text-xs text-muted-foreground mt-2">
-                Next attempt in {formatDistanceToNow(new Date(metrics.circuitBreakerStatus.nextAttemptTime))}
+                Next attempt in {formatDistanceToNow(metrics.circuitBreakerStatus.nextAttemptTime)}
               </p>
             )}
           </CardContent>
@@ -222,7 +245,7 @@ export function AIErrorMonitor() {
                               {error.endpoint}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(error.timestamp), { addSuffix: true })}
+                              {formatDistanceToNow(error.timestamp, { addSuffix: true })}
                             </span>
                             {error.retryCount > 0 && (
                               <Badge variant="secondary" className="text-xs">
