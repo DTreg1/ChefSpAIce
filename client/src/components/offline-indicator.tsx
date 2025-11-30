@@ -3,7 +3,7 @@ import { WifiOff, Wifi } from "lucide-react";
 
 export function OfflineIndicator() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [showToast, setShowToast] = useState(false);
+  const [showToast, setShowToast] = useState(!navigator.onLine);
 
   useEffect(() => {
     const handleOnline = () => {
