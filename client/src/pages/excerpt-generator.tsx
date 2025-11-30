@@ -33,7 +33,7 @@ import {
 import { ExcerptEditor, type ExcerptGenerationOptions } from "@/components/excerpt-editor";
 import { ExcerptPreview } from "@/components/excerpt-preview";
 import { ExcerptTester } from "@/components/excerpt-tester";
-import { PerformanceMetrics } from "@/components/performance-metrics";
+import { PerformanceMetrics } from "@/components/analytics";
 import type { Excerpt } from "@shared/schema";
 
 // Sample content for demonstration

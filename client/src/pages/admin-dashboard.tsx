@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Activity, Users, BarChart3, Settings } from "lucide-react";
-import AdminActivityMonitor from "@/components/AdminActivityMonitor";
+import { AdminActivityMonitor } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge";
 
 export default function AdminDashboard() {
