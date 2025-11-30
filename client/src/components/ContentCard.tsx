@@ -52,8 +52,15 @@ export const ContentCard = ({
     return "outline";
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    // Guard against undefined or empty dates
+    if (!dateString) return "Unknown";
+    
     const date = new Date(dateString);
+    
+    // Guard against invalid dates
+    if (isNaN(date.getTime())) return "Unknown";
+    
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -125,7 +132,7 @@ export const ContentCard = ({
                 <span>{metadata.readTime} min read</span>
               </div>
             )}
-            {metadata?.publishedAt && (
+            {metadata?.publishedAt && formatDate(metadata.publishedAt) !== "Unknown" && (
               <span>{formatDate(metadata.publishedAt)}</span>
             )}
           </div>
