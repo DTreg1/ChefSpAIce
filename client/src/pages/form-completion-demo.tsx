@@ -26,8 +26,8 @@ import {
   SmartFormField,
   FormMemoryToggle,
   AutoFillAllButton,
-} from "@/components/smart-form-field";
-import { AutoCompleteInput } from "@/components/auto-complete-input";
+  AutoCompleteInput,
+} from "@/components/forms";
 import { Input } from "@/components/ui/input";
 import {
   Brain,

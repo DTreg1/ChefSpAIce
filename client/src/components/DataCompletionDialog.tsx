@@ -38,7 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { DataQualityIndicator } from "./DataQualityIndicator";
+import { DataQualityIndicator } from "@/components/forms";
 import { 
   Search, 
   AlertTriangle, 

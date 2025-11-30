@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, CreditCard, Calendar, Globe, MapPin, User, FileText, Info } from "lucide-react";
-import { SmartValidation, ValidationSuccess, FormatHelper } from "@/components/SmartValidation";
+import { SmartValidation, ValidationSuccess, FormatHelper } from "@/components/forms";
 import { useSmartValidation } from "@/hooks/use-smart-validation";
 import { useToast } from "@/hooks/use-toast";
 
