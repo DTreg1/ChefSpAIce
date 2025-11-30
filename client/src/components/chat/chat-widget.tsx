@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChatInterface } from "./ChatInterface";
+import { ChatInterface } from "./chat-interface";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { Textarea } from "@/components/ui/textarea";

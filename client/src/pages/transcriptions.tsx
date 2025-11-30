@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { AudioRecorder } from "@/components/voice";
-import { TranscriptEditor } from "@/components/TranscriptEditor";
-import { PlaybackControls, TimestampJump } from "@/components/PlaybackControls";
-import { ExportOptions, ExportFormat } from "@/components/ExportOptions";
+import { TranscriptEditor } from "@/components/transcript-editor";
+import { PlaybackControls, TimestampJump } from "@/components/playback-controls";
+import { ExportOptions, ExportFormat } from "@/components/export-options";
 import { cn } from "@/lib/utils";
 import { 
   FileAudio, 

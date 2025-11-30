@@ -19,7 +19,7 @@ import {
   BarChart2,
   Award
 } from "lucide-react";
-import { LanguageSelector } from "./LanguageSelector";
+import { LanguageSelector } from "./language-selector";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 

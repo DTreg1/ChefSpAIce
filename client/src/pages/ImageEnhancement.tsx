@@ -13,11 +13,11 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImageEditor } from "@/components/images/ImageEditor";
-import { BeforeAfter } from "@/components/images/BeforeAfter";
-import { PresetSelector } from "@/components/images/PresetSelector";
-import { BatchUploader } from "@/components/images/BatchUploader";
-import { QualitySettings } from "@/components/images/QualitySettings";
+import { ImageEditor } from "@/components/images/image-editor";
+import { BeforeAfter } from "@/components/images/before-after";
+import { PresetSelector } from "@/components/images/preset-selector";
+import { BatchUploader } from "@/components/images/batch-uploader";
+import { QualitySettings } from "@/components/images/quality-settings";
 import { 
   Image as ImageIcon,
   Wand2,

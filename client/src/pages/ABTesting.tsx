@@ -1,4 +1,4 @@
-import ABTestDashboard from "@/components/ab-testing/ABTestDashboard";
+import ABTestDashboard from "@/components/ab-testing/ab-test-dashboard";
 
 export default function ABTesting() {
   return (

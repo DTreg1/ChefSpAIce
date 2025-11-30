@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChatInterface, ConversationSidebar } from '@/components/chat';
-import { QuickActions } from '@/components/QuickActions';
+import { QuickActions } from '@/components/quick-actions';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Bot } from 'lucide-react';
 

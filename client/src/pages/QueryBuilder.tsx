@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { NaturalQueryInput } from "@/components/NaturalQueryInput";
-import { QueryResults } from "@/components/QueryResults";
-import { QueryHistory } from "@/components/QueryHistory";
-import { SavedQueries } from "@/components/SavedQueries";
+import { NaturalQueryInput } from "@/components/natural-query-input";
+import { QueryResults } from "@/components/query-results";
+import { QueryHistory } from "@/components/query-history";
+import { SavedQueries } from "@/components/saved-queries";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Database, History, BookmarkIcon } from "lucide-react";
 

@@ -6,7 +6,7 @@ import {
   SearchResults, 
   SearchHighlightWithContext,
   type SearchResult 
-} from "@/components/SemanticSearch";
+} from "@/components/semantic-search";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

@@ -22,8 +22,8 @@ import { X, LogOut, Refrigerator, Snowflake, Pizza, UtensilsCrossed, Activity, A
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationSettings, IntelligentNotificationSettings } from "@/components/notifications";
-import ActivityTimeline from "@/components/ActivityTimeline";
-import ActivityPrivacyControls from "@/components/ActivityPrivacyControls";
+import ActivityTimeline from "@/components/activity-timeline";
+import ActivityPrivacyControls from "@/components/activity-privacy-controls";
 import type { User } from "@shared/schema";
 
 const storageAreaOptions = [

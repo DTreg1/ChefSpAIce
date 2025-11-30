@@ -18,9 +18,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { SentimentIndicator, type SentimentData } from "@/components/sentiment/SentimentIndicator";
-import { EmotionTags } from "@/components/sentiment/EmotionTags";
-import { SentimentTrendChart } from "@/components/sentiment/SentimentTrendChart";
+import { SentimentIndicator, type SentimentData } from "@/components/sentiment/sentiment-indicator";
+import { EmotionTags } from "@/components/sentiment/emotion-tags";
+import { SentimentTrendChart } from "@/components/sentiment/sentiment-trend-chart";
 import { useToast } from "@/hooks/use-toast";
 import { 
   BrainIcon, 

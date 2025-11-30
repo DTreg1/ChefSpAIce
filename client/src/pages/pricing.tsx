@@ -17,11 +17,11 @@ import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Activity, BarChart3, Calculator, DollarSign, TrendingUp, Users } from "lucide-react";
 
 // Import pricing components
-import { PricingDashboard } from "@/components/pricing/PricingDashboard";
-import { DemandCurve } from "@/components/pricing/DemandCurve";
-import { PriceSimulator } from "@/components/pricing/PriceSimulator";
-import { CompetitorPricing } from "@/components/pricing/CompetitorPricing";
-import { RevenueImpact } from "@/components/pricing/RevenueImpact";
+import { PricingDashboard } from "@/components/pricing/pricing-dashboard";
+import { DemandCurve } from "@/components/pricing/demand-curve";
+import { PriceSimulator } from "@/components/pricing/price-simulator";
+import { CompetitorPricing } from "@/components/pricing/competitor-pricing";
+import { RevenueImpact } from "@/components/pricing/revenue-impact";
 
 interface PricingRule {
   id: string;

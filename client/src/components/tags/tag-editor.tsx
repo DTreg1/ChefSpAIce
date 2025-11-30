@@ -22,9 +22,9 @@ import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
-import { TagInput } from "./TagInput";
-import { TagCloud } from "./TagCloud";
-import { TagSuggestions } from "./TagSuggestions";
+import { TagInput } from "./tag-input";
+import { TagCloud } from "./tag-cloud";
+import { TagSuggestions } from "./tag-suggestions";
 
 interface ContentTagData {
   id: string;

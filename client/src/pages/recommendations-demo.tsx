@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RelatedContentSidebar } from "@/components/RelatedContent";
+import { RelatedContentSidebar } from "@/components/related-content";
 import { ContentCard } from "@/components/cards";
-import { RecommendationCarousel } from "@/components/RecommendationCarousel";
-import { MoreLikeThis } from "@/components/MoreLikeThis";
+import { RecommendationCarousel } from "@/components/recommendation-carousel";
+import { MoreLikeThis } from "@/components/more-like-this";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

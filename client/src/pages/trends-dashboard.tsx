@@ -22,10 +22,10 @@ import {
   Zap,
   Info
 } from "lucide-react";
-import { TrendTimeline } from "@/components/trends/TrendTimeline";
-import { TrendingTopics } from "@/components/trends/TrendingTopics";
-import { TrendAlert } from "@/components/trends/TrendAlert";
-import { TrendPredictor } from "@/components/trends/TrendPredictor";
+import { TrendTimeline } from "@/components/trends/trend-timeline";
+import { TrendingTopics } from "@/components/trends/trending-topics";
+import { TrendAlert } from "@/components/trends/trend-alert";
+import { TrendPredictor } from "@/components/trends/trend-predictor";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Trend {

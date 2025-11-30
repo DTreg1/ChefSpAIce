@@ -18,10 +18,10 @@ import {
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { TemplateBuilder } from '@/components/extraction/TemplateBuilder';
-import { ExtractionPreview } from '@/components/extraction/ExtractionPreview';
-import { BatchProcessor } from '@/components/extraction/BatchProcessor';
-import { DataValidator } from '@/components/extraction/DataValidator';
+import { TemplateBuilder } from '@/components/extraction/template-builder';
+import { ExtractionPreview } from '@/components/extraction/extraction-preview';
+import { BatchProcessor } from '@/components/extraction/batch-processor';
+import { DataValidator } from '@/components/extraction/data-validator';
 
 export default function ExtractionPage() {
   const { toast } = useToast();

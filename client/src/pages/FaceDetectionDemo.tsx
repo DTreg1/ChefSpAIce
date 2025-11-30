@@ -11,10 +11,10 @@
 import { useState } from 'react';
 import { Camera } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FaceDetector } from '@/components/face-detection/FaceDetector';
-import { PrivacyBlur, AnonymizeToggle } from '@/components/face-detection/PrivacyBlur';
-import { FaceCropper } from '@/components/face-detection/FaceCropper';
-import { FaceCounter } from '@/components/face-detection/FaceCounter';
+import { FaceDetector } from '@/components/face-detection/face-detector';
+import { PrivacyBlur, AnonymizeToggle } from '@/components/face-detection/privacy-blur';
+import { FaceCropper } from '@/components/face-detection/face-cropper';
+import { FaceCounter } from '@/components/face-detection/face-counter';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function FaceDetectionDemo() {

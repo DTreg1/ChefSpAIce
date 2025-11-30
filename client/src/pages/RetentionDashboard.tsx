@@ -5,9 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ChurnRiskIndicator } from "@/components/predictions/ChurnRiskIndicator";
-import { PredictedActions } from "@/components/predictions/PredictedActions";
-import { InterventionSuggestions } from "@/components/predictions/InterventionSuggestions";
+import { ChurnRiskIndicator } from "@/components/predictions/churn-risk-indicator";
+import { PredictedActions } from "@/components/predictions/predicted-actions";
+import { InterventionSuggestions } from "@/components/predictions/intervention-suggestions";
 import { 
   Users, 
   TrendingDown, 

@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
-import { CohortBuilder } from "@/components/cohorts/CohortBuilder";
-import { RetentionTable } from "@/components/cohorts/RetentionTable";
-import { CohortComparison } from "@/components/cohorts/CohortComparison";
-import { InsightCards } from "@/components/cohorts/InsightCards";
-import { CohortTimeline } from "@/components/cohorts/CohortTimeline";
+import { CohortBuilder } from "@/components/cohorts/cohort-builder";
+import { RetentionTable } from "@/components/cohorts/retention-table";
+import { CohortComparison } from "@/components/cohorts/cohort-comparison";
+import { InsightCards } from "@/components/cohorts/insight-cards";
+import { CohortTimeline } from "@/components/cohorts/cohort-timeline";
 import { Users, Plus, Sparkles, TrendingUp, Calendar, Filter, RefreshCw } from "lucide-react";
 import type { Cohort } from "@shared/schema";
 

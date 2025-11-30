@@ -18,10 +18,10 @@ import { RouteLoading } from "@/components/loaders";
 import { useAuth } from "@/hooks/useAuth";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
 import { useGlobalKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import ErrorBoundary from "@/components/error-boundary";
 // Keep critical providers eagerly loaded for proper initialization
 import { PushNotificationHandler } from "@/components/notifications";
-import { VoiceControl } from "@/components/voice/VoiceControl";
+import { VoiceControl } from "@/components/voice/voice-control";
 import { ChatWidget } from "@/components/chat";
 
 // Eagerly loaded pages (critical path)

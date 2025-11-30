@@ -1,10 +1,10 @@
 import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
-import { VoiceButton } from "./VoiceButton";
-import { VoicePermissionModal } from "./VoicePermissionModal";
-import { TranscriptDisplay } from "./TranscriptDisplay";
-import { VoiceCommandHelper } from "./VoiceCommandHelper";
-import { useVoiceFeedback } from "./VoiceFeedback";
+import { VoiceButton } from "./voice-button";
+import { VoicePermissionModal } from "./voice-permission-modal";
+import { TranscriptDisplay } from "./transcript-display";
+import { VoiceCommandHelper } from "./voice-command-helper";
+import { useVoiceFeedback } from "./voice-feedback";
 import { Button } from "@/components/ui/button";
 import { HelpCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";

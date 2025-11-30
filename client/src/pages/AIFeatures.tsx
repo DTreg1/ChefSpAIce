@@ -21,8 +21,8 @@ import {
 // Import all ML feature components
 import { AIChatAssistant } from "@/components/chat";
 import { VoiceCommands } from "@/components/voice";
-import { EmailDrafting } from "@/components/EmailDrafting";
-import { WritingAssistant } from "@/components/WritingAssistant";
+import { EmailDrafting } from "@/components/email-drafting";
+import { WritingAssistant } from "@/components/writing-assistant";
 
 export default function AIFeatures() {
   const [activeTab, setActiveTab] = useState("chat");

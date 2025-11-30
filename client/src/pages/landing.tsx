@@ -1,4 +1,4 @@
-import AuthUI from "@/components/AuthUI";
+import AuthUI from "@/components/auth-ui";
 
 export default function Landing() {
   return <AuthUI />;

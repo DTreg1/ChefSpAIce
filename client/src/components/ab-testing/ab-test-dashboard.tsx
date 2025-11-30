@@ -7,11 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, TrendingUp, TrendingDown, Minus, Plus, BarChart3, Users, DollarSign } from "lucide-react";
-import CreateTestDialog from "./CreateTestDialog";
-import VariantComparison from "./VariantComparison";
-import SignificanceCalculator from "./SignificanceCalculator";
-import TestHistory from "./TestHistory";
-import RecommendationCard from "./RecommendationCard";
+import CreateTestDialog from "./create-test-dialog";
+import VariantComparison from "./variant-comparison";
+import SignificanceCalculator from "./significance-calculator";
+import TestHistory from "./test-history";
+import RecommendationCard from "./recommendation-card";
 import { type AbTest, type AbTestResult, type AbTestInsight } from "@shared/schema";
 
 interface TestWithDetails extends AbTest {

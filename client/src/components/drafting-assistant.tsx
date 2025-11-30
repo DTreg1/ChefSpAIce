@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sparkles, Send, RotateCcw, MessageSquare } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { type GeneratedDraft } from "@shared/schema";
-import { DraftSuggestions } from "./DraftSuggestions";
-import { DraftEditor } from "./DraftEditor";
+import { DraftSuggestions } from "./draft-suggestions";
+import { DraftEditor } from "./draft-editor";
 import { useToast } from "@/hooks/use-toast";
 
 const CONTEXT_TYPES = [
