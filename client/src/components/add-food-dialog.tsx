@@ -535,8 +535,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
       if (selectedUpc) {
         searchMethod = `UPC ${selectedUpc}`;
         response = await apiRequest(
-          "GET",
           `${API_ENDPOINTS.barcode.search}/product/${encodeURIComponent(selectedUpc)}`,
+          "GET",
           null,
         );
       } else {
@@ -548,8 +548,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
           // Treat as barcode lookup (will have fallback to OpenFoodFacts)
           searchMethod = `barcode ${simplifiedQuery}`;
           response = await apiRequest(
-            "GET",
             `${API_ENDPOINTS.barcode.search}/product/${encodeURIComponent(simplifiedQuery)}`,
+            "GET",
             null,
           );
         } else {
@@ -559,8 +559,8 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
             : simplifiedQuery;
           searchMethod = `search "${queryWithBrand}"`;
           response = await apiRequest(
-            "GET",
             `${API_ENDPOINTS.barcode.search}?query=${encodeURIComponent(queryWithBrand)}`,
+            "GET",
             null,
           );
         }

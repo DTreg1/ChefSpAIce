@@ -25,7 +25,7 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
 
   useEffect(() => {
     setAnalysis(null);
-  }, [test.id]);
+  }, [test.id, test]);
 
   const analyzeTest = useMutation({
     mutationFn: async () => {

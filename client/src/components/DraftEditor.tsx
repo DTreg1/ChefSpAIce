@@ -37,7 +37,7 @@ export function DraftEditor({ draft, onSave, onCancel, onCopy }: DraftEditorProp
     setTone(draft.metadata?.tone || "formal");
     setHasChanges(false);
     setCopied(false);
-  }, [draft.id, draft.metadata?.tone]);
+  }, [draft.id, draft.metadata?.tone, draft.editedContent, draft.generatedContent]);
 
   const handleContentChange = (value: string) => {
     setContent(value);

@@ -48,6 +48,7 @@ export const SummaryCard = memo(function SummaryCard({
   useEffect(() => {
     setEditedText(summary);
     setIsEditing(false);
+    setIsExpanded(false);
   }, [summary]);
 
   const handleSave = () => {

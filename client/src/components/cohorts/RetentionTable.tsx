@@ -34,7 +34,11 @@ export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }:
             body: JSON.stringify({ periods }),
           });
           const data = await response.json();
-          return { retention: data.retention, cohortName: cohort.cohortName, cohortDate: cohort.createdAt };
+          return { 
+            retention: Array.isArray(data.retention) ? data.retention : data.retention?.retention || [], 
+            cohortName: cohort.cohortName, 
+            cohortDate: cohort.createdAt 
+          };
         })
       );
       return retentionData;

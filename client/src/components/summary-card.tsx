@@ -23,6 +23,7 @@ export default function SummaryCard({ summary, onEdit, showOriginal = false }: S
   useEffect(() => {
     setEditedText(summary.summary || '');
     setIsEditing(false);
+    setCopied(false);
   }, [summary.id, summary.summary]);
 
   const compressionRatio = summary.wordCountOriginal && summary.wordCountSummary
