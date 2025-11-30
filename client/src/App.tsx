@@ -28,6 +28,7 @@ import { ChatWidget } from "@/components/ChatWidget";
 import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
 import Chat from "@/pages/chat"; // Keep Chat eager since it's the default route
+import { AnimatedBackground } from "./components/animated-background";
 
 // Lazy loaded pages (code splitting)
 const Storage = lazy(() => import("@/pages/storage"));
@@ -279,6 +280,14 @@ function AppContent() {
   // Show app layout with header (with or without sidebar based on onboarding status)
   return (
     <>
+      <PushNotificationHandler />
+      <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
+      <UnifiedRecipeDialog
+        open={recipeDialogOpen}
+        onOpenChange={setRecipeDialogOpen}
+      />
+      <AnimatedBackground />
+      {/* SidebarProvider wraps the entire app to manage sidebar state */}
       <SidebarProvider style={style}>
         <div className="flex flex-col h-screen w-full relative overflow-x-hidden">
           {/* Header outside the sidebar container but inside SidebarProvider */}
