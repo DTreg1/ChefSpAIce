@@ -242,15 +242,15 @@ export default function ExtractionPage() {
                 <div className="space-y-2">
                   <Label>Template (Optional)</Label>
                   <Select
-                    value={selectedTemplateId}
-                    onValueChange={setSelectedTemplateId}
+                    value={selectedTemplateId || "default"}
+                    onValueChange={(val) => setSelectedTemplateId(val === "default" ? "" : val)}
                     disabled={templatesLoading}
                   >
                     <SelectTrigger data-testid="select-template">
                       <SelectValue placeholder="Use default order extraction" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Default Order Extraction</SelectItem>
+                      <SelectItem value="default">Default Order Extraction</SelectItem>
                       {templates.map((template: any) => (
                         <SelectItem key={template.id} value={template.id}>
                           {template.name}
