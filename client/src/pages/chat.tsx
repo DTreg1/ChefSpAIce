@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { ChatMessage } from "@/components/chat-message";
-import { ChatInput } from "@/components/chat-input";
+import { ChatMessage, ChatInput } from "@/components/chat";
 import { EmptyState } from "@/components/empty-state";
 import { RecipeCard } from "@/components/recipe-card";
 import { UnifiedRecipeDialog } from "@/components/unified-recipe-dialog";

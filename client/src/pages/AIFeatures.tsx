@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 // Import all ML feature components
-import { AIChatAssistant } from "@/components/AIChatAssistant";
+import { AIChatAssistant } from "@/components/chat";
 import { VoiceCommands } from "@/components/VoiceCommands";
 import { EmailDrafting } from "@/components/EmailDrafting";
 import { WritingAssistant } from "@/components/WritingAssistant";
