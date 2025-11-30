@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Save, X, Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { type GeneratedDraft } from "@shared/schema";
 
 interface DraftEditorProps {
@@ -29,6 +29,13 @@ export function DraftEditor({ draft, onSave, onCancel, onCopy }: DraftEditorProp
   const [tone, setTone] = useState(draft.metadata?.tone || "formal");
   const [copied, setCopied] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    setContent(draft.editedContent || draft.generatedContent);
+    setTone(draft.metadata?.tone || "formal");
+    setHasChanges(false);
+    setCopied(false);
+  }, [draft.id, draft.metadata?.tone]);
 
   const handleContentChange = (value: string) => {
     setContent(value);
