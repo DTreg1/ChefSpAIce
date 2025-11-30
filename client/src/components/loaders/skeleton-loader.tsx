@@ -51,7 +51,7 @@ export function SkeletonLoader({
   );
 }
 
-export function CardSkeleton({ className }: { className?: string }) {
+export function BasicCardSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("rounded-xl border bg-card p-6 space-y-4", className)}>
       <div className="flex items-center gap-4">
