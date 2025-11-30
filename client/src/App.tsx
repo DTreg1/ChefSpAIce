@@ -12,7 +12,7 @@ import { ProgressiveDisclosureProvider } from "@/contexts/ProgressiveDisclosureC
 import { AppSidebar } from "@/components/app-sidebar";
 import { QuickActionsBar } from "@/components/quick-actions-bar";
 import { UnifiedAddFood } from "@/components/unified-add-food";
-import { UnifiedRecipeDialog } from "@/components/unified-recipe-dialog";
+import { UnifiedRecipeDialog } from "@/components/recipes";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { RouteLoading } from "@/components/loaders";
 import { useAuth } from "@/hooks/useAuth";

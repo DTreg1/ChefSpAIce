@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { RecipeCard } from "@/components/recipe-card";
-import { RecipeUpload } from "@/components/recipe-upload";
+import { RecipeCard, RecipeUpload } from "@/components/recipes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, BookOpen, Utensils } from "lucide-react";

@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FoodCard } from "@/components/food-card";
 import { FoodCardSkeletonGrid } from "@/components/loaders";
 import { AddFoodDialog } from "@/components/add-food-dialog";
-import { RecipeGenerator } from "@/components/recipe-generator";
+import { RecipeGenerator } from "@/components/recipes";
 import { ExpirationAlert } from "@/components/expiration-alert";
 import { ProgressiveSection } from "@/components/progressive-section";
 import { Button } from "@/components/ui/button";
