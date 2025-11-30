@@ -2,8 +2,19 @@ import { useEffect, useState } from "react";
 import { WifiOff, Wifi } from "lucide-react";
 
 export function OfflineIndicator() {
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [showToast, setShowToast] = useState(!navigator.onLine);
+  // Initialize based on current connectivity state with SSR safety
+  const [isOffline, setIsOffline] = useState(() => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return false; // Assume online during SSR
+    }
+    return !navigator.onLine;
+  });
+  const [showToast, setShowToast] = useState(() => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return false; // Don't show during SSR
+    }
+    return !navigator.onLine;
+  });
 
   useEffect(() => {
     const handleOnline = () => {

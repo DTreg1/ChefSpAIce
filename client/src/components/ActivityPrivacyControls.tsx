@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, Download, Trash2, Lock, Info } from "lucide-react";
+import { Shield, Download, Trash2, Lock, Info, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PrivacySettings {
@@ -34,14 +34,46 @@ interface PrivacySettings {
   sensitiveActions: string[];
 }
 
+const defaultSettings: PrivacySettings = {
+  hideFromAdmin: false,
+  autoDeleteDays: null,
+  excludeFromAnalytics: false,
+  sensitiveActions: [],
+};
+
 export default function ActivityPrivacyControls() {
   const { toast } = useToast();
-  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
-    hideFromAdmin: false,
-    autoDeleteDays: null,
-    excludeFromAnalytics: false,
-    sensitiveActions: [],
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>(defaultSettings);
+  
+  // Fetch saved privacy settings on mount
+  const { data: savedSettings, isLoading: isLoadingSettings } = useQuery<PrivacySettings>({
+    queryKey: ["/api/user/privacy-settings"],
+    queryFn: async () => {
+      const response = await fetch("/api/user/privacy-settings", {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        // Return defaults if endpoint doesn't exist or fails
+        if (response.status === 404) {
+          return defaultSettings;
+        }
+        throw new Error("Failed to fetch privacy settings");
+      }
+      return response.json();
+    },
   });
+  
+  // Hydrate state when saved settings are loaded
+  useEffect(() => {
+    if (savedSettings) {
+      setPrivacySettings({
+        hideFromAdmin: savedSettings.hideFromAdmin ?? defaultSettings.hideFromAdmin,
+        autoDeleteDays: savedSettings.autoDeleteDays ?? defaultSettings.autoDeleteDays,
+        excludeFromAnalytics: savedSettings.excludeFromAnalytics ?? defaultSettings.excludeFromAnalytics,
+        sensitiveActions: savedSettings.sensitiveActions ?? defaultSettings.sensitiveActions,
+      });
+    }
+  }, [savedSettings]);
   
   // Export activity logs
   const exportMutation = useMutation({
@@ -107,13 +139,10 @@ export default function ActivityPrivacyControls() {
   // Save privacy settings
   const saveSettingsMutation = useMutation({
     mutationFn: async (settings: PrivacySettings) => {
-      // This would save to a user preferences endpoint
-      // For now, just simulate saving
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(settings), 500);
-      });
+      return await apiRequest("/api/user/privacy-settings", "PUT", settings);
     },
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["/api/user/privacy-settings"] });
       toast({
         title: "Success",
         description: "Privacy settings updated successfully.",
@@ -144,6 +173,34 @@ export default function ActivityPrivacyControls() {
   const handleSaveSettings = () => {
     saveSettingsMutation.mutate(privacySettings);
   };
+  
+  // Compute disabled state for controls
+  const isControlsDisabled = isLoadingSettings || saveSettingsMutation.isPending;
+  
+  // Show loading state while fetching saved settings
+  if (isLoadingSettings) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Privacy Settings
+            </CardTitle>
+            <CardDescription>
+              Control how your activity data is collected and shared
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Loading your privacy settings...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -181,7 +238,7 @@ export default function ActivityPrivacyControls() {
                 id="hide-admin"
                 checked={privacySettings.hideFromAdmin}
                 onCheckedChange={handleToggleHideFromAdmin}
-                disabled={saveSettingsMutation.isPending}
+                disabled={isControlsDisabled}
                 data-testid="switch-hide-admin"
               />
             </div>
@@ -199,7 +256,7 @@ export default function ActivityPrivacyControls() {
                 id="exclude-analytics"
                 checked={privacySettings.excludeFromAnalytics}
                 onCheckedChange={handleToggleAnalytics}
-                disabled={saveSettingsMutation.isPending}
+                disabled={isControlsDisabled}
                 data-testid="switch-exclude-analytics"
               />
             </div>
@@ -209,7 +266,7 @@ export default function ActivityPrivacyControls() {
               <Select
                 value={privacySettings.autoDeleteDays?.toString() || "never"}
                 onValueChange={handleAutoDeleteChange}
-                disabled={saveSettingsMutation.isPending}
+                disabled={isControlsDisabled}
               >
                 <SelectTrigger id="auto-delete" data-testid="select-auto-delete">
                   <SelectValue />
