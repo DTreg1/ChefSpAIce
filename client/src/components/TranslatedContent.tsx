@@ -42,24 +42,31 @@ interface Translation {
   updatedAt: string;
 }
 
-// Language code to flag emoji mapping
-const languageFlags: Record<string, string> = {
-  'en': '🇬🇧',
-  'es': '🇪🇸',
-  'fr': '🇫🇷',
-  'de': '🇩🇪',
-  'it': '🇮🇹',
-  'pt': '🇵🇹',
-  'ru': '🇷🇺',
-  'ja': '🇯🇵',
-  'ko': '🇰🇷',
-  'zh': '🇨🇳',
-  'ar': '🇸🇦',
-  'hi': '🇮🇳',
-  'nl': '🇳🇱',
-  'sv': '🇸🇪',
-  'pl': '🇵🇱'
+// Language code to abbreviation mapping for badge display
+const languageAbbreviations: Record<string, string> = {
+  'en': 'EN',
+  'es': 'ES',
+  'fr': 'FR',
+  'de': 'DE',
+  'it': 'IT',
+  'pt': 'PT',
+  'ru': 'RU',
+  'ja': 'JA',
+  'ko': 'KO',
+  'zh': 'ZH',
+  'ar': 'AR',
+  'hi': 'HI',
+  'nl': 'NL',
+  'sv': 'SV',
+  'pl': 'PL'
 };
+
+// Helper to render language badge with abbreviation
+const renderLanguageBadge = (languageCode: string) => (
+  <Badge variant="outline" className="min-w-fit text-xs font-medium">
+    {languageAbbreviations[languageCode] || languageCode.toUpperCase()}
+  </Badge>
+);
 
 export function TranslatedContent({
   contentId,
@@ -248,11 +255,13 @@ export function TranslatedContent({
                 key={translation.languageCode} 
                 value={translation.languageCode}
                 data-testid={`tab-language-${translation.languageCode}`}
+                className="flex items-center gap-1.5"
               >
-                <span className="mr-1">{languageFlags[translation.languageCode] || '🌐'}</span>
-                {getLanguageName(translation.languageCode)}
+                <Badge variant="outline" className="min-w-fit text-xs font-medium">
+                  {languageAbbreviations[translation.languageCode] || translation.languageCode.toUpperCase()}
+                </Badge>
                 {translation.isVerified && (
-                  <CheckCircle className="h-3 w-3 ml-1 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-green-500" />
                 )}
               </TabsTrigger>
             ))}
