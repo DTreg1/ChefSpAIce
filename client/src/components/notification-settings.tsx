@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { User } from "@shared/schema";
 
 export function NotificationSettings() {
@@ -81,7 +82,7 @@ export function NotificationSettings() {
         });
 
         // Send subscription to backend
-        await apiRequest("/api/push-tokens/register", "POST", {
+        await apiRequest(API_ENDPOINTS.notifications.register, "POST", {
           subscription: subscription.toJSON(),
           platform: "web",
         });
@@ -118,7 +119,7 @@ export function NotificationSettings() {
   const disableNotifications = async () => {
     try {
       // Unregister from backend
-      await apiRequest("/api/push-tokens/unregister", "DELETE", {
+      await apiRequest(API_ENDPOINTS.notifications.unregister, "DELETE", {
         platform: "web",
       });
 
@@ -229,7 +230,7 @@ export function NotificationSettings() {
                 size="sm"
                 onClick={async () => {
                   try {
-                    const response = await apiRequest("POST", "/api/push-tokens/test");
+                    const response = await apiRequest("POST", API_ENDPOINTS.notifications.test);
                     const result = await response.json();
                     toast({
                       title: "Test Sent",

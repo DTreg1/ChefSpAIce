@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { API_ENDPOINTS } from '@/lib/api-endpoints';
 
 interface FaceDetection {
   boundingBox: {
@@ -48,7 +49,7 @@ export function FaceDetector() {
       const formData = new FormData();
       formData.append('image', file);
       
-      return apiRequest('/api/faces/detect', 'POST', formData) as Promise<DetectionResponse>;
+      return apiRequest(API_ENDPOINTS.ai.media.vision.faces.detect, 'POST', formData) as Promise<DetectionResponse>;
     },
     onSuccess: (data) => {
       setDetections(data.detections);

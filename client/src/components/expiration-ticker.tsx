@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 type ExpirationNotification = {
   id: string;
@@ -13,7 +14,7 @@ type ExpirationNotification = {
 
 export function ExpirationTicker() {
   const { data: notifications } = useQuery<ExpirationNotification[]>({
-    queryKey: ["/api/notifications/expiration"],
+    queryKey: [API_ENDPOINTS.notifications.list, 'expiration'],
   });
 
   const hasNotifications = notifications && notifications.length > 0;

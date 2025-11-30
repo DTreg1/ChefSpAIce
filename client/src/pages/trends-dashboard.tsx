@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,25 +64,25 @@ export default function TrendsDashboard() {
 
   // Fetch current trends
   const { data: currentTrends, isLoading: loadingCurrent } = useQuery<{ trends: Trend[] }>({
-    queryKey: ["/api/trends/current"],
+    queryKey: [API_ENDPOINTS.ai.analysis.trends.current],
     refetchInterval: 60000, // Refresh every minute
   });
 
   // Fetch emerging trends
   const { data: emergingTrends, isLoading: loadingEmerging } = useQuery<{ trends: Trend[] }>({
-    queryKey: ["/api/trends/emerging"],
+    queryKey: [API_ENDPOINTS.ai.analysis.trends.emerging],
     refetchInterval: 60000,
   });
 
   // Fetch user's trend alerts
   const { data: userAlerts, isLoading: loadingAlerts } = useQuery<{ alerts: TrendAlert[] }>({
-    queryKey: ["/api/trends/alerts"],
+    queryKey: [`${API_ENDPOINTS.ai.analysis.trends.current}/alerts`],
   });
 
   // Mutation to trigger trend analysis
   const analyzeTrends = useMutation({
     mutationFn: async (params: any) => {
-      return apiRequest("/api/trends/analyze", "POST", params);
+      return apiRequest(API_ENDPOINTS.ai.analysis.trends.analyze, "POST", params);
     },
     onSuccess: (data) => {
       toast({
@@ -89,9 +90,9 @@ export default function TrendsDashboard() {
         description: `Detected ${data.trends?.length || 0} new trends`,
       });
       // Invalidate all trend-related queries to refresh the dashboard
-      queryClient.invalidateQueries({ queryKey: ["/api/trends/current"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/trends/emerging"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/trends/alerts"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.trends.current] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.trends.emerging] });
+      queryClient.invalidateQueries({ queryKey: [`${API_ENDPOINTS.ai.analysis.trends.current}/alerts`] });
     },
     onError: (error: any) => {
       toast({
@@ -105,14 +106,14 @@ export default function TrendsDashboard() {
   // Mutation to subscribe to alerts
   const subscribeToAlerts = useMutation({
     mutationFn: async (params: any) => {
-      return apiRequest("/api/trends/subscribe", "POST", params);
+      return apiRequest(`${API_ENDPOINTS.ai.analysis.trends.current}/subscribe`, "POST", params);
     },
     onSuccess: () => {
       toast({
         title: "Subscribed",
         description: "You'll be notified when this trend condition is met",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/trends/alerts"] });
+      queryClient.invalidateQueries({ queryKey: [`${API_ENDPOINTS.ai.analysis.trends.current}/alerts`] });
     },
     onError: (error: any) => {
       toast({

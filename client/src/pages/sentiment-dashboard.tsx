@@ -8,6 +8,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS, API_BASE } from "@/lib/api-endpoints";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -155,7 +156,7 @@ export default function SentimentDashboard() {
 
   // Fetch dashboard data with metrics and alerts
   const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard } = useQuery({
-    queryKey: ['/api/sentiment/dashboard', selectedPeriod, periodType],
+    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'dashboard', selectedPeriod, periodType],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedPeriod) {
@@ -163,7 +164,7 @@ export default function SentimentDashboard() {
         params.append('periodType', periodType);
       }
       
-      const response = await apiRequest('GET', `/api/sentiment/dashboard?${params}`);
+      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.sentiment}/dashboard?${params}`);
       const data = await response.json();
       return data as DashboardData;
     }
@@ -171,9 +172,9 @@ export default function SentimentDashboard() {
 
   // Fetch active alerts
   const { data: activeAlerts, isLoading: alertsLoading, refetch: refetchAlerts } = useQuery({
-    queryKey: ['/api/sentiment/alerts/active'],
+    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'alerts', 'active'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/sentiment/alerts/active?limit=10');
+      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.sentiment}/alerts/active?limit=10`);
       const data = await response.json();
       return data.alerts as SentimentAlert[];
     }
@@ -181,12 +182,12 @@ export default function SentimentDashboard() {
 
   // Fetch sentiment insights
   const { data: insights, isLoading: insightsLoading, refetch: refetchInsights } = useQuery({
-    queryKey: ['/api/sentiment/insights', viewMode],
+    queryKey: [API_ENDPOINTS.ai.analysis.insights.all, viewMode],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (viewMode === 'global') params.append('global', 'true');
       
-      const response = await apiRequest('GET', `/api/sentiment/insights?${params}`);
+      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.insights.all}?${params}`);
       const data = await response.json();
       return data.insights as SentimentInsights;
     }
@@ -194,14 +195,14 @@ export default function SentimentDashboard() {
 
   // Fetch sentiment trends
   const { data: trends, isLoading: trendsLoading } = useQuery({
-    queryKey: ['/api/sentiment/trends', periodType, viewMode],
+    queryKey: [API_ENDPOINTS.ai.analysis.trends.current, periodType, viewMode],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.append('periodType', periodType);
       if (viewMode === 'global') params.append('global', 'true');
       params.append('limit', '30');
       
-      const response = await apiRequest('GET', `/api/sentiment/trends?${params}`);
+      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.trends.current}?${params}`);
       const data = await response.json();
       return data.trends;
     }
@@ -209,9 +210,9 @@ export default function SentimentDashboard() {
 
   // Fetch user's sentiment history
   const { data: history, isLoading: historyLoading } = useQuery({
-    queryKey: ['/api/sentiment/user', 'current'],
+    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'user', 'current'],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/sentiment/user/current');
+      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.sentiment}/user/current`);
       const data = await response.json();
       return data.analyses as SentimentAnalysis[];
     }
@@ -219,7 +220,7 @@ export default function SentimentDashboard() {
 
   // Fetch sentiment breakdown
   const { data: breakdown, isLoading: breakdownLoading } = useQuery({
-    queryKey: ['/api/sentiment/breakdown', selectedPeriod, periodType],
+    queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'breakdown', selectedPeriod, periodType],
     queryFn: async () => {
       if (!selectedPeriod) return null;
       
@@ -227,7 +228,7 @@ export default function SentimentDashboard() {
       params.append('period', selectedPeriod);
       params.append('periodType', periodType);
       
-      const response = await apiRequest('GET', `/api/sentiment/breakdown?${params}`);
+      const response = await apiRequest('GET', `${API_ENDPOINTS.ai.analysis.sentiment}/breakdown?${params}`);
       const data = await response.json();
       return data.breakdown;
     },
@@ -237,7 +238,7 @@ export default function SentimentDashboard() {
   // Mutation for analyzing text
   const analyzeMutation = useMutation({
     mutationFn: async (text: string) => {
-      const response = await apiRequest('POST', '/api/sentiment/analyze', { 
+      const response = await apiRequest('POST', API_ENDPOINTS.ai.analysis.sentiment, { 
         content: text,
         contentType: 'test'
       });
@@ -251,7 +252,7 @@ export default function SentimentDashboard() {
         description: `Sentiment: ${data.sentiment} (${Math.round(data.confidence * 100)}% confidence)`,
       });
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/sentiment'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.sentiment] });
     },
     onError: (error: any) => {
       toast({
@@ -265,7 +266,7 @@ export default function SentimentDashboard() {
   // Mutation for acknowledging alerts
   const acknowledgeAlertMutation = useMutation({
     mutationFn: async ({ alertId, status }: { alertId: string; status: 'acknowledged' | 'resolved' }) => {
-      const response = await apiRequest('PATCH', `/api/sentiment/alerts/${alertId}`, { status });
+      const response = await apiRequest('PATCH', `${API_ENDPOINTS.ai.analysis.sentiment}/alerts/${alertId}`, { status });
       const data = await response.json();
       return data.alert;
     },
@@ -274,8 +275,8 @@ export default function SentimentDashboard() {
         title: variables.status === 'acknowledged' ? "Alert acknowledged" : "Alert resolved",
         description: "Alert status updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/sentiment/alerts'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/sentiment/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'alerts'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.sentiment, 'dashboard'] });
     },
     onError: (error: any) => {
       toast({

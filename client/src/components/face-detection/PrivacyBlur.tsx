@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { API_ENDPOINTS } from '@/lib/api-endpoints';
 
 interface PrivacyBlurProps {
   imageFile: File | null;
@@ -46,7 +47,7 @@ export function PrivacyBlur({ imageFile, faceCount, onBlurComplete }: PrivacyBlu
       formData.append('blurIntensity', blurIntensity.toString());
       formData.append('excludeIndexes', JSON.stringify(Array.from(excludedFaces)));
       
-      return apiRequest('/api/faces/blur', 'POST', formData) as Promise<BlurResponse>;
+      return apiRequest(API_ENDPOINTS.ai.media.vision.faces.blur, 'POST', formData) as Promise<BlurResponse>;
     },
     onSuccess: (data) => {
       setBlurredImage(data.blurredImageUrl);

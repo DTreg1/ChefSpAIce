@@ -4,6 +4,8 @@
  * Centralized logging with levels, formatting, and remote error tracking
  */
 
+import { API_ENDPOINTS } from '@/lib/api-endpoints';
+
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -102,7 +104,7 @@ class Logger {
     }
 
     try {
-      const response = await fetch('/api/v1/logs', {
+      const response = await fetch(API_ENDPOINTS.logs, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

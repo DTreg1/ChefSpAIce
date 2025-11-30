@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { HelpCircle, Send, Loader2, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 export function AskAnalytics() {
   const [question, setQuestion] = useState("");
@@ -13,7 +14,7 @@ export function AskAnalytics() {
 
   const explainMutation = useMutation({
     mutationFn: async (metricName: string) => {
-      const response = await apiRequest("/api/insights/explain", "POST", { metricName });
+      const response = await apiRequest(API_ENDPOINTS.ai.analysis.insights.explain, "POST", { metricName });
       return response as unknown as { explanation: string };
     },
     onSuccess: (data) => {

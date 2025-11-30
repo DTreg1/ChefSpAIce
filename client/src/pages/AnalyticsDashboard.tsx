@@ -12,6 +12,7 @@ import { AnomalyAlert } from "@/components/analytics/AnomalyAlert";
 import { InsightDigest } from "@/components/analytics/InsightDigest";
 import { AskAnalytics } from "@/components/analytics/AskAnalytics";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { AnalyticsInsight } from "@shared/schema";
 
 // Sample data generator for demonstration
@@ -47,23 +48,23 @@ export default function AnalyticsDashboard() {
 
   // Fetch insights
   const { data: insights = [], isLoading: insightsLoading, refetch: refetchInsights } = useQuery({
-    queryKey: ["/api/insights", selectedCategory, selectedPeriod],
+    queryKey: [API_ENDPOINTS.ai.analysis.insights.all, selectedCategory, selectedPeriod],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedCategory !== "all") params.append("category", selectedCategory);
       params.append("period", selectedPeriod);
       params.append("limit", "50");
       
-      const response = await apiRequest(`/api/insights?${params.toString()}`, "GET");
+      const response = await apiRequest(`${API_ENDPOINTS.ai.analysis.insights.all}?${params.toString()}`, "GET");
       return response as AnalyticsInsight[];
     }
   });
 
   // Fetch daily summary
   const { data: dailySummary = [] } = useQuery({
-    queryKey: ["/api/insights/daily"],
+    queryKey: [API_ENDPOINTS.ai.analysis.insights.daily],
     queryFn: async () => {
-      const response = await apiRequest("/api/insights/daily", "GET");
+      const response = await apiRequest(API_ENDPOINTS.ai.analysis.insights.daily, "GET");
       return response as AnalyticsInsight[];
     }
   });
@@ -72,15 +73,15 @@ export default function AnalyticsDashboard() {
   const generateInsightMutation = useMutation({
     mutationFn: async (metricName: string) => {
       const dataPoints = generateSampleData(metricName, 30);
-      return apiRequest("/api/insights/generate", "POST", {
+      return apiRequest(API_ENDPOINTS.ai.analysis.insights.generate, "POST", {
         metricName,
         dataPoints,
         period: "30 days"
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/insights"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/insights/daily"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.insights.all] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.insights.daily] });
     }
   });
 

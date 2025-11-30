@@ -8,6 +8,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useStreamedContent } from './use-streamed-content';
 import { useAIErrorHandler, parseAPIError, type AIErrorInfo } from './use-ai-error-handler';
+import { API_ENDPOINTS } from '@/lib/api-endpoints';
 
 export interface StreamingChatOptions {
   endpoint?: string;
@@ -29,7 +30,7 @@ export interface StreamingChatState {
  */
 export function useStreamingChat(options: StreamingChatOptions = {}) {
   const {
-    endpoint = '/api/v1/chat/stream',
+    endpoint = API_ENDPOINTS.chat.stream,
     includeInventory = false,
     onMessageComplete,
     onError

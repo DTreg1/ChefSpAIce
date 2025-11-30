@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { API_ENDPOINTS } from '@/lib/api-endpoints';
 import { 
   Bell, 
   BellOff, 
@@ -111,17 +112,17 @@ export function IntelligentNotificationSettings() {
   
   // Fetch notification preferences
   const { data: preferences, isLoading: loadingPrefs } = useQuery<NotificationPreferences>({
-    queryKey: ['/api/notifications/preferences'],
+    queryKey: [API_ENDPOINTS.notifications.preferences],
   });
   
   // Fetch engagement metrics
   const { data: engagement } = useQuery<EngagementMetrics>({
-    queryKey: ['/api/notifications/engagement'],
+    queryKey: [API_ENDPOINTS.notifications.intelligent, 'engagement'],
   });
   
   // Fetch insights
   const { data: insights } = useQuery<NotificationInsights>({
-    queryKey: ['/api/notifications/insights'],
+    queryKey: [API_ENDPOINTS.notifications.intelligent, 'insights'],
   });
   
   // Derive safe fallback for recent notifications
@@ -130,7 +131,7 @@ export function IntelligentNotificationSettings() {
   // Update preferences mutation
   const updatePreferences = useMutation({
     mutationFn: async (prefs: NotificationPreferences) => {
-      const response = await fetch('/api/notifications/preferences', {
+      const response = await fetch(API_ENDPOINTS.notifications.preferences, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -141,15 +142,15 @@ export function IntelligentNotificationSettings() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications/preferences'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.notifications.preferences] });
       toast({
-        title: '✅ Preferences Updated',
+        title: 'Preferences Updated',
         description: 'Your notification preferences have been saved.',
       });
     },
     onError: () => {
       toast({
-        title: '❌ Update Failed',
+        title: 'Update Failed',
         description: 'Failed to save notification preferences.',
         variant: 'destructive',
       });
@@ -159,7 +160,7 @@ export function IntelligentNotificationSettings() {
   // Send feedback mutation
   const sendFeedback = useMutation({
     mutationFn: async ({ notificationId, action }: { notificationId: string; action: string }) => {
-      const response = await fetch('/api/notifications/feedback', {
+      const response = await fetch(`${API_ENDPOINTS.notifications.intelligent}/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +171,7 @@ export function IntelligentNotificationSettings() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications/engagement'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.notifications.intelligent, 'engagement'] });
     },
   });
   

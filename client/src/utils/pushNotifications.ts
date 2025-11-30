@@ -1,6 +1,7 @@
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 import { Device } from '@capacitor/device';
+import { API_ENDPOINTS } from '@/lib/api-endpoints';
 
 export interface NotificationPayload {
   title: string;
@@ -155,7 +156,7 @@ class PushNotificationService {
 
   private async sendWebSubscriptionToBackend(subscription: PushSubscription): Promise<void> {
     try {
-      const response = await fetch('/api/push-tokens/register', {
+      const response = await fetch(`${API_ENDPOINTS.notifications.registerToken}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,7 +192,7 @@ class PushNotificationService {
         appVersion: '1.0.0', // You can get this from package.json or config
       };
 
-      const response = await fetch('/api/push-tokens/register', {
+      const response = await fetch(`${API_ENDPOINTS.notifications.registerToken}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -278,7 +279,7 @@ class PushNotificationService {
 
   private async trackNotificationDelivery(notification: PushNotificationSchema): Promise<void> {
     try {
-      await fetch('/api/notifications/track', {
+      await fetch(API_ENDPOINTS.notifications.track, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -297,7 +298,7 @@ class PushNotificationService {
 
   private async trackNotificationOpened(notification: any): Promise<void> {
     try {
-      await fetch('/api/notifications/track', {
+      await fetch(API_ENDPOINTS.notifications.track, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

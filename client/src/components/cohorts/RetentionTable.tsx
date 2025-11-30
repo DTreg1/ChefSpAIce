@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TrendingUp, TrendingDown, Users, Calendar, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { Cohort } from "@shared/schema";
 
 interface RetentionData {
@@ -23,11 +24,11 @@ interface RetentionTableProps {
 
 export function RetentionTable({ cohorts, periods = [0, 1, 7, 14, 30, 60, 90] }: RetentionTableProps) {
   const retentionQueries = useQuery({
-    queryKey: ["/api/cohorts/retention", cohorts.map(c => c.id), periods],
+    queryKey: [API_ENDPOINTS.admin.cohorts.list, 'retention', cohorts.map(c => c.id), periods],
     queryFn: async () => {
       const retentionData = await Promise.all(
         cohorts.map(async (cohort) => {
-          const response = await fetch(`/api/cohorts/${cohort.id}/retention`, {
+          const response = await fetch(`${API_ENDPOINTS.admin.cohorts.item(cohort.id)}/retention`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ periods }),

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { AnalyticsInsight } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 
 interface InsightCardProps {
@@ -22,10 +23,10 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
   // Mark as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (insightId: string) => {
-      return apiRequest(`/api/insights/${insightId}/read`, "PATCH");
+      return apiRequest(`${API_ENDPOINTS.ai.analysis.insights.all}/${insightId}/read`, "PATCH");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/insights"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.analysis.insights.all] });
       onMarkAsRead?.(insight.id);
     }
   });
@@ -33,7 +34,7 @@ export function InsightCard({ insight, onMarkAsRead }: InsightCardProps) {
   // Submit feedback mutation
   const submitFeedbackMutation = useMutation({
     mutationFn: async ({ helpful }: { helpful: boolean }) => {
-      return apiRequest(`/api/insights/${insight.id}/feedback`, "POST", {
+      return apiRequest(`${API_ENDPOINTS.ai.analysis.insights.all}/${insight.id}/feedback`, "POST", {
         helpfulScore: helpful ? 5 : 2,
         wasActionable: helpful,
         comments: helpful ? "This insight was helpful" : "This insight wasn't helpful"

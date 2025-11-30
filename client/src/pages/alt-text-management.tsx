@@ -14,6 +14,7 @@ import {
   AltTextEditor 
 } from "@/components/alt-text";
 import { useQuery } from "@tanstack/react-query";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { 
   Upload, 
   BarChart3, 
@@ -30,7 +31,7 @@ export default function AltTextManagement() {
   
   // Fetch user's images
   const imagesQuery = useQuery<{ data: any[]; total: number }>({
-    queryKey: ["/api/images"],
+    queryKey: [API_ENDPOINTS.ai.media.images.enhance],
   });
 
   const images = imagesQuery.data?.data || [];

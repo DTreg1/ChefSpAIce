@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { TrendingUp, TrendingDown, Target, AlertCircle, RefreshCw } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface CompetitorData {
   competitorName: string;
@@ -45,9 +46,9 @@ interface CompetitorPricingProps {
 export function CompetitorPricing({ productId, productName, basePrice }: CompetitorPricingProps) {
   // Fetch competitor analysis
   const { data, isLoading, error, refetch } = useQuery<CompetitorAnalysis>({
-    queryKey: [`/api/pricing/competition/${productId}`],
+    queryKey: [API_ENDPOINTS.admin.pricing.rules, 'competition', productId],
     queryFn: async () => {
-      const response = await fetch(`/api/pricing/competition/${productId}?useAI=true`);
+      const response = await fetch(`${API_ENDPOINTS.admin.pricing.rules}/competition/${productId}?useAI=true`);
       if (!response.ok) throw new Error('Failed to fetch competitor data');
       return response.json();
     },

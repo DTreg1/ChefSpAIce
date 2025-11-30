@@ -7,6 +7,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { 
   OCRUploader, 
   ExtractedText, 
@@ -99,18 +100,18 @@ export default function OCRPage() {
 
   // Fetch supported languages
   const { data: languages } = useQuery({
-    queryKey: ['/api/ocr/languages'],
+    queryKey: [API_ENDPOINTS.ai.media.vision.ocr.languages],
   });
 
   // Fetch recent OCR results
   const { data: recentResults } = useQuery({
-    queryKey: ['/api/ocr/results'],
+    queryKey: [API_ENDPOINTS.ai.media.vision.ocr.results],
   });
 
   // Extract text mutation
   const extractMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch('/api/ocr/extract', {
+      const response = await fetch(API_ENDPOINTS.ai.media.vision.ocr.extract, {
         method: 'POST',
         body: formData,
       });
@@ -120,14 +121,14 @@ export default function OCRPage() {
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/ocr/results'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.vision.ocr.results] });
     }
   });
 
   // Save correction mutation
   const correctionMutation = useMutation({
     mutationFn: async (correction: Partial<OcrCorrection>) => {
-      const response = await fetch('/api/ocr/correct', {
+      const response = await fetch(`${API_ENDPOINTS.ai.media.vision.ocr.extract}/correct`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(correction),

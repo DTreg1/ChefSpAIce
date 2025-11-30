@@ -536,7 +536,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
         searchMethod = `UPC ${selectedUpc}`;
         response = await apiRequest(
           "GET",
-          `/api/barcodelookup/product/${encodeURIComponent(selectedUpc)}`,
+          `${API_ENDPOINTS.barcode.search}/product/${encodeURIComponent(selectedUpc)}`,
           null,
         );
       } else {
@@ -549,7 +549,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
           searchMethod = `barcode ${simplifiedQuery}`;
           response = await apiRequest(
             "GET",
-            `/api/barcodelookup/product/${encodeURIComponent(simplifiedQuery)}`,
+            `${API_ENDPOINTS.barcode.search}/product/${encodeURIComponent(simplifiedQuery)}`,
             null,
           );
         } else {
@@ -560,7 +560,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
           searchMethod = `search "${queryWithBrand}"`;
           response = await apiRequest(
             "GET",
-            `/api/barcodelookup/search?query=${encodeURIComponent(queryWithBrand)}`,
+            `${API_ENDPOINTS.barcode.search}?query=${encodeURIComponent(queryWithBrand)}`,
             null,
           );
         }

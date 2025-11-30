@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Activity, BarChart3, Calculator, DollarSign, TrendingUp, Users } from "lucide-react";
 
 // Import pricing components
@@ -67,9 +68,9 @@ export default function PricingPage() {
 
   // Fetch pricing rules
   const { data: rules, isLoading: rulesLoading } = useQuery<PricingRule[]>({
-    queryKey: ['/api/pricing/rules'],
+    queryKey: [API_ENDPOINTS.admin.pricing.rules],
     queryFn: async () => {
-      const response = await fetch('/api/pricing/rules');
+      const response = await fetch(API_ENDPOINTS.admin.pricing.rules);
       if (!response.ok) return [];
       const data = await response.json();
       // Since we're getting active rules from the API
@@ -79,10 +80,10 @@ export default function PricingPage() {
 
   // Fetch optimization for selected product
   const { data: optimization, isLoading: optLoading, refetch: refetchOptimization } = useQuery<OptimizationResult>({
-    queryKey: [`/api/pricing/optimize/${selectedProduct}`],
+    queryKey: [API_ENDPOINTS.admin.pricing.optimize, selectedProduct],
     queryFn: async () => {
       if (!selectedProduct) throw new Error('No product selected');
-      const response = await fetch(`/api/pricing/optimize/${selectedProduct}?includeCompetition=true&useAI=true`);
+      const response = await fetch(`${API_ENDPOINTS.admin.pricing.optimize}/${selectedProduct}?includeCompetition=true&useAI=true`);
       if (!response.ok) throw new Error('Failed to fetch optimization');
       return response.json();
     },
@@ -215,7 +216,7 @@ export default function PricingPage() {
                       <Button
                         size="lg"
                         onClick={async () => {
-                          const response = await fetch(`/api/pricing/apply/${selectedProduct}`, {
+                          const response = await fetch(`${API_ENDPOINTS.admin.pricing.rules}/${selectedProduct}/apply`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({

@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { TrendingUp, TrendingDown, Minus, AlertCircle, DollarSign, Package, Users, Activity } from "lucide-react";
 import { format } from "date-fns";
 
@@ -57,9 +58,9 @@ export function PricingDashboard() {
 
   // Fetch pricing report
   const { data: report, isLoading, error } = useQuery<PricingReport>({
-    queryKey: ['/api/pricing/report'],
+    queryKey: [API_ENDPOINTS.admin.pricing.rules, 'report'],
     queryFn: async () => {
-      const response = await fetch('/api/pricing/report?includeAI=true');
+      const response = await fetch(`${API_ENDPOINTS.admin.pricing.rules}/report?includeAI=true`);
       if (!response.ok) throw new Error('Failed to fetch pricing report');
       return response.json();
     },
@@ -70,18 +71,18 @@ export function PricingDashboard() {
   const handleOptimizePrice = async (productId: string) => {
     try {
       setRefreshing(true);
-      const response = await fetch(`/api/pricing/optimize/${productId}?includeCompetition=true&useAI=true`);
+      const response = await fetch(`${API_ENDPOINTS.admin.pricing.optimize}/${productId}?includeCompetition=true&useAI=true`);
       const optimization = await response.json();
       
       if (optimization.recommendedPrice) {
         // Apply the recommended price
-        await apiRequest(`/api/pricing/apply/${productId}`, 'POST', {
+        await apiRequest(`${API_ENDPOINTS.admin.pricing.optimize}/apply/${productId}`, 'POST', {
           price: optimization.recommendedPrice,
           reason: 'ai_optimization'
         });
         
         // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ['/api/pricing/report'] });
+        queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.admin.pricing.rules, 'report'] });
       }
     } catch (error) {
       console.error('Error optimizing price:', error);

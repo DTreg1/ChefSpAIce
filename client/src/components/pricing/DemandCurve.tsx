@@ -11,6 +11,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface DemandCurveProps {
   productId: string;
@@ -31,9 +32,9 @@ export function DemandCurve({
 }: DemandCurveProps) {
   // Fetch historical demand data
   const { data: history, isLoading } = useQuery({
-    queryKey: [`/api/pricing/history/${productId}`],
+    queryKey: [API_ENDPOINTS.admin.pricing.rules, 'history', productId],
     queryFn: async () => {
-      const response = await fetch(`/api/pricing/history/${productId}?limit=30`);
+      const response = await fetch(`${API_ENDPOINTS.admin.pricing.rules}/history/${productId}?limit=30`);
       if (!response.ok) throw new Error('Failed to fetch price history');
       return response.json();
     }

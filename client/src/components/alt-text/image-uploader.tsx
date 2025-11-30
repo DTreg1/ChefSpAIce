@@ -9,6 +9,7 @@ import { useState, useRef } from "react";
 import { Upload, Image as ImageIcon, Loader2, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +36,7 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
   // Generate alt text mutation
   const generateAltTextMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; context?: string }) => {
-      const res = await apiRequest("POST", "/api/images/alt-text", data);
+      const res = await apiRequest("POST", API_ENDPOINTS.ai.media.vision.altText.generate, data);
       return res.json();
     },
     onSuccess: (response) => {
@@ -43,7 +44,7 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
         title: "Success",
         description: `Alt text generated: "${response.data?.altText}"`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/images"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.images.enhance] });
       if (onImageUploaded && response.data?.imageId) {
         onImageUploaded(response.data);
       }
@@ -61,7 +62,7 @@ export function ImageUploader({ onImageUploaded, context }: ImageUploaderProps) 
   // Check if decorative mutation
   const checkDecorativeMutation = useMutation({
     mutationFn: async (data: { imageUrl: string; context?: string }) => {
-      const res = await apiRequest("POST", "/api/images/check-decorative", data);
+      const res = await apiRequest("POST", `${API_ENDPOINTS.ai.media.vision.altText.generate}/check-decorative`, data);
       return res.json();
     },
   });

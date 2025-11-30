@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,11 +49,11 @@ export default function FeedbackAnalyticsPage() {
   const [selectedType, setSelectedType] = useState<string>("all");
 
   const { data: analytics, isLoading: analyticsLoading } = useQuery<FeedbackAnalytics>({
-    queryKey: ["/api/feedback/analytics/summary", { days: timeRange }],
+    queryKey: [API_ENDPOINTS.feedback.analytics.summary, { days: timeRange }],
   });
 
   const { data: recentFeedback, isLoading: feedbackLoading } = useQuery<Feedback[]>({
-    queryKey: ["/api/feedback", { limit: 20 }],
+    queryKey: [API_ENDPOINTS.feedback.list, { limit: 20 }],
   });
 
   if (analyticsLoading || feedbackLoading) {

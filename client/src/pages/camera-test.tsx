@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Camera, CheckCircle, XCircle, AlertCircle, ScanLine, Package, Loader2, Image, ShoppingCart } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useToast } from "@/hooks/use-toast";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 // Common test barcodes for groceries and household items
 const COMMON_TEST_BARCODES = {
@@ -210,7 +211,7 @@ export default function CameraTest() {
     addError(`Testing single barcode API call for: ${barcode}`);
     
     try {
-      const response = await fetch(`/api/barcodelookup/product/${barcode}`);
+      const response = await fetch(`${API_ENDPOINTS.barcode.search}/product/${barcode}`);
       const data = await response.json();
       
       if (!response.ok) {
@@ -244,7 +245,7 @@ export default function CameraTest() {
     addError(`Testing batch API call with ${barcodesToTest.length} barcodes`);
     
     try {
-      const response = await fetch('/api/barcodelookup/batch', {
+      const response = await fetch(`${API_ENDPOINTS.barcode.search}/batch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ barcodes: barcodesToTest })

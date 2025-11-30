@@ -14,6 +14,7 @@ import { CalendarIcon, Plus, X, Users, Filter, Save } from "lucide-react";
 import { format } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 import type { InsertCohort, CohortCriteria } from "@shared/schema";
 
@@ -52,9 +53,9 @@ export function CohortBuilder() {
   
   const createCohortMutation = useMutation({
     mutationFn: (cohort: Partial<InsertCohort>) => 
-      apiRequest("/api/cohorts", "POST", cohort),
+      apiRequest(API_ENDPOINTS.admin.cohorts.create, "POST", cohort),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cohorts"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.admin.cohorts.list] });
       toast({
         title: "Cohort created",
         description: "Your cohort has been created successfully.",

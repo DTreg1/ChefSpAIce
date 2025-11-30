@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 import type { InsertFeedback } from "@shared/schema";
 
@@ -49,7 +50,7 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
 
   const submitFeedbackMutation = useMutation({
     mutationFn: async (data: Partial<InsertFeedback>) => {
-      const res = await apiRequest("POST", "/api/feedback", data);
+      const res = await apiRequest("POST", API_ENDPOINTS.feedback.submit, data);
       return res.json();
     },
     onSuccess: () => {
@@ -59,7 +60,7 @@ export function ChatWidget({ mode = "floating" }: ChatWidgetProps) {
       });
       resetFeedbackForm();
       setWidgetMode("chat");
-      void queryClient.invalidateQueries({ queryKey: ["/api/feedback"] });
+      void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.feedback.list] });
     },
     onError: () => {
       toast({

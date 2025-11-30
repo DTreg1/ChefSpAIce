@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Sparkles, TrendingUp, TrendingDown, AlertTriangle, Info, CheckCircle, XCircle, RefreshCw, Archive, Brain } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 import type { CohortInsight } from "@shared/schema";
 
@@ -19,9 +20,9 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
   const queryClient = useQueryClient();
   
   const insightsQuery = useQuery({
-    queryKey: [`/api/cohorts/${cohortId}/insights`],
+    queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)],
     queryFn: async () => {
-      const response = await fetch(`/api/cohorts/${cohortId}/insights`);
+      const response = await fetch(API_ENDPOINTS.admin.cohorts.insights(cohortId));
       if (!response.ok) throw new Error("Failed to fetch insights");
       const data = await response.json();
       return data.insights as CohortInsight[];
@@ -30,9 +31,9 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
   
   const generateInsightsMutation = useMutation({
     mutationFn: () => 
-      apiRequest(`/api/cohorts/${cohortId}/insights`, "POST"),
+      apiRequest(API_ENDPOINTS.admin.cohorts.insights(cohortId), "POST"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/cohorts/${cohortId}/insights`] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)] });
       toast({
         title: "Insights generated",
         description: "New AI insights have been generated for this cohort.",
@@ -49,9 +50,9 @@ export function InsightCards({ cohortId, cohortName }: InsightCardsProps) {
   
   const updateInsightStatusMutation = useMutation({
     mutationFn: ({ insightId, status }: { insightId: string; status: string }) =>
-      apiRequest(`/api/cohorts/insights/${insightId}/status`, "PATCH", { status }),
+      apiRequest(`${API_ENDPOINTS.admin.cohorts.list}/insights/${insightId}/status`, "PATCH", { status }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/cohorts/${cohortId}/insights`] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.admin.cohorts.insights(cohortId)] });
     },
   });
   

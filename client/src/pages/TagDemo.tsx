@@ -14,6 +14,7 @@ import { TagCloud } from "@/components/TagCloud";
 import { Loader2, FileText, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 
 // Sample content for testing
@@ -67,7 +68,7 @@ export default function TagDemo() {
   // Generate tags mutation
   const generateTagsMutation = useMutation({
     mutationFn: async (content: any) => {
-      return apiRequest("/api/ml/tags/generate", "POST", {
+      return apiRequest(API_ENDPOINTS.ml.tags.generate, "POST", {
         contentId: content.id || `demo-${Date.now()}`,
         contentType: "article",
         content: {

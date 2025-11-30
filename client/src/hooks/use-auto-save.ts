@@ -10,6 +10,7 @@ import * as tf from '@tensorflow/tfjs';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { API_ENDPOINTS } from '@/lib/api-endpoints';
 
 interface AutoSaveOptions {
   documentId: string;
@@ -78,7 +79,7 @@ export function useAutoSave(
 
   // Fetch user's typing patterns
   const { data: userPatterns } = useQuery<UserPatternsData>({
-    queryKey: ['/api/v1/autosave/patterns'],
+    queryKey: [API_ENDPOINTS.autosave.patterns],
     enabled: true,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
@@ -86,7 +87,7 @@ export function useAutoSave(
   // Mutation for saving drafts
   const saveDraftMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch('/api/v1/autosave/draft', {
+      const response = await fetch(API_ENDPOINTS.autosave.draft, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -105,7 +106,7 @@ export function useAutoSave(
       
       // Invalidate versions query
       queryClient.invalidateQueries({
-        queryKey: ['/api/v1/autosave/versions', documentId],
+        queryKey: [API_ENDPOINTS.autosave.versions(documentId)],
       });
     },
     onError: (error) => {
@@ -118,7 +119,7 @@ export function useAutoSave(
   // Mutation for recording typing events
   const recordEventMutation = useMutation({
     mutationFn: async (event: any) =>
-      apiRequest('/api/v1/autosave/typing-event', 'POST', event),
+      apiRequest(API_ENDPOINTS.autosave.typingEvent, 'POST', event),
   });
 
   // Initialize TensorFlow.js model
@@ -265,7 +266,7 @@ export function useAutoSave(
       const contentHash = await calculateHash(contentRef.current);
 
       // Check for conflicts
-      const conflictCheck = await apiRequest('/api/v1/autosave/check-conflicts', 'POST', {
+      const conflictCheck = await apiRequest(API_ENDPOINTS.autosave.checkConflicts, 'POST', {
         documentId,
         contentHash,
       });

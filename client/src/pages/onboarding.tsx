@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -139,7 +140,7 @@ export default function Onboarding() {
   // Fetch common equipment from API
   const { data: commonEquipment, isLoading: equipmentLoading } =
     useQuery<ApplianceLibrary[]>({
-      queryKey: ["/api/v1/appliances/appliance-library/common"],
+      queryKey: [API_ENDPOINTS.appliances.libraryCommon],
     });
 
   // Set all items as selected by default when data loads

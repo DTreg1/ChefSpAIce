@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageEditor } from "@/components/images/ImageEditor";
 import { BeforeAfter } from "@/components/images/BeforeAfter";
@@ -44,10 +45,10 @@ export default function ImageEnhancement() {
 
   // Fetch usage statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/images/stats'],
+    queryKey: [API_ENDPOINTS.ai.media.images.enhance, 'stats'],
     queryFn: async () => {
       try {
-        const response = await fetch('/api/images/stats');
+        const response = await fetch(`${API_ENDPOINTS.ai.media.images.enhance}/stats`);
         if (!response.ok) return null;
         return response.json();
       } catch {
@@ -58,10 +59,10 @@ export default function ImageEnhancement() {
 
   // Check Remove.bg API key status
   const { data: apiKeyStatus } = useQuery({
-    queryKey: ['/check-removebg-key'],
+    queryKey: [API_ENDPOINTS.ai.media.images.enhance, 'check-api-key'],
     queryFn: async () => {
       try {
-        const response = await fetch('/api/images/check-api-key');
+        const response = await fetch(`${API_ENDPOINTS.ai.media.images.enhance}/check-api-key`);
         if (!response.ok) return { hasKey: false };
         return response.json();
       } catch {

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, TrendingDown, Activity, Users, Eye, MousePointer, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { Cohort } from "@shared/schema";
 
 interface CohortComparisonProps {
@@ -29,11 +30,11 @@ export function CohortComparison({ cohorts }: CohortComparisonProps) {
   ]);
   
   const comparisonQuery = useQuery({
-    queryKey: ["/api/cohorts/compare", cohorts.map(c => c.id), selectedMetrics],
+    queryKey: [API_ENDPOINTS.admin.cohorts.list, 'compare', cohorts.map(c => c.id), selectedMetrics],
     queryFn: async () => {
       if (cohorts.length < 2) return null;
       
-      const response = await fetch("/api/cohorts/compare", {
+      const response = await fetch(`${API_ENDPOINTS.admin.cohorts.list}/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

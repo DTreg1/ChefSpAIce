@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface RateLimitData {
   remaining_requests: number;
@@ -10,7 +11,7 @@ interface RateLimitData {
 
 export function BarcodeRateLimitInfo() {
   const { data: rateLimits, isLoading, error } = useQuery<RateLimitData>({
-    queryKey: ["/api/barcodelookup/rate-limits"],
+    queryKey: [API_ENDPOINTS.barcode.search, 'rate-limits'],
   });
 
   if (isLoading) {

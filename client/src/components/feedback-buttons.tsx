@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { cn } from "@/lib/utils";
 import type { InsertFeedback } from "@shared/schema";
 
@@ -26,13 +27,13 @@ export function FeedbackButtons({
 
   const submitFeedbackMutation = useMutation({
     mutationFn: async (data: { localSentiment: 'positive' | 'negative'; feedback: Partial<InsertFeedback> }) => {
-      const res = await apiRequest('POST', '/api/feedback', data.feedback);
+      const res = await apiRequest('POST', API_ENDPOINTS.feedback.submit, data.feedback);
       return { result: await res.json(), localSentiment: data.localSentiment };
     },
     onSuccess: (response) => {
       setHasSubmitted(true);
       setSentiment(response.localSentiment);
-      void queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+      void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.feedback.list] });
       if (onFeedbackSubmit) {
         onFeedbackSubmit(response.localSentiment);
       }

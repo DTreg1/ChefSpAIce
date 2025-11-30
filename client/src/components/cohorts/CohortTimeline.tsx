@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Calendar, TrendingUp, TrendingDown, Users, Activity } from "lucide-react";
 import { format } from "date-fns";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { Cohort, CohortMetric } from "@shared/schema";
 
 interface CohortTimelineProps {
@@ -14,9 +15,9 @@ interface CohortTimelineProps {
 
 export function CohortTimeline({ cohortId, cohortName }: CohortTimelineProps) {
   const metricsQuery = useQuery({
-    queryKey: [`/api/cohorts/${cohortId}/metrics`],
+    queryKey: [API_ENDPOINTS.admin.cohorts.item(cohortId), 'metrics'],
     queryFn: async () => {
-      const response = await fetch(`/api/cohorts/${cohortId}/metrics`);
+      const response = await fetch(`${API_ENDPOINTS.admin.cohorts.item(cohortId)}/metrics`);
       if (!response.ok) throw new Error("Failed to fetch metrics");
       const data = await response.json();
       

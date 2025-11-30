@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertTriangle, TrendingDown, Activity, Users } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { UserPrediction } from "@shared/schema";
 
 interface ChurnRiskIndicatorProps {
@@ -14,10 +15,10 @@ interface ChurnRiskIndicatorProps {
 
 export function ChurnRiskIndicator({ userId, onInterventionClick }: ChurnRiskIndicatorProps) {
   const { data, isLoading } = useQuery<{ predictions: UserPrediction[] }>({
-    queryKey: ['/api/predict/user', userId],
+    queryKey: [API_ENDPOINTS.ai.analysis.predictions.user(userId || ''), userId],
     queryFn: async () => {
       if (!userId) return null;
-      const response = await fetch(`/api/predict/user/${userId}`, {
+      const response = await fetch(API_ENDPOINTS.ai.analysis.predictions.user(userId), {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });

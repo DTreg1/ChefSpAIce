@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Popover,
@@ -37,15 +38,15 @@ export function StarRating({
 
   const submitRatingMutation = useMutation({
     mutationFn: async (data: Partial<InsertFeedback>) => {
-      const res = await apiRequest('POST', '/api/v1/feedback', data);
+      const res = await apiRequest('POST', API_ENDPOINTS.feedback.submit, data);
       return res.json();
     },
     onSuccess: () => {
       setHasSubmitted(true);
       setIsOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/v1/feedback'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.feedback.list] });
       if (contextType === 'recipe') {
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/recipes'] });
+        queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list] });
       }
       if (onRatingSubmit) {
         onRatingSubmit(rating, comment);

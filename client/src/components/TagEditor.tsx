@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 import { TagInput } from "./TagInput";
 import { TagCloud } from "./TagCloud";
@@ -55,14 +56,14 @@ export function TagEditor({
 
   // Fetch existing tags
   const { data: existingTags = { tags: [] }, isLoading: tagsLoading } = useQuery<ContentTagsResponse>({
-    queryKey: [`/api/ml/content/${contentId}/tags`, contentType],
+    queryKey: [API_ENDPOINTS.ml.content.tags(contentId), contentType],
     staleTime: 1000 * 60, // Cache for 1 minute
   });
 
   // Generate tags mutation
   const generateTagsMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/ml/tags/generate", "POST", {
+      return apiRequest(API_ENDPOINTS.ml.tags.generate, "POST", {
         contentId,
         contentType,
         content,
@@ -90,7 +91,7 @@ export function TagEditor({
   const addTagsMutation = useMutation({
     mutationFn: async (tags: Array<{ id: string; name: string }>) => {
       const promises = tags.map(tag => 
-        apiRequest("/api/ml/tags/assign", "POST", {
+        apiRequest(API_ENDPOINTS.ml.tags.assign, "POST", {
           contentId,
           contentType,
           tagId: tag.id,
@@ -101,7 +102,7 @@ export function TagEditor({
       return Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/ml/content/${contentId}/tags`] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ml.content.tags(contentId)] });
       setSelectedTags([]);
       toast({
         title: "Tags added",
@@ -120,10 +121,10 @@ export function TagEditor({
   // Remove tag mutation
   const removeTagMutation = useMutation({
     mutationFn: async (tagId: string) => {
-      return apiRequest(`/api/ml/content/${contentId}/tags/${tagId}`, "DELETE");
+      return apiRequest(API_ENDPOINTS.ml.content.removeTag(contentId, tagId), "DELETE");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/ml/content/${contentId}/tags`] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ml.content.tags(contentId)] });
       toast({
         title: "Tag removed",
         description: "Tag has been successfully removed.",
@@ -141,7 +142,7 @@ export function TagEditor({
   // Get related tags for a specific tag
   const getRelatedTags = async (tagId: string) => {
     try {
-      const response = await apiRequest(`/api/ml/tags/related/${tagId}`, "GET");
+      const response = await apiRequest(API_ENDPOINTS.ml.tags.related(tagId), "GET");
       return response.tags;
     } catch (error) {
       console.error("Error fetching related tags:", error);
@@ -351,7 +352,7 @@ export function TagEditor({
               contentType={contentType}
               suggestions={generatedSuggestions}
               onUpdate={() => {
-                queryClient.invalidateQueries({ queryKey: [`/api/ml/content/${contentId}/tags`] });
+                queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ml.content.tags(contentId)] });
                 setShowSuggestions(false);
                 setGeneratedSuggestions([]);
               }}
@@ -366,7 +367,7 @@ export function TagEditor({
 // Component for displaying related tags
 function RelatedTagsList({ tagId }: { tagId: string }) {
   const { data: relatedTags = { tags: [] }, isLoading } = useQuery<ContentTagsResponse>({
-    queryKey: [`/api/ml/tags/related/${tagId}`],
+    queryKey: [API_ENDPOINTS.ml.tags.related(tagId)],
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 

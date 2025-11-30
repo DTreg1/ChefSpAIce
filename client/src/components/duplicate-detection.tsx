@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,9 +30,9 @@ export function DuplicateDetection() {
 
   // Get duplicate pairs
   const { data: duplicates, isLoading, refetch } = useQuery<DuplicatePair[]>({
-    queryKey: ['/api/ml/duplicates'],
+    queryKey: [API_ENDPOINTS.ml.duplicates.list],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/ml/duplicates');
+      const response = await apiRequest('GET', API_ENDPOINTS.ml.duplicates.list);
       return response.json();
     },
   });
@@ -40,7 +41,7 @@ export function DuplicateDetection() {
   const scanMutation = useMutation({
     mutationFn: async () => {
       setIsScanning(true);
-      const response = await apiRequest('POST', '/api/ml/duplicates/scan');
+      const response = await apiRequest('POST', API_ENDPOINTS.ml.duplicates.scan);
       return response.json();
     },
     onSuccess: (data) => {
@@ -68,7 +69,7 @@ export function DuplicateDetection() {
       action: 'merge' | 'keep_both' | 'delete';
       keepId?: string;
     }) => {
-      const response = await apiRequest('POST', '/api/ml/duplicates/resolve', { 
+      const response = await apiRequest('POST', API_ENDPOINTS.ml.duplicates.resolve, { 
         duplicateId, 
         action, 
         keepId 

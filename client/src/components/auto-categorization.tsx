@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +33,7 @@ export function AutoCategorization({
   // Categorization mutation
   const categorizeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/ml/categorize', {
+      const response = await apiRequest('POST', API_ENDPOINTS.ml.categorize, {
         contentId,
         contentType
       });
@@ -46,7 +47,7 @@ export function AutoCategorization({
         title: "Categorization Complete",
         description: `Category: ${data.category}`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/recipes', '/api/food-items'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list, API_ENDPOINTS.inventory.foodItems] });
     },
     onError: (error: any) => {
       toast({
@@ -60,7 +61,7 @@ export function AutoCategorization({
   // Auto-tagging mutation
   const autoTagMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/ml/tags/generate', {
+      const response = await apiRequest('POST', API_ENDPOINTS.ml.tags.generate, {
         contentId,
         contentType
       });
@@ -74,7 +75,7 @@ export function AutoCategorization({
         title: "Auto-Tagging Complete",
         description: `Added ${data.tags.length} tags`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/recipes', '/api/food-items'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list, API_ENDPOINTS.inventory.foodItems] });
     },
     onError: (error: any) => {
       toast({
@@ -89,7 +90,7 @@ export function AutoCategorization({
   const batchCategorizeMutation = useMutation({
     mutationFn: async () => {
       setIsProcessing(true);
-      const response = await apiRequest('POST', '/api/ml/categorize/batch');
+      const response = await apiRequest('POST', API_ENDPOINTS.ml.categorizeBatch);
       const data = await response.json();
       setIsProcessing(false);
       return data;
@@ -99,7 +100,7 @@ export function AutoCategorization({
         title: "Batch Categorization Complete",
         description: `Categorized ${data.processed} items`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/recipes', '/api/food-items'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list, API_ENDPOINTS.inventory.foodItems] });
     },
     onError: (error: any) => {
       setIsProcessing(false);
@@ -189,9 +190,9 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
 
   // Get uncategorized items stats
   const { data: stats } = useQuery({
-    queryKey: ['/api/ml/stats/uncategorized'],
+    queryKey: [API_ENDPOINTS.ml.stats.uncategorized],
     queryFn: async () => {
-      const response = await apiRequest('GET', '/api/ml/stats/uncategorized');
+      const response = await apiRequest('GET', API_ENDPOINTS.ml.stats.uncategorized);
       return response.json();
     },
   });
@@ -208,7 +209,7 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
       }, 1000);
       
       try {
-        const response = await apiRequest('POST', '/api/ml/categorize/batch');
+        const response = await apiRequest('POST', API_ENDPOINTS.ml.categorizeBatch);
         const data = await response.json();
         clearInterval(progressInterval);
         setProgress(100);
@@ -223,7 +224,7 @@ export function BatchCategorizationDialog({ trigger }: BatchCategorizationDialog
         title: "Batch Processing Complete",
         description: `Successfully categorized ${data.processed} items`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.recipes.list, API_ENDPOINTS.inventory.foodItems] });
       setIsProcessing(false);
       setProgress(0);
     },

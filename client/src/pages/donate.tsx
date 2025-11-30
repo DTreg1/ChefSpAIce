@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,7 +45,7 @@ const DonationForm = ({ donorInfo, setDonorInfo, clientSecret }: {
       // We'll extract the payment intent ID from the clientSecret
       const paymentIntentId = clientSecret.split('_secret_')[0];
       
-      await apiRequest("POST", "/api/donations/update-donor-info", {
+      await apiRequest("POST", `${API_ENDPOINTS.donations.create}/update-donor-info`, {
         paymentIntentId,
         donorName: donorInfo.donorName,
         donorEmail: donorInfo.donorEmail,

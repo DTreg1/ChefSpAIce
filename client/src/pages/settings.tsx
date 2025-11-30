@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useAuth } from "@/hooks/useAuth";
 import { useStorageLocations } from "@/hooks/useStorageLocations";
 import { useCachedQuery } from "@/hooks/useCachedQuery";
@@ -79,7 +80,7 @@ export default function Settings() {
       const formData = new FormData();
       formData.append("picture", file);
       
-      const response = await fetch("/api/v1/profile/picture", {
+      const response = await fetch(API_ENDPOINTS.users.profilePicture, {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -110,7 +111,7 @@ export default function Settings() {
 
   const removeProfilePictureMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/v1/profile/picture", {
+      const response = await fetch(API_ENDPOINTS.users.profilePicture, {
         method: "DELETE",
         credentials: "include",
       });
@@ -1062,15 +1063,15 @@ interface UsageLog {
 function ApiUsageSection() {
   
   const { data: rateLimits, isLoading: limitsLoading } = useQuery<RateLimits>({
-    queryKey: ["/api/barcodelookup/rate-limits"],
+    queryKey: [API_ENDPOINTS.barcode.rateLimits],
   });
 
   const { data: stats, isLoading: statsLoading } = useQuery<UsageStats>({
-    queryKey: ["/api/barcodelookup/usage/stats"],
+    queryKey: [API_ENDPOINTS.barcode.usage.stats],
   });
 
   const { data: logs } = useQuery<UsageLog[]>({
-    queryKey: ["/api/barcodelookup/usage/logs"],
+    queryKey: [API_ENDPOINTS.barcode.usage.logs],
   });
 
   if (limitsLoading || statsLoading) {

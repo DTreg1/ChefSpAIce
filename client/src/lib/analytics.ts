@@ -1,4 +1,5 @@
 import type { InsertAnalyticsEvent } from '@shared/schema';
+import { API_ENDPOINTS } from '@/lib/api-endpoints';
 
 // Generate a unique session ID for this browser session
 const getOrCreateSessionId = (): string => {
@@ -67,10 +68,10 @@ const flushEvents = async () => {
     // Use sendBeacon for reliability
     if (navigator.sendBeacon) {
       const blob = new Blob([JSON.stringify({ events: eventsToSend })], { type: 'application/json' });
-      navigator.sendBeacon('/api/v1/analytics/events', blob);
+      navigator.sendBeacon(API_ENDPOINTS.analytics.events, blob);
     } else {
       // Fallback to fetch
-      await fetch('/api/v1/analytics/events', {
+      await fetch(API_ENDPOINTS.analytics.events, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ events: eventsToSend }),
@@ -185,7 +186,7 @@ export const startSession = () => {
     const deviceInfo = getDeviceInfo();
     
     // Send session start event
-    fetch('/api/v1/analytics/sessions/start', {
+    fetch(API_ENDPOINTS.analytics.sessions.start, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -214,7 +215,7 @@ export const endSession = () => {
     void flushEvents();
     
     // Send session end event
-    navigator.sendBeacon?.('/api/analytics/sessions/end', 
+    navigator.sendBeacon?.(API_ENDPOINTS.analytics.sessions.end, 
       new Blob([JSON.stringify({ sessionId, exitPage: window.location.href })], 
         { type: 'application/json' })
     );

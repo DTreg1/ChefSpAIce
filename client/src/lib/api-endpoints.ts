@@ -32,7 +32,14 @@ export const API_ENDPOINTS = {
   
   // Barcode & Food Data endpoints
   barcode: {
-    search: `${API_BASE}/barcodelookup/search`,
+    search: `${API_BASE}/barcodelookup`,
+    product: (code: string) => `${API_BASE}/barcodelookup/product/${code}`,
+    batch: `${API_BASE}/barcodelookup/batch`,
+    rateLimits: `${API_BASE}/barcodelookup/rate-limits`,
+    usage: {
+      stats: `${API_BASE}/barcodelookup/usage/stats`,
+      logs: `${API_BASE}/barcodelookup/usage/logs`,
+    },
   },
   
   fdc: {
@@ -164,7 +171,7 @@ export const API_ENDPOINTS = {
           list: `${API_BASE}/ai/media/voice/transcriptions`,
           get: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}`,
           edit: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}/edit`,
-          export: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}/export`,
+          export: (id: string, format: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}/export?format=${format}`,
           delete: (id: string) => `${API_BASE}/ai/media/voice/transcriptions/${id}`,
           search: `${API_BASE}/ai/media/voice/transcriptions/search`,
         },
@@ -172,6 +179,7 @@ export const API_ENDPOINTS = {
           process: `${API_BASE}/ai/media/voice/commands/process`,
           list: `${API_BASE}/ai/media/voice/commands`,
           history: `${API_BASE}/ai/media/voice/commands/history`,
+          stats: `${API_BASE}/ai/media/voice/commands/stats`,
         },
         stats: `${API_BASE}/ai/media/voice/stats`,
       },
@@ -224,6 +232,7 @@ export const API_ENDPOINTS = {
   
   users: {
     profile: `${API_BASE}/users/profile`,
+    profilePicture: `${API_BASE}/profile/picture`,
     preferences: `${API_BASE}/users/preferences`,
     updateProfile: `${API_BASE}/users/profile`,
     updatePreferences: `${API_BASE}/users/preferences`,
@@ -235,9 +244,20 @@ export const API_ENDPOINTS = {
     user: (id: string) => `${API_BASE}/admin/users/${id}`,
     analytics: `${API_BASE}/admin/analytics`,
     experiments: `${API_BASE}/admin/ab-tests`,
-    cohorts: `${API_BASE}/admin/cohorts`,
+    cohorts: {
+      list: `${API_BASE}/admin/cohorts`,
+      create: `${API_BASE}/admin/cohorts`,
+      item: (id: string) => `${API_BASE}/admin/cohorts/${id}`,
+      insights: (id: string) => `${API_BASE}/admin/cohorts/${id}/insights`,
+    },
     maintenance: `${API_BASE}/admin/maintenance`,
-    pricing: `${API_BASE}/admin/pricing`,
+    pricing: {
+      rules: `${API_BASE}/admin/pricing/rules`,
+      optimize: `${API_BASE}/admin/pricing/optimize`,
+      competitors: `${API_BASE}/admin/pricing/competitors`,
+      demand: `${API_BASE}/admin/pricing/demand`,
+      revenue: `${API_BASE}/admin/pricing/revenue`,
+    },
     moderation: `${API_BASE}/admin/moderation`,
     tickets: `${API_BASE}/admin/tickets`,
     seed: `${API_BASE}/admin/seed`,
@@ -245,10 +265,14 @@ export const API_ENDPOINTS = {
   
   // Platform & Analytics endpoints
   analytics: {
-    events: `${API_BASE}/analytics`,
+    events: `${API_BASE}/analytics/events`,
     trackEvent: `${API_BASE}/analytics/events`,
     metrics: `${API_BASE}/analytics/metrics`,
     reports: `${API_BASE}/analytics/reports`,
+    sessions: {
+      start: `${API_BASE}/analytics/sessions/start`,
+      end: `${API_BASE}/analytics/sessions/end`,
+    },
   },
   
   activityLogs: {
@@ -259,9 +283,15 @@ export const API_ENDPOINTS = {
   notifications: {
     list: `${API_BASE}/notifications`,
     markRead: (id: string) => `${API_BASE}/notifications/${id}/read`,
+    dismiss: (id: string) => `${API_BASE}/notifications/${id}/dismiss`,
     preferences: `${API_BASE}/notifications/preferences`,
     tokens: `${API_BASE}/push-tokens`,
-    registerToken: `${API_BASE}/push-tokens`,
+    register: `${API_BASE}/push-tokens/register`,
+    unregister: `${API_BASE}/push-tokens/unregister`,
+    test: `${API_BASE}/push-tokens/test`,
+    track: `${API_BASE}/notifications/track`,
+    history: `${API_BASE}/notifications/history`,
+    unreadCount: `${API_BASE}/notifications/unread-count`,
     intelligent: `${API_BASE}/notifications/intelligent`,
   },
   
@@ -270,6 +300,10 @@ export const API_ENDPOINTS = {
     submit: `${API_BASE}/feedback`,
     list: `${API_BASE}/feedback`,
     item: (id: string) => `${API_BASE}/feedback/${id}`,
+    analytics: {
+      summary: `${API_BASE}/feedback/analytics/summary`,
+      trends: `${API_BASE}/feedback/analytics/trends`,
+    },
   },
   
   // Appliances & Kitchen endpoints
@@ -277,6 +311,7 @@ export const API_ENDPOINTS = {
     list: `${API_BASE}/appliances`,
     item: (id: string) => `${API_BASE}/appliances/${id}`,
     userAppliances: `${API_BASE}/user-appliances`,
+    libraryCommon: `${API_BASE}/appliances/appliance-library/common`,
   },
   
   cookingTerms: {
@@ -299,6 +334,11 @@ export const API_ENDPOINTS = {
   autosave: {
     save: `${API_BASE}/autosave`,
     recover: `${API_BASE}/autosave/recover`,
+    draft: `${API_BASE}/autosave/draft`,
+    patterns: `${API_BASE}/autosave/patterns`,
+    versions: (documentId: string) => `${API_BASE}/autosave/versions/${documentId}`,
+    typingEvent: `${API_BASE}/autosave/typing-event`,
+    checkConflicts: `${API_BASE}/autosave/check-conflicts`,
   },
   
   // Batch processing endpoints
@@ -327,9 +367,45 @@ export const API_ENDPOINTS = {
     search: `${API_BASE}/natural-query`,
   },
   
+  // ML/Categorization endpoints
+  ml: {
+    categorize: `${API_BASE}/ml/categorize`,
+    categorizeBatch: `${API_BASE}/ml/categorize/batch`,
+    tags: {
+      generate: `${API_BASE}/ml/tags/generate`,
+      assign: `${API_BASE}/ml/tags/assign`,
+      related: (tagId: string) => `${API_BASE}/ml/tags/related/${tagId}`,
+    },
+    content: {
+      tags: (contentId: string) => `${API_BASE}/ml/content/${contentId}/tags`,
+      removeTag: (contentId: string, tagId: string) => `${API_BASE}/ml/content/${contentId}/tags/${tagId}`,
+    },
+    duplicates: {
+      list: `${API_BASE}/ml/duplicates`,
+      scan: `${API_BASE}/ml/duplicates/scan`,
+      resolve: `${API_BASE}/ml/duplicates/resolve`,
+    },
+    stats: {
+      uncategorized: `${API_BASE}/ml/stats/uncategorized`,
+    },
+  },
+  
+  // Donations endpoints
+  donations: {
+    list: `${API_BASE}/donations`,
+    create: `${API_BASE}/donations`,
+    item: (id: string) => `${API_BASE}/donations/${id}`,
+    checkout: `${API_BASE}/donations/create-checkout`,
+    verify: `${API_BASE}/donations/verify`,
+    stats: `${API_BASE}/donations/stats`,
+  },
+  
   // Health & System endpoints
   health: `${API_BASE}/health`,
   info: `${API_BASE}/info`,
+  
+  // Logging endpoints
+  logs: `${API_BASE}/logs`,
 };
 
 /**

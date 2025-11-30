@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +77,7 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
 
   // Fetch moderation queue
   const { data: queueData, isLoading, refetch } = useQuery({
-    queryKey: ['/api/moderate/queue', selectedStatus, selectedSeverity, page],
+    queryKey: [API_ENDPOINTS.admin.moderation, 'queue', selectedStatus, selectedSeverity, page],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -88,7 +89,7 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
       if (selectedSeverity && selectedSeverity !== 'all') {
         params.append('severity', selectedSeverity);
       }
-      const response = await apiRequest('GET', `/api/moderate/queue?${params}`);
+      const response = await apiRequest('GET', `${API_ENDPOINTS.admin.moderation}/queue?${params}`);
       return response.json();
     },
     enabled: isAdmin
@@ -102,7 +103,7 @@ export function ModerationQueue({ isAdmin = false }: ModerationQueueProps) {
       reason?: string;
       notes?: string;
     }) => {
-      const response = await apiRequest('POST', '/api/moderate/action', { logId, action, reason, notes });
+      const response = await apiRequest('POST', `${API_ENDPOINTS.admin.moderation}/action`, { logId, action, reason, notes });
       return response.json();
     },
     onSuccess: () => {

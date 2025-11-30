@@ -18,6 +18,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Calculator, TrendingUp, AlertTriangle, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface SimulationScenario {
   price: number;
@@ -61,7 +62,7 @@ export function PriceSimulator({
   // Simulation mutation
   const simulationMutation = useMutation({
     mutationFn: async (data: { productId: string; scenarios: SimulationScenario[] }) => {
-      return apiRequest('/api/pricing/simulate', 'POST', data);
+      return apiRequest(`${API_ENDPOINTS.admin.pricing.rules}/simulate`, 'POST', data);
     },
     onSuccess: (data: any) => {
       setResults(data.scenarios);

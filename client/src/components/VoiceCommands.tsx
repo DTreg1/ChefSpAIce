@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -112,18 +113,18 @@ export function VoiceCommands() {
 
   // Fetch available commands
   const { data: availableCommands = [] } = useQuery<CommandInfo[]>({
-    queryKey: ["/api/voice/commands"],
+    queryKey: [API_ENDPOINTS.ai.media.voice.commands.list],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/voice/commands");
+      const response = await apiRequest("GET", API_ENDPOINTS.ai.media.voice.commands.list);
       return response.json();
     }
   });
 
   // Fetch command history
   const { data: commandHistory = [], isLoading: historyLoading } = useQuery<VoiceCommand[]>({
-    queryKey: ["/api/voice/history"],
+    queryKey: [API_ENDPOINTS.ai.media.voice.commands.history],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/voice/history");
+      const response = await apiRequest("GET", API_ENDPOINTS.ai.media.voice.commands.history);
       return response.json();
     },
     enabled: showHistory
@@ -135,9 +136,9 @@ export function VoiceCommands() {
     successRate: number;
     commandBreakdown: Record<string, number>;
   }>({
-    queryKey: ["/api/voice/stats"],
+    queryKey: [API_ENDPOINTS.ai.media.voice.commands.stats],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/voice/stats");
+      const response = await apiRequest("GET", API_ENDPOINTS.ai.media.voice.commands.stats);
       return response.json();
     }
   });
@@ -145,12 +146,12 @@ export function VoiceCommands() {
   // Process voice command
   const processCommandMutation = useMutation({
     mutationFn: async (text: string) => {
-      const response = await apiRequest("POST", "/api/voice/process-text", { text });
+      const response = await apiRequest("POST", API_ENDPOINTS.ai.media.voice.commands.process, { text });
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/voice/history"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/voice/stats"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.commands.history] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.commands.stats] });
       
       // Speak the response if available
       if (data.processedCommand?.response && 'speechSynthesis' in window) {

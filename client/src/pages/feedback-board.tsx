@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,14 +22,14 @@ export default function FeedbackBoard() {
   const [generalSortBy, setGeneralSortBy] = useState<'upvotes' | 'recent'>('recent');
 
   const { data: personalFeedback = [], isLoading: personalLoading } = useQuery<Feedback[]>({
-    queryKey: ['/api/feedback'],
+    queryKey: [API_ENDPOINTS.feedback.list],
   });
 
   const { data: featureRequests = [], isLoading: featuresLoading } = useQuery<FeedbackWithUpvote[]>({
-    queryKey: ['/api/feedback/community', 'feature', featureSortBy],
+    queryKey: [API_ENDPOINTS.feedback.list, 'community', 'feature', featureSortBy],
     queryFn: async () => {
       try {
-        const res = await fetch(`/api/feedback/community?type=feature&sortBy=${featureSortBy}`);
+        const res = await fetch(`${API_ENDPOINTS.feedback.list}/community?type=feature&sortBy=${featureSortBy}`);
         if (!res.ok) return [];
         const data = await res.json();
         return Array.isArray(data) ? data : [];
@@ -39,10 +40,10 @@ export default function FeedbackBoard() {
   });
 
   const { data: bugReports = [], isLoading: bugsLoading } = useQuery<FeedbackWithUpvote[]>({
-    queryKey: ['/api/feedback/community', 'bug', bugSortBy],
+    queryKey: [API_ENDPOINTS.feedback.list, 'community', 'bug', bugSortBy],
     queryFn: async () => {
       try {
-        const res = await fetch(`/api/feedback/community?type=bug&sortBy=${bugSortBy}`);
+        const res = await fetch(`${API_ENDPOINTS.feedback.list}/community?type=bug&sortBy=${bugSortBy}`);
         if (!res.ok) return [];
         const data = await res.json();
         return Array.isArray(data) ? data : [];
@@ -53,10 +54,10 @@ export default function FeedbackBoard() {
   });
 
   const { data: generalFeedback = [], isLoading: generalLoading } = useQuery<FeedbackWithUpvote[]>({
-    queryKey: ['/api/feedback/community', 'general', generalSortBy],
+    queryKey: [API_ENDPOINTS.feedback.list, 'community', 'general', generalSortBy],
     queryFn: async () => {
       try {
-        const res = await fetch(`/api/feedback/community?type=general&sortBy=${generalSortBy}`);
+        const res = await fetch(`${API_ENDPOINTS.feedback.list}/community?type=general&sortBy=${generalSortBy}`);
         if (!res.ok) return [];
         const data = await res.json();
         return Array.isArray(data) ? data : [];
@@ -69,13 +70,13 @@ export default function FeedbackBoard() {
   const upvoteMutation = useMutation({
     mutationFn: async ({ feedbackId, action }: { feedbackId: string; action: 'add' | 'remove' }) => {
       if (action === 'add') {
-        return apiRequest(`/api/feedback/${feedbackId}/upvote`, 'POST');
+        return apiRequest(`${API_ENDPOINTS.feedback.item(feedbackId)}/upvote`, 'POST');
       } else {
-        return apiRequest(`/api/feedback/${feedbackId}/upvote`, 'DELETE');
+        return apiRequest(`${API_ENDPOINTS.feedback.item(feedbackId)}/upvote`, 'DELETE');
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/feedback/community'] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.feedback.list, 'community'] });
     },
   });
 

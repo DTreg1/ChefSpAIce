@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { 
   Upload, 
   X, 
@@ -70,7 +71,7 @@ export function BatchUploader({
       const formData = new FormData();
       formData.append("image", file);
       
-      return apiRequest("/api/images/batch", "POST", formData);
+      return apiRequest(API_ENDPOINTS.ai.media.images.batch, "POST", formData);
     }
   });
 

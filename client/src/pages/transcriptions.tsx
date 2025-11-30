@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,9 +37,9 @@ export default function TranscriptionsPage() {
   
   // Fetch transcriptions
   const { data: transcriptions, isLoading, refetch } = useQuery({
-    queryKey: ["/api/transcriptions"],
+    queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list],
     queryFn: async () => {
-      const response = await fetch("/api/transcriptions?limit=20", {
+      const response = await fetch(`${API_ENDPOINTS.ai.media.voice.transcriptions.list}?limit=20`, {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to fetch transcriptions");
@@ -49,7 +50,7 @@ export default function TranscriptionsPage() {
   // Upload audio mutation
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch("/api/transcriptions/audio", {
+      const response = await fetch(API_ENDPOINTS.ai.media.voice.transcribe, {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -66,7 +67,7 @@ export default function TranscriptionsPage() {
         description: "Your audio has been transcribed successfully",
       });
       setSelectedTranscription(data.transcription);
-      queryClient.invalidateQueries({ queryKey: ["/api/transcriptions"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list] });
       setAudioBlob(null);
     },
     onError: (error: Error) => {
@@ -86,7 +87,7 @@ export default function TranscriptionsPage() {
       original_text, 
       corrected_text 
     }: any) => {
-      const response = await fetch(`/api/transcriptions/${transcriptionId}/edit`, {
+      const response = await fetch(API_ENDPOINTS.ai.media.voice.transcriptions.edit(transcriptionId), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -107,7 +108,7 @@ export default function TranscriptionsPage() {
         description: "Transcription has been updated",
       });
       setSelectedTranscription(data.transcription);
-      queryClient.invalidateQueries({ queryKey: ["/api/transcriptions"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list] });
     },
     onError: () => {
       toast({
@@ -121,7 +122,7 @@ export default function TranscriptionsPage() {
   // Delete transcription mutation
   const deleteMutation = useMutation({
     mutationFn: async (transcriptionId: string) => {
-      const response = await fetch(`/api/transcriptions/${transcriptionId}`, {
+      const response = await fetch(API_ENDPOINTS.ai.media.voice.transcriptions.delete(transcriptionId), {
         method: "DELETE",
         credentials: "include",
       });
@@ -134,7 +135,7 @@ export default function TranscriptionsPage() {
         description: "Transcription has been deleted",
       });
       setSelectedTranscription(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/transcriptions"] });
+      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.ai.media.voice.transcriptions.list] });
     },
     onError: () => {
       toast({
@@ -212,7 +213,7 @@ export default function TranscriptionsPage() {
     if (!selectedTranscription) return;
     
     const response = await fetch(
-      `/api/transcriptions/${selectedTranscription.id}/export?format=${format}`,
+      API_ENDPOINTS.ai.media.voice.transcriptions.export(selectedTranscription.id, format),
       {
         credentials: "include",
       }

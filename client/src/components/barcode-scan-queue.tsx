@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScanLine, X, Plus, Trash2, Package, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Html5Qrcode } from "html5-qrcode";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 interface ScannedItem {
   barcode: string;
@@ -36,7 +37,7 @@ export function BarcodeScanQueue({ open, onOpenChange, onSubmitQueue }: BarcodeS
 
   const enrichBarcode = async (barcode: string, index: number) => {
     try {
-      const response = await fetch(`/api/barcodelookup/${barcode}`, {
+      const response = await fetch(`${API_ENDPOINTS.barcode.search}/${barcode}`, {
         credentials: "include",
       });
 

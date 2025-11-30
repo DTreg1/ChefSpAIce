@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { CohortBuilder } from "@/components/cohorts/CohortBuilder";
 import { RetentionTable } from "@/components/cohorts/RetentionTable";
 import { CohortComparison } from "@/components/cohorts/CohortComparison";
@@ -19,9 +20,9 @@ export default function CohortAnalysis() {
   const [showBuilder, setShowBuilder] = useState(false);
   
   const cohortsQuery = useQuery({
-    queryKey: ["/api/cohorts"],
+    queryKey: [API_ENDPOINTS.admin.cohorts.list],
     queryFn: async () => {
-      const response = await fetch("/api/cohorts?isActive=true");
+      const response = await fetch(`${API_ENDPOINTS.admin.cohorts.list}?isActive=true`);
       if (!response.ok) throw new Error("Failed to fetch cohorts");
       const data = await response.json();
       return data.cohorts as Cohort[];
@@ -285,9 +286,9 @@ function CohortMembers({ cohortId, cohortName }: { cohortId: string; cohortName:
   const limit = 20;
   
   const membersQuery = useQuery({
-    queryKey: [`/api/cohorts/${cohortId}/members`, page],
+    queryKey: [API_ENDPOINTS.admin.cohorts.item(cohortId), 'members', page],
     queryFn: async () => {
-      const response = await fetch(`/api/cohorts/${cohortId}/members?limit=${limit}&offset=${page * limit}`);
+      const response = await fetch(`${API_ENDPOINTS.admin.cohorts.item(cohortId)}/members?limit=${limit}&offset=${page * limit}`);
       if (!response.ok) throw new Error("Failed to fetch members");
       const data = await response.json();
       return data;
