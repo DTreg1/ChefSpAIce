@@ -1,10 +1,10 @@
-export { VoiceButton } from './VoiceButton';
-export { VoicePermissionModal } from './VoicePermissionModal';
-export { TranscriptDisplay } from './TranscriptDisplay';
-export { VoiceCommandHelper } from './VoiceCommandHelper';
-export { VoiceFeedback, useVoiceFeedback } from './VoiceFeedback';
-export { VoiceControl } from './VoiceControl';
+export { VoiceButton } from './voice-button';
+export { VoicePermissionModal } from './voice-permission-modal';
+export { TranscriptDisplay } from './transcript-display';
+export { VoiceCommandHelper } from './voice-command-helper';
+export { VoiceFeedback, useVoiceFeedback } from './voice-feedback';
+export { VoiceControl } from './voice-control';
 export { VoiceControls } from './voice-controls';
 export { VoiceActivityIndicator } from './voice-activity-indicator';
-export { AudioRecorder } from './AudioRecorder';
-export { VoiceCommands } from './VoiceCommands';
+export { AudioRecorder } from './audio-recorder';
+export { VoiceCommands } from './voice-commands';

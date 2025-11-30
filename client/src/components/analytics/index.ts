@@ -1,7 +1,7 @@
-export { AnomalyAlert } from './AnomalyAlert';
-export { AskAnalytics } from './AskAnalytics';
-export { InsightCard } from './InsightCard';
-export { InsightDigest } from './InsightDigest';
+export { AnomalyAlert } from './anomaly-alert';
+export { AskAnalytics } from './ask-analytics';
+export { InsightCard } from './insight-card';
+export { InsightDigest } from './insight-digest';
 export { FraudMetrics } from './fraud-metrics';
 export { PerformanceMetrics } from './performance-metrics';
-export { default as AdminActivityMonitor } from './AdminActivityMonitor';
+export { default as AdminActivityMonitor } from './admin-activity-monitor';

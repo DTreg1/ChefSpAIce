@@ -1,3 +1,3 @@
-export { NotificationSettings } from './NotificationSettings';
-export { IntelligentNotificationSettings } from './IntelligentNotificationSettings';
-export { PushNotificationHandler } from './PushNotificationHandler';
+export { NotificationSettings } from './notification-settings';
+export { IntelligentNotificationSettings } from './intelligent-notification-settings';
+export { PushNotificationHandler } from './push-notification-handler';

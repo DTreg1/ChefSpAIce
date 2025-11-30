@@ -1,4 +1,4 @@
-export { SearchBar } from "./SearchBar";
-export { SearchResults } from "./SearchResults";
-export type { SearchResult } from "./SearchResults";
-export { SearchHighlight, SearchHighlightWithContext } from "./SearchHighlight";
+export { SearchBar } from "./search-bar";
+export { SearchResults } from "./search-results";
+export type { SearchResult } from "./search-results";
+export { SearchHighlight, SearchHighlightWithContext } from "./search-highlight";
