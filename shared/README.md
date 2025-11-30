@@ -2,7 +2,7 @@
 
 ## Overview
 
-The shared schema directory contains the complete database schema and TypeScript type definitions for the application. It uses **Drizzle ORM** with PostgreSQL to provide type-safe database operations and automatic validation with Zod schemas.
+The shared schema directory contains the complete database schema and TypeScript type definitions for ChefSpAIce. It uses **Drizzle ORM** with PostgreSQL to provide type-safe database operations and automatic validation with Zod schemas.
 
 ## Architecture
 
@@ -24,114 +24,168 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 
 ### Core Domains
 
-#### 🔐 **Authentication & Users** (`auth.ts`)
-- **3 tables**: users, sessions, oauthProviders
-- User profiles, preferences, dietary restrictions
-- Session management for authentication
-- OAuth provider linking
+#### Authentication & Users (`auth.ts`) - 3 tables
+- `users` - User accounts and profiles
+- `sessions` - Session management
+- `oauthProviders` - OAuth provider links
+- Includes: user preferences, dietary restrictions, notification settings
 
-#### 🍳 **Food Management** (`food.ts`)
-- **10 tables**: userInventory, userRecipes, mealPlans, shoppingLists, etc.
-- Food inventory tracking with expiration dates
-- Recipe management and sharing
-- Meal planning and shopping lists
-- Kitchen appliance library
-- USDA nutrition data integration
+#### Food Management (`food.ts`) - 10 tables
+- `userInventory` - Food inventory items with expiration tracking
+- `userStorage` - Storage location definitions
+- `userRecipes` - User recipes and AI-generated recipes
+- `mealPlans` - Meal planning entries
+- `shoppingLists` - Shopping list items
+- `applianceLibrary` - Kitchen appliance catalog
+- `userAppliances` - User's kitchen equipment
+- `fdcCache` - USDA FoodData Central cache
+- `onboardingInventory` - Default onboarding items
+- `cookingTerms` - Cooking terminology glossary
 
-#### 📱 **Notifications** (`notifications.ts`)
-- **5 tables**: pushTokens, notificationHistory, scheduledNotifications, etc.
-- Push notification management
-- Notification scheduling and history
-- Device token management
-- Engagement tracking
+#### Notifications (`notifications.ts`) - 5 tables
+- `pushTokens` - Device push notification tokens
+- `notificationHistory` - Sent notification log
+- `scheduledNotifications` - Future notification queue
+- `notificationPreferences` - User notification settings
+- `notificationScores` - Engagement scoring
+
+#### Chat System (`chat.ts`) - 4 tables
+- `userChats` - Chat conversations
+- `chatMessages` - Individual messages
+- `messageContext` - Conversation context
+- `conversationMetadata` - Conversation summaries
+
+#### Billing (`billing.ts`) - 1 table
+- `donations` - User donations and payments
+
+### Analytics Domains
+
+#### Analytics (`analytics.ts`) - 11 tables
+- `analyticsEvents` - User activity events
+- `analyticsSessions` - Session tracking
+- `userAnalytics` - Aggregated user metrics
+- `activityLogs` - Detailed activity logging
+- `trends` - Trend data
+- `analyticsInsights` - AI-generated insights
+- `userPredictions` - Predictive analytics
+- `predictedChurn` - Churn prediction
+- `webVitals` - Performance metrics
+- `apiUsage` - API usage tracking
+- `featureAdoption` - Feature usage tracking
+
+#### System Monitoring (`system.ts`) - 5 tables
+- `systemHealth` - System health metrics
+- `performanceMetrics` - Performance data
+- `errorLogs` - Error tracking
+- `maintenanceSchedule` - Maintenance windows
+- `resourceUsage` - Resource consumption
+
+#### Experiments (`experiments.ts`) - 6 tables
+- `abTests` - A/B test definitions
+- `abTestVariants` - Test variants
+- `abTestAssignments` - User assignments
+- `cohorts` - User cohort definitions
+- `cohortMembers` - Cohort membership
+- `experimentResults` - Test results
 
 ### AI/ML Domains
 
-#### 🤖 **AI/ML Features** (`ai-ml.ts`)
-- **14 tables**: voiceCommands, writingSessions, summarizations, etc.
-- Voice command processing
-- Content generation and summarization
-- Writing assistance
-- Translation services
-- Natural language processing
+#### AI/ML Features (`ai-ml.ts`) - 14 tables
+- `voiceCommands` - Voice command history
+- `writingSessions` - Writing assistance sessions
+- `summarizations` - Content summaries
+- `translations` - Translation history
+- `sentimentHistory` - Sentiment tracking
+- `aiResponses` - AI response cache
+- `nlpProcessing` - NLP results
+- `contentGeneration` - Generated content log
+- `modelUsage` - AI model usage tracking
+- `promptTemplates` - Prompt templates
+- `contextMemory` - Conversation memory
+- `feedbackLoop` - AI feedback data
+- `rewardModeling` - RLHF data
+- `modelVersions` - Model version tracking
 
-#### 🖼️ **Image Processing** (`images.ts`)
-- **7 tables**: userImages, imageAnalysis, altTextGenerations, etc.
-- Image storage and analysis
-- Alt text generation
-- Face detection results
-- OCR text extraction
+#### Image Processing (`images.ts`) - 7 tables
+- `userImages` - Uploaded images
+- `imageAnalysis` - Image analysis results
+- `altTextGenerations` - Alt text for accessibility
+- `altTextQuality` - Alt text quality metrics
+- `faceDetection` - Face detection results
+- `ocrResults` - OCR text extraction
+- `imageMetadata` - Image EXIF and metadata
 
-#### 💭 **Sentiment Analysis** (`sentiment.ts`)
-- **5 tables**: sentimentAnalysis, sentimentTimeline, etc.
-- Sentiment tracking over time
-- Emotion detection
-- Text analysis results
+#### Sentiment Analysis (`sentiment.ts`) - 5 tables
+- `sentimentAnalysis` - Sentiment scores
+- `sentimentTimeline` - Sentiment over time
+- `emotionDetection` - Emotion classifications
+- `opinionMining` - Opinion extraction
+- `sentimentAlerts` - Sentiment-based alerts
 
-### Analytics & Monitoring
+#### Transcription (`transcription.ts`) - 2 tables
+- `transcriptions` - Audio transcriptions
+- `transcriptionSegments` - Transcription segments
 
-#### 📊 **Analytics** (`analytics.ts`)
-- **11 tables**: userAnalytics, activityLogs, trends, insights, etc.
-- User activity tracking
-- Performance metrics
-- Trend analysis
-- Predictive insights
+#### Extraction (`extraction.ts`) - 2 tables
+- `dataExtractions` - Extracted data
+- `extractionTemplates` - Extraction patterns
 
-#### 🛠️ **System Monitoring** (`system.ts`)
-- **5 tables**: systemHealth, performanceMetrics, errorLogs, etc.
-- System health monitoring
-- Performance tracking
-- Error logging
-- Resource usage
+### Content Domains
 
-### Content & Collaboration
+#### Content Management (`content.ts`) - 7 tables
+- `contentCategories` - Content categorization
+- `contentTags` - Tag assignments
+- `recommendations` - Content recommendations
+- `duplicateDetection` - Duplicate content tracking
+- `naturalLanguageQueries` - NL query history
+- `semanticSearch` - Semantic search index
+- `contentEmbeddings` - Vector embeddings
 
-#### 💬 **Chat System** (`chat.ts`)
-- **4 tables**: userChats, chatMessages, messageHistory, etc.
-- Real-time chat functionality
-- Message history and context
-- AI-powered chat responses
+#### Forms (`forms.ts`) - 7 tables
+- `formDefinitions` - Form schemas
+- `formSubmissions` - Form responses
+- `formFields` - Field definitions
+- `formValidation` - Validation rules
+- `formAnalytics` - Form completion analytics
+- `autoSaveDrafts` - Draft auto-saves
+- `formTemplates` - Reusable form templates
 
-#### 📝 **Content Management** (`content.ts`)
-- **7 tables**: contentCategories, recommendations, duplicates, etc.
-- Content categorization
-- Recommendation engine
-- Duplicate detection
-- Natural language queries
+#### Scheduling (`scheduling.ts`) - 4 tables
+- `schedulingPreferences` - User availability
+- `meetingSuggestions` - AI meeting suggestions
+- `calendarSync` - Calendar integrations
+- `scheduledEvents` - Scheduled events
 
-#### 📅 **Scheduling** (`scheduling.ts`)
-- **4 tables**: schedulingPreferences, meetingSuggestions, etc.
-- Meeting scheduling
-- Calendar integration
-- Availability management
+#### Pricing (`pricing.ts`) - 3 tables
+- `pricingHistory` - Price tracking
+- `priceAlerts` - Price alerts
+- `pricePredictions` - Price predictions
 
-### Advanced Features
+### Security Domains
 
-#### 🧪 **Experiments** (`experiments.ts`)
-- **6 tables**: abTests, cohorts, experimentResults, etc.
-- A/B testing framework
-- User cohort management
-- Experiment analytics
+#### Security (`security.ts`) - 8 tables
+- `moderationResults` - Content moderation
+- `moderationQueue` - Moderation queue
+- `fraudDetection` - Fraud alerts
+- `fraudPatterns` - Fraud patterns
+- `validationRules` - Validation rule definitions
+- `accessControl` - Permission management
+- `securityAudits` - Security audit log
+- `blockedContent` - Blocked content list
 
-#### 🔒 **Security** (`security.ts`)
-- **8 tables**: moderationResults, fraudDetection, validationRules, etc.
-- Content moderation
-- Fraud detection
-- Security validation rules
-- Access control
-
-#### 💰 **Pricing & Billing** (`pricing.ts`, `billing.ts`)
-- **4 tables**: pricingHistory, priceAlerts, donations, etc.
-- Price tracking and alerts
-- Billing management
-- Donation handling
+#### Support (`support.ts`) - 5 tables
+- `supportTickets` - Support tickets
+- `ticketMessages` - Ticket communications
+- `knowledgeBase` - Help articles
+- `ticketCategories` - Ticket categorization
+- `agentAssignments` - Support agent assignments
 
 ## Key Technologies
 
 ### Drizzle ORM
 - Type-safe SQL query builder
 - Schema-first approach
-- PostgreSQL dialect
+- PostgreSQL dialect with Neon serverless
 - Automatic migrations
 
 ### Zod Validation
@@ -143,7 +197,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 ### PostgreSQL Features
 - JSONB columns for flexible data
 - Full-text search indexes
-- Foreign key constraints
+- Foreign key constraints with cascade deletes
 - Unique constraints
 - Performance indexes
 
@@ -155,7 +209,7 @@ The schema is organized into **18 logical domains** containing **104 tables** to
 // Import everything (maintains backward compatibility)
 import * from "@shared/schema";
 
-// Import specific domains
+// Import specific tables
 import { users, userInventory, userRecipes } from "@shared/schema";
 
 // Import domain-specific modules directly
@@ -175,33 +229,33 @@ type User = typeof users.$inferSelect;
 type InsertUser = typeof users.$inferInsert;
 
 // Using Zod schemas
+import { createInsertSchema } from 'drizzle-zod';
 const insertUserSchema = createInsertSchema(users);
 type InsertUserZod = z.infer<typeof insertUserSchema>;
 ```
 
-### Common Patterns
+### Table Definition Pattern
 
-#### Table Definition
 ```typescript
 export const tableName = pgTable(
   "table_name",
   {
     id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
     userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
-    // ... other columns
+    name: text("name").notNull(),
+    metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
   (table) => [
-    // Indexes for performance
     index("table_name_user_id_idx").on(table.userId),
-    // Unique constraints
     uniqueIndex("table_name_unique_idx").on(table.userId, table.name),
   ]
 );
 ```
 
-#### Schema Export Pattern
+### Schema Export Pattern
+
 ```typescript
 // Create insert schema with Zod
 export const insertTableNameSchema = createInsertSchema(tableName);
@@ -213,69 +267,99 @@ export type InsertTableName = z.infer<typeof insertTableNameSchema>;
 export type TableName = typeof tableName.$inferSelect;
 ```
 
+## Shared Interfaces
+
+The schema exports common utility interfaces:
+
+```typescript
+// Pagination
+interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// Time series data
+interface TimeSeriesPoint {
+  date: string;
+  value: number;
+  label?: string;
+}
+
+// Confidence scoring
+interface ConfidenceScore {
+  score: number;
+  level?: 'low' | 'medium' | 'high' | 'very_high';
+  threshold?: number;
+}
+
+// Chat messages
+interface Message {
+  id: string;
+  userId: string;
+  role: string;
+  content: string;
+  createdAt: Date;
+}
+```
+
 ## Domain Dependencies
 
-Some domains reference tables from other domains:
+Table references across domains:
 
 - Most tables reference `users` from `auth.ts`
-- Recipe-related tables reference `userRecipes` from `food.ts`
+- Recipe tables reference `userRecipes` from `food.ts`
 - Analytics tables may reference entities from multiple domains
-- Chat messages reference user profiles
+- Notification tables reference `pushTokens` for device targeting
+- All AI-related tables can reference `analyticsInsights` for tracking
 
 ## JSONB Columns
 
-Many tables use JSONB columns for flexible data storage:
+Common JSONB column patterns:
 
-- **metadata**: General-purpose metadata storage
-- **preferences**: User or feature preferences
-- **settings**: Configuration settings
-- **context**: Contextual information for AI features
-- **result**: API response storage
+| Column | Usage |
+|--------|-------|
+| `metadata` | General-purpose metadata storage |
+| `preferences` | User or feature preferences |
+| `settings` | Configuration settings |
+| `context` | Contextual information for AI |
+| `result` | API response storage |
+| `nutrients` | Nutrition data |
+| `ingredients` | Recipe ingredients |
 
 ## Indexes and Performance
 
 Each table includes appropriate indexes for:
 
-- **Foreign keys**: User ID lookups
-- **Timestamps**: Date range queries
+- **Foreign keys**: User ID lookups (most queries)
+- **Timestamps**: Date range queries, recent items
 - **Status fields**: Filtering by state
 - **Search fields**: Text search optimization
 - **Unique constraints**: Data integrity
 
-## Migration Strategy
-
-The schema has been refactored from a monolithic 11,000+ line file into domain modules:
-
-1. **Phase 1**: Split into logical domains (completed)
-2. **Phase 2**: Maintain backward compatibility (current)
-3. **Phase 3**: Optimize cross-domain references (planned)
-
-### Backward Compatibility
-
-- All exports from the original `schema.ts` are maintained
-- Existing imports continue to work unchanged
-- New code should import from domain modules for clarity
-
 ## Best Practices
 
-1. **Use Domain Imports**: Import from specific domain modules when possible
+1. **Use Domain Imports**: Import from specific domain modules for clarity
 2. **Type Safety**: Always use generated TypeScript types
 3. **Validation**: Use Zod schemas for runtime validation
 4. **Indexes**: Add indexes for frequently queried columns
-5. **Soft Deletes**: Consider using `deletedAt` timestamps instead of hard deletes
+5. **Soft Deletes**: Use `deletedAt` timestamps instead of hard deletes
 6. **Audit Fields**: Include `createdAt` and `updatedAt` on all tables
 7. **UUIDs**: Use UUIDs for primary keys for better distribution
+8. **Cascade Deletes**: Use `onDelete: "cascade"` for child records
 
-## Common Interfaces
+## Common Conventions
 
 ### User Context
-Most tables include a `userId` field referencing the authenticated user:
+Most tables include a `userId` field:
 ```typescript
 userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" })
 ```
 
 ### Timestamps
-Standard timestamp fields across all tables:
+Standard timestamp fields:
 ```typescript
 createdAt: timestamp("created_at").defaultNow(),
 updatedAt: timestamp("updated_at").defaultNow(),
@@ -292,24 +376,15 @@ status: text("status", {
 
 ## Security Considerations
 
-1. **Foreign Key Constraints**: Cascade deletes to maintain referential integrity
-2. **User Isolation**: Most queries filtered by userId for multi-tenancy
-3. **Sensitive Data**: Use separate tables for PII with restricted access
+1. **Foreign Key Constraints**: Cascade deletes maintain referential integrity
+2. **User Isolation**: Queries filtered by userId for multi-tenancy
+3. **Sensitive Data**: Separate tables for PII with restricted access
 4. **Audit Trails**: Activity logs track all data modifications
-5. **Validation Rules**: Enforce business rules at the database level
+5. **Validation Rules**: Business rules enforced at database level
 
-## Development Workflow
+## Related Documentation
 
-1. **Define Schema**: Create or modify table definitions in appropriate domain
-2. **Generate Types**: TypeScript types are automatically inferred
-3. **Create Validation**: Add Zod schemas for insert/update operations
-4. **Add Indexes**: Include appropriate indexes for query performance
-5. **Test Migrations**: Ensure schema changes migrate cleanly
-
-## Future Enhancements
-
-- [ ] Add database views for complex queries
-- [ ] Implement stored procedures for complex operations
-- [ ] Add more comprehensive audit logging
-- [ ] Optimize indexes based on query patterns
-- [ ] Add database-level encryption for sensitive fields
+- `/server/storage/` - Storage layer implementations
+- `/server/README.md` - Server architecture
+- `/docs/STORAGE_AUDIT_REPORT.md` - Interface alignment report
+- `/docs/food-domain-migration.md` - Domain migration details

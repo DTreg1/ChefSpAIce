@@ -2,11 +2,11 @@
 
 ## Overview
 
-This is the Express.js backend server for the application, providing RESTful APIs, authentication, database management, and various services for the frontend application.
+Express.js backend server for ChefSpAIce, providing RESTful APIs, authentication, database management, and AI/ML services for the frontend application.
 
 ## Architecture
 
-The server follows a modular architecture with clear separation of concerns:
+The server follows a modular, domain-driven architecture with clear separation of concerns:
 
 ```
 server/
@@ -17,10 +17,17 @@ server/
 ├── middleware/         # Express middleware
 ├── migrations/         # Database migrations & schema updates
 ├── notifications/      # Push notification system
-├── routers/            # API route handlers
+├── routers/            # API route handlers (3 domains)
+│   ├── user/           # User-facing features (13 routers)
+│   ├── admin/          # Administrative functions (8 routers)
+│   └── platform/       # Platform services (12 routers)
 ├── seeds/              # Database seed scripts
-├── services/           # Business logic services
+├── services/           # Business logic services (34 services)
 ├── storage/            # Database storage layer
+│   ├── domains/        # Domain implementations (17 modules)
+│   ├── facades/        # Storage facades (3 facades)
+│   ├── interfaces/     # TypeScript interfaces (17 interfaces)
+│   └── errors/         # Custom error classes
 ├── types/              # TypeScript type definitions
 ├── utils/              # Utility functions & helpers
 ├── db.ts               # Database connection
@@ -29,200 +36,253 @@ server/
 └── vite.ts             # Vite server configuration
 ```
 
-## Directory Structure Details
+## Router Structure
 
-### Core Files (Server Root)
-- `index.ts` - Application entry point, middleware setup, route registration
-- `db.ts` - Database connection using Neon's serverless PostgreSQL
-- `vite.ts` - Vite server configuration for frontend asset serving
-- `suppress-logs.ts` - TensorFlow log suppression (must load first)
+### User Domain (`routers/user/`) - 13 Routers
+User-facing features and personal data management:
+- `appliances.router.ts` - Kitchen appliance management
+- `autocomplete.router.ts` - Search autocomplete suggestions
+- `autosave.router.ts` - Draft content auto-saving
+- `chat.router.ts` - AI chat conversations
+- `cooking-terms.router.ts` - Cooking terminology glossary
+- `inventory.router.ts` - Food inventory management
+- `meal-planning.router.ts` - Meal plan creation and management
+- `nutrition.router.ts` - Nutrition tracking and goals
+- `oauth.router.ts` - OAuth authentication flows
+- `profile.router.ts` - User profile management
+- `recipes.router.ts` - Recipe CRUD and generation
+- `shopping-list.router.ts` - Shopping list management
+- `validation.router.ts` - Data validation endpoints
 
-### Data Directory (`data/`)
-Static configuration and mapping data:
-- `appliance-library-data.ts` - Comprehensive appliance data
-- `category-mapping.ts` - Food category normalization mappings
-- `foodCategoryDefaults.ts` - Default values for food categories
-- `onboarding-items.ts` - Initial onboarding food items
-- `onboarding-usda-mapping.ts` - USDA database mappings
+### Admin Domain (`routers/admin/`) - 8 Routers
+Administrative and management functions:
+- `ab-testing.router.ts` - A/B test management
+- `admin.router.ts` - General admin operations
+- `ai-metrics.router.ts` - AI usage analytics
+- `cohorts.router.ts` - User cohort management
+- `maintenance.router.ts` - System maintenance
+- `moderation.router.ts` - Content moderation
+- `pricing.router.ts` - Price management
+- `ticket-routing.router.ts` - Support ticket routing
 
-### Integrations Directory (`integrations/`)
-External API integrations:
-- `openai.ts` - OpenAI API client configuration
-- `usda.ts` - USDA FoodData Central API integration
-- `openFoodFacts.ts` - OpenFoodFacts API fallback
-- `objectStorage.ts` - Google Cloud Storage integration
+### Platform Domain (`routers/platform/`) - 12 Routers
+Platform-wide services and integrations:
+- `activity-logs.router.ts` - Activity logging
+- `analytics.router.ts` - Analytics tracking
+- `batch.router.ts` - Batch operations
+- `feedback.router.ts` - User feedback
+- `fraud.router.ts` - Fraud detection
+- `intelligent-notifications.router.ts` - Smart notifications
+- `notifications.router.ts` - Push notifications
+- `push-tokens.router.ts` - Device token management
+- `scheduling.router.ts` - Meeting scheduling
 
-### Seeds Directory (`seeds/`)
-Database seeding scripts:
-- `seed-db.ts` - Main database seeding script
-- `seed-common-food-items.ts` - Common food items seeder
-- `seed-ab-tests.ts` - A/B testing configuration
-- `seed-cohorts.ts` - User cohort definitions
-- `seed-templates.ts` - Template data seeding
-- `seed-validation-rules.ts` - Validation rule definitions
+**AI Sub-domain (`routers/platform/ai/`):**
+- `analysis.router.ts` - Content analysis
+- `content.router.ts` - Content generation
+- `media.router.ts` - Media processing
 
-### Migrations Directory (`migrations/`)
-Database schema migrations and updates:
-- `add-performance-indexes.ts` - Performance optimization indexes
-- `migrate-categories.ts` - Category migration scripts
-- `update-categories.ts` - Category update utilities
-- `init-appliance-library.ts` - Appliance library initialization
+## Storage Layer
 
-## Key Technologies
+### Domain-Driven Design
 
-- **Runtime**: Node.js with TypeScript
-- **Framework**: Express.js
-- **Database**: PostgreSQL (via Neon)
-- **ORM**: Drizzle ORM
-- **Authentication**: Passport.js with multiple OAuth providers
-- **Session Management**: express-session with PostgreSQL store
-- **Real-time**: WebSockets for chat functionality
-- **AI Integration**: OpenAI API for various AI features
-- **Object Storage**: Google Cloud Storage
-- **Push Notifications**: Web Push & Apple Push Notifications
+The storage layer is organized into 17 domain modules with corresponding interfaces:
 
-## Database
+| Domain | Interface | Methods | Description |
+|--------|-----------|---------|-------------|
+| User | IUserStorage | 22 | User accounts, sessions, preferences |
+| Inventory | IInventoryStorage | 16 | Food items, storage locations |
+| Recipes | IRecipesStorage | 22 | Recipes, meal plans, favorites |
+| Chat | IChatStorage | 4 | Chat messages and history |
+| Notification | INotificationStorage | 19 | Push tokens, notification history |
+| Analytics | IAnalyticsStorage | 24 | Events, sessions, predictions |
+| Feedback | IFeedbackStorage | 18 | User feedback, donations |
+| Billing | IBillingStorage | 20 | Payments, subscriptions |
+| Security | ISecurityStorage | 26 | Moderation, fraud detection |
+| Support | ISupportStorage | 23 | Tickets, knowledge base |
+| Experiments | IExperimentsStorage | 20 | A/B tests, cohorts |
+| Pricing | IPricingStorage | 18 | Price tracking, alerts |
+| Content | IContentStorage | 31 | Categorization, recommendations |
+| Scheduling | ISchedulingStorage | 21 | Calendar, meetings |
+| System | ISystemStorage | 28 | Health, maintenance |
+| Food | IFoodStorage | 18 | USDA cache, cooking terms |
+| AI-ML | IAiMlStorage | 45 | AI features, voice commands |
 
-### Configuration
+**Total: 375 methods across 17 domains**
 
-The database is configured in `db.ts` using Neon's serverless PostgreSQL:
+### Storage Facades
 
-```typescript
-// Database connection is established via DATABASE_URL environment variable
-import { db } from './db';
-```
+Three-tier facade system for organized data access:
 
-### Storage Layer
+1. **UserStorage** (`facades/UserStorage.ts`)
+   - User-specific data operations
+   - Inventory, recipes, preferences
+   - Personal settings and history
 
-The storage layer follows a domain-driven design pattern:
+2. **AdminStorage** (`facades/AdminStorage.ts`)
+   - Administrative functions
+   - User management
+   - System configuration
 
-- **Interfaces** (`storage/interfaces/`): Define contracts for storage operations
-- **Implementations** (`storage/domains/`): Concrete implementations for each domain
-- **Composition** (`storage/utils/compose-storage.ts`): Combines all storage domains
+3. **PlatformStorage** (`facades/PlatformStorage.ts`)
+   - Platform-wide operations
+   - Analytics, notifications
+   - Cross-user features
 
-Key storage domains:
-- `user-auth`: User authentication and profiles
-- `recipes`: Recipe management
-- `inventory`: Inventory tracking
-- `chat`: Chat messages and conversations
-- `analytics`: User analytics and metrics
-- `billing`: Subscription and payment handling
-- `ai-ml`: AI/ML model interactions
-- `notifications`: Push notification management
+### Error Handling
 
-## API Routes
+Custom storage errors (`storage/errors/`):
+- `StorageError` - Base storage error class
+- Consistent error propagation across domains
+- Type-safe error handling
 
-The server uses a modular routing system (`routers/index.ts`) with domain-specific routers:
+## Services (34 Services)
 
-### Core Routes
-- `/api/auth/*` - Authentication endpoints
-- `/api/recipes/*` - Recipe management
-- `/api/inventory/*` - Inventory operations
-- `/api/chat/*` - Chat functionality
-- `/api/notifications/*` - Push notifications
-- `/api/analytics/*` - Analytics tracking
+### AI/ML Services
+- `openai-query.service.ts` - OpenAI API interactions
+- `embeddings.service.ts` - Vector embeddings
+- `sentiment.service.ts` - Sentiment analysis
+- `summarization.service.ts` - Content summarization
+- `moderation.service.ts` - Content moderation
+- `excerpt.service.ts` - Excerpt generation
+- `duplicate-detection.service.ts` - Duplicate content detection
+- `ai-routing.service.ts` - AI request routing
 
-### AI/ML Routes
-- `/api/ai-assistant/*` - AI assistant interactions
-- `/api/predictions/*` - ML predictions
-- `/api/extraction/*` - Text/data extraction
-- `/api/summarization/*` - Content summarization
-- `/api/sentiment/*` - Sentiment analysis
-- `/api/ocr/*` - Optical character recognition
-- `/api/face-detection/*` - Face detection in images
+### Prediction Services
+- `prediction.service.ts` - ML predictions
+- `lightweight-prediction.service.ts` - Fast predictions
+- `trend-analyzer.service.ts` - Trend analysis
+- `predictive-maintenance.service.ts` - System health prediction
 
-### Utility Routes
-- `/api/autocomplete/*` - Search autocomplete
-- `/api/nutrition/*` - Nutrition calculations
-- `/api/pricing/*` - Price tracking
-- `/api/scheduling/*` - Meal scheduling
-- `/api/feedback/*` - User feedback
+### Notification Services
+- `push-notification.service.ts` - Push notification delivery
+- `push-notification-base.service.ts` - Base notification logic
+- `push-notification-scheduler.service.ts` - Scheduled notifications
+- `ml-notification-scheduler.service.ts` - ML-powered scheduling
+- `fcm.service.ts` - Firebase Cloud Messaging
+- `apns.service.ts` - Apple Push Notifications
+- `push-status.service.ts` - Notification status tracking
+
+### Analytics Services
+- `analytics.service.ts` - Analytics processing
+- `activity-logger.service.ts` - Activity logging
+- `fraud.service.ts` - Fraud detection
+- `retention-campaigns.service.ts` - User retention
+
+### Content Services
+- `alt-text-generator.service.ts` - Alt text generation
+- `face-detection.service.ts` - Face detection
+- `term-detector.service.ts` - Cooking term detection
+- `cooking-terms.service.ts` - Cooking terms management
+
+### Utility Services
+- `chat.service.ts` - Chat management
+- `validation.service.ts` - Data validation
+- `barcode-lookup.service.ts` - Barcode scanning
+- `logger.service.ts` - Application logging
+- `log-retention.service.ts` - Log management
+
+## Middleware
+
+### Core Middleware (`middleware/`)
+1. **Authentication** (`auth.middleware.ts`)
+   - Route protection
+   - Session validation
+   - OAuth verification
+
+2. **Error Handling** (`error.middleware.ts`)
+   - Global error handler
+   - Consistent error responses
+   - Error logging
+
+3. **Rate Limiting** (`rateLimit.ts`)
+   - API rate limiting
+   - DDoS protection
+   - Per-route limits
+
+4. **Caching** (`cache.middleware.ts`)
+   - Response caching
+   - Cache invalidation
+   - Performance optimization
+
+5. **Validation** (`validation.middleware.ts`)
+   - Request validation
+   - Zod schema validation
+   - Input sanitization
+
+6. **Activity Logging** (`activity-logging.middleware.ts`)
+   - User activity tracking
+   - Audit logging
+   - Analytics events
+
+## External Integrations
+
+### API Clients (`integrations/`)
+- `openai.ts` - OpenAI API client (GPT-4, embeddings)
+- `usda.ts` - USDA FoodData Central API
+- `openFoodFacts.ts` - Open Food Facts fallback
+- `objectStorage.ts` - Google Cloud Storage
+
+### Data Files (`data/`)
+- `appliance-library-data.ts` - Kitchen appliances
+- `category-mapping.ts` - Food category mappings
+- `foodCategoryDefaults.ts` - Default categories
+- `onboarding-items.ts` - Onboarding food items
+- `onboarding-usda-mapping.ts` - USDA mappings
 
 ## Authentication
 
-### Session Management
+### Supported Providers
+- Google OAuth 2.0
+- GitHub OAuth
+- Twitter/X OAuth 2.0 (PKCE)
+- Apple Sign In
+- Replit Auth (OIDC)
+- Email/Password (bcrypt)
 
-Sessions are configured in `auth/session-config.ts`:
-- PostgreSQL session store via `connect-pg-simple`
+### Session Management
+- PostgreSQL session store (`connect-pg-simple`)
 - Secure cookie configuration
+- 24-hour session expiry
 - CORS support for cross-origin requests
 
-### OAuth Providers
+### Key Files
+- `auth/session-config.ts` - Session configuration
+- `auth/oauth.ts` - OAuth strategy setup
+- `auth/unified-auth.ts` - Authentication orchestration
+- `auth/helpers.ts` - Auth utility functions
 
-The server supports multiple OAuth providers (`auth/oauth.ts`):
-- Google OAuth 2.0
-- GitHub
-- Twitter
-- Apple Sign In
-- Replit Authentication
+## Database
 
-### Middleware
-
-Authentication middleware (`middleware/auth.middleware.ts`) protects routes:
+### Connection
+Database configured in `db.ts` using Neon's serverless PostgreSQL:
 ```typescript
-// Routes are protected by requireAuth middleware
-router.get('/protected', requireAuth, handler);
+import { db } from './db';
 ```
 
-## Middleware Stack
+### Migrations (`migrations/`)
+- `add-performance-indexes.ts` - Performance indexes
+- `migrate-categories.ts` - Category migrations
+- `init-appliance-library.ts` - Appliance data
 
-Key middleware components (`middleware/`):
-
-1. **Error Handling** (`error.middleware.ts`)
-   - Global error handler
-   - API error responses
-   - Error logging
-
-2. **Rate Limiting** (`rateLimit.ts`)
-   - API rate limiting
-   - DDoS protection
-
-3. **Caching** (`cache.middleware.ts`)
-   - Response caching
-   - Cache invalidation
-
-4. **Validation** (`validation.middleware.ts`)
-   - Request validation
-   - Schema validation with Zod
-
-5. **Activity Logging** (`activity-logging.middleware.ts`)
-   - User activity tracking
-   - Audit logging
-
-## Services
-
-Business logic services (`services/`):
-
-- **Activity Logger**: Tracks user activities
-- **Push Status**: Manages push notification status
-- **Notification Scheduler**: Schedules push notifications
-- **Term Detector**: Detects cooking terms and entities
-- **Log Retention**: Manages log file retention
-
-## Utilities
-
-Helper functions (`utils/`):
-
-- **API Cache Service**: Caching for external API calls
-- **Circuit Breaker**: Fault tolerance for external services
-- **Retry Handler**: Automatic retry logic
-- **Batch Queries**: Efficient batch database operations
-- **Nutrition Calculator**: Calculate nutritional values
-- **Unit Converter**: Convert between measurement units
-- **USDA Cache**: Cache for USDA food database queries
+### Seeds (`seeds/`)
+- `seed-db.ts` - Main seeding script
+- `seed-common-food-items.ts` - Food items
+- `seed-ab-tests.ts` - A/B test configuration
+- `seed-cohorts.ts` - User cohorts
+- `seed-templates.ts` - Templates
+- `seed-validation-rules.ts` - Validation rules
 
 ## Environment Variables
 
-Required environment variables:
-
+### Required
 ```bash
-# Database
-DATABASE_URL=postgresql://...
+DATABASE_URL=postgresql://...          # Database connection
+SESSION_SECRET=your-session-secret     # Session encryption
+```
 
-# Authentication
-SESSION_SECRET=your-session-secret
-
-# OAuth Providers (optional)
+### Authentication (Optional)
+```bash
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GITHUB_CLIENT_ID=...
@@ -230,83 +290,56 @@ GITHUB_CLIENT_SECRET=...
 TWITTER_CLIENT_ID=...
 TWITTER_CLIENT_SECRET=...
 APPLE_CLIENT_ID=...
-APPLE_SERVICE_ID=...
 APPLE_TEAM_ID=...
 APPLE_KEY_ID=...
 APPLE_PRIVATE_KEY=...
+```
 
-# AI Services
+### AI Services
+```bash
 OPENAI_API_KEY=...
+```
 
-# Object Storage
+### Object Storage
+```bash
 OBJECT_STORAGE_BUCKET=...
+```
 
-# Push Notifications
+### Push Notifications
+```bash
 VAPID_PUBLIC_KEY=...
 VAPID_PRIVATE_KEY=...
-APPLE_PUSH_KEY_ID=...
-APPLE_PUSH_TEAM_ID=...
+FCM_SERVICE_ACCOUNT=...
+APNS_KEY_ID=...
+APNS_TEAM_ID=...
+APNS_KEY_CONTENT=...
 ```
-
-## Development
-
-### Starting the Server
-
-```bash
-# Development mode with hot-reload
-npm run dev
-
-# Production mode
-npm run build
-npm run start
-```
-
-### Database Operations
-
-```bash
-# Push schema changes to database
-npm run db:push
-
-# Generate migration files
-npm run db:generate
-```
-
-### Code Quality
-
-```bash
-# Type checking
-npm run check
-
-# Linting
-npm run lint
-npm run lint:fix
-
-# Backend-only linting
-npm run lint:back
-```
-
-## Production Considerations
-
-1. **Compression**: Gzip compression enabled for responses > 1KB
-2. **Security**: Helmet.js for security headers (when configured)
-3. **Logging**: Structured logging with sanitization of sensitive data
-4. **Error Handling**: Global error handler with proper status codes
-5. **Rate Limiting**: Configurable rate limits per endpoint
-6. **Caching**: Response caching for improved performance
-7. **Circuit Breaker**: Fault tolerance for external service dependencies
 
 ## API Response Format
 
-Standard API response structure:
-
-```typescript
-// Success Response
+### Success Response
+```json
 {
   "success": true,
   "data": { /* response data */ }
 }
+```
 
-// Error Response
+### Paginated Response
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 100,
+    "totalPages": 2
+  }
+}
+```
+
+### Error Response
+```json
 {
   "success": false,
   "error": {
@@ -317,26 +350,35 @@ Standard API response structure:
 }
 ```
 
-## Testing
+## Development
 
-The server includes comprehensive error handling and validation:
-- Request validation with Zod schemas
-- Type-safe storage operations
-- Automated retry logic for transient failures
-- Circuit breaker pattern for external services
+### Commands
+```bash
+npm run dev          # Development with hot-reload
+npm run build        # Production build
+npm run start        # Start production server
+npm run db:push      # Push schema changes
+npm run db:generate  # Generate migrations
+npm run check        # TypeScript checking
+npm run lint         # ESLint
+npm run lint:fix     # Auto-fix issues
+npm run lint:back    # Backend-only linting
+```
 
-## Monitoring
+## Production Considerations
 
-The server includes built-in monitoring:
-- Request/response logging
-- Performance metrics
-- Error tracking
-- Activity logging for audit trails
+1. **Compression**: Gzip enabled for responses > 1KB
+2. **Security**: Helmet.js for security headers
+3. **Logging**: Structured logging with sensitive data sanitization
+4. **Error Handling**: Global handler with proper status codes
+5. **Rate Limiting**: Configurable per-endpoint limits
+6. **Caching**: Response caching for performance
+7. **Circuit Breaker**: Fault tolerance for external services
+8. **Health Checks**: `/health` endpoint for monitoring
 
-## Deployment
+## Related Documentation
 
-The server is configured for deployment with:
-- Vite integration for serving frontend assets
-- Production-ready build configuration
-- Environment-based configuration
-- Health check endpoints
+- `/docs/API.md` - Complete API documentation
+- `/docs/AUTH_CONFIG.md` - Authentication setup
+- `/docs/SETUP_GUIDE.md` - Configuration guide
+- `/shared/README.md` - Schema documentation

@@ -1,64 +1,230 @@
 # ChefSpAIce - Smart Kitchen Assistant
 
 ## Overview
-ChefSpAIce is an AI-powered kitchen management application designed to help users manage food inventory, reduce waste, and discover personalized recipes. It integrates real-time inventory tracking with AI-driven recipe generation, nutrition analysis, and meal planning. The project aims to provide a comprehensive solution for modern kitchen management, offering a seamless experience across web and mobile platforms.
+
+ChefSpAIce is an AI-powered kitchen management application designed to help users manage food inventory, reduce waste, and discover personalized recipes. It integrates real-time inventory tracking with AI-driven recipe generation, nutrition analysis, and meal planning. The project provides a comprehensive solution for modern kitchen management, offering a seamless experience across web and mobile platforms.
 
 ## User Preferences
-Preferred communication style: Simple, everyday language.
+
+- Preferred communication style: Simple, everyday language
+- UI style: Utility-focused chat application following ChatGPT's conversational patterns
+- Design approach: Clean, accessible interface with olive green primary color (#6b8e23)
 
 ## System Architecture
 
 ### Frontend
-Built with React 18, TypeScript, Vite, and TailwindCSS with shadcn/ui. It uses TanStack Query for server state and React Context API for global UI state, employing a component-based architecture, custom hooks, progressive disclosure, and lazy loading. Capacitor is used for cross-platform mobile deployment (native camera, push notifications, sharing) and PWA capabilities.
+
+Built with React 18, TypeScript, Vite, and TailwindCSS with shadcn/ui components. Key technologies:
+- **State Management**: TanStack Query for server state, React Context API for global UI state
+- **Routing**: Wouter for client-side routing
+- **Forms**: React Hook Form with Zod validation
+- **Mobile**: Capacitor for cross-platform iOS/Android deployment with native camera, push notifications, and sharing
+- **PWA**: Progressive Web App with offline support via Service Worker
 
 ### Backend
-An Express.js RESTful API, organized into domain-specific routers with middleware for authentication, rate limiting, and error handling. Server-Sent Events (SSE) are used for streaming AI responses. Authentication supports Replit Auth, OAuth (Google, GitHub, Twitter/X, Apple), and email/password, with session-based management and user-scoped data isolation. Key router categories include `user/` (user features), `admin/` (administrative functions), `platform/` (platform-wide services), and `ai/` (AI/ML endpoints).
+
+Express.js RESTful API with modular router architecture:
+
+**Router Categories:**
+- `user/` - User features (inventory, recipes, chat, profile, meal planning)
+- `admin/` - Administrative functions (A/B testing, cohorts, moderation, maintenance)
+- `platform/` - Platform-wide services (analytics, notifications, scheduling, fraud detection)
+- `platform/ai/` - AI/ML endpoints (analysis, content generation, media processing)
+
+**Key Features:**
+- Server-Sent Events (SSE) for streaming AI responses and real-time chat
+- Session-based authentication with PostgreSQL store
+- Multi-provider OAuth (Google, GitHub, Twitter/X, Apple, Replit) + email/password
 
 ### Data Storage
-PostgreSQL, accessed via Drizzle ORM, is the primary data store. The schema is type-safe, defined in `shared/schema/*.ts` files, using Zod for runtime validation, foreign key relationships, and JSONB columns. Data is isolated by `user_id`. The architecture employs a three-tier facade system: `UserStorage` for user-specific data, `AdminStorage` for administrative functions, and `PlatformStorage` for platform-wide operations.
 
-### System Design Choices
-- **UI/UX**: Component-based architecture with TailwindCSS and shadcn/ui for consistency and accessibility.
-- **AI Integration**: Deep integration with OpenAI for various kitchen-related AI features.
-- **Cross-Platform**: Capacitor enables a unified codebase for web and mobile (iOS, Android).
-- **Scalability**: Batched database operations, in-memory caching, and database indexing.
-- **Maintainability**: Domain-driven design for storage, modular backend, and type-safe schema with Zod.
+PostgreSQL accessed via Drizzle ORM with a domain-driven architecture:
+
+**Schema Organization:** 18 domain modules containing 104 tables total
+- Core: auth (3), food (10), notifications (5), chat (4), billing (1)
+- Analytics: analytics (11), system (5), experiments (6)
+- AI/ML: ai-ml (14), images (7), sentiment (5), transcription (2), extraction (2)
+- Content: content (7), forms (7), scheduling (4), pricing (3)
+- Security: security (8), support (5)
+
+**Storage Layer Architecture:**
+- `storage/interfaces/` - TypeScript interface contracts (17 interfaces)
+- `storage/domains/` - Domain implementations (17 storage modules)
+- `storage/facades/` - Three-tier facade system:
+  - `UserStorage` - User-specific data operations
+  - `AdminStorage` - Administrative functions
+  - `PlatformStorage` - Platform-wide operations
+
+### Key Services (34 services)
+
+Located in `server/services/`:
+- **AI Services**: OpenAI query, embeddings, sentiment analysis, summarization, moderation
+- **ML Services**: Prediction, trend analysis, duplicate detection, ML notification scheduler
+- **Notification Services**: FCM, APNS, web push, push scheduling
+- **Analytics Services**: Activity logging, fraud detection, retention campaigns
+- **Content Services**: Alt-text generation, face detection, term detection, excerpt generation
 
 ## External Dependencies
 
 ### AI & Machine Learning
-- **OpenAI API**: GPT-4/GPT-4o for recipe generation, chat, and content moderation, with streaming via SSE.
-- **ML Services**: Semantic search (embeddings), auto-categorization, auto-tagging (NLP), duplicate detection, natural language to SQL.
-- **Retention Campaigns**: Automated user retention system with churn prediction, email campaigns, and intervention scheduling.
+- **OpenAI API**: GPT-4/GPT-4o for recipe generation, chat, content moderation, vision analysis
+- **Streaming**: Server-Sent Events for real-time AI responses
+- **ML Features**: Semantic search (embeddings), auto-categorization, duplicate detection, NLP tagging
 
 ### Food & Nutrition Data
-- **USDA FoodData Central API**: Authoritative nutrition data.
-- **Barcode Lookup API**: Product information from UPC/EAN codes.
-- **Open Food Facts**: Fallback for barcode data.
+- **USDA FoodData Central API**: Authoritative nutrition data with local caching
+- **Barcode Lookup API**: Product information from UPC/EAN codes
+- **Open Food Facts**: Fallback for barcode data
 
 ### Cloud Storage
-- **Google Cloud Storage**: For image uploads.
+- **Google Cloud Storage**: Image uploads and asset storage
 
 ### Push Notifications
-- **Web Push**: Browser-based notifications.
-- **Firebase Cloud Messaging (FCM)**: Android push notifications.
-- **Apple Push Notification Service (APNS)**: iOS push notifications.
+- **Web Push**: Browser-based notifications via VAPID (requires VAPID key configuration)
+- **Firebase Cloud Messaging (FCM)**: Android push notifications (requires FCM credentials)
+- **Apple Push Notification Service (APNS)**: iOS push notifications (requires APNs credentials)
 
 ### Authentication Providers
 - Google OAuth 2.0
 - GitHub OAuth
 - Twitter/X OAuth 2.0 with PKCE
 - Apple Sign In
-- Replit Auth (development only)
+- Replit Auth (OIDC)
+- Email/Password (bcrypt hashing)
 
 ### Mobile Platform
-- **Capacitor**: Cross-platform framework for iOS and Android deployment.
+- **Capacitor**: Cross-platform framework for iOS and Android
+- Native plugins: Camera, Push Notifications, Share, Device
 
 ### Infrastructure
-- **PostgreSQL Database**: Primary data store.
+- **PostgreSQL Database**: Primary data store (Neon serverless)
+- **Express Session**: PostgreSQL-backed session storage
 
-## Recent Changes (Sprint 3)
-- Activated ML service with ContentStorage integration for semantic search and content analysis.
-- Activated retention campaigns service with AnalyticsStorage integration for automated user retention.
-- Completed utilities consolidation with shared vectorMath functions.
-- Updated authentication documentation to clarify multi-provider support.
+## Project Structure
+
+```
+├── client/                 # Frontend React application
+│   └── src/
+│       ├── components/     # Reusable UI components
+│       ├── contexts/       # React context providers
+│       ├── hooks/          # Custom React hooks
+│       ├── lib/            # Utility libraries
+│       ├── pages/          # Route page components (60+ pages)
+│       └── utils/          # Helper functions
+├── server/                 # Backend Express server
+│   ├── auth/               # Authentication & OAuth
+│   ├── config/             # Server configuration
+│   ├── data/               # Static data files
+│   ├── integrations/       # External API clients
+│   ├── middleware/         # Express middleware
+│   ├── notifications/      # Push notification handlers
+│   ├── routers/            # API route handlers
+│   │   ├── user/           # User domain routes
+│   │   ├── admin/          # Admin domain routes
+│   │   └── platform/       # Platform domain routes
+│   ├── services/           # Business logic (34 services)
+│   ├── storage/            # Database access layer
+│   │   ├── domains/        # Domain implementations (17)
+│   │   ├── facades/        # Storage facades (3)
+│   │   └── interfaces/     # TypeScript interfaces (17)
+│   └── utils/              # Server utilities
+├── shared/                 # Shared code
+│   └── schema/             # Database schema (18 domains, 104 tables)
+├── docs/                   # Documentation
+├── ios/                    # iOS Capacitor project
+└── migrations/             # Database migrations
+```
+
+## Key Features
+
+### Inventory Management
+- Food item tracking with expiration dates
+- Storage location organization (fridge, freezer, pantry, counter)
+- Barcode scanning for quick item addition
+- USDA nutrition data integration
+
+### Recipe System
+- AI-powered recipe generation based on inventory
+- Recipe saving and favoriting
+- Ingredient matching with inventory
+- Nutrition analysis per recipe
+
+### Meal Planning
+- Weekly meal plan generation
+- Shopping list automation
+- Nutrition goal tracking
+- Calendar integration
+
+### AI Chat Assistant
+- Natural language food queries
+- Recipe suggestions based on available ingredients
+- Cooking technique explanations
+- Real-time streaming responses
+
+### Analytics & Insights
+- Food waste tracking
+- Nutrition trends
+- Usage patterns
+- Predictive expiration alerts
+
+### Admin Features
+- A/B testing framework
+- User cohort management
+- Content moderation
+- System health monitoring
+- Fraud detection
+
+## Development
+
+### Running the Project
+```bash
+npm run dev          # Start development server (port 5000)
+npm run build        # Build for production
+npm run db:push      # Push schema changes to database
+npm run db:generate  # Generate migration files
+```
+
+### Code Quality
+```bash
+npm run check        # TypeScript type checking
+npm run lint         # ESLint checking
+npm run lint:fix     # Auto-fix linting issues
+```
+
+### Mobile Development
+```bash
+npx cap sync ios     # Sync iOS project
+npx cap open ios     # Open in Xcode
+```
+
+## Documentation
+
+- `docs/API.md` - Complete API endpoint documentation
+- `docs/AUTH_CONFIG.md` - Authentication configuration guide
+- `docs/SETUP_GUIDE.md` - Service setup instructions
+- `docs/PUSH_NOTIFICATIONS_SETUP.md` - Push notification setup
+- `docs/IOS_SETUP_GUIDE.md` - iOS app store preparation
+- `docs/design_guidelines.md` - UI/UX design system
+- `server/README.md` - Backend architecture details
+- `shared/README.md` - Schema documentation
+
+## Recent Updates
+
+### Current Sprint
+- 17 storage domain modules (16 fully operational, 1 with stub methods)
+- 34 backend services active
+- 60+ frontend pages implemented
+- Multi-provider OAuth authentication complete
+- Real-time AI chat with SSE streaming
+- Push notification system for web, iOS, and Android (requires credential configuration)
+- Comprehensive analytics and insights system
+- A/B testing and experimentation framework
+
+### Storage Layer Status
+- **16/17 domains** fully aligned with interfaces
+- **1 domain** (AI-ML) has 10 stub implementations for image/OCR/privacy features
+- **365 fully implemented methods** + 10 stub methods
+- **0 critical alignment issues**
+- All facades (UserStorage, AdminStorage, PlatformStorage) operational
+
+*Last Updated: November 2025*

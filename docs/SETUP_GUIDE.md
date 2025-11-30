@@ -6,9 +6,9 @@ This document provides step-by-step instructions with copyable prompts to config
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Database | ✅ Working | PostgreSQL via Drizzle ORM |
-| Health Check API | ✅ Working | - |
-| Storage Tests (310) | ✅ Passing | - |
+| Database (PostgreSQL) | ✅ Working | Neon serverless via Drizzle ORM |
+| Health Check API | ✅ Working | `/health` endpoint |
+| Storage Layer (375 methods) | ✅ Working | 16 domains fully aligned, 1 partial (AI-ML) |
 | Google OAuth | ✅ Working | Requires credentials |
 | GitHub OAuth | ✅ Working | Requires credentials |
 | Twitter/X OAuth | ✅ Working | OAuth 2.0 with PKCE, requires credentials |
@@ -16,9 +16,12 @@ This document provides step-by-step instructions with copyable prompts to config
 | Replit OAuth | ✅ Working | Uses OIDC integration |
 | Email/Password Auth | ✅ Working | Full registration/login flow |
 | Onboarding Flow | ✅ Working | Auto-redirects new users |
-| Push Notifications (FCM) | ⚠️ Needs Credentials | Dummy credentials in place |
-| Push Notifications (APNs) | ⚠️ Needs Credentials | Dummy credentials in place |
-| Stripe Webhooks | ⚠️ Missing Secret | Stripe API keys configured |
+| AI Chat (OpenAI) | ✅ Working | Requires OPENAI_API_KEY |
+| Push Notifications (Web) | ⚠️ Needs VAPID Keys | Code implemented, needs key configuration |
+| Push Notifications (FCM) | ⚠️ Needs Credentials | Android notifications |
+| Push Notifications (APNs) | ⚠️ Needs Credentials | iOS notifications |
+| Stripe Integration | ⚠️ Needs Setup | Webhook secret required |
+| Object Storage (GCS) | ⚠️ Needs Setup | Image uploads |
 | Twilio SMS | ❌ Not Configured | Optional feature |
 
 ---
@@ -39,9 +42,57 @@ After successful authentication (via any method), users experience:
 
 ---
 
-## Section 1: Authentication Setup
+## Section 1: Core Configuration
 
-### 1.1 Google OAuth Setup
+### 1.1 Database (Required)
+
+**Status:** ✅ Working
+
+The application uses PostgreSQL via Neon serverless. Database URL is automatically provided by Replit.
+
+**Environment Variable:**
+```bash
+DATABASE_URL=postgresql://...  # Automatically set by Replit
+```
+
+**Testing:**
+```bash
+curl https://YOUR_DOMAIN/health
+```
+
+---
+
+### 1.2 Session Secret (Required)
+
+**Status:** ✅ Auto-generated if not set
+
+**Environment Variable:**
+```bash
+SESSION_SECRET=your-random-session-secret-at-least-32-chars
+```
+
+---
+
+### 1.3 OpenAI API Key (Required for AI Features)
+
+**Status:** Requires API key for AI chat, recipe generation, and analysis features
+
+**Steps:**
+1. Go to [OpenAI Platform](https://platform.openai.com/)
+2. Navigate to API Keys
+3. Create a new secret key
+4. Copy the key
+
+**Environment Variable:**
+```bash
+OPENAI_API_KEY=sk-...
+```
+
+---
+
+## Section 2: Authentication Setup
+
+### 2.1 Google OAuth Setup
 
 **Status:** ✅ Code implemented, requires credentials
 
@@ -60,14 +111,14 @@ After successful authentication (via any method), users experience:
 7. Copy the Client ID and Client Secret
 
 **Required Secrets:**
-```
-GOOGLE_CLIENT_ID=your_client_id
+```bash
+GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret
 ```
 
 ---
 
-### 1.2 GitHub OAuth Setup
+### 2.2 GitHub OAuth Setup
 
 **Status:** ✅ Code implemented, requires credentials
 
@@ -87,14 +138,45 @@ GOOGLE_CLIENT_SECRET=your_client_secret
 5. Copy Client ID and generate a new Client Secret
 
 **Required Secrets:**
-```
+```bash
 GITHUB_CLIENT_ID=your_client_id
 GITHUB_CLIENT_SECRET=your_client_secret
 ```
 
 ---
 
-### 1.3 Apple Sign In Setup
+### 2.3 Twitter/X OAuth 2.0
+
+**Status:** ✅ Code implemented, requires credentials
+
+**What you need:**
+- Twitter Developer account
+- OAuth 2.0 Client ID and Client Secret
+
+**Steps:**
+
+1. Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+2. Create a new project and app (or select existing)
+3. Navigate to "User authentication settings"
+4. Enable OAuth 2.0 with these settings:
+   - Type of App: Web App
+   - App permissions: Read (minimum)
+   - Request email from users: Enable
+5. Add Callback URL: `https://YOUR_REPLIT_DOMAIN/api/auth/twitter/callback`
+6. Add Website URL: `https://YOUR_REPLIT_DOMAIN`
+7. Copy the Client ID and Client Secret
+
+**Required Secrets:**
+```bash
+TWITTER_CLIENT_ID=your_client_id
+TWITTER_CLIENT_SECRET=your_client_secret
+```
+
+**Note:** This implementation uses OAuth 2.0 with PKCE (Proof Key for Code Exchange) for enhanced security.
+
+---
+
+### 2.4 Apple Sign In Setup
 
 **Status:** ✅ Code implemented, requires credentials
 
@@ -116,16 +198,16 @@ GITHUB_CLIENT_SECRET=your_client_secret
    - Download the .p8 key file
 
 **Required Secrets:**
-```
-APPLE_CLIENT_ID=com.yourcompany.chefpsaice
+```bash
+APPLE_CLIENT_ID=com.yourcompany.chefspaice
 APPLE_TEAM_ID=your_10_char_team_id
 APPLE_KEY_ID=your_key_id
-APPLE_CLIENT_SECRET=contents_of_p8_file
+APPLE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
 ```
 
 ---
 
-### 1.4 Replit OAuth Setup
+### 2.5 Replit OAuth Setup
 
 **Status:** ✅ Working with OIDC integration
 
@@ -141,14 +223,14 @@ Replit Auth uses OpenID Connect and is integrated via the Replit platform. The a
 3. Set callback URL: `https://YOUR_REPLIT_DOMAIN/api/auth/replit/callback`
 
 **Optional Secrets (for custom app):**
-```
+```bash
 REPLIT_CLIENT_ID=your_client_id
 REPLIT_CLIENT_SECRET=your_client_secret
 ```
 
 ---
 
-### 1.5 Email/Password Authentication
+### 2.6 Email/Password Authentication
 
 **Status:** ✅ Fully working
 
@@ -181,42 +263,29 @@ curl -X POST https://YOUR_REPLIT_DOMAIN/api/auth/email/login \
 
 ---
 
-### 1.6 Twitter/X OAuth 2.0
+## Section 3: Push Notifications
 
-**Status:** ✅ Code implemented, requires credentials
+### 3.1 Web Push (VAPID) Setup
 
-**What you need:**
-- Twitter Developer account
-- OAuth 2.0 Client ID and Client Secret
+**Status:** ⚠️ Requires VAPID keys
 
-**Steps:**
-
-1. Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
-2. Create a new project and app (or select existing)
-3. Navigate to "User authentication settings"
-4. Enable OAuth 2.0 with these settings:
-   - Type of App: Web App
-   - App permissions: Read (minimum)
-   - Request email from users: Enable
-5. Add Callback URL: `https://YOUR_REPLIT_DOMAIN/api/auth/twitter/callback`
-6. Add Website URL: `https://YOUR_REPLIT_DOMAIN`
-7. Copy the Client ID and Client Secret
+**Generate VAPID Keys:**
+```bash
+npx web-push generate-vapid-keys
+```
 
 **Required Secrets:**
+```bash
+VAPID_PUBLIC_KEY=BN...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:support@chefspaice.app
 ```
-TWITTER_CLIENT_ID=your_client_id
-TWITTER_CLIENT_SECRET=your_client_secret
-```
-
-**Note:** This implementation uses OAuth 2.0 with PKCE (Proof Key for Code Exchange) for enhanced security.
 
 ---
 
-## Section 2: Push Notifications
+### 3.2 Firebase Cloud Messaging (FCM) Setup
 
-### 2.1 Firebase Cloud Messaging (FCM) Setup
-
-**Status:** ⚠️ Code implemented with dummy credentials
+**Status:** ⚠️ Code implemented, needs credentials
 
 **What you need:**
 - Firebase project with Cloud Messaging enabled
@@ -231,17 +300,15 @@ TWITTER_CLIENT_SECRET=your_client_secret
 5. Download the JSON file
 
 **Required Secrets:**
-```
-FCM_SERVICE_ACCOUNT=entire_json_content
-FCM_SERVER_KEY=your_fcm_server_key
-FCM_PRIVATE_KEY=private_key_from_json
+```bash
+FCM_SERVICE_ACCOUNT={"type":"service_account","project_id":"..."}
 ```
 
 ---
 
-### 2.2 Apple Push Notification Service (APNs) Setup
+### 3.3 Apple Push Notification Service (APNs) Setup
 
-**Status:** ⚠️ Code implemented with dummy credentials
+**Status:** ⚠️ Code implemented, needs credentials
 
 **What you need:**
 - Apple Developer account
@@ -256,23 +323,21 @@ FCM_PRIVATE_KEY=private_key_from_json
 4. Note your Key ID and Team ID
 
 **Required Secrets:**
-```
+```bash
 APNS_KEY_ID=your_10_char_key_id
 APNS_TEAM_ID=your_10_char_team_id
-APNS_BUNDLE_ID=com.yourcompany.chefpsaice
-APNS_KEY_CONTENT=contents_of_p8_file
+APNS_BUNDLE_ID=com.chefspaice.app
+APNS_KEY_CONTENT=base64_encoded_p8_file
+APNS_PRODUCTION=false
 ```
 
 ---
 
-## Section 3: Payment & Webhooks
+## Section 4: External Services
 
-### 3.1 Stripe Webhooks Setup
+### 4.1 Stripe Integration
 
-**Status:** ⚠️ Stripe API keys configured, webhook secret missing
-
-**What you need:**
-- Stripe account with webhook endpoint configured
+**Status:** ⚠️ Needs webhook secret
 
 **Steps:**
 
@@ -288,40 +353,56 @@ APNS_KEY_CONTENT=contents_of_p8_file
 5. Copy the Signing Secret
 
 **Required Secrets:**
-```
-STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+```bash
+STRIPE_SECRET_KEY=sk_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+VITE_STRIPE_PUBLIC_KEY=pk_...
 ```
 
 ---
 
-## Section 4: SMS Notifications (Optional)
+### 4.2 Object Storage (Google Cloud Storage)
 
-### 4.1 Twilio Setup
+**Status:** ⚠️ Needs configuration
 
-**Status:** ❌ Not configured
-
-**What you need:**
-- Twilio account
-- Phone number for sending SMS
-
-**Steps:**
-
-1. Go to [Twilio Console](https://www.twilio.com/console)
-2. Get your Account SID and Auth Token from the dashboard
-3. Purchase a phone number for sending SMS
+For image uploads and asset storage.
 
 **Required Secrets:**
+```bash
+OBJECT_STORAGE_BUCKET=your-bucket-name
+GCS_SERVICE_ACCOUNT={"type":"service_account",...}
 ```
-TWILIO_ACCOUNT_SID=your_account_sid
-TWILIO_AUTH_TOKEN=your_auth_token
-TWILIO_PHONE_NUMBER=+15551234567
+
+---
+
+### 4.3 USDA API (Optional)
+
+**Status:** ✅ Works with local caching
+
+The USDA FoodData Central API provides nutrition data. Results are cached locally.
+
+**Optional Secret:**
+```bash
+USDA_API_KEY=your_api_key
 ```
 
 ---
 
 ## Quick Reference: All Secrets
 
-### Authentication (High Priority)
+### High Priority (Core Features)
+```bash
+# Database
+DATABASE_URL=                      # Auto-provided by Replit
+
+# Session
+SESSION_SECRET=                    # Required for auth
+
+# AI Features
+OPENAI_API_KEY=                    # Required for AI chat
+```
+
+### Medium Priority (Authentication)
 ```bash
 # Google OAuth
 GOOGLE_CLIENT_ID=
@@ -339,19 +420,18 @@ TWITTER_CLIENT_SECRET=
 APPLE_CLIENT_ID=
 APPLE_TEAM_ID=
 APPLE_KEY_ID=
-APPLE_CLIENT_SECRET=
-
-# Replit OAuth (optional - uses OIDC by default)
-REPLIT_CLIENT_ID=
-REPLIT_CLIENT_SECRET=
+APPLE_PRIVATE_KEY=
 ```
 
-### Push Notifications (Medium Priority)
+### Push Notifications
 ```bash
+# Web Push
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=
+
 # Firebase Cloud Messaging
 FCM_SERVICE_ACCOUNT=
-FCM_SERVER_KEY=
-FCM_PRIVATE_KEY=
 
 # Apple Push Notifications
 APNS_KEY_ID=
@@ -360,15 +440,15 @@ APNS_BUNDLE_ID=
 APNS_KEY_CONTENT=
 ```
 
-### Payments & SMS (Low Priority)
+### Low Priority (Optional Features)
 ```bash
 # Stripe
+STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
+VITE_STRIPE_PUBLIC_KEY=
 
-# Twilio
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_PHONE_NUMBER=
+# Object Storage
+OBJECT_STORAGE_BUCKET=
 ```
 
 ---
@@ -377,19 +457,11 @@ TWILIO_PHONE_NUMBER=
 
 ### Test OAuth Providers
 ```bash
-# Google OAuth - opens login flow
+# Open these URLs in browser to test OAuth flows
 https://YOUR_REPLIT_DOMAIN/api/auth/google/login
-
-# GitHub OAuth - opens login flow
 https://YOUR_REPLIT_DOMAIN/api/auth/github/login
-
-# Twitter/X OAuth 2.0 - opens login flow
 https://YOUR_REPLIT_DOMAIN/api/auth/twitter/login
-
-# Apple Sign In - opens login flow
 https://YOUR_REPLIT_DOMAIN/api/auth/apple/login
-
-# Replit OAuth - opens login flow
 https://YOUR_REPLIT_DOMAIN/api/auth/replit/login
 ```
 
@@ -412,20 +484,21 @@ Common causes:
 2. **Missing or invalid secrets** - Double-check all credentials
 3. **HTTPS required** - OAuth providers require HTTPS for production
 
-### "Unknown authentication strategy" Error
-This means the passport strategy wasn't initialized. Check:
-1. Server startup logs for strategy initialization
-2. Ensure OAuth is properly configured in server/index.ts
-
-### Post-Login Issues
-If users can't access the app after login:
-1. Check browser console for JavaScript errors
-2. Verify the API response format matches frontend expectations
-3. Clear browser cache and cookies
-
-### Push Notifications Not Working
+### Session Not Persisting
 Check:
-1. FCM/APNs credentials are real (not dummy)
+1. `SESSION_SECRET` is set and consistent
+2. Database connection is working
+3. The `sessions` table exists in database
+
+### AI Features Not Working
+Check:
+1. `OPENAI_API_KEY` is set correctly
+2. Key has sufficient credits/quota
+3. Check server logs for API errors
+
+### Push Notifications Not Sending
+Check:
+1. VAPID/FCM/APNs credentials are real (not placeholder)
 2. Device tokens are valid and registered
 3. Proper certificates are uploaded
 
@@ -439,31 +512,33 @@ Auth routes are mounted at two paths for compatibility:
 - `/api/v1/auth/*` - API versioned path
 
 ### API Response Format
-The `/api/food-items` endpoint returns paginated data:
+Paginated endpoints return:
 ```json
 {
   "data": [...],
   "pagination": {
     "page": 1,
     "limit": 50,
-    "total": 100
+    "total": 100,
+    "totalPages": 2
   }
 }
 ```
-
-Frontend components extract the `data` array from this response.
 
 ---
 
 ## Recommended Setup Order
 
-1. **Email/Password** - Already working, no setup needed
-2. **Replit Auth** - Easiest OAuth option, uses built-in OIDC
-3. **Google OAuth** - Most users have Google accounts
-4. **GitHub OAuth** - Great for developer users
-5. **Apple Sign In** - Required for iOS App Store
-6. **Push Notifications** - After core auth is tested
-7. **Stripe Webhooks** - When payment features are ready
+1. **Session Secret** - Required for all auth
+2. **OpenAI API Key** - Required for AI features
+3. **Email/Password** - Already working, no setup needed
+4. **Replit Auth** - Easiest OAuth option, uses built-in OIDC
+5. **Google OAuth** - Most users have Google accounts
+6. **GitHub OAuth** - Great for developer users
+7. **Web Push** - VAPID keys for browser notifications
+8. **Apple Sign In** - Required for iOS App Store
+9. **FCM/APNs** - When mobile notifications needed
+10. **Stripe** - When payment features are ready
 
 ---
 
