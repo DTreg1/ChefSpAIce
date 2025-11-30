@@ -29,20 +29,24 @@ interface Conflict {
 
 export function ConflictResolver({
   userId,
-  startTime = new Date(),
-  endTime = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days ahead
+  startTime: initialStartTime,
+  endTime: initialEndTime
 }: ConflictResolverProps) {
   const [selectedConflict, setSelectedConflict] = useState<Conflict | null>(null);
   const [resolving, setResolving] = useState(false);
   const { toast } = useToast();
 
-  // Persist date range to keep query key stable
-  const dateRange = useMemo(() => ({
-    startTime,
-    endTime,
-    startISO: startTime.toISOString(),
-    endISO: endTime.toISOString()
-  }), [startTime.getTime(), endTime.getTime()]);
+  // Persist date range in state to keep query key stable across renders
+  const [dateRange] = useState(() => {
+    const start = initialStartTime || new Date();
+    const end = initialEndTime || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    return {
+      startTime: start,
+      endTime: end,
+      startISO: start.toISOString(),
+      endISO: end.toISOString()
+    };
+  });
 
   // Fetch conflicts
   const { data: conflictData, isLoading } = useQuery({

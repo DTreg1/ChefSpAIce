@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { ExtractionTemplate } from '@shared/schema';
+import pLimit from 'p-limit';
 
 interface BatchItem {
   id: string;
@@ -53,45 +54,20 @@ export function BatchProcessor({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [delimiter, setDelimiter] = useState('---');
+  
+  // Concurrency limit for parallel processing
+  const CONCURRENCY_LIMIT = 3;
+  const BATCH_SIZE = 5;
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Batch extraction mutation
-  const batchExtractMutation = useMutation({
-    mutationFn: async (data: { texts: string[], templateId: string }) => {
-      return apiRequest('/api/extract/batch', 'POST', data);
-    },
-    onSuccess: (data) => {
-      // Update batch items with results
-      const results = data.extractions || [];
-      setBatchItems(prev => {
-        const updated = [...prev];
-        results.forEach((result: any, index: number) => {
-          if (updated[index]) {
-            updated[index] = {
-              ...updated[index],
-              status: 'completed',
-              result: result.extractedFields,
-              confidence: result.confidence
-            };
-          }
-        });
-        return updated;
+  // Single item extraction mutation
+  const extractItemMutation = useMutation({
+    mutationFn: async (data: { text: string, templateId: string, itemId: string }) => {
+      const result = await apiRequest('/api/extract', 'POST', {
+        text: data.text,
+        templateId: data.templateId
       });
-      
-      if (onComplete) {
-        onComplete(results);
-      }
-      
-      setIsProcessing(false);
-      setProgress(100);
-    },
-    onError: (error: any) => {
-      console.error('Batch extraction error:', error);
-      setBatchItems(prev => prev.map(item => ({
-        ...item,
-        status: item.status === 'processing' ? 'failed' : item.status,
-        error: 'Extraction failed'
-      })));
-      setIsProcessing(false);
+      return { ...result, itemId: data.itemId };
     }
   });
 
@@ -126,35 +102,114 @@ export function BatchProcessor({
     reader.readAsText(file);
   };
 
-  // Start batch processing
+  // Start batch processing with limited concurrency
   const startProcessing = async () => {
     if (!selectedTemplate || batchItems.length === 0) return;
     
     setIsProcessing(true);
     setProgress(0);
     
-    // Mark all items as processing
-    setBatchItems(prev => prev.map(item => ({ ...item, status: 'processing' })));
+    // Create abort controller for cancellation
+    abortControllerRef.current = new AbortController();
     
-    // Extract texts from batch items
-    const texts = batchItems.map(item => item.text);
+    // Mark all items as pending initially
+    setBatchItems(prev => prev.map(item => ({ ...item, status: 'pending' })));
     
-    // Start batch extraction
-    batchExtractMutation.mutate({
-      texts,
-      templateId: selectedTemplate
-    });
+    // Create concurrency limiter
+    const limit = pLimit(CONCURRENCY_LIMIT);
+    const totalItems = batchItems.length;
+    let completedCount = 0;
+    const results: any[] = [];
     
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return 90;
-        }
-        return prev + 10;
-      });
-    }, 500);
+    // Batch state updates to avoid excessive re-renders
+    const pendingUpdates: Map<string, Partial<BatchItem>> = new Map();
+    let updateTimeout: NodeJS.Timeout | null = null;
+    
+    const flushUpdates = () => {
+      if (pendingUpdates.size === 0) return;
+      
+      const updates = new Map(pendingUpdates);
+      pendingUpdates.clear();
+      
+      setBatchItems(prev => prev.map(item => {
+        const update = updates.get(item.id);
+        return update ? { ...item, ...update } : item;
+      }));
+    };
+    
+    const scheduleUpdate = (itemId: string, update: Partial<BatchItem>) => {
+      pendingUpdates.set(itemId, update);
+      
+      if (updateTimeout) clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(flushUpdates, 100); // Batch updates every 100ms
+    };
+    
+    // Process items with limited concurrency
+    const processItem = async (item: BatchItem) => {
+      if (abortControllerRef.current?.signal.aborted) {
+        return null;
+      }
+      
+      // Mark as processing
+      scheduleUpdate(item.id, { status: 'processing' });
+      
+      try {
+        const result = await extractItemMutation.mutateAsync({
+          text: item.text,
+          templateId: selectedTemplate,
+          itemId: item.id
+        });
+        
+        completedCount++;
+        setProgress(Math.round((completedCount / totalItems) * 100));
+        
+        scheduleUpdate(item.id, {
+          status: 'completed',
+          result: result.extractedFields,
+          confidence: result.confidence
+        });
+        
+        results.push(result);
+        return result;
+      } catch (error) {
+        completedCount++;
+        setProgress(Math.round((completedCount / totalItems) * 100));
+        
+        scheduleUpdate(item.id, {
+          status: 'failed',
+          error: 'Extraction failed'
+        });
+        
+        return null;
+      }
+    };
+    
+    try {
+      // Process all items with concurrency limit
+      await Promise.all(
+        batchItems.map(item => limit(() => processItem(item)))
+      );
+      
+      // Flush any remaining updates
+      flushUpdates();
+      
+      if (onComplete) {
+        onComplete(results.filter(Boolean));
+      }
+    } catch (error) {
+      console.error('Batch processing error:', error);
+    } finally {
+      setIsProcessing(false);
+      abortControllerRef.current = null;
+    }
+  };
+  
+  // Stop processing
+  const stopProcessing = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setIsProcessing(false);
   };
 
   // Reset batch
@@ -345,7 +400,7 @@ export function BatchProcessor({
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => setIsProcessing(false)}
+                    onClick={stopProcessing}
                     data-testid="button-stop"
                   >
                     <Pause className="w-4 h-4 mr-1" />

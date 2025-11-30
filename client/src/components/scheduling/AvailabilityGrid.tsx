@@ -28,33 +28,37 @@ interface TimeSlot {
 export function AvailabilityGrid({
   userId,
   participants = [],
-  startDate = new Date(),
-  endDate = addDays(new Date(), 7)
+  startDate: _startDate,
+  endDate: _endDate
 }: AvailabilityGridProps) {
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
+  const [currentWeek, setCurrentWeek] = useState(() => startOfWeek(new Date()));
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
 
-  // Calculate date range based on navigation state
+  // Calculate date range based on navigation state (currentWeek) - not props
+  // This ensures query keys are stable and tied to actual navigation
   const dateRange = useMemo(() => {
-    if (viewMode === 'month') {
-      return {
-        startDate: startOfMonth(currentWeek),
-        endDate: endOfMonth(currentWeek)
-      };
-    }
+    const start = viewMode === 'month' 
+      ? startOfMonth(currentWeek) 
+      : currentWeek;
+    const end = viewMode === 'month' 
+      ? endOfMonth(currentWeek) 
+      : addDays(currentWeek, 7);
+    
     return {
-      startDate: currentWeek,
-      endDate: addDays(currentWeek, 7)
+      startDate: start,
+      endDate: end,
+      startISO: start.toISOString(),
+      endISO: end.toISOString()
     };
   }, [currentWeek, viewMode]);
 
-  // Fetch meeting events for availability calculation
+  // Fetch meeting events for availability calculation - uses stable ISO strings
   const { data: events = [] } = useQuery({
-    queryKey: ["/api/schedule/events", dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
+    queryKey: ["/api/schedule/events", dateRange.startISO, dateRange.endISO],
     queryFn: async () => {
       const params = new URLSearchParams({
-        startTime: dateRange.startDate.toISOString(),
-        endTime: dateRange.endDate.toISOString(),
+        startTime: dateRange.startISO,
+        endTime: dateRange.endISO,
         status: "confirmed"
       });
       const response = await fetch(`/api/schedule/events?${params}`);
