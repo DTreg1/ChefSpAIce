@@ -22,10 +22,9 @@ router.get("/", async (req: Request, res: Response) => {
     res.json({
       id: user.id,
       email: user.email,
-      name: user.name,
-      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
       profileImageUrl: user.profileImageUrl,
-      createdAt: user.createdAt,
     });
   } catch (error) {
     console.error("Error fetching profile:", error);
