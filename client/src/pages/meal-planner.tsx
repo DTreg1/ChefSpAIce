@@ -14,7 +14,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ProgressiveSection } from "@/components/progressive-section";
+import { ProgressiveSection } from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { MealPlan, Recipe } from "@shared/schema";

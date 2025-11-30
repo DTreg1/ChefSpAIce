@@ -8,7 +8,7 @@ import { FoodCard, AddFoodDialog } from "@/components/inventory";
 import { FoodCardSkeletonGrid } from "@/components/loaders";
 import { RecipeGenerator } from "@/components/recipes";
 import { ExpirationAlert } from "@/components/expiration-alert";
-import { ProgressiveSection } from "@/components/progressive-section";
+import { ProgressiveSection } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

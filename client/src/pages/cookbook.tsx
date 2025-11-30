@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, BookOpen, Utensils } from "lucide-react";
 import { useState, useMemo } from "react";
 import type { Recipe, UserAppliance } from "@shared/schema";
-import { PageTransition } from "@/components/page-transition";
-import { StaggerContainer, StaggerItem } from "@/components/stagger-children";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/layout";
 import { AnimatedCard } from "@/components/cards";
 import { BasicCardSkeleton } from "@/components/loaders";
 

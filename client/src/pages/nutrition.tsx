@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Apple, Flame, Beef, Wheat, Droplet, RefreshCw, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ProgressiveSection } from "@/components/progressive-section";
+import { ProgressiveSection } from "@/components/layout";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { NutritionInfo } from "@shared/schema";

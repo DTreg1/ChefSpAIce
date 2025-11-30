@@ -1,6 +1,6 @@
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollText, Scale, Ban, AlertTriangle, CheckCircle, Info, Gavel, Users } from "lucide-react";
-import { PageTransition } from "@/components/page-transition";
+import { PageTransition } from "@/components/layout";
 import { AnimatedCard } from "@/components/cards";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
