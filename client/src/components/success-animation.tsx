@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,10 +16,18 @@ export function SuccessAnimation({
   className,
   onComplete,
 }: SuccessAnimationProps) {
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (showConfetti) {
       // Dynamically import confetti only when needed
       import("canvas-confetti").then(({ default: confetti }) => {
+        // Guard against double-triggering - check if already running
+        if (intervalRef.current) {
+          return;
+        }
+
         // Trigger confetti
         const duration = 3000;
         const animationEnd = Date.now() + duration;
@@ -34,6 +42,7 @@ export function SuccessAnimation({
 
           if (timeLeft <= 0) {
             clearInterval(interval);
+            intervalRef.current = null;
             onComplete?.();
             return;
           }
@@ -57,14 +66,32 @@ export function SuccessAnimation({
           });
         }, 250);
 
-        return () => clearInterval(interval);
+        intervalRef.current = interval;
       }).catch(console.error);
     } else {
+      // Guard against double-triggering
+      if (timerRef.current) {
+        return;
+      }
+
       const timer = setTimeout(() => {
+        timerRef.current = null;
         onComplete?.();
       }, 2000);
-      return () => clearTimeout(timer);
+      timerRef.current = timer;
     }
+
+    // Cleanup function - properly clear intervals/timers on unmount or dependency change
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [showConfetti, onComplete]);
 
   return (
