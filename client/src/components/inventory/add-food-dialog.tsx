@@ -241,7 +241,7 @@ export function AddFoodDialog({ open, onOpenChange }: AddFoodDialogProps) {
     ) {
       // Default to fridge if available, otherwise first location
       const fridgeLocation = storageLocations.find(
-        (loc) => loc.name.toLowerCase() === "refridgerator",
+        (loc) => loc.name.toLowerCase() === "refrigerator",
       );
       setStorageLocationId(fridgeLocation?.id || storageLocations[0].id);
     }
