@@ -547,6 +547,51 @@ export const privacySettings = pgTable("privacy_settings", {
   uniqueIndex("privacy_settings_user_id_idx").on(table.userId),
 ]);
 
+/**
+ * Privacy Request Details Interface
+ * 
+ * Additional details for privacy requests such as specific data categories
+ * or reasons for the request.
+ */
+export interface PrivacyRequestDetails {
+  /** Specific data categories requested (for exports/access) */
+  dataCategories?: string[];
+  /** Reason for the request */
+  reason?: string;
+  /** Additional context or notes */
+  notes?: string;
+  /** Verification method used */
+  verificationMethod?: string;
+  /** Export format preference (for data exports) */
+  exportFormat?: string;
+  /** Any additional metadata */
+  [key: string]: any;
+}
+
+/**
+ * Privacy Requests Table
+ * 
+ * Handles GDPR/CCPA privacy requests including data exports,
+ * deletion requests, opt-outs, and access requests.
+ */
+export const privacyRequests = pgTable("privacy_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  requestType: text("request_type").notNull(), // 'data_export', 'data_deletion', 'opt_out', 'access_request'
+  status: text("status").notNull().default('pending'), // 'pending', 'processing', 'completed', 'denied'
+  details: jsonb("details").$type<PrivacyRequestDetails>(),
+  processedBy: text("processed_by"), // admin who processed the request
+  processedAt: timestamp("processed_at"),
+  completionNotes: text("completion_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("privacy_requests_user_id_idx").on(table.userId),
+  index("privacy_requests_status_idx").on(table.status),
+  index("privacy_requests_type_idx").on(table.requestType),
+  index("privacy_requests_created_at_idx").on(table.createdAt),
+]);
+
 // ==================== Zod Schemas & Type Exports ====================
 
 export const actionTakenSchema = z.enum(['approved', 'blocked', 'flagged', 'warning']);
@@ -649,3 +694,24 @@ export const insertPrivacySettingsSchema = createInsertSchema(privacySettings)
 
 export type InsertPrivacySettings = z.infer<typeof insertPrivacySettingsSchema>;
 export type PrivacySettings = typeof privacySettings.$inferSelect;
+
+// Privacy Requests
+export const privacyRequestTypeSchema = z.enum(['data_export', 'data_deletion', 'opt_out', 'access_request']);
+export const privacyRequestStatusSchema = z.enum(['pending', 'processing', 'completed', 'denied']);
+
+export const insertPrivacyRequestSchema = createInsertSchema(privacyRequests)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    requestType: privacyRequestTypeSchema,
+    status: privacyRequestStatusSchema.default('pending'),
+    details: z.object({
+      dataCategories: z.array(z.string()).optional(),
+      reason: z.string().optional(),
+      notes: z.string().optional(),
+      verificationMethod: z.string().optional(),
+      exportFormat: z.string().optional(),
+    }).passthrough().optional().nullable(),
+  });
+
+export type InsertPrivacyRequest = z.infer<typeof insertPrivacyRequestSchema>;
+export type PrivacyRequest = typeof privacyRequests.$inferSelect;
