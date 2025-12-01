@@ -121,6 +121,10 @@ import analysisRouter from "./platform/ai/analysis.router";     // Includes: ins
 import mediaRouter from "./platform/ai/media.router";           // Merges: images, vision, voice
 import mlRouter from "./platform/ml.router";                    // ML/semantic search endpoints
 
+// Additional platform services
+import barcodeLookupRouter from "./platform/barcode-lookup.router";
+import recommendationsRouter from "./platform/recommendations.router";
+
 
 // ====================================================================
 // UTILITIES & SEED DATA
@@ -200,6 +204,7 @@ export function setupRouters(app: Application): void {
   // Analytics & Monitoring
   app.use(`${API_PREFIX}/analytics`, analyticsRouter);
   app.use(`${API_PREFIX}/activities`, activityLogsRouter);
+  app.use(`${API_PREFIX}/activity-logs`, activityLogsRouter); // Frontend-expected path
   
   // Notifications
   app.use(`${API_PREFIX}/notifications`, notificationsRouter);
@@ -214,6 +219,13 @@ export function setupRouters(app: Application): void {
   // Specialized Services
   app.use(`${API_PREFIX}/fraud-detection`, fraudRouter);
   app.use(`${API_PREFIX}/scheduling`, schedulingRouter);
+  
+  // Barcode lookup & Recommendations
+  app.use(`${API_PREFIX}/barcodelookup`, barcodeLookupRouter);
+  app.use(`${API_PREFIX}/recommendations`, recommendationsRouter);
+  
+  // FDC (USDA Food Data Central) endpoints - alias to inventory FDC
+  app.use(`${API_PREFIX}/fdc`, inventoryRouter);
   
   // Donations (no auth required for public access)
   app.use(`${API_PREFIX}/donations`, donationsRouter);
@@ -261,6 +273,12 @@ export function setupRouters(app: Application): void {
   // ML/AI endpoints (frontend calls /api/ml/search/semantic)
   app.use('/api/ml', mlRouter);
   app.use('/api/ai', contentRouter);
+  
+  // Barcode lookup and recommendations (legacy paths)
+  app.use('/api/barcodelookup', barcodeLookupRouter);
+  app.use('/api/recommendations', recommendationsRouter);
+  app.use('/api/fdc', inventoryRouter);
+  app.use('/api/activity-logs', activityLogsRouter);
   
   // Also mount at versioned path
   app.use(`${API_PREFIX}/ml`, mlRouter);

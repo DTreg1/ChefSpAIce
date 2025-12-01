@@ -14,7 +14,7 @@ import { ApiError } from "../../utils/apiError";
 const router = Router();
 
 /**
- * GET /api/activity-logs
+ * GET /api/activity-logs (or root when mounted at /activity-logs)
  * 
  * Get current user's activity logs
  * 
@@ -27,7 +27,7 @@ const router = Router();
  * - endDate: Filter by end date
  */
 router.get(
-  "/activity-logs",
+  "/",
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
@@ -74,7 +74,7 @@ router.get(
  * - limit: Number of recent activities (default: 50, max: 100)
  */
 router.get(
-  "/activity-logs/timeline",
+  "/timeline",
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
@@ -103,7 +103,7 @@ router.get(
  * - endDate: End date for statistics
  */
 router.get(
-  "/activity-logs/stats",
+  "/stats",
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
@@ -131,7 +131,7 @@ router.get(
  * Returns all user's activity logs in JSON format
  */
 router.get(
-  "/activity-logs/export",
+  "/export",
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
@@ -175,7 +175,7 @@ router.get(
  * - endDate: Filter by end date
  */
 router.get(
-  "/admin/activity-logs",
+  "/admin",
   isAuthenticated,
   adminOnly,
   asyncHandler(async (req, res) => {
@@ -222,7 +222,7 @@ router.get(
  * - limit: Number of events (default: 100)
  */
 router.get(
-  "/admin/activity-logs/system",
+  "/admin/system",
   isAuthenticated,
   adminOnly,
   asyncHandler(async (req, res) => {
@@ -261,7 +261,7 @@ router.get(
  * - endDate: End date for statistics
  */
 router.get(
-  "/admin/activity-logs/stats",
+  "/admin/stats",
   isAuthenticated,
   adminOnly,
   asyncHandler(async (req, res) => {
@@ -293,7 +293,7 @@ router.get(
  * - excludeActions: Array of action types to exclude from cleanup
  */
 router.post(
-  "/admin/activity-logs/cleanup",
+  "/admin/cleanup",
   isAuthenticated,
   adminOnly,
   asyncHandler(async (req, res) => {
@@ -335,7 +335,7 @@ router.post(
  * - limit: Items per page (default: 50)
  */
 router.get(
-  "/admin/activity-logs/user/:userId",
+  "/admin/user/:userId",
   isAuthenticated,
   adminOnly,
   asyncHandler(async (req, res) => {
@@ -360,7 +360,7 @@ router.get(
  * This is for user privacy - allows users to delete their own logs
  */
 router.delete(
-  "/activity-logs",
+  "/",
   isAuthenticated,
   asyncHandler(async (req: Request, res) => {
     const userId = getAuthenticatedUserId(req);
