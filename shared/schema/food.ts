@@ -397,7 +397,38 @@ export const userAppliances = pgTable(
   ],
 );
 
+/**
+ * USDA Cache Table
+ *
+ * Caches USDA FoodData Central API responses to reduce API calls
+ * and improve performance. Entries expire based on expiresAt timestamp.
+ */
+export const usdaCache = pgTable(
+  "usda_cache",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    fdcId: text("fdc_id").notNull().unique(),
+    data: jsonb("data").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+  },
+  (table) => [
+    index("usda_cache_fdc_id_idx").on(table.fdcId),
+    index("usda_cache_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
 // ==================== Zod Schemas & Type Exports ====================
+
+export const insertUsdaCacheSchema = createInsertSchema(usdaCache).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUsdaCache = z.infer<typeof insertUsdaCacheSchema>;
+export type UsdaCache = typeof usdaCache.$inferSelect;
 
 export const insertUserStorageSchema = createInsertSchema(userStorage);
 
