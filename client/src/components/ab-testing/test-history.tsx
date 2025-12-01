@@ -8,10 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { Search, Filter, TrendingUp, TrendingDown, Minus, Download, Calendar } from "lucide-react";
-import { type AbTest, type AbTestInsight } from "@shared/schema";
+import { type AbTest, type AbTestVariantMetric } from "@shared/schema";
 
 interface TestWithDetails extends AbTest {
-  insights?: AbTestInsight[];
+  variantMetrics?: AbTestVariantMetric[];
 }
 
 interface TestHistoryProps {
@@ -36,20 +36,20 @@ export default function TestHistory({ tests }: TestHistoryProps) {
     return true;
   });
 
-  // Helper to get best insight for a test
-  const getBestInsight = (test: TestWithDetails) => {
-    if (!test.insights || test.insights.length === 0) return null;
-    return test.insights.reduce((best, current) => 
+  // Helper to get best metric for a test
+  const getBestMetric = (test: TestWithDetails) => {
+    if (!test.variantMetrics || test.variantMetrics.length === 0) return null;
+    return test.variantMetrics.reduce((best, current) => 
       (current.confidence || 0) > (best.confidence || 0) ? current : best
     );
   };
 
   // Helper to calculate lift percentage
   const calculateLift = (test: TestWithDetails) => {
-    const insights = test.insights || [];
-    if (insights.length < 2) return 0;
-    const control = insights.find(i => i.variant === 'control');
-    const variant = insights.find(i => i.variant !== 'control');
+    const metrics = test.variantMetrics || [];
+    if (metrics.length < 2) return 0;
+    const control = metrics.find(m => m.variant === 'control');
+    const variant = metrics.find(m => m.variant !== 'control');
     if (!control || !variant || control.conversionRate === 0) return 0;
     return ((variant.conversionRate - control.conversionRate) / control.conversionRate) * 100;
   };
@@ -60,9 +60,9 @@ export default function TestHistory({ tests }: TestHistoryProps) {
       case "date":
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       case "confidence":
-        const aInsight = getBestInsight(a);
-        const bInsight = getBestInsight(b);
-        return (bInsight?.confidence || 0) - (aInsight?.confidence || 0);
+        const aMetric = getBestMetric(a);
+        const bMetric = getBestMetric(b);
+        return (bMetric?.confidence || 0) - (aMetric?.confidence || 0);
       case "lift":
         return calculateLift(b) - calculateLift(a);
       case "name":
@@ -76,11 +76,11 @@ export default function TestHistory({ tests }: TestHistoryProps) {
   const timelineData = tests
     .filter(t => t.status === 'completed' && t.endDate)
     .map(test => {
-      const bestInsight = getBestInsight(test);
+      const bestMetric = getBestMetric(test);
       return {
         date: format(new Date(test.endDate!), 'MMM dd'),
         lift: calculateLift(test),
-        confidence: (bestInsight?.confidence || 0) * 100,
+        confidence: (bestMetric?.confidence || 0) * 100,
         name: test.testName,
       };
     })
@@ -89,9 +89,9 @@ export default function TestHistory({ tests }: TestHistoryProps) {
 
   // Helper to determine winner
   const determineWinner = (test: TestWithDetails): string | null => {
-    const insights = test.insights || [];
-    if (insights.length < 2) return null;
-    const significant = insights.filter(i => i.isSignificant);
+    const metrics = test.variantMetrics || [];
+    if (metrics.length < 2) return null;
+    const significant = metrics.filter(m => m.isSignificant);
     if (significant.length === 0) return 'inconclusive';
     const best = significant.reduce((best, current) => 
       (current.conversionRate || 0) > (best.conversionRate || 0) ? current : best
@@ -140,7 +140,7 @@ export default function TestHistory({ tests }: TestHistoryProps) {
       ['Test Name', 'Status', 'Variant A', 'Variant B', 'Winner', 'Confidence', 'Lift %', 'Start Date', 'End Date'],
       ...filteredTests.map(test => {
         const { variantA, variantB } = getVariantNames(test);
-        const bestInsight = getBestInsight(test);
+        const bestMetric = getBestMetric(test);
         const winner = determineWinner(test);
         return [
           test.testName,
@@ -148,7 +148,7 @@ export default function TestHistory({ tests }: TestHistoryProps) {
           variantA,
           variantB,
           winner || 'N/A',
-          bestInsight?.confidence ? (bestInsight.confidence * 100).toFixed(2) + '%' : 'N/A',
+          bestMetric?.confidence ? (bestMetric.confidence * 100).toFixed(2) + '%' : 'N/A',
           calculateLift(test).toFixed(2) + '%',
           test.startDate ? format(new Date(test.startDate), 'yyyy-MM-dd') : 'N/A',
           test.endDate ? format(new Date(test.endDate), 'yyyy-MM-dd') : 'N/A',
@@ -327,18 +327,18 @@ export default function TestHistory({ tests }: TestHistoryProps) {
                         Variants: {test.configuration?.variants?.length || 1}
                       </TableCell>
                       <TableCell>
-                        {test.insights && test.insights.length > 0 && test.insights[0].isSignificant ? (
+                        {test.variantMetrics && test.variantMetrics.length > 0 && test.variantMetrics[0].isSignificant ? (
                           <Badge variant="outline">
-                            {test.insights[0].recommendation || 'Significant'}
+                            {test.variantMetrics[0].recommendation || 'Significant'}
                           </Badge>
                         ) : (
                           <span className="text-sm text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        {test.insights && test.insights.length > 0 && test.insights[0].confidence ? (
+                        {test.variantMetrics && test.variantMetrics.length > 0 && test.variantMetrics[0].confidence ? (
                           <span className="text-sm font-medium">
-                            {(test.insights[0].confidence * 100).toFixed(1)}%
+                            {(test.variantMetrics[0].confidence * 100).toFixed(1)}%
                           </span>
                         ) : (
                           <span className="text-sm text-muted-foreground">-</span>
