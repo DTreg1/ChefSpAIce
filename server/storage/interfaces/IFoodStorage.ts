@@ -229,4 +229,25 @@ export interface IFoodStorage {
    * @returns Array of matching cooking terms
    */
   searchCookingTerms(searchText: string): Promise<CookingTerm[]>;
+
+  // ==================== USDA Cache Methods ====================
+
+  /**
+   * Get statistics about the USDA cache
+   * @returns Object with cache statistics including counts, dates, and size
+   */
+  getUSDACacheStats(): Promise<{
+    totalEntries: number;
+    expiredEntries: number;
+    oldestEntry: Date | null;
+    newestEntry: Date | null;
+    totalSize: number;
+  }>;
+
+  /**
+   * Clear cache entries older than the specified date
+   * @param olderThan - Delete entries where createdAt < this date
+   * @returns Number of entries deleted
+   */
+  clearOldCache(olderThan: Date): Promise<number>;
 }

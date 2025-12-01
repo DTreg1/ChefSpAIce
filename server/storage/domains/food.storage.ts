@@ -9,13 +9,14 @@
  */
 
 import { db } from "../../db";
-import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
+import { eq, and, desc, sql, ilike, or, lt, count, min, max } from "drizzle-orm";
 import {
   userInventory,
   userStorage,
   cookingTerms,
   applianceLibrary,
   userAppliances,
+  usdaCache,
   type UserInventory,
   type InsertUserInventory,
   type UserStorage,
@@ -618,16 +619,60 @@ export class FoodStorage implements IFoodStorage {
       );
   }
 
-  // ==================== Cache Methods (Stubs) ====================
+  // ==================== USDA Cache Methods ====================
 
-  async getUSDACacheStats(): Promise<any> {
-    console.warn("getUSDACacheStats: stub method called");
-    return { size: 0, entries: [] };
+  /**
+   * Get statistics about the USDA cache
+   */
+  async getUSDACacheStats(): Promise<{
+    totalEntries: number;
+    expiredEntries: number;
+    oldestEntry: Date | null;
+    newestEntry: Date | null;
+    totalSize: number;
+  }> {
+    const now = new Date();
+
+    const [stats] = await db
+      .select({
+        totalEntries: count(),
+        oldestEntry: min(usdaCache.createdAt),
+        newestEntry: max(usdaCache.createdAt),
+      })
+      .from(usdaCache);
+
+    const [expiredStats] = await db
+      .select({
+        expiredEntries: count(),
+      })
+      .from(usdaCache)
+      .where(lt(usdaCache.expiresAt, now));
+
+    const sizeResult = await db.execute<{ total_size: string }>(
+      sql`SELECT COALESCE(SUM(pg_column_size(data)), 0)::text as total_size FROM usda_cache`
+    );
+
+    return {
+      totalEntries: Number(stats?.totalEntries || 0),
+      expiredEntries: Number(expiredStats?.expiredEntries || 0),
+      oldestEntry: stats?.oldestEntry || null,
+      newestEntry: stats?.newestEntry || null,
+      totalSize: parseInt(sizeResult.rows?.[0]?.total_size || "0", 10),
+    };
   }
 
-  async clearOldCache(_maxAge?: number): Promise<number> {
-    console.warn("clearOldCache: stub method called");
-    return 0;
+  /**
+   * Clear cache entries older than the specified date
+   * @param olderThan Delete entries where createdAt < this date
+   * @returns Number of entries deleted
+   */
+  async clearOldCache(olderThan: Date): Promise<number> {
+    const result = await db
+      .delete(usdaCache)
+      .where(lt(usdaCache.createdAt, olderThan))
+      .returning({ id: usdaCache.id });
+
+    return result.length;
   }
 }
 
