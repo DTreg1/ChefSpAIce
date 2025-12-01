@@ -403,28 +403,33 @@ export default function Onboarding() {
                   ) : commonEquipment && commonEquipment.length > 0 ? (
                     <div className="space-y-3">
                       {/* Group equipment by category */}
-                      {["appliance", "cookware", "bakeware", "utensil"].map((category) => {
+                      {["cooking", "refrigeration", "prep", "small"].map((category) => {
                         const categoryItems = commonEquipment.filter(
-                          (item) => item.type === category
+                          (item) => item.category === category
                         );
                         if (categoryItems.length === 0) return null;
                         
-                        const categoryIcons: Record<string, any> = {
-                          appliance: Home,
-                          cookware: Package2,
-                          bakeware: ChefHat,
-                          utensil: Utensils,
+                        const categoryIcons: Record<string, typeof Home> = {
+                          cooking: Home,
+                          refrigeration: Refrigerator,
+                          prep: Utensils,
+                          small: Package2,
                         };
                         const CategoryIcon = categoryIcons[category] || Package;
+                        
+                        const categoryLabels: Record<string, string> = {
+                          cooking: "Cooking Appliances",
+                          refrigeration: "Refrigeration",
+                          prep: "Prep Equipment",
+                          small: "Small Appliances",
+                        };
                         
                         return (
                           <div key={category}>
                             <div className="flex items-center gap-2 mb-2">
                               <CategoryIcon className="w-4 h-4 text-muted-foreground" />
-                              <h4 className="text-sm font-medium capitalize">
-                                {category === "appliance" ? "Appliances" : 
-                                 category === "cookware" ? "Cookware" :
-                                 category === "bakeware" ? "Bakeware" : "Utensils"}
+                              <h4 className="text-sm font-medium">
+                                {categoryLabels[category] || category}
                               </h4>
                             </div>
                             <div className="flex flex-wrap gap-2">
