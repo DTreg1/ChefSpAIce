@@ -8,6 +8,8 @@ import type {
   InsertAbTest,
   AbTestResult,
   InsertAbTestResult,
+  AbTestVariantMetric,
+  InsertAbTestVariantMetric,
   AbTestInsight,
   InsertAbTestInsight,
   Cohort,
@@ -48,9 +50,15 @@ export interface IExperimentsStorage {
     conversionValue?: number
   ): Promise<AbTestResult>;
 
-  // ==================== A/B Test Insights ====================
-  upsertAbTestInsight(insight: InsertAbTestInsight): Promise<AbTestInsight>;
-  getAbTestInsights(testId: string): Promise<AbTestInsight | undefined>;
+  // ==================== A/B Test Variant Metrics ====================
+  upsertAbTestVariantMetric(metric: InsertAbTestVariantMetric): Promise<AbTestVariantMetric>;
+  getAbTestVariantMetrics(testId: string): Promise<AbTestVariantMetric[]>;
+  getLatestAbTestVariantMetric(testId: string): Promise<AbTestVariantMetric | undefined>;
+
+  // ==================== A/B Test Insights (General/Narrative) ====================
+  createAbTestInsight(insight: InsertAbTestInsight): Promise<AbTestInsight>;
+  getAbTestInsights(testId: string): Promise<AbTestInsight[]>;
+  getAbTestInsightsByType(testId: string, insightType: string): Promise<AbTestInsight[]>;
   calculateStatisticalSignificance(testId: string): Promise<{
     pValue: number;
     confidence: number;
@@ -60,7 +68,8 @@ export interface IExperimentsStorage {
   getAbTestRecommendations(userId?: string): Promise<
     Array<
       AbTest & {
-        insight?: AbTestInsight;
+        insights?: AbTestInsight[];
+        variantMetrics?: AbTestVariantMetric[];
         results?: AbTestResult[];
       }
     >

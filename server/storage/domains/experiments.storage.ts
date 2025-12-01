@@ -18,6 +18,7 @@ import type { IExperimentsStorage } from "../interfaces/IExperimentsStorage";
 import {
   abTests,
   abTestResults,
+  abTestVariantMetrics,
   abTestInsights,
   cohorts,
   cohortMetrics,
@@ -26,6 +27,8 @@ import {
   type InsertAbTest,
   type AbTestResult,
   type InsertAbTestResult,
+  type AbTestVariantMetric,
+  type InsertAbTestVariantMetric,
   type AbTestInsight,
   type InsertAbTestInsight,
   type Cohort,
@@ -255,19 +258,19 @@ export class ExperimentsStorage implements IExperimentsStorage {
     }
   }
 
-  // ==================== A/B Test Insights ====================
+  // ==================== A/B Test Variant Metrics ====================
 
-  async upsertAbTestInsight(
-    insight: InsertAbTestInsight
-  ): Promise<AbTestInsight> {
-    // Check if insight already exists for this test and variant
+  async upsertAbTestVariantMetric(
+    metric: InsertAbTestVariantMetric
+  ): Promise<AbTestVariantMetric> {
+    // Check if metric already exists for this test and variant
     const existing = await db
       .select()
-      .from(abTestInsights)
+      .from(abTestVariantMetrics)
       .where(
         and(
-          eq(abTestInsights.testId, insight.testId),
-          eq(abTestInsights.variant, insight.variant)
+          eq(abTestVariantMetrics.testId, metric.testId),
+          eq(abTestVariantMetrics.variant, metric.variant)
         )
       )
       .limit(1);
@@ -275,29 +278,68 @@ export class ExperimentsStorage implements IExperimentsStorage {
     if (existing.length > 0) {
       // Update existing
       const [updated] = await db
-        .update(abTestInsights)
-        .set(insight)
-        .where(eq(abTestInsights.id, existing[0].id))
+        .update(abTestVariantMetrics)
+        .set(metric)
+        .where(eq(abTestVariantMetrics.id, existing[0].id))
         .returning();
       return updated;
     } else {
       // Create new
       const [created] = await db
-        .insert(abTestInsights)
-        .values(insight)
+        .insert(abTestVariantMetrics)
+        .values(metric)
         .returning();
       return created;
     }
   }
 
-  async getAbTestInsights(testId: string): Promise<AbTestInsight | undefined> {
-    const [insight] = await db
+  async getAbTestVariantMetrics(testId: string): Promise<AbTestVariantMetric[]> {
+    return await db
+      .select()
+      .from(abTestVariantMetrics)
+      .where(eq(abTestVariantMetrics.testId, testId))
+      .orderBy(desc(abTestVariantMetrics.calculatedAt));
+  }
+
+  async getLatestAbTestVariantMetric(testId: string): Promise<AbTestVariantMetric | undefined> {
+    const [metric] = await db
+      .select()
+      .from(abTestVariantMetrics)
+      .where(eq(abTestVariantMetrics.testId, testId))
+      .orderBy(desc(abTestVariantMetrics.calculatedAt))
+      .limit(1);
+    return metric;
+  }
+
+  // ==================== A/B Test Insights (General/Narrative) ====================
+
+  async createAbTestInsight(insight: InsertAbTestInsight): Promise<AbTestInsight> {
+    const [created] = await db
+      .insert(abTestInsights)
+      .values(insight)
+      .returning();
+    return created;
+  }
+
+  async getAbTestInsights(testId: string): Promise<AbTestInsight[]> {
+    return await db
       .select()
       .from(abTestInsights)
       .where(eq(abTestInsights.testId, testId))
-      .orderBy(desc(abTestInsights.calculatedAt))
-      .limit(1);
-    return insight;
+      .orderBy(desc(abTestInsights.createdAt));
+  }
+
+  async getAbTestInsightsByType(testId: string, insightType: string): Promise<AbTestInsight[]> {
+    return await db
+      .select()
+      .from(abTestInsights)
+      .where(
+        and(
+          eq(abTestInsights.testId, testId),
+          eq(abTestInsights.insightType, insightType)
+        )
+      )
+      .orderBy(desc(abTestInsights.createdAt));
   }
 
   async calculateStatisticalSignificance(testId: string): Promise<{
@@ -384,7 +426,8 @@ export class ExperimentsStorage implements IExperimentsStorage {
   async getAbTestRecommendations(userId?: string): Promise<
     Array<
       AbTest & {
-        insight?: AbTestInsight;
+        insights?: AbTestInsight[];
+        variantMetrics?: AbTestVariantMetric[];
         results?: AbTestResult[];
       }
     >
@@ -402,24 +445,26 @@ export class ExperimentsStorage implements IExperimentsStorage {
 
     const allTests = [...tests, ...recentCompleted];
 
-    // Fetch insights and results for each test
+    // Fetch insights, variant metrics, and results for each test
     const recommendations = await Promise.all(
       allTests.map(async (test) => {
-        const insight = await this.getAbTestInsights(test.id);
+        const insights = await this.getAbTestInsights(test.id);
+        const variantMetrics = await this.getAbTestVariantMetrics(test.id);
         const results = await this.getAbTestResults(test.id);
 
         return {
           ...test,
-          insight,
+          insights,
+          variantMetrics,
           results,
         };
       })
     );
 
-    // Sort by confidence level if insights exist
+    // Sort by latest variant metric confidence if available
     recommendations.sort((a, b) => {
-      const confA = a.insight?.confidence || 0;
-      const confB = b.insight?.confidence || 0;
+      const confA = a.variantMetrics?.[0]?.confidence || 0;
+      const confB = b.variantMetrics?.[0]?.confidence || 0;
       return confB - confA;
     });
 
@@ -435,10 +480,10 @@ export class ExperimentsStorage implements IExperimentsStorage {
       status: "completed",
     });
 
-    // Record insight with winner information
+    // Calculate and record variant metrics
     const stats = await this.calculateStatisticalSignificance(testId);
     
-    await this.upsertAbTestInsight({
+    await this.upsertAbTestVariantMetric({
       testId,
       variant,
       sampleSize: 0, // Will be updated from results
@@ -447,6 +492,21 @@ export class ExperimentsStorage implements IExperimentsStorage {
       pValue: stats.pValue,
       confidence: stats.confidence,
       recommendation: `Implement variant ${variant}. Lift: ${stats.liftPercentage.toFixed(2)}%`,
+    });
+
+    // Also create a general insight for the test conclusion
+    await this.createAbTestInsight({
+      testId,
+      insightType: "recommendation",
+      title: `Winner: Variant ${variant}`,
+      description: `Statistical analysis recommends implementing variant ${variant} with ${(stats.confidence * 100).toFixed(1)}% confidence and ${stats.liftPercentage.toFixed(2)}% lift.`,
+      data: {
+        winner: variant,
+        pValue: stats.pValue,
+        confidence: stats.confidence,
+        liftPercentage: stats.liftPercentage,
+      },
+      significance: stats.confidence,
     });
   }
 

@@ -92,11 +92,12 @@ export const abTestResults = pgTable("ab_test_results", {
 ]);
 
 /**
- * A/B Test Insights Table
+ * A/B Test Variant Metrics Table
  * 
- * Statistical analysis and insights from tests.
+ * Statistical analysis per variant (conversion rates, p-values, sample sizes).
+ * Used for automated statistical calculations and experiment monitoring.
  */
-export const abTestInsights = pgTable("ab_test_insights", {
+export const abTestVariantMetrics = pgTable("ab_test_variant_metrics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   testId: varchar("test_id").notNull().references(() => abTests.id, { onDelete: "cascade" }),
   variant: text("variant").notNull(),
@@ -110,8 +111,29 @@ export const abTestInsights = pgTable("ab_test_insights", {
   recommendation: text("recommendation"),
   calculatedAt: timestamp("calculated_at").defaultNow(),
 }, (table) => [
+  index("ab_test_variant_metrics_test_id_idx").on(table.testId),
+  index("ab_test_variant_metrics_calculated_at_idx").on(table.calculatedAt),
+]);
+
+/**
+ * A/B Test Insights Table
+ * 
+ * Human-readable or AI-generated insights and discoveries from tests.
+ * Used for curated findings and narrative insights.
+ */
+export const abTestInsights = pgTable("ab_test_insights", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  testId: text("test_id").notNull().references(() => abTests.id, { onDelete: "cascade" }),
+  insightType: text("insight_type").notNull(), // 'performance', 'behavioral', 'recommendation', etc.
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  data: jsonb("data").$type<Record<string, any>>(),
+  significance: real("significance"), // nullable
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
   index("ab_test_insights_test_id_idx").on(table.testId),
-  index("ab_test_insights_calculated_at_idx").on(table.calculatedAt),
+  index("ab_test_insights_insight_type_idx").on(table.insightType),
+  index("ab_test_insights_created_at_idx").on(table.createdAt),
 ]);
 
 /**
@@ -205,12 +227,26 @@ export const insertAbTestResultSchema = createInsertSchema(abTestResults)
 export type InsertAbTestResult = z.infer<typeof insertAbTestResultSchema>;
 export type AbTestResult = typeof abTestResults.$inferSelect;
 
-export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
+// Variant Metrics schemas and types
+export const insertAbTestVariantMetricSchema = createInsertSchema(abTestVariantMetrics)
   .extend({
     sampleSize: z.number().positive(),
     conversionRate: z.number().min(0).max(1),
     confidence: z.number().min(0).max(1).optional(),
     pValue: z.number().min(0).max(1).optional(),
+  });
+
+export type InsertAbTestVariantMetric = z.infer<typeof insertAbTestVariantMetricSchema>;
+export type AbTestVariantMetric = typeof abTestVariantMetrics.$inferSelect;
+
+// Insight schemas and types
+export const abTestInsightTypeSchema = z.enum(['performance', 'behavioral', 'recommendation', 'anomaly', 'trend', 'summary']);
+
+export const insertAbTestInsightSchema = createInsertSchema(abTestInsights)
+  .extend({
+    insightType: abTestInsightTypeSchema,
+    data: z.record(z.any()).optional(),
+    significance: z.number().min(0).max(1).optional(),
   });
 
 export type InsertAbTestInsight = z.infer<typeof insertAbTestInsightSchema>;
