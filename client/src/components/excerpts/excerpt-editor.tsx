@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Sparkles, Save, X, Eye } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExcerptPreview } from "./excerpt-preview";
-import { SocialPreview } from "./social-preview";
+import { SocialPreview } from "../social-preview";
 import type { Excerpt } from "@shared/schema";
 
 interface ExcerptEditorProps {
