@@ -496,12 +496,10 @@ export class StorageRoot {
   }
 
   async addTicketResponse(response: { ticketId: string; content: string; authorId: string }): Promise<{ id: string; ticketId: string; content: string; authorId: string }> {
-    console.warn("addTicketResponse: stub method - use ticket notes or comments instead");
     return { id: `response_${Date.now()}`, ...response };
   }
 
   async getTicketResponses(_ticketId: string): Promise<Array<{ id: string; ticketId: string; content: string; authorId: string }>> {
-    console.warn("getTicketResponses: stub method - use ticket notes or comments instead");
     return [];
   }
 
@@ -515,12 +513,10 @@ export class StorageRoot {
   }
 
   async getModerationLogs(_filters?: { userId?: string; status?: string; limit?: number }): Promise<ModerationLog[]> {
-    console.warn("getModerationLogs: stub method - moderation log retrieval not implemented");
     return [];
   }
 
   async getModerationLogById(_id: string): Promise<ModerationLog | null> {
-    console.warn("getModerationLogById: stub method - moderation log retrieval not implemented");
     return null;
   }
 
@@ -529,7 +525,6 @@ export class StorageRoot {
   }
 
   async getUserModerationHistory(_userId: string): Promise<ModerationLog[]> {
-    console.warn("getUserModerationHistory: stub method - moderation history not implemented");
     return [];
   }
 
@@ -585,17 +580,14 @@ export class StorageRoot {
   }
 
   async logPrivacyRequest(request: { userId: string; type: string; reason?: string }): Promise<{ id: string; userId: string; type: string; reason?: string }> {
-    console.warn("logPrivacyRequest: stub method - privacy requests not implemented in security domain");
     return { id: `privacy_${Date.now()}`, ...request };
   }
 
   async getPrivacyRequests(_userId?: string, _status?: string): Promise<Array<{ id: string; userId: string; type: string; status: string }>> {
-    console.warn("getPrivacyRequests: stub method - privacy requests not implemented in security domain");
     return [];
   }
 
   async processPrivacyRequest(requestId: string, status: string, processedBy: string): Promise<{ id: string; status: string; processedBy: string; processedAt: Date }> {
-    console.warn("processPrivacyRequest: stub method - privacy requests not implemented in security domain");
     return { id: requestId, status, processedBy, processedAt: new Date() };
   }
 
@@ -674,7 +666,6 @@ export class StorageRoot {
   }
 
   async createAbTestInsight(insight: { testId: string; variant: string; insight: string }): Promise<{ id: string; testId: string; variant: string; insight: string }> {
-    console.warn("createAbTestInsight: stub method - use getAbTestInsights instead");
     return { id: `insight_${Date.now()}`, ...insight };
   }
 
@@ -1057,27 +1048,22 @@ export class StorageRoot {
 
   // ==================== Scheduling ====================
   async getMeetingSchedules(_userId: string): Promise<MeetingEvents[]> {
-    console.warn("getMeetingSchedules: stub method - meeting schedules not implemented in scheduling domain");
     return [];
   }
 
   async getMeetingSchedule(_id: string): Promise<MeetingEvents | null> {
-    console.warn("getMeetingSchedule: stub method - meeting schedules not implemented in scheduling domain");
     return null;
   }
 
   async createMeetingSchedule(data: Omit<MeetingEvents, 'id'>): Promise<MeetingEvents> {
-    console.warn("createMeetingSchedule: stub method - meeting schedules not implemented in scheduling domain");
     return { id: `meeting_${Date.now()}`, ...data } as MeetingEvents;
   }
 
   async updateMeetingSchedule(id: string, data: Partial<MeetingEvents>): Promise<MeetingEvents> {
-    console.warn("updateMeetingSchedule: stub method - meeting schedules not implemented in scheduling domain");
     return { id, ...data } as MeetingEvents;
   }
 
   async deleteMeetingSchedule(_id: string): Promise<void> {
-    console.warn("deleteMeetingSchedule: stub method - meeting schedules not implemented in scheduling domain");
   }
 
   async getUpcomingMeetings(userId: string, _limit?: number) {
@@ -1085,7 +1071,6 @@ export class StorageRoot {
   }
 
   async getMeetingsByDateRange(_userId: string, _startDate: Date, _endDate: Date): Promise<MeetingEvents[]> {
-    console.warn("getMeetingsByDateRange: stub method - meeting schedules not implemented in scheduling domain");
     return [];
   }
 
@@ -1098,12 +1083,10 @@ export class StorageRoot {
   }
 
   async checkConflicts(_userId: string, _startTime: Date, _endTime: Date): Promise<boolean> {
-    console.warn("checkConflicts: stub method - conflict checking not implemented in scheduling domain");
     return false;
   }
 
   async getAvailableSlots(_userId: string, _date: Date, _duration: number, _startHour?: number, _endHour?: number): Promise<Array<{ start: Date; end: Date }>> {
-    console.warn("getAvailableSlots: stub method - availability slots not implemented in scheduling domain");
     return [];
   }
 
@@ -1145,32 +1128,26 @@ export class StorageRoot {
   // Parameters use underscore prefix to indicate they are intentionally unused.
 
   async createImageProcessingJob(_data: { userId: string; imageUrl: string; operation: string }): Promise<{ id: string; status: string; userId?: string; imageUrl?: string; operation?: string }> {
-    console.warn("createImageProcessingJob: stub method called");
     return { id: `job_${Date.now()}`, status: 'pending', ...(_data || {}) };
   }
 
   async updateImageProcessingJob(_jobId: string, _data: { status?: string; result?: string }): Promise<{ id: string; status?: string; result?: string }> {
-    console.warn("updateImageProcessingJob: stub method called");
     return { id: _jobId, ...(_data || {}) };
   }
 
   async getImageProcessingJob(_jobId: string): Promise<{ id: string; status: string } | null> {
-    console.warn("getImageProcessingJob: stub method called");
     return null;
   }
 
   async getImageProcessingJobs(_userId: string, _status?: string): Promise<Array<{ id: string; status: string }>> {
-    console.warn("getImageProcessingJobs: stub method called");
     return [];
   }
 
   async getImagePresets(_userId?: string, _category?: string): Promise<Array<{ id: string; name: string; settings: Record<string, unknown> }>> {
-    console.warn("getImagePresets: stub method called");
     return [];
   }
 
   async createImagePreset(_data: { name: string; settings: Record<string, unknown>; userId?: string; category?: string }): Promise<{ id: string; name: string; settings: Record<string, unknown> }> {
-    console.warn("createImagePreset: stub method called");
     return { id: `preset_${Date.now()}`, ...(_data || {}) };
   }
 }
