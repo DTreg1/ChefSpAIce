@@ -244,6 +244,118 @@ export const insertAgentExpertiseSchema = createInsertSchema(agentExpertise)
 export type InsertAgentExpertise = z.infer<typeof insertAgentExpertiseSchema>;
 export type AgentExpertise = typeof agentExpertise.$inferSelect;
 
+// ==================== Ticket Responses ====================
+
+/**
+ * Attachment structure for ticket responses
+ */
+export interface TicketResponseAttachment {
+  url: string;
+  type: string;
+  name: string;
+  size: number;
+}
+
+/**
+ * Ticket Responses Table
+ * 
+ * Responses to support tickets from users or agents, including internal notes.
+ */
+export const ticketResponses = pgTable("ticket_responses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ticketId: text("ticket_id").notNull().references(() => tickets.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(), // responder (user or agent)
+  content: text("content").notNull(),
+  isInternal: boolean("is_internal").notNull().default(false), // internal notes vs public response
+  attachments: jsonb("attachments").$type<TicketResponseAttachment[]>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("ticket_responses_ticket_id_idx").on(table.ticketId),
+  index("ticket_responses_user_id_idx").on(table.userId),
+  index("ticket_responses_created_at_idx").on(table.createdAt),
+]);
+
+export const insertTicketResponseSchema = createInsertSchema(ticketResponses)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    isInternal: z.boolean().default(false),
+    attachments: z.array(z.object({
+      url: z.string().url(),
+      type: z.string(),
+      name: z.string(),
+      size: z.number().positive(),
+    })).optional().nullable(),
+  });
+
+export type InsertTicketResponse = z.infer<typeof insertTicketResponseSchema>;
+export type TicketResponse = typeof ticketResponses.$inferSelect;
+
+// ==================== Admin Moderation Logs ====================
+
+/**
+ * Admin moderation action types
+ */
+export const adminModerationActionSchema = z.enum(['warn', 'mute', 'ban', 'unban', 'delete_content']);
+export type AdminModerationAction = z.infer<typeof adminModerationActionSchema>;
+
+/**
+ * Admin moderation target types
+ */
+export const adminModerationTargetTypeSchema = z.enum(['comment', 'recipe', 'review']);
+export type AdminModerationTargetType = z.infer<typeof adminModerationTargetTypeSchema>;
+
+/**
+ * Admin moderation metadata structure
+ */
+export interface AdminModerationMetadata {
+  duration?: number; // mute/ban duration in hours
+  previousWarnings?: number;
+  contentSnapshot?: string;
+  ipAddress?: string;
+  deviceId?: string;
+  [key: string]: any;
+}
+
+/**
+ * Admin Moderation Logs Table
+ * 
+ * Tracks moderation actions taken by admins against users.
+ * Distinct from security.ts moderation_logs which tracks AI content moderation.
+ */
+export const adminModerationLogs = pgTable("admin_moderation_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(), // user being moderated
+  moderatorId: text("moderator_id").notNull(), // admin performing action
+  action: text("action").notNull(), // 'warn', 'mute', 'ban', 'unban', 'delete_content'
+  reason: text("reason").notNull(),
+  targetType: text("target_type"), // 'comment', 'recipe', 'review'
+  targetId: text("target_id"),
+  metadata: jsonb("metadata").$type<AdminModerationMetadata>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("admin_moderation_logs_user_id_idx").on(table.userId),
+  index("admin_moderation_logs_moderator_id_idx").on(table.moderatorId),
+  index("admin_moderation_logs_action_idx").on(table.action),
+  index("admin_moderation_logs_created_at_idx").on(table.createdAt),
+]);
+
+export const insertAdminModerationLogSchema = createInsertSchema(adminModerationLogs)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    action: adminModerationActionSchema,
+    targetType: adminModerationTargetTypeSchema.optional().nullable(),
+    metadata: z.object({
+      duration: z.number().positive().optional(),
+      previousWarnings: z.number().nonnegative().optional(),
+      contentSnapshot: z.string().optional(),
+      ipAddress: z.string().optional(),
+      deviceId: z.string().optional(),
+    }).passthrough().optional().nullable(),
+  });
+
+export type InsertAdminModerationLog = z.infer<typeof insertAdminModerationLogSchema>;
+export type AdminModerationLog = typeof adminModerationLogs.$inferSelect;
+
 // Backward compatibility aliases
 export type Feedback = UserFeedback;
 export type InsertFeedback = InsertUserFeedback;
