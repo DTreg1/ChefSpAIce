@@ -251,6 +251,12 @@ export function setupRouters(app: Application): void {
   app.use('/api/meal-plans', mealPlanningRouter);
   app.use('/api/user/inventory', inventoryRouter);
   app.use('/api/user/profile', profileRouter);
+  app.use('/api/inventory', inventoryRouter);
+  app.use('/api/storage-locations', inventoryRouter);
+  app.use('/api/food-items', inventoryRouter);
+  app.use('/api/nutrition', nutritionRouter);
+  app.use('/api/cooking-terms', cookingTermsRouter);
+  app.use('/api/profile', profileRouter);
   
   // ML/AI endpoints (frontend calls /api/ml/search/semantic)
   app.use('/api/ml', mlRouter);
