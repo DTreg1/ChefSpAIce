@@ -6,7 +6,7 @@ test.describe('Food Groups Page', () => {
     await page.waitForLoadState('networkidle');
     
     // Should redirect to landing page
-    await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('tab-signup')).toBeVisible({ timeout: 10000 });
   });
 
   test('food categories API endpoint exists', async ({ request }) => {

@@ -7,7 +7,7 @@ test.describe('Barcode Scanning', () => {
     await page.waitForLoadState('networkidle');
     
     // Should redirect to auth UI with signup/login tabs
-    await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('tab-signup')).toBeVisible({ timeout: 10000 });
   });
 
   test('barcode lookup API exists', async ({ request }) => {

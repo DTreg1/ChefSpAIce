@@ -47,8 +47,7 @@ test.describe('Error Scenarios and Edge Cases', () => {
       await page.waitForLoadState('networkidle');
       
       // Should show auth UI for unauthenticated users
-      const authUI = page.getByTestId('tab-signup').or(page.getByTestId('tab-login'));
-      await expect(authUI).toBeVisible({ timeout: 10000 });
+      await expect(page.getByTestId('tab-signup')).toBeVisible({ timeout: 10000 });
     }
   });
 });

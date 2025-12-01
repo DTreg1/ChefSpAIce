@@ -6,7 +6,7 @@ test.describe('Cookbook Management', () => {
     await page.waitForLoadState('networkidle');
     
     // Should see auth UI for unauthenticated users
-    await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('tab-signup')).toBeVisible({ timeout: 10000 });
   });
 
   test('recipes API requires authentication', async ({ request }) => {

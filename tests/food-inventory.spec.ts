@@ -6,7 +6,7 @@ test.describe('Food Inventory Management', () => {
     await page.waitForLoadState('networkidle');
     
     // Should redirect to landing page
-    await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('tab-signup')).toBeVisible({ timeout: 10000 });
   });
 
   test('inventory API returns 401 for unauthenticated users', async ({ request }) => {

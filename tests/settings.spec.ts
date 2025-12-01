@@ -7,7 +7,7 @@ test.describe('Settings & User Profile Management', () => {
     await page.waitForLoadState('networkidle');
     
     // Should see landing/auth page
-    await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('tab-signup')).toBeVisible({ timeout: 10000 });
   });
 
   test('preferences API returns 401 for unauthenticated users', async ({ request }) => {

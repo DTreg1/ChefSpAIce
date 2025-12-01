@@ -6,7 +6,7 @@ test.describe('Meal Planning and Shopping List', () => {
     await page.waitForLoadState('networkidle');
     
     // Should see auth UI for unauthenticated users
-    await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('tab-signup')).toBeVisible({ timeout: 10000 });
   });
 
   test('shopping list page redirects unauthenticated users', async ({ page }) => {
@@ -14,7 +14,7 @@ test.describe('Meal Planning and Shopping List', () => {
     await page.waitForLoadState('networkidle');
     
     // Should see auth UI for unauthenticated users  
-    await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('tab-signup')).toBeVisible({ timeout: 10000 });
   });
 
   test('meal plans API requires authentication', async ({ request }) => {
