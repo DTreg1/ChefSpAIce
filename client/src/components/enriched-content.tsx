@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { CookingTermTooltip } from "./cooking-term-tooltip";
+import { CookingTermTooltip } from "./cooking-terms";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
