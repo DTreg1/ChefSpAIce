@@ -185,11 +185,21 @@ export function setupApiVersionRedirects(app: Application) {
 
   // === External API Redirects ===
   
-  // USDA/FDC API
+  // USDA/FDC API - redirects to inventory router which handles FDC endpoints
   app.use('/api/fdc', (req: Request, res: Response, next: NextFunction) => {
     if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/fdc${req.url}`;
+      const newUrl = `/api/v1/inventory/fdc${req.url}`;
       console.log(`[REDIRECT] ${req.method} /api/fdc${req.url} → ${newUrl}`);
+      return res.redirect(301, newUrl);
+    }
+    next();
+  });
+
+  // Legacy USDA endpoint - redirect to FDC endpoint
+  app.use('/api/usda', (req: Request, res: Response, next: NextFunction) => {
+    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
+      const newUrl = `/api/v1/inventory/fdc${req.url}`;
+      console.log(`[REDIRECT] ${req.method} /api/usda${req.url} → ${newUrl}`);
       return res.redirect(301, newUrl);
     }
     next();

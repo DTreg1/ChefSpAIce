@@ -87,13 +87,37 @@ router.get("/", isAuthenticated, async (req: Request, res: Response) => {
  * Storage locations are managed in the users.storageLocations JSONB column.
  * Default locations include: Refrigerator, Freezer, Pantry, Counter
  * 
+ * Auto-creates default storage locations if user has none (for new users).
+ * 
  * Returns: Array of storage locations with { id, name, icon }
  */
 router.get("/storage-locations", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-    const locations = await storage.user.inventory.getStorageLocations(userId);
+    
+    let locations = await storage.user.inventory.getStorageLocations(userId);
+    
+    // Auto-create default storage locations for new users
+    if (locations.length === 0) {
+      const defaultLocations = [
+        { name: "Fridge", icon: "refrigerator" },
+        { name: "Freezer", icon: "snowflake" },
+        { name: "Pantry", icon: "utensils-crossed" },
+      ];
+      
+      for (const loc of defaultLocations) {
+        try {
+          await storage.user.inventory.createStorageLocation(userId, loc);
+        } catch (err) {
+          // Location may already exist, ignore
+        }
+      }
+      
+      // Fetch the newly created locations
+      locations = await storage.user.inventory.getStorageLocations(userId);
+    }
+    
     res.json(locations);
   } catch (error) {
     console.error("Error fetching storage locations:", error);

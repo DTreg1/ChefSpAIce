@@ -260,24 +260,25 @@ export const nutritionInfoSchema = z.object({
 export type NutritionInfo = z.infer<typeof nutritionInfoSchema>;
 
 // ==================== USDA Food Data Schema ====================
+// Schema for USDA FoodData Central API response - lenient to handle raw API data
 export const usdaFoodDataSchema = z.object({
-  fdcId: z.string(),
+  fdcId: z.union([z.string(), z.number()]).transform(val => String(val)),
   gtinUpc: z.string().optional(),
   description: z.string(),
   dataType: z.string().optional(),
   brandOwner: z.string().optional(),
   brandName: z.string().optional(),
-  ingredients: z.string(),
+  ingredients: z.string().optional(),
   marketCountry: z.string().optional(),
-  foodCategory: z.string(),
+  foodCategory: z.string().optional(),
   modifiedDate: z.string().optional(),
   availableDate: z.string().optional(),
-  servingSize: z.number(),
-  servingSizeUnit: z.string(),
+  servingSize: z.number().optional(),
+  servingSizeUnit: z.string().optional(),
   packageWeight: z.string().optional(),
   notaSignificantSourceOf: z.string().optional(),
-  nutrition: nutritionInfoSchema,
-  foodNutrients: nutritionInfoSchema.array(),
+  nutrition: nutritionInfoSchema.optional(),
+  foodNutrients: z.array(z.any()).optional(),
 });
 
 export type USDAFoodItem = z.infer<typeof usdaFoodDataSchema>;
@@ -436,18 +437,22 @@ export type InsertUserStorage = z.infer<typeof insertUserStorageSchema>;
 export type UserStorage = typeof userStorage.$inferSelect;
 export type StorageLocation = UserStorage; // Backward compatibility
 
-export const insertUserInventorySchema = createInsertSchema(
-  userInventory,
-).extend({
-  usdaData: usdaFoodDataSchema.optional(),
-  barcodeData: barcodeDataSchema.optional(),
-  // Add stricter validation for expiration dates
-  expirationDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  weightInGrams: z.number().positive().optional(),
-});
+export const insertUserInventorySchema = createInsertSchema(userInventory)
+  .omit({
+    id: true,
+    userId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    usdaData: usdaFoodDataSchema.optional(),
+    barcodeData: barcodeDataSchema.optional(),
+    expirationDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    weightInGrams: z.number().positive().optional(),
+  });
 
 export type InsertUserInventory = z.infer<typeof insertUserInventorySchema>;
 export type UserInventory = typeof userInventory.$inferSelect;

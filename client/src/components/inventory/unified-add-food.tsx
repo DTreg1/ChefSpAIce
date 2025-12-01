@@ -303,8 +303,7 @@ export function UnifiedAddFood({ open, onOpenChange }: UnifiedAddFoodProps) {
   // Add food mutation
   const addFoodMutation = useMutation({
     mutationFn: async (data: unknown) => {
-      const response = await apiRequest(API_ENDPOINTS.inventory.foodItems, "POST", data);
-      return response.json();
+      return await apiRequest(API_ENDPOINTS.inventory.foodItems, "POST", data);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.foodItems] });
