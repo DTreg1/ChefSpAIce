@@ -30,9 +30,7 @@ import {
   Loader2,
   Copy,
 } from "lucide-react";
-import { ExcerptEditor, type ExcerptGenerationOptions } from "@/components/excerpt-editor";
-import { ExcerptPreview } from "@/components/excerpt-preview";
-import { ExcerptTester } from "@/components/excerpt-tester";
+import { ExcerptEditor, ExcerptPreview, ExcerptTester, type ExcerptGenerationOptions } from "@/components/excerpts";
 import { PerformanceMetrics } from "@/components/analytics";
 import type { Excerpt } from "@shared/schema";
 

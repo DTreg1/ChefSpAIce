@@ -3,11 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { LanguageSelector } from "@/components/language-selector";
+import { LanguageSelector, LanguagePreferences } from "@/components/language";
 import { TranslationToggle } from "@/components/translation-toggle";
 import { TranslatedContent } from "@/components/translated-content";
 import { TranslationQuality } from "@/components/translation-quality";
-import { LanguagePreferences } from "@/components/language-preferences";
 import { Globe, Settings, FileText, MessageSquare } from "lucide-react";
 
 export default function TranslationDemo() {

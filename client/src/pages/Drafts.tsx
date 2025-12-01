@@ -1,4 +1,4 @@
-import { DraftingAssistant } from "@/components/drafting-assistant";
+import { DraftingAssistant } from "@/components/drafts";
 
 export default function Drafts() {
   return (

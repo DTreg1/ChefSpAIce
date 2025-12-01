@@ -18,7 +18,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { format, addDays } from "date-fns";
 import type { UserInventory as FoodItem, StorageLocation, Recipe } from "@shared/schema";
-import { BarcodeScanQueue } from "@/components/barcode-scan-queue";
+import { BarcodeScanQueue } from "@/components/barcode";
 import { BatchCategorizationDialog } from "@/components/auto-categorization";
 
 // Virtual scrolling component for large food grids with multi-select support

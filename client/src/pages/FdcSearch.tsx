@@ -52,7 +52,7 @@ import { Html5Qrcode } from "html5-qrcode";
 import type { StorageLocation } from "@shared/schema";
 import { format, addDays } from "date-fns";
 import { SuccessAnimation } from "@/components/success-animation";
-import { BarcodeScannerDialog } from "@/components/barcode-scanner-dialog";
+import { BarcodeScannerDialog } from "@/components/barcode";
 
 interface FoodNutrient {
   nutrientId: number;

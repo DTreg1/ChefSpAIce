@@ -5,8 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Activity, Users, BarChart3, Settings, Copy, MessageSquareWarning } from "lucide-react";
 import { AdminActivityMonitor } from "@/components/analytics";
 import { Badge } from "@/components/ui/badge";
-import { DuplicateManager } from "@/components/duplicate-manager";
-import { DuplicateDetection } from "@/components/duplicate-detection";
+import { DuplicateManager, DuplicateDetection } from "@/components/duplicates";
 import { ModerationQueue, ModerationStats } from "@/components/moderation";
 
 export default function AdminDashboard() {
