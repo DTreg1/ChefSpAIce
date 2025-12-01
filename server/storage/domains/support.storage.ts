@@ -20,6 +20,8 @@ import {
   routingRules,
   ticketRouting,
   agentExpertise,
+  ticketResponses,
+  adminModerationLogs,
   type Ticket,
   type InsertTicket,
   type RoutingRule,
@@ -28,6 +30,10 @@ import {
   type InsertTicketRouting,
   type AgentExpertise,
   type InsertAgentExpertise,
+  type TicketResponse,
+  type InsertTicketResponse,
+  type AdminModerationLog,
+  type InsertAdminModerationLog,
 } from "@shared/schema/support";
 
 /**
@@ -580,6 +586,133 @@ export class SupportStorage implements ISupportStorage {
         ((agent.currentTicketCount || 0) / (agent.maxConcurrentTickets || 10)) * 100,
       avgSatisfactionScore: agent.satisfactionScore || 0,
     }));
+  }
+
+  // ==================== Ticket Responses ====================
+
+  /**
+   * Add a response to a ticket
+   * @param ticketId - The ticket ID
+   * @param response - The response data (userId, content, isInternal, attachments)
+   * @returns The created ticket response
+   */
+  async addTicketResponse(
+    ticketId: string,
+    response: Omit<InsertTicketResponse, "ticketId">
+  ): Promise<TicketResponse> {
+    const [newResponse] = await db
+      .insert(ticketResponses)
+      .values({
+        ticketId,
+        ...response,
+      })
+      .returning();
+    
+    // Update ticket's updatedAt timestamp
+    await db
+      .update(tickets)
+      .set({ updatedAt: new Date() })
+      .where(eq(tickets.id, ticketId));
+    
+    return newResponse;
+  }
+
+  /**
+   * Get all responses for a ticket ordered by creation date
+   * @param ticketId - The ticket ID
+   * @returns Array of ticket responses ordered by createdAt ascending
+   */
+  async getTicketResponses(ticketId: string): Promise<TicketResponse[]> {
+    return await db
+      .select()
+      .from(ticketResponses)
+      .where(eq(ticketResponses.ticketId, ticketId))
+      .orderBy(asc(ticketResponses.createdAt));
+  }
+
+  // ==================== Admin Moderation Logs ====================
+
+  /**
+   * Get moderation logs with optional filters
+   * @param filters - Optional filters for userId, moderatorId, action, startDate, endDate
+   * @returns Array of moderation logs matching filters
+   */
+  async getModerationLogs(filters?: {
+    userId?: string;
+    moderatorId?: string;
+    action?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<AdminModerationLog[]> {
+    const conditions = [];
+
+    if (filters?.userId) {
+      conditions.push(eq(adminModerationLogs.userId, filters.userId));
+    }
+    if (filters?.moderatorId) {
+      conditions.push(eq(adminModerationLogs.moderatorId, filters.moderatorId));
+    }
+    if (filters?.action) {
+      conditions.push(eq(adminModerationLogs.action, filters.action));
+    }
+    if (filters?.startDate) {
+      conditions.push(gte(adminModerationLogs.createdAt, filters.startDate));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(adminModerationLogs.createdAt, filters.endDate));
+    }
+
+    if (conditions.length > 0) {
+      return await db
+        .select()
+        .from(adminModerationLogs)
+        .where(and(...conditions))
+        .orderBy(desc(adminModerationLogs.createdAt));
+    }
+
+    return await db
+      .select()
+      .from(adminModerationLogs)
+      .orderBy(desc(adminModerationLogs.createdAt));
+  }
+
+  /**
+   * Get a single moderation log entry by ID
+   * @param logId - The moderation log ID
+   * @returns The moderation log entry or undefined if not found
+   */
+  async getModerationLogById(logId: string): Promise<AdminModerationLog | undefined> {
+    const [log] = await db
+      .select()
+      .from(adminModerationLogs)
+      .where(eq(adminModerationLogs.id, logId));
+    return log;
+  }
+
+  /**
+   * Get all moderation actions taken against a specific user
+   * @param userId - The user ID being moderated
+   * @returns Array of moderation logs for the user ordered by createdAt descending
+   */
+  async getUserModerationHistory(userId: string): Promise<AdminModerationLog[]> {
+    return await db
+      .select()
+      .from(adminModerationLogs)
+      .where(eq(adminModerationLogs.userId, userId))
+      .orderBy(desc(adminModerationLogs.createdAt));
+  }
+
+  /**
+   * Create a new moderation log entry
+   * @param log - The moderation log data
+   * @returns The created moderation log
+   */
+  async createModerationLog(log: InsertAdminModerationLog): Promise<AdminModerationLog> {
+    const [newLog] = await db
+      .insert(adminModerationLogs)
+      .values(log)
+      .returning();
+    return newLog;
   }
 }
 
