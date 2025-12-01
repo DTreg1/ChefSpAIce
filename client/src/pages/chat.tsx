@@ -403,7 +403,7 @@ export default function Chat() {
                   content={message.content}
                   userProfileImageUrl={user?.profileImageUrl || undefined}
                   userInitials={getUserInitials()}
-                  timestamp={(message.timestamp || message.createdAt || new Date()).toLocaleTimeString(
+                  timestamp={new Date(message.timestamp || message.createdAt || Date.now()).toLocaleTimeString(
                     [],
                     {
                       hour: "2-digit",

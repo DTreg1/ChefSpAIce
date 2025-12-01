@@ -15,90 +15,30 @@ import { Application, Request, Response, NextFunction } from 'express';
 export function setupApiVersionRedirects(app: Application) {
   // === Core Resource Redirects ===
   
-  // Inventory (singular to plural)
-  app.use('/api/inventory', (req: Request, res: Response, next: NextFunction) => {
-    // Check if it's an API request (not a frontend route)
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/inventories${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /api/inventory${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
+  // Inventory - NO REDIRECT (handled directly in router)
+  // POST requests to /api/inventory are handled directly to avoid 301 redirect issues
 
-  // Direct inventory access (shorthand)
-  app.use('/inventory', (req: Request, res: Response, next: NextFunction) => {
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/inventories${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /inventory${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
+  // Food items - NO REDIRECT (handled directly in router)
+  // POST requests to /api/food-items are handled directly to avoid 301 redirect issues
 
-  // Food items
-  app.use('/api/food-items', (req: Request, res: Response, next: NextFunction) => {
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/food-items${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /api/food-items${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
-
-  // Storage locations
-  app.use('/api/storage-locations', (req: Request, res: Response, next: NextFunction) => {
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/storage-locations${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /api/storage-locations${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
+  // Storage locations - NO REDIRECT (handled directly in router)
+  // POST requests to /api/storage-locations are handled directly to avoid 301 redirect issues
 
   // === Recipe & Meal Planning Redirects ===
   
-  // Recipes
-  app.use('/api/recipes', (req: Request, res: Response, next: NextFunction) => {
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/recipes${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /api/recipes${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
+  // Recipes - NO REDIRECT (handled directly in router)
+  // POST requests to /api/recipes are handled directly to avoid 301 redirect issues
 
-  // Meal plans
-  app.use('/api/meal-plans', (req: Request, res: Response, next: NextFunction) => {
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/meal-plans${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /api/meal-plans${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
+  // Meal plans - NO REDIRECT (handled directly in router)
+  // POST requests to /api/meal-plans are handled directly to avoid 301 redirect issues
 
-  // Shopping list
-  app.use('/api/shopping-list', (req: Request, res: Response, next: NextFunction) => {
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/shopping-list${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /api/shopping-list${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
+  // Shopping list - NO REDIRECT (handled directly in router)
+  // POST requests to /api/shopping-list are handled directly to avoid 301 redirect issues
 
   // === AI Service Redirects ===
   
-  // Chat (legacy path)
-  app.use('/api/chat', (req: Request, res: Response, next: NextFunction) => {
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/chat${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /api/chat${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
+  // Chat - NO REDIRECT (handled directly in router)
+  // POST requests to /api/chat are handled directly to avoid 301 redirect issues
 
   // AI endpoints
   app.use('/api/ai', (req: Request, res: Response, next: NextFunction) => {
@@ -120,15 +60,8 @@ export function setupApiVersionRedirects(app: Application) {
     next();
   });
 
-  // Nutrition analysis
-  app.use('/api/nutrition', (req: Request, res: Response, next: NextFunction) => {
-    if (req.accepts(['json', 'html']) === 'json' || req.xhr) {
-      const newUrl = `/api/v1/ai/analysis/nutrition${req.url}`;
-      console.log(`[REDIRECT] ${req.method} /api/nutrition${req.url} → ${newUrl}`);
-      return res.redirect(301, newUrl);
-    }
-    next();
-  });
+  // Nutrition - NO REDIRECT (handled directly in router)
+  // POST requests to /api/nutrition are handled directly to avoid 301 redirect issues
 
   // Image analysis
   app.use('/api/image-analysis', (req: Request, res: Response, next: NextFunction) => {

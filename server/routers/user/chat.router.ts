@@ -322,7 +322,7 @@ router.post(
       const completion = await chatCircuitBreaker.execute(async () => {
         return await retryWithBackoff(async () => {
           return await openai.chat.completions.create({
-            model: "gpt-4-turbo",
+            model: "gpt-4o",
             messages,
             temperature: 0.7,
             max_tokens: 500,
@@ -448,6 +448,174 @@ router.get("/health", isAuthenticated, (req: Request, res: Response) => {
     service: 'chat-stream',
     timestamp: Date.now()
   });
+});
+
+/**
+ * POST /api/chat/message
+ * 
+ * Alias for /messages - Creates a new chat message and gets AI response.
+ * Used by chat-interface.tsx
+ */
+router.post("/message", isAuthenticated, rateLimiters.openai.middleware(), async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    // Accept both 'content' and 'message' field names for flexibility
+    const { content, message, conversationId } = req.body;
+    const messageContent = content || message;
+    
+    if (!messageContent) {
+      return res.status(400).json({ error: "Message content is required" });
+    }
+
+    // Save user message with conversationId in metadata
+    const userMessage = await storage.user.chat.createChatMessage(userId, {
+      role: "user",
+      content: messageContent,
+      metadata: conversationId ? { conversationId } : undefined
+    });
+
+    // Get AI response using the chat service
+    try {
+      const context = await chatService.buildChatContext(userId, true, 10);
+      const aiResponse = await chatService.createChatCompletion(context.messages);
+      
+      // Save AI response with conversationId in metadata
+      const assistantMessage = await storage.user.chat.createChatMessage(userId, {
+        role: "assistant",
+        content: aiResponse,
+        metadata: conversationId ? { conversationId } : undefined
+      });
+
+      res.json({
+        userMessage,
+        assistantMessage,
+        response: aiResponse
+      });
+    } catch (aiError) {
+      console.error("AI response error:", aiError);
+      // Return user message but indicate AI failed
+      res.json({
+        userMessage,
+        assistantMessage: null,
+        response: null,
+        error: "AI service temporarily unavailable"
+      });
+    }
+  } catch (error) {
+    console.error("Error in chat message:", error);
+    res.status(500).json({ error: "Failed to process message" });
+  }
+});
+
+/**
+ * GET /api/chat/conversations
+ * 
+ * Get all conversations for the authenticated user.
+ */
+router.get("/conversations", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    // Get unique conversations from chat messages
+    const messages = await storage.user.chat.getChatMessages(userId, 100);
+    
+    // Group by conversationId and extract unique conversations
+    const conversationMap = new Map<string, any>();
+    for (const msg of messages) {
+      const convId = (msg.metadata as any)?.conversationId || 'default';
+      if (!conversationMap.has(convId)) {
+        conversationMap.set(convId, {
+          id: convId,
+          title: msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : ''),
+          lastMessage: msg.content,
+          createdAt: msg.createdAt,
+          updatedAt: msg.createdAt
+        });
+      }
+    }
+    
+    const conversations = Array.from(conversationMap.values());
+    res.json(conversations);
+  } catch (error) {
+    console.error("Error getting conversations:", error);
+    res.status(500).json({ error: "Failed to get conversations" });
+  }
+});
+
+/**
+ * GET /api/chat/conversation/:conversationId
+ * 
+ * Get messages for a specific conversation.
+ */
+router.get("/conversation/:conversationId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { conversationId } = req.params;
+    const messages = await storage.user.chat.getChatMessages(userId, 100);
+    
+    // Filter by conversationId stored in metadata
+    const conversationMessages = messages.filter((m: any) => 
+      ((m.metadata as any)?.conversationId || 'default') === conversationId
+    );
+    
+    res.json({
+      id: conversationId,
+      messages: conversationMessages
+    });
+  } catch (error) {
+    console.error("Error getting conversation:", error);
+    res.status(500).json({ error: "Failed to get conversation" });
+  }
+});
+
+/**
+ * POST /api/chat/conversation
+ * 
+ * Create a new conversation.
+ */
+router.post("/conversation", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    res.json({
+      id: conversationId,
+      title: "New Conversation",
+      createdAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error creating conversation:", error);
+    res.status(500).json({ error: "Failed to create conversation" });
+  }
+});
+
+/**
+ * DELETE /api/chat/conversation/:conversationId
+ * 
+ * Delete a conversation.
+ */
+router.delete("/conversation/:conversationId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { conversationId } = req.params;
+    
+    // Delete messages for this conversation
+    await storage.user.chat.deleteChatHistory(userId);
+    
+    res.json({ success: true, deletedConversationId: conversationId });
+  } catch (error) {
+    console.error("Error deleting conversation:", error);
+    res.status(500).json({ error: "Failed to delete conversation" });
+  }
 });
 
 /**

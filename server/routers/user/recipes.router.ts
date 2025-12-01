@@ -148,7 +148,7 @@ Return a JSON object with the following structure:
       const completion = await recipeCircuitBreaker.execute(async () => {
         return await retryWithBackoff(async () => {
           return await openai.chat.completions.create({
-            model: "gpt-4-turbo",
+            model: "gpt-4o",
             messages: [{ role: "user", content: context }],
             temperature: 0.8,
             max_tokens: 1000,
