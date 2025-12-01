@@ -9,17 +9,23 @@
  */
 
 import { db } from "../../db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
 import {
   userInventory,
   userStorage,
   cookingTerms,
+  applianceLibrary,
+  userAppliances,
   type UserInventory,
   type InsertUserInventory,
   type UserStorage,
   type InsertUserStorage,
   type CookingTerm,
-  type InsertCookingTerm
+  type InsertCookingTerm,
+  type ApplianceLibrary,
+  type InsertApplianceLibrary,
+  type UserAppliance,
+  type InsertUserAppliance,
 } from "@shared/schema";
 
 import { PaginationHelper, PaginatedResponse } from "../../utils/pagination";
@@ -401,116 +407,215 @@ export class FoodStorage implements IFoodStorage {
       );
   }
 
-  // ==================== Appliance Methods (Stubs) ====================
+  // ==================== Appliance Library Methods ====================
 
-  async getAppliances(_userId: string): Promise<any[]> {
-    console.warn("getAppliances: stub method called");
-    return [];
+  /**
+   * Get all appliances from the master library
+   */
+  async getAppliances(): Promise<ApplianceLibrary[]> {
+    return await db
+      .select()
+      .from(applianceLibrary)
+      .orderBy(applianceLibrary.category, applianceLibrary.name);
   }
 
-  async getUserAppliances(_userId: string): Promise<any[]> {
-    console.warn("getUserAppliances: stub method called");
-    return [];
-  }
-
-  async getUserAppliancesByCategory(_userId: string, _category?: string): Promise<any[]> {
-    console.warn("getUserAppliancesByCategory: stub method called");
-    return [];
-  }
-
-  async createAppliance(_userId: string, _data: any): Promise<any> {
-    console.warn("createAppliance: stub method called");
-    return { id: "stub" };
-  }
-
-  async updateAppliance(_userId: string, _id: string, _data: any): Promise<any> {
-    console.warn("updateAppliance: stub method called");
-    return { id: _id };
-  }
-
-  async deleteAppliance(_userId: string, _id: string): Promise<void> {
-    console.warn("deleteAppliance: stub method called");
-  }
-
+  /**
+   * Get distinct appliance categories
+   */
   async getApplianceCategories(): Promise<string[]> {
-    console.warn("getApplianceCategories: stub method called");
-    return [];
+    const results = await db
+      .selectDistinct({ category: applianceLibrary.category })
+      .from(applianceLibrary)
+      .orderBy(applianceLibrary.category);
+    
+    return results.map((r) => r.category);
   }
 
-  async getApplianceLibrary(_category?: string): Promise<any[]> {
-    console.warn("getApplianceLibrary: stub method called");
-    return [];
+  /**
+   * Alias for getAppliances - get all from appliance library
+   */
+  async getApplianceLibrary(): Promise<ApplianceLibrary[]> {
+    return this.getAppliances();
   }
 
-  async getApplianceLibraryByCategory(_category: string): Promise<any[]> {
-    console.warn("getApplianceLibraryByCategory: stub method called");
-    return [];
+  /**
+   * Get appliances from library filtered by category
+   */
+  async getApplianceLibraryByCategory(category: string): Promise<ApplianceLibrary[]> {
+    return await db
+      .select()
+      .from(applianceLibrary)
+      .where(eq(applianceLibrary.category, category))
+      .orderBy(applianceLibrary.name);
   }
 
-  async searchApplianceLibrary(_query: string): Promise<any[]> {
-    console.warn("searchApplianceLibrary: stub method called");
-    return [];
+  /**
+   * Search appliance library by name or description
+   */
+  async searchApplianceLibrary(query: string): Promise<ApplianceLibrary[]> {
+    const searchPattern = `%${query}%`;
+    return await db
+      .select()
+      .from(applianceLibrary)
+      .where(
+        or(
+          ilike(applianceLibrary.name, searchPattern),
+          ilike(applianceLibrary.description, searchPattern)
+        )
+      )
+      .orderBy(applianceLibrary.name);
   }
 
-  async getCommonAppliances(): Promise<any[]> {
-    return [
-      { id: "stove", name: "Stove/Range", type: "appliance", isCommon: true },
-      { id: "oven", name: "Oven", type: "appliance", isCommon: true },
-      { id: "microwave", name: "Microwave", type: "appliance", isCommon: true },
-      { id: "refrigerator", name: "Refrigerator", type: "appliance", isCommon: true },
-      { id: "freezer", name: "Freezer", type: "appliance", isCommon: true },
-      { id: "toaster", name: "Toaster", type: "appliance", isCommon: true },
-      { id: "blender", name: "Blender", type: "appliance", isCommon: true },
-      { id: "food-processor", name: "Food Processor", type: "appliance", isCommon: true },
-      { id: "stand-mixer", name: "Stand Mixer", type: "appliance", isCommon: true },
-      { id: "hand-mixer", name: "Hand Mixer", type: "appliance", isCommon: true },
-      { id: "air-fryer", name: "Air Fryer", type: "appliance", isCommon: true },
-      { id: "slow-cooker", name: "Slow Cooker/Crock Pot", type: "appliance", isCommon: true },
-      { id: "instant-pot", name: "Instant Pot/Pressure Cooker", type: "appliance", isCommon: true },
-      { id: "coffee-maker", name: "Coffee Maker", type: "appliance", isCommon: true },
-      { id: "kettle", name: "Electric Kettle", type: "appliance", isCommon: true },
-      { id: "grill", name: "Grill (outdoor/indoor)", type: "appliance", isCommon: true },
-      { id: "skillet", name: "Skillet/Frying Pan", type: "cookware", isCommon: true },
-      { id: "saucepan", name: "Saucepan", type: "cookware", isCommon: true },
-      { id: "stockpot", name: "Stock Pot", type: "cookware", isCommon: true },
-      { id: "dutch-oven", name: "Dutch Oven", type: "cookware", isCommon: true },
-      { id: "cast-iron", name: "Cast Iron Skillet", type: "cookware", isCommon: true },
-      { id: "wok", name: "Wok", type: "cookware", isCommon: true },
-      { id: "baking-sheet", name: "Baking Sheet", type: "bakeware", isCommon: true },
-      { id: "casserole-dish", name: "Casserole Dish", type: "bakeware", isCommon: true },
-      { id: "cake-pan", name: "Cake Pan", type: "bakeware", isCommon: true },
-      { id: "muffin-tin", name: "Muffin Tin", type: "bakeware", isCommon: true },
-      { id: "loaf-pan", name: "Loaf Pan", type: "bakeware", isCommon: true },
-      { id: "pie-dish", name: "Pie Dish", type: "bakeware", isCommon: true },
-      { id: "cutting-board", name: "Cutting Board", type: "utensil", isCommon: true },
-      { id: "knife-set", name: "Knife Set", type: "utensil", isCommon: true },
-      { id: "measuring-cups", name: "Measuring Cups", type: "utensil", isCommon: true },
-      { id: "measuring-spoons", name: "Measuring Spoons", type: "utensil", isCommon: true },
-      { id: "mixing-bowls", name: "Mixing Bowls", type: "utensil", isCommon: true },
-      { id: "colander", name: "Colander/Strainer", type: "utensil", isCommon: true },
-      { id: "spatula", name: "Spatula", type: "utensil", isCommon: true },
-      { id: "whisk", name: "Whisk", type: "utensil", isCommon: true },
-      { id: "tongs", name: "Tongs", type: "utensil", isCommon: true },
-      { id: "ladle", name: "Ladle", type: "utensil", isCommon: true },
-      { id: "peeler", name: "Vegetable Peeler", type: "utensil", isCommon: true },
-      { id: "grater", name: "Cheese Grater", type: "utensil", isCommon: true },
-      { id: "can-opener", name: "Can Opener", type: "utensil", isCommon: true },
-      { id: "rolling-pin", name: "Rolling Pin", type: "utensil", isCommon: true },
-    ];
+  // ==================== User Appliance Methods ====================
+
+  /**
+   * User appliance with joined library data
+   */
+  async getUserAppliances(userId: string): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]> {
+    const results = await db
+      .select({
+        userAppliance: userAppliances,
+        libraryAppliance: applianceLibrary,
+      })
+      .from(userAppliances)
+      .leftJoin(applianceLibrary, eq(userAppliances.applianceId, applianceLibrary.id))
+      .where(eq(userAppliances.userId, userId))
+      .orderBy(userAppliances.category, userAppliances.createdAt);
+
+    return results.map((r) => ({
+      ...r.userAppliance,
+      libraryAppliance: r.libraryAppliance || undefined,
+    }));
   }
 
-  async addUserAppliance(_userId: string, _data: any): Promise<any> {
-    console.warn("addUserAppliance: stub method called");
-    return { id: "stub" };
+  /**
+   * Get user's appliances filtered by category
+   */
+  async getUserAppliancesByCategory(
+    userId: string,
+    category: string
+  ): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]> {
+    const results = await db
+      .select({
+        userAppliance: userAppliances,
+        libraryAppliance: applianceLibrary,
+      })
+      .from(userAppliances)
+      .leftJoin(applianceLibrary, eq(userAppliances.applianceId, applianceLibrary.id))
+      .where(
+        and(
+          eq(userAppliances.userId, userId),
+          eq(userAppliances.category, category)
+        )
+      )
+      .orderBy(userAppliances.createdAt);
+
+    return results.map((r) => ({
+      ...r.userAppliance,
+      libraryAppliance: r.libraryAppliance || undefined,
+    }));
   }
 
-  async updateUserAppliance(_userId: string, _id: string, _data: any): Promise<any> {
-    console.warn("updateUserAppliance: stub method called");
-    return { id: _id };
+  /**
+   * Add a new appliance to the master library (admin)
+   */
+  async createAppliance(data: InsertApplianceLibrary): Promise<ApplianceLibrary> {
+    const [created] = await db
+      .insert(applianceLibrary)
+      .values(data)
+      .returning();
+    
+    return created;
   }
 
-  async deleteUserAppliance(_userId: string, _id: string): Promise<void> {
-    console.warn("deleteUserAppliance: stub method called");
+  /**
+   * Update an appliance in the master library (admin)
+   */
+  async updateAppliance(
+    id: string,
+    data: Partial<InsertApplianceLibrary>
+  ): Promise<ApplianceLibrary> {
+    const [updated] = await db
+      .update(applianceLibrary)
+      .set(data)
+      .where(eq(applianceLibrary.id, id))
+      .returning();
+
+    if (!updated) {
+      throw new Error("Appliance not found");
+    }
+
+    return updated;
+  }
+
+  /**
+   * Delete an appliance from the master library (admin)
+   */
+  async deleteAppliance(id: string): Promise<void> {
+    await db
+      .delete(applianceLibrary)
+      .where(eq(applianceLibrary.id, id));
+  }
+
+  /**
+   * Add an appliance to user's collection (link to library or custom)
+   */
+  async addUserAppliance(
+    userId: string,
+    data: Omit<InsertUserAppliance, "userId">
+  ): Promise<UserAppliance> {
+    const [created] = await db
+      .insert(userAppliances)
+      .values({
+        ...data,
+        userId,
+      })
+      .returning();
+
+    return created;
+  }
+
+  /**
+   * Update a user's appliance settings
+   */
+  async updateUserAppliance(
+    userId: string,
+    applianceId: string,
+    data: Partial<Omit<InsertUserAppliance, "userId">>
+  ): Promise<UserAppliance> {
+    const [updated] = await db
+      .update(userAppliances)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(userAppliances.id, applianceId),
+          eq(userAppliances.userId, userId)
+        )
+      )
+      .returning();
+
+    if (!updated) {
+      throw new Error("User appliance not found");
+    }
+
+    return updated;
+  }
+
+  /**
+   * Remove an appliance from user's collection
+   */
+  async deleteUserAppliance(userId: string, applianceId: string): Promise<void> {
+    await db
+      .delete(userAppliances)
+      .where(
+        and(
+          eq(userAppliances.id, applianceId),
+          eq(userAppliances.userId, userId)
+        )
+      );
   }
 
   // ==================== Cache Methods (Stubs) ====================
