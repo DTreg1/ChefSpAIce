@@ -20,6 +20,7 @@ import {
   meetingSuggestions,
   schedulingPatterns,
   meetingEvents,
+  meetingSchedules,
   type SchedulingPreferences,
   type InsertSchedulingPreferences,
   type MeetingSuggestions,
@@ -28,6 +29,8 @@ import {
   type InsertSchedulingPatterns,
   type MeetingEvents,
   type InsertMeetingEvents,
+  type MeetingSchedule,
+  type InsertMeetingSchedule,
   type SelectedTimeSlot,
 } from "@shared/schema/scheduling";
 
@@ -557,6 +560,194 @@ export class SchedulingStorage implements ISchedulingStorage {
       )
       .orderBy(asc(meetingEvents.startTime))
       .limit(limit);
+  }
+
+  // ==================== Meeting Schedules ====================
+
+  async getMeetingSchedules(userId: string): Promise<MeetingSchedule[]> {
+    return await db
+      .select()
+      .from(meetingSchedules)
+      .where(eq(meetingSchedules.userId, userId))
+      .orderBy(asc(meetingSchedules.startTime));
+  }
+
+  async getMeetingSchedule(scheduleId: string): Promise<MeetingSchedule | undefined> {
+    const [schedule] = await db
+      .select()
+      .from(meetingSchedules)
+      .where(eq(meetingSchedules.id, scheduleId))
+      .limit(1);
+    return schedule;
+  }
+
+  async createMeetingSchedule(schedule: InsertMeetingSchedule): Promise<MeetingSchedule> {
+    const [created] = await db
+      .insert(meetingSchedules)
+      .values(schedule as typeof meetingSchedules.$inferInsert)
+      .returning();
+    return created;
+  }
+
+  async updateMeetingSchedule(
+    scheduleId: string,
+    data: Partial<Omit<MeetingSchedule, "id" | "createdAt">>
+  ): Promise<MeetingSchedule> {
+    const [updated] = await db
+      .update(meetingSchedules)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(meetingSchedules.id, scheduleId))
+      .returning();
+    return updated;
+  }
+
+  async deleteMeetingSchedule(scheduleId: string): Promise<void> {
+    await db
+      .delete(meetingSchedules)
+      .where(eq(meetingSchedules.id, scheduleId));
+  }
+
+  async getMeetingsByDateRange(
+    userId: string,
+    start: Date,
+    end: Date
+  ): Promise<MeetingSchedule[]> {
+    return await db
+      .select()
+      .from(meetingSchedules)
+      .where(
+        and(
+          eq(meetingSchedules.userId, userId),
+          gte(meetingSchedules.startTime, start),
+          lte(meetingSchedules.endTime, end),
+          ne(meetingSchedules.status, "cancelled")
+        )
+      )
+      .orderBy(asc(meetingSchedules.startTime));
+  }
+
+  async checkConflicts(
+    userId: string,
+    start: Date,
+    end: Date,
+    excludeScheduleId?: string
+  ): Promise<MeetingSchedule[]> {
+    const conditions: SQL<unknown>[] = [
+      eq(meetingSchedules.userId, userId),
+      ne(meetingSchedules.status, "cancelled"),
+      or(
+        // New meeting starts during existing meeting
+        and(
+          gte(meetingSchedules.startTime, start),
+          lte(meetingSchedules.startTime, end)
+        ),
+        // New meeting ends during existing meeting
+        and(
+          gte(meetingSchedules.endTime, start),
+          lte(meetingSchedules.endTime, end)
+        ),
+        // Existing meeting encompasses the new meeting
+        and(
+          lte(meetingSchedules.startTime, start),
+          gte(meetingSchedules.endTime, end)
+        )
+      )!,
+    ];
+
+    if (excludeScheduleId) {
+      conditions.push(ne(meetingSchedules.id, excludeScheduleId));
+    }
+
+    return await db
+      .select()
+      .from(meetingSchedules)
+      .where(and(...conditions))
+      .orderBy(asc(meetingSchedules.startTime));
+  }
+
+  async getAvailableSlots(
+    userId: string,
+    date: Date,
+    durationMinutes: number
+  ): Promise<Array<{ start: Date; end: Date }>> {
+    // Set working hours (9 AM to 5 PM by default)
+    const dayStart = new Date(date);
+    dayStart.setHours(9, 0, 0, 0);
+    
+    const dayEnd = new Date(date);
+    dayEnd.setHours(17, 0, 0, 0);
+
+    // Get user preferences for working hours if available
+    const preferences = await this.getSchedulingPreferences(userId);
+    if (preferences?.workingHours) {
+      const [startHour, startMin] = preferences.workingHours.start.split(":").map(Number);
+      const [endHour, endMin] = preferences.workingHours.end.split(":").map(Number);
+      dayStart.setHours(startHour, startMin, 0, 0);
+      dayEnd.setHours(endHour, endMin, 0, 0);
+    }
+
+    // Get existing meetings for that day
+    const existingMeetings = await db
+      .select()
+      .from(meetingSchedules)
+      .where(
+        and(
+          eq(meetingSchedules.userId, userId),
+          gte(meetingSchedules.startTime, dayStart),
+          lte(meetingSchedules.endTime, dayEnd),
+          ne(meetingSchedules.status, "cancelled")
+        )
+      )
+      .orderBy(asc(meetingSchedules.startTime));
+
+    const availableSlots: Array<{ start: Date; end: Date }> = [];
+    const durationMs = durationMinutes * 60 * 1000;
+    let currentTime = dayStart.getTime();
+    const endTime = dayEnd.getTime();
+
+    // Find gaps between meetings
+    for (const meeting of existingMeetings) {
+      const meetingStart = new Date(meeting.startTime).getTime();
+      const meetingEnd = new Date(meeting.endTime).getTime();
+
+      // Check if there's a gap before this meeting
+      if (meetingStart > currentTime) {
+        const gapDuration = meetingStart - currentTime;
+        
+        // If gap is large enough for the requested duration
+        if (gapDuration >= durationMs) {
+          // Generate slots within this gap
+          let slotStart = currentTime;
+          while (slotStart + durationMs <= meetingStart) {
+            availableSlots.push({
+              start: new Date(slotStart),
+              end: new Date(slotStart + durationMs),
+            });
+            slotStart += 30 * 60 * 1000; // Move by 30-minute increments
+          }
+        }
+      }
+
+      // Move current time past this meeting
+      currentTime = Math.max(currentTime, meetingEnd);
+    }
+
+    // Check for availability after the last meeting
+    if (currentTime < endTime) {
+      let slotStart = currentTime;
+      while (slotStart + durationMs <= endTime) {
+        availableSlots.push({
+          start: new Date(slotStart),
+          end: new Date(slotStart + durationMs),
+        });
+        slotStart += 30 * 60 * 1000; // Move by 30-minute increments
+      }
+    }
+
+    return availableSlots;
   }
 }
 
