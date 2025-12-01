@@ -24,6 +24,7 @@ import {
   fraudReviews,
   fraudDetectionResults,
   privacySettings,
+  privacyRequests,
   type ModerationLog,
   type InsertModerationLog,
   type BlockedContent,
@@ -41,6 +42,8 @@ import {
   type PrivacySettings,
   type InsertPrivacySettings,
   type FraudReviewRestrictions,
+  type PrivacyRequest,
+  type InsertPrivacyRequest,
 } from "@shared/schema/security";
 
 /**
@@ -712,6 +715,119 @@ export class SecurityStorage implements ISecurityStorage {
   async deletePrivacySettings(userId: string): Promise<void> {
     await db.delete(privacySettings).where(eq(privacySettings.userId, userId));
     this.invalidateCache(`privacy:${userId}`);
+  }
+
+  // ==================== Privacy Requests ====================
+
+  /**
+   * Create a new privacy request record
+   * @param request - The privacy request data
+   * @returns The created privacy request
+   */
+  async logPrivacyRequest(request: InsertPrivacyRequest): Promise<PrivacyRequest> {
+    const [result] = await db
+      .insert(privacyRequests)
+      .values(request)
+      .returning();
+    return result;
+  }
+
+  /**
+   * Get privacy requests with optional filters
+   * @param filters - Optional filters for userId, status, requestType, date range
+   * @returns Array of privacy requests matching filters
+   */
+  async getPrivacyRequests(filters?: {
+    userId?: string;
+    status?: string;
+    requestType?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<PrivacyRequest[]> {
+    const conditions: SQL<unknown>[] = [];
+
+    if (filters?.userId) {
+      conditions.push(eq(privacyRequests.userId, filters.userId));
+    }
+    if (filters?.status) {
+      conditions.push(eq(privacyRequests.status, filters.status));
+    }
+    if (filters?.requestType) {
+      conditions.push(eq(privacyRequests.requestType, filters.requestType));
+    }
+    if (filters?.startDate) {
+      conditions.push(gte(privacyRequests.createdAt, filters.startDate));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(privacyRequests.createdAt, filters.endDate));
+    }
+
+    if (conditions.length > 0) {
+      return await db
+        .select()
+        .from(privacyRequests)
+        .where(and(...conditions))
+        .orderBy(desc(privacyRequests.createdAt));
+    }
+
+    return await db
+      .select()
+      .from(privacyRequests)
+      .orderBy(desc(privacyRequests.createdAt));
+  }
+
+  /**
+   * Process a privacy request by updating its status
+   * @param requestId - The privacy request ID
+   * @param status - The new status ('pending', 'processing', 'completed', 'denied')
+   * @param processedBy - The admin user ID who processed the request
+   * @param completionNotes - Optional notes about the completion
+   * @returns The updated privacy request
+   */
+  async processPrivacyRequest(
+    requestId: string,
+    status: string,
+    processedBy: string,
+    completionNotes?: string
+  ): Promise<PrivacyRequest> {
+    const [result] = await db
+      .update(privacyRequests)
+      .set({
+        status,
+        processedBy,
+        processedAt: new Date(),
+        completionNotes: completionNotes || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(privacyRequests.id, requestId))
+      .returning();
+    return result;
+  }
+
+  /**
+   * Get a single privacy request by ID
+   * @param requestId - The privacy request ID
+   * @returns The privacy request or undefined if not found
+   */
+  async getPrivacyRequestById(requestId: string): Promise<PrivacyRequest | undefined> {
+    const [result] = await db
+      .select()
+      .from(privacyRequests)
+      .where(eq(privacyRequests.id, requestId));
+    return result;
+  }
+
+  /**
+   * Get all privacy requests for a specific user
+   * @param userId - The user ID
+   * @returns Array of privacy requests for the user
+   */
+  async getUserPrivacyRequests(userId: string): Promise<PrivacyRequest[]> {
+    return await db
+      .select()
+      .from(privacyRequests)
+      .where(eq(privacyRequests.userId, userId))
+      .orderBy(desc(privacyRequests.createdAt));
   }
 }
 
