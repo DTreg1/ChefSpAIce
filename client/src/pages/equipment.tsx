@@ -48,7 +48,7 @@ export default function Equipment() {
     if (userAppliances) {
       const userApplianceIds = new Set(
         userAppliances
-          .map((ua: UserAppliance) => ua.applianceLibraryId)
+          .map((ua: UserAppliance) => ua.applianceId)
           .filter((id): id is string => id !== null)
       );
       setSelectedItems(userApplianceIds);
@@ -94,7 +94,7 @@ export default function Equipment() {
   const handleSaveChanges = () => {
     const userApplianceIds = new Set(
       userAppliances
-        ?.map((ua: UserAppliance) => ua.applianceLibraryId)
+        ?.map((ua: UserAppliance) => ua.applianceId)
         .filter((id): id is string => id !== null) || []
     );
     
@@ -112,7 +112,7 @@ export default function Equipment() {
     userApplianceIds.forEach(id => {
       if (!selectedItems.has(id)) {
         // We need to find the actual user appliance ID to remove
-        const userAppliance = userAppliances?.find((ua: UserAppliance) => ua.applianceLibraryId === id);
+        const userAppliance = userAppliances?.find((ua: UserAppliance) => ua.applianceId === id);
         if (userAppliance) {
           toRemove.push(userAppliance.id);
         }
@@ -130,13 +130,14 @@ export default function Equipment() {
     const query = searchQuery.toLowerCase();
     return (
       item.name.toLowerCase().includes(query) ||
-      item.type?.toLowerCase().includes(query)
+      item.category?.toLowerCase().includes(query) ||
+      item.description?.toLowerCase().includes(query)
     );
   });
 
-  // Group items by type
+  // Group items by category
   const groupedItems = filteredLibrary?.reduce((acc, item) => {
-    const category = item.type || "Other";
+    const category = item.category || "Other";
     if (!acc[category]) {
       acc[category] = [];
     }
@@ -225,18 +226,10 @@ export default function Equipment() {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
                                     <p className="font-medium text-sm">{item.name}</p>
-                                    {item.isCommon && (
-                                      <Badge variant="secondary" className="text-xs">Common</Badge>
-                                    )}
                                   </div>
-                                  {item.capacity && (
+                                  {item.description && (
                                     <p className="text-xs text-muted-foreground mt-1">
-                                      Capacity: {item.capacity}
-                                    </p>
-                                  )}
-                                  {item.brand && (
-                                    <p className="text-xs text-muted-foreground">
-                                      Brand: {item.brand}
+                                      {item.description}
                                     </p>
                                   )}
                                 </div>
