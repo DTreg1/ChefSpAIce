@@ -330,8 +330,8 @@ router.post(
       const statsBeforeClear = getCacheStats();
       clearAllCache();
       
-      // Also clear database cache
-      await storage.user.food.clearOldCache(0); // Clear all database cache
+      // Also clear database cache - use future date to clear all entries
+      await storage.user.food.clearOldCache(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000));
       
       // Log admin action
       await storage.platform.system.logApiUsage(getAuthenticatedUserId(req) || '', {
