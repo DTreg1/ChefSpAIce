@@ -134,38 +134,70 @@ export const imageProcessing = pgTable("image_processing", {
 ]);
 
 /**
- * Image Presets Table
+ * Image Processing Jobs Table
  * 
- * Stores reusable image processing presets.
+ * Tracks individual image processing operations with progress and status.
+ * Supports resize, compress, thumbnail, watermark, and optimize operations.
  */
-export const imagePresets = pgTable("image_presets", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
-  
-  name: text("name").notNull(),
-  description: text("description"),
-  
-  // Processing settings
-  settings: jsonb("settings").notNull().$type<{
+export const imageProcessingJobs = pgTable("image_processing_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  imageUrl: text("image_url").notNull(),
+  outputUrl: text("output_url"),
+  operation: text("operation").notNull(), // resize, compress, thumbnail, watermark, optimize
+  presetId: text("preset_id"),
+  parameters: jsonb("parameters").$type<{
     width?: number;
     height?: number;
     quality?: number;
     format?: string;
-    operations?: Array<{
-      type: string;
-      params: Record<string, any>;
-    }>;
+    watermarkText?: string;
+    watermarkPosition?: string;
+    thumbnailSize?: number;
+    [key: string]: any;
   }>(),
-  
-  // Usage
+  status: text("status").notNull().default("pending"), // pending, processing, completed, failed
+  error: text("error"),
+  progress: integer("progress").notNull().default(0), // 0-100
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("image_processing_jobs_user_id_idx").on(table.userId),
+  index("image_processing_jobs_status_idx").on(table.status),
+  index("image_processing_jobs_created_at_idx").on(table.createdAt),
+]);
+
+/**
+ * Image Presets Table
+ * 
+ * Stores reusable image processing presets with operation chains.
+ */
+export const imagePresets = pgTable("image_presets", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  operations: jsonb("operations").$type<Array<{
+    type: string;
+    params: Record<string, any>;
+  }>>().notNull().default([]),
+  settings: jsonb("settings").$type<{
+    width?: number;
+    height?: number;
+    quality?: number;
+    format?: string;
+  }>(),
+  isDefault: boolean("is_default").notNull().default(false),
   isPublic: boolean("is_public").default(false),
   usageCount: integer("usage_count").default(0),
-  
+  createdBy: text("created_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("image_presets_user_id_idx").on(table.userId),
   index("image_presets_is_public_idx").on(table.isPublic),
+  index("image_presets_is_default_idx").on(table.isDefault),
 ]);
 
 /**
@@ -308,8 +340,24 @@ export const insertImageProcessingSchema = createInsertSchema(imageProcessing)
 export type InsertImageProcessing = z.infer<typeof insertImageProcessingSchema>;
 export type ImageProcessing = typeof imageProcessing.$inferSelect;
 
+// Image Processing Jobs
+export const imageProcessingJobOperationSchema = z.enum(['resize', 'compress', 'thumbnail', 'watermark', 'optimize']);
+export const imageProcessingJobStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed']);
+
+export const insertImageProcessingJobSchema = createInsertSchema(imageProcessingJobs)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    operation: imageProcessingJobOperationSchema,
+    status: imageProcessingJobStatusSchema.default('pending'),
+    progress: z.number().min(0).max(100).default(0),
+  });
+
+export type InsertImageProcessingJob = z.infer<typeof insertImageProcessingJobSchema>;
+export type ImageProcessingJob = typeof imageProcessingJobs.$inferSelect;
+
 // Image Presets
-export const insertImagePresetSchema = createInsertSchema(imagePresets);
+export const insertImagePresetSchema = createInsertSchema(imagePresets)
+  .omit({ id: true, createdAt: true, updatedAt: true });
 
 export type InsertImagePreset = z.infer<typeof insertImagePresetSchema>;
 export type ImagePreset = typeof imagePresets.$inferSelect;
