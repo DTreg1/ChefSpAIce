@@ -4,100 +4,107 @@ test.describe('Authentication and Onboarding', () => {
   test('should display landing page for unauthenticated users', async ({ page }) => {
     await page.goto('/');
     
-    // Check for landing page elements
-    await expect(page.getByTestId('landing-hero')).toBeVisible();
+    // Check for landing page elements - the auth UI with ChefSpAIce branding
     await expect(page.getByRole('heading', { name: 'ChefSpAIce' })).toBeVisible();
-    await expect(page.getByText('Your AI-Powered Kitchen Assistant')).toBeVisible();
-    await expect(page.getByTestId('button-get-started')).toBeVisible();
+    await expect(page.getByText('Your AI-powered kitchen assistant')).toBeVisible();
+    
+    // Check for auth tabs
+    await expect(page.getByTestId('tab-signup')).toBeVisible();
+    await expect(page.getByTestId('tab-login')).toBeVisible();
+    
+    // Check for sign up options
+    await expect(page.getByTestId('button-signup-email')).toBeVisible();
   });
 
-  test('should redirect to onboarding after authentication', async ({ page }) => {
-    // Mock authentication state
+  test('should show email registration form when clicking email signup', async ({ page }) => {
     await page.goto('/');
     
-    // Click get started button
-    await page.getByTestId('button-get-started').click();
+    // Click on the email signup button
+    await page.getByTestId('button-signup-email').click();
     
-    // Should redirect to auth and then onboarding
-    await page.waitForURL('**/onboarding', { timeout: 10000 });
-    
-    // Verify onboarding page elements
-    await expect(page.getByText('Welcome to ChefSpAIce!')).toBeVisible();
-    await expect(page.getByTestId('button-onboarding-continue')).toBeVisible();
+    // Verify email registration form appears
+    await expect(page.getByTestId('input-email')).toBeVisible();
+    await expect(page.getByTestId('input-password')).toBeVisible();
+    await expect(page.getByTestId('button-email-register')).toBeVisible();
   });
 
-  test('should complete onboarding flow', async ({ page }) => {
-    await page.goto('/onboarding');
-    
-    // Step 1: Welcome
-    await expect(page.getByText('Welcome to ChefSpAIce!')).toBeVisible();
-    await page.getByTestId('button-onboarding-continue').click();
-    
-    // Step 2: Dietary preferences
-    await expect(page.getByText('Dietary Preferences')).toBeVisible();
-    await page.getByTestId('checkbox-vegetarian').click();
-    await page.getByTestId('checkbox-gluten-free').click();
-    await page.getByTestId('button-onboarding-continue').click();
-    
-    // Step 3: Allergies
-    await expect(page.getByText('Food Allergies')).toBeVisible();
-    await page.getByTestId('checkbox-peanuts').click();
-    await page.getByTestId('checkbox-shellfish').click();
-    await page.getByTestId('button-onboarding-continue').click();
-    
-    // Step 4: Initial inventory
-    await expect(page.getByText('Add Your First Items')).toBeVisible();
-    
-    // Add a few sample items
-    await page.getByTestId('input-food-name').fill('Milk');
-    await page.getByTestId('input-food-quantity').fill('1');
-    await page.getByTestId('select-food-unit').selectOption('gallon');
-    await page.getByTestId('button-add-item').click();
-    
-    await page.getByTestId('input-food-name').fill('Eggs');
-    await page.getByTestId('input-food-quantity').fill('12');
-    await page.getByTestId('select-food-unit').selectOption('count');
-    await page.getByTestId('button-add-item').click();
-    
-    // Complete onboarding
-    await page.getByTestId('button-onboarding-finish').click();
-    
-    // Should redirect to main chat page
-    await page.waitForURL('**/');
-    await expect(page.getByTestId('chat-input')).toBeVisible();
-  });
-
-  test('should show sidebar for authenticated users', async ({ page }) => {
-    // Assume authenticated
+  test('should show email login form when switching to login tab', async ({ page }) => {
     await page.goto('/');
     
-    // Check sidebar elements
-    await expect(page.getByTestId('button-sidebar-toggle')).toBeVisible();
+    // Click on the login tab
+    await page.getByTestId('tab-login').click();
     
-    // Open sidebar
-    await page.getByTestId('button-sidebar-toggle').click();
+    // Click on email login button
+    await page.getByTestId('button-login-email').click();
     
-    // Verify sidebar navigation items
-    await expect(page.getByRole('link', { name: 'Chef Chat' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Cookbook' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Meal Planner' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Shopping List' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Nutrition' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Appliances' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
+    // Verify login form appears
+    await expect(page.getByTestId('input-email-login')).toBeVisible();
+    await expect(page.getByTestId('input-password-login')).toBeVisible();
+    await expect(page.getByTestId('button-email-login')).toBeVisible();
   });
 
-  test('should handle logout correctly', async ({ page }) => {
-    await page.goto('/settings');
+  test('should validate email registration form', async ({ page }) => {
+    await page.goto('/');
     
-    // Find and click logout button
-    await page.getByTestId('button-logout').click();
+    // Click on the email signup button
+    await page.getByTestId('button-signup-email').click();
     
-    // Confirm logout in dialog
-    await page.getByTestId('button-confirm-logout').click();
+    // Try to register without filling in required fields
+    await page.getByTestId('button-email-register').click();
     
-    // Should redirect to landing page
-    await page.waitForURL('**/');
-    await expect(page.getByTestId('landing-hero')).toBeVisible();
+    // Should show error message
+    await expect(page.getByText('Email and password are required')).toBeVisible();
+  });
+
+  test('should validate password length on registration', async ({ page }) => {
+    await page.goto('/');
+    
+    // Click on the email signup button
+    await page.getByTestId('button-signup-email').click();
+    
+    // Fill in email and short password
+    await page.getByTestId('input-email').fill('test@example.com');
+    await page.getByTestId('input-password').fill('short');
+    
+    // Try to register
+    await page.getByTestId('button-email-register').click();
+    
+    // Should show password length error
+    await expect(page.getByText('Password must be at least 8 characters')).toBeVisible();
+  });
+
+  test('should display features on landing page', async ({ page }) => {
+    await page.goto('/');
+    
+    // Check for feature cards
+    await expect(page.getByTestId('feature-0')).toBeVisible();
+    await expect(page.getByText('Smart inventory tracking')).toBeVisible();
+    await expect(page.getByText('AI-powered recipe suggestions')).toBeVisible();
+    await expect(page.getByText('Reduce food waste')).toBeVisible();
+  });
+
+  test('should display stats on landing page', async ({ page }) => {
+    await page.goto('/');
+    
+    // Check for stats cards
+    await expect(page.getByTestId('stat-0')).toBeVisible();
+    await expect(page.getByText('Less food waste')).toBeVisible();
+    await expect(page.getByText('Active users')).toBeVisible();
+  });
+
+  test('should show back button on email form', async ({ page }) => {
+    await page.goto('/');
+    
+    // Click on the email signup button
+    await page.getByTestId('button-signup-email').click();
+    
+    // Verify back button exists
+    await expect(page.getByTestId('button-back-from-email')).toBeVisible();
+    
+    // Click back button
+    await page.getByTestId('button-back-from-email').click();
+    
+    // Should return to provider list
+    await expect(page.getByTestId('button-signup-email')).toBeVisible();
   });
 });

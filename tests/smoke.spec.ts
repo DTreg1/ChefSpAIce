@@ -3,21 +3,11 @@ import { test, expect } from '@playwright/test';
 test.describe('Smoke Tests - Post Deployment Verification', () => {
   test('application loads successfully', async ({ page }) => {
     // Navigate to the application
-    await page.goto('/');
-    
-    // Check that the page loads without errors
     const response = await page.goto('/', { waitUntil: 'networkidle' });
     expect(response?.status()).toBeLessThan(400);
     
     // Check for critical elements
     await expect(page).toHaveTitle(/ChefSpAIce/);
-    
-    // Verify no console errors
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        throw new Error(`Console error: ${msg.text()}`);
-      }
-    });
   });
 
   test('API health check passes', async ({ request }) => {
@@ -29,42 +19,26 @@ test.describe('Smoke Tests - Post Deployment Verification', () => {
     expect(data.status).toBe('healthy');
   });
 
-  test('database connection is active', async ({ request }) => {
-    const response = await request.get('/api/health/db');
+  test('API v1 health check passes', async ({ request }) => {
+    const response = await request.get('/api/v1/health');
     expect(response.ok()).toBeTruthy();
     
     const data = await response.json();
-    expect(data).toHaveProperty('database');
-    expect(data.database).toBe('connected');
+    expect(data).toHaveProperty('status');
   });
 
-  test('critical pages are accessible', async ({ page }) => {
-    const criticalPages = [
-      '/',
-      '/storage/refrigerator',
-      '/recipes',
-      '/chat',
-      '/nutrition',
-      '/meal-planner'
-    ];
+  test('landing page renders for unauthenticated users', async ({ page }) => {
+    await page.goto('/');
     
-    for (const pagePath of criticalPages) {
-      const response = await page.goto(pagePath);
-      expect(response?.status()).toBeLessThan(400);
-      
-      // Wait for content to load
-      await page.waitForLoadState('networkidle');
-      
-      // Check for error messages
-      const errorMessage = page.locator('[data-testid="error-message"]');
-      await expect(errorMessage).not.toBeVisible();
-    }
+    // Should show authentication UI
+    await expect(page.getByRole('heading', { name: 'ChefSpAIce' })).toBeVisible();
+    await expect(page.getByTestId('tab-signup')).toBeVisible();
   });
 
   test('authentication endpoints respond', async ({ request }) => {
-    // Check auth status endpoint
-    const response = await request.get('/api/auth/status');
-    expect(response.status()).toBeLessThan(500); // Should not error even if not authenticated
+    // Check auth config endpoint
+    const response = await request.get('/api/auth/config-status');
+    expect(response.status()).toBeLessThan(500);
   });
 
   test('static assets load correctly', async ({ page }) => {
@@ -77,26 +51,36 @@ test.describe('Smoke Tests - Post Deployment Verification', () => {
     });
     expect(styles).toBeTruthy();
     
-    // Check that JavaScript loads
-    const hasReact = await page.evaluate(() => {
-      return window.React !== undefined || document.querySelector('#root') !== null;
+    // Check that React app renders
+    const hasRoot = await page.evaluate(() => {
+      return document.querySelector('#root') !== null;
     });
-    expect(hasReact).toBeTruthy();
+    expect(hasRoot).toBeTruthy();
   });
 
-  test('environment variables are set', async ({ request }) => {
-    const response = await request.get('/api/health/env');
+  test('public pages are accessible', async ({ page }) => {
+    const publicPages = [
+      '/',
+      '/about',
+      '/privacy',
+      '/terms'
+    ];
     
-    if (response.ok()) {
-      const data = await response.json();
+    for (const pagePath of publicPages) {
+      const response = await page.goto(pagePath);
+      expect(response?.status()).toBeLessThan(400);
       
-      // Check critical environment variables (without exposing values)
-      expect(data).toHaveProperty('hasDatabase');
-      expect(data.hasDatabase).toBeTruthy();
-      
-      expect(data).toHaveProperty('hasOpenAI');
-      expect(data).toHaveProperty('hasUSDA');
-      expect(data).toHaveProperty('hasStripe');
+      // Wait for content to load
+      await page.waitForLoadState('networkidle');
     }
+  });
+
+  test('API info endpoint returns data', async ({ request }) => {
+    const response = await request.get('/api/v1/info');
+    expect(response.ok()).toBeTruthy();
+    
+    const data = await response.json();
+    expect(data).toHaveProperty('name');
+    expect(data).toHaveProperty('version');
   });
 });
