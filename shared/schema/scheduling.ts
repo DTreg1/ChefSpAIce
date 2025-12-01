@@ -6,7 +6,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, index, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, index, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./auth";
@@ -280,6 +280,60 @@ export const meetingEvents = pgTable("meeting_events", {
   index("meeting_events_status_idx").on(table.status),
 ]);
 
+/**
+ * Meeting Schedules Table
+ * 
+ * Core table for managing scheduled meetings with recurring support.
+ * Supports iCal RRULE format for recurrence patterns.
+ * 
+ * Fields:
+ * - id: UUID primary key
+ * - userId: Meeting owner/organizer
+ * - title: Meeting title
+ * - description: Optional meeting description
+ * - startTime: Meeting start time
+ * - endTime: Meeting end time
+ * - isRecurring: Whether meeting repeats
+ * - recurrenceRule: iCal RRULE format for recurrence
+ * - location: Meeting location (physical or virtual)
+ * - attendees: Array of user IDs or emails
+ * - reminders: Reminder configuration
+ * - status: scheduled/cancelled/completed
+ * - metadata: Additional meeting data
+ * - createdAt: Creation timestamp
+ * - updatedAt: Last update timestamp
+ * 
+ * Indexes:
+ * - userId: For user-specific queries
+ * - startTime: For time-based queries
+ * - status: For status filtering
+ */
+export const meetingSchedules = pgTable("meeting_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  isRecurring: boolean("is_recurring").notNull().default(false),
+  recurrenceRule: text("recurrence_rule"), // iCal RRULE format
+  location: text("location"),
+  attendees: jsonb("attendees").$type<string[]>(), // Array of user IDs or emails
+  reminders: jsonb("reminders").$type<{
+    enabled: boolean;
+    beforeMinutes: number[];
+    methods: ('email' | 'push' | 'sms')[];
+  }>(),
+  status: text("status").notNull().default("scheduled"), // scheduled/cancelled/completed
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("meeting_schedules_user_id_idx").on(table.userId),
+  index("meeting_schedules_start_time_idx").on(table.startTime),
+  index("meeting_schedules_status_idx").on(table.status),
+]);
+
 // ==================== Zod Schemas & Type Exports ====================
 
 export const meetingStatusSchema = z.enum(["confirmed", "tentative", "cancelled"]);
@@ -345,3 +399,22 @@ export const insertMeetingEventsSchema = createInsertSchema(meetingEvents)
 
 export type InsertMeetingEvents = z.infer<typeof insertMeetingEventsSchema>;
 export type MeetingEvents = typeof meetingEvents.$inferSelect;
+
+// Meeting Schedules
+export const meetingScheduleStatusSchema = z.enum(["scheduled", "cancelled", "completed"]);
+
+export const insertMeetingSchedulesSchema = createInsertSchema(meetingSchedules)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    status: meetingScheduleStatusSchema.default("scheduled"),
+    isRecurring: z.boolean().default(false),
+    attendees: z.array(z.string()).nullable().optional(),
+    reminders: z.object({
+      enabled: z.boolean(),
+      beforeMinutes: z.array(z.number()),
+      methods: z.array(z.enum(['email', 'push', 'sms'])),
+    }).nullable().optional(),
+  });
+
+export type InsertMeetingSchedule = z.infer<typeof insertMeetingSchedulesSchema>;
+export type MeetingSchedule = typeof meetingSchedules.$inferSelect;
