@@ -295,9 +295,17 @@ router.post("/onboarding/complete", isAuthenticated, async (req, res) => {
       });
     }
     
-    // 2. Create storage locations from selected areas
+    // 2. Create storage locations from selected areas (only if they don't exist)
+    const existingLocations = await storage.user.inventory.getStorageLocations(userId);
+    const existingNames = new Set(existingLocations.map((loc: { name: string }) => loc.name.toLowerCase()));
+    
     const storageAreas = [...(preferences?.storageAreasEnabled || []), ...(customStorageAreas || [])];
     for (const areaName of storageAreas) {
+      // Skip if location already exists
+      if (existingNames.has(areaName.toLowerCase())) {
+        continue;
+      }
+      
       try {
         const location = await storage.createStorageLocation(userId, {
           name: areaName,
@@ -307,7 +315,8 @@ router.post("/onboarding/complete", isAuthenticated, async (req, res) => {
           results.createdStorageLocations.push(areaName);
         }
       } catch (err) {
-        // Location may already exist, that's ok
+        // Location creation failed, log but continue
+        console.warn(`Could not create storage location "${areaName}":`, err);
       }
     }
     

@@ -98,7 +98,7 @@ router.get("/storage-locations", isAuthenticated, async (req: Request, res: Resp
     
     let locations = await storage.user.inventory.getStorageLocations(userId);
     
-    // Auto-create default storage locations for new users
+    // Auto-create default storage locations for new users (only if none exist)
     if (locations.length === 0) {
       const defaultLocations = [
         { name: "Fridge", icon: "refrigerator" },
@@ -106,15 +106,16 @@ router.get("/storage-locations", isAuthenticated, async (req: Request, res: Resp
         { name: "Pantry", icon: "utensils-crossed" },
       ];
       
+      // Create each location, silently skip if already exists
       for (const loc of defaultLocations) {
         try {
           await storage.user.inventory.createStorageLocation(userId, loc);
-        } catch (err) {
-          // Location may already exist, ignore
+        } catch {
+          // Silently ignore - location likely already exists
         }
       }
       
-      // Fetch the newly created locations
+      // Fetch the locations (either newly created or existing)
       locations = await storage.user.inventory.getStorageLocations(userId);
     }
     
