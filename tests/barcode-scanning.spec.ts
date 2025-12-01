@@ -2,10 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Barcode Scanning', () => {
   test('barcode page redirects unauthenticated users', async ({ page }) => {
-    await page.goto('/');
+    // Navigate to the protected barcode scanner page
+    await page.goto('/barcode-scanner');
     await page.waitForLoadState('networkidle');
     
-    // Should see auth UI for unauthenticated users
+    // Should redirect to auth UI with signup/login tabs
     await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
   });
 

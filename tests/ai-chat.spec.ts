@@ -2,10 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('AI Chat and Recipe Generation', () => {
   test('chat page redirects unauthenticated users', async ({ page }) => {
-    await page.goto('/');
+    // Navigate to the protected chat page
+    await page.goto('/chat');
     await page.waitForLoadState('networkidle');
     
-    // Should see auth UI for unauthenticated users
+    // Should redirect to auth UI with signup/login tabs
     await expect(page.getByTestId('tab-signup').or(page.getByTestId('tab-login'))).toBeVisible({ timeout: 10000 });
   });
 

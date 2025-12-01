@@ -28,7 +28,12 @@ test.describe('Smoke Tests - Post Deployment Verification', () => {
   });
 
   test('landing page renders for unauthenticated users', async ({ page }) => {
-    await page.goto('/');
+    // Reuse page from prior test to avoid browser context issues
+    const response = await page.goto('/');
+    expect(response?.status()).toBeLessThan(400);
+    
+    // Wait for main content with selector-based wait
+    await page.waitForSelector('[data-testid="tab-signup"], [data-testid="tab-login"]', { timeout: 10000 });
     
     // Should show authentication UI
     await expect(page.getByRole('heading', { name: 'ChefSpAIce' })).toBeVisible();
@@ -43,35 +48,36 @@ test.describe('Smoke Tests - Post Deployment Verification', () => {
 
   test('static assets load correctly', async ({ page }) => {
     await page.goto('/');
-    
-    // Check that CSS loads
-    const styles = await page.evaluate(() => {
-      const sheet = document.styleSheets[0];
-      return sheet ? sheet.cssRules.length > 0 : false;
-    });
-    expect(styles).toBeTruthy();
+    await page.waitForLoadState('networkidle');
     
     // Check that React app renders
     const hasRoot = await page.evaluate(() => {
       return document.querySelector('#root') !== null;
     });
     expect(hasRoot).toBeTruthy();
+    
+    // Check that stylesheets are loaded (without accessing cssRules which can throw security errors)
+    const stylesheetsLoaded = await page.evaluate(() => {
+      return document.styleSheets.length > 0;
+    });
+    expect(stylesheetsLoaded).toBeTruthy();
   });
 
   test('public pages are accessible', async ({ page }) => {
+    // Test each public page individually with proper assertions
     const publicPages = [
-      '/',
-      '/about',
-      '/privacy',
-      '/terms'
+      { path: '/', selector: '[data-testid="tab-signup"]' },
+      { path: '/about', selector: 'h1, h2' },
+      { path: '/privacy', selector: 'h1, h2' },
+      { path: '/terms', selector: 'h1, h2' }
     ];
     
-    for (const pagePath of publicPages) {
-      const response = await page.goto(pagePath);
+    for (const { path, selector } of publicPages) {
+      const response = await page.goto(path);
       expect(response?.status()).toBeLessThan(400);
       
-      // Wait for content to load
-      await page.waitForLoadState('networkidle');
+      // Wait for specific content instead of networkidle
+      await page.waitForSelector(selector, { timeout: 10000 });
     }
   });
 
@@ -80,7 +86,8 @@ test.describe('Smoke Tests - Post Deployment Verification', () => {
     expect(response.ok()).toBeTruthy();
     
     const data = await response.json();
-    expect(data).toHaveProperty('name');
+    // Check for actual properties returned by the API
     expect(data).toHaveProperty('version');
+    expect(data).toHaveProperty('supportedVersions');
   });
 });
