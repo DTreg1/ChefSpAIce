@@ -6,6 +6,8 @@
  * - Food item management with filtering and pagination
  * - Storage location management with item counts
  * - Cooking terms glossary management
+ * - Appliance library and user appliance management
+ * - USDA cache management
  * 
  * Note: This interface overlaps with IInventoryStorage for food items.
  * FoodStorage provides additional features like pagination options and cooking terms.
@@ -17,6 +19,10 @@ import type {
   UserStorage,
   CookingTerm,
   InsertCookingTerm,
+  ApplianceLibrary,
+  InsertApplianceLibrary,
+  UserAppliance,
+  InsertUserAppliance,
 } from "@shared/schema";
 import type { PaginatedResponse } from "../../utils/pagination";
 import type { StorageLocationWithCount } from "../domains/food.storage";
@@ -250,4 +256,112 @@ export interface IFoodStorage {
    * @returns Number of entries deleted
    */
   clearOldCache(olderThan: Date): Promise<number>;
+
+  // ==================== Appliance Library Methods ====================
+
+  /**
+   * Get all appliances from the master library
+   * @returns Array of all appliances ordered by category and name
+   */
+  getAppliances(): Promise<ApplianceLibrary[]>;
+
+  /**
+   * Get distinct appliance categories
+   * @returns Array of category names
+   */
+  getApplianceCategories(): Promise<string[]>;
+
+  /**
+   * Alias for getAppliances - get all from appliance library
+   * @returns Array of all appliances
+   */
+  getApplianceLibrary(): Promise<ApplianceLibrary[]>;
+
+  /**
+   * Get appliances from library filtered by category
+   * @param category - The category to filter by
+   * @returns Array of appliances in that category
+   */
+  getApplianceLibraryByCategory(category: string): Promise<ApplianceLibrary[]>;
+
+  /**
+   * Search appliance library by name or description
+   * @param query - Search text (case-insensitive)
+   * @returns Array of matching appliances
+   */
+  searchApplianceLibrary(query: string): Promise<ApplianceLibrary[]>;
+
+  /**
+   * Add a new appliance to the master library (admin)
+   * @param data - Appliance data to insert
+   * @returns The newly created appliance
+   */
+  createAppliance(data: InsertApplianceLibrary): Promise<ApplianceLibrary>;
+
+  /**
+   * Update an appliance in the master library (admin)
+   * @param id - The appliance's UUID
+   * @param data - Partial appliance data to update
+   * @returns The updated appliance
+   * @throws Error if appliance not found
+   */
+  updateAppliance(id: string, data: Partial<InsertApplianceLibrary>): Promise<ApplianceLibrary>;
+
+  /**
+   * Delete an appliance from the master library (admin)
+   * @param id - The appliance's UUID
+   */
+  deleteAppliance(id: string): Promise<void>;
+
+  // ==================== User Appliance Methods ====================
+
+  /**
+   * Get user's appliances with joined library data
+   * @param userId - The user's UUID
+   * @returns Array of user appliances with optional library appliance data
+   */
+  getUserAppliances(userId: string): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]>;
+
+  /**
+   * Get user's appliances filtered by category
+   * @param userId - The user's UUID
+   * @param category - The category to filter by
+   * @returns Array of user appliances in that category
+   */
+  getUserAppliancesByCategory(
+    userId: string,
+    category: string
+  ): Promise<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]>;
+
+  /**
+   * Add an appliance to user's collection
+   * @param userId - The user's UUID
+   * @param data - User appliance data (can be linked to library or custom)
+   * @returns The newly created user appliance
+   */
+  addUserAppliance(
+    userId: string,
+    data: Omit<InsertUserAppliance, "userId">
+  ): Promise<UserAppliance>;
+
+  /**
+   * Update a user's appliance settings
+   * @param userId - The user's UUID (for ownership verification)
+   * @param applianceId - The user appliance's UUID
+   * @param data - Partial appliance data to update
+   * @returns The updated user appliance
+   * @throws Error if user appliance not found
+   */
+  updateUserAppliance(
+    userId: string,
+    applianceId: string,
+    data: Partial<Omit<InsertUserAppliance, "userId">>
+  ): Promise<UserAppliance>;
+
+  /**
+   * Remove an appliance from user's collection
+   * @param userId - The user's UUID (for ownership verification)
+   * @param applianceId - The user appliance's UUID
+   */
+  deleteUserAppliance(userId: string, applianceId: string): Promise<void>;
 }
