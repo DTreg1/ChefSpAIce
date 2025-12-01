@@ -67,7 +67,7 @@ jobs:
           gzip ${{ steps.backup-name.outputs.filename }}
           
       - name: Upload to GitHub Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: db-backup-${{ steps.backup-name.outputs.timestamp }}
           path: ${{ steps.backup-name.outputs.filename }}.gz

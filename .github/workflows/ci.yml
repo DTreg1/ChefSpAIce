@@ -87,7 +87,7 @@ jobs:
           VITE_APP_NAME: ChefSpAIce
           
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: build-artifacts
           path: dist/
@@ -177,7 +177,7 @@ jobs:
           
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-results-${{ matrix.shard }}
           path: |
@@ -247,7 +247,7 @@ jobs:
           echo "Security scan completed"
           
       - name: Upload audit results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: security-audit
           path: audit.json
