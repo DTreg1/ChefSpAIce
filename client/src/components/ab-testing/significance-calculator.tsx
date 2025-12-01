@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, Area, AreaChart } from "recharts";
 import { Calculator, TrendingUp, AlertCircle, CheckCircle2, Loader2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { type AbTest, type AbTestInsight } from "@shared/schema";
+import { type AbTest, type AbTestVariantMetric, type AbTestInsight } from "@shared/schema";
 
 interface TestWithDetails extends AbTest {
-  insight?: AbTestInsight;
+  variantMetrics?: AbTestVariantMetric[];
+  insights?: AbTestInsight[];
 }
 
 interface SignificanceCalculatorProps {
@@ -22,6 +23,8 @@ interface SignificanceCalculatorProps {
 export default function SignificanceCalculator({ test }: SignificanceCalculatorProps) {
   const { toast } = useToast();
   const [analysis, setAnalysis] = useState<any>(null);
+  
+  const latestMetric = test.variantMetrics?.[0];
 
   useEffect(() => {
     setAnalysis(null);
@@ -48,8 +51,8 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
     },
   });
 
-  const significanceData = analysis?.significance || test.insight;
-  const insights = analysis?.insights || test.insight;
+  const significanceData = analysis?.significance || latestMetric;
+  const metricData = analysis?.insights || latestMetric;
 
   const getConfidenceLevel = (confidence: number) => {
     if (confidence >= 0.99) return { label: "Very High", color: "text-green-600 dark:text-green-400" };
@@ -96,33 +99,33 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {insights && (
+          {metricData && (
             <>
               {/* Key Metrics */}
               <div className="grid gap-4 md:grid-cols-4">
                 <MetricCard
                   label="P-Value"
-                  value={(insights.pValue || 0).toFixed(4)}
+                  value={(metricData.pValue || 0).toFixed(4)}
                   description="Statistical significance"
-                  highlight={insights.pValue && insights.pValue < 0.05}
+                  highlight={metricData.pValue && metricData.pValue < 0.05}
                 />
                 <MetricCard
                   label="Confidence"
-                  value={`${((insights.confidence || 0) * 100).toFixed(1)}%`}
-                  description={getConfidenceLevel(insights.confidence || 0).label}
-                  className={getConfidenceLevel(insights.confidence || 0).color}
+                  value={`${((metricData.confidence || 0) * 100).toFixed(1)}%`}
+                  description={getConfidenceLevel(metricData.confidence || 0).label}
+                  className={getConfidenceLevel(metricData.confidence || 0).color}
                 />
                 <MetricCard
-                  label="Lift"
-                  value={`${(insights.liftPercentage || 0).toFixed(1)}%`}
-                  description="Performance improvement"
-                  highlight={insights.liftPercentage && Math.abs(insights.liftPercentage) > 5}
+                  label="Conversion Rate"
+                  value={`${((metricData.conversionRate || 0) * 100).toFixed(1)}%`}
+                  description="Performance metric"
+                  highlight={metricData.conversionRate && metricData.conversionRate > 0.1}
                 />
                 <MetricCard
-                  label="Winner"
-                  value={insights.winner || "Inconclusive"}
-                  description={insights.recommendation || "Continue testing"}
-                  highlight={insights.winner !== "inconclusive"}
+                  label="Result"
+                  value={metricData.isSignificant ? metricData.variant : "Inconclusive"}
+                  description={metricData.recommendation || "Continue testing"}
+                  highlight={metricData.isSignificant}
                 />
               </div>
 
@@ -130,9 +133,9 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Statistical Confidence</span>
-                  <span className="font-medium">{((insights.confidence || 0) * 100).toFixed(1)}%</span>
+                  <span className="font-medium">{((metricData.confidence || 0) * 100).toFixed(1)}%</span>
                 </div>
-                <Progress value={(insights.confidence || 0) * 100} className="h-3" />
+                <Progress value={(metricData.confidence || 0) * 100} className="h-3" />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>0%</span>
                   <span>95% (Target)</span>
@@ -157,59 +160,51 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
                 </div>
               )}
 
-              {/* AI Insights */}
-              {insights.explanation && (
+              {/* Recommendation */}
+              {metricData.recommendation && (
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
                     <div className="space-y-2">
-                      <p className="font-medium">Analysis Summary</p>
-                      <p className="text-sm">{insights.explanation}</p>
+                      <p className="font-medium">Recommendation</p>
+                      <p className="text-sm">{metricData.recommendation}</p>
                     </div>
                   </AlertDescription>
                 </Alert>
               )}
 
-              {/* Key Findings */}
-              {insights.insights?.keyFindings && insights.insights.keyFindings.length > 0 && (
+              {/* Significance Status */}
+              {metricData.isSignificant && (
                 <div className="space-y-3">
                   <h3 className="font-medium">Key Findings</h3>
                   <div className="space-y-2">
-                    {insights.insights.keyFindings.map((finding: string, index: number) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
-                        <span className="text-sm">{finding}</span>
-                      </div>
-                    ))}
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">
+                        {metricData.variant} shows statistically significant improvement
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">
+                        Confidence level: {((metricData.confidence || 0) * 100).toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Next Steps */}
-              {insights.insights?.nextSteps && insights.insights.nextSteps.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="font-medium">Recommended Next Steps</h3>
-                  <div className="space-y-2">
-                    {insights.insights.nextSteps.map((step: string, index: number) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <TrendingUp className="h-4 w-4 text-blue-500 mt-0.5" />
-                        <span className="text-sm">{step}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Warnings */}
-              {insights.insights?.warnings && insights.insights.warnings.length > 0 && (
+              {/* Warnings for inconclusive tests */}
+              {!metricData.isSignificant && metricData.sampleSize && metricData.sampleSize < 100 && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     <div className="space-y-2">
                       <p className="font-medium">Important Considerations</p>
-                      {insights.insights.warnings.map((warning: string, index: number) => (
-                        <p key={index} className="text-sm">{warning}</p>
-                      ))}
+                      <p className="text-sm">
+                        Sample size ({metricData.sampleSize}) may be too small for reliable results. 
+                        Continue testing to gather more data.
+                      </p>
                     </div>
                   </AlertDescription>
                 </Alert>
@@ -217,7 +212,7 @@ export default function SignificanceCalculator({ test }: SignificanceCalculatorP
             </>
           )}
 
-          {!insights && !analyzeTest.isPending && (
+          {!metricData && !analyzeTest.isPending && (
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>

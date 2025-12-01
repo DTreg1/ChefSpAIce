@@ -6,10 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TrendingUp, TrendingDown, Zap, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { type AbTest, type AbTestInsight } from "@shared/schema";
+import { type AbTest, type AbTestVariantMetric } from "@shared/schema";
 
 interface TestWithDetails extends AbTest {
-  insight?: AbTestInsight;
+  variantMetrics?: AbTestVariantMetric[];
 }
 
 interface RecommendationCardProps {
@@ -19,6 +19,7 @@ interface RecommendationCardProps {
 
 export default function RecommendationCard({ test, onImplement }: RecommendationCardProps) {
   const { toast } = useToast();
+  const latestMetric = test.variantMetrics?.[0];
 
   const implementWinner = useMutation({
     mutationFn: async (variant: 'A' | 'B') => {
@@ -43,10 +44,21 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
     },
   });
 
+  const getRecommendationType = () => {
+    if (!latestMetric?.recommendation) return null;
+    const rec = latestMetric.recommendation.toLowerCase();
+    if (rec.includes('implement')) return 'implement';
+    if (rec.includes('continue')) return 'continue';
+    if (rec.includes('stop')) return 'stop';
+    return null;
+  };
+
+  const recommendationType = getRecommendationType();
+
   const getRecommendationIcon = () => {
-    if (!test.insight) return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+    if (!latestMetric) return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
     
-    switch (test.insight.recommendation) {
+    switch (recommendationType) {
       case 'implement':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'continue':
@@ -59,9 +71,9 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
   };
 
   const getRecommendationColor = () => {
-    if (!test.insight) return "secondary";
+    if (!latestMetric) return "secondary";
     
-    switch (test.insight.recommendation) {
+    switch (recommendationType) {
       case 'implement':
         return "default";
       case 'continue':
@@ -74,11 +86,10 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
   };
 
   const getLiftIcon = () => {
-    if (!test.insight?.conversionRate) return null;
+    if (!latestMetric?.conversionRate) return null;
     
-    // Compare conversion rate to baseline (e.g., 0.1 = 10%)
     const baseline = 0.1;
-    return test.insight.conversionRate > baseline 
+    return latestMetric.conversionRate > baseline 
       ? <TrendingUp className="h-4 w-4 text-green-500" />
       : <TrendingDown className="h-4 w-4 text-red-500" />;
   };
@@ -97,13 +108,12 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Metrics */}
-        {test.insight && (
+        {latestMetric && (
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Confidence</p>
               <p className="font-medium text-lg">
-                {test.insight.confidence ? `${(test.insight.confidence * 100).toFixed(1)}%` : 'N/A'}
+                {latestMetric.confidence ? `${(latestMetric.confidence * 100).toFixed(1)}%` : 'N/A'}
               </p>
             </div>
             <div>
@@ -111,47 +121,45 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
               <div className="flex items-center gap-1">
                 {getLiftIcon()}
                 <span className="font-medium text-lg">
-                  {(test.insight.conversionRate * 100).toFixed(1)}%
+                  {(latestMetric.conversionRate * 100).toFixed(1)}%
                 </span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Result Badge */}
-        {test.insight?.isSignificant && (
+        {latestMetric?.isSignificant && (
           <div className="flex items-center gap-2">
             <Badge variant={getRecommendationColor()}>
-              {test.insight.variant} Shows Significance
+              {latestMetric.variant} Shows Significance
             </Badge>
             <Badge variant="outline">
-              {test.insight.recommendation || 'Review'}
+              {recommendationType || 'Review'}
             </Badge>
           </div>
         )}
 
-        {/* Recommendation */}
-        {test.insight?.recommendation && (
+        {latestMetric?.recommendation && (
           <Alert className="border-0 bg-muted">
             <AlertDescription className="text-sm">
-              {test.insight.recommendation}
+              {latestMetric.recommendation}
             </AlertDescription>
           </Alert>
         )}
       </CardContent>
       <CardFooter className="gap-2">
-        {test.insight?.isSignificant && test.insight.recommendation === 'implement' && (
+        {latestMetric?.isSignificant && recommendationType === 'implement' && (
           <Button 
             className="w-full"
-            onClick={() => implementWinner.mutate(test.insight!.variant === 'control' ? 'A' : 'B')}
+            onClick={() => implementWinner.mutate(latestMetric.variant === 'control' ? 'A' : 'B')}
             disabled={implementWinner.isPending}
             data-testid={`button-implement-${test.id}`}
           >
             {implementWinner.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Implement {test.insight.variant}
+            Implement {latestMetric.variant}
           </Button>
         )}
-        {test.insight?.recommendation === 'continue' && (
+        {recommendationType === 'continue' && (
           <Button 
             className="w-full"
             variant="secondary"
@@ -160,7 +168,7 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
             Continue Testing
           </Button>
         )}
-        {test.insight?.recommendation === 'stop' && (
+        {recommendationType === 'stop' && (
           <Button 
             className="w-full"
             variant="destructive"
@@ -175,7 +183,7 @@ export default function RecommendationCard({ test, onImplement }: Recommendation
             Stop Test
           </Button>
         )}
-        {!test.insight && (
+        {!latestMetric && (
           <Button 
             className="w-full"
             variant="outline"

@@ -12,11 +12,12 @@ import VariantComparison from "./variant-comparison";
 import SignificanceCalculator from "./significance-calculator";
 import TestHistory from "./test-history";
 import RecommendationCard from "./recommendation-card";
-import { type AbTest, type AbTestResult, type AbTestInsight } from "@shared/schema";
+import { type AbTest, type AbTestResult, type AbTestVariantMetric, type AbTestInsight } from "@shared/schema";
 
 interface TestWithDetails extends AbTest {
   results?: AbTestResult[];
-  insight?: AbTestInsight;
+  variantMetrics?: AbTestVariantMetric[];
+  insights?: AbTestInsight[];
   aggregated?: {
     variantA: AbTestResult;
     variantB: AbTestResult;
@@ -45,9 +46,10 @@ export default function ABTestDashboard() {
 
   // Calculate overall metrics
   const totalTests = tests?.length || 0;
-  const testsWithConfidence = tests?.filter(t => t.insight?.confidence) || [];
+  const getLatestMetric = (t: TestWithDetails) => t.variantMetrics?.[0];
+  const testsWithConfidence = tests?.filter(t => getLatestMetric(t)?.confidence) || [];
   const averageConfidence = testsWithConfidence.length > 0
-    ? testsWithConfidence.reduce((acc, t) => acc + (t.insight?.confidence || 0), 0) / testsWithConfidence.length
+    ? testsWithConfidence.reduce((acc, t) => acc + (getLatestMetric(t)?.confidence || 0), 0) / testsWithConfidence.length
     : 0;
 
   const totalConversions = tests
@@ -129,7 +131,7 @@ export default function ABTestDashboard() {
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-success-rate">
               {tests && tests.length > 0 
-                ? ((tests.filter(t => t.insight?.isSignificant).length / tests.length) * 100).toFixed(0)
+                ? ((tests.filter(t => getLatestMetric(t)?.isSignificant).length / tests.length) * 100).toFixed(0)
                 : 0}%
             </div>
             <p className="text-xs text-muted-foreground">
@@ -270,6 +272,8 @@ interface TestCardProps {
 }
 
 function TestCard({ test, onSelect, selected }: TestCardProps) {
+  const latestMetric = test.variantMetrics?.[0];
+  
   const getLiftIcon = (lift?: number | null) => {
     if (!lift) return <Minus className="h-4 w-4" />;
     if (lift > 0) return <TrendingUp className="h-4 w-4 text-green-500" />;
@@ -313,21 +317,21 @@ function TestCard({ test, onSelect, selected }: TestCardProps) {
           <div>
             <p className="text-muted-foreground">Confidence</p>
             <p className="font-medium">
-              {test.insight?.confidence ? `${(test.insight.confidence * 100).toFixed(1)}%` : 'N/A'}
+              {latestMetric?.confidence ? `${(latestMetric.confidence * 100).toFixed(1)}%` : 'N/A'}
             </p>
           </div>
           <div>
             <p className="text-muted-foreground">P-Value</p>
             <div className="flex items-center gap-1">
               <span className="font-medium">
-                {test.insight?.pValue ? test.insight.pValue.toFixed(3) : 'N/A'}
+                {latestMetric?.pValue ? latestMetric.pValue.toFixed(3) : 'N/A'}
               </span>
             </div>
           </div>
           <div>
             <p className="text-muted-foreground">Result</p>
             <p className="font-medium">
-              {test.insight?.isSignificant ? 'Significant' : 'Inconclusive'}
+              {latestMetric?.isSignificant ? 'Significant' : 'Inconclusive'}
             </p>
           </div>
         </div>
