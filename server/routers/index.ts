@@ -119,6 +119,7 @@ import donationsRouter from "./platform/donations.router";
 import contentRouter from "./platform/ai/content.router";       // Merges: generation, drafting, excerpt, writing
 import analysisRouter from "./platform/ai/analysis.router";     // Includes: insights, recommendations, natural-query
 import mediaRouter from "./platform/ai/media.router";           // Merges: images, vision, voice
+import mlRouter from "./platform/ml.router";                    // ML/semantic search endpoints
 
 
 // ====================================================================
@@ -234,6 +235,29 @@ export function setupRouters(app: Application): void {
   app.use(`${API_PREFIX}/ai/recommendations`, analysisRouter);
   app.use(`${API_PREFIX}/natural-query`, analysisRouter);
   app.use(`${API_PREFIX}/images`, mediaRouter);
+  
+  // ====================================================================
+  // LEGACY ROUTE MOUNTS (direct handlers to avoid 301 redirect issues with POST)
+  // These duplicate the versioned routes but are needed because:
+  // - 301 redirects can change POST to GET in some browsers
+  // - Frontend code uses non-versioned paths for backward compatibility
+  // ====================================================================
+  
+  // User endpoints (direct mount, no redirect)
+  app.use('/api/recipes', recipesRouter);
+  app.use('/api/chat', chatRouter);
+  app.use('/api/chats', chatRouter);
+  app.use('/api/shopping-list', shoppingListRouter);
+  app.use('/api/meal-plans', mealPlanningRouter);
+  app.use('/api/user/inventory', inventoryRouter);
+  app.use('/api/user/profile', profileRouter);
+  
+  // ML/AI endpoints (frontend calls /api/ml/search/semantic)
+  app.use('/api/ml', mlRouter);
+  app.use('/api/ai', contentRouter);
+  
+  // Also mount at versioned path
+  app.use(`${API_PREFIX}/ml`, mlRouter);
   
   // ====================================================================
   // HEALTH & STATUS ENDPOINTS (No authentication required)
