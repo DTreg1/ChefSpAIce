@@ -12,7 +12,7 @@ import { isAuthenticated } from "../../middleware/oauth.middleware";
 
 const router = Router();
 
-// Appliances CRUD
+// Appliances CRUD - Get user's appliances
 router.get("/appliances", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -24,7 +24,7 @@ router.get("/appliances", isAuthenticated, async (req: Request, res: Response) =
       // Filter by category if provided
       userAppliances = await storage.user.food.getUserAppliancesByCategory(userId, category);
     } else {
-      userAppliances = await storage.user.food.getAppliances(userId);
+      userAppliances = await storage.user.food.getUserAppliances(userId);
     }
     
     res.json(userAppliances);
@@ -40,7 +40,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const validation = insertApplianceSchema.safeParse(req.body);
       
       if (!validation.success) {
@@ -50,7 +50,8 @@ router.post(
         });
       }
 
-      const appliance = await storage.user.food.createAppliance(userId, validation.data);
+      // Add user appliance - pass userId and the rest of the data
+      const appliance = await storage.user.food.addUserAppliance(userId, validation.data);
       
       res.json(appliance);
     } catch (error) {
@@ -79,8 +80,8 @@ router.get("/appliances/:id", isAuthenticated, async (req: Request, res: Respons
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
     const applianceId = req.params.id;
     
-    const userAppliances = await storage.user.food.getAppliances(userId);
-    const appliance = userAppliances.find((a: Appliance) => a.id === applianceId);
+    const userAppliances = await storage.user.food.getUserAppliances(userId);
+    const appliance = userAppliances.find((a) => a.id === applianceId);
     
     if (!appliance) {
       return res.status(404).json({ error: "Appliance not found" });
@@ -99,18 +100,18 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const applianceId = req.params.id;
       
       // Verify appliance belongs to user
-      const userAppliances = await storage.user.food.getAppliances(userId);
-      const existing = userAppliances.find((a: Appliance) => a.id === applianceId);
+      const userAppliances = await storage.user.food.getUserAppliances(userId);
+      const existing = userAppliances.find((a) => a.id === applianceId);
       
       if (!existing) {
         return res.status(404).json({ error: "Appliance not found" });
       }
       
-      const updated = await storage.user.food.updateAppliance(applianceId, userId, req.body);
+      const updated = await storage.user.food.updateUserAppliance(userId, applianceId, req.body);
       res.json(updated);
     } catch (error) {
       console.error("Error updating appliance:", error);
@@ -126,14 +127,14 @@ router.delete("/appliances/:id", isAuthenticated, async (req: Request, res: Resp
     const applianceId = req.params.id;
     
     // Verify appliance belongs to user
-    const userAppliances = await storage.user.food.getAppliances(userId);
-    const existing = userAppliances.find((a: Appliance) => a.id === applianceId);
+    const userAppliances = await storage.user.food.getUserAppliances(userId);
+    const existing = userAppliances.find((a) => a.id === applianceId);
     
     if (!existing) {
       return res.status(404).json({ error: "Appliance not found" });
     }
     
-    await storage.user.food.deleteAppliance(applianceId, userId);
+    await storage.user.food.deleteUserAppliance(userId, applianceId);
     res.json({ message: "Appliance deleted successfully" });
   } catch (error) {
     console.error("Error deleting appliance:", error);
@@ -192,10 +193,13 @@ router.get("/appliance-library", async (req: Request, res: Response) => {
   }
 });
 
-// Get common appliances (for onboarding)
+// Get common appliances (for onboarding) - returns first 20 from library
 router.get("/appliance-library/common", async (_req: Request, res: Response) => {
   try {
-    const commonAppliances = await storage.user.food.getCommonAppliances();
+    // Get all appliances and return a subset as "common"
+    const allAppliances = await storage.user.food.getApplianceLibrary();
+    // Return first 20 as common appliances
+    const commonAppliances = allAppliances.slice(0, 20);
     res.json(commonAppliances);
   } catch (error) {
     console.error("Error fetching common appliances:", error);
@@ -247,8 +251,6 @@ router.post("/user-appliances", isAuthenticated, async (req: Request, res: Respo
       applianceLibraryId: z.string(),
       nickname: z.string().optional(),
       notes: z.string().optional(),
-      purchaseDate: z.string().optional(),
-      warrantyEndDate: z.string().optional(),
     });
     
     const validation = bodySchema.safeParse(req.body);
@@ -259,10 +261,20 @@ router.post("/user-appliances", isAuthenticated, async (req: Request, res: Respo
       });
     }
     
-    const newUserAppliance = await storage.user.food.addUserAppliance(
-      userId,
-      validation.data.applianceLibraryId
-    );
+    // Look up the library item to get its category
+    const libraryItems = await storage.user.food.getApplianceLibrary();
+    const libraryItem = libraryItems.find(item => item.id === validation.data.applianceLibraryId);
+    
+    if (!libraryItem) {
+      return res.status(404).json({ error: "Appliance not found in library" });
+    }
+    
+    const newUserAppliance = await storage.user.food.addUserAppliance(userId, {
+      applianceId: validation.data.applianceLibraryId,
+      category: libraryItem.category as "cooking" | "refrigeration" | "prep" | "small",
+      customName: validation.data.nickname,
+      notes: validation.data.notes,
+    });
     
     res.json(newUserAppliance);
   } catch (error) {
@@ -346,12 +358,20 @@ router.post("/user-appliances/batch", isAuthenticated, async (req: Request, res:
       removed: [] as string[],
     };
     
-    // Add appliances
+    // Add appliances - need to look up library items for categories
     if (validation.data.add && validation.data.add.length > 0) {
+      const libraryItems = await storage.user.food.getApplianceLibrary();
+      
       for (const applianceLibraryId of validation.data.add) {
         try {
-          const added = await storage.user.food.addUserAppliance(userId, applianceLibraryId);
-          results.added.push(added);
+          const libraryItem = libraryItems.find(item => item.id === applianceLibraryId);
+          if (libraryItem) {
+            const added = await storage.user.food.addUserAppliance(userId, {
+              applianceId: applianceLibraryId,
+              category: libraryItem.category as "cooking" | "refrigeration" | "prep" | "small",
+            });
+            results.added.push(added);
+          }
         } catch (error) {
           console.error(`Failed to add appliance ${applianceLibraryId}:`, error);
         }
