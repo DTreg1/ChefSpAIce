@@ -71,16 +71,21 @@ import {
 import {
   type OcrResult,
   type InsertOcrResult,
+  ocrResults,
   type FaceDetection,
   type InsertFaceDetection,
+  faceDetections,
   type ImageMetadata,
   type InsertImageMetadata,
+  imageMetadata,
   type AltTextQuality,
   type InsertAltTextQuality,
+  altTextQuality,
 } from "@shared/schema/images";
 import {
   type PrivacySettings,
   type InsertPrivacySettings,
+  privacySettings,
 } from "@shared/schema/security";
 import {
   type AutoSaveDraft,
@@ -1368,157 +1373,234 @@ export class AiMlStorage implements IAiMlStorage {
     return result;
   }
 
-  // ==================== Stub Methods (TODO: Implement) ====================
-  // These methods are stubs to allow compilation. They should be implemented
-  // when the corresponding features are built out.
+  // ==================== OCR Results ====================
 
-  async createOcrResult(_userId: string, _data: Omit<InsertOcrResult, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<OcrResult> {
-    console.warn("createOcrResult: stub method called");
-    const structuredData = _data.structuredData as OcrResult['structuredData'] ?? null;
-    return {
-      id: `ocr_${Date.now()}`,
-      userId: _userId,
-      imageId: _data.imageId,
-      text: _data.text,
-      confidence: _data.confidence,
-      language: _data.language ?? null,
-      structuredData,
-      engine: _data.engine ?? 'tesseract',
-      processingTime: _data.processingTime ?? null,
-      reviewed: false,
-      corrected: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  async createOcrResult(userId: string, data: Omit<InsertOcrResult, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<OcrResult> {
+    const [result] = await db
+      .insert(ocrResults)
+      .values({
+        userId,
+        imageId: data.imageId,
+        text: data.text,
+        confidence: data.confidence,
+        language: data.language ?? null,
+        structuredData: data.structuredData ?? null,
+        engine: data.engine ?? 'tesseract',
+        processingTime: data.processingTime ?? null,
+        reviewed: false,
+        corrected: false,
+      } as any)
+      .returning();
+    return result;
   }
 
-  async getUserOcrResults(_userId: string, _limit?: number, _offset?: number): Promise<OcrResult[]> {
-    console.warn("getUserOcrResults: stub method called");
-    return [];
+  async getUserOcrResults(userId: string, limit = 50, offset = 0): Promise<OcrResult[]> {
+    return await db
+      .select()
+      .from(ocrResults)
+      .where(eq(ocrResults.userId, userId))
+      .orderBy(desc(ocrResults.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 
-  async createFaceDetection(_userId: string, _data: Omit<InsertFaceDetection, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<FaceDetection> {
-    console.warn("createFaceDetection: stub method called");
-    const faceCoordinates = _data.faceCoordinates as FaceDetection['faceCoordinates'] ?? [];
-    const metadata = _data.metadata as FaceDetection['metadata'] ?? null;
-    return {
-      id: `face_${Date.now()}`,
-      userId: _userId,
-      imageId: _data.imageId,
-      imageUrl: _data.imageUrl,
-      facesDetected: _data.facesDetected ?? 0,
-      faceCoordinates,
-      processedImageUrl: _data.processedImageUrl ?? null,
-      processingType: _data.processingType ?? null,
-      metadata,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  // ==================== Face Detections ====================
+
+  async createFaceDetection(userId: string, data: Omit<InsertFaceDetection, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<FaceDetection> {
+    const [result] = await db
+      .insert(faceDetections)
+      .values({
+        userId,
+        imageId: data.imageId,
+        imageUrl: data.imageUrl,
+        facesDetected: data.facesDetected ?? 0,
+        faceCoordinates: data.faceCoordinates ?? [],
+        processedImageUrl: data.processedImageUrl ?? null,
+        processingType: data.processingType ?? null,
+        metadata: data.metadata ?? null,
+      } as any)
+      .returning();
+    return result;
   }
 
-  async getPrivacySettings(_userId: string): Promise<PrivacySettings | null> {
-    console.warn("getPrivacySettings: stub method called");
-    return null;
+  // ==================== Privacy Settings ====================
+
+  async getPrivacySettings(userId: string): Promise<PrivacySettings | null> {
+    const [result] = await db
+      .select()
+      .from(privacySettings)
+      .where(eq(privacySettings.userId, userId))
+      .limit(1);
+    return result ?? null;
   }
 
-  async upsertPrivacySettings(_userId: string, _settings: Omit<InsertPrivacySettings, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<PrivacySettings> {
-    console.warn("upsertPrivacySettings: stub method called");
-    return {
-      id: `privacy_${Date.now()}`,
-      userId: _userId,
-      autoBlurFaces: _settings.autoBlurFaces ?? false,
-      faceRecognitionEnabled: _settings.faceRecognitionEnabled ?? true,
-      blurIntensity: _settings.blurIntensity ?? 5,
-      excludedFaces: null,
-      privacyMode: _settings.privacyMode ?? 'balanced',
-      consentToProcessing: _settings.consentToProcessing ?? false,
-      dataRetentionDays: _settings.dataRetentionDays ?? 30,
-      notifyOnFaceDetection: _settings.notifyOnFaceDetection ?? false,
-      allowGroupPhotoTagging: _settings.allowGroupPhotoTagging ?? true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  async upsertPrivacySettings(userId: string, settings: Omit<InsertPrivacySettings, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<PrivacySettings> {
+    const existing = await this.getPrivacySettings(userId);
+
+    if (existing) {
+      const [updated] = await db
+        .update(privacySettings)
+        .set({
+          autoBlurFaces: settings.autoBlurFaces ?? existing.autoBlurFaces,
+          faceRecognitionEnabled: settings.faceRecognitionEnabled ?? existing.faceRecognitionEnabled,
+          blurIntensity: settings.blurIntensity ?? existing.blurIntensity,
+          excludedFaces: (settings.excludedFaces ?? existing.excludedFaces) as string[] | null,
+          privacyMode: settings.privacyMode ?? existing.privacyMode,
+          consentToProcessing: settings.consentToProcessing ?? existing.consentToProcessing,
+          dataRetentionDays: settings.dataRetentionDays ?? existing.dataRetentionDays,
+          notifyOnFaceDetection: settings.notifyOnFaceDetection ?? existing.notifyOnFaceDetection,
+          allowGroupPhotoTagging: settings.allowGroupPhotoTagging ?? existing.allowGroupPhotoTagging,
+          updatedAt: new Date(),
+        })
+        .where(eq(privacySettings.userId, userId))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db
+      .insert(privacySettings)
+      .values({
+        userId,
+        autoBlurFaces: settings.autoBlurFaces ?? false,
+        faceRecognitionEnabled: settings.faceRecognitionEnabled ?? true,
+        blurIntensity: settings.blurIntensity ?? 5,
+        excludedFaces: settings.excludedFaces ?? null,
+        privacyMode: settings.privacyMode ?? 'balanced',
+        consentToProcessing: settings.consentToProcessing ?? false,
+        dataRetentionDays: settings.dataRetentionDays ?? 30,
+        notifyOnFaceDetection: settings.notifyOnFaceDetection ?? false,
+        allowGroupPhotoTagging: settings.allowGroupPhotoTagging ?? true,
+      } as any)
+      .returning();
+    return created;
   }
 
-  async getImageMetadataByUrl(_userId: string, _url: string): Promise<ImageMetadata | null> {
-    console.warn("getImageMetadataByUrl: stub method called");
-    return null;
+  // ==================== Image Metadata ====================
+
+  async getImageMetadataByUrl(userId: string, url: string): Promise<ImageMetadata | null> {
+    const [result] = await db
+      .select()
+      .from(imageMetadata)
+      .where(and(eq(imageMetadata.userId, userId), eq(imageMetadata.url, url)))
+      .limit(1);
+    return result ?? null;
   }
 
-  async createImageMetadata(_userId: string, _data: Omit<InsertImageMetadata, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<ImageMetadata> {
-    console.warn("createImageMetadata: stub method called");
-    const metadata = _data.metadata as ImageMetadata['metadata'] ?? null;
-    return {
-      id: `img_${Date.now()}`,
-      userId: _userId,
-      url: _data.url,
-      thumbnailUrl: _data.thumbnailUrl ?? null,
-      filename: _data.filename,
-      mimeType: _data.mimeType,
-      size: _data.size,
-      width: _data.width ?? null,
-      height: _data.height ?? null,
-      altText: _data.altText ?? null,
-      autoGeneratedAlt: _data.autoGeneratedAlt ?? null,
-      detectedText: _data.detectedText ?? null,
-      category: _data.category ?? null,
-      tags: _data.tags ?? null,
-      metadata,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  async createImageMetadata(userId: string, data: Omit<InsertImageMetadata, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<ImageMetadata> {
+    const [result] = await db
+      .insert(imageMetadata)
+      .values({
+        userId,
+        url: data.url,
+        thumbnailUrl: data.thumbnailUrl ?? null,
+        filename: data.filename,
+        mimeType: data.mimeType,
+        size: data.size,
+        width: data.width ?? null,
+        height: data.height ?? null,
+        altText: data.altText ?? null,
+        autoGeneratedAlt: data.autoGeneratedAlt ?? null,
+        detectedText: data.detectedText ?? null,
+        category: data.category ?? null,
+        tags: data.tags ?? null,
+        metadata: data.metadata ?? null,
+      } as any)
+      .returning();
+    return result;
   }
 
-  async updateImageMetadata(_userId: string, _imageId: string, _data: Partial<ImageMetadata>): Promise<ImageMetadata> {
-    console.warn("updateImageMetadata: stub method called");
-    const metadata = _data.metadata as ImageMetadata['metadata'] ?? null;
-    return {
-      id: _imageId,
-      userId: _userId,
-      url: _data.url ?? '',
-      thumbnailUrl: _data.thumbnailUrl ?? null,
-      filename: _data.filename ?? '',
-      mimeType: _data.mimeType ?? '',
-      size: _data.size ?? 0,
-      width: _data.width ?? null,
-      height: _data.height ?? null,
-      altText: _data.altText ?? null,
-      autoGeneratedAlt: _data.autoGeneratedAlt ?? null,
-      detectedText: _data.detectedText ?? null,
-      category: _data.category ?? null,
-      tags: _data.tags ?? null,
-      metadata,
-      createdAt: _data.createdAt ?? new Date(),
-      updatedAt: new Date(),
-    };
+  async updateImageMetadata(userId: string, imageId: string, data: Partial<ImageMetadata>): Promise<ImageMetadata> {
+    const existing = await this.getImageMetadata(userId, imageId);
+    if (!existing) {
+      throw new Error(`Image metadata not found: ${imageId}`);
+    }
+
+    const [result] = await db
+      .update(imageMetadata)
+      .set({
+        url: data.url ?? existing.url,
+        thumbnailUrl: data.thumbnailUrl ?? existing.thumbnailUrl,
+        filename: data.filename ?? existing.filename,
+        mimeType: data.mimeType ?? existing.mimeType,
+        size: data.size ?? existing.size,
+        width: data.width ?? existing.width,
+        height: data.height ?? existing.height,
+        altText: data.altText ?? existing.altText,
+        autoGeneratedAlt: data.autoGeneratedAlt ?? existing.autoGeneratedAlt,
+        detectedText: data.detectedText ?? existing.detectedText,
+        category: data.category ?? existing.category,
+        tags: data.tags ?? existing.tags,
+        metadata: data.metadata ?? existing.metadata,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(imageMetadata.id, imageId), eq(imageMetadata.userId, userId)))
+      .returning();
+
+    return result;
   }
 
-  async getImageMetadata(_userId: string, _imageId: string): Promise<ImageMetadata | null> {
-    console.warn("getImageMetadata: stub method called");
-    return null;
+  async getImageMetadata(userId: string, imageId: string): Promise<ImageMetadata | null> {
+    const [result] = await db
+      .select()
+      .from(imageMetadata)
+      .where(and(eq(imageMetadata.id, imageId), eq(imageMetadata.userId, userId)))
+      .limit(1);
+    return result ?? null;
   }
 
-  async upsertAltTextQuality(_imageId: string, _quality: Omit<InsertAltTextQuality, 'id' | 'imageId' | 'createdAt' | 'updatedAt'>): Promise<AltTextQuality> {
-    console.warn("upsertAltTextQuality: stub method called");
-    return {
-      id: `altq_${Date.now()}`,
-      imageId: _imageId,
-      qualityScore: _quality.qualityScore ?? 0,
-      accessibilityScore: _quality.accessibilityScore ?? 0,
-      lengthScore: _quality.lengthScore ?? null,
-      descriptiveScore: _quality.descriptiveScore ?? null,
-      contextScore: _quality.contextScore ?? null,
-      keywordScore: _quality.keywordScore ?? null,
-      screenReaderScore: _quality.screenReaderScore ?? null,
-      wcagCompliance: _quality.wcagCompliance ?? false,
-      issues: _quality.issues ?? null,
-      suggestions: _quality.suggestions ?? null,
-      reviewed: _quality.reviewed ?? false,
-      reviewedAt: _quality.reviewedAt ?? null,
-      reviewedBy: _quality.reviewedBy ?? null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  // ==================== Alt Text Quality ====================
+
+  async upsertAltTextQuality(imageId: string, quality: Omit<InsertAltTextQuality, 'id' | 'imageId' | 'createdAt' | 'updatedAt'>): Promise<AltTextQuality> {
+    const [existing] = await db
+      .select()
+      .from(altTextQuality)
+      .where(eq(altTextQuality.imageId, imageId))
+      .limit(1);
+
+    if (existing) {
+      const [updated] = await db
+        .update(altTextQuality)
+        .set({
+          qualityScore: quality.qualityScore ?? existing.qualityScore,
+          accessibilityScore: quality.accessibilityScore ?? existing.accessibilityScore,
+          lengthScore: quality.lengthScore ?? existing.lengthScore,
+          descriptiveScore: quality.descriptiveScore ?? existing.descriptiveScore,
+          contextScore: quality.contextScore ?? existing.contextScore,
+          keywordScore: quality.keywordScore ?? existing.keywordScore,
+          screenReaderScore: quality.screenReaderScore ?? existing.screenReaderScore,
+          wcagCompliance: quality.wcagCompliance ?? existing.wcagCompliance,
+          issues: quality.issues ?? existing.issues,
+          suggestions: quality.suggestions ?? existing.suggestions,
+          reviewed: quality.reviewed ?? existing.reviewed,
+          reviewedAt: quality.reviewedAt ?? existing.reviewedAt,
+          reviewedBy: quality.reviewedBy ?? existing.reviewedBy,
+          updatedAt: new Date(),
+        })
+        .where(eq(altTextQuality.imageId, imageId))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db
+      .insert(altTextQuality)
+      .values({
+        imageId,
+        qualityScore: quality.qualityScore ?? 0,
+        accessibilityScore: quality.accessibilityScore ?? 0,
+        lengthScore: quality.lengthScore ?? null,
+        descriptiveScore: quality.descriptiveScore ?? null,
+        contextScore: quality.contextScore ?? null,
+        keywordScore: quality.keywordScore ?? null,
+        screenReaderScore: quality.screenReaderScore ?? null,
+        wcagCompliance: quality.wcagCompliance ?? false,
+        issues: quality.issues ?? null,
+        suggestions: quality.suggestions ?? null,
+        reviewed: quality.reviewed ?? false,
+        reviewedAt: quality.reviewedAt ?? null,
+        reviewedBy: quality.reviewedBy ?? null,
+      } as any)
+      .returning();
+    return created;
   }
 
   async getTranscriptionsPaginated(
