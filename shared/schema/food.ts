@@ -340,7 +340,8 @@ export const cookingTerms = pgTable(
 /**
  * Appliance Library Table
  *
- * Master catalog of kitchen appliances and cookware.
+ * Master catalog of known kitchen appliances.
+ * Categories: 'cooking', 'refrigeration', 'prep', 'small'
  */
 export const applianceLibrary = pgTable(
   "appliance_library",
@@ -349,30 +350,23 @@ export const applianceLibrary = pgTable(
       .primaryKey()
       .default(sql`gen_random_uuid()`),
     name: text("name").notNull(),
-    type: text("type").notNull(),
-    brand: text("brand"),
-    model: text("model"),
-    capabilities: text("capabilities").array(),
-    capacity: text("capacity"),
-    servingSize: text("serving_size"),
+    category: text("category").notNull(), // 'cooking', 'refrigeration', 'prep', 'small'
+    description: text("description"),
     imageUrl: text("image_url"),
-    isCommon: boolean("is_common").notNull().default(false),
-    alternatives: text("alternatives").array(),
+    defaultSettings: jsonb("default_settings").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    index("appliance_library_type_idx").on(table.type),
-    index("appliance_library_is_common_idx").on(table.isCommon),
-    uniqueIndex("appliance_library_brand_model_idx").on(
-      table.brand,
-      table.model,
-    ),
+    index("appliance_library_category_idx").on(table.category),
+    index("appliance_library_name_idx").on(table.name),
   ],
 );
 
 /**
  * User Appliances Table
  *
- * Kitchen appliances and cookware owned by each user.
+ * Kitchen appliances owned by each user.
+ * Can link to appliance_library or be custom (customName).
  */
 export const userAppliances = pgTable(
   "user_appliances",
@@ -380,34 +374,26 @@ export const userAppliances = pgTable(
     id: varchar("id")
       .primaryKey()
       .default(sql`gen_random_uuid()`),
-    name: text("name").notNull(),
-    type: text("type"),
-    userId: varchar("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    applianceLibraryId: varchar("appliance_library_id").references(
+    applianceId: text("appliance_id").references(
       () => applianceLibrary.id,
       { onDelete: "set null" },
-    ),
-    customBrand: text("custom_brand"),
-    customModel: text("custom_model"),
-    customCapabilities: text("custom_capabilities").array(),
-    customCapacity: text("custom_capacity"),
-    customServingSize: text("custom_serving_size"),
-    nickname: text("nickname"),
-    purchaseDate: text("purchase_date"),
-    warrantyEndDate: text("warranty_end_date"),
+    ), // nullable for custom appliances
+    customName: text("custom_name"), // for custom appliances not in library
+    category: text("category").notNull(), // 'cooking', 'refrigeration', 'prep', 'small'
+    brand: text("brand"),
+    model: text("model"),
+    settings: jsonb("settings").$type<Record<string, unknown>>(),
     notes: text("notes"),
-    imageUrl: text("image_url"),
-    isActive: boolean("is_active").default(true),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
     index("user_appliances_user_id_idx").on(table.userId),
-    index("user_appliances_appliance_library_id_idx").on(
-      table.applianceLibraryId,
-    ),
+    index("user_appliances_appliance_id_idx").on(table.applianceId),
+    index("user_appliances_category_idx").on(table.category),
   ],
 );
 
@@ -476,7 +462,12 @@ export const insertShoppingItemSchema = createInsertSchema(userShopping).extend(
 export type InsertShoppingItem = z.infer<typeof insertShoppingItemSchema>;
 export type ShoppingItem = typeof userShopping.$inferSelect;
 
-export const insertUserApplianceSchema = createInsertSchema(userAppliances);
+export const applianceCategorySchema = z.enum(['cooking', 'refrigeration', 'prep', 'small']);
+
+export const insertUserApplianceSchema = createInsertSchema(userAppliances, {
+  category: applianceCategorySchema,
+  settings: z.record(z.unknown()).nullable().optional(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type InsertUserAppliance = z.infer<typeof insertUserApplianceSchema>;
 export type UserAppliance = typeof userAppliances.$inferSelect;
@@ -485,14 +476,16 @@ export const insertCookingTermSchema = createInsertSchema(cookingTerms);
 export type InsertCookingTerm = z.infer<typeof insertCookingTermSchema>;
 export type CookingTerm = typeof cookingTerms.$inferSelect;
 
-export const insertApplianceLibrarySchema =
-  createInsertSchema(applianceLibrary);
-export type InsertApplianceLibraryItem = z.infer<
-  typeof insertApplianceLibrarySchema
->;
-export type ApplianceLibraryItem = typeof applianceLibrary.$inferSelect;
+export const insertApplianceLibrarySchema = createInsertSchema(applianceLibrary, {
+  category: applianceCategorySchema,
+  defaultSettings: z.record(z.unknown()).nullable().optional(),
+}).omit({ id: true, createdAt: true });
+
+export type InsertApplianceLibrary = z.infer<typeof insertApplianceLibrarySchema>;
+export type ApplianceLibrary = typeof applianceLibrary.$inferSelect;
 
 // Backward compatibility aliases
 export const insertShoppingListItemSchema = insertShoppingItemSchema;
 export type ShoppingListItem = ShoppingItem;
-export type ApplianceLibrary = ApplianceLibraryItem;
+export type InsertApplianceLibraryItem = InsertApplianceLibrary;
+export type ApplianceLibraryItem = ApplianceLibrary;
