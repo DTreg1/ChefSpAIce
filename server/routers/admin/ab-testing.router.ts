@@ -254,20 +254,21 @@ router.post(
               }
             }
 
-            // Save insights to database - using schema-compatible fields
+            // Save variant metrics to database
             const variant = significance.winner === 'A' ? 'A' : 'B';
             const sampleSize = (metaA.totalExposures || 0) + (metaB.totalExposures || 0);
             const conversionRate = significance.winner === 'A' 
               ? (metaA.conversionRate || 0) 
               : (metaB.conversionRate || 0);
             
-            aiInsights = await storage.admin.experiments.upsertAbTestInsight({
+            aiInsights = await storage.admin.experiments.upsertAbTestVariantMetric({
               testId,
               variant,
               sampleSize,
               conversionRate,
               confidence: significance.confidence,
               pValue: significance.pValue,
+              isSignificant: significance.pValue < 0.05,
               recommendation:
                 significance.winner !== "inconclusive"
                   ? `implement_${significance.winner.toLowerCase()}: ${explanation.trim().substring(0, 200)}`
