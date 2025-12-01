@@ -48,11 +48,15 @@ import {
   Loader2,
   Layers
 } from "lucide-react";
-import type { UserAppliance } from "@shared/schema";
+import type { UserAppliance, ApplianceLibrary } from "@shared/schema";
 
-// Extended type with category information
-type ApplianceWithCategory = UserAppliance & {
-  category?: string | null;
+// Extended type with joined library data from the API
+type ApplianceWithLibrary = UserAppliance & {
+  libraryAppliance?: ApplianceLibrary;
+  // Computed fields for convenience
+  name: string;
+  nickname?: string | null;
+  imageUrl?: string | null;
   subcategory?: string | null;
 };
 
@@ -63,12 +67,12 @@ export default function Appliances() {
   const [viewMode, setViewMode] = useState<"grid" | "list" | "grouped">("grid");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
-  const [editingAppliance, setEditingAppliance] = useState<UserAppliance | null>(null);
+  const [editingAppliance, setEditingAppliance] = useState<ApplianceWithLibrary | null>(null);
   const [barcodeInput, setBarcodeInput] = useState("");
   const [deleteApplianceId, setDeleteApplianceId] = useState<string | null>(null);
 
   // Fetch appliances with category filter
-  const { data: appliances = [], isLoading } = useQuery<ApplianceWithCategory[]>({
+  const { data: rawAppliances = [], isLoading } = useQuery<(UserAppliance & { libraryAppliance?: ApplianceLibrary })[]>({
     queryKey: selectedCategory === "all" 
       ? ["/api/appliances"]
       : ["/api/appliances", { category: selectedCategory }],
@@ -81,6 +85,14 @@ export default function Appliances() {
       return response.json();
     },
   });
+
+  // Transform raw appliances to include computed fields
+  const appliances: ApplianceWithLibrary[] = rawAppliances.map(a => ({
+    ...a,
+    name: a.libraryAppliance?.name || a.customName || 'Unknown Appliance',
+    nickname: a.customName,
+    imageUrl: a.libraryAppliance?.imageUrl,
+  }));
 
   // Fetch categories from user's appliances
   const { data: categories = [] } = useQuery<{ id: string; name: string; count: number }[]>({
@@ -175,32 +187,13 @@ export default function Appliances() {
   });
 
   // Filter appliances (category filtering is done server-side via query param)
-  const filteredAppliances = appliances.filter((appliance: ApplianceWithCategory) => {
+  const filteredAppliances = appliances.filter((appliance: ApplianceWithLibrary) => {
     const matchesSearch = appliance.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           appliance.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           appliance.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          appliance.customBrand?.toLowerCase().includes(searchQuery.toLowerCase());
+                          appliance.brand?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
-
-  // Render capabilities badges
-  const renderCapabilities = (capabilities?: string[] | null) => {
-    if (!capabilities || capabilities.length === 0) return null;
-    return (
-      <div className="flex flex-wrap gap-1 mt-2">
-        {capabilities.slice(0, 3).map(cap => (
-          <Badge key={cap} variant="secondary" className="text-xs">
-            {cap.replace(/_/g, ' ')}
-          </Badge>
-        ))}
-        {capabilities.length > 3 && (
-          <Badge variant="outline" className="text-xs">
-            +{capabilities.length - 3} more
-          </Badge>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="container mx-auto p-6">
@@ -315,7 +308,7 @@ export default function Appliances() {
               }
               acc[category].push(appliance);
               return acc;
-            }, {} as Record<string, ApplianceWithCategory[]>);
+            }, {} as Record<string, ApplianceWithLibrary[]>);
 
             return Object.entries(grouped)
               .sort(([a], [b]) => a.localeCompare(b))
@@ -367,17 +360,16 @@ export default function Appliances() {
                             />
                           )}
                           <div className="space-y-2">
-                            {appliance.customBrand && (
+                            {appliance.brand && (
                               <div className="text-sm text-muted-foreground">
-                                Brand: {appliance.customBrand}
+                                Brand: {appliance.brand}
                               </div>
                             )}
-                            {appliance.customCapacity && (
+                            {appliance.model && (
                               <div className="text-sm text-muted-foreground">
-                                Capacity: {appliance.customCapacity}
+                                Model: {appliance.model}
                               </div>
                             )}
-                            {renderCapabilities(appliance.customCapabilities)}
                           </div>
                         </CardContent>
                       </Card>
@@ -389,7 +381,7 @@ export default function Appliances() {
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAppliances.map((appliance: ApplianceWithCategory) => (
+          {filteredAppliances.map((appliance: ApplianceWithLibrary) => (
             <Card key={appliance.id} className="hover-elevate" data-testid={`card-appliance-${appliance.id}`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -435,17 +427,16 @@ export default function Appliances() {
                   />
                 )}
                 <div className="space-y-2">
-                  {appliance.customBrand && (
+                  {appliance.brand && (
                     <div className="text-sm text-muted-foreground">
-                      Brand: {appliance.customBrand}
+                      Brand: {appliance.brand}
                     </div>
                   )}
-                  {appliance.customCapacity && (
+                  {appliance.model && (
                     <div className="text-sm text-muted-foreground">
-                      Capacity: {appliance.customCapacity}
+                      Model: {appliance.model}
                     </div>
                   )}
-                  {renderCapabilities(appliance.customCapabilities)}
                 </div>
               </CardContent>
             </Card>
@@ -455,7 +446,7 @@ export default function Appliances() {
         <Card>
           <CardContent className="p-0">
             <ScrollArea className="h-[600px]">
-              {filteredAppliances.map((appliance: ApplianceWithCategory, index: number) => (
+              {filteredAppliances.map((appliance: ApplianceWithLibrary, index: number) => (
                 <div key={appliance.id}>
                   <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
@@ -480,7 +471,6 @@ export default function Appliances() {
                         )}
                       </div>
                     </div>
-                    {renderCapabilities(appliance.customCapabilities)}
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -652,7 +642,7 @@ export default function Appliances() {
                   <Input 
                     id="edit-nickname" 
                     name="edit-nickname" 
-                    defaultValue={editingAppliance.nickname || editingAppliance.name}
+                    defaultValue={editingAppliance.customName || editingAppliance.name}
                   />
                 </div>
                 <div>
