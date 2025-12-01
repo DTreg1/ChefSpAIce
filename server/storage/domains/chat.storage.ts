@@ -8,9 +8,10 @@
  * - Facades should instantiate their own instances OR use the shared singleton consistently
  */
 
-import { eq } from "drizzle-orm";
+import { eq, desc, count } from "drizzle-orm";
 import { db } from "../../db";
 import {
+  chatMessages,
   type ChatMessage,
   type InsertChatMessage
 } from "@shared/schema";
@@ -18,8 +19,12 @@ import type { IChatStorage } from "../interfaces/IChatStorage";
 
 export class ChatDomainStorage implements IChatStorage {
   async getChatMessages(userId: string, limit: number = 100): Promise<ChatMessage[]> {
-    // TODO: Implement when chat_messages table is added to schema
-    return [];
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.userId, userId))
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(limit);
   }
   
   async getChatMessagesPaginated(
@@ -27,20 +32,47 @@ export class ChatDomainStorage implements IChatStorage {
     limit: number,
     offset: number,
   ): Promise<{ messages: ChatMessage[]; total: number }> {
-    // TODO: Implement when chat_messages table is added to schema
-    return { messages: [], total: 0 };
+    const [messages, totalResult] = await Promise.all([
+      db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.userId, userId))
+        .orderBy(desc(chatMessages.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ count: count() })
+        .from(chatMessages)
+        .where(eq(chatMessages.userId, userId)),
+    ]);
+
+    return {
+      messages,
+      total: totalResult[0]?.count ?? 0,
+    };
   }
   
   async createChatMessage(
     userId: string,
     message: Omit<InsertChatMessage, "id" | "userId">,
   ): Promise<ChatMessage> {
-    // TODO: Implement when chat_messages table is added to schema
-    throw new Error("Chat messages not yet implemented in new schema");
+    const [created] = await db
+      .insert(chatMessages)
+      .values({
+        userId,
+        role: message.role,
+        content: message.content,
+        metadata: message.metadata,
+      })
+      .returning();
+    
+    return created;
   }
   
   async deleteChatHistory(userId: string): Promise<void> {
-    // TODO: Implement when chat_messages table is added to schema
+    await db
+      .delete(chatMessages)
+      .where(eq(chatMessages.userId, userId));
   }
 }
 
