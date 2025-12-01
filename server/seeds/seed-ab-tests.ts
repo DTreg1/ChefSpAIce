@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { storage as defaultStorage } from '../storage/index';
-import { type InsertAbTest, type InsertAbTestResult, type InsertAbTestInsight, type AbTest } from '@shared/schema';
+import { type InsertAbTest, type InsertAbTestResult, type InsertAbTestVariantMetric, type AbTest } from '@shared/schema';
 
 export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
   const router = Router();
@@ -118,7 +118,7 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
         // Create tests and capture IDs
         const createdTests: AbTest[] = [];
         for (const test of tests) {
-          const created = await storage.createAbTest(test);
+          const created = await storage.admin.experiments.createAbTest(test);
           createdTests.push(created);
         }
 
@@ -193,14 +193,14 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
 
         // Add results
         for (const result of results) {
-          await storage.upsertAbTestResult(result);
+          await storage.admin.experiments.upsertAbTestResult(result);
         }
 
-        // Create insights for completed test
+        // Create variant metrics for completed test
         const controlResults = results.filter(r => r.testId === createdTests[1].id && r.variant === 'control');
         const variantBResults = results.filter(r => r.testId === createdTests[1].id && r.variant === 'variant_b');
         
-        const insights: InsertAbTestInsight[] = [
+        const variantMetrics: InsertAbTestVariantMetric[] = [
           {
             testId: createdTests[1].id,
             variant: 'control',
@@ -227,8 +227,8 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
           }
         ];
 
-        for (const insight of insights) {
-          await (storage as any).upsertAbTestInsight(insight);
+        for (const metric of variantMetrics) {
+          await storage.admin.experiments.upsertAbTestVariantMetric(metric);
         }
 
         res.json({ 
@@ -236,7 +236,7 @@ export function createABTestSeedEndpoint(storage: typeof defaultStorage) {
           message: 'Sample A/B test data created successfully',
           tests: tests.length,
           results: results.length,
-          insights: insights.length
+          variantMetrics: variantMetrics.length
         });
       } catch (error) {
         console.error('Error seeding A/B test data:', error);
