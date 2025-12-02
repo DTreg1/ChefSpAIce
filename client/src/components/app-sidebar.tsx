@@ -22,6 +22,7 @@ import {
   Activity,
   Brain,
   Bot,
+  History,
   FileSearch,
   DollarSign,
   Image,
@@ -169,7 +170,7 @@ export function AppSidebar() {
   const aiAssistantItem = {
     id: "ai-assistant",
     name: "AI Assistant",
-    icon: Bot,
+    icon: History,
     path: "/",
   };
 
