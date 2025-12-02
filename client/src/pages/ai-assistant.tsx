@@ -17,7 +17,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, RotateCcw, MessageSquare, Trash2 } from "lucide-react";
+import { Bot, RotateCcw, MessageSquare, Trash2, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useAIErrorHandler, parseAPIError } from "@/hooks/use-ai-error-handler";
@@ -384,7 +384,8 @@ export default function AIAssistant() {
         <Card className="h-full flex flex-col">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <History className="w-4 h-4" />
                 Chat History
               </CardTitle>
               {messages.length > 0 && (
