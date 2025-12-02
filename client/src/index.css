@@ -320,6 +320,30 @@
     width: 100%;
     position: relative;
   }
+
+  /* Custom scrollbar styling for sidebar */
+  [data-sidebar="content"]::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  [data-sidebar="content"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  [data-sidebar="content"]::-webkit-scrollbar-thumb {
+    background: hsl(var(--sidebar-border));
+    border-radius: 3px;
+  }
+
+  [data-sidebar="content"]::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--sidebar-foreground) / 0.3);
+  }
+
+  /* Firefox scrollbar styling for sidebar */
+  [data-sidebar="content"] {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--sidebar-border)) transparent;
+  }
 }
 
 /**
