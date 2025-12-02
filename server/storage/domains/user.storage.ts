@@ -105,19 +105,13 @@ export class UserAuthDomainStorage implements IUserStorage {
     context.additionalInfo = { email: userData.email };
     
     if (!userData.email) {
-      throw new StorageValidationError("Email is required to create a user", context, [
-        { field: "email", message: "Email is required" }
-      ]);
+      throw new StorageValidationError("Email is required to create a user", context, ["email"]);
     }
     if (!userData.firstName) {
-      throw new StorageValidationError("First name is required to create a user", context, [
-        { field: "firstName", message: "First name is required" }
-      ]);
+      throw new StorageValidationError("First name is required to create a user", context, ["firstName"]);
     }
     if (!userData.lastName) {
-      throw new StorageValidationError("Last name is required to create a user", context, [
-        { field: "lastName", message: "Last name is required" }
-      ]);
+      throw new StorageValidationError("Last name is required to create a user", context, ["lastName"]);
     }
     
     try {
