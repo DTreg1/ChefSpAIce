@@ -475,7 +475,14 @@ export class UserAuthDomainStorage implements IUserStorage {
       additionalInfo: { provider: provider.provider }
     };
     try {
-      const user = provider.email ? await this.getUserByEmail(provider.email) : null;
+      // Use providerEmail (the correct field) or fall back to userId lookup
+      const email = provider.providerEmail;
+      let user = email ? await this.getUserByEmail(email) : null;
+      
+      // If no user found by email but we have userId, get user by ID
+      if (!user && provider.userId) {
+        user = await this.getUserById(provider.userId);
+      }
       
       if (user) {
         const providerField = `${provider.provider}Id`;
@@ -493,10 +500,12 @@ export class UserAuthDomainStorage implements IUserStorage {
           providerEmail: provider.providerEmail,
         };
       } else {
+        // User should already exist from findOrCreateUser - this is a fallback
         const providerField = `${provider.provider}Id`;
         const userToCreate: Partial<User> = {
-          email: provider.email || undefined,
-          firstName: provider.displayName || provider.email || undefined,
+          email: email || `${provider.provider}_${provider.providerId}@oauth.local`,
+          firstName: provider.displayName || email?.split("@")[0] || "User",
+          lastName: "User",
           primaryProvider: provider.provider,
         };
         (userToCreate as Record<string, unknown>)[providerField] = provider.providerId;
