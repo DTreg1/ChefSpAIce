@@ -206,21 +206,38 @@ export default function Equipment() {
 
           {/* Category Tabs */}
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-            <TabsList className="grid w-full grid-cols-4">
-              {CATEGORIES.map((category) => {
-                const Icon = category.icon;
-                return (
-                  <TabsTrigger
-                    key={category.value}
-                    value={category.value}
-                    data-testid={`tab-${category.value}`}
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {category.label}
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
+            <div className="space-y-1 mb-4">
+              <TabsList className="grid w-full grid-cols-4 h-auto">
+                {CATEGORIES.slice(0, 4).map((category) => {
+                  const Icon = category.icon;
+                  return (
+                    <TabsTrigger
+                      key={category.value}
+                      value={category.value}
+                      data-testid={`tab-${category.value}`}
+                    >
+                      <Icon className="h-4 w-4 mr-2" />
+                      {category.label}
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              <TabsList className="grid w-full grid-cols-4 h-auto">
+                {CATEGORIES.slice(4, 8).map((category) => {
+                  const Icon = category.icon;
+                  return (
+                    <TabsTrigger
+                      key={category.value}
+                      value={category.value}
+                      data-testid={`tab-${category.value}`}
+                    >
+                      <Icon className="h-4 w-4 mr-2" />
+                      {category.label}
+                    </TabsTrigger>
+                  );
+                })}
+              </TabsList>
+            </div>
 
             {CATEGORIES.map((category) => (
               <TabsContent key={category.value} value={category.value}>
