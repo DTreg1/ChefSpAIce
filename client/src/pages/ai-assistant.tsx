@@ -25,6 +25,7 @@ import { useStreamedContent } from "@/hooks/use-streamed-content";
 import { useVoiceConversation } from "@/hooks/useVoiceConversation";
 import { ExpirationTicker } from "@/components/expiration-ticker";
 import { format } from "date-fns";
+import { useChatHistoryVisibility } from "@/contexts/chat-history-context";
 import type { Recipe } from "@shared/schema";
 
 type ChatMessageType = {
@@ -109,6 +110,7 @@ export default function AIAssistant() {
   });
 
   const { user } = useAuth();
+  const { isVisible: chatHistoryVisible } = useChatHistoryVisibility();
 
   const handleSendMessage = async (
     content: string,
@@ -380,6 +382,7 @@ export default function AIAssistant() {
   return (
     <div className="flex gap-4 p-4 h-[calc(100vh-5rem)]">
       {/* Sidebar with chat history info */}
+      {chatHistoryVisible && (
       <div className="w-80 flex-shrink-0 h-full">
         <Card className="h-full flex flex-col">
           <CardHeader className="pb-3">
@@ -438,6 +441,7 @@ export default function AIAssistant() {
           </div>
         </Card>
       </div>
+      )}
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">

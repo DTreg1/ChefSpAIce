@@ -81,6 +81,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useChatHistoryVisibility } from "@/contexts/chat-history-context";
 import { getCategoryIcon } from "@/lib/categoryIcons";
 import type {
   StorageLocation,
@@ -132,6 +133,7 @@ export function AppSidebar() {
   const [foodGroupsOpen, setFoodGroupsOpen] = useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
   const { user } = useAuth();
+  const { isVisible: chatHistoryVisible, toggle: toggleChatHistory } = useChatHistoryVisibility();
 
   const handleLinkClick = () => {
     if (isMobile) {
@@ -210,7 +212,22 @@ export function AppSidebar() {
                     >
                       <aiAssistantItem.icon className="w-4 h-4 transition-morph" />
                       <span className="flex-1">{aiAssistantItem.name}</span>
-                      <History className="w-4 h-4 ml-auto" data-testid="icon-history-ai-assistant" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleChatHistory();
+                        }}
+                        className={cn(
+                          "p-1 rounded hover:bg-accent/50 transition-colors",
+                          chatHistoryVisible ? "text-foreground" : "text-muted-foreground"
+                        )}
+                        data-testid="button-toggle-chat-history"
+                        title={chatHistoryVisible ? "Hide chat history" : "Show chat history"}
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
