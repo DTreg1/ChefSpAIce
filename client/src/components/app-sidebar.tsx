@@ -6,7 +6,6 @@ import {
   Pizza,
   UtensilsCrossed,
   ChefHat,
-  MessageSquare,
   BookOpen,
   Apple,
   CalendarDays,
@@ -142,10 +141,10 @@ export function AppSidebar() {
   const totalItems =
     foodItemsResponse?.pagination?.total || foodItems?.length || 0;
 
-  const chatItem = {
-    id: "chat",
-    name: "Chef Chat",
-    icon: MessageSquare,
+  const aiAssistantItem = {
+    id: "ai-assistant",
+    name: "AI Assistant",
+    icon: Bot,
     path: "/",
   };
 
@@ -175,33 +174,16 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={location === chatItem.path}
+                    isActive={location === aiAssistantItem.path}
                     className="transition-morph hover:pl-1"
                   >
                     <Link
-                      href={chatItem.path}
-                      data-testid="link-chat"
-                      onClick={handleLinkClick}
-                    >
-                      <chatItem.icon className="w-4 h-4 transition-morph" />
-                      <span className="flex-1">{chatItem.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === "/ai-assistant"}
-                    className="transition-morph hover:pl-1"
-                  >
-                    <Link
-                      href="/ai-assistant"
+                      href={aiAssistantItem.path}
                       data-testid="link-ai-assistant"
                       onClick={handleLinkClick}
                     >
-                      <Bot className="w-4 h-4 transition-morph" />
-                      <span className="flex-1">AI Assistant</span>
+                      <aiAssistantItem.icon className="w-4 h-4 transition-morph" />
+                      <span className="flex-1">{aiAssistantItem.name}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

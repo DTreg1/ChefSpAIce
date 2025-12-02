@@ -9,20 +9,43 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import {
   MessageCircle,
   Mic,
   Mail,
   Edit3,
   Sparkles,
-  Info
+  Info,
+  Bot,
+  ArrowRight
 } from "lucide-react";
 
-// Import all ML feature components
-import { AIChatAssistant } from "@/components/chat";
+// Import ML feature components
 import { VoiceCommands } from "@/components/voice";
 import { EmailDrafting } from "@/components/email-drafting";
 import { WritingAssistant } from "@/components/writing-assistant";
+
+function ChatRedirect() {
+  return (
+    <Card className="h-[400px] flex items-center justify-center">
+      <CardContent className="text-center space-y-4">
+        <Bot className="w-16 h-16 mx-auto text-primary" />
+        <h3 className="text-xl font-semibold">AI Assistant</h3>
+        <p className="text-muted-foreground max-w-md">
+          Get recipe suggestions, manage your inventory, and chat with your personal kitchen assistant.
+        </p>
+        <Link href="/">
+          <Button data-testid="button-go-to-assistant">
+            Go to AI Assistant
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AIFeatures() {
   const [activeTab, setActiveTab] = useState("chat");
@@ -33,8 +56,8 @@ export default function AIFeatures() {
       title: "AI Chat Assistant",
       description: "Have intelligent conversations with memory",
       icon: MessageCircle,
-      component: AIChatAssistant,
-      badge: "GPT-5"
+      component: ChatRedirect,
+      badge: "GPT-4"
     },
     {
       id: "voice",

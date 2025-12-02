@@ -27,14 +27,13 @@ import { ChatWidget } from "@/components/chat";
 // Eagerly loaded pages (critical path)
 import Landing from "@/pages/landing";
 import Onboarding from "@/pages/onboarding";
-import Chat from "@/pages/chat"; // Keep Chat eager since it's the default route
+import AIAssistantPage from "@/pages/ai-assistant"; // AI Assistant is the default route
 import { AnimatedBackground } from "./components/animated-background";
 
 // Lazy loaded pages (code splitting)
 const Storage = lazy(() => import("@/pages/storage"));
 const Cookbook = lazy(() => import("@/pages/cookbook"));
 const Nutrition = lazy(() => import("@/pages/nutrition"));
-const AIAssistant = lazy(() => import("@/pages/ai-assistant"));
 const MealPlanner = lazy(() => import("@/pages/meal-planner"));
 const ShoppingList = lazy(() => import("@/pages/shopping-list"));
 const Appliances = lazy(() => import("@/pages/appliances"));
@@ -96,9 +95,8 @@ function AuthenticatedRouter() {
   return (
     <Suspense fallback={<RouteLoading />}>
       <Switch>
-        <Route path="/" component={Chat} />
-        <Route path="/chat" component={Chat} />
-        <Route path="/ai-assistant" component={AIAssistant} />
+        <Route path="/" component={AIAssistantPage} />
+        <Route path="/ai-assistant" component={AIAssistantPage} />
         <Route path="/cookbook" component={Cookbook} />
         <Route path="/tag-demo" component={TagDemo} />
         <Route path="/nutrition" component={Nutrition} />
