@@ -210,6 +210,13 @@ npx cap open ios     # Open in Xcode
 
 ## Recent Updates
 
+### User Identification System (December 2025)
+- **Primary Key**: Users table uses UUID-based `id` column as the primary key
+- **Foreign Keys**: All 16+ schema files reference `users.id` for foreign key relationships
+- **Auth Flow**: SessionUser objects use `user.id` for user identification
+- **Storage Layer**: All storage methods query by `users.id` instead of `users.email`
+- **Note**: `users.email` is only used for email-based lookups (getUserByEmail)
+
 ### Current Sprint
 - 17 storage domain modules (16 fully operational, 1 with stub methods)
 - 33 backend services active
@@ -219,6 +226,7 @@ npx cap open ios     # Open in Xcode
 - Push notification system for web, iOS, and Android (requires credential configuration)
 - Comprehensive analytics and insights system
 - A/B testing and experimentation framework
+- Role-based access control (RBAC) with admin-protected routes under `/api/v1/admin/*`
 
 ### Storage Layer Status
 - **17/17 domains** fully aligned with interfaces
