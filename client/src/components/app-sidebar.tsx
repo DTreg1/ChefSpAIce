@@ -170,7 +170,7 @@ export function AppSidebar() {
   const aiAssistantItem = {
     id: "ai-assistant",
     name: "AI Assistant",
-    icon: History,
+    icon: Bot,
     path: "/",
   };
 
@@ -210,6 +210,7 @@ export function AppSidebar() {
                     >
                       <aiAssistantItem.icon className="w-4 h-4 transition-morph" />
                       <span className="flex-1">{aiAssistantItem.name}</span>
+                      <History className="w-4 h-4 ml-auto" data-testid="icon-history-ai-assistant" />
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
