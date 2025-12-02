@@ -72,7 +72,7 @@ Return as JSON array with format:
       });
     } catch (error) {
       console.error("Error generating recipe recommendations:", error);
-      throw new ApiError("Unable to generate recipe recommendations", 500, { cause: error });
+      throw new ApiError("Unable to generate recipe recommendations", 500);
     }
   })
 );
@@ -125,7 +125,7 @@ router.get(
       });
     } catch (error) {
       console.error("Error generating ingredient recommendations:", error);
-      throw new ApiError("Unable to generate ingredient recommendations", 500, { cause: error });
+      throw new ApiError("Unable to generate ingredient recommendations", 500);
     }
   })
 );
@@ -207,7 +207,7 @@ Return as JSON array with format:
       });
     } catch (error) {
       console.error("Error generating meal plan recommendations:", error);
-      throw new ApiError("Unable to generate meal plan recommendations", 500, { cause: error });
+      throw new ApiError("Unable to generate meal plan recommendations", 500);
     }
   })
 );
