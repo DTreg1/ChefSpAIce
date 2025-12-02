@@ -13,7 +13,7 @@ const Card = React.forwardRef<
       | "colored-secondary";
     animate?: boolean;
   }
->(({ className, variant = "default", animate = true, ...props }, ref) => {
+>(({ className, variant = "default", animate = false, ...props }, ref) => {
   const variantStyles = {
     default: "bg-card/80 backdrop-blur-sm border-card-border shadow-sm",
     glass: "glass-vibrant border-white/10 shadow-lg",
