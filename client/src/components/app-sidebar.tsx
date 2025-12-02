@@ -349,15 +349,15 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={location === "/equipment"}
+                    isActive={location === "/appliances"}
                   >
                     <Link
-                      href="/equipment"
-                      data-testid="link-equipment"
+                      href="/appliances"
+                      data-testid="link-appliances"
                       onClick={handleLinkClick}
                     >
                       <ChefHat className="w-4 h-4" />
-                      <span className="flex-1">Kitchen Appliances</span>
+                      <span className="flex-1">My Kitchen Appliances</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

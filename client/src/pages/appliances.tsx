@@ -222,7 +222,7 @@ export default function Appliances() {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">Kitchen Appliances</h1>
+          <h1 className="text-3xl font-bold">My Kitchen Appliances</h1>
           <p className="text-muted-foreground">
             Manage your kitchen appliances and tools
           </p>
