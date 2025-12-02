@@ -57,7 +57,10 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getCategoryIcon } from "@/lib/categoryIcons";
-import type { StorageLocation, UserInventory as FoodItem } from "@shared/schema";
+import type {
+  StorageLocation,
+  UserInventory as FoodItem,
+} from "@shared/schema";
 
 const iconMap: Record<string, any> = {
   refrigerator: Refrigerator,
@@ -82,14 +85,14 @@ function shortenCategoryName(category: string): string {
     "Finfish and Shellfish Products": "Seafood",
     "Legumes and Legume Products": "Legumes",
     "Nut and Seed Products": "Nuts & Seeds",
-    "Sweets": "Sweets",
+    Sweets: "Sweets",
     "Baby Foods": "Baby Foods",
     "Baked Products": "Baked Goods",
-    "Beverages": "Beverages",
+    Beverages: "Beverages",
     "Breakfast Cereals": "Cereals",
     "Fast Foods": "Fast Food",
     "Meals, Entrees, and Side Dishes": "Meals & Sides",
-    "Snacks": "Snacks",
+    Snacks: "Snacks",
     "Soups, Sauces, and Gravies": "Soups & Sauces",
     "American Indian/Alaska Native Foods": "Native Foods",
     "Restaurant Foods": "Restaurant",
@@ -116,19 +119,28 @@ export function AppSidebar() {
     // Clear localStorage cache
     CacheStorage.remove("cache:storage:locations");
     // Force React Query to refetch fresh data from the API
-    queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.inventory.storageLocations] });
+    queryClient.invalidateQueries({
+      queryKey: [API_ENDPOINTS.inventory.storageLocations],
+    });
   }, []);
 
-  const { data: storageLocations, refetch: _refetchStorageLocations } = useStorageLocations();
+  const { data: storageLocations, refetch: _refetchStorageLocations } =
+    useStorageLocations();
 
-  const { data: foodItemsResponse } = useQuery<{ data: FoodItem[], pagination?: { total: number } }>({
+  const { data: foodItemsResponse } = useQuery<{
+    data: FoodItem[];
+    pagination?: { total: number };
+  }>({
     queryKey: [API_ENDPOINTS.inventory.foodItems],
   });
-  
-  // Extract the array from the paginated response structure
-  const foodItems = Array.isArray(foodItemsResponse) ? foodItemsResponse : (foodItemsResponse?.data || []);
 
-  const totalItems = foodItemsResponse?.pagination?.total || foodItems?.length || 0;
+  // Extract the array from the paginated response structure
+  const foodItems = Array.isArray(foodItemsResponse)
+    ? foodItemsResponse
+    : foodItemsResponse?.data || [];
+
+  const totalItems =
+    foodItemsResponse?.pagination?.total || foodItems?.length || 0;
 
   const chatItem = {
     id: "chat",
@@ -176,7 +188,7 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                
+
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
@@ -319,10 +331,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === "/pricing"}
-                  >
+                  <SidebarMenuButton asChild isActive={location === "/pricing"}>
                     <Link
                       href="/pricing"
                       data-testid="link-pricing"
@@ -334,10 +343,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === "/images"}
-                  >
+                  <SidebarMenuButton asChild isActive={location === "/images"}>
                     <Link
                       href="/images"
                       data-testid="link-images"
@@ -726,8 +732,11 @@ export function AppSidebar() {
               variant="outline"
               onClick={async () => {
                 CacheStorage.clear();
-                await fetch(API_ENDPOINTS.auth.logout, { method: 'POST', credentials: 'include' });
-                window.location.href = '/';
+                await fetch(API_ENDPOINTS.auth.logout, {
+                  method: "POST",
+                  credentials: "include",
+                });
+                window.location.href = "/";
               }}
               data-testid="button-logout"
             >
