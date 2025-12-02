@@ -14,16 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 import type { ApplianceLibrary, UserAppliance } from "@shared/schema";
 
 const CATEGORIES = [
-  { value: "appliance", label: "Appliances", icon: Home },
-  { value: "cookware", label: "Cookware", icon: Package2 },
-  { value: "bakeware", label: "Bakeware", icon: ChefHat },
-  { value: "utensil", label: "Utensils", icon: Utensils },
+  { value: "cooking", label: "Cooking Appliances", icon: Home },
+  { value: "refrigeration", label: "Refrigeration", icon: Package2 },
+  { value: "prep", label: "Prep Equipment", icon: Utensils },
+  { value: "small", label: "Small Appliances", icon: ChefHat },
 ];
 
 export default function Equipment() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [selectedCategory, setSelectedCategory] = useState("appliance");
+  const [selectedCategory, setSelectedCategory] = useState("cooking");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [hasChanges, setHasChanges] = useState(false);

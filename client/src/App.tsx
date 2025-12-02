@@ -287,6 +287,7 @@ function AppContent() {
   // Show app layout with header (with or without sidebar based on onboarding status)
   return (
     <>
+      <AnimatedBackground />
       <PushNotificationHandler />
       <UnifiedAddFood open={addFoodOpen} onOpenChange={setAddFoodOpen} />
       <UnifiedRecipeDialog

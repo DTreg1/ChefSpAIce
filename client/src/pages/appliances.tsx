@@ -532,10 +532,10 @@ export default function Appliances() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cooking">Cooking</SelectItem>
-                    <SelectItem value="baking">Baking</SelectItem>
-                    <SelectItem value="prep">Food Prep</SelectItem>
-                    <SelectItem value="bakeware">Bakeware</SelectItem>
+                    <SelectItem value="cooking">Cooking Appliances</SelectItem>
+                    <SelectItem value="refrigeration">Refrigeration</SelectItem>
+                    <SelectItem value="prep">Prep Equipment</SelectItem>
+                    <SelectItem value="small">Small Appliances</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
