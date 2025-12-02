@@ -2,48 +2,118 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<key>CFBundleDisplayName</key>
+        <key>CFBundleDevelopmentRegion</key>
+        <string>en</string>
+        <key>CFBundleDisplayName</key>
         <string>ChefSpAIce</string>
-	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>armv7</string>
-	</array>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<true/>
+        <key>CFBundleExecutable</key>
+        <string>$(EXECUTABLE_NAME)</string>
+        <key>CFBundleIdentifier</key>
+        <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>6.0</string>
+        <key>CFBundleName</key>
+        <string>$(PRODUCT_NAME)</string>
+        <key>CFBundlePackageType</key>
+        <string>APPL</string>
+        <key>CFBundleShortVersionString</key>
+        <string>$(MARKETING_VERSION)</string>
+        <key>CFBundleVersion</key>
+        <string>$(CURRENT_PROJECT_VERSION)</string>
+        <key>LSRequiresIPhoneOS</key>
+        <true/>
+        <key>UILaunchStoryboardName</key>
+        <string>LaunchScreen</string>
+        <key>UIMainStoryboardFile</key>
+        <string>Main</string>
+        <key>UIRequiredDeviceCapabilities</key>
+        <array>
+                <string>armv7</string>
+        </array>
+        <key>UISupportedInterfaceOrientations</key>
+        <array>
+                <string>UIInterfaceOrientationPortrait</string>
+                <string>UIInterfaceOrientationLandscapeLeft</string>
+                <string>UIInterfaceOrientationLandscapeRight</string>
+        </array>
+        <key>UISupportedInterfaceOrientations~ipad</key>
+        <array>
+                <string>UIInterfaceOrientationPortrait</string>
+                <string>UIInterfaceOrientationPortraitUpsideDown</string>
+                <string>UIInterfaceOrientationLandscapeLeft</string>
+                <string>UIInterfaceOrientationLandscapeRight</string>
+        </array>
+        <key>UIViewControllerBasedStatusBarAppearance</key>
+        <true/>
+        
+        <!-- Background Modes for Push Notifications -->
+        <key>UIBackgroundModes</key>
+        <array>
+                <string>fetch</string>
+                <string>remote-notification</string>
+        </array>
+        
+        <!-- Privacy - Camera Usage Description -->
+        <key>NSCameraUsageDescription</key>
+        <string>ChefSpAIce needs access to your camera to scan barcodes and take photos of recipes and ingredients.</string>
+        
+        <!-- Privacy - Photo Library Usage Description -->
+        <key>NSPhotoLibraryUsageDescription</key>
+        <string>ChefSpAIce needs access to your photo library to save and share recipe photos.</string>
+        
+        <!-- Privacy - Photo Library Add Usage Description -->
+        <key>NSPhotoLibraryAddUsageDescription</key>
+        <string>ChefSpAIce needs permission to save photos to your library.</string>
+        
+        <!-- Privacy - Face ID Usage Description -->
+        <key>NSFaceIDUsageDescription</key>
+        <string>ChefSpAIce uses Face ID for secure authentication.</string>
+        
+        <!-- Privacy - Location Usage Description (if needed for local stores) -->
+        <key>NSLocationWhenInUseUsageDescription</key>
+        <string>ChefSpAIce uses your location to find nearby grocery stores and farmers markets.</string>
+        
+        <!-- App Transport Security -->
+        <key>NSAppTransportSecurity</key>
+        <dict>
+                <key>NSAllowsArbitraryLoads</key>
+                <false/>
+                <key>NSAllowsArbitraryLoadsInWebContent</key>
+                <true/>
+                <key>NSExceptionDomains</key>
+                <dict>
+                        <key>localhost</key>
+                        <dict>
+                                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                                <true/>
+                        </dict>
+                </dict>
+        </dict>
+        
+        <!-- Status Bar Style -->
+        <key>UIStatusBarStyle</key>
+        <string>UIStatusBarStyleDefault</string>
+        
+        <!-- iTunes File Sharing (for recipe exports) -->
+        <key>UIFileSharingEnabled</key>
+        <true/>
+        <key>LSSupportsOpeningDocumentsInPlace</key>
+        <true/>
+        
+        <!-- Document Types the app can open -->
+        <key>CFBundleDocumentTypes</key>
+        <array>
+                <dict>
+                        <key>CFBundleTypeName</key>
+                        <string>Recipe File</string>
+                        <key>LSHandlerRank</key>
+                        <string>Default</string>
+                        <key>LSItemContentTypes</key>
+                        <array>
+                                <string>public.json</string>
+                                <string>public.plain-text</string>
+                        </array>
+                </dict>
+        </array>
 </dict>
 </plist>
