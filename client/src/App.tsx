@@ -273,7 +273,7 @@ function AppContent() {
   }, [showOnboarding]); // Re-attach listener when onboarding status changes
 
   const style = {
-    "--sidebar-width": "18.75rem",
+    "--sidebar-width": "17.1875rem",
     "--sidebar-width-icon": "4rem",
   } as React.CSSProperties;
 
